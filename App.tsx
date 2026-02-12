@@ -237,26 +237,6 @@ const App: React.FC = () => {
           <div className="p-4 md:p-8 max-w-full mx-auto w-full flex flex-col">
             <div className="animate-in fade-in duration-500 flex-1">
               
-              {isAdmin && pendingEntries.length > 0 && activeTab !== 'register' && (
-                <div className="mb-6 p-5 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-[2rem] flex items-center justify-between shadow-xl animate-in slide-in-from-top-10 duration-700 no-print border-l-[6px] border-l-amber-500">
-                  <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-amber-200 animate-bounce">
-                      <BellRing size={28} />
-                    </div>
-                    <div>
-                      <h4 className="font-black text-slate-900 text-lg leading-tight">নতুন তথ্য অনুমোদনের অপেক্ষায় আছে!</h4>
-                      <p className="text-[12px] font-bold text-slate-600 mt-1 uppercase tracking-tight">আপনার মডোরেশনের জন্য মোট {toBengaliDigits(pendingEntries.length)}টি এন্ট্রি অপেক্ষমাণ আছে।</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => { setActiveTab('register'); setShowPendingOnly(true); }}
-                    className="px-8 py-3.5 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-black transition-all shadow-2xl active:scale-95 flex items-center gap-3"
-                  >
-                    রিভিউ করুন <ArrowRight size={18} className="text-amber-400" />
-                  </button>
-                </div>
-              )}
-
               {activeTab === 'landing' && (
                 <LandingPage 
                   entries={approvedEntries} 
