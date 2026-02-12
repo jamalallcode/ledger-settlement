@@ -1,0 +1,104 @@
+body {
+  font-family: 'Hind Siliguri', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+/* GLOBAL TABLE STICKY LOGIC */
+.table-container {
+  position: relative;
+  width: 100%;
+  overflow: visible !important;
+}
+
+table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* MULTI-LEVEL STICKY HEADER OFFSETS */
+thead th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  z-index: 50 !important;
+  background-color: #f8fafc !important; 
+  box-shadow: inset 0 -1px 0 #cbd5e1, inset -1px 0 0 #cbd5e1 !important;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+}
+
+/* Fixed offsets for sticky rows */
+thead tr:nth-child(1) th {
+  top: 0px !important;
+  z-index: 90 !important;
+}
+
+thead tr:nth-child(2) th {
+  top: 42px !important; 
+  z-index: 80 !important;
+}
+
+thead tr:nth-child(3) th {
+  top: 80px !important; 
+  z-index: 70 !important;
+}
+
+/* Sticky Footer */
+tfoot th, tfoot td {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 95 !important;
+  background-color: #0f172a !important;
+  color: white !important;
+  box-shadow: inset 0 1px 0 #334155, inset -1px 0 0 #334155 !important;
+}
+
+th, td {
+  position: relative;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+}
+
+/* Correctly positioned resizers that don't mess up padding */
+.resizer {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: transparent;
+  cursor: col-resize;
+  z-index: 140;
+}
+
+.resizer-h {
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 4px;
+  background: transparent;
+  cursor: row-resize;
+  z-index: 140;
+}
+
+.resizer:hover, .resizer.resizing, .resizer-h:hover, .resizer-h.resizing {
+  background: rgba(59, 130, 246, 0.4) !important;
+}
+
+[data-type="amount"] { 
+  font-weight: 900 !important; 
+}
+
+tbody tr:hover td {
+  background-color: #f1f5f9 !important;
+}
+
+@media print {
+  thead th, tfoot td { position: static !important; }
+  .no-print { display: none !important; }
+  .table-container { overflow: visible !important; }
+}
