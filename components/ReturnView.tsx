@@ -4,7 +4,7 @@ import React from 'react';
 import { SettlementEntry, ParaType, CumulativeStats, MinistryPrevStats } from '../types';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP, OFFICE_HEADER } from '../constants';
-import { ChevronLeft, ArrowRight, ClipboardCheck, CalendarRange, Printer, Database, Settings2, BarChart3, FileStack, ClipboardList, Settings, CheckCircle2, CalendarDays, UserCheck, ChevronDown, Check, LayoutGrid, PieChart, History, Search, CalendarSearch, Sparkles, X, Lock, KeyRound, ShieldAlert, RefreshCcw, ShieldCheck } from 'lucide-react';
+import { ChevronLeft, ArrowRight, ClipboardCheck, CalendarRange, Printer, Database, Settings2, BarChart3, FileStack, ClipboardList, Settings, CheckCircle2, CalendarDays, UserCheck, ChevronDown, Check, LayoutGrid, PieChart, History, Search, CalendarSearch, Sparkles, X, Lock, KeyRound, ShieldAlert, RefreshCcw, ShieldCheck, Mail, Send } from 'lucide-react';
 import { isWithinInterval, addMonths, format as dateFnsFormat, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { getCycleForDate, isInCycle } from '../utils/cycleHelper';
 
@@ -62,16 +62,18 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
   const [isSetupMode, setIsSetupMode] = useState(false);
   const [tempPrevStats, setTempPrevStats] = useState<Record<string, MinistryPrevStats>>({});
   
-  // --- PASSWORD PROTECTION STATES ---
+  // --- PASSWORD PROTECTION & EMAIL RECOVERY STATES ---
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [enteredPassword, setEnteredPassword] = useState('');
   const [modalMode, setModalMode] = useState<'auth' | 'recovery' | 'new-password'>('auth');
   const [recoveryCode, setRecoveryCode] = useState('');
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
-  const MASTER_RECOVERY_CODE = 'ADMIN-RESET';
+  const ADMIN_EMAIL = 'websitetogather@gmail.com';
   const PWD_STORAGE_KEY = 'ledger_setup_auth_pwd';
 
   const getStoredPassword = () => localStorage.getItem(PWD_STORAGE_KEY) || '1234';
@@ -82,6 +84,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
     setEnteredPassword('');
     setModalMode('auth');
     setShowPasswordModal(true);
+    setCodeSent(false);
   };
 
   const verifyPassword = (e: React.FormEvent) => {
@@ -94,13 +97,27 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
     }
   };
 
-  const handleRecovery = (e: React.FormEvent) => {
+  const sendRecoveryEmail = () => {
+    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedCode(newCode);
+    
+    // Construct mailto link
+    const subject = encodeURIComponent('Initial Balance Setup - Recovery Code');
+    const body = encodeURIComponent(`আপনার প্রারম্ভিক জের সেটআপ রিসেট কোডটি হলো: ${newCode}\n\nএটি সিস্টেমের সুরক্ষার জন্য কারো সাথে শেয়ার করবেন না।`);
+    const mailtoLink = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
+    
+    window.open(mailtoLink, '_blank');
+    setCodeSent(true);
+    setAuthError('আপনার ইমেইলে কোড পাঠানো হয়েছে। দয়া করে ইনবক্স চেক করুন।');
+  };
+
+  const handleRecoveryVerify = (e: React.FormEvent) => {
     e.preventDefault();
-    if (recoveryCode.toUpperCase() === MASTER_RECOVERY_CODE) {
+    if (recoveryCode === generatedCode && recoveryCode !== '') {
       setModalMode('new-password');
       setAuthError('');
     } else {
-      setAuthError('ভুল রিকভারি কোড!');
+      setAuthError('ভুল রিকভারি কোড! ইমেইল চেক করে সঠিক কোড দিন।');
     }
   };
 
@@ -363,7 +380,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
   const HistoricalFilter = () => (
     <div className="relative no-print" ref={dropdownRef}>
       <div onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} className={`flex items-center gap-3 px-5 h-[48px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isCycleDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}>
-         <CalendarDays size={20} className="text-blue-600" />
+         <CalendarDays size(20) className="text-blue-600" />
          <span className="font-black text-[13.5px] text-slate-800 tracking-tight">
            {cycleOptions.find(o => o.cycleLabel === activeCycle.label)?.label || toBengaliDigits(activeCycle.label)}
          </span>
@@ -464,22 +481,40 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
                   </div>
                   <div className="flex flex-col gap-3">
                     <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-xl hover:bg-blue-500 active:scale-95 transition-all">প্রবেশ করুন</button>
-                    <button type="button" onClick={() => { setModalMode('recovery'); setAuthError(''); }} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-blue-400 text-center">Forgot Password?</button>
+                    <button type="button" onClick={() => { setModalMode('recovery'); setAuthError(''); setCodeSent(false); }} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-blue-400 text-center">Forgot Password?</button>
                   </div>
                 </form>
               )}
 
               {modalMode === 'recovery' && (
-                <form onSubmit={handleRecovery} className="space-y-6">
-                   <div className="space-y-1">
-                    <p className="text-slate-400 text-xs font-bold px-1">সিক্রেট রিকভারি কোড দিন:</p>
-                    <input autoFocus type="text" value={recoveryCode} onChange={e => setRecoveryCode(e.target.value)} placeholder="RESET CODE" className="w-full h-14 bg-slate-800 border-2 border-slate-700 rounded-2xl px-6 text-white font-black text-center text-lg uppercase tracking-widest outline-none focus:border-emerald-500 transition-all" />
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    <button type="submit" className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl hover:bg-emerald-500 active:scale-95 transition-all">কোড যাচাই করুন</button>
-                    <button type="button" onClick={() => setModalMode('auth')} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white text-center">ফিরে যান</button>
-                  </div>
-                </form>
+                <div className="space-y-6">
+                   {!codeSent ? (
+                     <div className="space-y-6 text-center">
+                        <div className="w-16 h-16 bg-blue-600/10 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-2 animate-pulse">
+                          <Mail size={32} />
+                        </div>
+                        <p className="text-slate-400 text-xs font-bold leading-relaxed px-2">আপনার মেইলে একটি সিক্রেট রিকভারি কোড পাঠানো হবে। বাটনটি ক্লিক করুন।</p>
+                        <button 
+                          onClick={sendRecoveryEmail}
+                          className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-xl hover:bg-blue-500 transition-all flex items-center justify-center gap-2"
+                        >
+                          <Send size={16} /> ইমেইলে কোড পাঠান
+                        </button>
+                     </div>
+                   ) : (
+                     <form onSubmit={handleRecoveryVerify} className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                        <div className="space-y-1">
+                          <p className="text-slate-400 text-xs font-bold px-1">আপনার ইমেইল থেকে কোডটি দিন:</p>
+                          <input autoFocus type="text" value={recoveryCode} onChange={e => setRecoveryCode(e.target.value)} placeholder="000000" className="w-full h-14 bg-slate-800 border-2 border-slate-700 rounded-2xl px-6 text-white font-black text-center text-lg uppercase tracking-widest outline-none focus:border-emerald-500 transition-all" />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                          <button type="submit" className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl hover:bg-emerald-500 active:scale-95 transition-all">কোড যাচাই করুন</button>
+                          <button type="button" onClick={() => setCodeSent(false)} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white text-center">আবার কোড পাঠান</button>
+                        </div>
+                     </form>
+                   )}
+                   <button type="button" onClick={() => setModalMode('auth')} className="w-full text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-white text-center">ফিরে যান</button>
+                </div>
               )}
 
               {modalMode === 'new-password' && (
