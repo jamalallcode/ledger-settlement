@@ -207,28 +207,34 @@ const Navbar: React.FC<NavbarProps> = ({
           <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-xl relative">
             <IDBadge id="nav-cycle-badge" /> <Calendar size={16} className="text-blue-400" /> <span className="text-xs font-black text-slate-300 tracking-tight">{cycleLabel}</span>
           </div>
-          <div className="hidden sm:flex items-center gap-2">
-            <div className={`flex items-center gap-2 px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-xl relative`}>
-              <IDBadge id="nav-locked-status" /> <div className={`w-2 h-2 rounded-full ${isLockedMode ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 animate-pulse'}`}></div> <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{isLockedMode ? 'Locked' : 'Edit'}</span>
+          
+          {isAdmin && (
+            <div className="hidden sm:flex items-center gap-2">
+              <div className={`flex items-center gap-2 px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-xl relative`}>
+                <IDBadge id="nav-locked-status" /> <div className={`w-2 h-2 rounded-full ${isLockedMode ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 animate-pulse'}`}></div> <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{isLockedMode ? 'Locked' : 'Edit'}</span>
+              </div>
             </div>
-          </div>
+          )}
+
           <div className="flex items-center gap-3">
             {activeTab === 'register' && <button onClick={() => setShowRegisterFilters(!showRegisterFilters)} className={`p-2.5 rounded-xl border transition-all ${showRegisterFilters ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}><Filter size={20} /></button>}
-            <div className="relative" ref={toolsRef}>
-              <button onClick={() => setShowToolsDropdown(!showToolsDropdown)} className={`p-2.5 rounded-xl border transition-all ${showToolsDropdown ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}><Settings size={22} /></button>
-              {showToolsDropdown && (
-                <div className="absolute top-[calc(100%+12px)] right-0 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 z-[300]">
-                   {isAdmin && (
+            
+            {isAdmin && (
+              <div className="relative" ref={toolsRef}>
+                <button onClick={() => setShowToolsDropdown(!showToolsDropdown)} className={`p-2.5 rounded-xl border transition-all ${showToolsDropdown ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}><Settings size={22} /></button>
+                {showToolsDropdown && (
+                  <div className="absolute top-[calc(100%+12px)] right-0 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 z-[300]">
                     <div className="space-y-3 animate-in fade-in duration-500">
                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">লেআউট টুলস</span>
                       <button onClick={() => setIsLayoutEditable(!isLayoutEditable)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-black text-[11px] transition-all border relative ${isLayoutEditable ? 'bg-amber-500/10 border-amber-400/50 text-amber-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'}`}>
                         <IDBadge id="dropdown-layout-toggle" /> {isLayoutEditable ? <Unlock size={14} /> : <Lock size={14} />} লেআউট এডিট (ID ব্যাজ)
                       </button>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden p-2.5 bg-slate-800 text-white rounded-xl border border-slate-700"><Menu size={24} /></button>
           </div>
         </div>
