@@ -12,7 +12,7 @@
         font-family: 'Hind Siliguri', sans-serif;
         -webkit-font-smoothing: antialiased;
         scroll-behavior: smooth;
-        background-color: #f8fafc;
+        background-color: #ffffff;
       }
 
       /* Hide scrollbar for Chrome, Safari and Opera */
@@ -35,6 +35,16 @@
 
       .animate-premium-pulse {
         animation: premium-pulse-highlight 2s infinite ease-in-out;
+      }
+
+      /* Notification Scale Animation (Small to Large) */
+      @keyframes notif-scale-pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.3); }
+      }
+
+      .animate-notif-scale {
+        animation: notif-scale-pulse 1.5s infinite ease-in-out;
       }
 
       /* পেজ ট্রানজিশন এনিমেশন - ল্যান্ডিং/হোম পেজের জন্য (Premium Reveal) */
@@ -167,6 +177,9 @@
         .table-container { overflow: visible !important; }
       }
     </style>
+    <script type="application/javascript">
+      window.process = { env: { API_KEY: '' } };
+    </script>
     <script type="importmap">
 {
   "imports": {
@@ -187,9 +200,8 @@
 </script>
   <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-slate-50 overflow-x-hidden">
+  <body class="bg-white overflow-x-hidden">
     <div id="root"></div>
     <script type="module" src="index.tsx"></script>
-  <script type="module" src="/index.tsx"></script>
 </body>
 </html>
