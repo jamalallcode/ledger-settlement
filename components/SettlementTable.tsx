@@ -162,55 +162,61 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   const tdBase = "border border-slate-300 px-0.5 py-1.5 text-center align-middle text-[10px] leading-tight font-bold text-slate-900 relative";
   const tdMoney = "border border-slate-300 px-0.5 py-1 text-center align-middle text-[10px] font-black text-slate-950 relative";
 
-  const renderMetadataGrid = (entry: SettlementEntry) => (
-    <div className="bg-slate-50/80 p-6 border-x border-b border-slate-200 rounded-b-xl animate-in slide-in-from-top-4 duration-500 shadow-inner">
-      {isAdminView && (
-        <div className="mb-6 p-4 bg-white border border-amber-200 rounded-2xl flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center"><AlertCircle size={24} /></div>
-             <div>
-               <p className="text-xs font-black text-slate-900">এটি একটি অপেক্ষমাণ এন্ট্রি</p>
-               <p className="text-[10px] font-bold text-slate-500">অনুমোদন দিলে এটি মূল রেজিস্টারে দেখা যাবে।</p>
-             </div>
-          </div>
-          <div className="flex gap-3">
-             <button onClick={() => onReject?.(entry.id)} className="px-4 py-2 bg-red-50 text-red-600 rounded-xl font-black text-[11px] hover:bg-red-600 hover:text-white transition-all flex items-center gap-2 border border-red-100"><XCircle size={14} /> প্রত্যাখ্যান করুন</button>
-             <button onClick={() => onApprove?.(entry.id)} className="px-5 py-2 bg-emerald-600 text-white rounded-xl font-black text-[11px] hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-lg shadow-emerald-200"><ShieldCheck size={14} /> অনুমোদন দিন</button>
-          </div>
-        </div>
-      )}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: '১. শাখা ধরণ', value: entry.paraType, icon: Fingerprint, col: 'sky' },
-          { label: '২. চিঠির ধরণ', value: entry.isMeeting ? entry.meetingType : 'বিএসআর', icon: FileText, col: 'emerald' },
-          { label: '৩. মন্ত্রণালয়', value: entry.ministryName, icon: MapPin, col: 'amber' },
-          { label: '৪. সংস্থা', value: entry.entityName, icon: FileText, col: 'purple' },
-          { label: '৫. বিস্তারিত শাখা', value: entry.branchName, icon: MapPin, col: 'sky' },
-          { label: '৬. নিরীক্ষা সাল', value: toBengaliDigits(entry.auditYear), icon: Calendar, col: 'emerald' },
-          { label: '৭. পত্র নং ও তারিখ', value: entry.letterNoDate, icon: FileText, col: 'amber' },
-          { label: '৮. কার্যপত্র নং', value: entry.meetingWorkpaper || 'N/A', icon: FileText, col: 'purple' },
-          { label: '৯. কার্যবিবরণী নং', value: entry.minutesNoDate || 'N/A', icon: FileText, col: 'sky' },
-          { label: '১০. ডায়েরি নং ও তারিখ', value: entry.workpaperNoDate, icon: FileText, col: 'emerald' },
-          { label: '১১. জারিপত্র নং', value: formatIssueInfoForDisplay(entry.issueLetterNoDate), icon: FileText, col: 'amber' },
-          { label: '১২. আর্কাইভ নং', value: entry.archiveNo || 'N/A', icon: Archive, col: 'purple' },
-          { label: '১৩. প্রেরিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSentParaCount || '০'), icon: ListOrdered, col: 'sky' },
-          { label: '১৪. মীমাংসিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSettledParaCount || '০'), icon: CheckCircle2, col: 'emerald' },
-          { label: '১৫. অমীমাংসিত সংখ্যা', value: toBengaliDigits(entry.meetingUnsettledParas || '০'), icon: ListOrdered, col: 'amber' },
-          { label: '১৬. অমীমাংসিত টাকা', value: toBengaliDigits(entry.meetingUnsettledAmount ?? 0), icon: Banknote, col: 'purple' },
-          { label: '১৭. পূর্ণাঙ্গ আদায়', value: toBengaliDigits(entry.meetingFullSettledParaCount || '০'), icon: CheckCircle2, col: 'sky' },
-          { label: '১৮. আংশিক আদায়', value: toBengaliDigits(entry.meetingPartialSettledParaCount || '০'), icon: CheckCircle2, col: 'emerald' }
-        ].map((item, i) => (
-          <div key={i} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
-            <div className={`p-2 rounded-lg bg-${item.col}-50 text-${item.col}-600`}><item.icon size={14} /></div>
-            <div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-tight">{item.label}</p>
-              <p className="text-[11px] font-black text-slate-900 leading-tight">{item.value}</p>
+  const renderMetadataGrid = (entry: SettlementEntry) => {
+    // Calculate money amounts for display 17 and 18 from paragraph list
+    const fullMoney = entry.paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ').reduce((s, p) => s + p.involvedAmount, 0);
+    const partialMoney = entry.paragraphs.filter(p => p.status === 'আংশিক').reduce((s, p) => s + p.involvedAmount, 0);
+
+    return (
+      <div className="bg-slate-50/80 p-6 border-x border-b border-slate-200 rounded-b-xl animate-in slide-in-from-top-4 duration-500 shadow-inner">
+        {isAdminView && (
+          <div className="mb-6 p-4 bg-white border border-amber-200 rounded-2xl flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-3">
+               <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center"><AlertCircle size={24} /></div>
+               <div>
+                 <p className="text-xs font-black text-slate-900">এটি একটি অপেক্ষমাণ এন্ট্রি</p>
+                 <p className="text-[10px] font-bold text-slate-500">অনুমোদন দিলে এটি মূল রেজিস্টারে দেখা যাবে।</p>
+               </div>
+            </div>
+            <div className="flex gap-3">
+               <button onClick={() => onReject?.(entry.id)} className="px-4 py-2 bg-red-50 text-red-600 rounded-xl font-black text-[11px] hover:bg-red-600 hover:text-white transition-all flex items-center gap-2 border border-red-100"><XCircle size={14} /> প্রত্যাখ্যান করুন</button>
+               <button onClick={() => onApprove?.(entry.id)} className="px-5 py-2 bg-emerald-600 text-white rounded-xl font-black text-[11px] hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-lg shadow-emerald-200"><ShieldCheck size={14} /> অনুমোদন দিন</button>
             </div>
           </div>
-        ))}
+        )}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: '১. শাখা ধরণ', value: entry.paraType, icon: Fingerprint, col: 'sky' },
+            { label: '২. চিঠির ধরণ', value: entry.isMeeting ? entry.meetingType : 'বিএসআর', icon: FileText, col: 'emerald' },
+            { label: '৩. মন্ত্রণালয়', value: entry.ministryName, icon: MapPin, col: 'amber' },
+            { label: '৪. সংস্থা', value: entry.entityName, icon: FileText, col: 'purple' },
+            { label: '৫. বিস্তারিত শাখা', value: entry.branchName, icon: MapPin, col: 'sky' },
+            { label: '৬. নিরীক্ষা সাল', value: toBengaliDigits(entry.auditYear), icon: Calendar, col: 'emerald' },
+            { label: '৭. পত্র নং ও তারিখ', value: entry.letterNoDate, icon: FileText, col: 'amber' },
+            { label: '৮. কার্যপত্র নং', value: entry.meetingWorkpaper || 'N/A', icon: FileText, col: 'purple' },
+            { label: '৯. কার্যবিবরণী নং', value: entry.minutesNoDate || 'N/A', icon: FileText, col: 'sky' },
+            { label: '১০. ডায়েরি নং ও তারিখ', value: entry.workpaperNoDate, icon: FileText, col: 'emerald' },
+            { label: '১১. জারিপত্র নং', value: formatIssueInfoForDisplay(entry.issueLetterNoDate), icon: FileText, col: 'amber' },
+            { label: '১২. আর্কাইভ নং', value: entry.archiveNo || 'N/A', icon: Archive, col: 'purple' },
+            { label: '১৩. প্রেরিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSentParaCount || '০'), icon: ListOrdered, col: 'sky' },
+            { label: '১৪. মীমাংসিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSettledParaCount || '০'), icon: CheckCircle2, col: 'emerald' },
+            { label: '১৫. অমীমাংসিত সংখ্যা', value: toBengaliDigits(entry.meetingUnsettledParas || '০'), icon: ListOrdered, col: 'amber' },
+            { label: '১৬. অমীমাংসিত টাকা', value: toBengaliDigits(entry.meetingUnsettledAmount ?? 0), icon: Banknote, col: 'purple' },
+            { label: '১৭. পূর্ণাঙ্গ আদায়', value: toBengaliDigits(Math.round(fullMoney)), icon: CheckCircle2, col: 'sky' },
+            { label: '১৮. আংশিক আদায়', value: toBengaliDigits(Math.round(partialMoney)), icon: CheckCircle2, col: 'emerald' }
+          ].map((item, i) => (
+            <div key={i} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
+              <div className={`p-2 rounded-lg bg-${item.col}-50 text-${item.col}-600`}><item.icon size={14} /></div>
+              <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-tight">{item.label}</p>
+                <p className="text-[11px] font-black text-slate-900 leading-tight">{item.value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   let lastRenderedCycle = "";
   const footerTdCls = "p-1 text-center font-black text-[10px] bg-slate-900 border border-slate-700";
