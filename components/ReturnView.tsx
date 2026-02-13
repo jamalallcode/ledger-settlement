@@ -19,6 +19,7 @@ interface ReturnViewProps {
   onJumpToRegister?: () => void;
   isLayoutEditable?: boolean;
   resetKey?: number;
+  isAdmin?: boolean;
 }
 
 const reportOptions = [
@@ -56,7 +57,7 @@ const reportOptions = [
   }
 ];
 
-const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats, setPrevStats, isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister }) => {
+const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats, setPrevStats, isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister, isAdmin }) => {
   const [selectedReportType, setSelectedReportType] = useState<string | null>(null);
   const [isSetupMode, setIsSetupMode] = useState(false);
   const [tempPrevStats, setTempPrevStats] = useState<Record<string, MinistryPrevStats>>({});
@@ -315,7 +316,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
       <div id="section-report-selector" className="max-w-3xl pb-10 animate-report-page relative pt-0">
         <IDBadge id="section-report-selector" />
         <div className="flex flex-col gap-4">
-          {reportOptions.map((opt, index) => (
+          {reportOptions.filter(opt => isAdmin || opt.id !== 'setup-mode').map((opt, index) => (
             <div 
               key={opt.id} 
               onClick={() => {
