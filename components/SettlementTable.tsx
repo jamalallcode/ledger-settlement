@@ -2,7 +2,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import React from 'react';
 import { SettlementEntry } from '../types.ts';
-import { Trash2, Pencil, Calendar, Printer, CheckCircle2, ChevronDown, ChevronUp, FileText, Fingerprint, Banknote, ListOrdered, Archive, MapPin, CalendarDays, Sparkles, ClipboardList, Filter, X, Search, LayoutGrid, CalendarSearch, Check, ShieldCheck, XCircle, AlertCircle } from 'lucide-react';
+import { Trash2, Pencil, Calendar, Printer, CheckCircle2, ChevronDown, ChevronUp, FileText, Fingerprint, Banknote, ListOrdered, Archive, MapPin, CalendarDays, Sparkles, ClipboardList, Filter, X, Search, LayoutGrid, CalendarSearch, Check, ShieldCheck, XCircle, AlertCircle, MessageSquare } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils.ts';
 import { OFFICE_HEADER } from '../constants.ts';
 import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper.ts';
@@ -203,7 +203,9 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             { label: '১৫. অমীমাংসিত সংখ্যা', value: toBengaliDigits(entry.meetingUnsettledParas || '০'), icon: ListOrdered, col: 'amber' },
             { label: '১৬. অমীমাংসিত টাকা', value: toBengaliDigits(entry.meetingUnsettledAmount ?? 0), icon: Banknote, col: 'purple' },
             { label: '১৭. পূর্ণাঙ্গ আদায়', value: toBengaliDigits(Math.round(fullMoney)), icon: CheckCircle2, col: 'sky' },
-            { label: '১৮. আংশিক আদায়', value: toBengaliDigits(Math.round(partialMoney)), icon: CheckCircle2, col: 'emerald' }
+            { label: '১৮. আংশিক আদায়', value: toBengaliDigits(Math.round(partialMoney)), icon: CheckCircle2, col: 'emerald' },
+            { label: '১৯. সভার তারিখ', value: toBengaliDigits(entry.meetingDate || 'N/A'), icon: Calendar, col: 'amber' },
+            { label: '২০. মন্তব্য', value: entry.remarks || 'N/A', icon: MessageSquare, col: 'purple' }
           ].map((item, i) => (
             <div key={i} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
               <div className={`p-2 rounded-lg bg-${item.col}-50 text-${item.col}-600`}><item.icon size={14} /></div>
@@ -406,7 +408,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         <table id="table-main-ledger" ref={tableRef} className="w-full border-separate">
           <colgroup><col className="w-[30px]" /><col className="w-[170px]" /><col className="w-[45px]" /><col className="w-[65px]" /><col className="w-[40px]" /><col className="w-[65px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /></colgroup>
           <thead>
-            <tr className="h-[42px]"><th rowSpan={2} className={thBase}>ক্র: নং</th><th rowSpan={2} className={thBase}>বিস্তারিত বিবরণ (১৮ ফিল্ড দেখতে ক্লিক)</th><th rowSpan={2} className={thBase}>অনু: নং</th><th rowSpan={2} className={thBase}>জড়িত টাকা</th><th colSpan={2} className={thBase}>উত্থাপিত আপত্তি</th><th colSpan={2} className={thBase}>ভ্যাট</th><th colSpan={2} className={thBase}>আয়কর</th><th colSpan={2} className={thBase}>অন্যান্য</th><th colSpan={2} className={thBase}>মোট মীমাংসিত</th></tr>
+            <tr className="h-[42px]"><th rowSpan={2} className={thBase}>ক্র: নং</th><th rowSpan={2} className={thBase}>বিস্তারিত বিবরণ (২০ ফিল্ড দেখতে ক্লিক)</th><th rowSpan={2} className={thBase}>অনু: নং</th><th rowSpan={2} className={thBase}>জড়িত টাকা</th><th colSpan={2} className={thBase}>উত্থাপিত আপত্তি</th><th colSpan={2} className={thBase}>ভ্যাট</th><th colSpan={2} className={thBase}>আয়কর</th><th colSpan={2} className={thBase}>অন্যান্য</th><th colSpan={2} className={thBase}>মোট মীমাংসিত</th></tr>
             <tr className="h-[38px]"><th className={thBase}>সংখ্যা</th><th className={thBase}>টাকা</th><th className={thBase}>আদায়</th><th className={thBase}>সমন্বয়</th><th className={thBase}>আদায়</th><th className={thBase}>সমন্বয়</th><th className={thBase}>আদায়</th><th className={thBase}>সমন্বয়</th><th className={thBase}>আদায়</th><th className={thBase}>সমন্বয়</th></tr>
           </thead>
           <tbody>
