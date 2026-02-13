@@ -578,5 +578,3 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
 };
 
 export default ReturnView;
-
-
