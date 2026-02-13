@@ -467,7 +467,17 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
           </div>
           <div><h3 className="text-2xl font-black text-slate-900 leading-tight">মীমাংসা রেজিস্টার ডাটা এন্ট্রি</h3><p className="text-slate-500 font-bold text-sm">অনুগ্রহ করে নিচের ১৬টি ফিল্ড সঠিকভাবে পূরণ করুন</p></div>
         </div>
-        {onCancel && <button id="btn-cancel-entry" type="button" onClick={onCancel} className="px-5 py-2.5 bg-slate-50 text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-xl font-black text-sm transition-all flex items-center gap-2 border border-slate-200 relative shrink-0"><IDBadge id="btn-cancel-entry" isLayoutEditable={isLayoutEditable} /><X size={18} /> বাতিল করুন</button>}
+        {onCancel && (
+          <button 
+            id="btn-cancel-entry" 
+            type="button" 
+            onClick={onCancel} 
+            className="px-5 py-2.5 bg-slate-50 text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-xl font-black text-sm transition-all flex items-center gap-2 border border-slate-200 relative shrink-0"
+          >
+            <IDBadge id="btn-cancel-entry" isLayoutEditable={isLayoutEditable} />
+            <X size={18} /> বাতিল করুন
+          </button>
+        )}
       </div>
 
       <form id="form-entry" onSubmit={handleSubmit} className="space-y-10">
@@ -528,8 +538,8 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
                 <div key={p.id} id={`card-para-${idx}`} className={`p-6 rounded-[2rem] relative border-2 ${p.involvedAmount > 0 && p.involvedAmount === (p.recoveredAmount + p.adjustedAmount) ? "border-emerald-500 bg-emerald-50/10 shadow-emerald-100" : "border-red-500 bg-red-50/20 shadow-red-100"} hover:shadow-xl transition-all group overflow-hidden`}>
                   <IDBadge id={`card-para-${idx}`} isLayoutEditable={isLayoutEditable} />
                   
-                  {/* Floating Delete Button - Top Right Positioning as requested - Restricted to Admin */}
-                  {isAdmin && (
+                  {/* Floating Delete Button - Available during entry for all, only for admin during update */}
+                  {(isAdmin || !isUpdateMode) && (
                     <button 
                       type="button" 
                       onClick={() => { 
@@ -645,7 +655,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
                   <h4 className={`text-3xl font-black ${isDeletingPara || deletedCount > 0 ? 'text-red-950' : 'text-emerald-950'} tracking-tight`}>
                     {isDeletingPara || deletedCount === 1 ? "অনুচ্ছেদটি ডিলিট করা হচ্ছে" : (deletedCount > 1 ? "অনুচ্ছেদসমূহ ডিলিট করা হচ্ছে" : (isUpdateMode ? "তথ্য আপডেট করা হচ্ছে" : "রেজিস্টার তথ্য সফলভাবে সংরক্ষিত হয়েছে"))}
                   </h4>
-                  <p className="text-[15px] font-bold text-slate-600 uppercase tracking-widest flex items-center justify-center gap-2">
+                  <div className="text-[15px] font-bold text-slate-600 uppercase tracking-widest flex items-center justify-center gap-2">
                      {isDeletingPara || deletedCount === 1 ? (
                        <React.Fragment><AlertCircle size={18} className="text-red-600" /> অনুচ্ছেদটি ডিলিট করা হচ্ছে</React.Fragment>
                      ) : (deletedCount > 1 ? (
@@ -655,7 +665,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
                      ) : (
                        <React.Fragment><ShieldCheck size={18} className="text-emerald-600" /> এডমিন অনুমতি দিলে এটি মূল রেজিস্টারে যুক্ত হবে</React.Fragment>
                      )))}
-                  </p>
+                  </div>
                </div>
                
                <div className="flex flex-col items-center gap-3 mt-2">
@@ -667,8 +677,8 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
             </div>
           ) : (
             <button 
-              id="btn-submit-entry" 
-              type="submit" 
+              id="btn-submit-entry"
+              type="submit"
               className="w-full py-5 text-white text-xl font-black rounded-[2.5rem] bg-blue-600 hover:bg-blue-700 active:scale-[0.98] shadow-[0_20px_40px_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-4 group relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
