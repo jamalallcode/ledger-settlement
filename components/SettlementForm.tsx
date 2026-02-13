@@ -704,7 +704,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
               <IDBadge id="btn-submit-entry" isLayoutEditable={isLayoutEditable} />
-              <CheckCircle2 size={24} strokeWidth={2.5} /> {isUpdateMode ? 'তথ্য আপডেট করুন' : 'রেজিস্টার তথ্য সংরক্ষণ করুন'}
+              <CheckCircle2 size={24} strokeWidth={2.5} /> {isUpdateMode ? 'তথ্য আপডেট করুন' : 'রেজিস্টারে তথ্য সংরক্ষণ করুন'}
             </button>
           )}
         </div>
