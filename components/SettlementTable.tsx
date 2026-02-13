@@ -18,11 +18,12 @@ interface SettlementTableProps {
   isAdminView?: boolean;
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
+  isAdmin?: boolean;
 }
 
 const SettlementTable: React.FC<SettlementTableProps> = ({ 
   entries, onDelete, onEdit, isLayoutEditable, showFilters, setShowFilters,
-  isAdminView = false, onApprove, onReject 
+  isAdminView = false, onApprove, onReject, isAdmin = false 
 }) => {
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -101,7 +102,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       setTimeout(() => setCopied(false), 1500);
     };
     return (
-      <span onClick={handleCopy} className={`absolute -top-3 left-2 bg-black text-white text-[9px] font-black px-2 py-0.5 rounded border border-white/30 z-[300] cursor-pointer no-print shadow-2xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'ring-2 ring-emerald-500 bg-emerald-600' : ''}`}>
+      <span onClick={handleCopy} className={`absolute -top-3 left-2 bg-black text-white text-[9px] font-black px-2 py-0.5 rounded border border-white/30 z-[300] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'ring-2 ring-emerald-500 bg-emerald-600' : ''}`}>
         {copied ? 'COPIED!' : `#${id}`}
       </span>
     );
@@ -195,7 +196,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
           { label: '১৩. প্রেরিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSentParaCount || '০'), icon: ListOrdered, col: 'sky' },
           { label: '১৪. মীমাংসিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSettledParaCount || '০'), icon: CheckCircle2, col: 'emerald' },
           { label: '১৫. অমীমাংসিত সংখ্যা', value: toBengaliDigits(entry.meetingUnsettledParas || '০'), icon: ListOrdered, col: 'amber' },
-          { label: '১৬. অমীমাংসিত টাকা', value: toBengaliDigits(Math.round(entry.meetingUnsettledAmount || 0)), icon: Banknote, col: 'purple' }
+          { label: '১৬. অমীমাংসিত টাকা', value: toBengaliDigits(entry.meetingUnsettledAmount ?? 0), icon: Banknote, col: 'purple' }
         ].map((item, i) => (
           <div key={i} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
             <div className={`p-2 rounded-lg bg-${item.col}-50 text-${item.col}-600`}><item.icon size={14} /></div>
@@ -343,7 +344,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                 <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isTypeDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
                 
                 {isTypeDropdownOpen && (
-                  <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                  <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
                     <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
                       <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
                         <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
@@ -463,10 +464,10 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                       <td className={tdMoney}>{toBengaliDigits(Math.round(p.recoveredAmount))}</td>
                       <td className={tdMoney + " relative"}>
                         {toBengaliDigits(Math.round(p.adjustedAmount))}
-                        {!isAdminView && (
+                        {!isAdminView && isAdmin && (
                           <div className="absolute right-0 bottom-0.5 hidden group-hover:flex gap-0.5 no-print p-0.5">
                              <button onClick={(e) => { e.stopPropagation(); onEdit(entry); }} className="p-1 text-blue-600 bg-white border rounded shadow-sm hover:bg-blue-50"><Pencil size={11}/></button>
-                             <button onClick={(e) => { e.stopPropagation(); if(window.confirm('আপনি কি নিশ্চিত যে এই নির্দিষ্ট অনুচ্ছেদটি মুছে ফেলতে চান?')) onDelete(entry.id, p.id); }} className="p-1 text-red-600 bg-white border rounded shadow-sm ml-0.5 hover:bg-red-50"><Trash2 size={11}/></button>
+                             <button onClick={(e) => { e.stopPropagation(); if (window.confirm("আপনি কি নিশ্চিতভাবে এই অনুচ্ছেদটি মুছে ফেলতে চান?")) onDelete(entry.id, p.id); }} className="p-1 text-red-600 bg-white border rounded shadow-sm ml-0.5 hover:bg-red-50"><Trash2 size={11}/></button>
                           </div>
                         )}
                         {isAdminView && (
@@ -507,10 +508,10 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                       <td className={tdBase}>-</td><td className={tdMoney}>০</td><td className={tdBase + " text-blue-700 bg-white font-black"}>{mRaisedCount}</td><td className={tdMoney + " text-blue-800 bg-white"}>{toBengaliDigits(Math.round(mRaisedAmount))}</td>
                       <td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td>
                       <td className={tdMoney + " relative"}>০
-                        {!isAdminView && (
+                        {!isAdminView && isAdmin && (
                           <div className="absolute right-0 bottom-0.5 hidden group-hover:flex gap-0.5 no-print p-0.5">
                              <button onClick={(e) => { e.stopPropagation(); onEdit(entry); }} className="p-1 text-blue-600 bg-white border rounded shadow-sm hover:bg-blue-50"><Pencil size={11}/></button>
-                             <button onClick={(e) => { e.stopPropagation(); if(window.confirm('আপনি কি নিশ্চিত যে এই পুরো এন্ট্রিটি মুছে ফেলতে চান?')) onDelete(entry.id); }} className="p-1 text-red-600 bg-white border rounded shadow-sm ml-0.5 hover:bg-red-50"><Trash2 size={11}/></button>
+                             <button onClick={(e) => { e.stopPropagation(); if (window.confirm("আপনি কি নিশ্চিতভাবে সম্পূর্ণ এন্ট্রিটি মুছে ফেলতে চান?")) onDelete(entry.id); }} className="p-1 text-red-600 bg-white border rounded shadow-sm ml-0.5 hover:bg-red-50"><Trash2 size={11}/></button>
                           </div>
                         )}
                         {isAdminView && (
