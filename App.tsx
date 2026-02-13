@@ -122,6 +122,12 @@ const App: React.FC = () => {
   const cycleLabelBengali = useMemo(() => toBengaliDigits(cycleInfo.label), [cycleInfo.label]);
 
   const handleAddOrUpdateEntry = async (data: any) => {
+    // Security check: Only admin can edit existing entries
+    if (editingEntry && !isAdmin) {
+      alert("দুঃখিত, শুধুমাত্র এডমিন তথ্য এডিট করতে পারেন।");
+      return;
+    }
+
     const status = editingEntry 
       ? (editingEntry.approvalStatus || 'approved') 
       : (isAdmin ? 'approved' : 'pending');
@@ -159,12 +165,19 @@ const App: React.FC = () => {
   };
 
   const handleRejectEntry = async (id: string) => {
+    if (!isAdmin) return;
     if (!window.confirm("আপনি কি নিশ্চিতভাবে এই এন্ট্রিটি প্রত্যাখ্যান করতে চান? এটি মুছে ফেলা হবে।")) return;
     setEntries(prev => prev.filter(e => e.id !== id));
     await supabase.from('settlement_entries').delete().eq('id', id);
   };
 
   const handleDelete = async (id: string, paraId?: string) => {
+    // STRICT SECURITY CHECK: Only designated admin email can delete
+    if (!isAdmin) {
+      alert("দুঃখিত, শুধুমাত্র এডমিন তথ্য মুছে ফেলতে পারেন।");
+      return;
+    }
+
     // Persistent Delete Logic - Refactored to handle database first/concurrently
     if (paraId) {
       const entry = entries.find(e => e.id === id);
@@ -303,6 +316,7 @@ const App: React.FC = () => {
                            isAdminView={true}
                            onApprove={handleApproveEntry}
                            onReject={handleRejectEntry}
+                           isAdmin={isAdmin}
                          />
                        )}
                     </div>
@@ -315,6 +329,7 @@ const App: React.FC = () => {
                       isLayoutEditable={isLayoutEditable} 
                       showFilters={showRegisterFilters} 
                       setShowFilters={setShowRegisterFilters} 
+                      isAdmin={isAdmin}
                     />
                   )}
                 </div>
