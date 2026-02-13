@@ -122,7 +122,6 @@ const App: React.FC = () => {
   const cycleLabelBengali = useMemo(() => toBengaliDigits(cycleInfo.label), [cycleInfo.label]);
 
   const handleAddOrUpdateEntry = async (data: any) => {
-    // Determine the target status immediately
     const status = editingEntry 
       ? (editingEntry.approvalStatus || 'approved') 
       : (isAdmin ? 'approved' : 'pending');
@@ -143,11 +142,9 @@ const App: React.FC = () => {
       };
       
       setEntries(prev => [...prev, newEntry]);
-      // Immediate DB call
       await supabase.from('settlement_entries').upsert({ id: newId, content: newEntry });
     }
     
-    // Instant smooth transition without delay
     if (!isAdmin) setActiveTab('landing');
     else setActiveTab('register');
   };
@@ -168,27 +165,28 @@ const App: React.FC = () => {
   };
 
   const handleDelete = async (id: string, paraId?: string) => {
-    // DIRECT DELETE LOGIC (NO CONFIRMATION OR APPROVAL NEEDED AS PER USER REQUEST)
+    // Persistent Delete Logic - Refactored to handle database first/concurrently
     if (paraId) {
-      setEntries(prev => {
-        const entry = prev.find(e => e.id === id);
-        if (!entry) return prev;
+      const entry = entries.find(e => e.id === id);
+      if (!entry) return;
 
-        const remainingParas = entry.paragraphs.filter(p => p.id !== paraId);
-        const mRaisedCountRaw = entry.manualRaisedCount?.toString().trim() || "";
-        const hasRaisedData = (mRaisedCountRaw !== "" && mRaisedCountRaw !== "0" && mRaisedCountRaw !== "০") || 
-                              (entry.manualRaisedAmount !== null && entry.manualRaisedAmount !== 0);
-        
-        if (remainingParas.length === 0 && !hasRaisedData) {
-          supabase.from('settlement_entries').delete().eq('id', id);
-          return prev.filter(e => e.id !== id);
-        } else {
-          const updatedEntry = { ...entry, paragraphs: remainingParas };
-          // Immediate Database Sync
-          supabase.from('settlement_entries').upsert({ id: id, content: updatedEntry });
-          return prev.map(e => e.id === id ? updatedEntry : e);
-        }
-      });
+      const remainingParas = entry.paragraphs.filter(p => p.id !== paraId);
+      const mRaisedCountRaw = entry.manualRaisedCount?.toString().trim() || "";
+      const hasRaisedData = (mRaisedCountRaw !== "" && mRaisedCountRaw !== "0" && mRaisedCountRaw !== "০") || 
+                            (entry.manualRaisedAmount !== null && entry.manualRaisedAmount !== 0);
+      
+      if (remainingParas.length === 0 && !hasRaisedData) {
+        // Local State Update
+        setEntries(prev => prev.filter(e => e.id !== id));
+        // Database Persistent Delete
+        await supabase.from('settlement_entries').delete().eq('id', id);
+      } else {
+        const updatedEntry = { ...entry, paragraphs: remainingParas };
+        // Local State Update
+        setEntries(prev => prev.map(e => e.id === id ? updatedEntry : e));
+        // Database Persistent Upsert
+        await supabase.from('settlement_entries').upsert({ id: id, content: updatedEntry });
+      }
     } else {
       // Entire Entry Direct Delete
       setEntries(prev => prev.filter(e => e.id !== id));
