@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOption, SettlementStatus } from '../types.ts';
 import SearchableSelect from './SearchableSelect.tsx';
@@ -366,7 +367,8 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
       });
     } else if (id === 'direct') {
        setRawInputs(prev => ({ ...prev, [`direct-${field}`]: bDigits }));
-       setFormData(prev => ({ ...prev, [field]: val.includes('.') ? engNum : bDigits } as any));
+       const isNumericField = ['meetingSentParaCount', 'meetingSettledParaCount', 'meetingUnsettledParas', 'meetingUnsettledAmount'].includes(field);
+       setFormData(prev => ({ ...prev, [field]: isNumericField ? engNum : (val.includes('.') ? engNum : bDigits) } as any));
     } else {
       setRawInputs(prev => ({ ...prev, [`${id}-${field}`]: bDigits }));
       setParagraphs(prev => prev.map(p => p.id === id ? { ...p, [field]: engNum } : p));
@@ -460,7 +462,9 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
       <div id="form-header" className="flex flex-col md:flex-row justify-between items-center mb-10 pb-6 border-b border-slate-100 gap-4 relative">
         <IDBadge id="form-header" isLayoutEditable={isLayoutEditable} />
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-slate-900 rounded-2xl text-white shrink-0"><Layout size={24} /></div>
+          <div className="p-3 bg-slate-900 rounded-2xl text-white shrink-0">
+            <Layout size={24} />
+          </div>
           <div><h3 className="text-2xl font-black text-slate-900 leading-tight">মীমাংসা রেজিস্টার ডাটা এন্ট্রি</h3><p className="text-slate-500 font-bold text-sm">অনুগ্রহ করে নিচের ১৬টি ফিল্ড সঠিকভাবে পূরণ করুন</p></div>
         </div>
         {onCancel && <button id="btn-cancel-entry" type="button" onClick={onCancel} className="px-5 py-2.5 bg-slate-50 text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-xl font-black text-sm transition-all flex items-center gap-2 border border-slate-200 relative shrink-0"><IDBadge id="btn-cancel-entry" isLayoutEditable={isLayoutEditable} /><X size={18} /> বাতিল করুন</button>}
@@ -503,30 +507,122 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
 
           <div id="section-manual-raised-block" className="pt-8 relative"><IDBadge id="section-manual-raised-block" isLayoutEditable={isLayoutEditable} /><div className="bg-blue-50/40 border border-blue-100 rounded-[2.5rem] p-8 shadow-sm space-y-6"><div className="flex items-center gap-3"><Sparkles size={20} className="text-blue-600 animate-pulse" /><h4 className="text-[15px] font-black text-blue-900 tracking-tight">বর্তমান মাসে উত্থাপিত অডিট আপত্তি (ঐচ্ছিক)</h4></div><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="space-y-3"><label className="text-[13px] font-bold text-slate-700 ml-1">সংখ্যা (উত্থাপিত)</label><input type="text" className="w-full h-[58px] px-6 border-2 border-white rounded-2xl font-black text-slate-800 bg-white/60 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none shadow-sm transition-all text-center text-lg placeholder:text-slate-300 placeholder:font-black" value={rawInputs['entry-raised-count'] || (formData.manualRaisedCount === null || formData.manualRaisedCount === '0' || formData.manualRaisedCount === '' ? '' : toBengaliDigits(formData.manualRaisedCount || ''))} onChange={e => handleNumericInput('entry', 'raised-count', e.target.value)} placeholder="০" /></div><div className="space-y-3"><label className="text-[13px] font-bold text-slate-700 ml-1">টাকার পরিমাণ (উত্থাপিত)</label><input type="text" className="w-full h-[58px] px-6 border-2 border-white rounded-2xl font-black text-slate-800 bg-white/60 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none shadow-sm transition-all text-center text-lg placeholder:text-slate-300 placeholder:font-black" value={rawInputs['entry-raised-amount'] || (formData.manualRaisedAmount === null || formData.manualRaisedAmount === 0 ? '' : toBengaliDigits(formData.manualRaisedAmount || ''))} onChange={e => handleNumericInput('entry', 'raised-amount', e.target.value)} placeholder="০" /></div></div></div></div>
           
-          <div id="section-para-entry-area" className="pt-10 border-t border-slate-100 relative"><IDBadge id="section-para-entry-area" isLayoutEditable={isLayoutEditable} /><div id="section-para-bulk" className="bg-slate-50 p-6 rounded-3xl border border-slate-200 mb-8 relative"><IDBadge id="section-para-bulk" isLayoutEditable={isLayoutEditable} /><div className="flex flex-col md:flex-row gap-4 items-end"><div className="flex-1 w-full"><label className="block text-sm font-black text-slate-500 mb-2 ml-1 uppercase">বিস্তারিত অনুচ্ছেদ যোগ করুন (মীমাংসিতদের জন্য)</label><input type="text" className="w-full h-[55px] px-6 border border-slate-300 rounded-2xl font-black text-slate-900 bg-white focus:border-blue-500 outline-none shadow-sm text-lg transition-all" value={bulkParaInput} onChange={e => setBulkParaInput(toBengaliDigits(e.target.value))} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleBulkGenerate())} placeholder="অনুচ্ছেদ নং (যেমন: ৫, ১০, ১৫)" /></div><button id="btn-add-paras" type="button" onClick={handleBulkGenerate} className="w-full md:w-auto px-8 h-[55px] bg-slate-900 text-white font-black rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-3 shadow-lg relative"><IDBadge id="btn-add-paras" isLayoutEditable={isLayoutEditable} /><Sparkles size={20} className="text-blue-400" /> অনুচ্ছেদ যোগ</button></div></div>
+          <div id="section-para-entry-area" className="pt-10 border-t border-slate-100 relative">
+            <IDBadge id="section-para-entry-area" isLayoutEditable={isLayoutEditable} />
+            <div id="section-para-bulk" className="bg-slate-50 p-6 rounded-3xl border border-slate-200 mb-8 relative">
+              <IDBadge id="section-para-bulk" isLayoutEditable={isLayoutEditable} />
+              <div className="flex flex-col md:flex-row gap-4 items-end">
+                <div className="flex-1 w-full">
+                  <label className="block text-sm font-black text-slate-500 mb-2 ml-1 uppercase">বিস্তারিত অনুচ্ছেদ যোগ করুন (মীমাংসিতদের জন্য)</label>
+                  <input type="text" className="w-full h-[55px] px-6 border border-slate-300 rounded-2xl font-black text-slate-900 bg-white focus:border-blue-500 outline-none shadow-sm text-lg transition-all" value={bulkParaInput} onChange={e => setBulkParaInput(toBengaliDigits(e.target.value))} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleBulkGenerate())} placeholder="অনুচ্ছেদ নং (যেমন: ৫, ১০, ১৫)" />
+                </div>
+                <button id="btn-add-paras" type="button" onClick={handleBulkGenerate} className="w-full md:w-auto px-8 h-[55px] bg-slate-900 text-white font-black rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-3 shadow-lg relative">
+                  <IDBadge id="btn-add-paras" isLayoutEditable={isLayoutEditable} />
+                  <Sparkles size={20} className="text-blue-400" /> অনুচ্ছেদ যোগ
+                </button>
+              </div>
+            </div>
             <div id="section-para-list" className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10 relative">
               <IDBadge id="section-para-list" isLayoutEditable={isLayoutEditable} />
               {paragraphs.map((p, idx) => (
                 <div key={p.id} id={`card-para-${idx}`} className={`p-6 rounded-[2rem] relative border-2 ${p.involvedAmount > 0 && p.involvedAmount === (p.recoveredAmount + p.adjustedAmount) ? "border-emerald-500 bg-emerald-50/10 shadow-emerald-100" : "border-red-500 bg-red-50/20 shadow-red-100"} hover:shadow-xl transition-all group overflow-hidden`}>
-                  <IDBadge id={`card-para-${idx}`} isLayoutEditable={isLayoutEditable} /><div className="flex flex-wrap items-center gap-4 mb-6 relative z-10"><div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-xl shadow-md"><span className="text-[14px] font-black text-white">{toBengaliDigits(idx + 1)}</span></div><div className="flex items-center gap-2"><span className="text-[10px] font-black text-slate-500 uppercase">অনু: নং</span><input type="text" className="w-20 h-9 border border-slate-300 rounded-lg text-center font-black bg-white text-slate-950 outline-none focus:border-blue-500" value={rawInputs[`${p.id}-paraNo`] || toBengaliDigits(p.paraNo)} onChange={e => handleNumericInput(p.id, 'paraNo', e.target.value)} /></div><button type="button" onClick={() => setParagraphs(prev => prev.map(x => x.id === p.id ? {...x, status: x.status === 'পূর্ণাঙ্গ' ? 'আংশিক' : 'পূর্ণাঙ্গ'} : x))} className={`h-9 w-[85px] rounded-xl text-[10px] font-black text-white shadow-md transition-all active:scale-95 flex items-center justify-center ${p.status === 'পূর্ণাঙ্গ' ? 'bg-emerald-600' : 'bg-red-600'}`}>{p.status}</button><div className="flex bg-slate-100 rounded-lg p-1 h-9 border border-slate-200">{['ভ্যাট', 'আয়কর', 'অন্যান্য'].map(cat => (<button key={cat} type="button" onClick={() => setParagraphs(prev => prev.map(x => x.id === p.id ? {...x, category: cat as FinancialCategory} : x))} className={`whitespace-nowrap px-3 py-1 text-[9px] font-black rounded-md transition-all ${p.category === cat ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>{cat}</button>))}</div><div className="flex-1"></div><button type="button" onClick={() => { 
-                    setIsDeletingPara(true);
-                    setIsSuccess(true);
-                    setTimeout(() => {
-                      setParagraphs(prev => prev.filter(x => x.id !== p.id));
-                      setIsSuccess(false);
-                      setIsDeletingPara(false);
-                      if(isUpdateMode) { setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100); }
-                    }, 2800);
-                  }} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={20} /></button></div>
-                  <div className="grid grid-cols-3 gap-4 relative z-10"><div className="space-y-1"><label className="text-[10px] font-black text-slate-500 pl-1 uppercase tracking-wider text-center block">জড়িত টাকা</label><input type="text" className="w-full h-12 px-3 border border-slate-300 rounded-xl text-center font-black bg-white text-slate-950 outline-none focus:border-blue-500 shadow-inner placeholder:text-slate-300 placeholder:font-black" value={rawInputs[`${p.id}-involvedAmount`] || (p.involvedAmount === 0 ? '' : toBengaliDigits(p.involvedAmount))} onChange={e => handleNumericInput(p.id, 'involvedAmount', e.target.value)} placeholder="০" /></div><div className="space-y-1"><label className="text-[10px] font-black text-emerald-600 pl-1 uppercase tracking-wider text-center block">আদায়কৃত</label><input type="text" className="w-full h-12 px-3 border border-slate-300 rounded-xl text-center font-black bg-white text-slate-950 outline-none focus:border-emerald-500 shadow-inner placeholder:text-slate-300 placeholder:font-black" value={rawInputs[`${p.id}-recoveredAmount`] || (p.recoveredAmount === 0 ? '' : toBengaliDigits(p.recoveredAmount))} onChange={e => handleNumericInput(p.id, 'recoveredAmount', e.target.value)} placeholder="০" /></div><div className="space-y-1"><label className="text-[10px] font-black text-indigo-600 pl-1 uppercase tracking-wider text-center block">সমন্বয়কৃত</label><input type="text" className="w-full h-12 px-3 border border-slate-300 rounded-xl text-center font-black bg-white text-slate-950 outline-none focus:border-indigo-500 shadow-inner placeholder:text-slate-300 placeholder:font-black" value={rawInputs[`${p.id}-adjustedAmount`] || (p.adjustedAmount === 0 ? '' : toBengaliDigits(p.adjustedAmount))} onChange={e => handleNumericInput(p.id, 'adjustedAmount', e.target.value)} placeholder="০" /></div></div>
+                  <IDBadge id={`card-para-${idx}`} isLayoutEditable={isLayoutEditable} />
+                  
+                  {/* Floating Delete Button - Top Right Positioning as requested - Restricted to Admin */}
+                  {isAdmin && (
+                    <button 
+                      type="button" 
+                      onClick={() => { 
+                        if (!window.confirm("আপনি কি নিশ্চিতভাবে এই অনুচ্ছেদটি মুছে ফেলতে চান?")) return;
+                        setIsDeletingPara(true);
+                        setIsSuccess(true);
+                        setTimeout(() => {
+                          setParagraphs(prev => prev.filter(x => x.id !== p.id));
+                          setIsSuccess(false);
+                          setIsDeletingPara(false);
+                          if(isUpdateMode) { setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100); }
+                        }, 2800);
+                      }} 
+                      className="absolute top-4 right-4 h-6 w-6 flex items-center justify-center bg-white text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-100 rounded-lg transition-all shadow-sm z-30 active:scale-95 hover:scale-110"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6 relative z-10 pr-10">
+                    <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-xl shadow-md">
+                      <span className="text-[14px] font-black text-white">{toBengaliDigits(idx + 1)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black text-slate-500 uppercase">অনু: নং</span>
+                      <input type="text" className="w-20 h-9 border border-slate-300 rounded-lg text-center font-black bg-white text-slate-950 outline-none focus:border-blue-500" value={rawInputs[`${p.id}-paraNo`] || toBengaliDigits(p.paraNo)} onChange={e => handleNumericInput(p.id, 'paraNo', e.target.value)} />
+                    </div>
+                    <button type="button" onClick={() => setParagraphs(prev => prev.map(x => x.id === p.id ? {...x, status: x.status === 'পূর্ণাঙ্গ' ? 'আংশিক' : 'পূর্ণাঙ্গ'} : x))} className={`h-9 w-[85px] rounded-xl text-[10px] font-black text-white shadow-md transition-all active:scale-95 flex items-center justify-center ${p.status === 'পূর্ণাঙ্গ' ? 'bg-emerald-600' : 'bg-red-600'}`}>{p.status}</button>
+                    <div className="flex bg-slate-100 rounded-lg p-1 h-9 border border-slate-200">
+                      {['ভ্যাট', 'আয়কর', 'অন্যান্য'].map(cat => (
+                        <button key={cat} type="button" onClick={() => setParagraphs(prev => prev.map(x => x.id === p.id ? {...x, category: cat as FinancialCategory} : x))} className={`whitespace-nowrap px-3 py-1 text-[9px] font-black rounded-md transition-all ${p.category === cat ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 relative z-10">
+                    <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 pl-1 uppercase tracking-wider text-center block">জড়িত টাকা</label><input type="text" className="w-full h-12 px-3 border border-slate-300 rounded-xl text-center font-black bg-white text-slate-950 outline-none focus:border-blue-500 shadow-inner placeholder:text-slate-300 placeholder:font-black" value={rawInputs[`${p.id}-involvedAmount`] || (p.involvedAmount === 0 ? '' : toBengaliDigits(p.involvedAmount))} onChange={e => handleNumericInput(p.id, 'involvedAmount', e.target.value)} placeholder="০" /></div>
+                    <div className="space-y-1"><label className="text-[10px] font-black text-emerald-600 pl-1 uppercase tracking-wider text-center block">আদায়কৃত</label><input type="text" className="w-full h-12 px-3 border border-slate-300 rounded-xl text-center font-black bg-white text-slate-950 outline-none focus:border-emerald-500 shadow-inner placeholder:text-slate-300 placeholder:font-black" value={rawInputs[`${p.id}-recoveredAmount`] || (p.recoveredAmount === 0 ? '' : toBengaliDigits(p.recoveredAmount))} onChange={e => handleNumericInput(p.id, 'recoveredAmount', e.target.value)} placeholder="০" /></div>
+                    <div className="space-y-1"><label className="text-[10px] font-black text-indigo-600 pl-1 uppercase tracking-wider text-center block">সমন্বয়কৃত</label><input type="text" className="w-full h-12 px-3 border border-slate-300 rounded-xl text-center font-black bg-white text-slate-950 outline-none focus:border-indigo-500 shadow-inner placeholder:text-slate-300 placeholder:font-black" value={rawInputs[`${p.id}-adjustedAmount`] || (p.adjustedAmount === 0 ? '' : toBengaliDigits(p.adjustedAmount))} onChange={e => handleNumericInput(p.id, 'adjustedAmount', e.target.value)} placeholder="০" /></div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
           <div id="section-form-summary" className="pt-10 border-t border-slate-100 space-y-6 relative">
-             <IDBadge id="section-form-summary" isLayoutEditable={isLayoutEditable} /><div className="flex items-center gap-3 ml-2"><div className="p-2 bg-slate-900 text-white rounded-lg shadow-lg"><BarChart3 size={18} /></div><h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">এন্ট্রি সারাংশ (Summary Dashboard)</h4></div>
-             <div className="bg-white border-2 border-slate-200 rounded-[2.5rem] shadow-xl overflow-hidden relative"><IDBadge id="summary-unified-block" isLayoutEditable={isLayoutEditable} /><div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100"><div className="p-8 space-y-6 bg-slate-50/30"><div className="flex items-center justify-between"><span className="text-[13px] font-black text-slate-600 uppercase tracking-tighter">পূর্ণাঙ্গ নিষ্পন্ন</span><span className="px-4 py-1.5 bg-emerald-100 text-emerald-700 rounded-xl text-[14px] font-black shadow-sm">{toBengaliDigits(summaryData.fullCount)} টি</span></div><div className="flex items-center justify-between"><span className="text-[13px] font-black text-slate-600 uppercase tracking-tighter">আংশিক নিষ্পন্ন</span><span className="px-4 py-1.5 bg-amber-100 text-amber-700 rounded-xl text-[14px] font-black shadow-sm">{toBengaliDigits(summaryData.partialCount)} টি</span></div></div><div className="p-8 space-y-6"><div className="flex items-center justify-between"><span className="text-[13px] font-black text-slate-500 uppercase tracking-tighter">পূর্ণাঙ্গ জড়িত টাকা:</span><span className="text-lg font-black text-slate-900">{formatSummaryNum(summaryData.fullInvolved)}</span></div><div className="flex items-center justify-between"><span className="text-[13px] font-black text-slate-500 uppercase tracking-tighter">আংশিক জড়িত টাকা:</span><span className="text-lg font-black text-slate-900">{formatSummaryNum(summaryData.partialInvolved)}</span></div><div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between"><span className="text-[13px] font-black text-blue-600 uppercase tracking-tighter">মোট জড়িত টাকা:</span><span className="text-2xl font-black text-blue-700">{formatSummaryNum(summaryData.totalInvolved)}</span></div></div><div className="p-8 space-y-6 bg-blue-600 text-white"><div className="flex items-center justify-between"><span className="text-[13px] font-black text-blue-100 uppercase tracking-tighter">মোট আদায় টাকা:</span><span className="text-2xl font-black">{formatSummaryNum(summaryData.totalRec)}</span></div><div className="h-[1px] w-full bg-white/10"></div><div className="flex items-center justify-between"><span className="text-[13px] font-black text-blue-100 uppercase tracking-tighter">মোট সমন্বয় টাকা:</span><span className="text-2xl font-black">{formatSummaryNum(summaryData.totalAdj)}</span></div></div></div></div>
+             <IDBadge id="section-form-summary" isLayoutEditable={isLayoutEditable} />
+             <div className="flex items-center gap-3 ml-2">
+               <div className="p-2 bg-slate-900 text-white rounded-lg shadow-lg"><BarChart3 size={18} /></div>
+               <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">এন্ট্রি সারাংশ (Summary Dashboard)</h4>
+             </div>
+             <div className="bg-white border-2 border-slate-200 rounded-[2.5rem] shadow-xl overflow-hidden relative">
+               <IDBadge id="summary-unified-block" isLayoutEditable={isLayoutEditable} />
+               <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                 <div className="p-8 space-y-6 bg-slate-50/30">
+                   <div className="flex items-center justify-between">
+                     <span className="text-[13px] font-black text-slate-600 uppercase tracking-tighter">পূর্ণাঙ্গ নিষ্পন্ন</span>
+                     <span className="px-4 py-1.5 bg-emerald-100 text-emerald-700 rounded-xl text-[14px] font-black shadow-sm">{toBengaliDigits(summaryData.fullCount)} টি</span>
+                   </div>
+                   <div className="flex items-center justify-between">
+                     <span className="text-[13px] font-black text-slate-600 uppercase tracking-tighter">আংশিক নিষ্পন্ন</span>
+                     <span className="px-4 py-1.5 bg-amber-100 text-amber-700 rounded-xl text-[14px] font-black shadow-sm">{toBengaliDigits(summaryData.partialCount)} টি</span>
+                   </div>
+                 </div>
+                 <div className="p-8 space-y-6">
+                   <div className="flex items-center justify-between">
+                     <span className="text-[13px] font-black text-slate-500 uppercase tracking-tighter">পূর্ণাঙ্গ জড়িত টাকা:</span>
+                     <span className="text-lg font-black text-slate-900">{formatSummaryNum(summaryData.fullInvolved)}</span>
+                   </div>
+                   <div className="flex items-center justify-between">
+                     <span className="text-[13px] font-black text-slate-500 uppercase tracking-tighter">আংশিক জড়িত টাকা:</span>
+                     <span className="text-lg font-black text-slate-900">{formatSummaryNum(summaryData.partialInvolved)}</span>
+                   </div>
+                   <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
+                     <span className="text-[13px] font-black text-blue-600 uppercase tracking-tighter">মোট জড়িত টাকা:</span>
+                     <span className="text-2xl font-black text-blue-700">{formatSummaryNum(summaryData.totalInvolved)}</span>
+                   </div>
+                 </div>
+                 <div className="p-8 space-y-6 bg-blue-600 text-white">
+                   <div className="flex items-center justify-between">
+                     <span className="text-[13px] font-black text-blue-100 uppercase tracking-widest">মোট আদায় টাকা:</span>
+                     <span className="text-2xl font-black">{formatSummaryNum(summaryData.totalRec)}</span>
+                   </div>
+                   <div className="h-[1px] w-full bg-white/10"></div>
+                   <div className="flex items-center justify-between">
+                     <span className="text-[13px] font-black text-blue-100 uppercase tracking-widest">মোট সমন্বয় টাকা:</span>
+                     <span className="text-2xl font-black">{formatSummaryNum(summaryData.totalAdj)}</span>
+                   </div>
+                 </div>
+               </div>
+             </div>
           </div>
         </fieldset>
 
@@ -551,13 +647,13 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
                   </h4>
                   <p className="text-[15px] font-bold text-slate-600 uppercase tracking-widest flex items-center justify-center gap-2">
                      {isDeletingPara || deletedCount === 1 ? (
-                       <><AlertCircle size={18} className="text-red-600" /> অনুচ্ছেদটি ডিলিট করা হচ্ছে</>
+                       <React.Fragment><AlertCircle size={18} className="text-red-600" /> অনুচ্ছেদটি ডিলিট করা হচ্ছে</React.Fragment>
                      ) : (deletedCount > 1 ? (
-                       <><AlertCircle size={18} className="text-red-600" /> অনুচ্ছেদসমূহ ডিলিট করা হচ্ছে</>
+                       <React.Fragment><AlertCircle size={18} className="text-red-600" /> অনুচ্ছেদসমূহ ডিলিট করা হচ্ছে</React.Fragment>
                      ) : (isUpdateMode || isAdmin ? (
-                       <><CheckCircle2 size={18} className="text-emerald-600" /> আপনার এন্ট্রিটি সরাসরি মূল রেজিস্টারে যুক্ত করা হয়েছে</>
+                       <React.Fragment><CheckCircle2 size={18} className="text-emerald-600" /> আপনার এন্ট্রিটি সরাসরি মূল রেজিস্টারে যুক্ত করা হয়েছে</React.Fragment>
                      ) : (
-                       <><ShieldCheck size={18} className="text-emerald-600" /> এডমিন অনুমতি দিলে এটি মূল রেজিস্টারে যুক্ত হবে</>
+                       <React.Fragment><ShieldCheck size={18} className="text-emerald-600" /> এডমিন অনুমতি দিলে এটি মূল রেজিস্টারে যুক্ত হবে</React.Fragment>
                      )))}
                   </p>
                </div>
