@@ -107,8 +107,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
     const body = encodeURIComponent(`আপনার প্রারম্ভিক জের সেটআপ রিসেট কোডটি হলো: ${newCode}\n\nএটি সিস্টেমের সুরক্ষার জন্য কারো সাথে শেয়ার করবেন না।`);
     const mailtoLink = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
     
-    // Using location.href instead of window.open to prevent unexpected navigation/blank tabs
-    window.location.href = mailtoLink;
+    // Programsatically trigger mail client via temporary anchor for better browser support
+    const link = document.createElement('a');
+    link.href = mailtoLink;
+    link.target = '_self';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     
     setCodeSent(true);
     setAuthError('আপনার ইমেইলে কোড পাঠানোর প্রসেস শুরু হয়েছে। ইমেইল অ্যাপটি চেক করুন।');
