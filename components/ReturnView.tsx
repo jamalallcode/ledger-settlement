@@ -4,7 +4,7 @@ import React from 'react';
 import { SettlementEntry, ParaType, CumulativeStats, MinistryPrevStats } from '../types';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP, OFFICE_HEADER } from '../constants';
-import { ChevronLeft, ArrowRight, ClipboardCheck, CalendarRange, Printer, Database, Settings2, BarChart3, FileStack, ClipboardList, Settings, CheckCircle2, CalendarDays, UserCheck, ChevronDown, Check, LayoutGrid, PieChart, History, Search, CalendarSearch, Sparkles, X } from 'lucide-react';
+import { ChevronLeft, ArrowRight, ClipboardCheck, CalendarRange, Printer, Database, Settings2, BarChart3, FileStack, ClipboardList, Settings, CheckCircle2, CalendarDays, UserCheck, ChevronDown, Check, LayoutGrid, PieChart, History, Search, CalendarSearch, Sparkles, X, Lock, KeyRound, ShieldAlert, Pencil, Unlock } from 'lucide-react';
 import { isWithinInterval, addMonths, format as dateFnsFormat, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { getCycleForDate, isInCycle } from '../utils/cycleHelper';
 
@@ -33,7 +33,7 @@ const reportOptions = [
   },
   { 
     id: 'monthly-para', 
-    title: 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।', 
+    title: 'মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।', 
     desc: 'মাসিক ভিত্তিতে অনুচ্ছেদ নিষ্পত্তির বিস্তারিত রিপোর্ট', 
     icon: BarChart3, 
     bg: 'bg-[#507db5]', 
@@ -60,10 +60,36 @@ const reportOptions = [
 const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats, setPrevStats, isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister, isAdmin }) => {
   const [selectedReportType, setSelectedReportType] = useState<string | null>(null);
   const [isSetupMode, setIsSetupMode] = useState(false);
+  const [isEditingSetup, setIsEditingSetup] = useState(false);
   const [tempPrevStats, setTempPrevStats] = useState<Record<string, MinistryPrevStats>>({});
   
+  // --- PASSWORD PROTECTION ---
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [enteredPassword, setEnteredPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+
+  const PWD_STORAGE_KEY = 'ledger_setup_auth_pwd';
+  const getStoredPassword = () => localStorage.getItem(PWD_STORAGE_KEY) || '1234';
+
+  const handleSetupAccess = () => {
+    setAuthError('');
+    setEnteredPassword('');
+    setShowPasswordModal(true);
+  };
+
+  const verifyPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (enteredPassword === getStoredPassword()) {
+      setIsSetupMode(true);
+      setIsEditingSetup(false); // Default to locked mode
+      setShowPasswordModal(false);
+    } else {
+      setAuthError('ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।');
+    }
+  };
+  // ----------------------------------
+
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
-  
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -163,6 +189,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
   }, [isSetupMode, prevStats, activeCycle, ministryGroups]);
 
   const handleSetupPaste = (e: React.ClipboardEvent, startEnt: string, startField: string) => {
+    if (!isEditingSetup) return;
     e.preventDefault();
     const pasteData = e.clipboardData.getData('text');
     if (!pasteData) return;
@@ -225,14 +252,23 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
             return isInCycle(e.issueDateISO, activeCycle.start, activeCycle.end);
           });
           
-          let curRC = 0, curRA = 0, curSC = 0, curSA = 0;
+          let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0;
           matchingEntries.forEach(entry => {
-            if (entry.paragraphs) entry.paragraphs.forEach(p => { 
-              if (p.status === 'পূর্ণাঙ্গ') { 
-                curSC++; 
-              } 
-              curSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0); 
-            });
+            if (entry.paragraphs && entry.paragraphs.length > 0) {
+              entry.paragraphs.forEach(p => { 
+                if (p.status === 'পূর্ণাঙ্গ') { 
+                  curFC++; curSC++; 
+                } else if (p.status === 'আংশিক') {
+                  curPC++;
+                }
+                curSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0); 
+              });
+            } else {
+              curFC += parseBengaliNumber(entry.meetingFullSettledParaCount || '0');
+              curPC += parseBengaliNumber(entry.meetingPartialSettledParaCount || '0');
+              curSC += parseBengaliNumber(entry.meetingSettledParaCount || '0');
+              curSA += Number(entry.meetingUnsettledAmount || 0);
+            }
             
             const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
             if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
@@ -242,21 +278,28 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
               curRA += Number(entry.manualRaisedAmount);
             }
           });
-          return { entity: entityName, currentRaisedCount: curRC, currentRaisedAmount: curRA, currentSettledCount: curSC, currentSettledAmount: curSA, prev: ePrev };
+          return { 
+            entity: entityName, 
+            currentRaisedCount: curRC, currentRaisedAmount: curRA, 
+            currentSettledCount: curSC, currentSettledAmount: curSA, 
+            currentFullCount: curFC, currentPartialCount: curPC,
+            prev: ePrev 
+          };
         })
       };
     });
   }, [entries, selectedReportType, prevStats, activeCycle, ministryGroups]);
 
   const grandTotals = useMemo(() => {
-    if (!reportData || reportData.length === 0) return { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0 };
+    if (!reportData || reportData.length === 0) return { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0 };
     return reportData.reduce((acc, mGroup) => {
       mGroup.entityRows.forEach(row => {
         acc.pUC += (row.prev.unsettledCount || 0); acc.pUA += (row.prev.unsettledAmount || 0); acc.cRC += (row.currentRaisedCount || 0); acc.cRA += (row.currentRaisedAmount || 0);
         acc.pSC += (row.prev.settledCount || 0); acc.pSA += (row.prev.settledAmount || 0); acc.cSC += (row.currentSettledCount || 0); acc.cSA += (row.currentSettledAmount || 0);
+        acc.cFC += (row.currentFullCount || 0); acc.cPC += (row.currentPartialCount || 0);
       });
       return acc;
-    }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0 });
+    }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0 });
   }, [reportData]);
 
   const handleSaveSetup = () => {
@@ -266,6 +309,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
       entitiesNonSFI: {} 
     });
     setIsSetupMode(false);
+    setIsEditingSetup(false);
   };
 
   const IDBadge = ({ id }: { id: string }) => {
@@ -320,7 +364,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
             <div 
               key={opt.id} 
               onClick={() => {
-                if (opt.id === 'setup-mode') setIsSetupMode(true);
+                if (opt.id === 'setup-mode') handleSetupAccess();
                 else setSelectedReportType(opt.title);
               }} 
               className={`
@@ -342,7 +386,10 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
 
               {/* Title Section shifted to left with height adjustment */}
               <div className="flex flex-col justify-center pl-6 flex-1">
-                <h3 className="text-[19px] font-black text-white tracking-tight leading-tight mb-0.5">{opt.title}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-[19px] font-black text-white tracking-tight leading-tight mb-0.5">{opt.title}</h3>
+                  {opt.id === 'setup-mode' && <Lock size={14} className="text-white/40" />}
+                </div>
                 <p className="text-white/50 font-bold text-[10px] uppercase tracking-wider">{opt.desc}</p>
               </div>
 
@@ -356,6 +403,39 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
             </div>
           ))}
         </div>
+
+        {/* --- PASSWORD AUTH MODAL --- */}
+        {showPasswordModal && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-[2.5rem] shadow-2xl p-8 space-y-6 animate-in zoom-in-95 duration-300">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-xl bg-blue-600/20 text-blue-500`}>
+                    <KeyRound size={20} />
+                  </div>
+                  <h3 className="text-white font-black text-lg">সুরক্ষিত উইন্ডো</h3>
+                </div>
+                <button onClick={() => setShowPasswordModal(false)} className="text-slate-500 hover:text-white transition-colors"><X size={20} /></button>
+              </div>
+
+              {authError && (
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2 text-red-400 text-xs font-bold animate-in shake duration-300">
+                  <ShieldAlert size={14} /> {authError}
+                </div>
+              )}
+
+              <form onSubmit={verifyPassword} className="space-y-6">
+                <div className="space-y-1">
+                  <p className="text-slate-400 text-xs font-bold px-1">সেটআপ পাসওয়ার্ড দিন:</p>
+                  <input autoFocus type="password" value={enteredPassword} onChange={e => setEnteredPassword(e.target.value)} placeholder="••••" className="w-full h-14 bg-slate-800 border-2 border-slate-700 rounded-2xl px-6 text-white font-black text-center text-2xl tracking-widest outline-none focus:border-blue-500 transition-all" />
+                </div>
+                <div className="flex flex-col gap-3">
+                  <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-xl hover:bg-blue-500 active:scale-95 transition-all">প্রবেশ করুন</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -387,6 +467,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
             </div>
           </div>
           <div className="flex items-center gap-4">
+             {/* Edit Toggle Button Added Here */}
+             <button 
+               onClick={() => setIsEditingSetup(!isEditingSetup)} 
+               className={`px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all border-b-4 active:scale-95 ${isEditingSetup ? 'bg-amber-500 text-white border-amber-700 hover:bg-amber-600' : 'bg-indigo-600 text-white border-indigo-800 hover:bg-indigo-700'}`}
+             >
+               {isEditingSetup ? <Unlock size={18} /> : <Pencil size={18} />}
+               {isEditingSetup ? 'এডিট মোড বন্ধ' : 'এডিট করুন'}
+             </button>
              <button onClick={handleSaveSetup} className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-blue-700 shadow-2xl transition-all border-b-4 border-blue-800 active:scale-95">সংরক্ষণ করুন</button>
           </div>
         </div>
@@ -419,8 +507,20 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
                        <tr key={ent} className="hover:bg-blue-50/40 transition-all group bg-white">
                          <td className="px-6 py-4 font-bold text-slate-800 border border-slate-300 text-[13px] bg-white group-hover:text-blue-700">{ent}</td>
                          {['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount'].map(field => (
-                           <td key={field} className="p-1.5 border border-slate-300 text-center align-middle h-14 bg-white group-hover:bg-blue-50 transition-colors">
-                             <input type="text" className="w-full h-11 bg-white text-center font-black text-slate-900 text-[15px] outline-none border-0" placeholder="০" value={tempPrevStats[ent]?.[field as keyof MinistryPrevStats] !== undefined && tempPrevStats[ent]![field as keyof MinistryPrevStats] !== 0 ? toBengaliDigits(tempPrevStats[ent]![field as keyof MinistryPrevStats]) : ''} onPaste={(e) => handleSetupPaste(e, ent, field)} onChange={e => { const num = parseBengaliNumber(e.target.value); setTempPrevStats(prev => ({ ...prev, [ent]: { ...(prev[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 }), [field]: num } })); }} />
+                           <td key={field} className={`p-1.5 border border-slate-300 text-center align-middle h-14 transition-colors ${isEditingSetup ? 'bg-white group-hover:bg-blue-50' : 'bg-slate-50'}`}>
+                             <input 
+                               type="text" 
+                               readOnly={!isEditingSetup}
+                               className={`w-full h-11 text-center font-black text-[15px] outline-none border-0 transition-all ${isEditingSetup ? 'bg-white text-slate-900 cursor-text' : 'bg-slate-50 text-slate-400 cursor-not-allowed'}`} 
+                               placeholder="০" 
+                               value={tempPrevStats[ent]?.[field as keyof MinistryPrevStats] !== undefined && tempPrevStats[ent]![field as keyof MinistryPrevStats] !== 0 ? toBengaliDigits(tempPrevStats[ent]![field as keyof MinistryPrevStats]) : ''} 
+                               onPaste={(e) => handleSetupPaste(e, ent, field)} 
+                               onChange={e => { 
+                                 if (!isEditingSetup) return;
+                                 const num = parseBengaliNumber(e.target.value); 
+                                 setTempPrevStats(prev => ({ ...prev, [ent]: { ...(prev[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 }), [field]: num } })); 
+                               }} 
+                             />
                            </td>
                          ))}
                        </tr>
@@ -478,7 +578,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
 
         <div className="table-container border-t border-slate-300 overflow-visible relative">
           <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0">
-            <colgroup><col className="w-[58px]" /><col className="w-[125px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /></colgroup>
+            <colgroup><col className="w-[58px]" /><col className="w-[125px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[36px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /></colgroup>
             <thead>
               <tr className="h-[42px]">
                 <th rowSpan={2} className={`${reportThStyle} !top-0`}>মন্ত্রণালয়</th>
@@ -487,7 +587,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
                 <th colSpan={2} className={`${reportThStyle} !top-0`}>বর্তমান উত্থাপিত</th>
                 <th colSpan={2} className={`${reportThStyle} !top-0`}>মোট অমীমাংসিত</th>
                 <th colSpan={2} className={`${reportThStyle} !top-0`}>প্রারম্ভিক মীমাংসিত</th>
-                <th colSpan={2} className={`${reportThStyle} !top-0`}>চলতি মীমাংসিত</th>
+                <th colSpan={4} className={`${reportThStyle} !top-0`}>চলতি মীমাংসিত</th>
                 <th colSpan={2} className={`${reportThStyle} !top-0`}>মোট মীমাংসিত</th>
                 <th colSpan={2} className={`${reportThStyle} !top-0`}>সর্বমোট অমীমাংসিত</th>
               </tr>
@@ -496,7 +596,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
                 <th className={`${reportThStyle} !top-[42px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[42px]`}>টাকা</th>
                 <th className={`${reportThStyle} !top-[42px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[42px]`}>টাকা</th>
                 <th className={`${reportThStyle} !top-[42px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[42px]`}>টাকা</th>
-                <th className={`${reportThStyle} !top-[42px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[42px]`}>টাকা</th>
+                <th className={`${reportThStyle} !top-[42px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[42px]`}>পূর্ণাঙ্গ</th><th className={`${reportThStyle} !top-[42px]`}>আংশিক</th><th className={`${reportThStyle} !top-[42px]`}>টাকা</th>
                 <th className={`${reportThStyle} !top-[42px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[42px]`}>টাকা</th>
                 <th className={`${reportThStyle} !top-[42px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[42px]`}>টাকা</th>
               </tr>
@@ -506,8 +606,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
                 const mTotals = m.entityRows.reduce((acc, row) => {
                   acc.pUC += (row.prev.unsettledCount || 0); acc.pUA += (row.prev.unsettledAmount || 0); acc.cRC += (row.currentRaisedCount || 0); acc.cRA += (row.currentRaisedAmount || 0);
                   acc.pSC += (row.prev.settledCount || 0); acc.pSA += (row.prev.settledAmount || 0); acc.cSC += (row.currentSettledCount || 0); acc.cSA += (row.currentSettledAmount || 0);
+                  acc.cFC += (row.currentFullCount || 0); acc.cPC += (row.currentPartialCount || 0);
                   return acc;
-                }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0 });
+                }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0 });
                 return (
                   <React.Fragment key={m.ministry}>
                     {m.entityRows.map((row, rIdx) => {
@@ -527,7 +628,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
                           <td className={tdStyle}>{toBengaliDigits(row.currentRaisedCount)}</td><td className={tdStyle + " text-center font-black border-r border-slate-300"}>{toBengaliDigits(Math.round(row.currentRaisedAmount))}</td>
                           <td className={tdStyle + " bg-slate-100/50"}>{toBengaliDigits(totalUC)}</td><td className={tdStyle + " text-center font-black bg-slate-100/50 border-r border-slate-300"}>{toBengaliDigits(Math.round(totalUA))}</td>
                           <td className={tdStyle}>{toBengaliDigits(row.prev.settledCount)}</td><td className={tdStyle + " text-center font-black border-r border-slate-300"}>{toBengaliDigits(Math.round(row.prev.settledAmount))}</td>
-                          <td className={tdStyle}>{toBengaliDigits(row.currentSettledCount)}</td><td className={tdStyle + " text-center font-black border-r border-slate-300"}>{toBengaliDigits(Math.round(row.currentSettledAmount))}</td>
+                          <td className={tdStyle}>{toBengaliDigits(row.currentSettledCount)}</td><td className={tdStyle}>{toBengaliDigits(row.currentFullCount)}</td><td className={tdStyle}>{toBengaliDigits(row.currentPartialCount)}</td><td className={tdStyle + " text-center font-black border-r border-slate-300"}>{toBengaliDigits(Math.round(row.currentSettledAmount))}</td>
                           <td className={tdStyle + " bg-emerald-50/50"}>{toBengaliDigits(totalSC)}</td><td className={tdStyle + " text-center font-black bg-emerald-50/50 border-r border-slate-300"}>{toBengaliDigits(Math.round(totalSA))}</td>
                           <td className={tdStyle + " bg-amber-50 font-black text-blue-700"}>{toBengaliDigits(closingUC)}</td><td className={tdStyle + " text-center bg-amber-50 font-black text-blue-700"}>{toBengaliDigits(Math.round(closingUA))}</td>
                         </tr>
@@ -539,7 +640,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
                       <td className={tdStyle}>{toBengaliDigits(mTotals.cRC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.cRA))}</td>
                       <td className={tdStyle + " bg-slate-200/50"}>{toBengaliDigits(mTotals.pUC + mTotals.cRC)}</td><td className={tdStyle + " text-center bg-slate-200/50 border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.pUA + mTotals.cRA))}</td>
                       <td className={tdStyle}>{toBengaliDigits(mTotals.pSC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.pSA))}</td>
-                      <td className={tdStyle}>{toBengaliDigits(mTotals.cSC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.cSA))}</td>
+                      <td className={tdStyle}>{toBengaliDigits(mTotals.cSC)}</td><td className={tdStyle}>{toBengaliDigits(mTotals.cFC)}</td><td className={tdStyle}>{toBengaliDigits(mTotals.cPC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.cSA))}</td>
                       <td className={tdStyle + " bg-emerald-200/50"}>{toBengaliDigits(mTotals.pSC + mTotals.cSC)}</td><td className={tdStyle + " text-center bg-emerald-200/50 border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.pSA + mTotals.cSA))}</td>
                       <td className={tdStyle + " bg-amber-100/30"}>{toBengaliDigits((mTotals.pUC + mTotals.cRC) - (mTotals.pSC + mTotals.cSC))}</td><td className={tdStyle + " text-center bg-amber-100/30"}>{toBengaliDigits(Math.round((mTotals.pUA + mTotals.cRA) - (mTotals.pSA + mTotals.cSA)))}</td>
                     </tr>
@@ -554,7 +655,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
                 <td className={grandStyle}>{toBengaliDigits(grandTotals.cRC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.cRA))}</td>
                 <td className={grandStyle + " !bg-slate-700"}>{toBengaliDigits(grandTotals.pUC + grandTotals.cRC)}</td><td className={grandStyle + " text-center !bg-slate-700"}>{toBengaliDigits(Math.round(grandTotals.pUA + grandTotals.cRA))}</td>
                 <td className={grandStyle}>{toBengaliDigits(grandTotals.pSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.pSA))}</td>
-                <td className={grandStyle}>{toBengaliDigits(grandTotals.cSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.cSA))}</td>
+                <td className={grandStyle}>{toBengaliDigits(grandTotals.cSC)}</td><td className={grandStyle}>{toBengaliDigits(grandTotals.cFC)}</td><td className={grandStyle}>{toBengaliDigits(grandTotals.cPC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.cSA))}</td>
                 <td className={grandStyle + " !bg-emerald-700"}>{toBengaliDigits(grandTotals.pSC + grandTotals.cSC)}</td><td className={grandStyle + " text-center !bg-emerald-700"}>{toBengaliDigits(Math.round(grandTotals.pSA + grandTotals.cSA))}</td>
                 <td className={grandStyle + " !bg-orange-600 text-white"}>{toBengaliDigits((grandTotals.pUC + grandTotals.cRC) - (grandTotals.pSC + grandTotals.cSC))}</td><td className={grandStyle + " text-center !bg-orange-600 text-white"}>{toBengaliDigits(Math.round((grandTotals.pUA + grandTotals.cRA) - (grandTotals.pSA + grandTotals.cSA)))}</td>
               </tr>
@@ -579,5 +680,3 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
 };
 
 export default ReturnView;
-
-
