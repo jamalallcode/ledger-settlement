@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOption, SettlementStatus } from '../types.ts';
 import SearchableSelect from './SearchableSelect.tsx';
 import { MINISTRIES_LIST, MINISTRY_ENTITY_MAP, ENTITY_BRANCH_MAP, AUDIT_YEARS_OPTIONS } from '../constants.ts';
-import { Trash2, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Hash, Banknote, Archive, BookOpen, Send, Files, FileEdit, ClipboardList, Layout, Fingerprint, Info, BarChart3, ListOrdered, Timer, Plus, Check, ShieldCheck, Trash } from 'lucide-react';
+import { Trash2, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Hash, Banknote, Archive, BookOpen, Send, Files, FileEdit, ClipboardList, Layout, Fingerprint, Info, BarChart3, ListOrdered, Timer, Plus, Check, ShieldCheck, Trash, MessageSquare } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils.ts';
 import { getCycleForDate, isEntryLate } from '../utils/cycleHelper.ts';
 import { format } from 'date-fns';
@@ -166,6 +166,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
     meetingUnsettledAmount: 0,
     isMeeting: false,
     remarks: '',
+    meetingDate: '',
     manualRaisedCount: null as string | null,
     manualRaisedAmount: null as number | null
   });
@@ -278,6 +279,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
         meetingUnsettledAmount: initialEntry.meetingUnsettledAmount || 0,
         isMeeting: initialEntry.isMeeting || false,
         remarks: initialEntry.remarks || '',
+        meetingDate: initialEntry.meetingDate || '',
         manualRaisedCount: initialEntry.manualRaisedCount || null,
         manualRaisedAmount: initialEntry.manualRaisedAmount || null
       });
@@ -473,7 +475,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
           <div className="p-3 bg-slate-900 rounded-2xl text-white shrink-0">
             <Layout size={24} />
           </div>
-          <div><h3 className="text-2xl font-black text-slate-900 leading-tight">মীমাংসা রেজিস্টার ডাটা এন্ট্রি</h3><p className="text-slate-500 font-bold text-sm">অনুগ্রহ করে নিচের ১৬টি ফিল্ড সঠিকভাবে পূরণ করুন</p></div>
+          <div><h3 className="text-2xl font-black text-slate-900 leading-tight">মীমাংসা রেজিস্টার ডাটা এন্ট্রি</h3><p className="text-slate-500 font-bold text-sm">অনুগ্রহ করে নিচের ১৮টি ফিল্ড সঠিকভাবে পূরণ করুন</p></div>
         </div>
         {onCancel && (
           <button 
@@ -521,6 +523,17 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
             <div id="field-14" className={col2Style}><IDBadge id="field-14" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৪</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> মীমাংসিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={inputCls} value={rawInputs['direct-meetingSettledParaCount'] || (formData.meetingSettledParaCount === '0' || formData.meetingSettledParaCount === '' ? '' : toBengaliDigits(formData.meetingSettledParaCount))} onChange={e => handleNumericInput('direct', 'meetingSettledParaCount', e.target.value)} placeholder="০" /></div>
             <div id="field-15" className={col3Style}><IDBadge id="field-15" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৫</span> <AlertCircle size={14} className="text-amber-600 shrink-0" /> অমীমাংসিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={inputCls} value={rawInputs['direct-meetingUnsettledParas'] || (formData.meetingUnsettledParas === '0' || formData.meetingUnsettledParas === '' ? '' : toBengaliDigits(formData.meetingUnsettledParas))} onChange={e => handleNumericInput('direct', 'meetingUnsettledParas', e.target.value)} placeholder="০" /></div>
             <div id="field-16" className={col4Style}><IDBadge id="field-16" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৬</span> <Banknote size={14} className="text-purple-600 shrink-0" /> অমীমাংসিত জড়িত টাকা</label><input type="text" className={inputCls} value={rawInputs['direct-meetingUnsettledAmount'] || (formData.meetingUnsettledAmount === 0 ? '' : toBengaliDigits(formData.meetingUnsettledAmount))} onChange={e => handleNumericInput('direct', 'meetingUnsettledAmount', e.target.value)} placeholder="০" /></div>
+            
+            <div id="field-17" className={col1Style}>
+              <IDBadge id="field-17" isLayoutEditable={isLayoutEditable} />
+              <label className={labelCls}><span className={numBadge}>১৭</span> <Calendar size={14} className="text-sky-600 shrink-0" /> সভার তারিখ</label>
+              <input type="date" className={inputCls} value={formData.meetingDate} onChange={e => setFormData({...formData, meetingDate: e.target.value})} />
+            </div>
+            <div id="field-18" className={col2Style}>
+              <IDBadge id="field-18" isLayoutEditable={isLayoutEditable} />
+              <label className={labelCls}><span className={numBadge}>১৮</span> <MessageSquare size={14} className="text-emerald-600 shrink-0" /> মন্তব্য</label>
+              <input type="text" className={inputCls} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
+            </div>
           </div>
 
           <div id="section-manual-raised-block" className="pt-8 relative"><IDBadge id="section-manual-raised-block" isLayoutEditable={isLayoutEditable} /><div className="bg-blue-50/40 border border-blue-100 rounded-[2.5rem] p-8 shadow-sm space-y-6"><div className="flex items-center gap-3"><Sparkles size={20} className="text-blue-600 animate-pulse" /><h4 className="text-[15px] font-black text-blue-900 tracking-tight">বর্তমান মাসে উত্থাপিত অডিট আপত্তি (ঐচ্ছিক)</h4></div><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="space-y-3"><label className="text-[13px] font-bold text-slate-700 ml-1">সংখ্যা (উত্থাপিত)</label><input type="text" className="w-full h-[58px] px-6 border-2 border-white rounded-2xl font-black text-slate-800 bg-white/60 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none shadow-sm transition-all text-center text-lg placeholder:text-slate-300 placeholder:font-black" value={rawInputs['entry-raised-count'] || (formData.manualRaisedCount === null || formData.manualRaisedCount === '0' || formData.manualRaisedCount === '' ? '' : toBengaliDigits(formData.manualRaisedCount || ''))} onChange={e => handleNumericInput('entry', 'raised-count', e.target.value)} placeholder="০" /></div><div className="space-y-3"><label className="text-[13px] font-bold text-slate-700 ml-1">টাকার পরিমাণ (উত্থাপিত)</label><input type="text" className="w-full h-[58px] px-6 border-2 border-white rounded-2xl font-black text-slate-800 bg-white/60 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none shadow-sm transition-all text-center text-lg placeholder:text-slate-300 placeholder:font-black" value={rawInputs['entry-raised-amount'] || (formData.manualRaisedAmount === null || formData.manualRaisedAmount === 0 ? '' : toBengaliDigits(formData.manualRaisedAmount || ''))} onChange={e => handleNumericInput('entry', 'raised-amount', e.target.value)} placeholder="০" /></div></div></div></div>
