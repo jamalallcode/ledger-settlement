@@ -81,7 +81,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
     e.preventDefault();
     if (enteredPassword === getStoredPassword()) {
       setIsSetupMode(true);
-      setIsEditingSetup(false); // Default to locked mode
+      setIsEditingSetup(false); // Default to locked mode for safety
       setShowPasswordModal(false);
     } else {
       setAuthError('ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।');
@@ -377,14 +377,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
             >
               <IDBadge id={`report-opt-${opt.id}`} />
               
-              {/* Compact circular icon wrapper */}
               <div className="flex items-center justify-center pl-5">
                 <div className={`w-11 h-11 ${opt.circleColor} rounded-full border-[3px] border-white/20 shadow-lg flex items-center justify-center transition-transform group-hover:scale-105`}>
                    <opt.icon size={20} className="text-white" />
                 </div>
               </div>
 
-              {/* Title Section shifted to left with height adjustment */}
               <div className="flex flex-col justify-center pl-6 flex-1">
                 <div className="flex items-center gap-2">
                   <h3 className="text-[19px] font-black text-white tracking-tight leading-tight mb-0.5">{opt.title}</h3>
@@ -393,24 +391,21 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
                 <p className="text-white/50 font-bold text-[10px] uppercase tracking-wider">{opt.desc}</p>
               </div>
 
-              {/* Compact Arrow Decoration */}
               <div className="pr-8 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
                 <ArrowRight size={20} className="text-white" />
               </div>
               
-              {/* Premium Glow Overlay */}
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </div>
           ))}
         </div>
 
-        {/* --- PASSWORD AUTH MODAL --- */}
         {showPasswordModal && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
             <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-[2.5rem] shadow-2xl p-8 space-y-6 animate-in zoom-in-95 duration-300">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-xl bg-blue-600/20 text-blue-500`}>
+                  <div className="p-2 rounded-xl bg-blue-600/20 text-blue-500">
                     <KeyRound size={20} />
                   </div>
                   <h3 className="text-white font-black text-lg">সুরক্ষিত উইন্ডো</h3>
@@ -467,7 +462,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
             </div>
           </div>
           <div className="flex items-center gap-4">
-             {/* Edit Toggle Button Added Here */}
              <button 
                onClick={() => setIsEditingSetup(!isEditingSetup)} 
                className={`px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all border-b-4 active:scale-95 ${isEditingSetup ? 'bg-amber-500 text-white border-amber-700 hover:bg-amber-600' : 'bg-indigo-600 text-white border-indigo-800 hover:bg-indigo-700'}`}
@@ -506,14 +500,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
                      {entities.map(ent => (
                        <tr key={ent} className="hover:bg-blue-50/40 transition-all group bg-white">
                          <td className="px-6 py-4 font-bold text-slate-800 border border-slate-300 text-[13px] bg-white group-hover:text-blue-700">{ent}</td>
-                         {['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount'].map(field => (
+                         {(['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount'] as const).map(field => (
                            <td key={field} className={`p-1.5 border border-slate-300 text-center align-middle h-14 transition-colors ${isEditingSetup ? 'bg-white group-hover:bg-blue-50' : 'bg-slate-50'}`}>
                              <input 
                                type="text" 
                                readOnly={!isEditingSetup}
                                className={`w-full h-11 text-center font-black text-[15px] outline-none border-0 transition-all ${isEditingSetup ? 'bg-white text-slate-900 cursor-text' : 'bg-slate-50 text-slate-400 cursor-not-allowed'}`} 
                                placeholder="০" 
-                               value={tempPrevStats[ent]?.[field as keyof MinistryPrevStats] !== undefined && tempPrevStats[ent]![field as keyof MinistryPrevStats] !== 0 ? toBengaliDigits(tempPrevStats[ent]![field as keyof MinistryPrevStats]) : ''} 
+                               value={tempPrevStats[ent]?.[field] !== undefined && tempPrevStats[ent]![field] !== 0 ? toBengaliDigits(tempPrevStats[ent]![field]) : ''} 
                                onPaste={(e) => handleSetupPaste(e, ent, field)} 
                                onChange={e => { 
                                  if (!isEditingSetup) return;
