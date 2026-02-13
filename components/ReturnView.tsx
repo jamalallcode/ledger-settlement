@@ -126,18 +126,35 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
 
     let pastRC = 0, pastRA = 0, pastSC = 0, pastSA = 0;
     pastEntries.forEach(entry => {
-        const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
-        if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
-            pastRC += parseBengaliNumber(rCountRaw);
+        // Raised objections calculation for past records
+        let entryRaised = 0;
+        if (entry.paragraphs && entry.paragraphs.length > 0) {
+            entryRaised = entry.paragraphs.length;
+        } else {
+            entryRaised = parseBengaliNumber(entry.meetingSentParaCount || '0');
         }
-        if (entry.manualRaisedAmount) pastRA += Number(entry.manualRaisedAmount);
+        
+        pastRC += entryRaised + parseBengaliNumber(entry.manualRaisedCount?.toString() || '0');
+        
+        if (entry.paragraphs && entry.paragraphs.length > 0) {
+            pastRA += entry.paragraphs.reduce((s, p) => s + (p.involvedAmount || 0), 0);
+        } else {
+            pastRA += Number(entry.meetingUnsettledAmount || 0);
+        }
+        pastRA += Number(entry.manualRaisedAmount || 0);
 
-        if (entry.paragraphs) entry.paragraphs.forEach(p => {
-            if (p.status === 'পূর্ণাঙ্গ') {
-                pastSC++;
-            }
-            pastSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
-        });
+        // Settled objections calculation for past records
+        if (entry.paragraphs && entry.paragraphs.length > 0) {
+            entry.paragraphs.forEach(p => {
+                if (p.status === 'পূর্ণাঙ্গ') {
+                    pastSC++;
+                }
+                pastSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
+            });
+        } else {
+            pastSC += parseBengaliNumber(entry.meetingFullSettledParaCount || '0');
+            pastSA += (Number(entry.totalRec) || 0) + (Number(entry.totalAdj) || 0);
+        }
     });
 
     return {
@@ -229,6 +246,16 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
           
           let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0;
           matchingEntries.forEach(entry => {
+            // Count current cycle raised objections
+            let entryRaised = 0;
+            if (entry.paragraphs && entry.paragraphs.length > 0) {
+                entryRaised = entry.paragraphs.length;
+            } else {
+                entryRaised = parseBengaliNumber(entry.meetingSentParaCount || '0');
+            }
+            curRC += entryRaised;
+
+            // Count current cycle settled objections
             if (entry.paragraphs && entry.paragraphs.length > 0) {
               entry.paragraphs.forEach(p => { 
                 if (p.status === 'পূর্ণাঙ্গ') { 
@@ -242,9 +269,10 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
               curFC += parseBengaliNumber(entry.meetingFullSettledParaCount || '0');
               curPC += parseBengaliNumber(entry.meetingPartialSettledParaCount || '0');
               curSC += parseBengaliNumber(entry.meetingSettledParaCount || '0');
-              curSA += Number(entry.meetingUnsettledAmount || 0);
+              curSA += (Number(entry.totalRec) || 0) + (Number(entry.totalAdj) || 0);
             }
             
+            // Manual Raised handling
             const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
             if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
               curRC += parseBengaliNumber(rCountRaw);
@@ -287,6 +315,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
     setIsEditingSetup(false);
   };
 
+  /**
+   * Internal sub-component for rendering ID badges.
+   */
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = useState(false);
     if (!isLayoutEditable) return null;
@@ -305,6 +336,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
     );
   };
 
+  /**
+   * Internal sub-component for filtering by historical cycles.
+   */
   const HistoricalFilter = () => (
     <div className="relative no-print" ref={dropdownRef}>
       <div onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} className={`flex items-center gap-3 px-5 h-[48px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isCycleDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}>
@@ -330,6 +364,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
     </div>
   );
 
+  // --- Conditional Rendering for Initial Selection Screen ---
   if (!selectedReportType && !isSetupMode) {
     return (
       <div id="section-report-selector" className="max-w-3xl pb-10 animate-report-page relative pt-0">
@@ -378,6 +413,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
     );
   }
 
+  // --- Conditional Rendering for Initial Setup (Opening Balances) ---
   if (isSetupMode) {
     const setupThCls = "p-4 text-center font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] uppercase bg-slate-100 leading-tight h-20 align-middle sticky top-0 z-[195] shadow-[inset_0_-1px_0_#cbd5e1]";
     const setupFooterTdCls = "p-4 border border-slate-300 text-center text-[15px] bg-blue-50 font-black sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1]";
@@ -480,9 +516,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
     );
   }
 
+  // --- Main Report View Rendering ---
   const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-slate-50 sticky z-[160] shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-padding relative";
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight bg-white group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
-  
   const grandStyle = "px-0.5 py-2 text-center font-black text-white text-[10.5px] bg-slate-800 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#1e293b,inset_0_0_0_1px_#1e293b] h-[45px] align-middle whitespace-normal break-words bg-clip-padding transition-all relative";
 
   return (
