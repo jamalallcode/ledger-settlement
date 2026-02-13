@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { 
-  LayoutDashboard, ArrowRight, ShieldCheck, CheckCircle2, CalendarRange
+  LayoutDashboard, ArrowRight, ShieldCheck, CheckCircle2, CalendarRange, Bell, ShieldAlert
 } from 'lucide-react';
 import { SettlementEntry } from '../types.ts';
 import { toBengaliDigits } from '../utils/numberUtils.ts';
@@ -11,6 +12,9 @@ interface LandingPageProps {
   cycleLabel: string;
   isLockedMode?: boolean;
   isLayoutEditable?: boolean;
+  isAdmin?: boolean;
+  pendingCount?: number;
+  onShowPending?: () => void;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ 
@@ -18,7 +22,10 @@ const LandingPage: React.FC<LandingPageProps> = ({
   setActiveTab, 
   cycleLabel, 
   isLockedMode = true,
-  isLayoutEditable = false 
+  isLayoutEditable = false,
+  isAdmin = false,
+  pendingCount = 0,
+  onShowPending
 }) => {
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = useState(false);
@@ -52,14 +59,14 @@ const LandingPage: React.FC<LandingPageProps> = ({
   };
 
   return (
-    <div className="animate-landing-premium relative">
+    <div className="animate-landing-premium relative space-y-8">
       <IDBadge id="view-landing-home" />
       
-      {/* Hero Section - Updated to a premium light white theme as requested */}
+      {/* Hero Section */}
       <div id="hero-section" className="relative overflow-hidden rounded-[2.5rem] bg-white p-10 text-slate-900 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-slate-200">
         <IDBadge id="hero-section" />
         
-        {/* Subtle background decoration for premium feel */}
+        {/* Subtle background decoration */}
         <div className="absolute top-0 right-0 p-8 text-slate-100 opacity-40">
           <ShieldCheck size={200} />
         </div>
@@ -71,8 +78,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
             </div>
             <span className="text-sm font-black tracking-widest text-blue-600 uppercase">Settlement Register</span>
             
-            {/* Locked Mode Indicator - Maintained as per strict instruction */}
-            {isLockedMode && (
+            {isAdmin && isLockedMode && (
               <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black border border-emerald-200 flex items-center gap-1.5 ml-auto shadow-sm">
                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
                 LOCKED MODE
