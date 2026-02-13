@@ -122,15 +122,6 @@ const Navbar: React.FC<NavbarProps> = ({
                       <FilePlus2 size={20} className="text-blue-600" /> 
                       নতুন তথ্য এন্ট্রি
                     </button>
-                    {isAdmin && pendingEntries.length > 0 && (
-                      <div 
-                        onClick={(e) => { e.stopPropagation(); setShowNotifDropdown(!showNotifDropdown); }}
-                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 border-2 border-slate-900 rounded-full flex items-center justify-center cursor-pointer shadow-[0_0_20px_rgba(220,38,38,0.6)] animate-bounce z-[210] hover:scale-125 transition-transform"
-                        title={`${pendingEntries.length}টি এন্ট্রি অনুমোদনের অপেক্ষায়`}
-                      >
-                        <span className="text-[11px] text-white font-black">{toBengaliDigits(pendingEntries.length)}</span>
-                      </div>
-                    )}
                   </div>
                 )}
               </React.Fragment>
@@ -147,7 +138,7 @@ const Navbar: React.FC<NavbarProps> = ({
               >
                 {pendingEntries.length > 0 ? <BellRing size={20} className="animate-pulse" /> : <Bell size={20} />}
                 {pendingEntries.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-slate-900 shadow-sm">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-slate-900 shadow-sm animate-notif-scale">
                     {toBengaliDigits(pendingEntries.length)}
                   </span>
                 )}
