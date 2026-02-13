@@ -1,10 +1,9 @@
-
 import { useState, useMemo, useEffect, useRef } from 'react';
 import React from 'react';
 import { SettlementEntry, ParaType, CumulativeStats, MinistryPrevStats } from '../types';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP, OFFICE_HEADER } from '../constants';
-import { ChevronLeft, ArrowRight, ClipboardCheck, CalendarRange, Printer, Database, Settings2, BarChart3, FileStack, ClipboardList, Settings, CheckCircle2, CalendarDays, UserCheck, ChevronDown, Check, LayoutGrid, PieChart, History, Search, CalendarSearch, Sparkles, X, Lock, KeyRound, ShieldAlert, Pencil, Unlock } from 'lucide-react';
+import { ChevronLeft, ArrowRight, ClipboardCheck, CalendarRange, Printer, Database, Settings2, BarChart3, FileStack, ClipboardList, Settings, CheckCircle2, CalendarDays, UserCheck, ChevronDown, Check, LayoutGrid, PieChart, History, Search, CalendarSearch, Sparkles, X } from 'lucide-react';
 import { isWithinInterval, addMonths, format as dateFnsFormat, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { getCycleForDate, isInCycle } from '../utils/cycleHelper';
 
@@ -60,7 +59,6 @@ const reportOptions = [
 const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats, setPrevStats, isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister, isAdmin }) => {
   const [selectedReportType, setSelectedReportType] = useState<string | null>(null);
   const [isSetupMode, setIsSetupMode] = useState(false);
-  const [isEditingSetup, setIsEditingSetup] = useState(false);
   const [tempPrevStats, setTempPrevStats] = useState<Record<string, MinistryPrevStats>>({});
   
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
@@ -164,7 +162,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
   }, [isSetupMode, prevStats, activeCycle, ministryGroups]);
 
   const handleSetupPaste = (e: React.ClipboardEvent, startEnt: string, startField: string) => {
-    if (!isEditingSetup) return;
     e.preventDefault();
     const pasteData = e.clipboardData.getData('text');
     if (!pasteData) return;
@@ -268,7 +265,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
       entitiesNonSFI: {} 
     });
     setIsSetupMode(false);
-    setIsEditingSetup(false);
   };
 
   const IDBadge = ({ id }: { id: string }) => {
@@ -390,14 +386,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
             </div>
           </div>
           <div className="flex items-center gap-4">
-             {/* Edit Toggle Button Added Here */}
-             <button 
-               onClick={() => setIsEditingSetup(!isEditingSetup)} 
-               className={`px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all border-b-4 active:scale-95 ${isEditingSetup ? 'bg-amber-500 text-white border-amber-700 hover:bg-amber-600' : 'bg-blue-600 text-white border-blue-800 hover:bg-blue-700'}`}
-             >
-               {isEditingSetup ? <Unlock size={18} /> : <Pencil size={18} />}
-               {isEditingSetup ? 'এডিট মোড বন্ধ' : 'এডিট করুন'}
-             </button>
              <button onClick={handleSaveSetup} className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-blue-700 shadow-2xl transition-all border-b-4 border-blue-800 active:scale-95">সংরক্ষণ করুন</button>
           </div>
         </div>
@@ -429,21 +417,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
                      {entities.map(ent => (
                        <tr key={ent} className="hover:bg-blue-50/40 transition-all group bg-white">
                          <td className="px-6 py-4 font-bold text-slate-800 border border-slate-300 text-[13px] bg-white group-hover:text-blue-700">{ent}</td>
-                         {(['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount'] as const).map(field => (
-                           <td key={field} className={`p-1.5 border border-slate-300 text-center align-middle h-14 transition-colors ${isEditingSetup ? 'bg-white group-hover:bg-blue-50' : 'bg-slate-50'}`}>
-                             <input 
-                               type="text" 
-                               readOnly={!isEditingSetup}
-                               className={`w-full h-11 text-center font-black text-[15px] outline-none border-0 transition-all ${isEditingSetup ? 'bg-white text-slate-900 cursor-text' : 'bg-slate-50 text-slate-400 cursor-not-allowed'}`} 
-                               placeholder="০" 
-                               value={tempPrevStats[ent]?.[field] !== undefined && tempPrevStats[ent]![field] !== 0 ? toBengaliDigits(tempPrevStats[ent]![field]) : ''} 
-                               onPaste={(e) => handleSetupPaste(e, ent, field)} 
-                               onChange={e => { 
-                                 if (!isEditingSetup) return;
-                                 const num = parseBengaliNumber(e.target.value); 
-                                 setTempPrevStats(prev => ({ ...prev, [ent]: { ...(prev[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 }), [field]: num } })); 
-                               }} 
-                             />
+                         {['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount'].map(field => (
+                           <td key={field} className="p-1.5 border border-slate-300 text-center align-middle h-14 bg-white group-hover:bg-blue-50 transition-colors">
+                             <input type="text" className="w-full h-11 bg-white text-center font-black text-slate-900 text-[15px] outline-none border-0" placeholder="০" value={tempPrevStats[ent]?.[field as keyof MinistryPrevStats] !== undefined && tempPrevStats[ent]![field as keyof MinistryPrevStats] !== 0 ? toBengaliDigits(tempPrevStats[ent]![field as keyof MinistryPrevStats]) : ''} onPaste={(e) => handleSetupPaste(e, ent, field)} onChange={e => { const num = parseBengaliNumber(e.target.value); setTempPrevStats(prev => ({ ...prev, [ent]: { ...(prev[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 }), [field]: num } })); }} />
                            </td>
                          ))}
                        </tr>
@@ -466,8 +442,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
     );
   }
 
-  const reportThStyle = "border border-slate-300 px-0.5 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-100 text-slate-900 leading-tight align-middle h-[42px]";
-  const tdStyle = "border border-slate-300 px-0.5 py-1 text-[11px] md:text-[12px] text-center font-black leading-tight bg-white h-[38px]";
+  const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-slate-50 sticky z-[160] shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-padding relative";
+  const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight bg-white group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
   
   const grandStyle = "px-0.5 py-2 text-center font-black text-white text-[10.5px] bg-slate-800 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#1e293b,inset_0_0_0_1px_#1e293b] h-[45px] align-middle whitespace-normal break-words bg-clip-padding transition-all relative";
 
@@ -501,7 +477,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
 
         <div className="table-container border-t border-slate-300 overflow-visible relative">
           <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0">
-            <colgroup><col className="w-[58px]" /><col className="w-[125px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[36px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /></colgroup>
+            <colgroup><col className="w-[58px]" /><col className="w-[125px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /></colgroup>
             <thead>
               <tr className="h-[42px]">
                 <th rowSpan={2} className={`${reportThStyle} !top-0`}>মন্ত্রণালয়</th>
@@ -544,7 +520,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
 
                       return (
                         <tr key={row.entity} className="group hover:bg-blue-50/50">
-                          {rIdx === 0 && <td rowSpan={m.entityRows.length} className={tdStyle + " bg-slate-50 font-black border-r border-slate-300"}>{m.ministry}</td>}
+                          {rIdx === 0 && <td rowSpan={m.entityRows.length + 1} className={tdStyle + " bg-slate-50 font-black border-r border-slate-300"}>{m.ministry}</td>}
                           <td className={tdStyle + " text-left border-r border-slate-300"}>{row.entity}</td>
                           <td className={tdStyle}>{toBengaliDigits(row.prev.unsettledCount)}</td><td className={tdStyle + " text-center font-black border-r border-slate-300"}>{toBengaliDigits(Math.round(row.prev.unsettledAmount))}</td>
                           <td className={tdStyle}>{toBengaliDigits(row.currentRaisedCount)}</td><td className={tdStyle + " text-center font-black border-r border-slate-300"}>{toBengaliDigits(Math.round(row.currentRaisedAmount))}</td>
@@ -586,22 +562,21 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
         </div>
       </div>
 
-      {/* ছবির মার্ক করা অংশ - শুধুমাত্র এডমিনদের জন্য দৃশ্যমান */}
-      {isAdmin && (
-        <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 flex flex-col md:flex-row items-center gap-6 no-print animate-in slide-in-from-left duration-1000 shadow-sm mt-6">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0"><Database size={28} /></div>
-          <div className="text-center md:text-left flex-1">
-            <p className="text-[17px] font-black text-slate-900 mb-1.5">অ্যাকাউন্টিং চেইন লজিক (Chain Integrity) ভেরিফাইড</p>
-            <p className="text-[12px] font-bold text-slate-500 leading-relaxed uppercase tracking-tight">
-              সিস্টেম বর্তমানে <span className="text-blue-600">{toBengaliDigits(activeCycle.label)}</span> পিরিয়ডের প্রারম্ভিক জের বিগত সকল মাসের লেনদেনের ভিত্তিতে স্বয়ংক্রিয়ভাবে সমন্বিত উপায়ে গণনা করছে।
-              হিসাব: কলাম ৭ = (কলাম ৩ - কলাম ৬)।
-            </p>
-          </div>
-          <div className="px-8 py-3 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner flex items-center gap-4"><div className="flex flex-col items-end"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Calculated Status</span><span className="text-[12px] font-black text-emerald-600">ACCURATE & SYNCED</span></div><CheckCircle2 size={24} className="text-emerald-500" /></div>
+      <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 flex flex-col md:flex-row items-center gap-6 no-print animate-in slide-in-from-left duration-1000 shadow-sm mt-6">
+        <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0"><Database size={28} /></div>
+        <div className="text-center md:text-left flex-1">
+          <p className="text-[17px] font-black text-slate-900 mb-1.5">অ্যাকাউন্টিং চেইন লজিক (Chain Integrity) ভেরিফাইড</p>
+          <p className="text-[12px] font-bold text-slate-500 leading-relaxed uppercase tracking-tight">
+            সিস্টেম বর্তমানে <span className="text-blue-600">{toBengaliDigits(activeCycle.label)}</span> পিরিয়ডের প্রারম্ভিক জের বিগত সকল মাসের লেনদেনের ভিত্তিতে স্বয়ংক্রিয়ভাবে সমন্বিত উপায়ে গণনা করছে।
+            হিসাব: কলাম ৭ = (কলাম ৩ - কলাম ৬)।
+          </p>
         </div>
-      )}
+        <div className="px-8 py-3 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner flex items-center gap-4"><div className="flex flex-col items-end"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Calculated Status</span><span className="text-[12px] font-black text-emerald-600">ACCURATE & SYNCED</span></div><CheckCircle2 size={24} className="text-emerald-500" /></div>
+      </div>
     </div>
   );
 };
 
 export default ReturnView;
+
+
