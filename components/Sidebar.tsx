@@ -118,16 +118,8 @@ const Sidebar: React.FC<SidebarProps> = ({
               <IDBadge id={item.badgeId} />
               <div className="relative">
                 <item.icon size={18} />
-                {isAdmin && item.id === 'register' && pendingCount > 0 && (
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900 animate-pulse"></div>
-                )}
               </div>
               <span className="text-sm">{item.label}</span>
-              {isAdmin && item.id === 'register' && pendingCount > 0 && (
-                 <span className="ml-auto bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-lg group-hover:scale-110 transition-transform">
-                   {toBengaliDigits(pendingCount)}
-                 </span>
-              )}
             </button>
           ))}
         </nav>
