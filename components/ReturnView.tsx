@@ -24,7 +24,7 @@ interface ReturnViewProps {
 const reportOptions = [
   { 
     id: 'monthly-letter', 
-    title: 'মাসিক রিটারন: চিঠিপত্র সংক্রান্ত।', 
+    title: 'মাসিক রিটার্ণ: চিঠিপত্র সংক্রান্ত।', 
     desc: 'চিঠিপত্র আদান-প্রদান এবং নিষ্পত্তির পরিসংখ্যান', 
     icon: FileStack, 
     accent: 'from-blue-600 to-indigo-700'
