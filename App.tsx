@@ -335,7 +335,7 @@ const App: React.FC = () => {
                 </div>
               )}
               
-              {activeTab === 'return' && <ReturnView key={`return-reset-${resetKey}`} entries={approvedEntries} cycleLabel={cycleLabelBengali} prevStats={prevStats} setPrevStats={setPrevStats} isLayoutEditable={isLayoutEditable} />}
+              {activeTab === 'return' && <ReturnView key={`return-reset-${resetKey}`} entries={approvedEntries} cycleLabel={cycleLabelBengali} prevStats={prevStats} setPrevStats={setPrevStats} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} />}
               
               {activeTab === 'voting' && <VotingSystem isAdmin={isAdmin} />}
             </div>
