@@ -98,17 +98,20 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
   };
 
   const sendRecoveryEmail = () => {
+    // Generate a fresh 6-digit random code
     const newCode = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedCode(newCode);
     
-    // Construct mailto link
-    const subject = encodeURIComponent('Initial Balance Setup - Recovery Code');
+    // Construct safe mailto link to open default email client
+    const subject = encodeURIComponent('Settlement Register - Password Recovery');
     const body = encodeURIComponent(`আপনার প্রারম্ভিক জের সেটআপ রিসেট কোডটি হলো: ${newCode}\n\nএটি সিস্টেমের সুরক্ষার জন্য কারো সাথে শেয়ার করবেন না।`);
     const mailtoLink = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
     
-    window.open(mailtoLink, '_blank');
+    // Using location.href instead of window.open to prevent unexpected navigation/blank tabs
+    window.location.href = mailtoLink;
+    
     setCodeSent(true);
-    setAuthError('আপনার ইমেইলে কোড পাঠানো হয়েছে। দয়া করে ইনবক্স চেক করুন।');
+    setAuthError('আপনার ইমেইলে কোড পাঠানোর প্রসেস শুরু হয়েছে। ইমেইল অ্যাপটি চেক করুন।');
   };
 
   const handleRecoveryVerify = (e: React.FormEvent) => {
@@ -380,7 +383,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
   const HistoricalFilter = () => (
     <div className="relative no-print" ref={dropdownRef}>
       <div onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} className={`flex items-center gap-3 px-5 h-[48px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isCycleDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}>
-         {/* Fixed syntax error: changed size(20) to size={20} */}
          <CalendarDays size={20} className="text-blue-600" />
          <span className="font-black text-[13.5px] text-slate-800 tracking-tight">
            {cycleOptions.find(o => o.cycleLabel === activeCycle.label)?.label || toBengaliDigits(activeCycle.label)}
