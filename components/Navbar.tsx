@@ -1,11 +1,10 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, 
   ChevronDown, Sparkles, Lock, Unlock, CheckCircle2, Download, 
   Upload, ShieldCheck, LogOut, X, KeyRound, Settings, 
   Calendar, ShieldAlert, Filter, Printer, Menu, Fingerprint, 
-  Bell, Check, XCircle, UserCheck, BellRing, ArrowRight
+  Bell, Check, XCircle, UserCheck, BellRing, ArrowRight, Library
 } from 'lucide-react';
 import { SettlementEntry } from '../types';
 import { toBengaliDigits } from '../utils/numberUtils';
@@ -81,6 +80,7 @@ const Navbar: React.FC<NavbarProps> = ({
     { id: 'landing', label: 'হোম', icon: Home },
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter },
     { id: 'return', label: 'রিটার্ণ/সারাংশ', icon: PieChart },
+    { id: 'archive', label: 'লাইব্রেরি', icon: Library },
     { id: 'voting', label: 'ভোট', icon: Fingerprint },
   ];
 
