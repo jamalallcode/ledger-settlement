@@ -1,12 +1,93 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { supabase } from '../lib/supabase';
 import { EMPLOYEES, VOTE_POSITIONS } from '../constants';
 import { BallotVote, PositionResult, VoterToken } from '../types';
 import { 
   CheckCircle2, AlertCircle, BarChart3, Fingerprint, 
-  Send, Trophy, UserCheck, Loader2, Key, RefreshCw, Copy, Check, Trash2, ShieldCheck, Ticket, Database, HelpCircle, ArrowRight, RotateCcw, MessageSquare, Plus, Settings2, Vote, Lock, Unlock, UserPlus, UserMinus, Eye, EyeOff, LayoutGrid, Trash, Pencil, X
+  Send, Trophy, UserCheck, Loader2, Key, RefreshCw, Copy, Check, Trash2, ShieldCheck, Ticket, Database, HelpCircle, ArrowRight, RotateCcw, MessageSquare, Plus, Settings2, Vote, Lock, Unlock, UserPlus, UserMinus, Eye, EyeOff, LayoutGrid, Trash, Pencil, X, ChevronDown, Search
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
+
+/**
+ * Premium custom dropdown component for voter selection
+ */
+const PremiumVoterSelect: React.FC<{
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (val: string) => void;
+  placeholder?: string;
+}> = ({ label, value, options, onChange, placeholder = "প্রার্থী নির্বাচন করুন" }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredOptions = options.filter(opt => 
+    opt.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-2 relative" ref={dropdownRef}>
+      <label className="flex items-center gap-2 text-[13px] font-black text-slate-700 ml-1">
+        <UserCheck size={14} className="text-blue-600" /> {label}
+      </label>
+      
+      <div 
+        onClick={() => { setIsOpen(!isOpen); if (!isOpen) setSearchTerm(''); }}
+        className={`w-full h-[58px] px-5 bg-slate-50 border-2 rounded-2xl flex items-center justify-between cursor-pointer transition-all duration-300 shadow-sm ${isOpen ? 'border-blue-500 bg-white ring-4 ring-blue-50' : 'border-slate-100 hover:border-slate-200'}`}
+      >
+        <span className={`font-bold text-[15px] truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>
+          {value || placeholder}
+        </span>
+        <ChevronDown size={20} className={`text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-blue-600' : ''}`} />
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-3xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="p-3 bg-slate-50 border-b border-slate-100">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input 
+                autoFocus
+                type="text"
+                placeholder="নাম দিয়ে খুঁজুন..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full h-10 pl-10 pr-4 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-blue-400 transition-all"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          </div>
+          <div className="max-h-60 overflow-y-auto no-scrollbar py-2">
+            {filteredOptions.length > 0 ? filteredOptions.map((opt, i) => (
+              <div 
+                key={i}
+                onClick={() => { onChange(opt); setIsOpen(false); }}
+                className={`px-5 py-3.5 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${value === opt ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-blue-50 text-slate-700 font-bold'}`}
+              >
+                <span className="text-[14px]">{opt}</span>
+                {value === opt && <Check size={18} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+              </div>
+            )) : (
+              <div className="py-8 text-center text-slate-400 font-bold text-xs italic">কিছু পাওয়া যায়নি</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const [activeSubTab, setActiveSubTab] = useState<'vote' | 'results' | 'admin' | 'poll'>('vote');
@@ -207,7 +288,6 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       setAllVotes(updatedVotes);
 
       // 5. Sync updated votes to Supabase
-      // Query all entries starting with vote_
       const { data: voteRows } = await supabase
         .from('settlement_entries')
         .select('*')
@@ -324,7 +404,6 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     if (!window.confirm("সাবধান! এটি শুধুমাত্র সকল 'ভোটের ফলাফল' মুছে ফেলবে। ভোটার টোকেনগুলো আগের মতোই থাকবে।")) return;
     try {
       setIsLoading(true);
-      // Delete all entries in settlement_entries starting with vote_
       const { error } = await supabase.from('settlement_entries').delete().like('id', 'vote_%');
       if (error) throw error;
       setAllVotes([]);
@@ -385,13 +464,12 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     
     if (!token) return alert("দয়া করে আপনার সিক্রেট টোকেনটি দিন।");
     if (type === 'election' && Object.keys(selections).length < activePositions.length) return alert("অনুগ্রহ করে সকল পদের জন্য ভোট দিন।");
-    if (type === 'poll' && !pollSelection) return alert("দয়া করে একটি অপশন নির্বাচন করুন।");
+    if (type === 'poll' && !pollSelection) return alert("দয়া করে একটি পশন নির্বাচন করুন।");
 
     setIsSubmitting(true);
     setMessage(null);
 
     try {
-      // Find token locally or in DB
       const { data: tokenData, error: tokenError } = await supabase
         .from('voter_tokens')
         .select('*')
@@ -419,20 +497,17 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
       const entryId = `vote_${voterHash}`;
 
-      // Handle Offline/Flexible Storage
       if (!navigator.onLine) {
         const queue = JSON.parse(localStorage.getItem('ledger_offline_sync_queue_v1') || '[]');
         const offlineVoteEntry = { id: entryId, content: voteData };
         localStorage.setItem('ledger_offline_sync_queue_v1', JSON.stringify([...queue, offlineVoteEntry]));
         
-        // Update local UI states for instant feedback
         setAllTokens(prev => prev.map(t => t.token === token ? { ...t, is_used: true } : t));
         setAllVotes(prev => [...prev, voteData]);
         
         setMessage({ type: 'success', text: 'অফলাইন ভোট গ্রহণ করা হয়েছে। ইন্টারনেট সংযোগ পেলে তা স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।' });
         setSelections({}); setPollSelection(''); setVoterTokenInput('');
       } else {
-        // Use settlement_entries for dynamic and safe schema
         const { error: voteError } = await supabase.from('settlement_entries').upsert({ id: entryId, content: voteData });
 
         if (voteError) {
@@ -490,14 +565,12 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-landing-premium px-4 md:px-0">
-      {/* Header Container */}
       <div className="sticky top-0 z-[100] flex flex-col md:flex-row items-stretch justify-between bg-white/95 backdrop-blur-xl rounded-none border border-slate-200 shadow-xl overflow-hidden transition-all duration-500 md:min-h-[100px]">
         <div className="flex items-center gap-4 pl-6 md:pl-10 py-4 md:py-2 shrink-0">
           <div className="w-12 h-12 md:w-14 md:h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-blue-600/30"><Ticket size={24} className="md:size-[28px]" /></div>
           <div><h2 className="text-xl md:text-2xl font-black text-slate-900 leading-tight">ডিজিটাল ব্যালট বক্স</h2><p className="text-slate-500 font-bold text-[10px] md:text-xs uppercase tracking-widest">Election & Poll System</p></div>
         </div>
         
-        {/* Navigation Section */}
         <div className="flex flex-row items-stretch border-t md:border-t-0 md:border-l border-slate-100 rounded-none bg-white overflow-x-auto no-scrollbar shrink-0">
           <button onClick={() => {setActiveSubTab('vote'); setMessage(null);}} className={`flex items-center gap-2.5 px-5 md:px-6 py-4 md:py-0 font-black text-[11px] transition-all border-r border-slate-50 whitespace-nowrap ${activeSubTab === 'vote' ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}>
             <Fingerprint size={16} /> ব্যালট
@@ -535,10 +608,13 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               </div>
               <div className="grid grid-cols-1 gap-6 mb-8">
                 {activePositions.map((pos) => (
-                  <div key={pos.id} className="space-y-2">
-                    <label className="flex items-center gap-2 text-[13px] font-black text-slate-700 ml-1"><UserCheck size={14} className="text-blue-600" />{pos.title}</label>
-                    <select required value={selections[pos.id] || ''} onChange={(e) => setSelections({...selections, [pos.id]: e.target.value})} className="w-full h-[58px] px-5 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all appearance-none shadow-sm"><option value="" disabled>প্রার্থী নির্বাচন করুন</option>{voterList.map((emp, i) => <option key={i} value={emp}>{emp}</option>)}</select>
-                  </div>
+                  <PremiumVoterSelect 
+                    key={pos.id}
+                    label={pos.title}
+                    value={selections[pos.id] || ''}
+                    options={voterList}
+                    onChange={(val) => setSelections({...selections, [pos.id]: val})}
+                  />
                 ))}
               </div>
               
