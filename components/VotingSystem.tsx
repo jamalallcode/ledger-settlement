@@ -306,27 +306,27 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-      {/* Sticky Header with optimized Vertical & Sharp Navigation Menu as requested in image markings */}
+      {/* Sticky Header with optimized Horizontal & Sharp Navigation Menu as requested in image markings */}
       <div className="sticky top-0 z-[100] flex flex-row items-stretch justify-between bg-white/95 backdrop-blur-xl rounded-b-[2rem] md:rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden transition-all duration-500 min-h-[100px]">
-        <div className="flex items-center gap-4 pl-6 md:pl-10 py-2">
+        <div className="flex items-center gap-4 pl-6 md:pl-10 py-2 shrink-0">
           <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-blue-600/30"><Ticket size={28} /></div>
           <div><h2 className="text-2xl font-black text-slate-900 leading-tight">ডিজিটাল ব্যালট বক্স</h2><p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Election & Poll System</p></div>
         </div>
         
-        {/* Navigation Section: Compact, Vertical, Sharp corners (rounded-none), filling the height as per brown marking */}
-        <div className="flex flex-col border-l border-slate-100 rounded-none bg-white min-w-[140px] md:min-w-[170px] h-auto">
-          <button onClick={() => {setActiveSubTab('vote'); setMessage(null);}} className={`flex items-center gap-2.5 px-5 py-2 rounded-none font-black text-[10px] transition-all border-b border-slate-50 flex-1 ${activeSubTab === 'vote' ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}>
-            <Fingerprint size={14} /> ব্যালট
+        {/* Navigation Section: Compact, Horizontal (flex-row), Sharp corners (rounded-none) as per brown marking */}
+        <div className="flex flex-row items-stretch border-l border-slate-100 rounded-none bg-white overflow-hidden">
+          <button onClick={() => {setActiveSubTab('vote'); setMessage(null);}} className={`flex items-center gap-2.5 px-6 font-black text-[11px] transition-all border-r border-slate-50 ${activeSubTab === 'vote' ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}>
+            <Fingerprint size={16} /> ব্যালট
           </button>
-          <button onClick={() => {setActiveSubTab('poll'); setMessage(null);}} className={`flex items-center gap-2.5 px-5 py-2 rounded-none font-black text-[10px] transition-all border-b border-slate-50 flex-1 ${activeSubTab === 'poll' ? 'bg-emerald-50 text-emerald-600' : 'text-slate-500 hover:bg-slate-50'}`}>
-            <MessageSquare size={14} /> পাবলিক পোল
+          <button onClick={() => {setActiveSubTab('poll'); setMessage(null);}} className={`flex items-center gap-2.5 px-6 font-black text-[11px] transition-all border-r border-slate-50 ${activeSubTab === 'poll' ? 'bg-emerald-50 text-emerald-600' : 'text-slate-500 hover:bg-slate-50'}`}>
+            <MessageSquare size={16} /> পাবলিক পোল
           </button>
-          <button onClick={() => {setActiveSubTab('results'); setMessage(null);}} className={`flex items-center gap-2.5 px-5 py-2 rounded-none font-black text-[10px] transition-all border-b border-slate-50 flex-1 ${activeSubTab === 'results' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`}>
-            <BarChart3 size={14} /> ইলেকশন ফলাফল
+          <button onClick={() => {setActiveSubTab('results'); setMessage(null);}} className={`flex items-center gap-2.5 px-6 font-black text-[11px] transition-all border-r border-slate-50 ${activeSubTab === 'results' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`}>
+            <BarChart3 size={16} /> ইলেকশন ফলাফল
           </button>
           {isAdmin && (
-            <button onClick={() => {setActiveSubTab('admin'); setMessage(null);}} className={`flex items-center gap-2.5 px-5 py-2 rounded-none font-black text-[10px] transition-all flex-1 ${activeSubTab === 'admin' ? 'bg-purple-50 text-purple-600' : 'text-slate-500 hover:bg-slate-50'}`}>
-              <Settings2 size={14} /> এডমিন
+            <button onClick={() => {setActiveSubTab('admin'); setMessage(null);}} className={`flex items-center gap-2.5 px-6 font-black text-[11px] transition-all ${activeSubTab === 'admin' ? 'bg-purple-50 text-purple-600' : 'text-slate-500 hover:bg-slate-50'}`}>
+              <Settings2 size={16} /> এডমিন
             </button>
           )}
         </div>
