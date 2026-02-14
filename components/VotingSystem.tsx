@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { EMPLOYEES, VOTE_POSITIONS } from '../constants';
 import { BallotVote, PositionResult, VoterToken } from '../types';
 import { 
   CheckCircle2, AlertCircle, BarChart3, Fingerprint, 
-  Send, Trophy, UserCheck, Loader2, Key, RefreshCw, Copy, Check, Trash2, ShieldCheck, Ticket, Database, HelpCircle, ArrowRight, RotateCcw, MessageSquare, Plus, Settings2, Vote, Lock, Unlock, UserPlus, UserMinus, Eye, EyeOff, LayoutGrid, Trash, Pencil, X, ChevronDown, Search
+  Send, Trophy, UserCheck, Loader2, Key, RefreshCw, Copy, Check, Trash2, ShieldCheck, Ticket, Database, HelpCircle, ArrowRight, RotateCcw, MessageSquare, Plus, Settings2, Vote, Lock, Unlock, UserPlus, UserMinus, Eye, EyeOff, LayoutGrid, Trash, Pencil, X, ChevronDown, Search, KeyRound
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 
@@ -111,7 +110,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
   // Dynamic Voter List & Permissions
   const [voterList, setVoterList] = useState<string[]>([]);
-  const [authorizedViewers, setAuthorizedViewers] = useState<string[]>([]);
+  const [authorizedViewers, setAuthorizedViewers] = useState<any[]>([]);
   const [isViewerVerified, setIsViewerVerified] = useState(false);
   const [newVoterName, setNewVoterName] = useState('');
   
@@ -275,7 +274,12 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       // 1. Update voterList
       const nextVoters = voterList.map(v => v === oldName ? updatedName : v);
       // 2. Update authorizedViewers
-      const nextViewers = authorizedViewers.map(v => v === oldName ? updatedName : v);
+      const nextViewers = authorizedViewers.map(v => {
+        if (typeof v === 'object' && v.name === oldName) {
+          return { ...v, name: updatedName };
+        }
+        return v === oldName ? updatedName : v;
+      });
 
       // 3. Update active state locally
       setVoterList(nextVoters);
@@ -374,19 +378,26 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const handleRemoveVoter = (name: string) => {
     if (!window.confirm(`আপনি কি নিশ্চিতভাবে "${name}" কে তালিকা থেকে বাদ দিতে চান?`)) return;
     const nextVoters = voterList.filter(v => v !== name);
-    const nextViewers = authorizedViewers.filter(v => v !== name);
+    const nextViewers = authorizedViewers.filter(v => {
+      if (typeof v === 'object') return v.name !== name;
+      return v !== name;
+    });
     setVoterList(nextVoters);
     setAuthorizedViewers(nextViewers);
     syncConfigToDB({ voterList: nextVoters, authorizedViewers: nextViewers });
   };
 
   const toggleViewerPermission = (name: string) => {
-    let next: string[];
-    if (authorizedViewers.includes(name)) {
-      next = authorizedViewers.filter(v => v !== name);
+    let next: any[];
+    const isAuthorized = authorizedViewers.some(v => (typeof v === 'object' ? v.name === name : v === name));
+
+    if (isAuthorized) {
+      next = authorizedViewers.filter(v => (typeof v === 'object' ? v.name !== name : v !== name));
     } else {
-      next = [...authorizedViewers, name];
+      const accessId = `VIEW-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      next = [...authorizedViewers, { name, accessId }];
     }
+    
     setAuthorizedViewers(next);
     syncConfigToDB({ authorizedViewers: next });
   };
@@ -567,13 +578,16 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   };
 
   const handleViewerVerification = () => {
-    const name = prompt("ফলাফল দেখতে আপনার নাম নির্বাচন করুন:");
-    if (!name) return;
-    if (authorizedViewers.includes(name.trim())) {
+    const inputId = prompt("ফলাফল দেখতে আপনার সিক্রেট এক্সেস আইডি (Access ID) প্রদান করুন:");
+    if (!inputId) return;
+    
+    const viewer = authorizedViewers.find(v => (typeof v === 'object' ? v.accessId === inputId.trim().toUpperCase() : false));
+    
+    if (viewer) {
       setIsViewerVerified(true);
-      setMessage({ type: 'success', text: `স্বাগতম ${name}, আপনাকে ফলাফল দেখার অনুমতি দেওয়া হয়েছে।` });
+      setMessage({ type: 'success', text: `স্বাগতম ${viewer.name}, আপনাকে ফলাফল দেখার অনুমতি দেওয়া হয়েছে।` });
     } else {
-      alert("দুঃখিত, আপনাকে এই ফলাফল দেখার অনুমতি হয়নি।");
+      alert("দুঃখিত, আপনার আইডিটি সঠিক নয় বা আপনার জন্য কোনো এক্সেস আইডি বরাদ্দ করা হয়নি।");
     }
   };
 
@@ -589,9 +603,9 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       </div>
       <div className="space-y-4">
         <h3 className="text-2xl font-black text-slate-800 tracking-tight">ফলাফল বর্তমানে লক করা আছে</h3>
-        <p className="text-slate-500 font-bold max-w-sm mx-auto">এডমিন দ্বারা ফলাফল গোপন রাখা হয়েছে। শুধুমাত্র অনুমোদিত সময়েই ফলাফল দেখা যাবে।</p>
+        <p className="text-slate-500 font-bold max-w-sm mx-auto">এডমিন দ্বারা ফলাফল গোপন রাখা হয়েছে। শুধুমাত্র অনুমোদিত আইডি দিয়েই ফলাফল দেখা যাবে।</p>
         <button onClick={handleViewerVerification} className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all flex items-center gap-2 mx-auto shadow-lg shadow-blue-600/20 active:scale-95">
-          <UserCheck size={18} /> আমি একজন অনুমোদিত পর্যবেক্ষক
+          <Key size={18} /> আমার এক্সেস আইডি আছে
         </button>
       </div>
     </div>
@@ -674,9 +688,6 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
         </form>
       )}
 
-      {/**
-       * Removed all backslash-escaped quotes to fix JSX syntax errors.
-       */}
       {activeSubTab === 'poll' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="space-y-8">
@@ -878,61 +889,82 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                   </button>
                 </form>
                 <div className="max-h-[450px] overflow-y-auto pr-2 space-y-3 no-scrollbar">
-                  {voterList.map((voter, idx) => (
-                    <div key={idx} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-white border border-slate-200 rounded-3xl group hover:border-emerald-400 transition-all shadow-sm">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="w-10 h-10 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xs shrink-0 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
-                          {toBengaliDigits(idx + 1)}
+                  {voterList.map((voter, idx) => {
+                    const authViewer = authorizedViewers.find(v => (typeof v === 'object' ? v.name === voter : v === voter));
+                    const isAuthorized = !!authViewer;
+                    const accessId = typeof authViewer === 'object' ? authViewer.accessId : null;
+
+                    return (
+                      <div key={idx} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-white border border-slate-200 rounded-3xl group hover:border-emerald-400 transition-all shadow-sm">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="w-10 h-10 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xs shrink-0 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                            {toBengaliDigits(idx + 1)}
+                          </div>
+                          
+                          {editingVoterName === voter ? (
+                            <div className="flex-1 flex gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                              <input 
+                                autoFocus
+                                type="text" 
+                                value={newVoterEditValue} 
+                                onChange={e => setNewVoterEditValue(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleUpdateVoterName(voter)}
+                                className="flex-1 px-4 h-10 bg-white border-2 border-blue-400 rounded-xl font-black text-slate-800 outline-none shadow-inner text-sm"
+                              />
+                              <button onClick={() => handleUpdateVoterName(voter)} className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"><Check size={16} strokeWidth={3} /></button>
+                              <button onClick={() => setEditingVoterName(null)} className="p-2 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 transition-all"><X size={16} /></button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-3">
+                                <span className="font-black text-slate-800 text-[15px]">{voter}</span>
+                                {isAuthorized && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-600 text-[9px] font-black rounded-full uppercase tracking-tighter flex items-center gap-1 shadow-sm border border-emerald-200"><Eye size={10} /> Authorized</span>}
+                              </div>
+                              {isAuthorized && accessId && (
+                                <div className="flex items-center gap-2 mt-0.5 px-2 py-1 bg-slate-900 text-white text-[10px] font-black rounded-lg w-fit shadow-lg animate-in slide-in-from-top-1 duration-300">
+                                   <KeyRound size={12} className="text-amber-400" />
+                                   <span className="tracking-widest font-mono">ID: {accessId}</span>
+                                   <button 
+                                      onClick={() => copyToClipboard(accessId)} 
+                                      className="ml-2 p-1 hover:bg-slate-700 rounded transition-colors"
+                                      title="আইডি কপি করুন"
+                                   >
+                                      {copiedToken === accessId ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} />}
+                                   </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                         
-                        {editingVoterName === voter ? (
-                          <div className="flex-1 flex gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
-                            <input 
-                              autoFocus
-                              type="text" 
-                              value={newVoterEditValue} 
-                              onChange={e => setNewVoterEditValue(e.target.value)}
-                              onKeyDown={e => e.key === 'Enter' && handleUpdateVoterName(voter)}
-                              className="flex-1 px-4 h-10 bg-white border-2 border-blue-400 rounded-xl font-black text-slate-800 outline-none shadow-inner text-sm"
-                            />
-                            <button onClick={() => handleUpdateVoterName(voter)} className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"><Check size={16} strokeWidth={3} /></button>
-                            <button onClick={() => setEditingVoterName(null)} className="p-2 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 transition-all"><X size={16} /></button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-3">
-                            <span className="font-black text-slate-800 text-[15px]">{voter}</span>
-                            {authorizedViewers.includes(voter) && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-600 text-[9px] font-black rounded-full uppercase tracking-tighter flex items-center gap-1 shadow-sm border border-emerald-200"><Eye size={10} /> Authorized</span>}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center gap-2 mt-4 md:mt-0 ml-auto">
-                        {!editingVoterName && (
+                        <div className="flex items-center gap-2 mt-4 md:mt-0 ml-auto">
+                          {!editingVoterName && (
+                            <button 
+                              onClick={() => { setEditingVoterName(voter); setNewVoterEditValue(voter); }} 
+                              title="নাম এডিট করুন"
+                              className="p-2.5 bg-white text-slate-400 hover:text-blue-600 border border-slate-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-all shadow-sm"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                          )}
                           <button 
-                            onClick={() => { setEditingVoterName(voter); setNewVoterEditValue(voter); }} 
-                            title="নাম এডিট করুন"
-                            className="p-2.5 bg-white text-slate-400 hover:text-blue-600 border border-slate-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-all shadow-sm"
+                            onClick={() => toggleViewerPermission(voter)} 
+                            title={isAuthorized ? "অনুমতি বাতিল করুন" : "ফলাফল দেখার আইডি জেনারেট করুন"} 
+                            className={`p-2.5 rounded-xl transition-all border shadow-sm ${isAuthorized ? 'bg-emerald-500 text-white border-emerald-400 shadow-emerald-200' : 'bg-white text-slate-400 hover:text-emerald-600 border-slate-200 hover:bg-emerald-50'}`}
                           >
-                            <Pencil size={14} />
+                            {isAuthorized ? <Eye size={14} /> : <EyeOff size={14} />}
                           </button>
-                        )}
-                        <button 
-                          onClick={() => toggleViewerPermission(voter)} 
-                          title={authorizedViewers.includes(voter) ? "অনুমতি বাতিল করুন" : "ফলাফল দেখার অনুমতি দিন"} 
-                          className={`p-2.5 rounded-xl transition-all border shadow-sm ${authorizedViewers.includes(voter) ? 'bg-emerald-500 text-white border-emerald-400 shadow-emerald-200' : 'bg-white text-slate-400 hover:text-emerald-600 border-slate-200 hover:bg-emerald-50'}`}
-                        >
-                          {authorizedViewers.includes(voter) ? <Eye size={14} /> : <EyeOff size={14} />}
-                        </button>
-                        <button 
-                          onClick={() => handleRemoveVoter(voter)} 
-                          title="মুছে ফেলুন"
-                          className="p-2.5 bg-white text-slate-400 hover:text-red-600 border border-slate-200 rounded-xl hover:bg-red-50 hover:border-red-200 transition-all shadow-sm"
-                        >
-                          <UserMinus size={14} />
-                        </button>
+                          <button 
+                            onClick={() => handleRemoveVoter(voter)} 
+                            title="মুছে ফেলুন"
+                            className="p-2.5 bg-white text-slate-400 hover:text-red-600 border border-slate-200 rounded-xl hover:bg-red-50 hover:border-red-200 transition-all shadow-sm"
+                          >
+                            <UserMinus size={14} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -961,7 +993,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     </div>
                     <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl">
                       <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><HelpCircle size={10} /> ইনফো</p>
-                      <p className="text-[11px] font-bold text-blue-700">ফলাফল লক থাকা অবস্থায় শুধুমাত্র এডমিন এবং আপনার অনুমোদিত পর্যবেক্ষকরা (Observers) আইডি ভেরিফিকেশনের মাধ্যমে ডাটা দেখতে পাবেন।</p>
+                      <p className="text-[11px] font-bold text-blue-700">ফলাফল লক থাকা অবস্থায় শুধুমাত্র এডমিন এবং আপনার অনুমোদিত পর্যবেক্ষকরা (Observers) বরাদ্দকৃত ইউনিক আইডি দিয়ে ফলাফল দেখতে পাবেন।</p>
                     </div>
                   </div>
                 </div>
