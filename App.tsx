@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, useRef } from 'react';
 import React from 'react';
 import Navbar from './components/Navbar';
@@ -8,6 +7,7 @@ import SettlementTable from './components/SettlementTable';
 import ReturnView from './components/ReturnView';
 import LandingPage from './components/LandingPage';
 import VotingSystem from './components/VotingSystem';
+import DocumentArchive from './components/DocumentArchive';
 import { SettlementEntry, GroupOption, CumulativeStats } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
@@ -137,22 +137,27 @@ const App: React.FC = () => {
 
         const { data, error } = await supabase.from('settlement_entries').select('*');
         if (!error && data) {
-          const metaRow = data.find((row: any) => row.id === 'system_metadata_prev_stats');
-          if (metaRow) {
-            setPrevStats(metaRow.content);
-            localStorage.setItem(PREV_STATS_KEY, JSON.stringify(metaRow.content));
-          }
+          const processedEntries: SettlementEntry[] = [];
+          
+          data.forEach((row: any) => {
+            if (!row || !row.id) return;
+            
+            // Safe content parsing
+            let content = row.content;
+            if (typeof content === 'string') {
+              try { content = JSON.parse(content); } catch (e) { return; }
+            }
+            if (!content) return;
 
-          // FIX: Filter out non-ledger entries (voting configs, individual votes, etc.)
-          const loadedEntries = data
-            .filter((row: any) => 
-              row.id !== 'system_metadata_prev_stats' && 
-              row.id !== 'voting_system_config' &&
-              !row.id.startsWith('vote_') &&
-              row.id.startsWith('id-') // Strict check for settlement entries
-            )
-            .map((row: any) => row.content);
-          setEntries(loadedEntries);
+            if (row.id === 'system_metadata_prev_stats') {
+              setPrevStats(content);
+              localStorage.setItem(PREV_STATS_KEY, JSON.stringify(content));
+            } else if (row.id.startsWith('id-')) {
+              processedEntries.push(content);
+            }
+          });
+          
+          setEntries(processedEntries);
         }
       } catch (e) { console.error('Data error:', e); } 
       finally { setIsLoading(false); }
@@ -243,8 +248,6 @@ const App: React.FC = () => {
     if (navigator.onLine) {
       await supabase.from('settlement_entries').delete().eq('id', id);
     } else {
-      // If offline, we just remove it from local state. 
-      // If it was in offline queue, we should remove it from there too.
       const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
       localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue.filter((e: any) => e.id !== id)));
     }
@@ -424,6 +427,8 @@ const App: React.FC = () => {
               
               {activeTab === 'return' && <ReturnView key={`return-reset-${resetKey}`} entries={approvedEntries} cycleLabel={cycleLabelBengali} prevStats={prevStats} setPrevStats={setPrevStats} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} />}
               
+              {activeTab === 'archive' && <DocumentArchive isAdmin={isAdmin} />}
+
               {activeTab === 'voting' && <VotingSystem isAdmin={isAdmin} />}
             </div>
           </div>
