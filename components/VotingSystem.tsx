@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { EMPLOYEES, VOTE_POSITIONS } from '../constants';
@@ -265,7 +264,6 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       }
     } catch (err: any) {
       console.error("Critical Error:", err);
-      // Fix: Removed duplicate 'type' property from object literal
       setMessage({ type: 'error', text: 'কারিগরি ত্রুটি।' });
     } finally {
       setIsSubmitting(false);
@@ -308,16 +306,29 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-      <div className="flex flex-col md:flex-row items-center justify-between bg-white/80 backdrop-blur-xl p-6 rounded-[2.5rem] border border-slate-200 shadow-xl gap-6">
-        <div className="flex items-center gap-4">
+      {/* Sticky Header implemented with Vertical & Sharp Tab navigation as requested */}
+      <div className="sticky top-0 z-[100] flex flex-row items-stretch justify-between bg-white/95 backdrop-blur-xl rounded-b-[2rem] md:rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden transition-all duration-500 min-h-[110px]">
+        <div className="flex items-center gap-4 pl-6 md:pl-10">
           <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-blue-600/30"><Ticket size={28} /></div>
           <div><h2 className="text-2xl font-black text-slate-900 leading-tight">ডিজিটাল ব্যালট বক্স</h2><p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Election & Poll System</p></div>
         </div>
-        <div className="flex flex-wrap bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner">
-          <button onClick={() => {setActiveSubTab('vote'); setMessage(null);}} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition-all ${activeSubTab === 'vote' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500'}`}><Fingerprint size={16} /> ব্যালট</button>
-          <button onClick={() => {setActiveSubTab('poll'); setMessage(null);}} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition-all ${activeSubTab === 'poll' ? 'bg-white text-emerald-600 shadow-md' : 'text-slate-500'}`}><MessageSquare size={16} /> পাবলিক পোল</button>
-          <button onClick={() => {setActiveSubTab('results'); setMessage(null);}} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition-all ${activeSubTab === 'results' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-500'}`}><BarChart3 size={16} /> ইলেকশন ফলাফল</button>
-          {isAdmin && (<button onClick={() => {setActiveSubTab('admin'); setMessage(null);}} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition-all ${activeSubTab === 'admin' ? 'bg-white text-purple-600 shadow-md' : 'text-slate-500'}`}><Settings2 size={16} /> এডমিন</button>)}
+        
+        {/* Navigation redesigned to be Vertical and Square (rounded-none) integrated on the right */}
+        <div className="flex flex-col border-l border-slate-100 rounded-none bg-white min-w-[160px] md:min-w-[200px]">
+          <button onClick={() => {setActiveSubTab('vote'); setMessage(null);}} className={`flex items-center gap-3 px-6 py-3 rounded-none font-black text-[11px] transition-all border-b border-slate-50 ${activeSubTab === 'vote' ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}>
+            <Fingerprint size={16} /> ব্যালট
+          </button>
+          <button onClick={() => {setActiveSubTab('poll'); setMessage(null);}} className={`flex items-center gap-3 px-6 py-3 rounded-none font-black text-[11px] transition-all border-b border-slate-50 ${activeSubTab === 'poll' ? 'bg-emerald-50 text-emerald-600' : 'text-slate-500 hover:bg-slate-50'}`}>
+            <MessageSquare size={16} /> পাবলিক পোল
+          </button>
+          <button onClick={() => {setActiveSubTab('results'); setMessage(null);}} className={`flex items-center gap-3 px-6 py-3 rounded-none font-black text-[11px] transition-all border-b border-slate-50 ${activeSubTab === 'results' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`}>
+            <BarChart3 size={16} /> ইলেকশন ফলাফল
+          </button>
+          {isAdmin && (
+            <button onClick={() => {setActiveSubTab('admin'); setMessage(null);}} className={`flex items-center gap-3 px-6 py-3 rounded-none font-black text-[11px] transition-all ${activeSubTab === 'admin' ? 'bg-purple-50 text-purple-600' : 'text-slate-500 hover:bg-slate-50'}`}>
+              <Settings2 size={16} /> এডমিন
+            </button>
+          )}
         </div>
       </div>
 
