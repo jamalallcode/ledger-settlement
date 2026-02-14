@@ -41,7 +41,17 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
         .like('id', 'doc_%');
       
       if (!error && data) {
-        setDocuments(data.map((row: any) => ({ ...row.content, id: row.id })));
+        // Defensive mapping to prevent crashes if content is null or properties are missing
+        setDocuments(data.map((row: any) => ({
+          title: '',
+          description: '',
+          category: 'অন্যান্য',
+          docDate: '',
+          archiveId: '',
+          createdAt: new Date().toISOString(),
+          ...(row.content || {}),
+          id: row.id 
+        })));
       }
     } catch (err) {
       console.error("Fetch Docs error:", err);
@@ -89,11 +99,19 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
   const filteredDocs = useMemo(() => {
     return documents.filter(doc => {
-      const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          doc.description.toLowerCase().includes(searchTerm.toLowerCase());
+      // Defensive string checks to prevent toLowerCase() crash on null/undefined
+      const title = (doc.title || '').toLowerCase();
+      const description = (doc.description || '').toLowerCase();
+      const search = (searchTerm || '').toLowerCase();
+      
+      const matchesSearch = title.includes(search) || description.includes(search);
       const matchesCat = activeCategory === 'সকল' || doc.category === activeCategory;
       return matchesSearch && matchesCat;
-    }).sort((a, b) => new Date(b.docDate).getTime() - new Date(a.docDate).getTime());
+    }).sort((a, b) => {
+      const dateA = new Date(a.docDate || 0).getTime();
+      const dateB = new Date(b.docDate || 0).getTime();
+      return dateB - dateA;
+    });
   }, [documents, searchTerm, activeCategory]);
 
   return (
