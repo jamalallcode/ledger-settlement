@@ -73,14 +73,35 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     }
   };
 
+  /**
+   * Helper function to extract only the identifier from a potential URL
+   */
+  const extractCleanId = (rawId: string) => {
+    let clean = rawId.trim();
+    if (clean.includes('archive.org/')) {
+      const parts = clean.split('/');
+      // Look for the segment after 'details' or 'embed'
+      const detailIdx = parts.indexOf('details');
+      const embedIdx = parts.indexOf('embed');
+      const targetIdx = detailIdx !== -1 ? detailIdx : embedIdx;
+      
+      if (targetIdx !== -1 && parts[targetIdx + 1]) {
+        clean = parts[targetIdx + 1].split('?')[0].split('#')[0];
+      }
+    }
+    return clean;
+  };
+
   const handleAddDocument = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDoc.title || !newDoc.archiveId) return alert("শিরোনাম এবং আর্কাইভ আইডি আবশ্যক!");
 
+    const cleanId = extractCleanId(newDoc.archiveId);
     const docId = `doc_${Date.now()}`;
     const docData: ArchiveDoc = {
       id: docId,
       ...newDoc,
+      archiveId: cleanId, // Save the cleaned ID to prevent display issues
       createdAt: new Date().toISOString()
     };
 
@@ -213,7 +234,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     <div className="p-4 flex-1 space-y-4">
                        <div className="aspect-[4/5] bg-slate-100 rounded-[2rem] overflow-hidden relative border border-slate-100 group-hover:border-blue-200 transition-colors">
                           <img 
-                            src={`https://archive.org/services/img/${doc.archiveId}`} 
+                            src={`https://archive.org/services/img/${extractCleanId(doc.archiveId)}`} 
                             alt={doc.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                             onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
@@ -223,7 +244,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                           </div>
                           <div className="absolute inset-0 bg-blue-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                              <button onClick={() => setSelectedDoc(doc)} className="p-4 bg-white text-blue-600 rounded-2xl shadow-2xl hover:scale-110 active:scale-95 transition-all"><Eye size={24} /></button>
-                             <a href={`https://archive.org/details/${doc.archiveId}`} target="_blank" className="p-4 bg-blue-600 text-white rounded-2xl shadow-2xl hover:scale-110 active:scale-95 transition-all"><Download size={24} /></a>
+                             <a href={`https://archive.org/details/${extractCleanId(doc.archiveId)}`} target="_blank" className="p-4 bg-blue-600 text-white rounded-2xl shadow-2xl hover:scale-110 active:scale-95 transition-all"><Download size={24} /></a>
                           </div>
                        </div>
                        <div className="space-y-2 px-2">
@@ -246,7 +267,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     <div className="flex items-center gap-6 flex-1 min-w-0">
                        <div className="w-14 h-14 bg-slate-100 rounded-xl overflow-hidden shrink-0 border border-slate-200">
                           <img 
-                             src={`https://archive.org/services/img/${doc.archiveId}`} 
+                             src={`https://archive.org/services/img/${extractCleanId(doc.archiveId)}`} 
                              className="w-full h-full object-cover"
                              onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
                           />
@@ -262,7 +283,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     </div>
                     <div className="flex items-center gap-3 ml-4">
                        <button onClick={() => setSelectedDoc(doc)} className="p-3 bg-slate-50 text-slate-600 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all border border-slate-100"><Eye size={18} /></button>
-                       <a href={`https://archive.org/details/${doc.archiveId}`} target="_blank" className="p-3 bg-slate-50 text-slate-600 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 transition-all border border-slate-100"><Download size={18} /></a>
+                       <a href={`https://archive.org/details/${extractCleanId(doc.archiveId)}`} target="_blank" className="p-3 bg-slate-50 text-slate-600 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 transition-all border border-slate-100"><Download size={18} /></a>
                        {isAdmin && (
                          <button onClick={() => handleDelete(doc.id)} className="p-3 bg-slate-50 text-slate-300 hover:text-red-500 transition-all border border-slate-100"><Trash2 size={18} /></button>
                        )}
@@ -297,7 +318,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
                  <div className="flex-[3] bg-slate-50 relative min-h-[400px]">
                     <iframe 
-                       src={`https://archive.org/embed/${selectedDoc.archiveId}`} 
+                       src={`https://archive.org/embed/${extractCleanId(selectedDoc.archiveId)}`} 
                        className="w-full h-full border-none"
                        allowFullScreen
                     ></iframe>
@@ -320,7 +341,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     
                     <div className="pt-6 space-y-3">
                        <a 
-                         href={`https://archive.org/details/${selectedDoc.archiveId}`} 
+                         href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
                          target="_blank"
                          className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-3 shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all"
                        >
@@ -389,11 +410,11 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
                  <div className="space-y-3 bg-blue-50 p-6 rounded-[2rem] border border-blue-100">
                     <div className="flex items-center gap-2 text-blue-700 font-black text-xs uppercase tracking-widest"><AlertCircle size={14} /> গুরুত্বপূর্ণ নির্দেশিকা</div>
-                    <p className="text-[11px] font-bold text-blue-600 leading-relaxed">ডকুমেন্টটি প্রথমে Archive.org এ আপলোড করুন। আপলোড সম্পন্ন হলে URL-এর শেষের অংশটি (যেমন: Details-এর পর যা থাকে) নিচে দিন। <br/>উদাহরণ: archive.org/details/<span className="bg-blue-200 px-1 rounded text-blue-900 font-black">circular-2024-audit</span></p>
+                    <p className="text-[11px] font-bold text-blue-600 leading-relaxed">ডকুমেন্টটি প্রথমে Archive.org এ আপলোড করুন। আপলোড সম্পন্ন হলে URL বা Archive ID নিচে দিন। <br/>সঠিক ফরম্যাট: <span className="bg-blue-200 px-1 rounded text-blue-900 font-black tracking-tight">https://archive.org/details/20260214_20260214_2027</span></p>
                     <input 
                       type="text" 
                       required
-                      placeholder="Archive ID লিখুন" 
+                      placeholder="এখানে লিঙ্ক বা আইডি পেস্ট করুন" 
                       className="w-full px-5 h-[50px] bg-white border border-blue-200 rounded-xl font-black text-blue-900 placeholder:text-blue-300 outline-none focus:border-blue-500 transition-all text-sm tracking-widest"
                       value={newDoc.archiveId}
                       onChange={e => setNewDoc({...newDoc, archiveId: e.target.value})}
