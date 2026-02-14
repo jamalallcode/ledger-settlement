@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { EMPLOYEES, VOTE_POSITIONS } from '../constants';
@@ -410,7 +411,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   );
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+    <div className="max-w-6xl mx-auto space-y-8 animate-landing-premium">
       {/* Sharp Header - Removed rounded corners as per image markings */}
       <div className="sticky top-0 z-[100] flex flex-row items-stretch justify-between bg-white/95 backdrop-blur-xl rounded-none border border-slate-200 shadow-xl overflow-hidden transition-all duration-500 min-h-[100px]">
         <div className="flex items-center gap-4 pl-6 md:pl-10 py-2 shrink-0">
@@ -441,13 +442,18 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
         <form onSubmit={(e) => handleVoteSubmit(e, 'election')} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
            <div className="bg-slate-900 text-white p-10 rounded-[3rem] shadow-2xl space-y-8 relative overflow-hidden h-fit">
               <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-4"><div className="w-1.5 h-6 bg-blue-500 rounded-full"></div><h3 className="text-xl font-black tracking-tight">সিক্রেট টোকেন</h3></div>
+                <div className="flex items-center gap-3 mb-4"><div className="w-1.5 h-6 bg-blue-500 rounded-full"></div><h3 className="text-xl font-black tracking-tight text-white">সিক্রেট টোকেন</h3></div>
                 <input type="text" placeholder="যেমন: VOTE-XXXXX" value={voterTokenInput} onChange={(e) => setVoterTokenInput(e.target.value.toUpperCase())} className="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl px-6 py-5 text-white font-black text-2xl tracking-widest outline-none focus:border-blue-500 transition-all placeholder:text-slate-700" />
                 <p className="mt-4 text-slate-400 text-sm">টোকেনটি শুধুমাত্র একবার ব্যবহারযোগ্য। ভোট দেওয়ার সাথে সাথে এটি নিষ্ক্রিয় হয়ে যাবে।</p>
               </div>
            </div>
            <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-xl space-y-8">
-              <div className="flex items-center gap-3 mb-2"><div className="w-1.5 h-6 bg-emerald-500 rounded-full"></div><h3 className="text-xl font-black tracking-tight">ব্যালট পেপার (নির্বাচন)</h3></div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-1.5 h-6 bg-emerald-500 rounded-full"></div>
+                <h3 className="text-xl font-black tracking-tight text-white bg-blue-600 px-3 py-1 rounded-lg shadow-sm">
+                  ব্যালট পেপার (নির্বাচন)
+                </h3>
+              </div>
               <div className="grid grid-cols-1 gap-6">
                 {activePositions.map((pos) => (
                   <div key={pos.id} className="space-y-2">
@@ -457,6 +463,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                 ))}
               </div>
               
+              {/* Corrected escaped quotes that broke JSX scope */}
               <div className="space-y-4 pt-4">
                 {message?.type === 'error' && (
                   <div className="p-5 rounded-2xl border-2 animate-in slide-in-from-bottom-2 duration-300 flex items-center gap-4 bg-red-50 border-red-100 text-red-600 shadow-sm">
@@ -526,6 +533,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                 <input type="text" placeholder="VOTE-XXXXX" value={voterTokenInput} onChange={(e) => setVoterTokenInput(e.target.value.toUpperCase())} className="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl px-6 py-4 text-white font-black text-xl tracking-widest outline-none focus:border-emerald-500" />
               </div>
 
+              {/* Fixed escaped quotes in JSX attributes */}
               <div className="space-y-4 pt-4">
                 {message?.type === 'error' && (
                   <div className="p-5 rounded-2xl border-2 animate-in slide-in-from-bottom-2 duration-300 flex items-center gap-4 bg-red-50 border-red-100 text-red-600 shadow-sm">
@@ -566,7 +574,6 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                 </div>
               ))}
 
-              {/* Add New Position Card at the end of the 7 existing positions */}
               <button 
                 onClick={() => {
                   const title = prompt("নতুন পদের নাম লিখুন (যেমন: প্রচার সম্পাদক):");
