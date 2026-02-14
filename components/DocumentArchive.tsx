@@ -4,7 +4,7 @@ import { ArchiveDoc } from '../types';
 import { 
   Library, Search, Filter, Plus, FileText, Calendar, 
   ExternalLink, Trash2, LayoutGrid, List, X, 
-  ChevronRight, BookOpen, Clock, Download, Eye, Loader2, Sparkles, AlertCircle
+  ChevronRight, BookOpen, Clock, Download, Eye, Loader2, Sparkles, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 
@@ -71,6 +71,26 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  /**
+   * Smart ID Extractor: Handles both raw IDs and full Archive.org URLs
+   */
+  const handleArchiveIdInput = (val: string) => {
+    let cleanId = val.trim();
+    // If a full URL is pasted, extract the identifier
+    if (cleanId.includes('archive.org/details/')) {
+      const parts = cleanId.split('archive.org/details/');
+      if (parts[1]) {
+        cleanId = parts[1].split('?')[0].split('/')[0];
+      }
+    } else if (cleanId.includes('archive.org/embed/')) {
+      const parts = cleanId.split('archive.org/embed/');
+      if (parts[1]) {
+        cleanId = parts[1].split('?')[0].split('/')[0];
+      }
+    }
+    setNewDoc({ ...newDoc, archiveId: cleanId });
   };
 
   const handleAddDocument = async (e: React.FormEvent) => {
@@ -157,11 +177,16 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               </div>
               <p className="text-slate-400 font-bold max-w-xl">সরকারি অর্ডার, সার্কুলার এবং গুরুত্বপূর্ণ সকল ডকুমেন্ট এখন এক জায়গার। Archive.org ইন্টিগ্রেশনের মাধ্যমে আপনার ফাইলগুলো থাকছে নিরাপদ এবং চিরস্থায়ী।</p>
            </div>
-           {isAdmin && (
-             <button onClick={() => setShowAddModal(true)} className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black flex items-center gap-3 shadow-xl shadow-blue-900/40 active:scale-95 transition-all">
-                <Plus size={20} /> নতুন ডকুমেন্ট যুক্ত করুন
+           <div className="flex items-center gap-4">
+             <button onClick={fetchDocuments} className="p-4 bg-slate-800 text-slate-300 rounded-2xl hover:text-white hover:bg-slate-700 transition-all border border-slate-700 shadow-xl active:scale-95" title="রিফ্রেশ করুন">
+                <RefreshCw size={20} className={isLoading ? "animate-spin" : ""} />
              </button>
-           )}
+             {isAdmin && (
+               <button onClick={() => setShowAddModal(true)} className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black flex items-center gap-3 shadow-xl shadow-blue-900/40 active:scale-95 transition-all">
+                  <Plus size={20} /> নতুন ডকুমেন্ট যুক্ত করুন
+               </button>
+             )}
+           </div>
         </div>
       </div>
 
@@ -295,11 +320,15 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               </button>
               
               <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-                 <div className="flex-[3] bg-slate-50 relative min-h-[400px]">
+                 <div className="flex-[3] bg-slate-900 relative min-h-[400px]">
+                    <div className="absolute inset-0 bg-slate-900 flex items-center justify-center -z-10">
+                       <Loader2 size={40} className="text-blue-500 animate-spin opacity-20" />
+                    </div>
                     <iframe 
-                       src={`https://archive.org/embed/${selectedDoc.archiveId}`} 
-                       className="w-full h-full border-none"
+                       src={`https://archive.org/embed/${selectedDoc.archiveId}?ui=embed`} 
+                       className="absolute inset-0 w-full h-full border-none rounded-l-[3rem] md:rounded-l-none"
                        allowFullScreen
+                       title={selectedDoc.title}
                     ></iframe>
                  </div>
                  <div className="flex-1 p-10 space-y-8 overflow-y-auto bg-white border-l border-slate-100 no-scrollbar">
@@ -389,14 +418,14 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
                  <div className="space-y-3 bg-blue-50 p-6 rounded-[2rem] border border-blue-100">
                     <div className="flex items-center gap-2 text-blue-700 font-black text-xs uppercase tracking-widest"><AlertCircle size={14} /> গুরুত্বপূর্ণ নির্দেশিকা</div>
-                    <p className="text-[11px] font-bold text-blue-600 leading-relaxed">ডকুমেন্টটি প্রথমে Archive.org এ আপলোড করুন। আপলোড সম্পন্ন হলে URL-এর শেষের অংশটি (যেমন: Details-এর পর যা থাকে) নিচে দিন। <br/>উদাহরণ: archive.org/details/<span className="bg-blue-200 px-1 rounded text-blue-900 font-black">circular-2024-audit</span></p>
+                    <p className="text-[11px] font-bold text-blue-600 leading-relaxed">ডকুমেন্টটি প্রথমে Archive.org এ আপলোড করুন। আপলোড সম্পন্ন হলে <span className="bg-blue-200 px-1 rounded text-blue-900 font-black">পুরো URL</span> বা <span className="bg-blue-200 px-1 rounded text-blue-900 font-black">Archive ID</span> নিচে দিন।</p>
                     <input 
                       type="text" 
                       required
-                      placeholder="Archive ID লিখুন" 
+                      placeholder="এখানে লিঙ্ক বা আইডি পেস্ট করুন" 
                       className="w-full px-5 h-[50px] bg-white border border-blue-200 rounded-xl font-black text-blue-900 placeholder:text-blue-300 outline-none focus:border-blue-500 transition-all text-sm tracking-widest"
                       value={newDoc.archiveId}
-                      onChange={e => setNewDoc({...newDoc, archiveId: e.target.value})}
+                      onChange={e => handleArchiveIdInput(e.target.value)}
                     />
                  </div>
 
