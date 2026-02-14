@@ -120,9 +120,12 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const fetchVotes = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.from('votes').select('*');
+      const { data, error } = await supabase
+        .from('settlement_entries')
+        .select('*')
+        .like('id', 'vote_%');
       if (error) throw error;
-      setAllVotes(data || []);
+      setAllVotes((data || []).map((row: any) => ({ ...row.content, id: row.id })));
     } catch (err: any) {
       console.error("Fetch Votes Error:", err);
     } finally {
@@ -242,7 +245,8 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     if (!window.confirm("সাবধান! এটি শুধুমাত্র সকল 'ভোটের ফলাফল' মুছে ফেলবে। ভোটার টোকেনগুলো আগের মতোই থাকবে।")) return;
     try {
       setIsLoading(true);
-      const { error } = await supabase.from('votes').delete().not('id', 'is', null);
+      // Delete all entries in settlement_entries starting with vote_
+      const { error } = await supabase.from('settlement_entries').delete().like('id', 'vote_%');
       if (error) throw error;
       setAllVotes([]);
       setMessage({ type: 'success', text: 'ভোটের ফলাফল সফলভাবে মুছে ফেলা হয়েছে।' });
@@ -257,7 +261,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     if (!window.confirm("সাবধান! এটি সকল টোকেন এবং ভোট স্থায়ীভাবে মুছে ফেলবে।")) return;
     try {
       setIsLoading(true);
-      await supabase.from('votes').delete().not('id', 'is', null);
+      await supabase.from('settlement_entries').delete().like('id', 'vote_%');
       await supabase.from('voter_tokens').delete().not('id', 'is', null);
       setAllVotes([]);
       setAllTokens([]);
@@ -308,6 +312,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     setMessage(null);
 
     try {
+      // Find token locally or in DB
       const { data: tokenData, error: tokenError } = await supabase
         .from('voter_tokens')
         .select('*')
@@ -323,7 +328,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
       const voterHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-      let voteData: any = { voter_hash: voterHash };
+      let voteData: any = { voter_hash: voterHash, type: type, created_at: new Date().toISOString() };
       
       if (type === 'election') {
         activePositions.forEach(pos => {
@@ -333,16 +338,34 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
         voteData.p1 = pollSelection;
       }
 
-      const { error: voteError } = await supabase.from('votes').insert([voteData]);
+      const entryId = `vote_${voterHash}`;
 
-      if (voteError) {
-        console.error("Supabase Insert Error:", voteError);
-        setMessage({ type: 'error', text: voteError.code === '23505' ? 'ইতিমধ্যে ভোট দিয়েছেন!' : 'ব্যর্থ হয়েছে।' });
-      } else {
-        await supabase.from('voter_tokens').update({ is_used: true }).eq('token', token);
-        setMessage({ type: 'success', text: 'আপনার ভোট সফলভাবে সম্পন্ন হয়েছে।' });
+      // Handle Offline/Flexible Storage
+      if (!navigator.onLine) {
+        const queue = JSON.parse(localStorage.getItem('ledger_offline_sync_queue_v1') || '[]');
+        const offlineVoteEntry = { id: entryId, content: voteData };
+        localStorage.setItem('ledger_offline_sync_queue_v1', JSON.stringify([...queue, offlineVoteEntry]));
+        
+        // Update local UI states for instant feedback
+        setAllTokens(prev => prev.map(t => t.token === token ? { ...t, is_used: true } : t));
+        setAllVotes(prev => [...prev, voteData]);
+        
+        setMessage({ type: 'success', text: 'অফলাইন ভোট গ্রহণ করা হয়েছে। ইন্টারনেট সংযোগ পেলে তা স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।' });
         setSelections({}); setPollSelection(''); setVoterTokenInput('');
-        fetchTokens();
+      } else {
+        // Use settlement_entries for dynamic and safe schema
+        const { error: voteError } = await supabase.from('settlement_entries').upsert({ id: entryId, content: voteData });
+
+        if (voteError) {
+          console.error("Supabase Insert Error:", voteError);
+          setMessage({ type: 'error', text: 'ভোট গ্রহণ ব্যর্থ হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।' });
+        } else {
+          await supabase.from('voter_tokens').update({ is_used: true }).eq('token', token);
+          setAllVotes(prev => [...prev, voteData]);
+          setMessage({ type: 'success', text: 'আপনার ভোট সফলভাবে সম্পন্ন হয়েছে।' });
+          setSelections({}); setPollSelection(''); setVoterTokenInput('');
+          fetchTokens();
+        }
       }
     } catch (err: any) {
       console.error("Critical Error:", err);
