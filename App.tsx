@@ -18,6 +18,7 @@ const STORAGE_KEY = 'ledger_settlement_v10_stable';
 const PREV_STATS_KEY = 'ledger_prev_stats_v1';
 const LOCK_MODE_KEY = 'ledger_lock_mode_status';
 const ADMIN_MODE_KEY = 'ledger_admin_access_v1';
+const OFFLINE_QUEUE_KEY = 'ledger_offline_sync_queue_v1';
 
 const generateId = () => {
   return 'id-' + Math.random().toString(36).substring(2, 11) + '-' + Date.now().toString(36);
@@ -35,6 +36,7 @@ const App: React.FC = () => {
   const [showRegisterFilters, setShowRegisterFilters] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showPendingOnly, setShowPendingOnly] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   
   const [prevStats, setPrevStats] = useState<CumulativeStats>({
     inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0,
@@ -49,6 +51,53 @@ const App: React.FC = () => {
     else { setActiveTab(tab); setResetKey(0); }
     setShowPendingOnly(false);
   };
+
+  // --- AUTO SYNC LOGIC ---
+  const syncOfflineData = async () => {
+    const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+    if (queue.length === 0) return;
+
+    console.log(`Syncing ${queue.length} offline entries...`);
+    const successfulSyncs: string[] = [];
+
+    for (const entry of queue) {
+      try {
+        const { error } = await supabase.from('settlement_entries').upsert({ id: entry.id, content: entry });
+        if (!error) {
+          successfulSyncs.push(entry.id);
+        }
+      } catch (err) {
+        console.error("Sync failed for entry:", entry.id, err);
+      }
+    }
+
+    const remainingQueue = queue.filter((entry: any) => !successfulSyncs.includes(entry.id));
+    if (remainingQueue.length === 0) {
+      localStorage.removeItem(OFFLINE_QUEUE_KEY);
+      console.log("All offline data synced successfully.");
+    } else {
+      localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(remainingQueue));
+    }
+  };
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      syncOfflineData();
+    };
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    // Initial check on load
+    if (navigator.onLine) syncOfflineData();
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // STRICT AUTO-ADMIN DETECTION
   useEffect(() => {
@@ -108,10 +157,12 @@ const App: React.FC = () => {
   useEffect(() => {
     const syncPrevStats = async () => {
       if (Object.keys(prevStats.entitiesSFI).length > 0) {
-        await supabase.from('settlement_entries').upsert({ 
-          id: 'system_metadata_prev_stats', 
-          content: prevStats 
-        });
+        if (navigator.onLine) {
+          await supabase.from('settlement_entries').upsert({ 
+            id: 'system_metadata_prev_stats', 
+            content: prevStats 
+          });
+        }
         localStorage.setItem(PREV_STATS_KEY, JSON.stringify(prevStats));
       }
     };
@@ -122,7 +173,6 @@ const App: React.FC = () => {
   const cycleLabelBengali = useMemo(() => toBengaliDigits(cycleInfo.label), [cycleInfo.label]);
 
   const handleAddOrUpdateEntry = async (data: any) => {
-    // Security check: Only admin can edit existing entries
     if (editingEntry && !isAdmin) {
       alert("দুঃখিত, শুধুমাত্র এডমিন তথ্য এডিট করতে পারেন।");
       return;
@@ -132,23 +182,31 @@ const App: React.FC = () => {
       ? (editingEntry.approvalStatus || 'approved') 
       : (isAdmin ? 'approved' : 'pending');
 
+    let entryToSync: SettlementEntry;
+
     if (editingEntry) {
-      const entryToSync = { ...editingEntry, ...data, approvalStatus: status };
+      entryToSync = { ...editingEntry, ...data, approvalStatus: status };
       setEntries(prev => prev.map(e => e.id === editingEntry.id ? entryToSync : e));
       setEditingEntry(null);
-      await supabase.from('settlement_entries').upsert({ id: entryToSync.id, content: entryToSync });
     } else {
       const newId = generateId();
-      const newEntry: SettlementEntry = { 
+      entryToSync = { 
         ...data, 
         id: newId, 
         sl: entries.length + 1, 
         createdAt: new Date().toISOString(),
         approvalStatus: status
       };
-      
-      setEntries(prev => [...prev, newEntry]);
-      await supabase.from('settlement_entries').upsert({ id: newId, content: newEntry });
+      setEntries(prev => [...prev, entryToSync]);
+    }
+    
+    // OFFLINE HANDLING
+    if (!navigator.onLine) {
+      const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+      localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify([...queue, entryToSync]));
+      alert("ইন্টারনেট সংযোগ নেই। তথ্যটি আপনার ডিভাইসে (Offline Queue) জমা রাখা হয়েছে এবং ইন্টারনেট সংযোগ পাওয়ার সাথে সাথে এটি স্বয়ংক্রিয়ভাবে মূল ডাটাবেজে সংরক্ষিত হবে।");
+    } else {
+      await supabase.from('settlement_entries').upsert({ id: entryToSync.id, content: entryToSync });
     }
     
     if (!isAdmin) setActiveTab('landing');
@@ -161,24 +219,37 @@ const App: React.FC = () => {
     
     const updatedEntry = { ...entry, approvalStatus: 'approved' as const };
     setEntries(prev => prev.map(e => e.id === id ? updatedEntry : e));
-    await supabase.from('settlement_entries').upsert({ id: updatedEntry.id, content: updatedEntry });
+
+    if (navigator.onLine) {
+      await supabase.from('settlement_entries').upsert({ id: updatedEntry.id, content: updatedEntry });
+    } else {
+      const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+      localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify([...queue, updatedEntry]));
+    }
   };
 
   const handleRejectEntry = async (id: string) => {
     if (!isAdmin) return;
     if (!window.confirm("আপনি কি নিশ্চিতভাবে এই এন্ট্রিটি প্রত্যাখ্যান করতে চান? এটি মুছে ফেলা হবে।")) return;
+    
     setEntries(prev => prev.filter(e => e.id !== id));
-    await supabase.from('settlement_entries').delete().eq('id', id);
+    
+    if (navigator.onLine) {
+      await supabase.from('settlement_entries').delete().eq('id', id);
+    } else {
+      // If offline, we just remove it from local state. 
+      // If it was in offline queue, we should remove it from there too.
+      const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+      localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue.filter((e: any) => e.id !== id)));
+    }
   };
 
   const handleDelete = async (id: string, paraId?: string) => {
-    // STRICT SECURITY CHECK: Only designated admin email can delete
     if (!isAdmin) {
       alert("দুঃখিত, শুধুমাত্র এডমিন তথ্য মুছে ফেলতে পারেন।");
       return;
     }
 
-    // Persistent Delete Logic - Refactored to handle database first/concurrently
     if (paraId) {
       const entry = entries.find(e => e.id === id);
       if (!entry) return;
@@ -189,21 +260,31 @@ const App: React.FC = () => {
                             (entry.manualRaisedAmount !== null && entry.manualRaisedAmount !== 0);
       
       if (remainingParas.length === 0 && !hasRaisedData) {
-        // Local State Update
         setEntries(prev => prev.filter(e => e.id !== id));
-        // Database Persistent Delete
-        await supabase.from('settlement_entries').delete().eq('id', id);
+        if (navigator.onLine) {
+          await supabase.from('settlement_entries').delete().eq('id', id);
+        } else {
+          const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+          localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue.filter((e: any) => e.id !== id)));
+        }
       } else {
         const updatedEntry = { ...entry, paragraphs: remainingParas };
-        // Local State Update
         setEntries(prev => prev.map(e => e.id === id ? updatedEntry : e));
-        // Database Persistent Upsert
-        await supabase.from('settlement_entries').upsert({ id: id, content: updatedEntry });
+        if (navigator.onLine) {
+          await supabase.from('settlement_entries').upsert({ id: id, content: updatedEntry });
+        } else {
+          const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+          localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify([...queue, updatedEntry]));
+        }
       }
     } else {
-      // Entire Entry Direct Delete
       setEntries(prev => prev.filter(e => e.id !== id));
-      await supabase.from('settlement_entries').delete().eq('id', id);
+      if (navigator.onLine) {
+        await supabase.from('settlement_entries').delete().eq('id', id);
+      } else {
+        const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+        localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue.filter((e: any) => e.id !== id)));
+      }
     }
   };
 
