@@ -41,18 +41,29 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
         .like('id', 'doc_%');
       
       if (!error && data) {
-        const mappedDocs = data.map((row: any) => {
-          const content = row.content || {};
-          return {
+        const mappedDocs: ArchiveDoc[] = [];
+        
+        data.forEach((row: any) => {
+          if (!row || !row.id) return;
+
+          // Production Fix: Safe content extraction if it's a string
+          let content = row.content;
+          if (typeof content === 'string') {
+            try { content = JSON.parse(content); } catch (e) { return; }
+          }
+          if (!content) return;
+
+          mappedDocs.push({
+            id: row.id,
             title: String(content.title || ''),
-            description: String(content.description || ''),
             category: (content.category as any) || 'অন্যান্য',
-            docDate: String(content.docDate || ''),
             archiveId: String(content.archiveId || ''),
-            createdAt: String(content.createdAt || new Date().toISOString()),
-            id: row.id 
-          };
+            docDate: String(content.docDate || ''),
+            description: String(content.description || ''),
+            createdAt: String(content.createdAt || new Date().toISOString())
+          });
         });
+
         setDocuments(mappedDocs);
       }
     } catch (err) {
@@ -100,11 +111,14 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   };
 
   const filteredDocs = useMemo(() => {
+    if (!documents) return [];
+    
     return documents
       .filter(doc => {
-        const title = (doc.title || '').toLowerCase();
-        const description = (doc.description || '').toLowerCase();
-        const search = (searchTerm || '').toLowerCase();
+        // Extra defensive string checks
+        const title = String(doc.title || '').toLowerCase();
+        const description = String(doc.description || '').toLowerCase();
+        const search = String(searchTerm || '').toLowerCase();
         
         const matchesSearch = title.includes(search) || description.includes(search);
         const matchesCat = activeCategory === 'সকল' || doc.category === activeCategory;
