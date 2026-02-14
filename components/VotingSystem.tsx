@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { EMPLOYEES, VOTE_POSITIONS } from '../constants';
@@ -389,7 +388,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       setIsViewerVerified(true);
       setMessage({ type: 'success', text: `স্বাগতম ${name}, আপনাকে ফলাফল দেখার অনুমতি দেওয়া হয়েছে।` });
     } else {
-      alert("দুঃখিত, আপনাকে এই ফলাফল দেখার অনুমতি দেওয়া হয়নি।");
+      alert("দুঃখিত, আপনাকে এই ফলাফল দেখার অনুমতি হয়নি।");
     }
   };
 
@@ -447,14 +446,16 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                 <p className="mt-4 text-slate-400 text-sm">টোকেনটি শুধুমাত্র একবার ব্যবহারযোগ্য। ভোট দেওয়ার সাথে সাথে এটি নিষ্ক্রিয় হয়ে যাবে।</p>
               </div>
            </div>
-           <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-xl space-y-8">
-              <div className="flex items-center gap-3 mb-2">
+           
+           {/* Card 2: Ballot Paper - Anchor button to bottom with flex-col and min-height to prevent jumping */}
+           <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-xl flex flex-col min-h-[620px]">
+              <div className="flex items-center gap-3 mb-8">
                 <div className="w-1.5 h-6 bg-emerald-500 rounded-full"></div>
                 <h3 className="text-xl font-black tracking-tight text-white bg-blue-600 px-3 py-1 rounded-lg shadow-sm">
                   ব্যালট পেপার (নির্বাচন)
                 </h3>
               </div>
-              <div className="grid grid-cols-1 gap-6">
+              <div className="grid grid-cols-1 gap-6 mb-8">
                 {activePositions.map((pos) => (
                   <div key={pos.id} className="space-y-2">
                     <label className="flex items-center gap-2 text-[13px] font-black text-slate-700 ml-1"><UserCheck size={14} className="text-blue-600" />{pos.title}</label>
@@ -463,8 +464,8 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                 ))}
               </div>
               
-              {/* Corrected escaped quotes that broke JSX scope */}
-              <div className="space-y-4 pt-4">
+              {/* Submit Section: Anchored at bottom with mt-auto */}
+              <div className="mt-auto pt-6 space-y-4">
                 {message?.type === 'error' && (
                   <div className="p-5 rounded-2xl border-2 animate-in slide-in-from-bottom-2 duration-300 flex items-center gap-4 bg-red-50 border-red-100 text-red-600 shadow-sm">
                     <AlertCircle size={24} className="shrink-0" />
@@ -533,7 +534,6 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                 <input type="text" placeholder="VOTE-XXXXX" value={voterTokenInput} onChange={(e) => setVoterTokenInput(e.target.value.toUpperCase())} className="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl px-6 py-4 text-white font-black text-xl tracking-widest outline-none focus:border-emerald-500" />
               </div>
 
-              {/* Fixed escaped quotes in JSX attributes */}
               <div className="space-y-4 pt-4">
                 {message?.type === 'error' && (
                   <div className="p-5 rounded-2xl border-2 animate-in slide-in-from-bottom-2 duration-300 flex items-center gap-4 bg-red-50 border-red-100 text-red-600 shadow-sm">
