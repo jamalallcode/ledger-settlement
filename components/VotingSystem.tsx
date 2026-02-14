@@ -104,6 +104,10 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   // Dynamic Positions State
   const [activePositions, setActivePositions] = useState<{id: string, title: string}[]>([]);
   const [newPositionTitle, setNewPositionTitle] = useState('');
+  
+  // Position Edit State
+  const [editingPositionId, setEditingPositionId] = useState<string | null>(null);
+  const [newPositionEditValue, setNewPositionEditValue] = useState('');
 
   // Dynamic Voter List & Permissions
   const [voterList, setVoterList] = useState<string[]>([]);
@@ -117,7 +121,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
   // Poll Settings
   const [pollQuestion, setPollQuestion] = useState('আপনারা কি এ বছর বার্ষিক পিকনিকে যেতে ইচ্ছুক?');
-  const [pollOptions, setPollOptions] = useState(['হ্যাঁ', 'না', 'বলা যাচ্ছে না']);
+  const [pollOptions, setPollOptions] = useState(['হ্যাঁ', 'না', 'ব বলা যাচ্ছে না']);
   const [isResultsLocked, setIsResultsLocked] = useState(false);
 
   // --- PERSISTENCE HELPERS ---
@@ -333,6 +337,33 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     setMessage({ type: 'success', text: `নতুন পদ "${title}" যুক্ত করা হয়েছে।` });
   };
 
+  const handleUpdatePositionTitle = async (id: string) => {
+    const updatedTitle = newPositionEditValue.trim();
+    if (!updatedTitle) {
+      setEditingPositionId(null);
+      return;
+    }
+
+    const pos = activePositions.find(p => p.id === id);
+    if (pos && pos.title === updatedTitle) {
+      setEditingPositionId(null);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const next = activePositions.map(p => p.id === id ? { ...p, title: updatedTitle } : p);
+      setActivePositions(next);
+      await syncConfigToDB({ activePositions: next });
+      setEditingPositionId(null);
+      setMessage({ type: 'success', text: `পদের নাম সফলভাবে পরিবর্তন করা হয়েছে।` });
+    } catch (err: any) {
+      alert("পদের নাম পরিবর্তন ব্যর্থ হয়েছে: " + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleRemovePosition = (id: string) => {
     if (!window.confirm("আপনি কি নিশ্চিতভাবে এই পদটি মুছে ফেলতে চান?")) return;
     const next = activePositions.filter(p => p.id !== id);
@@ -464,7 +495,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     
     if (!token) return alert("দয়া করে আপনার সিক্রেট টোকেনটি দিন।");
     if (type === 'election' && Object.keys(selections).length < activePositions.length) return alert("অনুগ্রহ করে সকল পদের জন্য ভোট দিন।");
-    if (type === 'poll' && !pollSelection) return alert("দয়া করে একটি পশন নির্বাচন করুন।");
+    if (type === 'poll' && !pollSelection) return alert("দয়া করে একটি অপশন নির্বাচন করুন।");
 
     setIsSubmitting(true);
     setMessage(null);
@@ -548,6 +579,9 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
   const showResults = isAdmin || !isResultsLocked || isViewerVerified;
 
+  /**
+   * Corrected typo in Lock component's size prop.
+   */
   const LockedResultsView = () => (
     <div className="col-span-full py-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[3rem] flex flex-col items-center justify-center text-center space-y-4">
       <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shadow-xl">
@@ -640,6 +674,9 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
         </form>
       )}
 
+      {/**
+       * Removed all backslash-escaped quotes to fix JSX syntax errors.
+       */}
       {activeSubTab === 'poll' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="space-y-8">
@@ -791,13 +828,41 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                 <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2 no-scrollbar">
                   {activePositions.map((pos, idx) => (
                     <div key={pos.id} className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl group hover:border-blue-300 transition-all">
-                      <div className="flex items-center gap-3">
-                        <span className="w-6 h-6 bg-slate-100 text-slate-500 text-[10px] font-black rounded-lg flex items-center justify-center">{idx + 1}</span>
-                        <span className="font-black text-slate-700">{pos.title}</span>
+                      <div className="flex items-center gap-3 flex-1">
+                        <span className="w-6 h-6 bg-slate-100 text-slate-500 text-[10px] font-black rounded-lg flex items-center justify-center">{toBengaliDigits(idx + 1)}</span>
+                        
+                        {editingPositionId === pos.id ? (
+                          <div className="flex-1 flex gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                            <input 
+                              autoFocus
+                              type="text" 
+                              value={newPositionEditValue} 
+                              onChange={e => setNewPositionEditValue(e.target.value)}
+                              onKeyDown={e => e.key === 'Enter' && handleUpdatePositionTitle(pos.id)}
+                              className="flex-1 px-4 h-9 bg-white border-2 border-blue-400 rounded-xl font-black text-slate-800 outline-none shadow-inner text-xs"
+                            />
+                            <button onClick={() => handleUpdatePositionTitle(pos.id)} className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"><Check size={14} strokeWidth={3} /></button>
+                            <button onClick={() => setEditingPositionId(null)} className="p-1.5 bg-slate-100 text-slate-500 rounded-lg hover:bg-slate-200 transition-all"><X size={14} /></button>
+                          </div>
+                        ) : (
+                          <span className="font-black text-slate-700">{pos.title}</span>
+                        )}
                       </div>
-                      <button onClick={() => handleRemovePosition(pos.id)} className="p-2 text-slate-400 hover:text-red-600 transition-all">
-                        <Trash size={16} />
-                      </button>
+                      
+                      <div className="flex items-center gap-1 ml-2">
+                        {!editingPositionId && (
+                          <button 
+                            onClick={() => { setEditingPositionId(pos.id); setNewPositionEditValue(pos.title); }} 
+                            className="p-2 text-slate-400 hover:text-blue-600 transition-all"
+                            title="পদ এডিট করুন"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                        )}
+                        <button onClick={() => handleRemovePosition(pos.id)} className="p-2 text-slate-400 hover:text-red-600 transition-all">
+                          <Trash size={16} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
