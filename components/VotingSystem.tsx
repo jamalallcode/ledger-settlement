@@ -4,7 +4,7 @@ import { EMPLOYEES, VOTE_POSITIONS } from '../constants';
 import { BallotVote, PositionResult, VoterToken } from '../types';
 import { 
   CheckCircle2, AlertCircle, BarChart3, Fingerprint, 
-  Send, Trophy, UserCheck, Loader2, Key, RefreshCw, Copy, Check, Trash2, ShieldCheck, Ticket, Database, HelpCircle, ArrowRight, RotateCcw, MessageSquare, Plus, Settings2, Vote, Lock, Unlock, UserPlus, UserMinus, Eye, EyeOff
+  Send, Trophy, UserCheck, Loader2, Key, RefreshCw, Copy, Check, Trash2, ShieldCheck, Ticket, Database, HelpCircle, ArrowRight, RotateCcw, MessageSquare, Plus, Settings2, Vote, Lock, Unlock, UserPlus, UserMinus, Eye, EyeOff, LayoutGrid, Trash
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 
@@ -19,6 +19,10 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const [allTokens, setAllTokens] = useState<VoterToken[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+
+  // Dynamic Positions State
+  const [activePositions, setActivePositions] = useState<{id: string, title: string}[]>([]);
+  const [newPositionTitle, setNewPositionTitle] = useState('');
 
   // Dynamic Voter List & Permissions
   const [voterList, setVoterList] = useState<string[]>([]);
@@ -37,9 +41,13 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     const savedQuestion = localStorage.getItem('active_poll_q');
     const savedOptions = localStorage.getItem('active_poll_opts');
     const savedLock = localStorage.getItem('voting_results_locked');
+    const savedPos = localStorage.getItem('voting_active_positions');
 
     if (savedVoters) setVoterList(JSON.parse(savedVoters));
     else setVoterList(EMPLOYEES);
+
+    if (savedPos) setActivePositions(JSON.parse(savedPos));
+    else setActivePositions(VOTE_POSITIONS);
 
     if (savedViewers) setAuthorizedViewers(JSON.parse(savedViewers));
     if (savedQuestion) setPollQuestion(savedQuestion);
@@ -50,6 +58,10 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   useEffect(() => {
     localStorage.setItem('voting_voter_list', JSON.stringify(voterList));
   }, [voterList]);
+
+  useEffect(() => {
+    localStorage.setItem('voting_active_positions', JSON.stringify(activePositions));
+  }, [activePositions]);
 
   useEffect(() => {
     localStorage.setItem('voting_authorized_viewers', JSON.stringify(authorizedViewers));
@@ -99,6 +111,21 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       return [...prevList, nameToAdd];
     });
     setNewVoterName('');
+  };
+
+  const handleAddPosition = () => {
+    const title = newPositionTitle.trim();
+    if (!title) return;
+    
+    const newId = `p${Date.now()}`;
+    setActivePositions(prev => [...prev, { id: newId, title }]);
+    setNewPositionTitle('');
+    setMessage({ type: 'success', text: `নতুন পদ "${title}" যুক্ত করা হয়েছে।` });
+  };
+
+  const handleRemovePosition = (id: string) => {
+    if (!window.confirm("আপনি কি নিশ্চিতভাবে এই পদটি মুছে ফেলতে চান?")) return;
+    setActivePositions(prev => prev.filter(p => p.id !== id));
   };
 
   const handleRemoveVoter = (name: string) => {
@@ -188,10 +215,10 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   };
 
   const calculateElectionResults = useMemo((): PositionResult[] => {
-    return VOTE_POSITIONS.map(pos => {
+    return activePositions.map(pos => {
       const voteCounts: Record<string, number> = {};
       allVotes.forEach(v => {
-        const choice = v[pos.id as keyof BallotVote];
+        const choice = (v as any)[pos.id];
         if (typeof choice === 'string' && voterList.includes(choice)) {
           voteCounts[choice] = (voteCounts[choice] || 0) + 1;
         }
@@ -201,7 +228,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
         .sort((a, b) => b.votes - a.votes);
       return { title: pos.title, id: pos.id, results };
     });
-  }, [allVotes, voterList]);
+  }, [allVotes, voterList, activePositions]);
 
   const calculatePollResults = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -219,7 +246,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     const token = voterTokenInput.trim().toUpperCase();
     
     if (!token) return alert("দয়া করে আপনার সিক্রেট টোকেনটি দিন।");
-    if (type === 'election' && Object.keys(selections).length < VOTE_POSITIONS.length) return alert("অনুগ্রহ করে সকল পদের জন্য ভোট দিন।");
+    if (type === 'election' && Object.keys(selections).length < activePositions.length) return alert("অনুগ্রহ করে সকল পদের জন্য ভোট দিন।");
     if (type === 'poll' && !pollSelection) return alert("দয়া করে একটি অপশন নির্বাচন করুন।");
 
     setIsSubmitting(true);
@@ -241,15 +268,15 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
       const voterHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-      const voteData = type === 'election' ? {
-        voter_hash: voterHash, 
-        p1: selections.p1 || '', p2: selections.p2 || '', p3: selections.p3 || '',
-        p4: selections.p4 || '', p5: selections.p5 || '', p6: selections.p6 || '', p7: selections.p7 || ''
-      } : { 
-        voter_hash: voterHash, 
-        p1: pollSelection,
-        p2: '', p3: '', p4: '', p5: '', p6: '', p7: '' 
-      };
+      let voteData: any = { voter_hash: voterHash };
+      
+      if (type === 'election') {
+        activePositions.forEach(pos => {
+          voteData[pos.id] = selections[pos.id] || '';
+        });
+      } else {
+        voteData.p1 = pollSelection;
+      }
 
       const { error: voteError } = await supabase.from('votes').insert([voteData]);
 
@@ -344,7 +371,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
            <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-xl space-y-8">
               <div className="flex items-center gap-3 mb-2"><div className="w-1.5 h-6 bg-emerald-500 rounded-full"></div><h3 className="text-xl font-black tracking-tight">ব্যালট পেপার (নির্বাচন)</h3></div>
               <div className="grid grid-cols-1 gap-6">
-                {VOTE_POSITIONS.map((pos) => (
+                {activePositions.map((pos) => (
                   <div key={pos.id} className="space-y-2">
                     <label className="flex items-center gap-2 text-[13px] font-black text-slate-700 ml-1"><UserCheck size={14} className="text-blue-600" />{pos.title}</label>
                     <select required value={selections[pos.id] || ''} onChange={(e) => setSelections({...selections, [pos.id]: e.target.value})} className="w-full h-[58px] px-5 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all appearance-none shadow-sm"><option value="" disabled>প্রার্থী নির্বাচন করুন</option>{voterList.map((emp, i) => <option key={i} value={emp}>{emp}</option>)}</select>
@@ -355,7 +382,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               <div className="space-y-4 pt-4">
                 {message?.type === 'error' && (
                   <div className="p-5 rounded-2xl border-2 animate-in slide-in-from-bottom-2 duration-300 flex items-center gap-4 bg-red-50 border-red-100 text-red-600 shadow-sm">
-                    <AlertCircle size={24} className="shrink-0" />
+                    <AlertCircle size={24} className=\"shrink-0\" />
                     <span className="text-[15px] font-black leading-tight">{message.text}</span>
                   </div>
                 )}
@@ -424,7 +451,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               <div className="space-y-4 pt-4">
                 {message?.type === 'error' && (
                   <div className="p-5 rounded-2xl border-2 animate-in slide-in-from-bottom-2 duration-300 flex items-center gap-4 bg-red-50 border-red-100 text-red-600 shadow-sm">
-                    <AlertCircle size={24} className="shrink-0" />
+                    <AlertCircle size={24} className=\"shrink-0\" />
                     <span className="text-[15px] font-black leading-tight">{message.text}</span>
                   </div>
                 )}
@@ -451,7 +478,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
           ) : (
             calculateElectionResults.map((pos) => (
               <div key={pos.id} className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden hover:shadow-2xl transition-all flex flex-col">
-                <div className="bg-slate-900 p-6 flex items-center justify-between"><h3 className="text-white font-black text-lg">{pos.title}</h3><div className="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest">{toBengaliDigits(allVotes.filter(v => voterList.includes(v[pos.id as keyof BallotVote] as string)).length)} ভোট</div></div>
+                <div className="bg-slate-900 p-6 flex items-center justify-between"><h3 className="text-white font-black text-lg">{pos.title}</h3><div className="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest">{toBengaliDigits(allVotes.filter(v => voterList.includes((v as any)[pos.id] as string)).length)} ভোট</div></div>
                 <div className="p-6 space-y-4 flex-1">
                   {pos.results.length > 0 ? pos.results.map((res, idx) => (
                     <div key={idx} className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${idx === 0 ? 'bg-emerald-50 border-emerald-100 scale-[1.02]' : 'bg-slate-50 border-slate-100'}`}><div className="flex items-center gap-3">{idx === 0 && <Trophy size={20} className="text-amber-500 animate-bounce" />}<span className={`text-sm font-black ${idx === 0 ? 'text-emerald-900' : 'text-slate-700'}`}>{res.name}</span></div><div className="flex items-center gap-2"><span className="text-lg font-black">{toBengaliDigits(res.votes)}</span><span className="text-[10px] font-black text-slate-400 uppercase">ভোট</span></div></div>
@@ -506,18 +533,45 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+              {/* Election Positions Management */}
+              <div className="pt-6 space-y-6">
+                <h4 className="text-lg font-black text-slate-900 flex items-center gap-2"><LayoutGrid size={20} className="text-blue-600" /> নির্বাচনী পদের সেটিংস</h4>
+                <div className="p-5 bg-blue-50 border border-blue-100 rounded-2xl space-y-4">
+                  <p className="text-[11px] font-bold text-blue-700">এখানে আপনি নির্বাচনের জন্য নতুন পদ যুক্ত করতে পারেন। যেমন: প্রচার সম্পাদক, ক্রীড়া সম্পাদক ইত্যাদি।</p>
+                  <div className="flex gap-2">
+                    <input type="text" placeholder="পদের নাম (যেমন: প্রচার সম্পাদক)" value={newPositionTitle} onChange={e => setNewPositionTitle(e.target.value)} className="flex-1 h-[50px] px-4 bg-white border border-blue-200 rounded-xl font-bold outline-none focus:border-blue-500 transition-all text-sm" />
+                    <button onClick={handleAddPosition} className="px-4 bg-blue-600 text-white rounded-xl font-black text-xs shadow-md hover:bg-blue-700 transition-all active:scale-95 flex items-center gap-2 shrink-0">
+                      <Plus size={16} /> পদ যুক্ত করুন
+                    </button>
+                  </div>
+                </div>
+                <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2 no-scrollbar">
+                  {activePositions.map((pos, idx) => (
+                    <div key={pos.id} className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl group hover:border-blue-300 transition-all">
+                      <div className="flex items-center gap-3">
+                        <span className="w-6 h-6 bg-slate-100 text-slate-500 text-[10px] font-black rounded-lg flex items-center justify-center">{idx + 1}</span>
+                        <span className="font-black text-slate-700">{pos.title}</span>
+                      </div>
+                      <button onClick={() => handleRemovePosition(pos.id)} className="p-2 text-slate-400 hover:text-red-600 transition-all">
+                        <Trash size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Voter & Permission Management */}
               <div className="pt-6 space-y-6">
-                <h4 className="text-lg font-black text-slate-900 flex items-center gap-2"><UserPlus size={20} className="text-blue-600" /> ভোটার ও পারমিশন ম্যানেজমেন্ট</h4>
+                <h4 className="text-lg font-black text-slate-900 flex items-center gap-2"><UserPlus size={20} className="text-emerald-600" /> ভোটার ও পারমিশন ম্যানেজমেন্ট</h4>
                 <form onSubmit={(e) => { e.preventDefault(); handleAddVoter(); }} className="flex gap-2">
                   <input type="text" placeholder="নতুন ভোটারের নাম" value={newVoterName} onChange={e => setNewVoterName(e.target.value)} className="flex-1 h-[58px] px-5 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold outline-none focus:border-blue-500 transition-all" />
-                  <button type="submit" className="h-[58px] w-[58px] bg-blue-600 text-white rounded-2xl font-black shadow-lg hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center shrink-0">
+                  <button type="submit" className="h-[58px] w-[58px] bg-emerald-600 text-white rounded-2xl font-black shadow-lg hover:bg-emerald-700 transition-all active:scale-95 flex items-center justify-center shrink-0">
                     <Plus size={24} />
                   </button>
                 </form>
-                <div className="max-h-[400px] overflow-y-auto pr-2 space-y-2 no-scrollbar">
+                <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2 no-scrollbar">
                   {voterList.map((voter, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl group hover:border-blue-300 transition-all">
+                    <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl group hover:border-emerald-300 transition-all">
                       <div className="flex items-center gap-3">
                         <span className="font-black text-slate-700">{voter}</span>
                         {authorizedViewers.includes(voter) && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-600 text-[9px] font-black rounded-full uppercase tracking-tighter flex items-center gap-1"><Eye size={10} /> Authorized</span>}
@@ -534,10 +588,11 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                   ))}
                 </div>
               </div>
+            </div>
 
-              <div className="pt-6 space-y-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 border-t border-slate-100 pt-8">
                 <div className="space-y-6">
-                  <h4 className="text-lg font-black text-slate-900 flex items-center gap-2"><MessageSquare size={20} className="text-emerald-600" /> পাবলিক পোল সেটিংস</h4>
+                  <h4 className="text-lg font-black text-slate-900 flex items-center gap-2"><MessageSquare size={20} className="text-indigo-600" /> পাবলিক পোল সেটিংস</h4>
                   <form onSubmit={handlePollUpdate} className="grid grid-cols-1 gap-6">
                      <div className="space-y-2"><label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">পোলের প্রশ্ন</label><input name="q" defaultValue={pollQuestion} className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold outline-none focus:border-emerald-500" /></div>
                      <div className="space-y-2"><label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">বিকল্পসমূহ (কমা দিয়ে লিখুন)</label><input name="opts" defaultValue={pollOptions.join(', ')} className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold outline-none focus:border-emerald-500" /></div>
@@ -563,7 +618,6 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     </div>
                   </div>
                 </div>
-              </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 pt-8 border-t border-slate-100">
