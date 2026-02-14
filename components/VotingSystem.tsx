@@ -410,27 +410,27 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   );
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-landing-premium">
-      {/* Sharp Header - Removed rounded corners as per image markings */}
-      <div className="sticky top-0 z-[100] flex flex-row items-stretch justify-between bg-white/95 backdrop-blur-xl rounded-none border border-slate-200 shadow-xl overflow-hidden transition-all duration-500 min-h-[100px]">
-        <div className="flex items-center gap-4 pl-6 md:pl-10 py-2 shrink-0">
-          <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-blue-600/30"><Ticket size={28} /></div>
-          <div><h2 className="text-2xl font-black text-slate-900 leading-tight">ডিজিটাল ব্যালট বক্স</h2><p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Election & Poll System</p></div>
+    <div className="max-w-6xl mx-auto space-y-8 animate-landing-premium px-4 md:px-0">
+      {/* Header Container: Responsive layout for stacking logo and nav on mobile */}
+      <div className="sticky top-0 z-[100] flex flex-col md:flex-row items-stretch justify-between bg-white/95 backdrop-blur-xl rounded-none border border-slate-200 shadow-xl overflow-hidden transition-all duration-500 md:min-h-[100px]">
+        <div className="flex items-center gap-4 pl-6 md:pl-10 py-4 md:py-2 shrink-0">
+          <div className="w-12 h-12 md:w-14 md:h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-blue-600/30"><Ticket size={24} className="md:size-[28px]" /></div>
+          <div><h2 className="text-xl md:text-2xl font-black text-slate-900 leading-tight">ডিজিটাল ব্যালট বক্স</h2><p className="text-slate-500 font-bold text-[10px] md:text-xs uppercase tracking-widest">Election & Poll System</p></div>
         </div>
         
-        {/* Navigation Section: Compact, Horizontal (flex-row), Sharp corners (rounded-none) as per brown marking */}
-        <div className="flex flex-row items-stretch border-l border-slate-100 rounded-none bg-white overflow-hidden">
-          <button onClick={() => {setActiveSubTab('vote'); setMessage(null);}} className={`flex items-center gap-2.5 px-6 font-black text-[11px] transition-all border-r border-slate-50 ${activeSubTab === 'vote' ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}>
+        {/* Navigation Section: Added overflow-x-auto and no-scrollbar for mobile tabs visibility */}
+        <div className="flex flex-row items-stretch border-t md:border-t-0 md:border-l border-slate-100 rounded-none bg-white overflow-x-auto no-scrollbar shrink-0">
+          <button onClick={() => {setActiveSubTab('vote'); setMessage(null);}} className={`flex items-center gap-2.5 px-5 md:px-6 py-4 md:py-0 font-black text-[11px] transition-all border-r border-slate-50 whitespace-nowrap ${activeSubTab === 'vote' ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}>
             <Fingerprint size={16} /> ব্যালট
           </button>
-          <button onClick={() => {setActiveSubTab('poll'); setMessage(null);}} className={`flex items-center gap-2.5 px-6 font-black text-[11px] transition-all border-r border-slate-50 ${activeSubTab === 'poll' ? 'bg-emerald-50 text-emerald-600' : 'text-slate-500 hover:bg-slate-50'}`}>
+          <button onClick={() => {setActiveSubTab('poll'); setMessage(null);}} className={`flex items-center gap-2.5 px-5 md:px-6 py-4 md:py-0 font-black text-[11px] transition-all border-r border-slate-50 whitespace-nowrap ${activeSubTab === 'poll' ? 'bg-emerald-50 text-emerald-600' : 'text-slate-500 hover:bg-slate-50'}`}>
             <MessageSquare size={16} /> পাবলিক পোল
           </button>
-          <button onClick={() => {setActiveSubTab('results'); setMessage(null);}} className={`flex items-center gap-2.5 px-6 font-black text-[11px] transition-all border-r border-slate-50 ${activeSubTab === 'results' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`}>
+          <button onClick={() => {setActiveSubTab('results'); setMessage(null);}} className={`flex items-center gap-2.5 px-5 md:px-6 py-4 md:py-0 font-black text-[11px] transition-all border-r border-slate-50 whitespace-nowrap ${activeSubTab === 'results' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`}>
             <BarChart3 size={16} /> ইলেকশন ফলাফল
           </button>
           {isAdmin && (
-            <button onClick={() => {setActiveSubTab('admin'); setMessage(null);}} className={`flex items-center gap-2.5 px-6 font-black text-[11px] transition-all ${activeSubTab === 'admin' ? 'bg-purple-50 text-purple-600' : 'text-slate-500 hover:bg-slate-50'}`}>
+            <button onClick={() => {setActiveSubTab('admin'); setMessage(null);}} className={`flex items-center gap-2.5 px-5 md:px-6 py-4 md:py-0 font-black text-[11px] transition-all whitespace-nowrap ${activeSubTab === 'admin' ? 'bg-purple-50 text-purple-600' : 'text-slate-500 hover:bg-slate-50'}`}>
               <Settings2 size={16} /> এডমিন
             </button>
           )}
@@ -439,7 +439,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
       {activeSubTab === 'vote' && (
         <form onSubmit={(e) => handleVoteSubmit(e, 'election')} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-           <div className="bg-slate-900 text-white p-10 rounded-[3rem] shadow-2xl space-y-8 relative overflow-hidden h-fit">
+           <div className="bg-slate-900 text-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl space-y-8 relative overflow-hidden h-fit">
               <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-4"><div className="w-1.5 h-6 bg-blue-500 rounded-full"></div><h3 className="text-xl font-black tracking-tight text-white">সিক্রেট টোকেন</h3></div>
                 <input type="text" placeholder="যেমন: VOTE-XXXXX" value={voterTokenInput} onChange={(e) => setVoterTokenInput(e.target.value.toUpperCase())} className="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl px-6 py-5 text-white font-black text-2xl tracking-widest outline-none focus:border-blue-500 transition-all placeholder:text-slate-700" />
@@ -448,10 +448,10 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
            </div>
            
            {/* Card 2: Ballot Paper - Anchor button to bottom with flex-col and min-height to prevent jumping */}
-           <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-xl flex flex-col min-h-[620px]">
+           <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-slate-200 shadow-xl flex flex-col min-h-[620px]">
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-1.5 h-6 bg-emerald-500 rounded-full"></div>
-                <h3 className="text-xl font-black tracking-tight text-white bg-blue-600 px-3 py-1 rounded-lg shadow-sm">
+                <h3 className="text-lg md:text-xl font-black tracking-tight text-white bg-blue-600 px-3 py-1 rounded-lg shadow-sm">
                   ব্যালট পেপার (নির্বাচন)
                 </h3>
               </div>
@@ -490,7 +490,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       {activeSubTab === 'poll' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="space-y-8">
-            <div className="bg-white p-10 rounded-[3rem] border-2 border-slate-100 shadow-xl space-y-8">
+            <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border-2 border-slate-100 shadow-xl space-y-8">
               <div className="flex items-center gap-3"><div className="w-1.5 h-6 bg-emerald-500 rounded-full"></div><h3 className="text-2xl font-black tracking-tight text-slate-900">পাবলিক পোল ফলাফল</h3></div>
               <p className="text-slate-500 font-bold">{pollQuestion}</p>
               
@@ -517,7 +517,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               )}
             </div>
           </div>
-          <div className="bg-slate-900 p-10 rounded-[3rem] shadow-2xl space-y-8">
+          <div className="bg-slate-900 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl space-y-8">
             <form onSubmit={(e) => handleVoteSubmit(e, 'poll')} className="space-y-8">
               <div className="flex items-center gap-3 text-white"><Vote size={28} className="text-emerald-400" /><h3 className="text-2xl font-black">পোলে অংশগ্রহণ করুন</h3></div>
               <p className="text-slate-400 font-bold">{pollQuestion}</p>
@@ -564,7 +564,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
           ) : (
             <>
               {calculateElectionResults.map((pos) => (
-                <div key={pos.id} className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden hover:shadow-2xl transition-all flex flex-col">
+                <div key={pos.id} className="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden hover:shadow-2xl transition-all flex flex-col">
                   <div className="bg-slate-900 p-6 flex items-center justify-between"><h3 className="text-white font-black text-lg">{pos.title}</h3><div className="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest">{toBengaliDigits(allVotes.filter(v => voterList.includes(String((v as any)[pos.id]))).length)} ভোট</div></div>
                   <div className="p-6 space-y-4 flex-1">
                     {pos.results.length > 0 ? pos.results.map((res, idx) => (
@@ -586,12 +586,12 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     setMessage({ type: 'success', text: `নতুন পদ "${newTitle}" যুক্ত করা হয়েছে।` });
                   }
                 }}
-                className="bg-white border-4 border-dashed border-slate-300 rounded-none flex flex-col items-center justify-center min-h-[300px] hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 group shadow-lg"
+                className="bg-white border-4 border-dashed border-slate-300 rounded-[2rem] flex flex-col items-center justify-center min-h-[300px] hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 group shadow-lg"
               >
                 <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600 transition-all duration-300 shadow-inner">
                   <Plus size={48} strokeWidth={3} className="group-hover:scale-110 transition-transform" />
                 </div>
-                <h4 className="mt-6 font-black text-slate-500 group-hover:text-blue-700 uppercase tracking-widest text-sm">নতুন নির্বাচনী পদ যোগ করুন</h4>
+                <h4 className="mt-6 font-black text-slate-500 group-hover:text-blue-700 uppercase tracking-widest text-sm text-center px-4">নতুন নির্বাচনী পদ যোগ করুন</h4>
                 <p className="mt-2 text-[10px] font-bold text-slate-400 italic">নতুন পদ যুক্ত করলে তা ব্যালটে দেখা যাবে</p>
               </button>
             </>
@@ -608,10 +608,10 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
             </div>
           )}
           
-          <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-xl space-y-8">
+          <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-slate-200 shadow-xl space-y-8">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-slate-100">
-              <div className="flex items-center gap-4"><div className="p-4 bg-purple-50 text-purple-600 rounded-2xl"><ShieldCheck size={32} /></div><div><h3 className="text-2xl font-black text-slate-900">এডমিন কন্ট্রোল প্যানেল</h3><p className="text-slate-500 font-bold">সিস্টেম ম্যানেজমেন্ট ও রিসেট অপশন।</p></div></div>
-              <div className="flex flex-wrap gap-4 justify-end">
+              <div className="flex items-center gap-4 w-full md:w-auto"><div className="p-4 bg-purple-50 text-purple-600 rounded-2xl"><ShieldCheck size={32} /></div><div><h3 className="text-2xl font-black text-slate-900">এডমিন কন্ট্রোল প্যানেল</h3><p className="text-slate-500 font-bold">সিস্টেম ম্যানেজমেন্ট ও রিসেট অপশন।</p></div></div>
+              <div className="flex flex-wrap gap-4 justify-center md:justify-end">
                 <button onClick={toggleResultsLock} className={`px-5 py-2.5 rounded-xl font-black text-xs flex items-center gap-2 border transition-all shadow-sm ${isResultsLocked ? 'bg-amber-600 text-white border-amber-700' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}>
                   {isResultsLocked ? <Unlock size={16} /> : <Lock size={16} />} 
                   {isResultsLocked ? 'ফলাফল আনলক করুন' : 'ফলাফল লক করুন'}
