@@ -143,8 +143,14 @@ const App: React.FC = () => {
             localStorage.setItem(PREV_STATS_KEY, JSON.stringify(metaRow.content));
           }
 
+          // FIX: Filter out non-ledger entries (voting configs, individual votes, etc.)
           const loadedEntries = data
-            .filter((row: any) => row.id !== 'system_metadata_prev_stats')
+            .filter((row: any) => 
+              row.id !== 'system_metadata_prev_stats' && 
+              row.id !== 'voting_system_config' &&
+              !row.id.startsWith('vote_') &&
+              row.id.startsWith('id-') // Strict check for settlement entries
+            )
             .map((row: any) => row.content);
           setEntries(loadedEntries);
         }
