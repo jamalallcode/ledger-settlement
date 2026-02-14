@@ -443,30 +443,30 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                   {showCycleHeader && (
                     <tr className="bg-slate-100/80 border-y border-slate-300 relative group/cycle-header">
                       <td colSpan={14} className="px-4 py-2 border border-slate-300">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-start gap-12">
+                          <div className="flex items-center gap-3 shrink-0">
                             <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-md">
                               <CalendarDays size={18} />
                             </div>
-                            <span className="font-black text-[12px] text-slate-800 tracking-tight uppercase">
+                            <span className="font-black text-[13px] text-slate-800 tracking-tight uppercase">
                               সময়কাল: <span className="text-blue-700">{toBengaliDigits(currentCycle)}</span>
                             </span>
                           </div>
                           
-                          {/* Premium Cycle Statistics Badges */}
-                          <div className="hidden md:flex items-center gap-2 text-[10px] font-bold text-slate-600">
-                             <span className="px-3 py-1 bg-white border border-slate-200 rounded-full shadow-sm flex items-center gap-1.5">
-                                মোট চিঠি: <span className="text-blue-600 font-black">{toBengaliDigits(totalLetters)} টি</span>
+                          {/* Premium Cycle Statistics Badges - Adjusted positioning and font size */}
+                          <div className="hidden md:flex items-center gap-4 text-[12px] font-bold text-slate-700">
+                             <span className="px-4 py-1.5 bg-white border border-slate-300 rounded-full shadow-sm flex items-center gap-2">
+                                মোট চিঠি: <span className="text-blue-700 font-black text-[13px]">{toBengaliDigits(totalLetters)} টি</span>
                              </span>
-                             <div className="w-[1px] h-4 bg-slate-300 mx-1"></div>
-                             <span className="flex items-center gap-1">
-                                এসএফআই: <span className="text-emerald-600 font-black">{toBengaliDigits(sfiEntries.length)} টি</span>
-                                <span className="text-slate-400 text-[9px] font-medium">(বিএসআর {toBengaliDigits(sfiBSR)}, সভা {toBengaliDigits(sfiTri)})</span>
+                             <div className="w-[1.5px] h-5 bg-slate-300 mx-1"></div>
+                             <span className="flex items-center gap-2">
+                                এসএফআই: <span className="text-emerald-700 font-black text-[13px]">{toBengaliDigits(sfiEntries.length)} টি</span>
+                                <span className="text-slate-500 text-[11px] font-bold">(বিএসআর {toBengaliDigits(sfiBSR)}, সভা {toBengaliDigits(sfiTri)})</span>
                              </span>
-                             <div className="w-[1px] h-3 bg-slate-200 mx-1"></div>
-                             <span className="flex items-center gap-1">
-                                নন এসএফআই: <span className="text-indigo-600 font-black">{toBengaliDigits(nonSfiEntries.length)} টি</span>
-                                <span className="text-slate-400 text-[9px] font-medium">(বিএসআর {toBengaliDigits(nonSfiBSR)}, সভা {toBengaliDigits(nonSfiBi)})</span>
+                             <div className="w-[1.5px] h-4 bg-slate-300 mx-1"></div>
+                             <span className="flex items-center gap-2">
+                                নন এসএফআই: <span className="text-indigo-700 font-black text-[13px]">{toBengaliDigits(nonSfiEntries.length)} টি</span>
+                                <span className="text-slate-500 text-[11px] font-bold">(বিএসআর {toBengaliDigits(nonSfiBSR)}, সভা {toBengaliDigits(nonSfiBi)})</span>
                              </span>
                           </div>
                         </div>
