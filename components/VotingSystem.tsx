@@ -4,7 +4,7 @@ import { EMPLOYEES, VOTE_POSITIONS } from '../constants';
 import { BallotVote, PositionResult, VoterToken } from '../types';
 import { 
   CheckCircle2, AlertCircle, BarChart3, Fingerprint, 
-  Send, Trophy, UserCheck, Loader2, Key, RefreshCw, Copy, Check, Trash2, ShieldCheck, Ticket, Database, HelpCircle, ArrowRight, RotateCcw, MessageSquare, Plus, Settings2, Vote, Lock, Unlock, UserPlus, UserMinus, Eye, EyeOff, LayoutGrid, Trash
+  Send, Trophy, UserCheck, Loader2, Key, RefreshCw, Copy, Check, Trash2, ShieldCheck, Ticket, Database, HelpCircle, ArrowRight, RotateCcw, MessageSquare, Plus, Settings2, Vote, Lock, Unlock, UserPlus, UserMinus, Eye, EyeOff, LayoutGrid, Trash, Pencil, X
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 
@@ -29,6 +29,10 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const [authorizedViewers, setAuthorizedViewers] = useState<string[]>([]);
   const [isViewerVerified, setIsViewerVerified] = useState(false);
   const [newVoterName, setNewVoterName] = useState('');
+  
+  // Voter Edit State
+  const [editingVoterName, setEditingVoterName] = useState<string | null>(null);
+  const [newVoterEditValue, setNewVoterEditValue] = useState('');
 
   // Poll Settings
   const [pollQuestion, setPollQuestion] = useState('আপনারা কি এ বছর বার্ষিক পিকনিকে যেতে ইচ্ছুক?');
@@ -38,6 +42,12 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   // --- PERSISTENCE HELPERS ---
   const syncConfigToDB = async (updates: any) => {
     try {
+      const { data: currentData } = await supabase
+        .from('settlement_entries')
+        .select('content')
+        .eq('id', 'voting_system_config')
+        .maybeSingle();
+
       const currentConfig = {
         activePositions,
         voterList,
@@ -45,6 +55,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
         pollQuestion,
         pollOptions,
         isResultsLocked,
+        ...(currentData?.content || {}),
         ...updates
       };
       await supabase.from('settlement_entries').upsert({
@@ -160,6 +171,74 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       return next;
     });
     setNewVoterName('');
+  };
+
+  const handleUpdateVoterName = async (oldName: string) => {
+    const updatedName = newVoterEditValue.trim();
+    if (!updatedName || updatedName === oldName) {
+      setEditingVoterName(null);
+      return;
+    }
+
+    if (voterList.includes(updatedName)) {
+      alert("এই নাম ইতিমধ্যে তালিকায় আছে।");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      // 1. Update voterList
+      const nextVoters = voterList.map(v => v === oldName ? updatedName : v);
+      // 2. Update authorizedViewers
+      const nextViewers = authorizedViewers.map(v => v === oldName ? updatedName : v);
+
+      // 3. Update active state locally
+      setVoterList(nextVoters);
+      setAuthorizedViewers(nextViewers);
+
+      // 4. Update historical votes in state for immediate UI update
+      const updatedVotes = allVotes.map(vote => {
+        const newVote = { ...vote } as any;
+        Object.keys(newVote).forEach(key => {
+          if (newVote[key] === oldName) newVote[key] = updatedName;
+        });
+        return newVote;
+      });
+      setAllVotes(updatedVotes);
+
+      // 5. Sync updated votes to Supabase
+      // Query all entries starting with vote_
+      const { data: voteRows } = await supabase
+        .from('settlement_entries')
+        .select('*')
+        .like('id', 'vote_%');
+        
+      if (voteRows) {
+        for (const row of voteRows) {
+          const content = row.content;
+          let changed = false;
+          Object.keys(content).forEach(k => {
+            if (content[k] === oldName) {
+              content[k] = updatedName;
+              changed = true;
+            }
+          });
+          if (changed) {
+            await supabase.from('settlement_entries').upsert({ id: row.id, content: content });
+          }
+        }
+      }
+
+      // 6. Sync config to DB
+      await syncConfigToDB({ voterList: nextVoters, authorizedViewers: nextViewers });
+
+      setEditingVoterName(null);
+      setMessage({ type: 'success', text: `নাম সফলভাবে পরিবর্তন করা হয়েছে।` });
+    } catch (err: any) {
+      alert("নাম পরিবর্তন ব্যর্থ হয়েছে: " + err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAddPosition = () => {
@@ -411,14 +490,14 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-landing-premium px-4 md:px-0">
-      {/* Header Container: Responsive layout for stacking logo and nav on mobile */}
+      {/* Header Container */}
       <div className="sticky top-0 z-[100] flex flex-col md:flex-row items-stretch justify-between bg-white/95 backdrop-blur-xl rounded-none border border-slate-200 shadow-xl overflow-hidden transition-all duration-500 md:min-h-[100px]">
         <div className="flex items-center gap-4 pl-6 md:pl-10 py-4 md:py-2 shrink-0">
           <div className="w-12 h-12 md:w-14 md:h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-blue-600/30"><Ticket size={24} className="md:size-[28px]" /></div>
           <div><h2 className="text-xl md:text-2xl font-black text-slate-900 leading-tight">ডিজিটাল ব্যালট বক্স</h2><p className="text-slate-500 font-bold text-[10px] md:text-xs uppercase tracking-widest">Election & Poll System</p></div>
         </div>
         
-        {/* Navigation Section: Added overflow-x-auto and no-scrollbar for mobile tabs visibility */}
+        {/* Navigation Section */}
         <div className="flex flex-row items-stretch border-t md:border-t-0 md:border-l border-slate-100 rounded-none bg-white overflow-x-auto no-scrollbar shrink-0">
           <button onClick={() => {setActiveSubTab('vote'); setMessage(null);}} className={`flex items-center gap-2.5 px-5 md:px-6 py-4 md:py-0 font-black text-[11px] transition-all border-r border-slate-50 whitespace-nowrap ${activeSubTab === 'vote' ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}>
             <Fingerprint size={16} /> ব্যালট
@@ -447,7 +526,6 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               </div>
            </div>
            
-           {/* Card 2: Ballot Paper - Anchor button to bottom with flex-col and min-height to prevent jumping */}
            <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-slate-200 shadow-xl flex flex-col min-h-[620px]">
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-1.5 h-6 bg-emerald-500 rounded-full"></div>
@@ -464,7 +542,6 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                 ))}
               </div>
               
-              {/* Submit Section: Anchored at bottom with mt-auto */}
               <div className="mt-auto pt-6 space-y-4">
                 {message?.type === 'error' && (
                   <div className="p-5 rounded-2xl border-2 animate-in slide-in-from-bottom-2 duration-300 flex items-center gap-4 bg-red-50 border-red-100 text-red-600 shadow-sm">
@@ -659,18 +736,57 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     <Plus size={24} />
                   </button>
                 </form>
-                <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2 no-scrollbar">
+                <div className="max-h-[450px] overflow-y-auto pr-2 space-y-3 no-scrollbar">
                   {voterList.map((voter, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl group hover:border-emerald-300 transition-all">
-                      <div className="flex items-center gap-3">
-                        <span className="font-black text-slate-700">{voter}</span>
-                        {authorizedViewers.includes(voter) && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-600 text-[9px] font-black rounded-full uppercase tracking-tighter flex items-center gap-1"><Eye size={10} /> Authorized</span>}
+                    <div key={idx} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-white border border-slate-200 rounded-3xl group hover:border-emerald-400 transition-all shadow-sm">
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="w-10 h-10 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xs shrink-0 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                          {toBengaliDigits(idx + 1)}
+                        </div>
+                        
+                        {editingVoterName === voter ? (
+                          <div className="flex-1 flex gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                            <input 
+                              autoFocus
+                              type="text" 
+                              value={newVoterEditValue} 
+                              onChange={e => setNewVoterEditValue(e.target.value)}
+                              onKeyDown={e => e.key === 'Enter' && handleUpdateVoterName(voter)}
+                              className="flex-1 px-4 h-10 bg-white border-2 border-blue-400 rounded-xl font-black text-slate-800 outline-none shadow-inner text-sm"
+                            />
+                            <button onClick={() => handleUpdateVoterName(voter)} className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"><Check size={16} strokeWidth={3} /></button>
+                            <button onClick={() => setEditingVoterName(null)} className="p-2 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 transition-all"><X size={16} /></button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <span className="font-black text-slate-800 text-[15px]">{voter}</span>
+                            {authorizedViewers.includes(voter) && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-600 text-[9px] font-black rounded-full uppercase tracking-tighter flex items-center gap-1 shadow-sm border border-emerald-200"><Eye size={10} /> Authorized</span>}
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => toggleViewerPermission(voter)} title={authorizedViewers.includes(voter) ? "অনুমতি বাতিল করুন" : "ফলাফল দেখার অনুমতি দিন"} className={`p-2 rounded-lg transition-all ${authorizedViewers.includes(voter) ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200' : 'bg-white text-slate-400 hover:text-emerald-600 border border-slate-200'}`}>
+                      
+                      <div className="flex items-center gap-2 mt-4 md:mt-0 ml-auto">
+                        {!editingVoterName && (
+                          <button 
+                            onClick={() => { setEditingVoterName(voter); setNewVoterEditValue(voter); }} 
+                            title="নাম এডিট করুন"
+                            className="p-2.5 bg-white text-slate-400 hover:text-blue-600 border border-slate-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-all shadow-sm"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => toggleViewerPermission(voter)} 
+                          title={authorizedViewers.includes(voter) ? "অনুমতি বাতিল করুন" : "ফলাফল দেখার অনুমতি দিন"} 
+                          className={`p-2.5 rounded-xl transition-all border shadow-sm ${authorizedViewers.includes(voter) ? 'bg-emerald-500 text-white border-emerald-400 shadow-emerald-200' : 'bg-white text-slate-400 hover:text-emerald-600 border-slate-200 hover:bg-emerald-50'}`}
+                        >
                           {authorizedViewers.includes(voter) ? <Eye size={14} /> : <EyeOff size={14} />}
                         </button>
-                        <button onClick={() => handleRemoveVoter(voter)} className="p-2 bg-white text-slate-400 hover:text-red-600 rounded-lg border border-slate-200 transition-all">
+                        <button 
+                          onClick={() => handleRemoveVoter(voter)} 
+                          title="মুছে ফেলুন"
+                          className="p-2.5 bg-white text-slate-400 hover:text-red-600 border border-slate-200 rounded-xl hover:bg-red-50 hover:border-red-200 transition-all shadow-sm"
+                        >
                           <UserMinus size={14} />
                         </button>
                       </div>
