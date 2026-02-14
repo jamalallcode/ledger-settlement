@@ -41,20 +41,22 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
         .like('id', 'doc_%');
       
       if (!error && data) {
-        // Defensive mapping to prevent crashes if content is null or properties are missing
-        setDocuments(data.map((row: any) => ({
-          title: '',
-          description: '',
-          category: 'অন্যান্য',
-          docDate: '',
-          archiveId: '',
-          createdAt: new Date().toISOString(),
-          ...(row.content || {}),
-          id: row.id 
-        })));
+        const mappedDocs = data.map((row: any) => {
+          const content = row.content || {};
+          return {
+            title: String(content.title || ''),
+            description: String(content.description || ''),
+            category: (content.category as any) || 'অন্যান্য',
+            docDate: String(content.docDate || ''),
+            archiveId: String(content.archiveId || ''),
+            createdAt: String(content.createdAt || new Date().toISOString()),
+            id: row.id 
+          };
+        });
+        setDocuments(mappedDocs);
       }
     } catch (err) {
-      console.error("Fetch Docs error:", err);
+      console.error("Fetch Documents Error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -98,21 +100,35 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   };
 
   const filteredDocs = useMemo(() => {
-    return documents.filter(doc => {
-      // Defensive string checks to prevent toLowerCase() crash on null/undefined
-      const title = (doc.title || '').toLowerCase();
-      const description = (doc.description || '').toLowerCase();
-      const search = (searchTerm || '').toLowerCase();
-      
-      const matchesSearch = title.includes(search) || description.includes(search);
-      const matchesCat = activeCategory === 'সকল' || doc.category === activeCategory;
-      return matchesSearch && matchesCat;
-    }).sort((a, b) => {
-      const dateA = new Date(a.docDate || 0).getTime();
-      const dateB = new Date(b.docDate || 0).getTime();
-      return dateB - dateA;
-    });
+    return documents
+      .filter(doc => {
+        const title = (doc.title || '').toLowerCase();
+        const description = (doc.description || '').toLowerCase();
+        const search = (searchTerm || '').toLowerCase();
+        
+        const matchesSearch = title.includes(search) || description.includes(search);
+        const matchesCat = activeCategory === 'সকল' || doc.category === activeCategory;
+        return matchesSearch && matchesCat;
+      })
+      .sort((a, b) => {
+        // Strict timestamp sorting to prevent NaN in production
+        const timeA = a.docDate ? new Date(a.docDate).getTime() : 0;
+        const timeB = b.docDate ? new Date(b.docDate).getTime() : 0;
+        const validA = isNaN(timeA) ? 0 : timeA;
+        const validB = isNaN(timeB) ? 0 : timeB;
+        return validB - validA;
+      });
   }, [documents, searchTerm, activeCategory]);
+
+  const safeFormatDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString();
+    } catch (e) {
+      return dateStr;
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-landing-premium pb-20">
@@ -200,7 +216,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                           <h4 className="text-lg font-black text-slate-900 leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">{doc.title}</h4>
                           <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-tighter">
                              <div className="flex items-center gap-1.5"><Calendar size={12} /> {toBengaliDigits(doc.docDate)}</div>
-                             <div className="flex items-center gap-1.5"><Clock size={12} /> {toBengaliDigits(new Date(doc.createdAt).toLocaleDateString())}</div>
+                             <div className="flex items-center gap-1.5"><Clock size={12} /> {toBengaliDigits(safeFormatDate(doc.createdAt))}</div>
                           </div>
                        </div>
                     </div>
