@@ -35,39 +35,83 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const [pollOptions, setPollOptions] = useState(['হ্যাঁ', 'না', 'বলা যাচ্ছে না']);
   const [isResultsLocked, setIsResultsLocked] = useState(false);
 
+  // --- PERSISTENCE HELPERS ---
+  const syncConfigToDB = async (updates: any) => {
+    try {
+      const currentConfig = {
+        activePositions,
+        voterList,
+        authorizedViewers,
+        pollQuestion,
+        pollOptions,
+        isResultsLocked,
+        ...updates
+      };
+      await supabase.from('settlement_entries').upsert({
+        id: 'voting_system_config',
+        content: currentConfig
+      });
+    } catch (err) {
+      console.error("Config sync error:", err);
+    }
+  };
+
   useEffect(() => {
-    const savedVoters = localStorage.getItem('voting_voter_list');
-    const savedViewers = localStorage.getItem('voting_authorized_viewers');
-    const savedQuestion = localStorage.getItem('active_poll_q');
-    const savedOptions = localStorage.getItem('active_poll_opts');
-    const savedLock = localStorage.getItem('voting_results_locked');
-    const savedPos = localStorage.getItem('voting_active_positions');
+    const fetchConfig = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('settlement_entries')
+          .select('*')
+          .eq('id', 'voting_system_config')
+          .maybeSingle();
+        
+        if (!error && data && data.content) {
+          const config = data.content;
+          if (config.activePositions) setActivePositions(config.activePositions);
+          if (config.voterList) setVoterList(config.voterList);
+          if (config.authorizedViewers) setAuthorizedViewers(config.authorizedViewers);
+          if (config.pollQuestion) setPollQuestion(config.pollQuestion);
+          if (config.pollOptions) setPollOptions(config.pollOptions);
+          if (config.isResultsLocked !== undefined) setIsResultsLocked(config.isResultsLocked);
+        } else {
+          // Fallback to localStorage if no DB entry exists yet
+          const savedVoters = localStorage.getItem('voting_voter_list');
+          const savedViewers = localStorage.getItem('voting_authorized_viewers');
+          const savedQuestion = localStorage.getItem('active_poll_q');
+          const savedOptions = localStorage.getItem('active_poll_opts');
+          const savedLock = localStorage.getItem('voting_results_locked');
+          const savedPos = localStorage.getItem('voting_active_positions');
 
-    if (savedVoters) setVoterList(JSON.parse(savedVoters));
-    else setVoterList(EMPLOYEES);
+          if (savedVoters) setVoterList(JSON.parse(savedVoters));
+          else setVoterList(EMPLOYEES);
 
-    if (savedPos) setActivePositions(JSON.parse(savedPos));
-    else setActivePositions(VOTE_POSITIONS);
+          if (savedPos) setActivePositions(JSON.parse(savedPos));
+          else setActivePositions(VOTE_POSITIONS);
 
-    if (savedViewers) setAuthorizedViewers(JSON.parse(savedViewers));
-    if (savedQuestion) setPollQuestion(savedQuestion);
-    if (savedOptions) setPollOptions(JSON.parse(savedOptions));
-    if (savedLock !== null) setIsResultsLocked(JSON.parse(savedLock));
+          if (savedViewers) setAuthorizedViewers(JSON.parse(savedViewers));
+          if (savedQuestion) setPollQuestion(savedQuestion);
+          if (savedOptions) setPollOptions(JSON.parse(savedOptions));
+          if (savedLock !== null) setIsResultsLocked(JSON.parse(savedLock));
+        }
+      } catch (e) {
+        console.error("Config load error:", e);
+      }
+    };
+    
+    fetchConfig();
   }, []);
 
+  // Update localStorage for immediate feedback, though primary source is now DB
   useEffect(() => {
     localStorage.setItem('voting_voter_list', JSON.stringify(voterList));
-  }, [voterList]);
-
-  useEffect(() => {
     localStorage.setItem('voting_active_positions', JSON.stringify(activePositions));
-  }, [activePositions]);
-
-  useEffect(() => {
     localStorage.setItem('voting_authorized_viewers', JSON.stringify(authorizedViewers));
-  }, [authorizedViewers]);
+    localStorage.setItem('active_poll_q', pollQuestion);
+    localStorage.setItem('active_poll_opts', JSON.stringify(pollOptions));
+    localStorage.setItem('voting_results_locked', JSON.stringify(isResultsLocked));
+  }, [voterList, activePositions, authorizedViewers, pollQuestion, pollOptions, isResultsLocked]);
 
-  // Initial fetch
+  // Initial fetch for votes/tokens
   useEffect(() => {
     fetchTokens();
     if (activeSubTab === 'results' || activeSubTab === 'poll') fetchVotes();
@@ -108,7 +152,9 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
         alert("এই নাম ইতিমধ্যে তালিকায় আছে।");
         return prevList;
       }
-      return [...prevList, nameToAdd];
+      const next = [...prevList, nameToAdd];
+      syncConfigToDB({ voterList: next });
+      return next;
     });
     setNewVoterName('');
   };
@@ -118,28 +164,38 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     if (!title) return;
     
     const newId = `p${Date.now()}`;
-    setActivePositions(prev => [...prev, { id: newId, title }]);
+    const next = [...activePositions, { id: newId, title }];
+    setActivePositions(next);
+    syncConfigToDB({ activePositions: next });
     setNewPositionTitle('');
     setMessage({ type: 'success', text: `নতুন পদ "${title}" যুক্ত করা হয়েছে।` });
   };
 
   const handleRemovePosition = (id: string) => {
     if (!window.confirm("আপনি কি নিশ্চিতভাবে এই পদটি মুছে ফেলতে চান?")) return;
-    setActivePositions(prev => prev.filter(p => p.id !== id));
+    const next = activePositions.filter(p => p.id !== id);
+    setActivePositions(next);
+    syncConfigToDB({ activePositions: next });
   };
 
   const handleRemoveVoter = (name: string) => {
     if (!window.confirm(`আপনি কি নিশ্চিতভাবে "${name}" কে তালিকা থেকে বাদ দিতে চান?`)) return;
-    setVoterList(voterList.filter(v => v !== name));
-    setAuthorizedViewers(authorizedViewers.filter(v => v !== name));
+    const nextVoters = voterList.filter(v => v !== name);
+    const nextViewers = authorizedViewers.filter(v => v !== name);
+    setVoterList(nextVoters);
+    setAuthorizedViewers(nextViewers);
+    syncConfigToDB({ voterList: nextVoters, authorizedViewers: nextViewers });
   };
 
   const toggleViewerPermission = (name: string) => {
+    let next: string[];
     if (authorizedViewers.includes(name)) {
-      setAuthorizedViewers(authorizedViewers.filter(v => v !== name));
+      next = authorizedViewers.filter(v => v !== name);
     } else {
-      setAuthorizedViewers([...authorizedViewers, name]);
+      next = [...authorizedViewers, name];
     }
+    setAuthorizedViewers(next);
+    syncConfigToDB({ authorizedViewers: next });
   };
 
   const generateTokens = async () => {
@@ -171,15 +227,14 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     
     setPollQuestion(q);
     setPollOptions(opts);
-    localStorage.setItem('active_poll_q', q);
-    localStorage.setItem('active_poll_opts', JSON.stringify(opts));
+    syncConfigToDB({ pollQuestion: q, pollOptions: opts });
     setMessage({ type: 'success', text: 'পোল প্রশ্ন সফলভাবে আপডেট করা হয়েছে।'});
   };
 
   const toggleResultsLock = () => {
     const nextState = !isResultsLocked;
     setIsResultsLocked(nextState);
-    localStorage.setItem('voting_results_locked', JSON.stringify(nextState));
+    syncConfigToDB({ isResultsLocked: nextState });
     setMessage({ type: 'success', text: nextState ? 'ফলাফল লক করা হয়েছে।' : 'ফলাফল আনলক করা হয়েছে।' });
   };
 
@@ -495,7 +550,9 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                   if (title && title.trim()) {
                     const newTitle = title.trim();
                     const newId = `p${Date.now()}`;
-                    setActivePositions(prev => [...prev, { id: newId, title: newTitle }]);
+                    const next = [...activePositions, { id: newId, title: newTitle }];
+                    setActivePositions(next);
+                    syncConfigToDB({ activePositions: next });
                     setMessage({ type: 'success', text: `নতুন পদ "${newTitle}" যুক্ত করা হয়েছে।` });
                   }
                 }}
