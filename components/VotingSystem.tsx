@@ -6,7 +6,7 @@ import {
   CheckCircle2, AlertCircle, BarChart3, Fingerprint, 
   Send, Trophy, UserCheck, Loader2, Key, RefreshCw, Copy, Check, Trash2, ShieldCheck, Ticket, Database, HelpCircle, ArrowRight, RotateCcw, MessageSquare, Plus, Settings2, Vote, Lock, Unlock, UserPlus, UserMinus, Eye, EyeOff, LayoutGrid, Trash
 } from 'lucide-react';
-import { toBengaliDigits } from '../utils/numberUtils';
+import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 
 const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const [activeSubTab, setActiveSubTab] = useState<'vote' | 'results' | 'admin' | 'poll'>('vote');
@@ -234,8 +234,8 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     const counts: Record<string, number> = {};
     pollOptions.forEach(opt => counts[opt] = 0);
     allVotes.forEach(v => {
-      if (pollOptions.includes(v.p1)) {
-        counts[v.p1] = (counts[v.p1] || 0) + 1;
+      if (pollOptions.includes(String(v.p1))) {
+        counts[String(v.p1)] = (counts[String(v.p1)] || 0) + 1;
       }
     });
     return Object.entries(counts).map(([label, value]) => ({ label, value }));
@@ -272,7 +272,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       
       if (type === 'election') {
         activePositions.forEach(pos => {
-          voteData[pos.id] = selections[pos.id] || '';
+          voteData[pos.id] = String(selections[pos.id] || '');
         });
       } else {
         voteData.p1 = pollSelection;
@@ -382,7 +382,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               <div className="space-y-4 pt-4">
                 {message?.type === 'error' && (
                   <div className="p-5 rounded-2xl border-2 animate-in slide-in-from-bottom-2 duration-300 flex items-center gap-4 bg-red-50 border-red-100 text-red-600 shadow-sm">
-                    <AlertCircle size={24} className=\"shrink-0\" />
+                    <AlertCircle size={24} className="shrink-0" />
                     <span className="text-[15px] font-black leading-tight">{message.text}</span>
                   </div>
                 )}
@@ -451,7 +451,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               <div className="space-y-4 pt-4">
                 {message?.type === 'error' && (
                   <div className="p-5 rounded-2xl border-2 animate-in slide-in-from-bottom-2 duration-300 flex items-center gap-4 bg-red-50 border-red-100 text-red-600 shadow-sm">
-                    <AlertCircle size={24} className=\"shrink-0\" />
+                    <AlertCircle size={24} className="shrink-0" />
                     <span className="text-[15px] font-black leading-tight">{message.text}</span>
                   </div>
                 )}
@@ -476,35 +476,57 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
           {!showResults ? (
             <LockedResultsView />
           ) : (
-            calculateElectionResults.map((pos) => (
-              <div key={pos.id} className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden hover:shadow-2xl transition-all flex flex-col">
-                <div className="bg-slate-900 p-6 flex items-center justify-between"><h3 className="text-white font-black text-lg">{pos.title}</h3><div className="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest">{toBengaliDigits(allVotes.filter(v => voterList.includes((v as any)[pos.id] as string)).length)} ভোট</div></div>
-                <div className="p-6 space-y-4 flex-1">
-                  {pos.results.length > 0 ? pos.results.map((res, idx) => (
-                    <div key={idx} className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${idx === 0 ? 'bg-emerald-50 border-emerald-100 scale-[1.02]' : 'bg-slate-50 border-slate-100'}`}><div className="flex items-center gap-3">{idx === 0 && <Trophy size={20} className="text-amber-500 animate-bounce" />}<span className={`text-sm font-black ${idx === 0 ? 'text-emerald-900' : 'text-slate-700'}`}>{res.name}</span></div><div className="flex items-center gap-2"><span className="text-lg font-black">{toBengaliDigits(res.votes)}</span><span className="text-[10px] font-black text-slate-400 uppercase">ভোট</span></div></div>
-                  )) : <div className="py-12 text-center text-slate-400 font-bold">কোনো ডাটা নেই</div>}
-                  
-                  {/* Manual Add Candidate Button inside results card with sharp corners */}
-                  <button 
-                    onClick={() => {
-                      const name = prompt("নতুন প্রার্থীর নাম লিখুন:");
-                      if (name && name.trim()) {
-                        const newName = name.trim();
-                        if (voterList.includes(newName)) {
-                          alert("এই নাম ইতিমধ্যে তালিকায় আছে।");
-                        } else {
-                          setVoterList(prev => [...prev, newName]);
+            <>
+              {calculateElectionResults.map((pos) => (
+                <div key={pos.id} className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden hover:shadow-2xl transition-all flex flex-col">
+                  <div className="bg-slate-900 p-6 flex items-center justify-between"><h3 className="text-white font-black text-lg">{pos.title}</h3><div className="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest">{toBengaliDigits(allVotes.filter(v => voterList.includes(String((v as any)[pos.id]))).length)} ভোট</div></div>
+                  <div className="p-6 space-y-4 flex-1">
+                    {pos.results.length > 0 ? pos.results.map((res, idx) => (
+                      <div key={idx} className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${idx === 0 ? 'bg-emerald-50 border-emerald-100 scale-[1.02]' : 'bg-slate-50 border-slate-100'}`}><div className="flex items-center gap-3">{idx === 0 && <Trophy size={20} className="text-amber-500 animate-bounce" />}<span className={`text-sm font-black ${idx === 0 ? 'text-emerald-900' : 'text-slate-700'}`}>{res.name}</span></div><div className="flex items-center gap-2"><span className="text-lg font-black">{toBengaliDigits(res.votes)}</span><span className="text-[10px] font-black text-slate-400 uppercase">ভোট</span></div></div>
+                    )) : <div className="py-12 text-center text-slate-400 font-bold">কোনো ডাটা নেই</div>}
+                    
+                    {/* Manual Add Candidate Button inside results card with sharp corners */}
+                    <button 
+                      onClick={() => {
+                        const name = prompt("নতুন প্রার্থীর নাম লিখুন:");
+                        if (name && name.trim()) {
+                          const newName = name.trim();
+                          if (voterList.includes(newName)) {
+                            alert("এই নাম ইতিমধ্যে তালিকায় আছে।");
+                          } else {
+                            setVoterList(prev => [...prev, newName]);
+                          }
                         }
-                      }
-                    }}
-                    className="w-full mt-4 p-5 border-2 border-dashed border-slate-200 rounded-none text-slate-300 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-all flex flex-col items-center justify-center gap-2 group"
-                  >
-                    <Plus size={32} className="group-hover:scale-110 transition-transform" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">নতুন প্রার্থী যুক্ত করুন</span>
-                  </button>
+                      }}
+                      className="w-full mt-4 p-5 border-2 border-dashed border-slate-200 rounded-none text-slate-300 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-all flex flex-col items-center justify-center gap-2 group"
+                    >
+                      <Plus size={32} className="group-hover:scale-110 transition-transform" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">নতুন প্রার্থী যুক্ত করুন</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+
+              {/* Add New Position Card at the end of the 7 existing positions */}
+              <button 
+                onClick={() => {
+                  const title = prompt("নতুন পদের নাম লিখুন (যেমন: প্রচার সম্পাদক):");
+                  if (title && title.trim()) {
+                    const newTitle = title.trim();
+                    const newId = `p${Date.now()}`;
+                    setActivePositions(prev => [...prev, { id: newId, title: newTitle }]);
+                    setMessage({ type: 'success', text: `নতুন পদ "${newTitle}" যুক্ত করা হয়েছে।` });
+                  }
+                }}
+                className="bg-white border-4 border-dashed border-slate-300 rounded-none flex flex-col items-center justify-center min-h-[300px] hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 group shadow-lg"
+              >
+                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600 transition-all duration-300 shadow-inner">
+                  <Plus size={48} strokeWidth={3} className="group-hover:scale-110 transition-transform" />
+                </div>
+                <h4 className="mt-6 font-black text-slate-500 group-hover:text-blue-700 uppercase tracking-widest text-sm">নতুন নির্বাচনী পদ যোগ করুন</h4>
+                <p className="mt-2 text-[10px] font-bold text-slate-400 italic">নতুন পদ যুক্ত করলে তা ব্যালটে দেখা যাবে</p>
+              </button>
+            </>
           )}
         </div>
       )}
