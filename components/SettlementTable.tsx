@@ -138,8 +138,11 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
 
   const grandTotals = useMemo(() => {
     return filteredEntries.reduce((acc, entry) => {
-      acc.paraCount += entry.paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ').length;
-      acc.inv += entry.paragraphs.reduce((sum, p) => sum + (p.involvedAmount || 0), 0);
+      // Defensive checks for paragraphs to prevent white screen crashes
+      const paras = entry.paragraphs || [];
+      acc.paraCount += paras.filter(p => p.status === 'পূর্ণাঙ্গ').length;
+      acc.inv += paras.reduce((sum, p) => sum + (p.involvedAmount || 0), 0);
+      
       const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
       const rCount = (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") ? parseBengaliNumber(rCountRaw) : 0;
       const rAmount = (entry.manualRaisedAmount !== null && entry.manualRaisedAmount !== undefined && entry.manualRaisedAmount !== 0) ? Number(entry.manualRaisedAmount) : 0;
@@ -164,8 +167,9 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
 
   const renderMetadataGrid = (entry: SettlementEntry) => {
     // Calculate money amounts for display 17 and 18 from paragraph list
-    const fullMoney = entry.paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ').reduce((s, p) => s + p.involvedAmount, 0);
-    const partialMoney = entry.paragraphs.filter(p => p.status === 'আংশিক').reduce((s, p) => s + p.involvedAmount, 0);
+    const paras = entry.paragraphs || [];
+    const fullMoney = paras.filter(p => p.status === 'পূর্ণাঙ্গ').reduce((s, p) => s + p.involvedAmount, 0);
+    const partialMoney = paras.filter(p => p.status === 'আংশিক').reduce((s, p) => s + p.involvedAmount, 0);
 
     return (
       <div className="bg-slate-50/80 p-6 border-x border-b border-slate-200 rounded-b-xl animate-in slide-in-from-top-4 duration-500 shadow-inner">
@@ -180,7 +184,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             </div>
             <div className="flex gap-3">
                <button onClick={() => onReject?.(entry.id)} className="px-4 py-2 bg-red-50 text-red-600 rounded-xl font-black text-[11px] hover:bg-red-600 hover:text-white transition-all flex items-center gap-2 border border-red-100"><XCircle size={14} /> প্রত্যাখ্যান করুন</button>
-               <button onClick={() => onApprove?.(entry.id)} className="px-5 py-2 bg-emerald-600 text-white rounded-xl font-black text-[11px] hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-lg shadow-emerald-200"><ShieldCheck size={14} /> অনুমোদন দিন</button>
+               <button onClick={() => onApprove?.(entry.id)} className="px-5 py-2 bg-emerald-600 text-white rounded-xl font-black text-[11px] hover:bg-emerald-700 transition-all items-center gap-2 shadow-lg shadow-emerald-200"><ShieldCheck size={14} /> অনুমোদন দিন</button>
             </div>
           </div>
         )}
@@ -417,8 +421,9 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
               const showCycleHeader = currentCycle !== lastRenderedCycle;
               if (showCycleHeader) lastRenderedCycle = currentCycle;
               const isExpanded = expandedEntries.has(entry.id);
-              const entrySettledCount = entry.paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ').length;
-              const entryInvolvedAmount = entry.paragraphs.reduce((sum, p) => sum + (p.involvedAmount || 0), 0);
+              const paras = entry.paragraphs || [];
+              const entrySettledCount = paras.filter(p => p.status === 'পূর্ণাঙ্গ').length;
+              const entryInvolvedAmount = paras.reduce((sum, p) => sum + (p.involvedAmount || 0), 0);
               const mRaisedCountRaw = entry.manualRaisedCount?.toString().trim() || "";
               const mRaisedCount = (mRaisedCountRaw === "" || mRaisedCountRaw === "0" || mRaisedCountRaw === "০") ? "০" : toBengaliDigits(mRaisedCountRaw);
               const mRaisedAmount = (entry.manualRaisedAmount !== null && entry.manualRaisedAmount !== undefined && entry.manualRaisedAmount !== 0) ? entry.manualRaisedAmount : 0;
@@ -439,12 +444,12 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                       </td>
                     </tr>
                   )}
-                  {entry.paragraphs.length > 0 ? entry.paragraphs.map((p, pIdx) => (
+                  {paras.length > 0 ? paras.map((p, pIdx) => (
                     <tr key={p.id} className={`transition-colors group ${isAdminView ? 'bg-amber-50/30 hover:bg-amber-100/50' : 'hover:bg-blue-50/30'}`}>
                       {pIdx === 0 && (
                         <>
-                          <td rowSpan={entry.paragraphs.length} className={tdBase + " font-black bg-white"}>{toBengaliDigits(idx + 1)}</td>
-                          <td rowSpan={entry.paragraphs.length} onClick={() => toggleExpand(entry.id)} className={tdBase + " cursor-pointer bg-white group-hover:bg-blue-50/50 transition-all text-left p-3"}>
+                          <td rowSpan={paras.length} className={tdBase + " font-black bg-white"}>{toBengaliDigits(idx + 1)}</td>
+                          <td rowSpan={paras.length} onClick={() => toggleExpand(entry.id)} className={tdBase + " cursor-pointer bg-white group-hover:bg-blue-50/50 transition-all text-left p-3"}>
                             <div className="flex items-start justify-between">
                               <div className="space-y-1 text-left flex-1">
                                 <p className="text-[10px] leading-tight"><span className="font-bold text-emerald-700">মন্ত্রণালয়:</span> <span className="font-bold text-slate-900">{entry.ministryName}</span></p>
@@ -464,8 +469,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                       <td className={tdMoney}>{toBengaliDigits(Math.round(p.involvedAmount))}</td>
                       {pIdx === 0 && (
                         <>
-                          <td rowSpan={entry.paragraphs.length} className={tdBase + " text-blue-700 bg-white"}>{mRaisedCount}</td>
-                          <td rowSpan={entry.paragraphs.length} className={tdMoney + " text-blue-800 bg-white"}>{toBengaliDigits(Math.round(mRaisedAmount))}</td>
+                          <td rowSpan={paras.length} className={tdBase + " text-blue-700 bg-white"}>{mRaisedCount}</td>
+                          <td rowSpan={paras.length} className={tdMoney + " text-blue-800 bg-white"}>{toBengaliDigits(Math.round(mRaisedAmount))}</td>
                         </>
                       )}
                       <td className={tdMoney}>{toBengaliDigits(Math.round(p.category === 'ভ্যাট' ? p.recoveredAmount : 0))}</td><td className={tdMoney}>{toBengaliDigits(Math.round(p.category === 'ভ্যাট' ? p.adjustedAmount : 0))}</td>
@@ -546,7 +551,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                     </tr>
                   )}
                   <tr className={`${isAdminView ? 'bg-amber-100/40' : 'bg-blue-50/60'} font-black border-t border-slate-300 h-[38px]`}>
-                    <td colSpan={2} className="px-4 text-left italic text-[10px] text-blue-900 border border-slate-300">মিমাংসিত অনুচ্ছেদ: <span className="text-emerald-700">{toBengaliDigits(entrySettledCount)} টি</span> | জড়িত টাকা: <span className="text-blue-700">{toBengaliDigits(Math.round(entryInvolvedAmount))}</span></td>
+                    <td colSpan={2} className="px-4 text-left italic text-[10px] text-blue-900 border border-slate-300">মোট মিমাংসিত অনুচ্ছেদ: <span className="text-emerald-700">{toBengaliDigits(entrySettledCount)} টি</span> | মোট জড়িত টাকা: <span className="text-blue-700">{toBengaliDigits(Math.round(entryInvolvedAmount))}</span></td>
                     <td className="text-center text-[10px] text-emerald-800 border border-slate-300 bg-emerald-50/30">{toBengaliDigits(entrySettledCount)}</td><td className="text-center text-[10px] text-blue-800 border border-slate-300 bg-blue-50/30">{toBengaliDigits(Math.round(entryInvolvedAmount))}</td>
                     <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{mRaisedCount}</td><td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(mRaisedAmount))}</td>
                     <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(entry.vatRec || 0))}</td><td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(entry.vatAdj || 0))}</td>
