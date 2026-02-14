@@ -39,43 +39,19 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
     );
   };
 
-  // INITIAL SELECTION MENU (Redesigned as per image: No header, Aligned Left)
+  // INITIAL SELECTION MENU (Redesigned as per image: No header, Aligned Left, Swapped Order)
   if (!mainModule) {
     return (
       <div id="section-entry-choice" className="w-full py-2 animate-in slide-in-from-left-10 duration-700 relative">
         <IDBadge id="section-entry-choice" isLayoutEditable={isLayoutEditable} />
         
-        {/* Header section removed as per user's cross-marked image */}
+        {/* Header section removed as per user's earlier instruction */}
 
         <div className="space-y-5 max-w-4xl text-left">
-          {/* Option 1: Settlement Register - Vertical Premium Card */}
-          <div 
-            onClick={() => setMainModule('settlement')}
-            className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards"
-          >
-            <IDBadge id="opt-settlement-row" />
-            <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]"></div>
-            
-            <div className="flex items-center justify-center pl-7">
-              <div className="w-12 h-12 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-600 transition-all duration-500">
-                <ClipboardList size={24} className="text-blue-500 group-hover:text-white" />
-              </div>
-            </div>
-
-            <div className="flex flex-col justify-center pl-8 flex-1">
-              <h3 className="text-[20px] font-black text-white tracking-tight leading-tight group-hover:text-blue-400 transition-colors">১. মীমাংসা রেজিস্টার ডাটা এন্ট্রি</h3>
-              <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider mt-0.5 group-hover:text-slate-300 transition-colors">অনুগ্রহ করে নিচের ১৮টি ফিল্ড সঠিকভাবে পূরণ করুন - যেটা বর্তমানে আছে।</p>
-            </div>
-
-            <div className="pr-10 opacity-30 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-              <ArrowRight size={22} className="text-white" />
-            </div>
-          </div>
-
-          {/* Option 2: Incoming Correspondence - Vertical Premium Card */}
+          {/* Option 1: Incoming Correspondence - NOW FIRST */}
           <div 
             onClick={() => setMainModule('correspondence')}
-            className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards delay-100"
+            className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards"
           >
             <IDBadge id="opt-correspondence-row" />
             <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.4)]"></div>
@@ -87,8 +63,32 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
             </div>
 
             <div className="flex flex-col justify-center pl-8 flex-1">
-              <h3 className="text-[20px] font-black text-white tracking-tight leading-tight group-hover:text-emerald-400 transition-colors">২. প্রাপ্ত চিঠিপত্র এন্ট্রি</h3>
+              <h3 className="text-[20px] font-black text-white tracking-tight leading-tight group-hover:text-emerald-400 transition-colors">১. প্রাপ্ত চিঠিপত্র এন্ট্রি</h3>
               <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider mt-0.5 group-hover:text-slate-300 transition-colors">নতুন চিঠিপত্র প্রাপ্তি এবং ডায়েরি এন্ট্রি করার জন্য এই মডিউলটি ব্যবহার করুন।</p>
+            </div>
+
+            <div className="pr-10 opacity-30 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
+              <ArrowRight size={22} className="text-white" />
+            </div>
+          </div>
+
+          {/* Option 2: Settlement Register - NOW SECOND */}
+          <div 
+            onClick={() => setMainModule('settlement')}
+            className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards delay-100"
+          >
+            <IDBadge id="opt-settlement-row" />
+            <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]"></div>
+            
+            <div className="flex items-center justify-center pl-7">
+              <div className="w-12 h-12 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-600 transition-all duration-500">
+                <ClipboardList size={24} className="text-blue-500 group-hover:text-white" />
+              </div>
+            </div>
+
+            <div className="flex flex-col justify-center pl-8 flex-1">
+              <h3 className="text-[20px] font-black text-white tracking-tight leading-tight group-hover:text-blue-400 transition-colors">২. মীমাংসা রেজিস্টার ডাটা এন্ট্রি</h3>
+              <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider mt-0.5 group-hover:text-slate-300 transition-colors">অনুগ্রহ করে নিচের ১৮টি ফিল্ড সঠিকভাবে পূরণ করুন - যেটা বর্তমানে আছে।</p>
             </div>
 
             <div className="pr-10 opacity-30 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
