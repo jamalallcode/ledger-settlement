@@ -484,25 +484,6 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     {pos.results.length > 0 ? pos.results.map((res, idx) => (
                       <div key={idx} className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${idx === 0 ? 'bg-emerald-50 border-emerald-100 scale-[1.02]' : 'bg-slate-50 border-slate-100'}`}><div className="flex items-center gap-3">{idx === 0 && <Trophy size={20} className="text-amber-500 animate-bounce" />}<span className={`text-sm font-black ${idx === 0 ? 'text-emerald-900' : 'text-slate-700'}`}>{res.name}</span></div><div className="flex items-center gap-2"><span className="text-lg font-black">{toBengaliDigits(res.votes)}</span><span className="text-[10px] font-black text-slate-400 uppercase">ভোট</span></div></div>
                     )) : <div className="py-12 text-center text-slate-400 font-bold">কোনো ডাটা নেই</div>}
-                    
-                    {/* Manual Add Candidate Button inside results card with sharp corners */}
-                    <button 
-                      onClick={() => {
-                        const name = prompt("নতুন প্রার্থীর নাম লিখুন:");
-                        if (name && name.trim()) {
-                          const newName = name.trim();
-                          if (voterList.includes(newName)) {
-                            alert("এই নাম ইতিমধ্যে তালিকায় আছে।");
-                          } else {
-                            setVoterList(prev => [...prev, newName]);
-                          }
-                        }
-                      }}
-                      className="w-full mt-4 p-5 border-2 border-dashed border-slate-200 rounded-none text-slate-300 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-all flex flex-col items-center justify-center gap-2 group"
-                    >
-                      <Plus size={32} className="group-hover:scale-110 transition-transform" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">নতুন প্রার্থী যুক্ত করুন</span>
-                    </button>
                   </div>
                 </div>
               ))}
