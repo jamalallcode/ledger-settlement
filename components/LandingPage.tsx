@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { 
-  LayoutDashboard, ArrowRight, ShieldCheck, CheckCircle2, CalendarRange, Bell, ShieldAlert
+  LayoutDashboard, ArrowRight, ShieldCheck, CheckCircle2, CalendarRange, Bell, ShieldAlert, Sparkles, UserCheck, AlertTriangle, ArrowRightCircle
 } from 'lucide-react';
 import { SettlementEntry } from '../types.ts';
 import { toBengaliDigits } from '../utils/numberUtils.ts';
@@ -27,9 +27,12 @@ const LandingPage: React.FC<LandingPageProps> = ({
   pendingCount = 0,
   onShowPending
 }) => {
-  const IDBadge = ({ id }: { id: string }) => {
+  // Added isLayoutEditable as an optional prop to match usage on line 117
+  const IDBadge = ({ id, isLayoutEditable: manualEditable }: { id: string, isLayoutEditable?: boolean }) => {
     const [copied, setCopied] = useState(false);
-    if (!isLayoutEditable) return null;
+    // Use manual prop if provided, otherwise fallback to parent scope value
+    const showBadge = manualEditable !== undefined ? manualEditable : isLayoutEditable;
+    if (!showBadge) return null;
     
     const handleCopy = (e: React.MouseEvent) => {
       e.preventDefault();
@@ -59,7 +62,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
   };
 
   return (
-    <div className="animate-landing-premium relative space-y-8">
+    <div className="animate-landing-premium relative space-y-8 pb-20">
       <IDBadge id="view-landing-home" />
       
       {/* Hero Section */}
@@ -110,6 +113,44 @@ const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
       </div>
+
+      {/* MODERATION ALERT FOR ADMIN */}
+      {isAdmin && pendingCount > 0 && (
+        <div id="admin-moderation-alert" className="group relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-amber-50 to-orange-50 p-8 border-2 border-amber-200/60 shadow-xl shadow-amber-900/5 animate-in slide-in-from-bottom-6 duration-700">
+          <IDBadge id="admin-moderation-alert" isLayoutEditable={isLayoutEditable} />
+          
+          <div className="absolute -right-10 -bottom-10 opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all duration-1000">
+             <ShieldAlert size={260} />
+          </div>
+
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex items-center gap-6">
+              <div className="relative flex h-16 w-16 items-center justify-center shrink-0">
+                <div className="absolute inset-0 animate-ping rounded-full bg-amber-400 opacity-20"></div>
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-lg shadow-amber-500/30">
+                  <ShieldAlert size={32} />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-black text-amber-950 flex items-center gap-3">
+                  রিভিউ এর জন্য তথ্য অপেক্ষমাণ আছে!
+                  <span className="px-3 py-1 bg-amber-200 text-amber-900 rounded-full text-xs font-black">
+                    {toBengaliDigits(pendingCount)} টি নতুন এন্ট্রি
+                  </span>
+                </h2>
+                <p className="text-amber-800/70 font-bold text-sm">অন্যান্য ব্যবহারকারী দ্বারা প্রেরিত নতুন ডাটাগুলো রেজিস্টারে যুক্ত করার পূর্বে আপনার অনুমোদন প্রয়োজন।</p>
+              </div>
+            </div>
+            
+            <button 
+              onClick={onShowPending}
+              className="flex items-center gap-3 px-8 py-4 bg-amber-600 hover:bg-amber-700 text-white rounded-2xl font-black text-sm shadow-xl shadow-amber-600/30 transition-all active:scale-95 whitespace-nowrap"
+            >
+              এখনই মডোরেশন করুন <ArrowRightCircle size={18} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
