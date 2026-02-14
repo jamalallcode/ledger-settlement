@@ -167,51 +167,51 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-landing-premium pb-20">
-      {/* Header Section */}
-      <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl">
-        <div className="absolute top-0 right-0 p-12 text-white/5"><Library size={300} /></div>
-        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-           <div className="space-y-4">
+      {/* Header Section - Height Reduced (p-10 to p-8) */}
+      <div className="bg-slate-900 rounded-[3rem] p-8 text-white relative overflow-hidden shadow-2xl">
+        <div className="absolute top-0 right-0 p-12 text-white/5"><Library size={240} /></div>
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+           <div className="space-y-3">
               <div className="flex items-center gap-3">
-                 <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg"><Library size={24} /></div>
-                 <h2 className="text-3xl font-black tracking-tight">ডকুমেন্ট আর্কাইভ ও লাইব্রেরি</h2>
+                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg"><Library size={20} /></div>
+                 <h2 className="text-2xl md:text-3xl font-black tracking-tight">ডকুমেন্ট আর্কাইভ ও লাইব্রেরি</h2>
               </div>
-              <p className="text-slate-400 font-bold max-w-xl">সরকারি অর্ডার, সার্কুলার এবং গুরুত্বপূর্ণ সকল ডকুমেন্ট এখন এক জায়গার। Archive.org ইন্টিগ্রেশনের মাধ্যমে আপনার ফাইলগুলো থাকছে নিরাপদ এবং চিরস্থায়ী।</p>
+              <p className="text-slate-400 font-bold max-w-xl text-sm md:text-base leading-relaxed">সরকারি অর্ডার, সার্কুলার এবং গুরুত্বপূর্ণ সকল ডকুমেন্ট এখন এক জায়গার। Archive.org ইন্টিগ্রেশনের মাধ্যমে আপনার ফাইলগুলো থাকছে নিরাপদ।</p>
            </div>
            {isAdmin && (
-             <button onClick={() => setShowAddModal(true)} className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black flex items-center gap-3 shadow-xl shadow-blue-900/40 active:scale-95 transition-all">
-                <Plus size={20} /> নতুন ডকুমেন্ট যুক্ত করুন
+             <button onClick={() => setShowAddModal(true)} className="px-7 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black flex items-center gap-3 shadow-xl shadow-blue-900/40 active:scale-95 transition-all shrink-0">
+                <Plus size={18} /> নতুন ডকুমেন্ট যুক্ত করুন
              </button>
            )}
         </div>
       </div>
 
-      {/* Controls Bar */}
-      <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm flex flex-col lg:flex-row items-center gap-6">
+      {/* Controls Bar - Sticky, height reduced (p-6 to p-5, input h-55 to h-50) */}
+      <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border border-slate-200 p-5 rounded-3xl shadow-lg flex flex-col lg:flex-row items-center gap-5 transition-all duration-300">
          <div className="relative flex-1 w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text" 
               placeholder="শিরোনাম বা কী-ওয়ার্ড দিয়ে খুঁজুন..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 h-[55px] bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all"
+              className="w-full pl-11 pr-4 h-[50px] bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-sm"
             />
          </div>
-         <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+         <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0 justify-center">
             {categories.map(cat => (
               <button 
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-6 py-3 rounded-xl font-black text-sm transition-all border ${activeCategory === cat ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                className={`px-5 py-2.5 rounded-xl font-black text-[13px] transition-all border ${activeCategory === cat ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
               >
                 {cat}
               </button>
             ))}
             <div className="h-8 w-[1.5px] bg-slate-200 mx-2 hidden lg:block"></div>
             <div className="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-inner">
-               <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-400'}`}><LayoutGrid size={18} /></button>
-               <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-400'}`}><List size={18} /></button>
+               <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}><LayoutGrid size={16} /></button>
+               <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}><List size={16} /></button>
             </div>
          </div>
       </div>
