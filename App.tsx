@@ -248,11 +248,13 @@ const App: React.FC = () => {
       await supabase.from('settlement_entries').upsert({ id: entryToSync.id, content: entryToSync });
     }
     
-    if (!isAdmin) setActiveTab('landing');
-    else {
-      setActiveTab('register');
-      setRegisterSubModule(isCorrespondence ? 'correspondence' : 'settlement');
-    }
+    // REDIRECT DISABLED as per user instruction to allow viewing success buttons
+    // The redirect will now be handled by the "View Register" buttons in the child modules
+  };
+
+  const handleViewRegister = (module: 'settlement' | 'correspondence') => {
+    setActiveTab('register');
+    setRegisterSubModule(module);
   };
 
   const handleApproveEntry = async (id: string) => {
@@ -412,7 +414,7 @@ const App: React.FC = () => {
                 />
               )}
               
-              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} nextSl={entries.length + 1} branchSuggestions={[]} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} />}
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={[]} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} />}
               
               {activeTab === 'register' && (
                 <div className="space-y-6 relative">
