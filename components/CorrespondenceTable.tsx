@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange } from 'lucide-react';
+import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { getCurrentCycle } from '../utils/cycleHelper';
 
@@ -33,9 +33,11 @@ interface CorrespondenceTableProps {
   isAdmin?: boolean;
   onEdit?: (entry: any) => void;
   onDelete?: (id: string) => void;
+  onApprove?: (id: string) => void;
+  onReject?: (id: string) => void;
 }
 
-const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBack, isLayoutEditable, isAdmin, onEdit, onDelete }) => {
+const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBack, isLayoutEditable, isAdmin, onEdit, onDelete, onApprove, onReject }) => {
   
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
 
@@ -155,6 +157,24 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                    {entry.remarks || '-'}
                    {isAdmin && (
                      <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all no-print">
+                       {entry.approvalStatus === 'pending' && onApprove && (
+                         <button 
+                           onClick={(e) => { e.stopPropagation(); onApprove(entry.id); }}
+                           className="p-1 bg-emerald-600 text-white rounded-lg shadow-lg hover:bg-emerald-700 transition-all active:scale-95 border border-emerald-400"
+                           title="অনুমোদন দিন"
+                         >
+                           <Check size={11} strokeWidth={3} />
+                         </button>
+                       )}
+                       {entry.approvalStatus === 'pending' && onReject && (
+                         <button 
+                           onClick={(e) => { e.stopPropagation(); onReject(entry.id); }}
+                           className="p-1 bg-rose-600 text-white rounded-lg shadow-lg hover:bg-rose-700 transition-all active:scale-95 border border-rose-400"
+                           title="বাতিল করুন"
+                         >
+                           <XCircle size={11} />
+                         </button>
+                       )}
                        <button 
                          onClick={(e) => { e.stopPropagation(); onEdit?.(entry); }}
                          className="p-1 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-all active:scale-95 border border-blue-400"
