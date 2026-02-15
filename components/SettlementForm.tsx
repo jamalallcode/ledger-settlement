@@ -42,16 +42,14 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, 
     );
   };
 
-  // INITIAL SELECTION MENU (Redesigned as per image: No header, Aligned Left, Swapped Order)
+  // INITIAL SELECTION MENU
   if (!mainModule) {
     return (
       <div id="section-entry-choice" className="w-full py-2 animate-in slide-in-from-left-10 duration-700 relative">
         <IDBadge id="section-entry-choice" isLayoutEditable={isLayoutEditable} />
         
-        {/* Header section removed as per user's earlier instruction */}
-
         <div className="space-y-5 max-w-4xl text-left">
-          {/* Option 1: Incoming Correspondence - NOW FIRST */}
+          {/* Option 1: Incoming Correspondence */}
           <div 
             onClick={() => setMainModule('correspondence')}
             className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards"
@@ -75,7 +73,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, 
             </div>
           </div>
 
-          {/* Option 2: Settlement Register - NOW SECOND */}
+          {/* Option 2: Settlement Register */}
           <div 
             onClick={() => setMainModule('settlement')}
             className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards delay-100"
@@ -104,7 +102,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, 
   }
 
   if (mainModule === 'correspondence') {
-    return <CorrespondenceEntryModule onBackToMenu={() => setMainModule(null)} onViewRegister={() => onViewRegister('correspondence')} onAdd={onAdd} isLayoutEditable={isLayoutEditable} initialEntry={initialEntry} />;
+    return <CorrespondenceEntryModule onBackToMenu={() => setMainModule(null)} onViewRegister={() => onViewRegister('correspondence')} onAdd={onAdd} isLayoutEditable={isLayoutEditable} initialEntry={initialEntry} isAdmin={isAdmin} />;
   }
 
   return (
