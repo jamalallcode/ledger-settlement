@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Mail, X, FileText, Calendar, Hash, Banknote, BookOpen, 
   Inbox, Computer, User, CheckCircle2, Layout, Sparkles, 
-  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash, Search, ChevronDown, Check, Plus
+  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash, Search, ChevronDown, Check, Plus, CalendarRange
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
+import { getCycleForDate } from '../utils/cycleHelper';
 
 interface CorrespondenceEntryModuleProps {
   onBackToMenu: () => void;
@@ -13,6 +14,8 @@ interface CorrespondenceEntryModuleProps {
 
 const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ onBackToMenu, isLayoutEditable }) => {
   const [isSuccess, setIsSuccess] = useState(false);
+  const [calculatedCycle, setCalculatedCycle] = useState<string>('');
+  
   const [formData, setFormData] = useState({
     description: '',
     paraType: 'এসএফআই',
@@ -44,6 +47,20 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
       setReceiverSuggestions(JSON.parse(savedNames));
     }
   }, []);
+
+  // Calculate Cycle automatically when diaryDate changes
+  useEffect(() => {
+    if (formData.diaryDate) {
+      try {
+        const cycle = getCycleForDate(new Date(formData.diaryDate));
+        setCalculatedCycle(toBengaliDigits(cycle.label));
+      } catch (e) {
+        setCalculatedCycle('');
+      }
+    } else {
+      setCalculatedCycle('');
+    }
+  }, [formData.diaryDate]);
 
   // Handle click outside for dropdown
   useEffect(() => {
@@ -199,24 +216,32 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               />
             </div>
 
-            {/* Field 6 - Fixed date alignment */}
+            {/* Field 6 - Automatic Cycle Logic integrated here */}
             <div className={`${colWrapper} border-emerald-100`}>
               <IDBadge id="corr-field-6" />
               <label className={labelCls}><span className={numBadge}>৬</span> <BookOpen size={14} className="text-emerald-600" /> ডায়েরি নং ও তারিখ:</label>
-              <div className="flex items-center w-full h-[52px] bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-50 transition-all shadow-sm">
-                <input 
-                  type="text" placeholder="নং" 
-                  className="flex-[2] min-w-0 h-full px-3 bg-transparent border-none font-bold outline-none text-[14px]" 
-                  value={formData.diaryNo} 
-                  onChange={e => setFormData({...formData, diaryNo: toBengaliDigits(e.target.value)})} 
-                />
-                <div className="w-[1.5px] h-6 bg-slate-200 shrink-0"></div>
-                <input 
-                  type="date" 
-                  className="flex-[3] min-w-0 h-full px-2 bg-transparent border-none font-bold outline-none text-[13px] text-slate-700" 
-                  value={formData.diaryDate} 
-                  onChange={e => setFormData({...formData, diaryDate: e.target.value})} 
-                />
+              <div className="space-y-2">
+                <div className="flex items-center w-full h-[52px] bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-50 transition-all shadow-sm">
+                  <input 
+                    type="text" placeholder="নং" 
+                    className="flex-[2] min-w-0 h-full px-3 bg-transparent border-none font-bold outline-none text-[14px]" 
+                    value={formData.diaryNo} 
+                    onChange={e => setFormData({...formData, diaryNo: toBengaliDigits(e.target.value)})} 
+                  />
+                  <div className="w-[1.5px] h-6 bg-slate-200 shrink-0"></div>
+                  <input 
+                    type="date" 
+                    className="flex-[3] min-w-0 h-full px-2 bg-transparent border-none font-bold outline-none text-[13px] text-slate-700" 
+                    value={formData.diaryDate} 
+                    onChange={e => setFormData({...formData, diaryDate: e.target.value})} 
+                  />
+                </div>
+                {calculatedCycle && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 w-fit animate-in slide-in-from-top-1 duration-300">
+                    <CalendarRange size={12} />
+                    <span className="text-[10px] font-black uppercase tracking-tighter">সাইকেল: {calculatedCycle}</span>
+                  </div>
+                )}
               </div>
             </div>
 
