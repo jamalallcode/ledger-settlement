@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOption } from '../types.ts';
 import SearchableSelect from './SearchableSelect.tsx';
 import { MINISTRIES_LIST, MINISTRY_ENTITY_MAP, ENTITY_BRANCH_MAP, AUDIT_YEARS_OPTIONS } from '../constants.ts';
-import { Trash2, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare } from 'lucide-react';
+import { Trash2, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils.ts';
 import { getCycleForDate, isEntryLate } from '../utils/cycleHelper.ts';
 import { format } from 'date-fns';
@@ -415,7 +414,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
 
-    // Get current date for entry metadata fix for line 759
+    // Get current date for entry metadata
     const now = new Date();
     let cycleLabel = '';
     let isLate = false;
@@ -444,7 +443,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
     setTimeout(() => {
       onAdd(finalData);
       isSubmitting.current = false;
-    }, 2800);
+    }, 8000);
   };
 
   const formatSummaryNum = (val: number) => {
@@ -480,7 +479,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
         </div>
 
         <div className="space-y-6 max-w-2xl mx-auto">
-          {/* SFI Row - Premium Vertical Card */}
+          {/* SFI Row */}
           <div 
             onClick={() => setFormData({...formData, paraType: 'এসএফআই'})}
             className={`group relative flex items-center min-h-[100px] w-full rounded-[1.5rem] shadow-md border-2 transition-all duration-500 cursor-pointer overflow-hidden ${formData.paraType === 'এসএফআই' ? 'bg-slate-900 border-blue-600 ring-4 ring-blue-50' : 'bg-white border-slate-100 hover:border-blue-200'}`}
@@ -512,7 +511,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
             )}
           </div>
 
-          {/* Non-SFI Row - Premium Vertical Card */}
+          {/* Non-SFI Row */}
           <div 
             onClick={() => setFormData({...formData, paraType: 'নন এসএফআই'})}
             className={`group relative flex items-center min-h-[100px] w-full rounded-[1.5rem] shadow-md border-2 transition-all duration-500 cursor-pointer overflow-hidden ${formData.paraType === 'নন এসএফআই' ? 'bg-slate-900 border-indigo-600 ring-4 ring-indigo-50' : 'bg-white border-slate-100 hover:border-indigo-200'}`}
@@ -628,7 +627,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
             </div>
             <div id="field-18" className={col2Style}>
               <IDBadge id="field-18" isLayoutEditable={isLayoutEditable} />
-              <label className={labelCls}><span className={numBadge}>১৮</span> <MessageSquare size={14} className="text-emerald-600 shrink-0" /> মন্তব্য</label>
+              <label className={labelCls}><span className={numBadge}>১৮</span> <MessageSquare size={14} className="text-emerald-600" /> মন্তব্য</label>
               <input type="text" className={inputCls} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
             </div>
           </div>
@@ -755,45 +754,56 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
 
         <div className="pt-6 relative" ref={bottomRef}>
           {isSuccess ? (
-            <div className="w-full py-10 bg-gradient-to-br from-emerald-50 via-white to-teal-50 border-2 border-emerald-200/60 rounded-[3rem] flex flex-col items-center justify-center gap-5 animate-in zoom-in-95 duration-500 shadow-[0_25px_60px_rgba(16,185,129,0.2)] backdrop-blur-md relative overflow-hidden group">
+            <div className="w-full py-10 bg-gradient-to-br from-emerald-50 via-white to-teal-50 border-2 border-emerald-200/60 rounded-[3rem] flex flex-col items-center justify-center gap-6 animate-in zoom-in-95 duration-500 shadow-[0_25px_60px_rgba(16,185,129,0.2)] backdrop-blur-md relative overflow-hidden group">
                <div className="relative">
-                  <div className={`w-20 h-20 ${isDeletingPara || deletedCount > 0 ? 'bg-red-600' : 'bg-emerald-600'} text-white rounded-[2rem] flex items-center justify-center shadow-[0_15px_35px_rgba(5,150,105,0.4)] animate-in spin-in-12 duration-700 border-4 border-white`}>
-                     {isDeletingPara || deletedCount > 0 ? <Trash size={48} strokeWidth={2.5} className="animate-pulse" /> : (isUpdateMode ? <ShieldCheck size={48} strokeWidth={2.5} className="animate-pulse" /> : <CheckCircle2 size={48} strokeWidth={2.5} className="animate-pulse" />)}
+                  <div className={`w-24 h-24 ${isDeletingPara || deletedCount > 0 ? 'bg-red-600' : 'bg-emerald-600'} text-white rounded-[2.5rem] flex items-center justify-center shadow-[0_15px_35px_rgba(5,150,105,0.4)] animate-in spin-in-12 duration-700 border-4 border-white`}>
+                     {isDeletingPara || deletedCount > 0 ? <Trash size={56} strokeWidth={2.5} className="animate-pulse" /> : (isUpdateMode ? <ShieldCheck size={56} strokeWidth={2.5} className="animate-pulse" /> : <CheckCircle2 size={56} strokeWidth={2.5} className="animate-pulse" />)}
                   </div>
-                  <div className="absolute -right-2 -bottom-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg border border-emerald-100">
-                     <Sparkles size={18} className="text-amber-500" />
+                  <div className="absolute -right-2 -bottom-2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg border border-emerald-100">
+                     <Sparkles size={22} className="text-amber-500" />
                   </div>
                </div>
                
-               <div className="text-center space-y-2 relative z-10">
-                  <h4 className={`text-3xl font-black ${isDeletingPara || deletedCount > 0 ? 'text-red-950' : 'text-emerald-950'} tracking-tight`}>
+               <div className="text-center space-y-3 relative z-10 px-6">
+                  <h4 className={`text-4xl font-black ${isDeletingPara || deletedCount > 0 ? 'text-red-950' : 'text-emerald-950'} tracking-tight`}>
                     {isDeletingPara || deletedCount === 1 ? "অনুচ্ছেদটি ডিলিট করা হচ্ছে" : (deletedCount > 1 ? "অনুচ্ছেদসমূহ ডিলিট করা হচ্ছে" : (isUpdateMode ? "তথ্য আপডেট করা হচ্ছে" : "রেজিস্টার তথ্য সফলভাবে সংরক্ষিত হয়েছে"))}
                   </h4>
-                  <div className="text-[15px] font-bold text-slate-600 uppercase tracking-widest flex items-center justify-center gap-2">
+                  <div className="text-[16px] font-bold text-slate-600 uppercase tracking-widest flex items-center justify-center gap-2">
                      {isDeletingPara || deletedCount === 1 ? (
-                       <React.Fragment><AlertCircle size={18} className="text-red-600" /> অনুচ্ছেদটি ডিলিট করা হচ্ছে</React.Fragment>
+                       <React.Fragment><AlertCircle size={20} className="text-red-600" /> তথ্য যাচাই করা হচ্ছে</React.Fragment>
                      ) : (deletedCount > 1 ? (
-                       <React.Fragment><AlertCircle size={18} className="text-red-600" /> অনুচ্ছেদসমূহ ডিলিট করা হচ্ছে</React.Fragment>
+                       <React.Fragment><AlertCircle size={20} className="text-red-600" /> তথ্য আপডেট হচ্ছে</React.Fragment>
                      ) : (isUpdateMode || isAdmin ? (
-                       <React.Fragment><CheckCircle2 size={18} className="text-emerald-600" /> আপনার এন্ট্রিটি সরাসরি মূল রেজিস্টারে যুক্ত করা হয়েছে</React.Fragment>
+                       <React.Fragment><CheckCircle2 size={20} className="text-emerald-600" /> আপনার এন্ট্রিটি সরাসরি মূল রেজিস্টারে যুক্ত করা হয়েছে</React.Fragment>
                      ) : (
-                       <React.Fragment><ShieldCheck size={18} className="text-emerald-600" /> এডমিন অনুমতি দিলে এটি মূল রেজিস্টারে যুক্ত হবে</React.Fragment>
+                       <React.Fragment><ShieldCheck size={20} className="text-emerald-600" /> এডমিন অনুমতি দিলে এটি মূল রেজিস্টারে যুক্ত হবে</React.Fragment>
                      )))}
                   </div>
                </div>
+
+               {!isDeletingPara && (
+                  <div className="flex flex-col md:flex-row items-center gap-4 mt-2">
+                    <button 
+                      onClick={onBackToMenu}
+                      className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-3 active:scale-95 group"
+                    >
+                      প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টারটি দেখুন <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
+               )}
                
-               <div className="flex flex-col items-center gap-3 mt-2">
+               <div className="flex flex-col items-center gap-3 mt-4">
                   <div className="h-1.5 w-64 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                      <div className={`h-full ${isDeletingPara || deletedCount > 0 ? 'bg-red-600' : 'bg-emerald-600'} animate-progress-loading-premium`}></div>
                   </div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter animate-pulse">{(isDeletingPara || deletedCount > 0) ? 'অনুগ্রহ করে অপেক্ষা করুন...' : 'অনুগ্রহ করে অপেক্ষা করুন... হোম পেজে রিডাইরেক্ট হচ্ছে'}</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter animate-pulse italic">{(isDeletingPara || deletedCount > 0) ? 'অনুগ্রহ করে অপেক্ষা করুন...' : 'স্বয়ংক্রিয়ভাবে মেনুতে ফিরে যাওয়া হচ্ছে...'}</span>
                </div>
             </div>
           ) : (
             <button 
               id="btn-submit-entry"
               type="submit"
-              className="w-full py-5 text-white text-xl font-black rounded-[2.5rem] bg-blue-600 hover:bg-blue-700 active:scale-[0.98] shadow-[0_20px_40px_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-4 group relative overflow-hidden"
+              className="w-full py-5 text-white text-xl font-black rounded-[2.5rem] bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] shadow-[0_20px_40px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-4 group relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
               <IDBadge id="btn-submit-entry" isLayoutEditable={isLayoutEditable} />
@@ -809,7 +819,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
           100% { width: 100%; }
         }
         .animate-progress-loading-premium {
-          animation: progress-loading-premium 2.8s linear forwards;
+          animation: progress-loading-premium 8s linear forwards;
         }
       `}} />
     </div>
