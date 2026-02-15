@@ -416,7 +416,82 @@ const App: React.FC = () => {
               
               {activeTab === 'register' && (
                 <div className="space-y-6 relative">
-                  {!registerSubModule ? (
+                  {showPendingOnly ? (
+                    <div className="space-y-8 animate-in fade-in duration-700">
+                      <div className="flex items-center justify-between no-print mb-4">
+                        <button 
+                          onClick={() => setShowPendingOnly(false)}
+                          className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all flex items-center gap-2 font-black text-[11px] border border-slate-200"
+                        >
+                          <ChevronLeft size={16} /> মূল রেজিস্টারে ফিরুন
+                        </button>
+                      </div>
+
+                      {(pendingEntries.length > 0 || pendingCorrespondence.length > 0) ? (
+                        <div className="bg-amber-50/50 border-2 border-dashed border-amber-200 p-8 rounded-[2.5rem] text-center space-y-3">
+                           <h3 className="text-xl font-black text-amber-900">অপেক্ষমাণ এন্ট্রি মডোরেশন</h3>
+                           <p className="text-sm font-bold text-amber-700">নিচের এন্ট্রিগুলো যাচাই করে অনুমোদন দিন। অনুমোদন না পাওয়া পর্যন্ত এগুলো রিপোর্ট বা রেজিস্টারে আসবে না।</p>
+                        </div>
+                      ) : (
+                        <div className="bg-emerald-50/50 border-2 border-dashed border-emerald-200 p-10 rounded-[3rem] text-center space-y-4 shadow-sm animate-in zoom-in-95 duration-1000">
+                           <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-200 animate-in spin-in-1 duration-1000">
+                              <CheckCircle2 size={36} strokeWidth={2.5} />
+                           </div>
+                           <div className="space-y-1">
+                              <h3 className="text-2xl font-black text-emerald-900 flex items-center justify-center gap-3">
+                                <Sparkles size={20} className="text-amber-400" /> সকল তথ্য সফলভাবে মডোরেশন করা হয়েছে!
+                              </h3>
+                              <p className="text-sm font-bold text-emerald-700">বর্তমানে আপনার ইনবক্সে কোনো এন্ট্রি অনুমোদনের অপেক্ষায় নেই।</p>
+                           </div>
+                           <button 
+                             onClick={() => setShowPendingOnly(false)}
+                             className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all shadow-xl active:scale-95 border-b-4 border-emerald-800"
+                           >
+                             মূল রেজিস্টারে ফিরে যান
+                           </button>
+                        </div>
+                      )}
+                      
+                      {pendingCorrespondence.length > 0 && (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl w-fit font-black text-sm border border-emerald-100">
+                            <Mail size={16} /> প্রাপ্ত চিঠিপত্র অপেক্ষমাণ
+                          </div>
+                          <CorrespondenceTable 
+                            entries={pendingCorrespondence} 
+                            onBack={() => {}}
+                            isAdmin={isAdmin}
+                            isLayoutEditable={isLayoutEditable}
+                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
+                            onDelete={handleDelete}
+                            onApprove={handleApproveEntry}
+                            onReject={handleRejectEntry}
+                          />
+                        </div>
+                      )}
+
+                      {pendingEntries.length > 0 && (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl w-fit font-black text-sm border border-blue-100">
+                            <ClipboardList size={16} /> মীমাংসা রেজিস্টার অপেক্ষমাণ
+                          </div>
+                          <SettlementTable 
+                            key={`pending-list`} 
+                            entries={pendingEntries} 
+                            onDelete={handleDelete} 
+                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
+                            isLayoutEditable={isLayoutEditable} 
+                            showFilters={false} 
+                            setShowFilters={setShowRegisterFilters}
+                            isAdminView={true}
+                            onApprove={handleApproveEntry}
+                            onReject={handleRejectEntry}
+                            isAdmin={isAdmin}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : !registerSubModule ? (
                     <div id="section-register-choice" className="w-full py-2 animate-in slide-in-from-left-10 duration-700 relative">
                       <IDBadge id="section-register-choice" />
                       <div className="space-y-5 max-w-4xl text-left">
@@ -474,94 +549,16 @@ const App: React.FC = () => {
                         </button>
                       </div>
 
-                      {isAdmin && (totalPendingCount > 0 || showPendingOnly) && (
-                        <div className="flex justify-end gap-2 no-print">
-                          <button 
-                            onClick={() => setShowPendingOnly(!showPendingOnly)}
-                            className={`px-4 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-2 border shadow-sm ${showPendingOnly ? 'bg-amber-600 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
-                          >
-                            {showPendingOnly ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
-                            {showPendingOnly ? 'মূল রেজিস্টারে ফিরুন' : `অপেক্ষমাণ তালিকা (${toBengaliDigits(totalPendingCount)})`}
-                          </button>
-                        </div>
-                      )}
-                      
-                      {showPendingOnly ? (
-                        <div className="space-y-8 animate-in fade-in duration-700">
-                           {(pendingEntries.length > 0 || pendingCorrespondence.length > 0) ? (
-                             <div className="bg-amber-50/50 border-2 border-dashed border-amber-200 p-8 rounded-[2.5rem] text-center space-y-3">
-                                <h3 className="text-xl font-black text-amber-900">অপেক্ষমাণ এন্ট্রি মডোরেশন</h3>
-                                <p className="text-sm font-bold text-amber-700">নিচের এন্ট্রিগুলো যাচাই করে অনুমোদন দিন। অনুমোদন না পাওয়া পর্যন্ত এগুলো রিপোর্ট বা রেজিস্টারে আসবে না।</p>
-                             </div>
-                           ) : (
-                             <div className="bg-emerald-50/50 border-2 border-dashed border-emerald-200 p-10 rounded-[3rem] text-center space-y-4 shadow-sm animate-in zoom-in-95 duration-1000">
-                                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-200 animate-in spin-in-1 duration-1000">
-                                   <CheckCircle2 size={36} strokeWidth={2.5} />
-                                </div>
-                                <div className="space-y-1">
-                                   <h3 className="text-2xl font-black text-emerald-900 flex items-center justify-center gap-3">
-                                     <Sparkles size={20} className="text-amber-400" /> সকল তথ্য সফলভাবে মডোরেশন করা হয়েছে!
-                                   </h3>
-                                   <p className="text-sm font-bold text-emerald-700">বর্তমানে আপনার ইনবক্সে কোনো এন্ট্রি অনুমোদনের অপেক্ষায় নেই।</p>
-                                </div>
-                                <button 
-                                  onClick={() => setShowPendingOnly(false)}
-                                  className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all shadow-xl active:scale-95 border-b-4 border-emerald-800"
-                                >
-                                  মূল রেজিস্টারে ফিরে যান
-                                </button>
-                             </div>
-                           )}
-                           
-                           {pendingCorrespondence.length > 0 && (
-                             <div className="space-y-4">
-                               <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl w-fit font-black text-sm border border-emerald-100">
-                                 <Mail size={16} /> প্রাপ্ত চিঠিপত্র অপেক্ষমাণ
-                               </div>
-                               <CorrespondenceTable 
-                                 entries={pendingCorrespondence} 
-                                 onBack={() => {}}
-                                 isAdmin={isAdmin}
-                                 isLayoutEditable={isLayoutEditable}
-                                 onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
-                                 onDelete={handleDelete}
-                               />
-                             </div>
-                           )}
-
-                           {pendingEntries.length > 0 && (
-                             <div className="space-y-4">
-                               <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl w-fit font-black text-sm border border-blue-100">
-                                 <ClipboardList size={16} /> মীমাংসা রেজিস্টার অপেক্ষমাণ
-                               </div>
-                               <SettlementTable 
-                                 key={`pending-list`} 
-                                 entries={pendingEntries} 
-                                 onDelete={handleDelete} 
-                                 onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
-                                 isLayoutEditable={isLayoutEditable} 
-                                 showFilters={false} 
-                                 setShowFilters={setShowRegisterFilters}
-                                 isAdminView={true}
-                                 onApprove={handleApproveEntry}
-                                 onReject={handleRejectEntry}
-                                 isAdmin={isAdmin}
-                               />
-                             </div>
-                           )}
-                        </div>
-                      ) : (
-                        <SettlementTable 
-                          key={`register-reset-${resetKey}`} 
-                          entries={approvedEntries} 
-                          onDelete={handleDelete} 
-                          onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
-                          isLayoutEditable={isLayoutEditable} 
-                          showFilters={showRegisterFilters} 
-                          setShowFilters={setShowRegisterFilters} 
-                          isAdmin={isAdmin}
-                        />
-                      )}
+                      <SettlementTable 
+                        key={`register-reset-${resetKey}`} 
+                        entries={approvedEntries} 
+                        onDelete={handleDelete} 
+                        onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
+                        isLayoutEditable={isLayoutEditable} 
+                        showFilters={showRegisterFilters} 
+                        setShowFilters={setShowRegisterFilters} 
+                        isAdmin={isAdmin}
+                      />
                     </div>
                   ) : (
                     <div className="animate-in fade-in duration-700">
