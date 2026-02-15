@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Mail, X, FileText, Calendar, Hash, Banknote, BookOpen, 
@@ -11,9 +12,10 @@ interface CorrespondenceEntryModuleProps {
   onAdd: (data: any) => void;
   onBackToMenu: () => void;
   isLayoutEditable?: boolean;
+  initialEntry?: any;
 }
 
-const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ onAdd, onBackToMenu, isLayoutEditable }) => {
+const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ onAdd, onBackToMenu, isLayoutEditable, initialEntry }) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [calculatedCycle, setCalculatedCycle] = useState<string>('');
   
@@ -49,6 +51,36 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
       setReceiverSuggestions(JSON.parse(savedNames));
     }
   }, []);
+
+  // Initialize for Edit Mode
+  useEffect(() => {
+    if (initialEntry) {
+      setFormData({
+        description: initialEntry.description || '',
+        paraType: initialEntry.paraType || 'এসএফআই',
+        letterType: initialEntry.letterType || 'বিএসআর',
+        letterNo: initialEntry.letterNo || '',
+        letterDate: initialEntry.letterDate || '',
+        totalParas: initialEntry.totalParas || '',
+        totalAmount: initialEntry.totalAmount || '',
+        diaryNo: initialEntry.diaryNo || '',
+        diaryDate: initialEntry.diaryDate || '',
+        receiptDate: initialEntry.receiptDate || '',
+        digitalFileNo: initialEntry.digitalFileNo || '',
+        presentationDate: initialEntry.presentationDate || '',
+        sentParaCount: initialEntry.sentParaCount || '',
+        receiverName: initialEntry.receiverName || '',
+        receivedDate: initialEntry.receivedDate || '',
+        isOnline: initialEntry.isOnline || 'না'
+      });
+      
+      setRawInputs({
+        totalParas: toBengaliDigits(initialEntry.totalParas),
+        totalAmount: toBengaliDigits(initialEntry.totalAmount),
+        sentParaCount: toBengaliDigits(initialEntry.sentParaCount)
+      });
+    }
+  }, [initialEntry]);
 
   // Calculate Cycle automatically when diaryDate changes
   useEffect(() => {
@@ -144,7 +176,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
             <Mail size={24} />
           </div>
           <div>
-            <h3 className="text-2xl font-black text-slate-900 leading-tight">প্রাপ্ত চিঠিপত্র ডাটা এন্ট্রি</h3>
+            <h3 className="text-2xl font-black text-slate-900 leading-tight">
+               {initialEntry ? 'প্রাপ্ত চিঠিপত্র এডিট' : 'প্রাপ্ত চিঠিপত্র ডাটা এন্ট্রি'}
+            </h3>
             <p className="text-slate-500 font-bold text-sm">নতুন চিঠিপত্র এবং ডায়েরি এন্ট্রির জন্য এই ফরমটি ব্যবহার করুন</p>
           </div>
         </div>
@@ -389,6 +423,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
           </div>
         </fieldset>
 
+        {/* Corrected escaped characters in JSX that caused rendering and type errors */}
         {/* Action Buttons */}
         <div className="pt-10 border-t border-slate-100 relative" ref={bottomRef}>
           {isSuccess ? (
@@ -402,7 +437,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
                   </div>
                </div>
                <div className="text-center space-y-2">
-                  <h4 className="text-3xl font-black text-emerald-950 tracking-tight">চিঠিপত্র তথ্য সফলভাবে সংরক্ষিত হয়েছে</h4>
+                  <h4 className="text-3xl font-black text-emerald-950 tracking-tight">
+                    {initialEntry ? 'তথ্য সফলভাবে আপডেট হয়েছে' : 'চিঠিপত্র তথ্য সফলভাবে সংরক্ষিত হয়েছে'}
+                  </h4>
                   <p className="text-[15px] font-bold text-emerald-700 uppercase tracking-widest flex items-center justify-center gap-2">
                     <CheckCircle2 size={18} /> আপনার ডাটাবেজে এন্ট্রিটি যুক্ত করা হয়েছে
                   </p>
@@ -425,7 +462,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
                   className="flex-[2] py-5 bg-emerald-600 text-white rounded-[2rem] font-black text-xl shadow-[0_20px_40px_rgba(16,185,129,0.3)] hover:bg-emerald-700 transition-all active:scale-95 flex items-center justify-center gap-4 group relative overflow-hidden"
                >
                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-                 <CheckCircle2 size={24} /> তথ্য সংরক্ষণ করুন
+                 <CheckCircle2 size={24} /> {initialEntry ? 'তথ্য আপডেট করুন' : 'তথ্য সংরক্ষণ করুন'}
                </button>
             </div>
           )}
