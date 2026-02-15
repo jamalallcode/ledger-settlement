@@ -157,6 +157,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
   const numBadge = "inline-flex items-center justify-center w-5 h-5 bg-slate-900 text-white rounded-md text-[10px] font-black shadow-sm shrink-0";
 
   return (
+    /* Fixed outer div className and removed escaped quotes/newlines */
     <div id="form-container-correspondence" className="bg-white p-4 md:p-10 rounded-[2.5rem] border border-slate-200 shadow-2xl animate-landing-premium max-w-7xl mx-auto overflow-x-hidden relative">
       <IDBadge id="view-correspondence-form" />
       
@@ -450,7 +451,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
                   <div className="h-1.5 w-64 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                      <div className="h-full bg-emerald-600 animate-progress-loading-premium"></div>
                   </div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter animate-pulse italic">প্রক্রিয়াটি সফলভাবে সম্পন্ন হয়েছে</span>
+                  <div className="relative flex items-center justify-center">
+                    <span className="text-[14px] font-black text-emerald-600 uppercase tracking-widest animate-complete-text">কমপ্লিট</span>
+                  </div>
                </div>
             </div>
           ) : (
@@ -478,6 +481,13 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
         }
         .animate-progress-loading-premium {
           animation: progress-loading-premium 4s linear forwards;
+        }
+        @keyframes fade-in-complete {
+          0%, 95% { opacity: 0; transform: translateY(10px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-complete-text {
+          animation: fade-in-complete 4.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}} />
     </div>
