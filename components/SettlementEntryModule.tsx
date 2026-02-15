@@ -11,7 +11,6 @@ const generateSafeId = () => {
   return 'id-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 };
 
-// --- STYLES & CONSTANTS ---
 const inputCls = "w-full h-[48px] px-4 border border-slate-300 rounded-xl font-bold bg-white text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 shadow-sm transition-all text-[14px]";
 const labelCls = "block text-[13px] font-black text-slate-700 mb-2 flex items-center gap-1.5";
 const numBadge = "inline-flex items-center justify-center w-5 h-5 bg-white text-slate-600 rounded-md text-[10px] font-black mr-1 shadow-sm shrink-0";
@@ -176,31 +175,26 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, on
   const isSubmitting = useRef(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Field 7 States
   const [letterNoPart, setLetterNoPart] = useState('');
   const [letterDay, setLetterDay] = useState('');
   const [letterMonth, setLetterMonth] = useState('');
   const [letterYear, setLetterYear] = useState('');
 
-  // Field 8 States
   const [wpNoPart, setWpNoPart] = useState('');
   const [wpDay, setWpDay] = useState('');
   const [wpMonth, setWpMonth] = useState('');
   const [wpYear, setWpYear] = useState('');
 
-  // Field 9 States
   const [minNoPart, setMinNoPart] = useState('');
   const [minDay, setMinDay] = useState('');
   const [minMonth, setMinMonth] = useState('');
   const [minYear, setMinYear] = useState('');
 
-  // Field 10 States
   const [diaryNoPart, setDiaryNoPart] = useState('');
   const [diaryDay, setDiaryDay] = useState('');
   const [diaryMonth, setDiaryMonth] = useState('');
   const [diaryYear, setDiaryYear] = useState('');
 
-  // Field 11 States
   const [issueNoPart, setIssueNoPart] = useState('');
   const [dayPart, setDayPart] = useState('');
   const [monthPart, setMonthPart] = useState('');
@@ -212,28 +206,22 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, on
   const [isMinFocused, setIsMinFocused] = useState(false);
   const [isDiaryFocused, setIsDiaryFocused] = useState(false);
 
-  // Focus Refs
   const letterDayRef = useRef<HTMLInputElement>(null);
   const letterMonthRef = useRef<HTMLInputElement>(null);
   const letterYearRef = useRef<HTMLInputElement>(null);
-  
   const wpDayRef = useRef<HTMLInputElement>(null);
   const wpMonthRef = useRef<HTMLInputElement>(null);
   const wpYearRef = useRef<HTMLInputElement>(null);
-  
   const minDayRef = useRef<HTMLInputElement>(null);
   const minMonthRef = useRef<HTMLInputElement>(null);
   const minYearRef = useRef<HTMLInputElement>(null);
-  
   const diaryDayRef = useRef<HTMLInputElement>(null);
   const diaryMonthRef = useRef<HTMLInputElement>(null);
   const diaryYearRef = useRef<HTMLInputElement>(null);
-  
   const issueDayRef = useRef<HTMLInputElement>(null);
   const issueMonthRef = useRef<HTMLInputElement>(null);
   const issueYearRef = useRef<HTMLInputElement>(null);
 
-  // Helper function to extract segments
   const extractSegments = (combined: string, noPrefix: string, datePrefix: string) => {
     if (!combined) return { no: '', d: '', m: '', y: '' };
     const parts = combined.split(',');
@@ -477,7 +465,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, on
         </div>
 
         <div className="space-y-6 max-w-2xl mx-auto">
-          {/* SFI Row */}
           <div 
             onClick={() => setFormData({...formData, paraType: 'এসএফআই'})}
             className={`group relative flex items-center min-h-[100px] w-full rounded-[1.5rem] shadow-md border-2 transition-all duration-500 cursor-pointer overflow-hidden ${formData.paraType === 'এসএফআই' ? 'bg-slate-900 border-blue-600 ring-4 ring-blue-50' : 'bg-white border-slate-100 hover:border-blue-200'}`}
@@ -509,7 +496,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, on
             )}
           </div>
 
-          {/* Non-SFI Row */}
           <div 
             onClick={() => setFormData({...formData, paraType: 'নন এসএফআই'})}
             className={`group relative flex items-center min-h-[100px] w-full rounded-[1.5rem] shadow-md border-2 transition-all duration-500 cursor-pointer overflow-hidden ${formData.paraType === 'নন এসএফআই' ? 'bg-slate-900 border-indigo-600 ring-4 ring-indigo-50' : 'bg-white border-slate-100 hover:border-indigo-200'}`}
