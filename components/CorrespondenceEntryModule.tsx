@@ -19,6 +19,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
   const [formData, setFormData] = useState({
     description: '',
     paraType: 'এসএফআই',
+    letterType: 'বিএসআর',
     letterNo: '',
     letterDate: '',
     totalParas: '',
@@ -160,10 +161,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               />
             </div>
 
-            {/* Field 2 */}
+            {/* Field 2 - Renamed to শাখার ধরণ */}
             <div className={`${colWrapper} border-blue-100`}>
               <IDBadge id="corr-field-2" />
-              <label className={labelCls}><span className={numBadge}>২</span> <ShieldCheck size={14} className="text-blue-600" /> পত্রের ধরণ:</label>
+              <label className={labelCls}><span className={numBadge}>২</span> <ShieldCheck size={14} className="text-blue-600" /> শাখার ধরণ:</label>
               <select 
                 className={inputCls} value={formData.paraType}
                 onChange={e => setFormData({...formData, paraType: e.target.value})}
@@ -173,10 +174,24 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               </select>
             </div>
 
-            {/* Field 3 - Fixed date alignment */}
+            {/* New Field - ৩. পত্রের ধরণ */}
+            <div className={`${colWrapper} border-indigo-100`}>
+              <IDBadge id="corr-field-letter-type" />
+              <label className={labelCls}><span className={numBadge}>৩</span> <FileText size={14} className="text-indigo-600" /> পত্রের ধরণ:</label>
+              <select 
+                className={inputCls} value={formData.letterType}
+                onChange={e => setFormData({...formData, letterType: e.target.value})}
+              >
+                <option value="বিএসআর">বিএসআর (BSR)</option>
+                <option value="দ্বিপক্ষীয় সভা">দ্বিপক্ষীয় সভা</option>
+                <option value="ত্রিপক্ষীয় সভা">ত্রিপক্ষীয় সভা</option>
+              </select>
+            </div>
+
+            {/* Field 4 - Letter No & Date (Previous 3) */}
             <div className={`${colWrapper} border-amber-100`}>
               <IDBadge id="corr-field-3" />
-              <label className={labelCls}><span className={numBadge}>৩</span> <Hash size={14} className="text-amber-600" /> পত্র নং ও তারিখ:</label>
+              <label className={labelCls}><span className={numBadge}>৪</span> <Hash size={14} className="text-amber-600" /> পত্র নং ও তারিখ:</label>
               <div className="flex items-center w-full h-[52px] bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:bg-white focus-within:border-amber-500 focus-within:ring-4 focus-within:ring-amber-50 transition-all shadow-sm">
                 <input 
                   type="text" placeholder="নং" 
@@ -194,10 +209,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               </div>
             </div>
 
-            {/* Field 4 */}
+            {/* Field 5 - Total Paras (Previous 4) */}
             <div className={`${colWrapper} border-purple-100`}>
               <IDBadge id="corr-field-4" />
-              <label className={labelCls}><span className={numBadge}>৪</span> <ListOrdered size={14} className="text-purple-600" /> প্রেরিত মোট অনুচ্ছেদ সংখ্যা:</label>
+              <label className={labelCls}><span className={numBadge}>৫</span> <ListOrdered size={14} className="text-purple-600" /> প্রেরিত মোট অনুচ্ছেদ সংখ্যা:</label>
               <input 
                 type="text" className={inputCls} 
                 value={rawInputs.totalParas || ''} onChange={e => handleNumericInput('totalParas', e.target.value)}
@@ -205,10 +220,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               />
             </div>
 
-            {/* Field 5 */}
+            {/* Field 6 - Total Amount (Previous 5) */}
             <div className={`${colWrapper} border-rose-100`}>
               <IDBadge id="corr-field-5" />
-              <label className={labelCls}><span className={numBadge}>৫</span> <Banknote size={14} className="text-rose-600" /> মোট জড়িত টাকা:</label>
+              <label className={labelCls}><span className={numBadge}>৬</span> <Banknote size={14} className="text-rose-600" /> মোট জড়িত টাকা:</label>
               <input 
                 type="text" className={inputCls} 
                 value={rawInputs.totalAmount || ''} onChange={e => handleNumericInput('totalAmount', e.target.value)}
@@ -216,10 +231,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               />
             </div>
 
-            {/* Field 6 - Automatic Cycle Logic integrated here */}
+            {/* Field 7 - Diary No & Date (Previous 6) */}
             <div className={`${colWrapper} border-emerald-100`}>
               <IDBadge id="corr-field-6" />
-              <label className={labelCls}><span className={numBadge}>৬</span> <BookOpen size={14} className="text-emerald-600" /> ডায়েরি নং ও তারিখ:</label>
+              <label className={labelCls}><span className={numBadge}>৭</span> <BookOpen size={14} className="text-emerald-600" /> ডায়েরি নং ও তারিখ:</label>
               <div className="space-y-2">
                 <div className="flex items-center w-full h-[52px] bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-50 transition-all shadow-sm">
                   <input 
@@ -245,20 +260,20 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               </div>
             </div>
 
-            {/* Field 7 */}
+            {/* Field 8 - Receipt Date (Previous 7) */}
             <div className={`${colWrapper} border-sky-100`}>
               <IDBadge id="corr-field-7" />
-              <label className={labelCls}><span className={numBadge}>৭</span> <Inbox size={14} className="text-sky-600" /> শাখায় প্রাপ্তির তারিখ:</label>
+              <label className={labelCls}><span className={numBadge}>৮</span> <Inbox size={14} className="text-sky-600" /> শাখায় প্রাপ্তির তারিখ:</label>
               <input 
                 type="date" className={inputCls} 
                 value={formData.receiptDate} onChange={e => setFormData({...formData, receiptDate: e.target.value})}
               />
             </div>
 
-            {/* Field 8 */}
+            {/* Field 9 - Digital File No (Previous 8) */}
             <div className={`${colWrapper} border-indigo-100`}>
               <IDBadge id="corr-field-8" />
-              <label className={labelCls}><span className={numBadge}>৮</span> <Computer size={14} className="text-indigo-600" /> ডিজিটাল নথি নং-:</label>
+              <label className={labelCls}><span className={numBadge}>৯</span> <Computer size={14} className="text-indigo-600" /> ডিজিটাল নথি নং-:</label>
               <input 
                 type="text" className={inputCls} 
                 value={formData.digitalFileNo} onChange={e => setFormData({...formData, digitalFileNo: toBengaliDigits(e.target.value)})}
@@ -266,20 +281,20 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               />
             </div>
 
-            {/* Field 9 */}
+            {/* Field 10 - Presentation Date (Previous 9) */}
             <div className={`${colWrapper} border-orange-100`}>
               <IDBadge id="corr-field-9" />
-              <label className={labelCls}><span className={numBadge}>৯</span> <Calendar size={14} className="text-orange-600" /> উপস্থাপনের তারিখ:</label>
+              <label className={labelCls}><span className={numBadge}>১০</span> <Calendar size={14} className="text-orange-600" /> উপস্থাপনের তারিখ:</label>
               <input 
                 type="date" className={inputCls} 
                 value={formData.presentationDate} onChange={e => setFormData({...formData, presentationDate: e.target.value})}
               />
             </div>
 
-            {/* Field 10 */}
+            {/* Field 11 - Sent Para Count (Previous 10) */}
             <div className={`${colWrapper} border-teal-100`}>
               <IDBadge id="corr-field-10" />
-              <label className={labelCls}><span className={numBadge}>১০</span> <ListOrdered size={14} className="text-teal-600" /> প্রেরিত অনুচ্ছেদ সংখ্যা:</label>
+              <label className={labelCls}><span className={numBadge}>১১</span> <ListOrdered size={14} className="text-teal-600" /> প্রেরিত অনুচ্ছেদ সংখ্যা:</label>
               <input 
                 type="text" className={inputCls} 
                 value={rawInputs.sentParaCount || ''} onChange={e => handleNumericInput('sentParaCount', e.target.value)}
@@ -287,10 +302,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               />
             </div>
 
-            {/* Field 11 - Premium Searchable Dropdown for Receiver Name */}
+            {/* Field 12 - Receiver Name (Previous 11) */}
             <div className={`${colWrapper} border-slate-200`} ref={receiverRef}>
               <IDBadge id="corr-field-11" />
-              <label className={labelCls}><span className={numBadge}>১১</span> <User size={14} className="text-slate-600" /> গৃহীতার নাম:</label>
+              <label className={labelCls}><span className={numBadge}>১২</span> <User size={14} className="text-slate-600" /> গৃহীতার নাম:</label>
               <div className="relative group">
                 <input 
                   type="text" 
@@ -341,20 +356,20 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               </div>
             </div>
 
-            {/* Field 12 */}
+            {/* Field 13 - Received Date (Previous 12) */}
             <div className={`${colWrapper} border-blue-100`}>
               <IDBadge id="corr-field-12" />
-              <label className={labelCls}><span className={numBadge}>১২</span> <Calendar size={14} className="text-blue-600" /> গ্রহণের তারিখ:</label>
+              <label className={labelCls}><span className={numBadge}>১৩</span> <Calendar size={14} className="text-blue-600" /> গ্রহণের তারিখ:</label>
               <input 
                 type="date" className={inputCls} 
                 value={formData.receivedDate} onChange={e => setFormData({...formData, receivedDate: e.target.value})}
               />
             </div>
 
-            {/* Field 13 */}
+            {/* Field 14 - Is Online (Previous 13) */}
             <div className={`${colWrapper} border-emerald-100`}>
               <IDBadge id="corr-field-13" />
-              <label className={labelCls}><span className={numBadge}>১৩</span> <Computer size={14} className="text-emerald-600" /> অনলাইনে প্রাপ্তি:</label>
+              <label className={labelCls}><span className={numBadge}>১৪</span> <Computer size={14} className="text-emerald-600" /> অনলাইনে প্রাপ্তি:</label>
               <div className="flex gap-4 h-[52px] items-center px-2">
                 <button 
                   type="button" onClick={() => setFormData({...formData, isOnline: 'হ্যাঁ'})}
