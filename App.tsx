@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import SettlementForm from './components/SettlementForm';
 import SettlementTable from './components/SettlementTable';
+import CorrespondenceTable from './components/CorrespondenceTable';
 import ReturnView from './components/ReturnView';
 import LandingPage from './components/LandingPage';
 import VotingSystem from './components/VotingSystem';
@@ -15,6 +16,7 @@ import { supabase } from './lib/supabase';
 import { ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ArrowRight, BellRing, Sparkles, Mail, ClipboardList, ArrowRightCircle, ChevronLeft } from 'lucide-react';
 
 const STORAGE_KEY = 'ledger_settlement_v10_stable';
+const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
 const PREV_STATS_KEY = 'ledger_prev_stats_v1';
 const LOCK_MODE_KEY = 'ledger_lock_mode_status';
 const ADMIN_MODE_KEY = 'ledger_admin_access_v1';
@@ -26,6 +28,7 @@ const generateId = () => {
 
 const App: React.FC = () => {
   const [entries, setEntries] = useState<SettlementEntry[]>([]);
+  const [correspondenceEntries, setCorrespondenceEntries] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('landing'); 
   const [resetKey, setResetKey] = useState(0); 
   const [editingEntry, setEditingEntry] = useState<SettlementEntry | null>(null);
@@ -143,6 +146,7 @@ const App: React.FC = () => {
         const { data, error } = await supabase.from('settlement_entries').select('*');
         if (!error && data) {
           const processedEntries: SettlementEntry[] = [];
+          const corrEntries: any[] = [];
           
           data.forEach((row: any) => {
             if (!row || !row.id) return;
@@ -158,11 +162,17 @@ const App: React.FC = () => {
               setPrevStats(content);
               localStorage.setItem(PREV_STATS_KEY, JSON.stringify(content));
             } else if (row.id.startsWith('id-')) {
-              processedEntries.push(content);
+              // Distinguish between entry types
+              if (content.type === 'correspondence') {
+                corrEntries.push(content);
+              } else {
+                processedEntries.push(content);
+              }
             }
           });
           
           setEntries(processedEntries);
+          setCorrespondenceEntries(corrEntries);
         }
       } catch (e) { console.error('Data error:', e); } 
       finally { setIsLoading(false); }
@@ -189,6 +199,9 @@ const App: React.FC = () => {
   const cycleLabelBengali = useMemo(() => toBengaliDigits(cycleInfo.label), [cycleInfo.label]);
 
   const handleAddOrUpdateEntry = async (data: any) => {
+    // If data comes from Correspondence Module, it will have a specific structure
+    const isCorrespondence = data.description !== undefined;
+
     if (editingEntry && !isAdmin) {
       alert("দুঃখিত, শুধুমাত্র এডমিন তথ্য এডিট করতে পারেন।");
       return;
@@ -198,7 +211,7 @@ const App: React.FC = () => {
       ? (editingEntry.approvalStatus || 'approved') 
       : (isAdmin ? 'approved' : 'pending');
 
-    let entryToSync: SettlementEntry;
+    let entryToSync: any;
 
     if (editingEntry) {
       entryToSync = { ...editingEntry, ...data, approvalStatus: status };
@@ -209,11 +222,17 @@ const App: React.FC = () => {
       entryToSync = { 
         ...data, 
         id: newId, 
-        sl: entries.length + 1, 
+        type: isCorrespondence ? 'correspondence' : 'settlement',
+        sl: isCorrespondence ? correspondenceEntries.length + 1 : entries.length + 1, 
         createdAt: new Date().toISOString(),
         approvalStatus: status
       };
-      setEntries(prev => [...prev, entryToSync]);
+      
+      if (isCorrespondence) {
+        setCorrespondenceEntries(prev => [entryToSync, ...prev]);
+      } else {
+        setEntries(prev => [...prev, entryToSync]);
+      }
     }
     
     // OFFLINE HANDLING
@@ -228,7 +247,7 @@ const App: React.FC = () => {
     if (!isAdmin) setActiveTab('landing');
     else {
       setActiveTab('register');
-      setRegisterSubModule('settlement');
+      setRegisterSubModule(isCorrespondence ? 'correspondence' : 'settlement');
     }
   };
 
@@ -508,20 +527,12 @@ const App: React.FC = () => {
                       )}
                     </div>
                   ) : (
-                    <div className="py-20 text-center space-y-6 animate-in zoom-in-95 duration-500">
-                      <button 
-                          onClick={() => setRegisterSubModule(null)}
-                          className="mx-auto p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all flex items-center gap-2 font-black text-[11px] border border-slate-200 mb-10"
-                        >
-                          <ChevronLeft size={16} /> মেনুতে ফিরুন
-                      </button>
-                      <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-[2rem] flex items-center justify-center mx-auto shadow-xl">
-                        <Mail size={48} />
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="text-2xl font-black text-slate-900">প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টার</h3>
-                        <p className="text-slate-500 font-bold max-w-sm mx-auto">এই রেজিস্টার মডিউলটি বর্তমানে ডেভেলপমেন্ট পর্যায়ে আছে। শীঘ্রই এটি উন্মুক্ত করা হবে।</p>
-                      </div>
+                    <div className="animate-in fade-in duration-700">
+                      <CorrespondenceTable 
+                        entries={correspondenceEntries} 
+                        onBack={() => setRegisterSubModule(null)} 
+                        isLayoutEditable={isLayoutEditable}
+                      />
                     </div>
                   )}
                 </div>
