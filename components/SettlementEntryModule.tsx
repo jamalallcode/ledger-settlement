@@ -408,8 +408,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, on
     e.preventDefault();
     if (isSubmitting.current || isSuccess) return;
     isSubmitting.current = true;
-    
-    // Trigger Success UI instantly
     setIsSuccess(true);
     setIsDeletingPara(false);
     
@@ -442,7 +440,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, on
       vatRec: totals.vR, vatAdj: totals.vA, itRec: totals.iR, itAdj: totals.iA, othersRec: totals.oR, othersAdj: totals.oA, totalRec: totals.vR + totals.iR + totals.oR, totalAdj: totals.vA + totals.iA + totals.oA 
     };
 
-    // Fast call to onAdd without long artificial delay
     onAdd(finalData);
     isSubmitting.current = false;
   };
