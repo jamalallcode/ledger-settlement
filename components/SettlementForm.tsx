@@ -8,7 +8,7 @@ interface SettlementFormProps {
   onAdd: (entry: Omit<SettlementEntry, 'id' | 'sl' | 'createdAt'> | SettlementEntry) => void;
   nextSl: number;
   branchSuggestions: GroupOption[];
-  initialEntry?: SettlementEntry | null;
+  initialEntry?: SettlementEntry | any | null;
   onCancel?: () => void;
   isLayoutEditable?: boolean;
   isAdmin?: boolean;
@@ -19,7 +19,9 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
 
   useEffect(() => {
     if (initialEntry) {
-      setMainModule('settlement');
+      // Determine module type based on entry structure or explicit 'type' field
+      const isCorrespondence = initialEntry.type === 'correspondence' || !!initialEntry.description;
+      setMainModule(isCorrespondence ? 'correspondence' : 'settlement');
     }
   }, [initialEntry]);
 
@@ -101,7 +103,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
   }
 
   if (mainModule === 'correspondence') {
-    return <CorrespondenceEntryModule onBackToMenu={() => setMainModule(null)} onAdd={onAdd} isLayoutEditable={isLayoutEditable} />;
+    return <CorrespondenceEntryModule onBackToMenu={() => setMainModule(null)} onAdd={onAdd} isLayoutEditable={isLayoutEditable} initialEntry={initialEntry} />;
   }
 
   return (
