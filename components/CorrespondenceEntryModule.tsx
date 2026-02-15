@@ -1,9 +1,8 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Mail, X, FileText, Calendar, Hash, Banknote, BookOpen, 
   Inbox, Computer, User, CheckCircle2, Layout, Sparkles, 
-  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash, Search, ChevronDown, Check, Plus, CalendarRange
+  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { getCycleForDate } from '../utils/cycleHelper';
@@ -132,9 +131,11 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
 
+    // Give more time for the user to see the success message and button
     setTimeout(() => {
-      onBackToMenu();
-    }, 2800);
+      if (!isSuccess) return; // safety
+      // We don't auto-close immediately if user wants to click the button
+    }, 8000);
   };
 
   const IDBadge = ({ id }: { id: string }) => {
@@ -199,7 +200,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               />
             </div>
 
-            {/* Field 2 - Renamed to শাখার ধরণ */}
+            {/* Field 2 */}
             <div className={`${colWrapper} border-blue-100`}>
               <IDBadge id="corr-field-2" />
               <label className={labelCls}><span className={numBadge}>২</span> <ShieldCheck size={14} className="text-blue-600" /> শাখার ধরণ:</label>
@@ -212,7 +213,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               </select>
             </div>
 
-            {/* New Field - ৩. পত্রের ধরণ */}
+            {/* Field 3 */}
             <div className={`${colWrapper} border-indigo-100`}>
               <IDBadge id="corr-field-letter-type" />
               <label className={labelCls}><span className={numBadge}>৩</span> <FileText size={14} className="text-indigo-600" /> পত্রের ধরণ:</label>
@@ -226,7 +227,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               </select>
             </div>
 
-            {/* Field 4 - Letter No & Date (Previous 3) */}
+            {/* Field 4 */}
             <div className={`${colWrapper} border-amber-100`}>
               <IDBadge id="corr-field-3" />
               <label className={labelCls}><span className={numBadge}>৪</span> <Hash size={14} className="text-amber-600" /> পত্র নং ও তারিখ:</label>
@@ -247,7 +248,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               </div>
             </div>
 
-            {/* Field 5 - Total Paras (Previous 4) */}
+            {/* Field 5 */}
             <div className={`${colWrapper} border-purple-100`}>
               <IDBadge id="corr-field-4" />
               <label className={labelCls}><span className={numBadge}>৫</span> <ListOrdered size={14} className="text-purple-600" /> প্রেরিত মোট অনুচ্ছেদ সংখ্যা:</label>
@@ -258,7 +259,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               />
             </div>
 
-            {/* Field 6 - Total Amount (Previous 5) */}
+            {/* Field 6 */}
             <div className={`${colWrapper} border-rose-100`}>
               <IDBadge id="corr-field-5" />
               <label className={labelCls}><span className={numBadge}>৬</span> <Banknote size={14} className="text-rose-600" /> মোট জড়িত টাকা:</label>
@@ -269,7 +270,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               />
             </div>
 
-            {/* Field 7 - Diary No & Date (Previous 6) */}
+            {/* Field 7 */}
             <div className={`${colWrapper} border-emerald-100`}>
               <IDBadge id="corr-field-6" />
               <label className={labelCls}><span className={numBadge}>৭</span> <BookOpen size={14} className="text-emerald-600" /> ডায়েরি নং ও তারিখ:</label>
@@ -298,7 +299,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               </div>
             </div>
 
-            {/* Field 8 - Receipt Date (Previous 7) */}
+            {/* Field 8 */}
             <div className={`${colWrapper} border-sky-100`}>
               <IDBadge id="corr-field-7" />
               <label className={labelCls}><span className={numBadge}>৮</span> <Inbox size={14} className="text-sky-600" /> শাখায় প্রাপ্তির তারিখ:</label>
@@ -308,7 +309,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               />
             </div>
 
-            {/* Field 9 - Digital File No (Previous 8) */}
+            {/* Field 9 */}
             <div className={`${colWrapper} border-indigo-100`}>
               <IDBadge id="corr-field-8" />
               <label className={labelCls}><span className={numBadge}>৯</span> <Computer size={14} className="text-indigo-600" /> ডিজিটাল নথি নং-:</label>
@@ -319,7 +320,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               />
             </div>
 
-            {/* Field 10 - Presentation Date (Previous 9) */}
+            {/* Field 10 */}
             <div className={`${colWrapper} border-orange-100`}>
               <IDBadge id="corr-field-9" />
               <label className={labelCls}><span className={numBadge}>১০</span> <Calendar size={14} className="text-orange-600" /> উপস্থাপনের তারিখ:</label>
@@ -329,7 +330,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               />
             </div>
 
-            {/* Field 11 - Sent Para Count (Previous 10) */}
+            {/* Field 11 */}
             <div className={`${colWrapper} border-teal-100`}>
               <IDBadge id="corr-field-10" />
               <label className={labelCls}><span className={numBadge}>১১</span> <ListOrdered size={14} className="text-teal-600" /> প্রেরিত অনুচ্ছেদ সংখ্যা:</label>
@@ -340,7 +341,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               />
             </div>
 
-            {/* Field 12 - Receiver Name (Previous 11) */}
+            {/* Field 12 */}
             <div className={`${colWrapper} border-slate-200`} ref={receiverRef}>
               <IDBadge id="corr-field-11" />
               <label className={labelCls}><span className={numBadge}>১২</span> <User size={14} className="text-slate-600" /> গৃহীতার নাম:</label>
@@ -383,18 +384,13 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
                           {formData.receiverName === name && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
                         </div>
                       ))}
-                      {receiverSuggestions.filter(name => name.toLowerCase().includes(formData.receiverName.toLowerCase())).length === 0 && (
-                        <div className="px-5 py-6 text-center text-slate-400 font-bold text-xs italic">
-                           কোনো নাম পাওয়া যায়নি
-                        </div>
-                      )}
                     </div>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Field 13 - Received Date (Previous 12) */}
+            {/* Field 13 */}
             <div className={`${colWrapper} border-blue-100`}>
               <IDBadge id="corr-field-12" />
               <label className={labelCls}><span className={numBadge}>১৩</span> <Calendar size={14} className="text-blue-600" /> গ্রহণের তারিখ:</label>
@@ -404,7 +400,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
               />
             </div>
 
-            {/* Field 14 - Is Online (Previous 13) */}
+            {/* Field 14 */}
             <div className={`${colWrapper} border-emerald-100`}>
               <IDBadge id="corr-field-13" />
               <label className={labelCls}><span className={numBadge}>১৪</span> <Computer size={14} className="text-emerald-600" /> অনলাইনে প্রাপ্তি:</label>
@@ -423,32 +419,41 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
           </div>
         </fieldset>
 
-        {/* Corrected escaped characters in JSX that caused rendering and type errors */}
-        {/* Action Buttons */}
+        {/* Action Buttons & Success Message */}
         <div className="pt-10 border-t border-slate-100 relative" ref={bottomRef}>
           {isSuccess ? (
-            <div className="w-full py-10 bg-emerald-50 border-2 border-dashed border-emerald-200 rounded-[3rem] flex flex-col items-center justify-center gap-5 animate-in zoom-in-95 duration-500 shadow-xl shadow-emerald-100/50">
+            <div className="w-full py-10 bg-emerald-50 border-2 border-dashed border-emerald-200 rounded-[3rem] flex flex-col items-center justify-center gap-6 animate-in zoom-in-95 duration-500 shadow-xl shadow-emerald-100/50">
                <div className="relative">
-                  <div className="w-20 h-20 bg-emerald-600 text-white rounded-[2rem] flex items-center justify-center shadow-lg animate-in spin-in-12 duration-700 border-4 border-white">
-                     <CheckCircle2 size={48} strokeWidth={2.5} className="animate-pulse" />
+                  <div className="w-24 h-24 bg-emerald-600 text-white rounded-[2.5rem] flex items-center justify-center shadow-[0_20px_40px_rgba(5,150,105,0.3)] animate-in spin-in-12 duration-700 border-4 border-white">
+                     <CheckCircle2 size={56} strokeWidth={2.5} className="animate-pulse" />
                   </div>
-                  <div className="absolute -right-2 -bottom-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg border border-emerald-100">
-                     <Sparkles size={18} className="text-amber-500" />
+                  <div className="absolute -right-2 -bottom-2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg border border-emerald-100">
+                     <Sparkles size={22} className="text-amber-500" />
                   </div>
                </div>
-               <div className="text-center space-y-2">
-                  <h4 className="text-3xl font-black text-emerald-950 tracking-tight">
+               <div className="text-center space-y-3 px-6">
+                  <h4 className="text-4xl font-black text-emerald-950 tracking-tight">
                     {initialEntry ? 'তথ্য সফলভাবে আপডেট হয়েছে' : 'চিঠিপত্র তথ্য সফলভাবে সংরক্ষিত হয়েছে'}
                   </h4>
-                  <p className="text-[15px] font-bold text-emerald-700 uppercase tracking-widest flex items-center justify-center gap-2">
-                    <CheckCircle2 size={18} /> আপনার ডাটাবেজে এন্ট্রিটি যুক্ত করা হয়েছে
+                  <p className="text-[16px] font-bold text-emerald-700 uppercase tracking-widest flex items-center justify-center gap-2">
+                    <ShieldCheck size={20} /> আপনার ডাটাবেজে এন্ট্রিটি যুক্ত করা হয়েছে
                   </p>
                </div>
-               <div className="flex flex-col items-center gap-3 mt-2">
+               
+               <div className="flex flex-col md:flex-row items-center gap-4 mt-2">
+                  <button 
+                    onClick={onBackToMenu}
+                    className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-3 active:scale-95 group"
+                  >
+                    প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টারটি দেখুন <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                  </button>
+               </div>
+
+               <div className="flex flex-col items-center gap-3 mt-4">
                   <div className="h-1.5 w-64 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                      <div className="h-full bg-emerald-600 animate-progress-loading-premium"></div>
                   </div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter animate-pulse">অনুগ্রহ করে অপেক্ষা করুন... হোম পেজে রিডাইরেক্ট হচ্ছে</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter animate-pulse italic">স্বয়ংক্রিয়ভাবে মেনুতে ফিরে যাওয়া হচ্ছে...</span>
                </div>
             </div>
           ) : (
@@ -459,7 +464,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
                >বাতিল করুন</button>
                <button 
                   type="submit"
-                  className="flex-[2] py-5 bg-emerald-600 text-white rounded-[2rem] font-black text-xl shadow-[0_20px_40px_rgba(16,185,129,0.3)] hover:bg-emerald-700 transition-all active:scale-95 flex items-center justify-center gap-4 group relative overflow-hidden"
+                  className="flex-[2] py-5 bg-emerald-500 text-white rounded-[2rem] font-black text-xl shadow-[0_20px_40px_rgba(16,185,129,0.3)] hover:bg-emerald-600 transition-all active:scale-95 flex items-center justify-center gap-4 group relative overflow-hidden"
                >
                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                  <CheckCircle2 size={24} /> {initialEntry ? 'তথ্য আপডেট করুন' : 'তথ্য সংরক্ষণ করুন'}
@@ -475,7 +480,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
           100% { width: 100%; }
         }
         .animate-progress-loading-premium {
-          animation: progress-loading-premium 2.8s linear forwards;
+          animation: progress-loading-premium 8s linear forwards;
         }
       `}} />
     </div>
