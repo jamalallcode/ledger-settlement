@@ -101,7 +101,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, nextSl, branchSu
   }
 
   if (mainModule === 'correspondence') {
-    return <CorrespondenceEntryModule onBackToMenu={() => setMainModule(null)} />;
+    return <CorrespondenceEntryModule onBackToMenu={() => setMainModule(null)} onAdd={onAdd} isLayoutEditable={isLayoutEditable} />;
   }
 
   return (
