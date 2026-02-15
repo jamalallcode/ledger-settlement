@@ -12,7 +12,7 @@ import { SettlementEntry, GroupOption, CumulativeStats } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
 import { supabase } from './lib/supabase';
-import { ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ArrowRight, BellRing, Sparkles } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ArrowRight, BellRing, Sparkles, Mail, ClipboardList, ArrowRightCircle, ChevronLeft } from 'lucide-react';
 
 const STORAGE_KEY = 'ledger_settlement_v10_stable';
 const PREV_STATS_KEY = 'ledger_prev_stats_v1';
@@ -38,6 +38,9 @@ const App: React.FC = () => {
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
+  // Register Selection State
+  const [registerSubModule, setRegisterSubModule] = useState<'settlement' | 'correspondence' | null>(null);
+  
   const [prevStats, setPrevStats] = useState<CumulativeStats>({
     inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0,
     entitiesSFI: {},
@@ -50,6 +53,8 @@ const App: React.FC = () => {
     if (tab === activeTab) setResetKey(prev => prev + 1);
     else { setActiveTab(tab); setResetKey(0); }
     setShowPendingOnly(false);
+    // Reset submodule selection when clicking register in sidebar
+    if (tab === 'register') setRegisterSubModule(null);
   };
 
   // --- AUTO SYNC LOGIC ---
@@ -221,7 +226,10 @@ const App: React.FC = () => {
     }
     
     if (!isAdmin) setActiveTab('landing');
-    else setActiveTab('register');
+    else {
+      setActiveTab('register');
+      setRegisterSubModule('settlement');
+    }
   };
 
   const handleApproveEntry = async (id: string) => {
@@ -300,6 +308,24 @@ const App: React.FC = () => {
   const approvedEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'approved' || !e.approvalStatus), [entries]);
   const pendingEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'pending'), [entries]);
 
+  const IDBadge = ({ id }: { id: string }) => {
+    const [copied, setCopied] = useState(false);
+    if (!isLayoutEditable) return null;
+    const handleCopy = (e: React.MouseEvent) => {
+      e.preventDefault(); e.stopPropagation();
+      navigator.clipboard.writeText(id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
+    return (
+      <div onClick={handleCopy} className="absolute top-0 left-0 -translate-y-full z-[9995] pointer-events-auto no-print">
+        <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md font-black text-[9px] bg-black text-white border border-white/30 shadow-2xl transition-all duration-300 hover:scale-150 hover:bg-blue-600 hover:z-[99999] active:scale-95 cursor-copy origin-bottom-left ${copied ? 'bg-emerald-600 border-emerald-400 ring-4 ring-emerald-500/30 !scale-125' : ''}`}>
+          {copied ? <><CheckCircle2 size={10} /> COPIED</> : `#${id}`}
+        </span>
+      </div>
+    );
+  };
+
   return (
     <div className="h-screen bg-white flex overflow-hidden font-['Hind_Siliguri']">
       {isLoading && (
@@ -354,73 +380,149 @@ const App: React.FC = () => {
               {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} nextSl={entries.length + 1} branchSuggestions={[]} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} />}
               
               {activeTab === 'register' && (
-                <div className="space-y-6">
-                  {isAdmin && (pendingEntries.length > 0 || showPendingOnly) && (
-                    <div className="flex justify-end gap-2 no-print">
-                      <button 
-                        onClick={() => setShowPendingOnly(!showPendingOnly)}
-                        className={`px-4 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-2 border shadow-sm ${showPendingOnly ? 'bg-amber-600 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
-                      >
-                        {showPendingOnly ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
-                        {showPendingOnly ? 'মূল রেজিস্টারে ফিরুন' : `অপেক্ষমাণ তালিকা (${toBengaliDigits(pendingEntries.length)})`}
-                      </button>
+                <div className="space-y-6 relative">
+                  {!registerSubModule ? (
+                    <div id="section-register-choice" className="w-full py-2 animate-in slide-in-from-left-10 duration-700 relative">
+                      <IDBadge id="section-register-choice" />
+                      <div className="space-y-5 max-w-4xl text-left">
+                        {/* Option 1: Incoming Correspondence Register */}
+                        <div 
+                          onClick={() => setRegisterSubModule('correspondence')}
+                          className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards"
+                        >
+                          <IDBadge id="reg-opt-correspondence" />
+                          <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.4)]"></div>
+                          <div className="flex items-center justify-center pl-7">
+                            <div className="w-12 h-12 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-600 transition-all duration-500">
+                              <Mail size={24} className="text-emerald-500 group-hover:text-white" />
+                            </div>
+                          </div>
+                          <div className="flex flex-col justify-center pl-8 flex-1">
+                            <h3 className="text-[20px] font-black text-white tracking-tight leading-tight group-hover:text-emerald-400 transition-colors">১. প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টার</h3>
+                            <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider mt-0.5 group-hover:text-slate-300 transition-colors">প্রাপ্ত সকল চিঠিপত্র এবং ডায়েরি এন্ট্রির পরিসংখ্যান দেখুন।</p>
+                          </div>
+                          <div className="pr-10 opacity-30 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
+                            <ArrowRightCircle size={22} className="text-white" />
+                          </div>
+                        </div>
+
+                        {/* Option 2: Settlement Register */}
+                        <div 
+                          onClick={() => setRegisterSubModule('settlement')}
+                          className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards delay-100"
+                        >
+                          <IDBadge id="reg-opt-settlement" />
+                          <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]"></div>
+                          <div className="flex items-center justify-center pl-7">
+                            <div className="w-12 h-12 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-600 transition-all duration-500">
+                              <ClipboardList size={24} className="text-blue-500 group-hover:text-white" />
+                            </div>
+                          </div>
+                          <div className="flex flex-col justify-center pl-8 flex-1">
+                            <h3 className="text-[20px] font-black text-white tracking-tight leading-tight group-hover:text-blue-400 transition-colors">২. মীমাংসা রেজিস্টার</h3>
+                            <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider mt-0.5 group-hover:text-slate-300 transition-colors">অডিট আপত্তি নিষ্পত্তি সংক্রান্ত বিস্তারিত রিপোর্ট এবং তথ্য।</p>
+                          </div>
+                          <div className="pr-10 opacity-30 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
+                            <ArrowRightCircle size={22} className="text-white" />
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  
-                  {showPendingOnly ? (
-                    <div className="space-y-8 animate-in fade-in duration-700">
-                       {pendingEntries.length > 0 ? (
-                         <div className="bg-amber-50/50 border-2 border-dashed border-amber-200 p-8 rounded-[2.5rem] text-center space-y-3">
-                            <h3 className="text-xl font-black text-amber-900">অপেক্ষমাণ এন্ট্রি মডোরেশন</h3>
-                            <p className="text-sm font-bold text-amber-700">নিচের এন্ট্রিগুলো যাচাই করে অনুমোদন দিন। অনুমোদন না পাওয়া পর্যন্ত এগুলো রিপোর্ট বা রেজিস্টারে আসবে না।</p>
-                         </div>
-                       ) : (
-                         <div className="bg-emerald-50/50 border-2 border-dashed border-emerald-200 p-10 rounded-[3rem] text-center space-y-4 shadow-sm animate-in zoom-in-95 duration-1000">
-                            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-200 animate-in spin-in-1 duration-1000">
-                               <CheckCircle2 size={36} strokeWidth={2.5} />
-                            </div>
-                            <div className="space-y-1">
-                               <h3 className="text-2xl font-black text-emerald-900 flex items-center justify-center gap-3">
-                                 <Sparkles size={20} className="text-amber-400" /> সকল তথ্য সফলভাবে মডোরেশন করা হয়েছে!
-                               </h3>
-                               <p className="text-sm font-bold text-emerald-700">বর্তমানে আপনার ইনবক্সে কোনো এন্ট্রি অনুমোদনের অপেক্ষায় নেই।</p>
-                            </div>
-                            <button 
-                              onClick={() => setShowPendingOnly(false)}
-                              className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all shadow-xl active:scale-95 border-b-4 border-emerald-800"
-                            >
-                              মূল রেজিস্টারে ফিরে যান
-                            </button>
-                         </div>
-                       )}
-                       
-                       {pendingEntries.length > 0 && (
-                         <SettlementTable 
-                           key={`pending-list`} 
-                           entries={pendingEntries} 
-                           onDelete={handleDelete} 
-                           onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
-                           isLayoutEditable={isLayoutEditable} 
-                           showFilters={false} 
-                           setShowFilters={setShowRegisterFilters}
-                           isAdminView={true}
-                           onApprove={handleApproveEntry}
-                           onReject={handleRejectEntry}
-                           isAdmin={isAdmin}
-                         />
-                       )}
+                  ) : registerSubModule === 'settlement' ? (
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-4 no-print mb-2">
+                        <button 
+                          onClick={() => setRegisterSubModule(null)}
+                          className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all flex items-center gap-2 font-black text-[11px] border border-slate-200"
+                        >
+                          <ChevronLeft size={16} /> মেনুতে ফিরুন
+                        </button>
+                      </div>
+
+                      {isAdmin && (pendingEntries.length > 0 || showPendingOnly) && (
+                        <div className="flex justify-end gap-2 no-print">
+                          <button 
+                            onClick={() => setShowPendingOnly(!showPendingOnly)}
+                            className={`px-4 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-2 border shadow-sm ${showPendingOnly ? 'bg-amber-600 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                          >
+                            {showPendingOnly ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                            {showPendingOnly ? 'মূল রেজিস্টারে ফিরুন' : `অপেক্ষমাণ তালিকা (${toBengaliDigits(pendingEntries.length)})`}
+                          </button>
+                        </div>
+                      )}
+                      
+                      {showPendingOnly ? (
+                        <div className="space-y-8 animate-in fade-in duration-700">
+                           {pendingEntries.length > 0 ? (
+                             <div className="bg-amber-50/50 border-2 border-dashed border-amber-200 p-8 rounded-[2.5rem] text-center space-y-3">
+                                <h3 className="text-xl font-black text-amber-900">অপেক্ষমাণ এন্ট্রি মডোরেশন</h3>
+                                <p className="text-sm font-bold text-amber-700">নিচের এন্ট্রিগুলো যাচাই করে অনুমোদন দিন। অনুমোদন না পাওয়া পর্যন্ত এগুলো রিপোর্ট বা রেজিস্টারে আসবে না।</p>
+                             </div>
+                           ) : (
+                             <div className="bg-emerald-50/50 border-2 border-dashed border-emerald-200 p-10 rounded-[3rem] text-center space-y-4 shadow-sm animate-in zoom-in-95 duration-1000">
+                                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-200 animate-in spin-in-1 duration-1000">
+                                   <CheckCircle2 size={36} strokeWidth={2.5} />
+                                </div>
+                                <div className="space-y-1">
+                                   <h3 className="text-2xl font-black text-emerald-900 flex items-center justify-center gap-3">
+                                     <Sparkles size={20} className="text-amber-400" /> সকল তথ্য সফলভাবে মডোরেশন করা হয়েছে!
+                                   </h3>
+                                   <p className="text-sm font-bold text-emerald-700">বর্তমানে আপনার ইনবক্সে কোনো এন্ট্রি অনুমোদনের অপেক্ষায় নেই।</p>
+                                </div>
+                                <button 
+                                  onClick={() => setShowPendingOnly(false)}
+                                  className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all shadow-xl active:scale-95 border-b-4 border-emerald-800"
+                                >
+                                  মূল রেজিস্টারে ফিরে যান
+                                </button>
+                             </div>
+                           )}
+                           
+                           {pendingEntries.length > 0 && (
+                             <SettlementTable 
+                               key={`pending-list`} 
+                               entries={pendingEntries} 
+                               onDelete={handleDelete} 
+                               onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
+                               isLayoutEditable={isLayoutEditable} 
+                               showFilters={false} 
+                               setShowFilters={setShowRegisterFilters}
+                               isAdminView={true}
+                               onApprove={handleApproveEntry}
+                               onReject={handleRejectEntry}
+                               isAdmin={isAdmin}
+                             />
+                           )}
+                        </div>
+                      ) : (
+                        <SettlementTable 
+                          key={`register-reset-${resetKey}`} 
+                          entries={approvedEntries} 
+                          onDelete={handleDelete} 
+                          onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
+                          isLayoutEditable={isLayoutEditable} 
+                          showFilters={showRegisterFilters} 
+                          setShowFilters={setShowRegisterFilters} 
+                          isAdmin={isAdmin}
+                        />
+                      )}
                     </div>
                   ) : (
-                    <SettlementTable 
-                      key={`register-reset-${resetKey}`} 
-                      entries={approvedEntries} 
-                      onDelete={handleDelete} 
-                      onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
-                      isLayoutEditable={isLayoutEditable} 
-                      showFilters={showRegisterFilters} 
-                      setShowFilters={setShowRegisterFilters} 
-                      isAdmin={isAdmin}
-                    />
+                    <div className="py-20 text-center space-y-6 animate-in zoom-in-95 duration-500">
+                      <button 
+                          onClick={() => setRegisterSubModule(null)}
+                          className="mx-auto p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all flex items-center gap-2 font-black text-[11px] border border-slate-200 mb-10"
+                        >
+                          <ChevronLeft size={16} /> মেনুতে ফিরুন
+                      </button>
+                      <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-[2rem] flex items-center justify-center mx-auto shadow-xl">
+                        <Mail size={48} />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-2xl font-black text-slate-900">প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টার</h3>
+                        <p className="text-slate-500 font-bold max-w-sm mx-auto">এই রেজিস্টার মডিউলটি বর্তমানে ডেভেলপমেন্ট পর্যায়ে আছে। শীঘ্রই এটি উন্মুক্ত করা হবে।</p>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
