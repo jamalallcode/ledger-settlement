@@ -101,7 +101,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             <col className="w-[125px]" /> {/* গৃহীতা ও তারিখ */}
             <col className="w-[70px]" />  {/* অনলাইন */}
             <col className="w-[100px]" /> {/* মন্তব্য */}
-            {isAdmin && <col className="w-[80px]" />} {/* অ্যাকশন */}
           </colgroup>
           <thead>
             <tr>
@@ -115,7 +114,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
               <th className={thCls}>গৃহীতার নাম ও গ্রহণের তারিখ</th>
               <th className={thCls}>অনলাইনে প্রাপ্তি (হ্যাঁ/না)</th>
               <th className={thCls}>মন্তব্য</th>
-              {isAdmin && <th className={thCls}>অ্যাকশন</th>}
             </tr>
           </thead>
           <tbody>
@@ -153,31 +151,31 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                       {entry.isOnline}
                    </span>
                 </td>
-                <td className={tdCls}>{entry.remarks || '-'}</td>
-                {isAdmin && (
-                  <td className={tdCls + " text-center align-middle"}>
-                    <div className="flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all">
-                      <button 
-                        onClick={() => onEdit?.(entry)}
-                        className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg border border-blue-100 transition-all shadow-sm"
-                        title="এডিট করুন"
-                      >
-                        <Pencil size={12} />
-                      </button>
-                      <button 
-                        onClick={() => onDelete?.(entry.id)}
-                        className="p-1.5 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg border border-red-100 transition-all shadow-sm"
-                        title="মুছে ফেলুন"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  </td>
-                )}
+                <td className={tdCls + " relative group/action"}>
+                   {entry.remarks || '-'}
+                   {isAdmin && (
+                     <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all no-print">
+                       <button 
+                         onClick={(e) => { e.stopPropagation(); onEdit?.(entry); }}
+                         className="p-1 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-all active:scale-95 border border-blue-400"
+                         title="এডিট করুন"
+                       >
+                         <Pencil size={11} />
+                       </button>
+                       <button 
+                         onClick={(e) => { e.stopPropagation(); onDelete?.(entry.id); }}
+                         className="p-1 bg-red-600 text-white rounded-lg shadow-lg hover:bg-red-700 transition-all active:scale-95 border border-red-400"
+                         title="মুছে ফেলুন"
+                       >
+                         <Trash2 size={11} />
+                       </button>
+                     </div>
+                   )}
+                </td>
               </tr>
             )) : (
               <tr>
-                <td colSpan={isAdmin ? 11 : 10} className="py-20 text-center bg-white">
+                <td colSpan={10} className="py-20 text-center bg-white">
                    <div className="flex flex-col items-center gap-4 opacity-30">
                       <Mail size={48} />
                       <p className="text-lg font-black text-slate-900 tracking-widest">রেজিস্টারে কোনো তথ্য পাওয়া যায়নি</p>
@@ -194,7 +192,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
               <td className="px-4 text-center border-t border-slate-700 text-blue-400">
                 {toBengaliDigits(entries.reduce((sum, e) => sum + parseBengaliNumber(e.totalAmount), 0))}
               </td>
-              <td colSpan={isAdmin ? 4 : 3} className="border-t border-slate-700"></td>
+              <td colSpan={3} className="border-t border-slate-700"></td>
             </tr>
           </tfoot>
         </table>
