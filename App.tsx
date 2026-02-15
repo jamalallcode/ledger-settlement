@@ -248,8 +248,8 @@ const App: React.FC = () => {
       await supabase.from('settlement_entries').upsert({ id: entryToSync.id, content: entryToSync });
     }
     
-    // REDIRECT DISABLED as per user instruction to allow viewing success buttons
-    // The redirect will now be handled by the "View Register" buttons in the child modules
+    // REDIRECTS STRICTLY REMOVED AS PER USER REQUEST
+    // The component state now handles the success view properly.
   };
 
   const handleViewRegister = (module: 'settlement' | 'correspondence') => {
