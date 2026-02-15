@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOption } from '../types.ts';
 import SearchableSelect from './SearchableSelect.tsx';
@@ -414,6 +415,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
 
+    // Get current date for entry metadata fix for line 759
     const now = new Date();
     let cycleLabel = '';
     let isLate = false;
@@ -797,7 +799,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
               <IDBadge id="btn-submit-entry" isLayoutEditable={isLayoutEditable} />
               <CheckCircle2 size={24} strokeWidth={2.5} /> {isUpdateMode ? 'তথ্য আপডেট করুন' : 'রেজিস্টার তথ্য সংরক্ষণ করুন'}
             </button>
-          )র্
+          )}
         </div>
       </form>
       
