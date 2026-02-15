@@ -7,6 +7,11 @@ import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/n
 import { getCycleForDate, isEntryLate } from '../utils/cycleHelper.ts';
 import { format } from 'date-fns';
 
+/**
+ * @security-protocol LOCKED_MODE
+ * @zero-alteration-policy ACTIVE
+ */
+
 const generateSafeId = () => {
   return 'id-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 };
@@ -141,7 +146,17 @@ interface SettlementEntryModuleProps {
   isAdmin?: boolean;
 }
 
-const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, onViewRegister, nextSl, branchSuggestions, initialEntry, onCancel, onBackToMenu, isLayoutEditable, isAdmin = false }) => {
+const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ 
+  onAdd, 
+  onViewRegister, 
+  nextSl, 
+  branchSuggestions, 
+  initialEntry, 
+  onCancel, 
+  onBackToMenu, 
+  isLayoutEditable, 
+  isAdmin = false 
+}) => {
   const [formData, setFormData] = useState({
     paraType: 'এসএফআই' as ParaType, 
     meetingType: 'বিএসআর',
@@ -780,7 +795,9 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, on
                   <div className="h-1.5 w-64 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                      <div className={`h-full ${isDeletingPara || deletedCount > 0 ? 'bg-red-600' : 'bg-emerald-600'} animate-progress-loading-premium`}></div>
                   </div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter animate-pulse italic">{(isDeletingPara || deletedCount > 0) ? 'অনুগ্রহ করে অপেক্ষা করুন...' : 'প্রক্রিয়াটি সফলভাবে সম্পন্ন হয়েছে'}</span>
+                  <div className="relative flex items-center justify-center">
+                    <span className="text-[14px] font-black text-emerald-600 uppercase tracking-widest animate-complete-text">কমপ্লিট</span>
+                  </div>
                </div>
             </div>
           ) : (
@@ -804,6 +821,13 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, on
         }
         .animate-progress-loading-premium {
           animation: progress-loading-premium 4s linear forwards;
+        }
+        @keyframes fade-in-complete {
+          0%, 95% { opacity: 0; transform: translateY(10px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-complete-text {
+          animation: fade-in-complete 4.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}} />
     </div>
