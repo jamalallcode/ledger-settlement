@@ -598,7 +598,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
             <SegmentedInput id="field-7" icon={FileText} label="পত্র নং ও তারিখ" color="amber" noValue={letterNoPart} dayValue={letterDay} monthValue={letterMonth} yearValue={letterYear} noSetter={setLetterNoPart} daySetter={setLetterDay} monthSetter={setLetterMonth} yearSetter={setLetterYear} dayRef={letterDayRef} monthRef={letterMonthRef} yearRef={letterYearRef} isFocused={isLetterFocused} focusSetter={setIsLetterFocused} isLayoutEditable={isLayoutEditable} />
             <SegmentedInput id="field-8" icon={FileEdit} label="কার্যপত্র নং ও তারিখ" color="purple" noValue={wpNoPart} dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} noSetter={setWpNoPart} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} isFocused={isWpFocused} focusSetter={setIsWpFocused} isLayoutEditable={isLayoutEditable} />
             <SegmentedInput id="field-9" icon={Info} label="কার্যবিবরণী নং ও তারিখ" color="sky" noValue={minNoPart} dayValue={minDay} monthValue={minMonth} yearValue={minYear} noSetter={setMinNoPart} daySetter={setMinDay} monthSetter={setMinMonth} yearSetter={setMinYear} dayRef={minDayRef} monthRef={minMonthRef} yearRef={minYearRef} isFocused={isMinFocused} focusSetter={setIsMinFocused} isLayoutEditable={isLayoutEditable} />
-            <SegmentedInput id="field-10" icon={BookOpen} label="ডায়েরি নং ও তারিখ" color="emerald" noValue={diaryNoPart} dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryMonth} noSetter={setDiaryNoPart} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} isLayoutEditable={isLayoutEditable} />
+            <SegmentedInput id="field-10" icon={BookOpen} label="ডায়েরি নং ও তারিখ" color="emerald" noValue={diaryNoPart} dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryYear} noSetter={setDiaryNoPart} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} isLayoutEditable={isLayoutEditable} />
 
             <SegmentedInput 
               id="field-11" icon={Send} label="জারিপত্র নং ও তারিখ" color="amber" 
@@ -797,7 +797,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
               <IDBadge id="btn-submit-entry" isLayoutEditable={isLayoutEditable} />
               <CheckCircle2 size={24} strokeWidth={2.5} /> {isUpdateMode ? 'তথ্য আপডেট করুন' : 'রেজিস্টার তথ্য সংরক্ষণ করুন'}
             </button>
-          )}
+          )র্
         </div>
       </form>
       
