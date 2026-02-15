@@ -132,6 +132,7 @@ const SegmentedInput = ({
 
 interface SettlementEntryModuleProps {
   onAdd: (entry: Omit<SettlementEntry, 'id' | 'sl' | 'createdAt'> | SettlementEntry) => void;
+  onViewRegister: () => void;
   nextSl: number;
   branchSuggestions: GroupOption[];
   initialEntry?: SettlementEntry | null;
@@ -141,7 +142,7 @@ interface SettlementEntryModuleProps {
   isAdmin?: boolean;
 }
 
-const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, nextSl, branchSuggestions, initialEntry, onCancel, onBackToMenu, isLayoutEditable, isAdmin = false }) => {
+const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, onViewRegister, nextSl, branchSuggestions, initialEntry, onCancel, onBackToMenu, isLayoutEditable, isAdmin = false }) => {
   const [formData, setFormData] = useState({
     paraType: 'এসএফআই' as ParaType, 
     meetingType: 'বিএসআর',
@@ -169,7 +170,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
     manualRaisedAmount: null as number | null
   });
 
-  const [wizardStep, setWizardStep] = useState('details'); // Direct to details bypass selection
+  const [wizardStep, setWizardStep] = useState('details'); 
   const [isSuccess, setIsSuccess] = useState(false);
   const [isDeletingPara, setIsDeletingPara] = useState(false);
   const isSubmitting = useRef(false);
@@ -414,7 +415,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
 
-    // Get current date for entry metadata
     const now = new Date();
     let cycleLabel = '';
     let isLate = false;
@@ -462,6 +462,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
   const isUpdateMode = !!initialEntry;
   const deletedCount = isUpdateMode ? (initialEntry?.paragraphs?.length || 0) - paragraphs.length : 0;
 
+  // Fix: Fix syntax for wizardStep selection return
   if (wizardStep === 'selection') {
     return (
       <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border border-slate-100 mb-8 max-w-4xl mx-auto animate-in zoom-in-95 duration-300 relative">
@@ -555,6 +556,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
     );
   }
 
+  // Fix: Corrected syntax for main component return, removing escaped quotes
   return (
     <div id="form-container-settlement" className="bg-white p-4 md:p-10 rounded-[2.5rem] border border-slate-200 shadow-2xl animate-landing-premium max-w-7xl mx-auto overflow-x-hidden relative">
       <IDBadge id="view-settlement-form" isLayoutEditable={isLayoutEditable} />
@@ -784,10 +786,10 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
                {!isDeletingPara && (
                   <div className="flex flex-col md:flex-row items-center gap-4 mt-2">
                     <button 
-                      onClick={onBackToMenu}
+                      onClick={onViewRegister}
                       className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-3 active:scale-95 group"
                     >
-                      প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টারটি দেখুন <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                      মীমাংসা রেজিস্টারটি দেখুন <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                     </button>
                   </div>
                )}
@@ -803,7 +805,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, ne
             <button 
               id="btn-submit-entry"
               type="submit"
-              className="w-full py-5 text-white text-xl font-black rounded-[2.5rem] bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] shadow-[0_20px_40px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-4 group relative overflow-hidden"
+              className="w-full py-5 text-white text-xl font-black rounded-[2.5rem] bg-blue-600 hover:bg-blue-700 active:scale-[0.98] shadow-[0_20px_40px_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-4 group relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
               <IDBadge id="btn-submit-entry" isLayoutEditable={isLayoutEditable} />
