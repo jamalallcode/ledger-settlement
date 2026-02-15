@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
-import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer } from 'lucide-react';
+import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
+import { getCurrentCycle } from '../utils/cycleHelper';
 
 interface CorrespondenceEntry {
   id: string;
@@ -22,16 +23,22 @@ interface CorrespondenceEntry {
   isOnline: string;
   remarks?: string;
   createdAt: string;
+  approvalStatus?: 'approved' | 'pending';
 }
 
 interface CorrespondenceTableProps {
   entries: CorrespondenceEntry[];
   onBack: () => void;
   isLayoutEditable?: boolean;
+  isAdmin?: boolean;
+  onEdit?: (entry: any) => void;
+  onDelete?: (id: string) => void;
 }
 
-const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBack, isLayoutEditable }) => {
+const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBack, isLayoutEditable, isAdmin, onEdit, onDelete }) => {
   
+  const cycleInfo = useMemo(() => getCurrentCycle(), []);
+
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = React.useState(false);
     if (!isLayoutEditable) return null;
@@ -65,7 +72,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3">
               <Mail className="text-emerald-600" /> প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টার
             </h3>
-            <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-1">Incoming Correspondence Ledger</p>
+            <div className="flex items-center gap-3 mt-1">
+               <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Incoming Correspondence Ledger</p>
+               <div className="h-4 w-[1.5px] bg-slate-300"></div>
+               <div className="flex items-center gap-1.5 text-blue-600 font-black text-xs">
+                  <CalendarRange size={14} /> সাইকেল: {toBengaliDigits(cycleInfo.label)}
+               </div>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -88,6 +101,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             <col className="w-[125px]" /> {/* গৃহীতা ও তারিখ */}
             <col className="w-[70px]" />  {/* অনলাইন */}
             <col className="w-[100px]" /> {/* মন্তব্য */}
+            {isAdmin && <col className="w-[80px]" />} {/* অ্যাকশন */}
           </colgroup>
           <thead>
             <tr>
@@ -101,6 +115,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
               <th className={thCls}>গৃহীতার নাম ও গ্রহণের তারিখ</th>
               <th className={thCls}>অনলাইনে প্রাপ্তি (হ্যাঁ/না)</th>
               <th className={thCls}>মন্তব্য</th>
+              {isAdmin && <th className={thCls}>অ্যাকশন</th>}
             </tr>
           </thead>
           <tbody>
@@ -139,10 +154,30 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                    </span>
                 </td>
                 <td className={tdCls}>{entry.remarks || '-'}</td>
+                {isAdmin && (
+                  <td className={tdCls + " text-center align-middle"}>
+                    <div className="flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all">
+                      <button 
+                        onClick={() => onEdit?.(entry)}
+                        className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg border border-blue-100 transition-all shadow-sm"
+                        title="এডিট করুন"
+                      >
+                        <Pencil size={12} />
+                      </button>
+                      <button 
+                        onClick={() => onDelete?.(entry.id)}
+                        className="p-1.5 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg border border-red-100 transition-all shadow-sm"
+                        title="মুছে ফেলুন"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </td>
+                )}
               </tr>
             )) : (
               <tr>
-                <td colSpan={10} className="py-20 text-center bg-white">
+                <td colSpan={isAdmin ? 11 : 10} className="py-20 text-center bg-white">
                    <div className="flex flex-col items-center gap-4 opacity-30">
                       <Mail size={48} />
                       <p className="text-lg font-black text-slate-900 tracking-widest">রেজিস্টারে কোনো তথ্য পাওয়া যায়নি</p>
@@ -159,7 +194,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
               <td className="px-4 text-center border-t border-slate-700 text-blue-400">
                 {toBengaliDigits(entries.reduce((sum, e) => sum + parseBengaliNumber(e.totalAmount), 0))}
               </td>
-              <td colSpan={3} className="border-t border-slate-700"></td>
+              <td colSpan={isAdmin ? 4 : 3} className="border-t border-slate-700"></td>
             </tr>
           </tfoot>
         </table>
