@@ -8,11 +8,12 @@ import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { getCycleForDate } from '../utils/cycleHelper';
 
 interface CorrespondenceEntryModuleProps {
+  onAdd: (data: any) => void;
   onBackToMenu: () => void;
   isLayoutEditable?: boolean;
 }
 
-const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ onBackToMenu, isLayoutEditable }) => {
+const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ onAdd, onBackToMenu, isLayoutEditable }) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [calculatedCycle, setCalculatedCycle] = useState<string>('');
   
@@ -89,6 +90,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
       setReceiverSuggestions(updatedNames);
       localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updatedNames));
     }
+
+    // Call onAdd to notify parent app and save to database
+    onAdd(formData);
 
     setIsSuccess(true);
     
