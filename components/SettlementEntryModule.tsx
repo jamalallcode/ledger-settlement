@@ -408,6 +408,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, on
     e.preventDefault();
     if (isSubmitting.current || isSuccess) return;
     isSubmitting.current = true;
+    
+    // Trigger Success UI instantly
     setIsSuccess(true);
     setIsDeletingPara(false);
     
@@ -440,10 +442,9 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, on
       vatRec: totals.vR, vatAdj: totals.vA, itRec: totals.iR, itAdj: totals.iA, othersRec: totals.oR, othersAdj: totals.oA, totalRec: totals.vR + totals.iR + totals.oR, totalAdj: totals.vA + totals.iA + totals.oA 
     };
 
-    setTimeout(() => {
-      onAdd(finalData);
-      isSubmitting.current = false;
-    }, 8000);
+    // Fast call to onAdd without long artificial delay
+    onAdd(finalData);
+    isSubmitting.current = false;
   };
 
   const formatSummaryNum = (val: number) => {
@@ -462,7 +463,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, on
   const isUpdateMode = !!initialEntry;
   const deletedCount = isUpdateMode ? (initialEntry?.paragraphs?.length || 0) - paragraphs.length : 0;
 
-  // Fix: Fix syntax for wizardStep selection return
   if (wizardStep === 'selection') {
     return (
       <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border border-slate-100 mb-8 max-w-4xl mx-auto animate-in zoom-in-95 duration-300 relative">
@@ -556,7 +556,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, on
     );
   }
 
-  // Fix: Corrected syntax for main component return, removing escaped quotes
   return (
     <div id="form-container-settlement" className="bg-white p-4 md:p-10 rounded-[2.5rem] border border-slate-200 shadow-2xl animate-landing-premium max-w-7xl mx-auto overflow-x-hidden relative">
       <IDBadge id="view-settlement-form" isLayoutEditable={isLayoutEditable} />
@@ -778,7 +777,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, on
                      ) : (isUpdateMode || isAdmin ? (
                        <React.Fragment><CheckCircle2 size={20} className="text-emerald-600" /> আপনার এন্ট্রিটি সরাসরি মূল রেজিস্টারে যুক্ত করা হয়েছে</React.Fragment>
                      ) : (
-                       <React.Fragment><ShieldCheck size={20} className="text-emerald-600" /> এডমিন অনুমতি দিলে এটি মূল রেজিস্টারে যুক্ত হবে</React.Fragment>
+                       <React.Fragment><ShieldCheck size={20} className="text-emerald-600" /> চিঠি এন্ট্রি হয়েছে, এডমিন অনুমোদনের পর রেজিস্টারে দেখা যাবে</React.Fragment>
                      )))}
                   </div>
                </div>
@@ -798,14 +797,14 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, on
                   <div className="h-1.5 w-64 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                      <div className={`h-full ${isDeletingPara || deletedCount > 0 ? 'bg-red-600' : 'bg-emerald-600'} animate-progress-loading-premium`}></div>
                   </div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter animate-pulse italic">{(isDeletingPara || deletedCount > 0) ? 'অনুগ্রহ করে অপেক্ষা করুন...' : 'স্বয়ংক্রিয়ভাবে মেনুতে ফিরে যাওয়া হচ্ছে...'}</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter animate-pulse italic">{(isDeletingPara || deletedCount > 0) ? 'অনুগ্রহ করে অপেক্ষা করুন...' : 'প্রক্রিয়াটি সফলভাবে সম্পন্ন হয়েছে'}</span>
                </div>
             </div>
           ) : (
             <button 
               id="btn-submit-entry"
               type="submit"
-              className="w-full py-5 text-white text-xl font-black rounded-[2.5rem] bg-blue-600 hover:bg-blue-700 active:scale-[0.98] shadow-[0_20px_40px_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-4 group relative overflow-hidden"
+              className="w-full py-5 text-white text-xl font-black rounded-[2.5rem] bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] shadow-[0_20px_40px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-4 group relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
               <IDBadge id="btn-submit-entry" isLayoutEditable={isLayoutEditable} />
@@ -821,7 +820,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ onAdd, on
           100% { width: 100%; }
         }
         .animate-progress-loading-premium {
-          animation: progress-loading-premium 8s linear forwards;
+          animation: progress-loading-premium 4s linear forwards;
         }
       `}} />
     </div>
