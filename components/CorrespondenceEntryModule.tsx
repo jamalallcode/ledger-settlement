@@ -13,9 +13,10 @@ interface CorrespondenceEntryModuleProps {
   onBackToMenu: () => void;
   isLayoutEditable?: boolean;
   initialEntry?: any;
+  isAdmin?: boolean;
 }
 
-const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ onAdd, onViewRegister, onBackToMenu, isLayoutEditable, initialEntry }) => {
+const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ onAdd, onViewRegister, onBackToMenu, isLayoutEditable, initialEntry, isAdmin = false }) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [calculatedCycle, setCalculatedCycle] = useState<string>('');
   
@@ -113,7 +114,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
     setFormData(prev => ({ ...prev, [field]: val }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Save receiver name if it's new
@@ -123,20 +124,15 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
       localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updatedNames));
     }
 
+    // Trigger Success instantly
+    setIsSuccess(true);
+    
     // Call onAdd to notify parent app and save to database
     onAdd(formData);
 
-    setIsSuccess(true);
-    
     setTimeout(() => {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
-
-    // Give more time for the user to see the success message and button
-    setTimeout(() => {
-      if (!isSuccess) return; // safety
-      // We don't auto-close immediately if user wants to click the button
-    }, 8000);
   };
 
   const IDBadge = ({ id }: { id: string }) => {
@@ -434,10 +430,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
                </div>
                <div className="text-center space-y-3 px-6">
                   <h4 className="text-4xl font-black text-emerald-950 tracking-tight">
-                    {initialEntry ? 'তথ্য সফলভাবে আপডেট হয়েছে' : 'চিঠিপত্র তথ্য সফলভাবে সংরক্ষিত হয়েছে'}
+                    {initialEntry ? 'তথ্য সফলভাবে আপডেট হয়েছে' : (isAdmin ? 'চিঠিপত্র তথ্য সফলভাবে সংরক্ষিত হয়েছে' : 'চিঠি এন্ট্রি হয়েছে')}
                   </h4>
                   <p className="text-[16px] font-bold text-emerald-700 uppercase tracking-widest flex items-center justify-center gap-2">
-                    <ShieldCheck size={20} /> আপনার ডাটাবেজে এন্ট্রিটি যুক্ত করা হয়েছে
+                    <ShieldCheck size={20} /> {isAdmin ? 'আপনার ডাটাবেজে এন্ট্রিটি যুক্ত করা হয়েছে' : 'সফলভাবে এন্ট্রি হয়েছে, এডমিন অনুমোদনের পর রেজিস্টারে দেখা যাবে'}
                   </p>
                </div>
                
@@ -454,7 +450,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
                   <div className="h-1.5 w-64 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                      <div className="h-full bg-emerald-600 animate-progress-loading-premium"></div>
                   </div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter animate-pulse italic">স্বয়ংক্রিয়ভাবে মেনুতে ফিরে যাওয়া হচ্ছে...</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter animate-pulse italic">প্রক্রিয়াটি সফলভাবে সম্পন্ন হয়েছে</span>
                </div>
             </div>
           ) : (
@@ -481,7 +477,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
           100% { width: 100%; }
         }
         .animate-progress-loading-premium {
-          animation: progress-loading-premium 8s linear forwards;
+          animation: progress-loading-premium 4s linear forwards;
         }
       `}} />
     </div>
