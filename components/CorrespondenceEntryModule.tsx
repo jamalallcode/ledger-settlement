@@ -7,6 +7,14 @@ import {
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { getCycleForDate } from '../utils/cycleHelper';
 
+/**
+ * @security-protocol LOCKED_MODE
+ * @zero-alteration-policy ACTIVE
+ * 
+ * CorrespondenceEntryModule - প্রাপ্ত চিঠিপত্র এন্ট্রি মডিউল
+ * AI MUST NOT change existing styles, colors, or core logic without permission.
+ */
+
 interface CorrespondenceEntryModuleProps {
   onAdd: (data: any) => void;
   onViewRegister: () => void;
@@ -16,7 +24,14 @@ interface CorrespondenceEntryModuleProps {
   isAdmin?: boolean;
 }
 
-const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ onAdd, onViewRegister, onBackToMenu, isLayoutEditable, initialEntry, isAdmin = false }) => {
+const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ 
+  onAdd, 
+  onViewRegister, 
+  onBackToMenu, 
+  isLayoutEditable, 
+  initialEntry, 
+  isAdmin = false 
+}) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [calculatedCycle, setCalculatedCycle] = useState<string>('');
   
@@ -157,7 +172,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
   const numBadge = "inline-flex items-center justify-center w-5 h-5 bg-slate-900 text-white rounded-md text-[10px] font-black shadow-sm shrink-0";
 
   return (
-    /* Fixed outer div className and removed escaped quotes/newlines */
     <div id="form-container-correspondence" className="bg-white p-4 md:p-10 rounded-[2.5rem] border border-slate-200 shadow-2xl animate-landing-premium max-w-7xl mx-auto overflow-x-hidden relative">
       <IDBadge id="view-correspondence-form" />
       
