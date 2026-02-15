@@ -31,7 +31,7 @@ const App: React.FC = () => {
   const [correspondenceEntries, setCorrespondenceEntries] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('landing'); 
   const [resetKey, setResetKey] = useState(0); 
-  const [editingEntry, setEditingEntry] = useState<SettlementEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<any | null>(null);
   const [isLayoutEditable, setIsLayoutEditable] = useState(false);
   const [isLockedMode, setIsLockedMode] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -215,7 +215,11 @@ const App: React.FC = () => {
 
     if (editingEntry) {
       entryToSync = { ...editingEntry, ...data, approvalStatus: status };
-      setEntries(prev => prev.map(e => e.id === editingEntry.id ? entryToSync : e));
+      if (isCorrespondence) {
+        setCorrespondenceEntries(prev => prev.map(e => e.id === editingEntry.id ? entryToSync : e));
+      } else {
+        setEntries(prev => prev.map(e => e.id === editingEntry.id ? entryToSync : e));
+      }
       setEditingEntry(null);
     } else {
       const newId = generateId();
@@ -252,11 +256,16 @@ const App: React.FC = () => {
   };
 
   const handleApproveEntry = async (id: string) => {
-    const entry = entries.find(e => e.id === id);
+    const entry = [...entries, ...correspondenceEntries].find(e => e.id === id);
     if (!entry) return;
     
     const updatedEntry = { ...entry, approvalStatus: 'approved' as const };
-    setEntries(prev => prev.map(e => e.id === id ? updatedEntry : e));
+    
+    if (entry.type === 'correspondence') {
+      setCorrespondenceEntries(prev => prev.map(e => e.id === id ? updatedEntry : e));
+    } else {
+      setEntries(prev => prev.map(e => e.id === id ? updatedEntry : e));
+    }
 
     if (navigator.onLine) {
       await supabase.from('settlement_entries').upsert({ id: updatedEntry.id, content: updatedEntry });
@@ -271,6 +280,7 @@ const App: React.FC = () => {
     if (!window.confirm("আপনি কি নিশ্চিতভাবে এই এন্ট্রিটি প্রত্যাখ্যান করতে চান? এটি মুছে ফেলা হবে।")) return;
     
     setEntries(prev => prev.filter(e => e.id !== id));
+    setCorrespondenceEntries(prev => prev.filter(e => e.id !== id));
     
     if (navigator.onLine) {
       await supabase.from('settlement_entries').delete().eq('id', id);
@@ -315,6 +325,7 @@ const App: React.FC = () => {
       }
     } else {
       setEntries(prev => prev.filter(e => e.id !== id));
+      setCorrespondenceEntries(prev => prev.filter(e => e.id !== id));
       if (navigator.onLine) {
         await supabase.from('settlement_entries').delete().eq('id', id);
       } else {
@@ -325,7 +336,12 @@ const App: React.FC = () => {
   };
 
   const approvedEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'approved' || !e.approvalStatus), [entries]);
+  const approvedCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'approved' || !e.approvalStatus), [correspondenceEntries]);
+  
   const pendingEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'pending'), [entries]);
+  const pendingCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'pending'), [correspondenceEntries]);
+  
+  const totalPendingCount = pendingEntries.length + pendingCorrespondence.length;
 
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = useState(false);
@@ -360,7 +376,7 @@ const App: React.FC = () => {
           onToggleVisibility={() => setIsSidebarOpen(false)}
           isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
           isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} setIsAdmin={setIsAdmin}
-          pendingCount={pendingEntries.length}
+          pendingCount={totalPendingCount}
         />
       )}
 
@@ -373,7 +389,7 @@ const App: React.FC = () => {
           isAdmin={isAdmin} setIsAdmin={setIsAdmin} cycleLabel={cycleLabelBengali}
           showRegisterFilters={showRegisterFilters} setShowRegisterFilters={setShowRegisterFilters}
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen}
-          pendingEntries={pendingEntries}
+          pendingEntries={[...pendingEntries, ...pendingCorrespondence]}
           onApprove={handleApproveEntry}
           onReject={handleRejectEntry}
           setShowPendingOnly={setShowPendingOnly}
@@ -391,7 +407,7 @@ const App: React.FC = () => {
                   isLockedMode={isLockedMode} 
                   isLayoutEditable={isLayoutEditable} 
                   isAdmin={isAdmin}
-                  pendingCount={pendingEntries.length}
+                  pendingCount={totalPendingCount}
                   onShowPending={() => { setActiveTab('register'); setShowPendingOnly(true); }}
                 />
               )}
@@ -458,21 +474,21 @@ const App: React.FC = () => {
                         </button>
                       </div>
 
-                      {isAdmin && (pendingEntries.length > 0 || showPendingOnly) && (
+                      {isAdmin && (totalPendingCount > 0 || showPendingOnly) && (
                         <div className="flex justify-end gap-2 no-print">
                           <button 
                             onClick={() => setShowPendingOnly(!showPendingOnly)}
                             className={`px-4 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-2 border shadow-sm ${showPendingOnly ? 'bg-amber-600 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
                           >
                             {showPendingOnly ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
-                            {showPendingOnly ? 'মূল রেজিস্টারে ফিরুন' : `অপেক্ষমাণ তালিকা (${toBengaliDigits(pendingEntries.length)})`}
+                            {showPendingOnly ? 'মূল রেজিস্টারে ফিরুন' : `অপেক্ষমাণ তালিকা (${toBengaliDigits(totalPendingCount)})`}
                           </button>
                         </div>
                       )}
                       
                       {showPendingOnly ? (
                         <div className="space-y-8 animate-in fade-in duration-700">
-                           {pendingEntries.length > 0 ? (
+                           {(pendingEntries.length > 0 || pendingCorrespondence.length > 0) ? (
                              <div className="bg-amber-50/50 border-2 border-dashed border-amber-200 p-8 rounded-[2.5rem] text-center space-y-3">
                                 <h3 className="text-xl font-black text-amber-900">অপেক্ষমাণ এন্ট্রি মডোরেশন</h3>
                                 <p className="text-sm font-bold text-amber-700">নিচের এন্ট্রিগুলো যাচাই করে অনুমোদন দিন। অনুমোদন না পাওয়া পর্যন্ত এগুলো রিপোর্ট বা রেজিস্টারে আসবে না।</p>
@@ -497,20 +513,41 @@ const App: React.FC = () => {
                              </div>
                            )}
                            
+                           {pendingCorrespondence.length > 0 && (
+                             <div className="space-y-4">
+                               <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl w-fit font-black text-sm border border-emerald-100">
+                                 <Mail size={16} /> প্রাপ্ত চিঠিপত্র অপেক্ষমাণ
+                               </div>
+                               <CorrespondenceTable 
+                                 entries={pendingCorrespondence} 
+                                 onBack={() => {}}
+                                 isAdmin={isAdmin}
+                                 isLayoutEditable={isLayoutEditable}
+                                 onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
+                                 onDelete={handleDelete}
+                               />
+                             </div>
+                           )}
+
                            {pendingEntries.length > 0 && (
-                             <SettlementTable 
-                               key={`pending-list`} 
-                               entries={pendingEntries} 
-                               onDelete={handleDelete} 
-                               onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
-                               isLayoutEditable={isLayoutEditable} 
-                               showFilters={false} 
-                               setShowFilters={setShowRegisterFilters}
-                               isAdminView={true}
-                               onApprove={handleApproveEntry}
-                               onReject={handleRejectEntry}
-                               isAdmin={isAdmin}
-                             />
+                             <div className="space-y-4">
+                               <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl w-fit font-black text-sm border border-blue-100">
+                                 <ClipboardList size={16} /> মীমাংসা রেজিস্টার অপেক্ষমাণ
+                               </div>
+                               <SettlementTable 
+                                 key={`pending-list`} 
+                                 entries={pendingEntries} 
+                                 onDelete={handleDelete} 
+                                 onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
+                                 isLayoutEditable={isLayoutEditable} 
+                                 showFilters={false} 
+                                 setShowFilters={setShowRegisterFilters}
+                                 isAdminView={true}
+                                 onApprove={handleApproveEntry}
+                                 onReject={handleRejectEntry}
+                                 isAdmin={isAdmin}
+                               />
+                             </div>
                            )}
                         </div>
                       ) : (
@@ -529,9 +566,12 @@ const App: React.FC = () => {
                   ) : (
                     <div className="animate-in fade-in duration-700">
                       <CorrespondenceTable 
-                        entries={correspondenceEntries} 
+                        entries={approvedCorrespondence} 
                         onBack={() => setRegisterSubModule(null)} 
                         isLayoutEditable={isLayoutEditable}
+                        isAdmin={isAdmin}
+                        onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
+                        onDelete={handleDelete}
                       />
                     </div>
                   )}
