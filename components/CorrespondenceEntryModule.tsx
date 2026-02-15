@@ -9,12 +9,13 @@ import { getCycleForDate } from '../utils/cycleHelper';
 
 interface CorrespondenceEntryModuleProps {
   onAdd: (data: any) => void;
+  onViewRegister: () => void;
   onBackToMenu: () => void;
   isLayoutEditable?: boolean;
   initialEntry?: any;
 }
 
-const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ onAdd, onBackToMenu, isLayoutEditable, initialEntry }) => {
+const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ onAdd, onViewRegister, onBackToMenu, isLayoutEditable, initialEntry }) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [calculatedCycle, setCalculatedCycle] = useState<string>('');
   
@@ -442,10 +443,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
                
                <div className="flex flex-col md:flex-row items-center gap-4 mt-2">
                   <button 
-                    onClick={onBackToMenu}
+                    onClick={onViewRegister}
                     className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-3 active:scale-95 group"
                   >
-                    প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টারটি দেখুন <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                    চিঠিপত্র প্রাপ্তি রেজিস্টার দেখুন <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                   </button>
                </div>
 
@@ -464,7 +465,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ o
                >বাতিল করুন</button>
                <button 
                   type="submit"
-                  className="flex-[2] py-5 bg-emerald-500 text-white rounded-[2rem] font-black text-xl shadow-[0_20px_40px_rgba(16,185,129,0.3)] hover:bg-emerald-600 transition-all active:scale-95 flex items-center justify-center gap-4 group relative overflow-hidden"
+                  className="flex-[2] py-5 bg-emerald-600 text-white rounded-[2rem] font-black text-xl shadow-[0_20px_40px_rgba(5,150,105,0.3)] hover:bg-emerald-700 transition-all active:scale-95 flex items-center justify-center gap-4 group relative overflow-hidden"
                >
                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                  <CheckCircle2 size={24} /> {initialEntry ? 'তথ্য আপডেট করুন' : 'তথ্য সংরক্ষণ করুন'}
