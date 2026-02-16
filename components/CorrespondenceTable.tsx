@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle } from 'lucide-react';
+import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { getCurrentCycle } from '../utils/cycleHelper';
 
@@ -21,6 +21,8 @@ interface CorrespondenceEntry {
   receiverName: string;
   receivedDate: string;
   isOnline: string;
+  issueLetterNo: string;
+  issueLetterDate: string;
   remarks?: string;
   createdAt: string;
   approvalStatus?: 'approved' | 'pending';
@@ -102,6 +104,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             <col className="w-[100px]" /> {/* জড়িত টাকা */}
             <col className="w-[125px]" /> {/* গৃহীতা ও তারিখ */}
             <col className="w-[70px]" />  {/* অনলাইন */}
+            <col className="w-[120px]" /> {/* জারিপত্র নং ও তারিখ */}
             <col className="w-[100px]" /> {/* মন্তব্য */}
           </colgroup>
           <thead>
@@ -115,6 +118,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
               <th className={thCls}>মোট জড়িত টাকা</th>
               <th className={thCls}>গৃহীতার নাম ও গ্রহণের তারিখ</th>
               <th className={thCls}>অনলাইনে প্রাপ্তি (হ্যাঁ/না)</th>
+              <th className={thCls}>জারিপত্র নং ও তারিখ</th>
               <th className={thCls}>মন্তব্য</th>
             </tr>
           </thead>
@@ -152,6 +156,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${entry.isOnline === 'হ্যাঁ' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
                       {entry.isOnline}
                    </span>
+                </td>
+                <td className={tdCls + " text-center"}>
+                   <div className="text-center space-y-1">
+                      <div className="font-black text-amber-700 text-[10px]">{entry.issueLetterNo || '-'}</div>
+                      {entry.issueLetterDate && <div className="text-[9px] bg-amber-50 rounded-lg px-2 py-0.5 inline-block text-amber-600 font-bold border border-amber-100">{toBengaliDigits(entry.issueLetterDate)}</div>}
+                   </div>
                 </td>
                 <td className={tdCls + " relative group/action"}>
                    {entry.remarks || '-'}
@@ -195,7 +205,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
               </tr>
             )) : (
               <tr>
-                <td colSpan={10} className="py-20 text-center bg-white">
+                <td colSpan={11} className="py-20 text-center bg-white">
                    <div className="flex flex-col items-center gap-4 opacity-30">
                       <Mail size={48} />
                       <p className="text-lg font-black text-slate-900 tracking-widest">রেজিস্টারে কোনো তথ্য পাওয়া যায়নি</p>
@@ -212,7 +222,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
               <td className="px-4 text-center border-t border-slate-700 text-blue-400">
                 {toBengaliDigits(entries.reduce((sum, e) => sum + parseBengaliNumber(e.totalAmount), 0))}
               </td>
-              <td colSpan={3} className="border-t border-slate-700"></td>
+              <td colSpan={4} className="border-t border-slate-700"></td>
             </tr>
           </tfoot>
         </table>
