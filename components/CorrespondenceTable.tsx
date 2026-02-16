@@ -1,7 +1,9 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles, Save } from 'lucide-react';
-import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
-import { getCurrentCycle } from '../utils/cycleHelper';
+/* Added CalendarDays to imports */
+import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles, Save, CalendarSearch, LayoutGrid, CalendarDays } from 'lucide-react';
+import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
+import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper';
+import { format, addMonths } from 'date-fns';
 
 interface CorrespondenceEntry {
   id: string;
@@ -27,6 +29,7 @@ interface CorrespondenceEntry {
   remarks?: string;
   createdAt: string;
   approvalStatus?: 'approved' | 'pending';
+  type?: string;
 }
 
 interface CorrespondenceTableProps {
@@ -39,7 +42,82 @@ interface CorrespondenceTableProps {
   onDelete?: (id: string) => void;
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
+  showFilters: boolean;
+  setShowFilters: (val: boolean) => void;
 }
+
+/**
+ * Segmented Date Input for Table Cells with Auto-focus
+ */
+const SegmentedTableDateInput: React.FC<{
+  value: string;
+  onChange: (val: string) => void;
+  accent: 'blue' | 'amber';
+}> = ({ value, onChange, accent }) => {
+  // Expect value as YYYY-MM-DD
+  const [y, m, d] = value ? value.split('-') : ['', '', ''];
+  const dayRef = useRef<HTMLInputElement>(null);
+  const monthRef = useRef<HTMLInputElement>(null);
+  const yearRef = useRef<HTMLInputElement>(null);
+
+  const update = (nD: string, nM: string, nY: string) => {
+    const finalY = nY.padStart(4, '0');
+    const finalM = nM.padStart(2, '0');
+    const finalD = nD.padStart(2, '0');
+    onChange(`${finalY}-${finalM}-${finalD}`);
+  };
+
+  const dayVal = d ? toBengaliDigits(d) : '';
+  const monthVal = m ? toBengaliDigits(m) : '';
+  const yearVal = y && y !== '0000' ? toBengaliDigits(y) : '';
+
+  const focusCls = accent === 'blue' 
+    ? 'focus-within:border-blue-400 focus-within:ring-blue-50' 
+    : 'focus-within:border-amber-400 focus-within:ring-amber-50';
+
+  const inputCls = "w-full bg-transparent border-none outline-none text-center font-black text-[10px] p-0 placeholder:text-slate-300";
+
+  return (
+    <div className={`flex items-center gap-0.5 px-1 h-6 bg-white border border-slate-200 rounded-md ${focusCls} transition-all`}>
+      <input 
+        ref={dayRef} type="text" placeholder="দিন" 
+        className={`${inputCls} flex-[1]`}
+        value={dayVal} 
+        onChange={e => {
+          const v = toEnglishDigits(e.target.value).replace(/\D/g, '').slice(0, 2);
+          if (v && parseInt(v) > 31) return;
+          update(v, m, y);
+          if (v.length === 2) monthRef.current?.focus();
+        }} 
+      />
+      <span className="text-slate-300 text-[8px] font-black">/</span>
+      <input 
+        ref={monthRef} type="text" placeholder="মাস" 
+        className={`${inputCls} flex-[1]`}
+        value={monthVal} 
+        onChange={e => {
+          const v = toEnglishDigits(e.target.value).replace(/\D/g, '').slice(0, 2);
+          if (v && parseInt(v) > 12) return;
+          update(d, v, y);
+          if (v.length === 2) yearRef.current?.focus();
+        }} 
+      />
+      <span className="text-slate-300 text-[8px] font-black">/</span>
+      <input 
+        ref={yearRef} type="text" placeholder="বছর" 
+        className={`${inputCls} flex-[1.8]`}
+        value={yearVal} 
+        onChange={e => {
+          const v = toEnglishDigits(e.target.value).replace(/\D/g, '').slice(0, 4);
+          update(d, m, v);
+        }}
+        onBlur={() => {
+          if (y && y.length === 2) update(d, m, '20' + y);
+        }}
+      />
+    </div>
+  );
+};
 
 /**
  * Premium Dropdown Component for Inline Presentation Name Update
@@ -145,11 +223,79 @@ const PremiumInlineSelect: React.FC<{
   );
 };
 
-const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBack, isLayoutEditable, isAdmin, onEdit, onInlineUpdate, onDelete, onApprove, onReject }) => {
+const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBack, isLayoutEditable, isAdmin, onEdit, onInlineUpdate, onDelete, onApprove, onReject, showFilters, setShowFilters }) => {
   const [pendingChanges, setPendingChanges] = useState<Record<string, Partial<CorrespondenceEntry>>>({});
   const [isUpdating, setIsUpdating] = useState(false);
   
+  // Filter States
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterParaType, setFilterParaType] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const [selectedCycleDate, setSelectedCycleDate] = useState<Date | null>(null);
+  
+  const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
+  const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+  const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
+
+  const cycleDropdownRef = useRef<HTMLDivElement>(null);
+  const branchDropdownRef = useRef<HTMLDivElement>(null);
+  const typeDropdownRef = useRef<HTMLDivElement>(null);
+
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (cycleDropdownRef.current && !cycleDropdownRef.current.contains(event.target as Node)) setIsCycleDropdownOpen(false);
+      if (branchDropdownRef.current && !branchDropdownRef.current.contains(event.target as Node)) setIsBranchDropdownOpen(false);
+      if (typeDropdownRef.current && !typeDropdownRef.current.contains(event.target as Node)) setIsTypeDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const cycleOptions = useMemo(() => {
+    const options = [];
+    const banglaMonths: Record<string, string> = {
+      'January': 'জানুয়ারি', 'February': 'ফেব্রুয়ারি', 'March': 'মার্চ', 'April': 'এপ্রিল',
+      'May': 'মে', 'June': 'জুন', 'July': 'জুলাই', 'August': 'আগস্ট',
+      'September': 'সেপ্টেম্বর', 'October': 'অক্টোবর', 'November': 'নভেম্বর', 'December': 'ডিসেম্বর'
+    };
+    const today = new Date();
+    for (let i = 0; i < 24; i++) {
+      const refDate = addMonths(today, -i);
+      const firstOfTargetMonth = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+      const cycle = getCycleForDate(firstOfTargetMonth);
+      const monthNameEng = format(firstOfTargetMonth, 'MMMM');
+      const yearEng = format(firstOfTargetMonth, 'yyyy');
+      const label = `${banglaMonths[monthNameEng]} ${toBengaliDigits(yearEng)} সাইকেল`;
+      options.push({ date: firstOfTargetMonth, label, cycleLabel: cycle.label });
+    }
+    return options;
+  }, []);
+
+  const activeCycle = useMemo(() => {
+    if (!selectedCycleDate) return null;
+    return getCycleForDate(selectedCycleDate);
+  }, [selectedCycleDate]);
+
+  const filteredEntries = useMemo(() => {
+    return entries.filter(entry => {
+      const matchSearch = !searchTerm || 
+        entry.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        entry.letterNo.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        entry.diaryNo.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchBranch = !filterParaType || entry.paraType === filterParaType;
+      const matchType = !filterType || entry.letterType === filterType;
+      
+      let matchCycle = true;
+      if (activeCycle && entry.diaryDate) {
+        matchCycle = entry.diaryDate >= format(activeCycle.start, 'yyyy-MM-dd') && entry.diaryDate <= format(activeCycle.end, 'yyyy-MM-dd');
+      }
+
+      return matchSearch && matchBranch && matchType && matchCycle;
+    });
+  }, [entries, searchTerm, filterParaType, filterType, activeCycle]);
 
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = useState(false);
@@ -200,6 +346,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-slate-800 font-bold leading-tight align-top bg-white transition-colors group-hover:bg-blue-50/50 break-words";
   const labelCls = "text-[10px] font-black text-emerald-700 mr-1 shrink-0";
   const valCls = "text-[10px] font-bold text-slate-900";
+  const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[48px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
 
   const hasChanges = Object.keys(pendingChanges).length > 0;
 
@@ -239,6 +386,163 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
         </div>
       </div>
 
+      {/* Replicated Filter UI for Correspondence */}
+      {showFilters && (
+        <div id="correspondence-filters" className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            {/* Cycle Selection */}
+            <div className="space-y-1.5" ref={cycleDropdownRef}>
+              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">সময়কাল নির্বাচন (সাইকেল)</label>
+              <div 
+                onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
+                className={customDropdownCls(isCycleDropdownOpen)}
+              >
+                <CalendarDays size={18} className="text-blue-600" />
+                <span className="font-black text-[13px] text-slate-900 truncate">
+                  {!selectedCycleDate ? 'সকল সাইকেল' : (cycleOptions.find(o => o.cycleLabel === activeCycle?.label)?.label || toBengaliDigits(activeCycle?.label || ''))}
+                </span>
+                <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isCycleDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                
+                {isCycleDropdownOpen && (
+                  <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                    <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
+                      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                          <CalendarSearch size={12} /> সাইকেল নির্বাচন
+                        </span>
+                      </div>
+                      <div className="p-2 space-y-1">
+                        <div 
+                          key="all" 
+                          onClick={(e) => { e.stopPropagation(); setSelectedCycleDate(null); setIsCycleDropdownOpen(false); }} 
+                          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${!selectedCycleDate ? '!bg-blue-600 !text-white shadow-lg' : 'hover:bg-slate-100 text-slate-700 font-bold bg-white'}`}
+                        >
+                          <span className="text-[13px]">সকল সাইকেল</span>
+                          {!selectedCycleDate && <Check size={16} strokeWidth={3} />}
+                        </div>
+                        {cycleOptions.map((opt, idx) => (
+                          <div 
+                            key={idx} 
+                            onClick={(e) => { e.stopPropagation(); setSelectedCycleDate(opt.date); setIsCycleDropdownOpen(false); }} 
+                            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${opt.cycleLabel === activeCycle?.label ? '!bg-blue-600 !text-white shadow-lg' : 'hover:bg-slate-100 text-slate-700 font-bold bg-white'}`}
+                          >
+                            <span className="text-[13px]">{opt.label}</span>
+                            {opt.cycleLabel === activeCycle?.label && <Check size={16} strokeWidth={3} />}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Branch Selection */}
+            <div className="space-y-1.5" ref={branchDropdownRef}>
+              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">শাখা</label>
+              <div 
+                onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)} 
+                className={customDropdownCls(isBranchDropdownOpen)}
+              >
+                <LayoutGrid className="text-blue-600" size={16} />
+                <span className="font-black text-[13px] text-slate-900 truncate">
+                  {filterParaType === '' ? 'সকল শাখা' : filterParaType}
+                </span>
+                <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isBranchDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                
+                {isBranchDropdownOpen && (
+                  <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                    <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
+                      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                          <LayoutGrid size={12} /> শাখা নির্বাচন
+                        </span>
+                      </div>
+                      <div className="p-2 space-y-1">
+                        {[
+                          { val: '', label: 'সকল শাখা' },
+                          { val: 'এসএফআই', label: 'এসএফআই' },
+                          { val: 'নন এসএফআই', label: 'নন এসএফআই' }
+                        ].map((opt, idx) => (
+                          <div 
+                            key={idx} 
+                            onClick={(e) => { e.stopPropagation(); setFilterParaType(opt.val); setIsBranchDropdownOpen(false); }} 
+                            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterParaType === opt.val ? '!bg-blue-600 !text-white shadow-lg' : 'hover:bg-slate-100 text-slate-700 font-bold bg-white'}`}
+                          >
+                            <span className="text-[13px]">{opt.label}</span>
+                            {filterParaType === opt.val && <Check size={16} strokeWidth={3} />}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Letter Type Selection */}
+            <div className="space-y-1.5" ref={typeDropdownRef}>
+              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">চিঠির ধরণ</label>
+              <div 
+                onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)} 
+                className={customDropdownCls(isTypeDropdownOpen)}
+              >
+                <FileText className="text-blue-600" size={16} />
+                <span className="font-black text-[13px] text-slate-900 truncate">
+                  {filterType === '' ? 'সকল ধরণ' : filterType}
+                </span>
+                <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isTypeDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                
+                {isTypeDropdownOpen && (
+                  <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                    <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
+                      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                          <FileText size={12} /> ধরণ নির্বাচন
+                        </span>
+                      </div>
+                      <div className="p-2 space-y-1">
+                        {[
+                          { val: '', label: 'সকল ধরণ' },
+                          { val: 'বিএসআর', label: 'বিএসআর (BSR)' },
+                          { val: 'ত্রিপক্ষীয় সভা', label: 'ত্রিপক্ষীয় সভা' },
+                          { val: 'দ্বিপক্ষীয় সভা', label: 'দ্বিপক্ষীয় সভা' }
+                        ].map((opt, idx) => (
+                          <div 
+                            key={idx} 
+                            onClick={(e) => { e.stopPropagation(); setFilterType(opt.val); setIsTypeDropdownOpen(false); }} 
+                            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterType === opt.val ? '!bg-blue-600 !text-white shadow-lg' : 'hover:bg-slate-100 text-slate-700 font-bold bg-white'}`}
+                          >
+                            <span className="text-[13px]">{opt.label}</span>
+                            {filterType === opt.val && <Check size={16} strokeWidth={3} />}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Search Input */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">অনুসন্ধান</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600" size={16} />
+                <input 
+                  type="text" 
+                  value={searchTerm} 
+                  onChange={e => setSearchTerm(e.target.value)} 
+                  placeholder="বিবরণ বা নং দিয়ে খুঁজুন..." 
+                  className="w-full pl-9 pr-4 h-[48px] bg-white border border-slate-300 rounded-xl font-black text-slate-900 text-[13px] outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold" 
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Table Container - Optimized for Width */}
       <div className="table-container border border-slate-300 rounded-sm overflow-visible relative shadow-xl bg-white max-w-full">
         <IDBadge id="table-correspondence-ledger" />
@@ -270,7 +574,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             </tr>
           </thead>
           <tbody>
-            {entries.length > 0 ? entries.map((entry, idx) => {
+            {filteredEntries.length > 0 ? filteredEntries.map((entry, idx) => {
               const pending = pendingChanges[entry.id] || {};
               const currentPresDate = pending.presentationDate !== undefined ? pending.presentationDate : (entry.presentationDate || '');
               const currentPresName = pending.presentedToName !== undefined ? pending.presentedToName : (entry.presentedToName || '');
@@ -341,21 +645,22 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                 <td className={tdCls}>
                    <div className="space-y-2">
                       <div className="p-1.5 bg-slate-50 border border-slate-100 rounded-lg relative">
+                         {/* Removed backslashes from className */}
                          <div className="text-[9px] font-black text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1"><Inbox size={8} /> গ্রহণকারী</div>
                          <div className="font-black text-slate-900 text-[10px] leading-tight truncate">{entry.receiverName || '-'}</div>
                          <div className="text-[9px] text-slate-500 font-bold">{toBengaliDigits(entry.receivedDate)}</div>
                       </div>
 
                       <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.presentationDate || pending.presentedToName ? 'bg-blue-600/10 border-blue-400 ring-2 ring-blue-50' : 'bg-blue-50/50 border-blue-100'}`}>
+                         {/* Removed backslashes from className */}
                          <div className="text-[9px] font-black text-blue-700 uppercase tracking-tighter flex items-center gap-1"><UserCheck size={8} /> উপস্থাপন</div>
                          <div className="space-y-1">
                            <div className="flex flex-col gap-0.5">
                               <span className="text-[8px] font-black text-slate-400 uppercase">তারিখ</span>
-                              <input 
-                                type="date" 
-                                className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none focus:border-blue-400 bg-white" 
+                              <SegmentedTableDateInput 
                                 value={currentPresDate} 
-                                onChange={e => handleInlineChange(entry.id, 'presentationDate', e.target.value)}
+                                accent="blue"
+                                onChange={val => handleInlineChange(entry.id, 'presentationDate', val)} 
                               />
                            </div>
                            <div className="flex flex-col gap-0.5">
@@ -371,6 +676,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                 </td>
                 <td className={tdCls}>
                    <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.issueLetterNo || pending.issueLetterDate ? 'bg-amber-600/10 border-amber-400 ring-2 ring-amber-50' : 'bg-amber-50/50 border-amber-100'}`}>
+                      {/* Removed backslashes from className */}
                       <div className="text-[9px] font-black text-amber-700 uppercase tracking-tighter flex items-center gap-1"><Send size={8} /> জারিপত্র</div>
                       <div className="space-y-1">
                         <div className="flex flex-col gap-0.5">
@@ -385,11 +691,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                         </div>
                         <div className="flex flex-col gap-0.5">
                           <span className="text-[8px] font-black text-slate-400 uppercase">তারিখ</span>
-                          <input 
-                            type="date" 
-                            className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none focus:border-amber-400 bg-white" 
+                          <SegmentedTableDateInput 
                             value={currentIssueDate} 
-                            onChange={e => handleInlineChange(entry.id, 'issueLetterDate', e.target.value)}
+                            accent="amber"
+                            onChange={val => handleInlineChange(entry.id, 'issueLetterDate', val)} 
                           />
                         </div>
                       </div>
@@ -419,10 +724,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
           <tfoot className="sticky bottom-0 z-[110]">
             <tr className="bg-slate-900 text-white font-black text-[11px] h-9 shadow-[0_-5px_15px_rgba(0,0,0,0.2)]">
               <td colSpan={2} className="px-4 text-left border-t border-slate-700">সর্বমোট:</td>
-              <td colSpan={1} className="px-2 text-center border-t border-slate-700 text-emerald-400">{toBengaliDigits(entries.length)} টি</td>
+              <td colSpan={1} className="px-2 text-center border-t border-slate-700 text-emerald-400">{toBengaliDigits(filteredEntries.length)} টি</td>
               <td colSpan={3} className="border-t border-slate-700"></td>
               <td className="px-2 text-center border-t border-slate-700 text-blue-400">
-                {toBengaliDigits(entries.reduce((sum, e) => sum + parseBengaliNumber(e.totalAmount), 0))}
+                {toBengaliDigits(filteredEntries.reduce((sum, e) => sum + parseBengaliNumber(e.totalAmount), 0))}
               </td>
               <td colSpan={3} className="border-t border-slate-700"></td>
             </tr>
