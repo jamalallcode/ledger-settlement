@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Mail, X, FileText, Calendar, Hash, Banknote, BookOpen, 
   Inbox, Computer, User, CheckCircle2, Layout, Sparkles, 
-  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send
+  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send, FileEdit
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { getCycleForDate } from '../utils/cycleHelper';
@@ -16,7 +16,7 @@ import { getCycleForDate } from '../utils/cycleHelper';
  */
 
 /**
- * Smart Segmented Date Input Component
+ * Segmented Date Input Component (Mirrored from Settlement Module Logic)
  * Handles auto-padding, max limits, smart year expansion, and auto-focus jump.
  */
 const SegmentedInput = ({ 
