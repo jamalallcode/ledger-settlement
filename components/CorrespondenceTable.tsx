@@ -55,12 +55,14 @@ const PremiumInlineSelect: React.FC<{
 
   useEffect(() => {
     const saved = localStorage.getItem('ledger_correspondence_presented_to');
-    const defaultList = ['সুপার', 'এএন্ডএও', 'উপপরিচালক'];
+    const defaultList = ['সুপার', 'এএন্ডএও']; // Removed 'উপপরিচালক' as per instruction
     
+    const filterUnwanted = (s: string) => s !== 'শামীমা রহমান' && s !== 'উপপরিচালক' && s !== 'উপ-পরিচালক';
+
     if (saved) {
-      // Filter out unwanted name from saved data and merge with defaults
-      const parsed = JSON.parse(saved).filter((s: string) => s !== 'শামীমা রহমান');
-      const merged = Array.from(new Set([...defaultList, ...parsed])).filter(s => s !== 'শামীমা রহমান');
+      // Filter out unwanted names from saved data and merge with defaults
+      const parsed = JSON.parse(saved).filter(filterUnwanted);
+      const merged = Array.from(new Set([...defaultList, ...parsed])).filter(filterUnwanted);
       setSuggestions(merged);
     } else {
       setSuggestions(defaultList);
@@ -76,11 +78,12 @@ const PremiumInlineSelect: React.FC<{
   }, []);
 
   const handleAddNew = () => {
-    if (!searchTerm.trim() || searchTerm.trim() === 'শামীমা রহমান') return;
-    const next = Array.from(new Set([searchTerm.trim(), ...suggestions]));
+    const trimmed = searchTerm.trim();
+    if (!trimmed || trimmed === 'শামীমা রহমান' || trimmed === 'উপপরিচালক' || trimmed === 'উপ-পরিচালক') return;
+    const next = Array.from(new Set([trimmed, ...suggestions]));
     setSuggestions(next);
     localStorage.setItem('ledger_correspondence_presented_to', JSON.stringify(next));
-    onSelect(searchTerm.trim());
+    onSelect(trimmed);
     setIsOpen(false);
   };
 
@@ -120,7 +123,7 @@ const PremiumInlineSelect: React.FC<{
                 {value === opt && <Check size={10} strokeWidth={3} />}
               </div>
             ))}
-            {searchTerm && !suggestions.includes(searchTerm) && searchTerm !== 'শামীমা রহমান' && (
+            {searchTerm && !suggestions.includes(searchTerm) && searchTerm !== 'শামীমা রহমান' && searchTerm !== 'উপপরিচালক' && searchTerm !== 'উপ-পরিচালক' && (
               <div 
                 onClick={handleAddNew}
                 className="px-3 py-1.5 cursor-pointer bg-emerald-50 text-emerald-600 font-black text-[9px] flex items-center gap-2 hover:bg-emerald-100"
