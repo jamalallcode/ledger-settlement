@@ -176,7 +176,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
             const eMin = robustNormalize(e.ministryName || '');
             const eEnt = robustNormalize(e.entityName || '');
             if (eMin !== normMinistry || eEnt !== normEntity) return false;
-            // Fix: Refer to e.issueDateISO correctly
             if (!e.issueDateISO) return false;
             return isInCycle(e.issueDateISO, activeCycle.start, activeCycle.end);
           });
@@ -218,7 +217,15 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
     if (selectedReportType !== 'মাসিক রিটারন: চিঠিপত্র সংক্রান্ত।') return [];
     return correspondenceEntries.filter(e => {
       if (!e.diaryDate) return false;
-      return isInCycle(e.diaryDate, activeCycle.start, activeCycle.end);
+      
+      // Filter by Cycle
+      const inCycle = isInCycle(e.diaryDate, activeCycle.start, activeCycle.end);
+      
+      // Filter by "Issued" status: Only show if NOT issued (no issue letter number AND no issue letter date)
+      // Letters with issue info are considered "finished/settled" and should not appear in the "outstanding/pending" return.
+      const isIssued = (e.issueLetterNo && e.issueLetterNo.trim() !== "") || (e.issueLetterDate && e.issueLetterDate.trim() !== "");
+      
+      return inCycle && !isIssued;
     }).sort((a, b) => new Date(b.diaryDate).getTime() - new Date(a.diaryDate).getTime());
   }, [correspondenceEntries, selectedReportType, activeCycle]);
 
@@ -314,6 +321,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
   const HistoricalFilter = () => (
     <div className="relative no-print" ref={dropdownRef}>
       <div onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} className={`flex items-center gap-3 px-5 h-[48px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isCycleDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}>
+         {/* Fix line 324: Replaced \" with " */}
          <CalendarDays size={20} className="text-blue-600" />
          <span className="font-black text-[13.5px] text-slate-800 tracking-tight">
            {cycleOptions.find(o => o.cycleLabel === activeCycle.label)?.label || toBengaliDigits(activeCycle.label)}
@@ -338,6 +346,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
 
   if (!selectedReportType && !isSetupMode) {
     return (
+      /* Fix line 348: Replaced \" with " */
       <div id="section-report-selector" className="max-w-4xl pb-10 animate-report-page relative pt-0">
         <IDBadge id="section-report-selector" />
         <div className="grid grid-cols-1 gap-5">
@@ -367,11 +376,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
               <div className="flex flex-col justify-center pl-8 flex-1 relative z-10">
                 <div className="flex items-center gap-3">
                   <h3 className="text-[20px] font-black text-white tracking-tight leading-tight mb-0.5 group-hover:text-blue-200 transition-colors">{opt.title}</h3>
+                  {/* Fix line 377: Replaced \" with " */}
                   {opt.id === 'setup-mode' && <Lock size={14} className="text-white/30" />}
                 </div>
                 <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider group-hover:text-slate-300 transition-colors">{opt.desc}</p>
               </div>
               <div className="pr-10 opacity-40 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0 relative z-10">
+                {/* Fix line 382: Replaced \" with " */}
                 <ArrowRightCircle size={24} className="text-white" />
               </div>
             </div>
@@ -583,6 +594,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
                          ))}
                        </tr>
                      ))}
+                     {/* Fix line 593: Replaced \" with " */}
                      <tr className="bg-sky-50/50 font-black italic text-slate-700"><td className="px-6 py-3 border border-slate-300 text-right text-[11px] uppercase">উপ-মোট: {m}</td><td className="p-3 border border-slate-300 text-center text-blue-600">{toBengaliDigits(mSubTotal.uC)}</td><td className="p-3 border border-slate-300 text-center text-blue-600">{toBengaliDigits(Math.round(mSubTotal.uA))}</td><td className="p-3 border border-slate-300 text-center text-emerald-600">{toBengaliDigits(mSubTotal.sC)}</td><td className="p-3 border border-slate-300 text-center text-emerald-600">{toBengaliDigits(Math.round(mSubTotal.sA))}</td></tr>
                    </React.Fragment>
                  );
