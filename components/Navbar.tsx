@@ -120,7 +120,7 @@ const Navbar: React.FC<NavbarProps> = ({
                     >
                       <IDBadge id="nav-quick-entry" /> 
                       <FilePlus2 size={20} className="text-blue-600" /> 
-                      নতুন তথ্য এন্ট্রি
+                      নতুন এন্ট্রি
                     </button>
                   </div>
                 )}
