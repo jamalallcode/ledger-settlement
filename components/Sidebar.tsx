@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 
 interface SidebarProps {
@@ -37,6 +37,47 @@ const Sidebar: React.FC<SidebarProps> = ({
   const clickCount = useRef(0);
   const lastClickTime = useRef(0);
 
+  // --- Important Links State ---
+  const [isLinksOpen, setIsLinksOpen] = useState(false);
+  const [importantLinks, setImportantLinks] = useState<{name: string, url: string}[]>([]);
+
+  // Load links from storage on mount
+  useEffect(() => {
+    const savedLinks = localStorage.getItem('ledger_important_links');
+    if (savedLinks) {
+      setImportantLinks(JSON.parse(savedLinks));
+    } else {
+      const defaultLinks = [
+        { name: 'Archive.org', url: 'https://archive.org/' },
+        { name: 'Gemini AI', url: 'https://gemini.google.com/app' },
+        { name: 'CAG Website', url: 'https://cag.org.bd/' }
+      ];
+      setImportantLinks(defaultLinks);
+      localStorage.setItem('ledger_important_links', JSON.stringify(defaultLinks));
+    }
+  }, []);
+
+  const handleAddLink = () => {
+    const name = prompt("লিঙ্কের নাম লিখুন (যেমন: Google):");
+    if (!name) return;
+    const url = prompt("লিঙ্কের ইউআরএল (URL) দিন:", "https://");
+    if (!url || !url.startsWith('http')) {
+      alert("সঠিক ইউআরএল প্রদান করুন।");
+      return;
+    }
+    const nextLinks = [...importantLinks, { name, url }];
+    setImportantLinks(nextLinks);
+    localStorage.setItem('ledger_important_links', JSON.stringify(nextLinks));
+  };
+
+  const handleRemoveLink = (e: React.MouseEvent, index: number) => {
+    e.stopPropagation();
+    if (!window.confirm("আপনি কি এই লিঙ্কটি মুছে ফেলতে চান?")) return;
+    const nextLinks = importantLinks.filter((_, i) => i !== index);
+    setImportantLinks(nextLinks);
+    localStorage.setItem('ledger_important_links', JSON.stringify(nextLinks));
+  };
+
   const handleLogoClick = () => {
     const now = Date.now();
     if (now - lastClickTime.current > 2000) clickCount.current = 0;
@@ -52,7 +93,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (e) e.preventDefault();
     if (adminPassword === '123') {
       setIsAdmin(true);
-      // Persist admin status to prevent re-entry requirement
       localStorage.setItem('ledger_admin_access_v1', 'true');
       setShowAdminModal(false);
       setAdminPassword('');
@@ -122,6 +162,58 @@ const Sidebar: React.FC<SidebarProps> = ({
               <span className="text-sm">{item.label}</span>
             </button>
           ))}
+
+          {/* New Important Links Section */}
+          <div className="pt-4 space-y-1">
+            <div 
+              id="side-nav-links-header"
+              onClick={() => setIsLinksOpen(!isLinksOpen)}
+              className={`w-full flex items-center justify-between px-3 py-3 rounded-xl font-bold transition-all relative cursor-pointer group ${isLinksOpen ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`}
+            >
+              <IDBadge id="side-nav-links-header" />
+              <div className="flex items-center gap-3">
+                <Globe size={18} />
+                <span className="text-xs">প্রয়োজনীয় লিঙ্কসমূহ</span>
+              </div>
+              <ChevronDown size={14} className={`transition-transform duration-300 ${isLinksOpen ? 'rotate-180' : ''}`} />
+            </div>
+
+            {isLinksOpen && (
+              <div className="pl-4 space-y-1 animate-in slide-in-from-top-2 duration-300">
+                {importantLinks.map((link, idx) => (
+                  <div key={idx} className="group/link flex items-center gap-2">
+                    <a 
+                      href={link.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center gap-2 px-3 py-2 text-[11px] font-bold text-slate-500 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all truncate"
+                    >
+                      <LinkIcon size={12} className="shrink-0" />
+                      <span className="truncate">{link.name}</span>
+                    </a>
+                    {isAdmin && (
+                      <button 
+                        onClick={(e) => handleRemoveLink(e, idx)}
+                        className="opacity-0 group-hover/link:opacity-100 p-1 text-slate-600 hover:text-red-500 transition-all"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                
+                {isAdmin && (
+                  <button 
+                    onClick={handleAddLink}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-black text-blue-500 hover:bg-blue-500/10 rounded-lg transition-all mt-2"
+                  >
+                    <Plus size={14} />
+                    <span>লিঙ্ক যুক্ত করুন</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </nav>
         <div id="sidebar-footer" className="p-4 border-t border-slate-800 space-y-4 relative">
           <IDBadge id="sidebar-footer" />
