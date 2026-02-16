@@ -227,9 +227,10 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
       const diaryDateObj = new Date(e.diaryDate);
       const isBeforeOrOnReportingDate = diaryDateObj.getTime() <= reportingDateObj.getTime();
       
-      // Filter by "Issued" status: Only show if NOT issued (no issue letter number AND no issue letter date)
-      // Letters with issue info are considered "finished/settled" and should not appear in the "outstanding/pending" return.
-      const isIssued = (e.issueLetterNo && e.issueLetterNo.trim() !== "") || (e.issueLetterDate && e.issueLetterDate.trim() !== "");
+      // Filter by "Issued" status: Only show if NOT fully issued (both number AND date are required to clear from return)
+      // If either is missing or it's '0000-00-00' (empty segmented input), it stays in the report.
+      const isIssued = (e.issueLetterNo && e.issueLetterNo.trim() !== "") && 
+                       (e.issueLetterDate && e.issueLetterDate.trim() !== "" && e.issueLetterDate !== '0000-00-00');
       
       return isBeforeOrOnReportingDate && !isIssued;
     }).sort((a, b) => new Date(b.diaryDate).getTime() - new Date(a.diaryDate).getTime());
