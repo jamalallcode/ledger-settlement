@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+/* Added CalendarDays to imports */
 import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles, Save, CalendarSearch, LayoutGrid, CalendarDays } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper';
@@ -46,62 +47,24 @@ interface CorrespondenceTableProps {
 }
 
 /**
- * Enhanced Segmented Date Input for Table Cells
+ * Segmented Date Input for Table Cells with Auto-focus
  */
 const SegmentedTableDateInput: React.FC<{
   value: string;
   onChange: (val: string) => void;
   accent: 'blue' | 'amber';
 }> = ({ value, onChange, accent }) => {
-  const [y, m, d] = value && value !== '0000-00-00' ? value.split('-') : ['', '', ''];
+  // Expect value as YYYY-MM-DD
+  const [y, m, d] = value ? value.split('-') : ['', '', ''];
   const dayRef = useRef<HTMLInputElement>(null);
   const monthRef = useRef<HTMLInputElement>(null);
   const yearRef = useRef<HTMLInputElement>(null);
-  const hiddenDateRef = useRef<HTMLInputElement>(null);
 
   const update = (nD: string, nM: string, nY: string) => {
     const finalY = nY.padStart(4, '0');
     const finalM = nM.padStart(2, '0');
     const finalD = nD.padStart(2, '0');
     onChange(`${finalY}-${finalM}-${finalD}`);
-  };
-
-  const handleSegmentChange = (val: string, type: 'day'|'month'|'year', setter: (v: string) => void, nextRef?: React.RefObject<HTMLInputElement>) => {
-    const cleaned = toEnglishDigits(val).replace(/[^0-9]/g, '');
-    const num = parseInt(cleaned);
-
-    if (type === 'day') {
-      if (cleaned.length <= 2) {
-        if (cleaned.length > 0 && num > 31) return;
-        if (cleaned.length === 2 || (cleaned.length === 1 && num > 3)) nextRef?.current?.focus();
-        update(cleaned, m, y);
-      }
-    } else if (type === 'month') {
-      if (cleaned.length <= 2) {
-        if (cleaned.length > 0 && num > 12) return;
-        if (cleaned.length === 2 || (cleaned.length === 1 && num > 1)) nextRef?.current?.focus();
-        update(d, cleaned, y);
-      }
-    } else if (type === 'year') {
-      if (cleaned.length <= 4) update(d, m, cleaned);
-    }
-  };
-
-  const handleSegmentBlur = (val: string, type: 'day'|'month'|'year') => {
-    const eng = toEnglishDigits(val);
-    if (!eng) return;
-
-    if (type === 'year') {
-      let nY = eng;
-      if (eng.length === 1) nY = '200' + eng;
-      else if (eng.length === 2) nY = '20' + eng;
-      if (nY !== eng) update(d, m, nY);
-    } else {
-      if (eng.length === 1) {
-        if (type === 'day') update(eng.padStart(2, '0'), m, y);
-        else update(d, eng.padStart(2, '0'), y);
-      }
-    }
   };
 
   const dayVal = d ? toBengaliDigits(d) : '';
@@ -115,44 +78,43 @@ const SegmentedTableDateInput: React.FC<{
   const inputCls = "w-full bg-transparent border-none outline-none text-center font-black text-[10px] p-0 placeholder:text-slate-300";
 
   return (
-    <div className={`flex items-center gap-0.5 px-1 h-6 bg-white border border-slate-200 rounded-md ${focusCls} transition-all relative`}>
+    <div className={`flex items-center gap-0.5 px-1 h-6 bg-white border border-slate-200 rounded-md ${focusCls} transition-all`}>
       <input 
         ref={dayRef} type="text" placeholder="দিন" 
         className={`${inputCls} flex-[1]`}
         value={dayVal} 
-        onChange={e => handleSegmentChange(e.target.value, 'day', (v) => {}, monthRef)}
-        onBlur={e => handleSegmentBlur(e.target.value, 'day')}
+        onChange={e => {
+          const v = toEnglishDigits(e.target.value).replace(/\D/g, '').slice(0, 2);
+          if (v && parseInt(v) > 31) return;
+          update(v, m, y);
+          if (v.length === 2) monthRef.current?.focus();
+        }} 
       />
       <span className="text-slate-300 text-[8px] font-black">/</span>
       <input 
         ref={monthRef} type="text" placeholder="মাস" 
         className={`${inputCls} flex-[1]`}
         value={monthVal} 
-        onChange={e => handleSegmentChange(e.target.value, 'month', (v) => {}, yearRef)}
-        onBlur={e => handleSegmentBlur(e.target.value, 'month')}
+        onChange={e => {
+          const v = toEnglishDigits(e.target.value).replace(/\D/g, '').slice(0, 2);
+          if (v && parseInt(v) > 12) return;
+          update(d, v, y);
+          if (v.length === 2) yearRef.current?.focus();
+        }} 
       />
       <span className="text-slate-300 text-[8px] font-black">/</span>
       <input 
         ref={yearRef} type="text" placeholder="বছর" 
-        className={`${inputCls} flex-[1.6]`}
+        className={`${inputCls} flex-[1.8]`}
         value={yearVal} 
-        onChange={e => handleSegmentChange(e.target.value, 'year', (v) => {})}
-        onBlur={e => handleSegmentBlur(e.target.value, 'year')}
+        onChange={e => {
+          const v = toEnglishDigits(e.target.value).replace(/\D/g, '').slice(0, 4);
+          update(d, m, v);
+        }}
+        onBlur={() => {
+          if (y && y.length === 2) update(d, m, '20' + y);
+        }}
       />
-      <div className="flex items-center ml-0.5 relative group shrink-0">
-        <Calendar 
-          size={10} 
-          className="text-slate-400 cursor-pointer hover:text-blue-500 transition-colors" 
-          onClick={() => hiddenDateRef.current?.showPicker()}
-        />
-        <input 
-          ref={hiddenDateRef}
-          type="date" 
-          className="absolute inset-0 opacity-0 w-4 h-4 cursor-pointer pointer-events-auto"
-          value={value || ''}
-          onChange={e => onChange(e.target.value)}
-        />
-      </div>
     </div>
   );
 };
@@ -683,12 +645,14 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                 <td className={tdCls}>
                    <div className="space-y-2">
                       <div className="p-1.5 bg-slate-50 border border-slate-100 rounded-lg relative">
+                         {/* Removed backslashes from className */}
                          <div className="text-[9px] font-black text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1"><Inbox size={8} /> গ্রহণকারী</div>
                          <div className="font-black text-slate-900 text-[10px] leading-tight truncate">{entry.receiverName || '-'}</div>
                          <div className="text-[9px] text-slate-500 font-bold">{toBengaliDigits(entry.receivedDate)}</div>
                       </div>
 
                       <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.presentationDate || pending.presentedToName ? 'bg-blue-600/10 border-blue-400 ring-2 ring-blue-50' : 'bg-blue-50/50 border-blue-100'}`}>
+                         {/* Removed backslashes from className */}
                          <div className="text-[9px] font-black text-blue-700 uppercase tracking-tighter flex items-center gap-1"><UserCheck size={8} /> উপস্থাপন</div>
                          <div className="space-y-1">
                            <div className="flex flex-col gap-0.5">
@@ -712,6 +676,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                 </td>
                 <td className={tdCls}>
                    <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.issueLetterNo || pending.issueLetterDate ? 'bg-amber-600/10 border-amber-400 ring-2 ring-amber-50' : 'bg-amber-50/50 border-amber-100'}`}>
+                      {/* Removed backslashes from className */}
                       <div className="text-[9px] font-black text-amber-700 uppercase tracking-tighter flex items-center gap-1"><Send size={8} /> জারিপত্র</div>
                       <div className="space-y-1">
                         <div className="flex flex-col gap-0.5">
@@ -726,12 +691,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                         </div>
                         <div className="flex flex-col gap-0.5">
                           <span className="text-[8px] font-black text-slate-400 uppercase">তারিখ</span>
-                          <input 
-                            type="date" 
-                            className="hidden" 
-                            value={currentIssueDate} 
-                            onChange={e => handleInlineChange(entry.id, 'issueLetterDate', e.target.value)} 
-                          />
                           <SegmentedTableDateInput 
                             value={currentIssueDate} 
                             accent="amber"
