@@ -47,7 +47,7 @@ interface CorrespondenceTableProps {
 }
 
 /**
- * Segmented Date Input for Table Cells with Auto-focus
+ * Segmented Table Date Input for Table Cells with Auto-focus
  */
 const SegmentedTableDateInput: React.FC<{
   value: string;
@@ -645,38 +645,43 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                 <td className={tdCls}>
                    <div className="space-y-2">
                       <div className="p-1.5 bg-slate-50 border border-slate-100 rounded-lg relative">
-                         {/* Removed backslashes from className */}
                          <div className="text-[9px] font-black text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1"><Inbox size={8} /> গ্রহণকারী</div>
                          <div className="font-black text-slate-900 text-[10px] leading-tight truncate">{entry.receiverName || '-'}</div>
                          <div className="text-[9px] text-slate-500 font-bold">{toBengaliDigits(entry.receivedDate)}</div>
                       </div>
 
                       <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.presentationDate || pending.presentedToName ? 'bg-blue-600/10 border-blue-400 ring-2 ring-blue-50' : 'bg-blue-50/50 border-blue-100'}`}>
-                         {/* Removed backslashes from className */}
-                         <div className="text-[9px] font-black text-blue-700 uppercase tracking-tighter flex items-center gap-1"><UserCheck size={8} /> উপস্থাপন</div>
-                         <div className="space-y-1">
-                           <div className="flex flex-col gap-0.5">
-                              <span className="text-[8px] font-black text-slate-400 uppercase">তারিখ</span>
-                              <SegmentedTableDateInput 
-                                value={currentPresDate} 
-                                accent="blue"
-                                onChange={val => handleInlineChange(entry.id, 'presentationDate', val)} 
-                              />
-                           </div>
-                           <div className="flex flex-col gap-0.5">
-                              <span className="text-[8px] font-black text-slate-400 uppercase">বরাবর</span>
-                              <PremiumInlineSelect 
-                                value={currentPresName} 
-                                onSelect={val => handleInlineChange(entry.id, 'presentedToName', val)}
-                              />
-                           </div>
+                         <div className="flex items-center justify-between">
+                            <div className="text-[9px] font-black text-blue-700 uppercase tracking-tighter flex items-center gap-1"><UserCheck size={8} /> উপস্থাপন</div>
+                            <div className="flex items-center gap-1.5">
+                               {currentPresDate && <span className="text-[8px] font-black text-blue-600">{toBengaliDigits(currentPresDate.split('-').reverse().join('/'))}</span>}
+                               <div className="relative flex items-center h-3 w-3">
+                                  <Calendar 
+                                    size={11} 
+                                    className="text-blue-500 cursor-pointer hover:text-blue-700 transition-colors" 
+                                    onClick={(e) => {
+                                      const input = (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement);
+                                      if (input) input.showPicker();
+                                    }}
+                                  />
+                                  <input 
+                                    type="date" 
+                                    className="absolute inset-0 opacity-0 w-3 h-3 cursor-pointer"
+                                    value={currentPresDate}
+                                    onChange={e => handleInlineChange(entry.id, 'presentationDate', e.target.value)}
+                                  />
+                               </div>
+                            </div>
                          </div>
+                         <PremiumInlineSelect 
+                            value={currentPresName} 
+                            onSelect={val => handleInlineChange(entry.id, 'presentedToName', val)}
+                         />
                       </div>
                    </div>
                 </td>
                 <td className={tdCls}>
                    <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.issueLetterNo || pending.issueLetterDate ? 'bg-amber-600/10 border-amber-400 ring-2 ring-amber-50' : 'bg-amber-50/50 border-amber-100'}`}>
-                      {/* Removed backslashes from className */}
                       <div className="text-[9px] font-black text-amber-700 uppercase tracking-tighter flex items-center gap-1"><Send size={8} /> জারিপত্র</div>
                       <div className="space-y-1">
                         <div className="flex flex-col gap-0.5">
