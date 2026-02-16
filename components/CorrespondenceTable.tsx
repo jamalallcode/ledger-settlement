@@ -35,6 +35,7 @@ interface CorrespondenceTableProps {
   isLayoutEditable?: boolean;
   isAdmin?: boolean;
   onEdit?: (entry: any) => void;
+  onInlineUpdate?: (entry: any) => void; // Added for inline updates without tab switch
   onDelete?: (id: string) => void;
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
@@ -126,7 +127,7 @@ const PremiumInlineSelect: React.FC<{
   );
 };
 
-const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBack, isLayoutEditable, isAdmin, onEdit, onDelete, onApprove, onReject }) => {
+const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBack, isLayoutEditable, isAdmin, onEdit, onInlineUpdate, onDelete, onApprove, onReject }) => {
   
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
 
@@ -147,8 +148,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   };
 
   const handleInlineUpdate = (entry: CorrespondenceEntry, field: string, value: any) => {
-    if (!onEdit) return;
-    onEdit({ ...entry, [field]: value });
+    // If inline handler is provided, use it to avoid jumping to entry form
+    if (onInlineUpdate) {
+      onInlineUpdate({ ...entry, [field]: value });
+    } else if (onEdit) {
+      // Fallback to onEdit if no specialized inline handler is available
+      onEdit({ ...entry, [field]: value });
+    }
   };
 
   const thCls = "border border-slate-300 px-1 py-3 text-center align-middle font-black text-slate-900 text-[11px] bg-slate-100 sticky top-0 z-[100] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
@@ -232,7 +238,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                       <div className="flex items-start"><span className={labelCls}>ডায়েরি নং ও তারিখ:</span> <span className={valCls}>{entry.diaryNo} ({toBengaliDigits(entry.diaryDate)})</span></div>
                       <div className="flex items-start"><span className={labelCls}>শাখায় প্রাপ্তির তারিখ:</span> <span className={valCls}>{toBengaliDigits(entry.receiptDate)}</span></div>
                       <div className="flex items-start"><span className={labelCls}>ডিজিটাল নথি নং-:</span> <span className={valCls}>{entry.digitalFileNo}</span></div>
-                      {/* Presentation Date removed from here as per instruction */}
                    </div>
                 </td>
                 <td className={tdCls + " text-center"}>{entry.paraType}</td>
