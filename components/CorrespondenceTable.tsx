@@ -151,7 +151,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
 
-  // Fix: Defined IDBadge to correctly handle layout editing logic and prevent "Cannot find name" error
+  // Defined IDBadge to correctly handle layout editing logic and fix potential scope error
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = useState(false);
     if (!isLayoutEditable) return null;
@@ -205,7 +205,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   const hasChanges = Object.keys(pendingChanges).length > 0;
 
   return (
-    // Fix: Corrected syntax error by removing escaped backslashes and ensuring proper JSX structure
     <div id="section-correspondence-register" className="w-full space-y-4 animate-premium-page relative">
       <IDBadge id="section-correspondence-register" />
       
