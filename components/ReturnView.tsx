@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import React from 'react';
 import { SettlementEntry, ParaType, CumulativeStats, MinistryPrevStats } from '../types';
-import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
+import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP, OFFICE_HEADER } from '../constants';
 import { ChevronLeft, ArrowRight, ClipboardCheck, CalendarRange, Printer, Database, Settings2, BarChart3, FileStack, ClipboardList, Settings, CheckCircle2, CalendarDays, UserCheck, ChevronDown, Check, LayoutGrid, PieChart, History, Search, CalendarSearch, Sparkles, X, Lock, KeyRound, ShieldAlert, Pencil, Unlock, ArrowRightCircle } from 'lucide-react';
 import { isWithinInterval, addMonths, format as dateFnsFormat, parseISO, startOfDay, endOfDay } from 'date-fns';
@@ -216,24 +216,33 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
   const filteredCorrespondence = useMemo(() => {
     if (selectedReportType !== 'মাসিক রিটারন: চিঠিপত্র সংক্রান্ত।') return [];
     
-    // Calculate the reporting boundary (last day of the previous month relative to the cycle end)
-    // As per user instruction, for February cycle (16/01-15/02), reporting date is 31/01
+    // Calculate the reporting boundary (last day of the calendar month relative to the cycle start)
+    // Example: If cycle is 16/02 - 15/03, start month is Feb. Reporting date = 28/02.
     const reportingDateObj = endOfDay(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0));
 
     return correspondenceEntries.filter(e => {
       if (!e.diaryDate) return false;
       
-      // Show ALL letters from the past up to the reporting date (cumulative outstanding)
-      const diaryDateObj = new Date(e.diaryDate);
+      // Robust date comparison
+      const diaryDateStr = toEnglishDigits(e.diaryDate);
+      const diaryDateObj = startOfDay(new Date(diaryDateStr));
+      if (isNaN(diaryDateObj.getTime())) return false;
+      
       const isBeforeOrOnReportingDate = diaryDateObj.getTime() <= reportingDateObj.getTime();
       
-      // Filter by "Issued" status: Only show if NOT fully issued (both number AND date are required to clear from return)
-      // If either is missing or it's '0000-00-00' (empty segmented input), it stays in the report.
-      const isIssued = (e.issueLetterNo && e.issueLetterNo.trim() !== "") && 
-                       (e.issueLetterDate && e.issueLetterDate.trim() !== "" && e.issueLetterDate !== '0000-00-00');
+      // Filter by "Issued" status: Only show if NOT fully issued.
+      // We check both Number and Date. If BOTH are present and valid, it's Issued (Removed from return).
+      // If either is missing, or Number is '০'/'0', it stays in the report as pending.
+      const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
+      const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
+      
+      const hasValidNo = rawNo !== '' && rawNo !== '০' && rawNo !== '0' && !rawNo.includes('নং-');
+      const hasValidDate = rawDate !== '' && rawDate !== '0000-00-00';
+      
+      const isIssued = hasValidNo && hasValidDate;
       
       return isBeforeOrOnReportingDate && !isIssued;
-    }).sort((a, b) => new Date(b.diaryDate).getTime() - new Date(a.diaryDate).getTime());
+    }).sort((a, b) => new Date(toEnglishDigits(b.diaryDate)).getTime() - new Date(toEnglishDigits(a.diaryDate)).getTime());
   }, [correspondenceEntries, selectedReportType, activeCycle]);
 
   const grandTotals = useMemo(() => {
@@ -258,10 +267,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
     setIsEditingSetup(false);
   };
 
-  /**
-   * handleSetupPaste - Fix for line 522
-   * Handles bulk pasting from spreadsheet (Excel/Google Sheets) into the setup table
-   */
   const handleSetupPaste = (e: React.ClipboardEvent, startEntity: string, startField: keyof MinistryPrevStats) => {
     if (!isEditingSetup) return;
     e.preventDefault();
@@ -270,7 +275,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
     
     const rows = pasteData.split(/\r?\n/).filter(row => row.trim() !== '');
     
-    // Flatten entities for linear mapping
     const allEntities: string[] = [];
     ministryGroups.forEach(m => {
       const entities = MINISTRY_ENTITY_MAP[m] || [];
@@ -290,7 +294,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
       if (entityIdx >= allEntities.length) return;
       const entityName = allEntities[entityIdx];
       
-      const cells = row.split(/\t/); // Excel data is tab-separated
+      const cells = row.split(/\t/); 
       cells.forEach((cell, cellOffset) => {
         const fieldIdx = fieldStartIdx + cellOffset;
         if (fieldIdx >= fields.length) return;
@@ -395,12 +399,10 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
     );
   }
 
-  // Monthly Correspondence Report Logic (Matching Image 1)
   if (selectedReportType === 'মাসিক রিটারন: চিঠিপত্র সংক্রান্ত।') {
     const thS = "border border-slate-300 px-1 py-2 font-black text-center text-[10px] md:text-[11px] bg-slate-100 text-slate-900 leading-tight align-middle sticky top-0 z-[100] shadow-[inset_0_-1px_0_#cbd5e1]";
     const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
 
-    // Calculate the last day of the starting month of the cycle
     const reportingDateBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0), 'dd/MM/yyyy'));
 
     return (
@@ -426,7 +428,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
             <h2 className="text-xl font-bold text-slate-800 leading-tight">{OFFICE_HEADER.sub}</h2>
             <h3 className="text-lg font-bold text-slate-700 leading-tight">{OFFICE_HEADER.address}</h3>
             <div className="mt-4 inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
-              <span className="text-blue-400">নন এসএফআই শাখার {reportingDateBN} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।</span>
+              <span className="text-blue-400">শাখা ভিত্তিক {reportingDateBN} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।</span>
             </div>
           </div>
 
@@ -466,7 +468,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
                   <th className={`${thS} !top-[45px]`}>দ্বি-পক্ষীয় (NON-SFI)</th>
                   <th className={`${thS} !top-[45px]`}>অন্যান্য</th>
                 </tr>
-                {/* Column Numbers Header Row */}
                 <tr className="h-[28px] no-print">
                   {['১','২','৩','৪','৫','৬','৭','৮','৯','১০','১১','১২','১৩'].map(num => (
                     <th key={num} className={`${thS} !top-[86px] bg-slate-200 py-1 text-[9px]`}>{num}</th>
@@ -480,15 +481,10 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
                     <td className={tdS + " text-left px-3"}>{entry.description}</td>
                     <td className={tdS}>{entry.diaryNo}<br/>{toBengaliDigits(entry.diaryDate)}</td>
                     <td className={tdS}>{entry.letterNo}<br/>{toBengaliDigits(entry.letterDate)}</td>
-                    {/* BSR SFI */}
                     <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'এসএফআই' ? `বিএসআর (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                    {/* BSR Non-SFI */}
                     <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'নন এসএফআই' ? `বিএসআর (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                    {/* Tri-Party SFI */}
                     <td className={tdS}>{entry.letterType === 'ত্রিপক্ষীয় সভা' && entry.paraType === 'এসএফআই' ? `ত্রিপক্ষীয় (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                    {/* Bi-Party Non-SFI */}
                     <td className={tdS}>{entry.letterType === 'দ্বিপক্ষীয় সভা' && entry.paraType === 'নন এসএফআই' ? `দ্বিপক্ষীয় (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                    {/* Others */}
                     <td className={tdS}>-</td>
                     <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
                     <td className={tdS}>{toBengaliDigits(entry.presentationDate)}</td>
