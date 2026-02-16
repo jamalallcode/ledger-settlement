@@ -570,7 +570,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             <col className="w-[130px]" /> {/* পত্রের বিবরণ */}
             <col className="w-[160px]" /> {/* পত্রের অন্যান্য তথ্য */}
             <col className="w-[160px]" /> {/* অত্র অফিসের তথ্য */}
-            <col className="w-[45px]" />  {/* অনলাইন */}
             <col className="w-[145px]" /> {/* গ্রহণ ও উপস্থাপন */}
             <col className="w-[135px]" /> {/* জারিপত্র নং ও তারিখ */}
             <col className="w-[50px]" />  {/* মন্তব্য */}
@@ -581,7 +580,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
               <th className={thCls}>পত্রের বিবরণ</th>
               <th className={thCls}>পত্রের অন্যান্য তথ্য</th>
               <th className={thCls}>অত্র অফিসের তথ্য</th>
-              <th className={thCls}>অনলাইন</th>
               <th className={thCls}>গ্রহণ ও উপস্থাপন</th>
               <th className={thCls}>জারিপত্র নং ও তারিখ</th>
               <th className={thCls}>মন্তব্য</th>
@@ -651,15 +649,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                       </div>
                    </div>
                 </td>
-                <td className={tdCls + " text-center"}>
-                   <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase ${entry.isOnline === 'হ্যাঁ' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
-                      {entry.isOnline}
-                   </span>
-                </td>
                 <td className={tdCls}>
                    <div className="space-y-2">
                       <div className="p-1.5 bg-slate-50 border border-slate-100 rounded-lg relative">
-                         <div className="text-[9px] font-black text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1"><Inbox size={8} /> গ্রহণকারী</div>
+                         <div className="text-[9px] font-black text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1\"><Inbox size={8} /> গ্রহণকারী</div>
                          <div className="font-black text-slate-900 text-[10px] leading-tight truncate">{entry.receiverName || '-'}</div>
                          <div className="text-[9px] text-slate-500 font-bold">{formatDisplayDate(entry.receivedDate)}</div>
                       </div>
@@ -778,7 +771,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
               </tr>
             )}) : (
               <tr>
-                <td colSpan={8} className="py-20 text-center bg-white">
+                <td colSpan={7} className="py-20 text-center bg-white">
                    <div className="flex flex-col items-center gap-3 opacity-30">
                       <Mail size={40} />
                       <p className="text-sm font-black text-slate-900 tracking-widest">রেজিস্টার খালি</p>
@@ -791,7 +784,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             <tr className="bg-slate-900 text-white font-black text-[11px] h-9 shadow-[0_-5px_15px_rgba(0,0,0,0.2)]">
               <td colSpan={2} className="px-4 text-left border-t border-slate-700">সর্বমোট:</td>
               <td colSpan={1} className="px-2 text-center border-t border-slate-700 text-emerald-400">{toBengaliDigits(filteredEntries.length)} টি</td>
-              <td colSpan={5} className="border-t border-slate-700"></td>
+              <td colSpan={4} className="border-t border-slate-700"></td>
             </tr>
           </tfoot>
         </table>
