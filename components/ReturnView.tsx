@@ -9,6 +9,7 @@ import { getCycleForDate, isInCycle } from '../utils/cycleHelper';
 
 interface ReturnViewProps {
   entries: SettlementEntry[];
+  correspondenceEntries?: any[];
   cycleLabel: string;
   onDownloadPDF?: () => void;
   isGeneratingPDF?: boolean;
@@ -24,7 +25,7 @@ interface ReturnViewProps {
 const reportOptions = [
   { 
     id: 'monthly-letter', 
-    title: 'মাসিক রিটার্ণ: চিঠিপত্র সংক্রান্ত।', 
+    title: 'মাসিক রিটারন: চিঠিপত্র সংক্রান্ত।', 
     desc: 'চিঠিপত্র আদান-প্রদান এবং নিষ্পত্তির পরিসংখ্যান', 
     icon: FileStack, 
     accent: 'from-blue-600 to-indigo-700'
@@ -52,7 +53,7 @@ const reportOptions = [
   }
 ];
 
-const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats, setPrevStats, isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister, isAdmin }) => {
+const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries = [], cycleLabel, prevStats, setPrevStats, isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister, isAdmin }) => {
   const [selectedReportType, setSelectedReportType] = useState<string | null>(null);
   const [isSetupMode, setIsSetupMode] = useState(false);
   const [isEditingSetup, setIsEditingSetup] = useState(false);
@@ -121,7 +122,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
 
     let pastRC = 0, pastRA = 0, pastSC = 0, pastSA = 0;
     pastEntries.forEach(entry => {
-        // Correct logic implementation for opening balance calculation
         const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
         if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
             pastRC += parseBengaliNumber(rCountRaw);
@@ -159,51 +159,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
     }
   }, [isSetupMode, prevStats, activeCycle, ministryGroups]);
 
-  const handleSetupPaste = (e: React.ClipboardEvent, startEnt: string, startField: string) => {
-    if (!isEditingSetup) return;
-    e.preventDefault();
-    const pasteData = e.clipboardData.getData('text');
-    if (!pasteData) return;
-
-    const rows = pasteData.split(/\r?\n/).filter(row => row.trim() !== '');
-    const flatEntities = ministryGroups.flatMap(m => MINISTRY_ENTITY_MAP[m] || []);
-    const fields = ['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount'];
-    
-    const startEntIdx = flatEntities.indexOf(startEnt);
-    const startFieldIdx = fields.indexOf(startField);
-
-    if (startEntIdx === -1) return;
-
-    const updatedStats = { ...tempPrevStats };
-
-    rows.forEach((row, rowOffset) => {
-      const cols = row.split('\t');
-      const targetEntIdx = startEntIdx + rowOffset;
-      if (targetEntIdx >= flatEntities.length) return;
-      
-      const targetEnt = flatEntities[targetEntIdx];
-      if (!updatedStats[targetEnt]) {
-        updatedStats[targetEnt] = { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
-      }
-
-      cols.forEach((cellValue, colOffset) => {
-        const targetFieldIdx = startFieldIdx + colOffset;
-        if (targetFieldIdx >= fields.length) return;
-        
-        const targetField = fields[targetFieldIdx] as keyof MinistryPrevStats;
-        const num = parseBengaliNumber(cellValue);
-        updatedStats[targetEnt] = {
-          ...updatedStats[targetEnt],
-          [targetField]: num
-        };
-      });
-    });
-
-    setTempPrevStats(updatedStats);
-  };
-
   const reportData = useMemo(() => {
-    if (!selectedReportType) return [];
+    if (!selectedReportType || selectedReportType === 'মাসিক রিটারন: চিঠিপত্র সংক্রান্ত।') return [];
     
     return ministryGroups.map(ministryName => {
       const normMinistry = robustNormalize(ministryName);
@@ -225,7 +182,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
           
           let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0;
           matchingEntries.forEach(entry => {
-            // Processing paragraphs and raised amounts for each entry within cycle
             if (entry.paragraphs && entry.paragraphs.length > 0) {
               entry.paragraphs.forEach(p => { 
                 if (p.status === 'পূর্ণাঙ্গ') { 
@@ -257,6 +213,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
     });
   }, [entries, selectedReportType, prevStats, activeCycle, ministryGroups]);
 
+  const filteredCorrespondence = useMemo(() => {
+    if (selectedReportType !== 'মাসিক রিটারন: চিঠিপত্র সংক্রান্ত।') return [];
+    return correspondenceEntries.filter(e => {
+      if (!e.diaryDate) return false;
+      return isInCycle(e.diaryDate, activeCycle.start, activeCycle.end);
+    }).sort((a, b) => new Date(b.diaryDate).getTime() - new Date(a.diaryDate).getTime());
+  }, [correspondenceEntries, selectedReportType, activeCycle]);
+
   const grandTotals = useMemo(() => {
     if (!reportData || reportData.length === 0) return { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0 };
     return reportData.reduce((acc, mGroup) => {
@@ -280,8 +244,54 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
   };
 
   /**
-   * IDBadge component for showing element IDs when layout is editable
+   * handleSetupPaste - Fix for line 522
+   * Handles bulk pasting from spreadsheet (Excel/Google Sheets) into the setup table
    */
+  const handleSetupPaste = (e: React.ClipboardEvent, startEntity: string, startField: keyof MinistryPrevStats) => {
+    if (!isEditingSetup) return;
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData('text');
+    if (!pasteData) return;
+    
+    const rows = pasteData.split(/\r?\n/).filter(row => row.trim() !== '');
+    
+    // Flatten entities for linear mapping
+    const allEntities: string[] = [];
+    ministryGroups.forEach(m => {
+      const entities = MINISTRY_ENTITY_MAP[m] || [];
+      entities.forEach(ent => allEntities.push(ent));
+    });
+
+    const startIdx = allEntities.indexOf(startEntity);
+    if (startIdx === -1) return;
+
+    const fields: (keyof MinistryPrevStats)[] = ['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount'];
+    const fieldStartIdx = fields.indexOf(startField);
+
+    const newStats = { ...tempPrevStats };
+
+    rows.forEach((row, rowOffset) => {
+      const entityIdx = startIdx + rowOffset;
+      if (entityIdx >= allEntities.length) return;
+      const entityName = allEntities[entityIdx];
+      
+      const cells = row.split(/\t/); // Excel data is tab-separated
+      cells.forEach((cell, cellOffset) => {
+        const fieldIdx = fieldStartIdx + cellOffset;
+        if (fieldIdx >= fields.length) return;
+        const fieldName = fields[fieldIdx];
+        
+        const value = parseBengaliNumber(cell.trim());
+        newStats[entityName] = { 
+          ...(newStats[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 }), 
+          [fieldName]: value 
+        };
+      });
+    });
+
+    setTempPrevStats(newStats);
+  };
+
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = useState(false);
     if (!isLayoutEditable) return null;
@@ -300,9 +310,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
     );
   };
 
-  /**
-   * HistoricalFilter component for selecting report cycle
-   */
   const HistoricalFilter = () => (
     <div className="relative no-print" ref={dropdownRef}>
       <div onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} className={`flex items-center gap-3 px-5 h-[48px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isCycleDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}>
@@ -350,15 +357,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
               style={{ animationDelay: `${index * 150}ms` }}
             >
               <IDBadge id={`report-opt-${opt.id}`} />
-              
               <div className={`absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b ${opt.accent} shadow-[0_0_15px_rgba(255,255,255,0.2)]`}></div>
-              
               <div className="flex items-center justify-center pl-7 relative z-10">
                 <div className={`w-12 h-12 bg-slate-800/50 rounded-2xl border border-white/10 shadow-inner flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:bg-gradient-to-br ${opt.accent}`}>
                    <opt.icon size={22} className="text-white group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
                 </div>
               </div>
-
               <div className="flex flex-col justify-center pl-8 flex-1 relative z-10">
                 <div className="flex items-center gap-3">
                   <h3 className="text-[20px] font-black text-white tracking-tight leading-tight mb-0.5 group-hover:text-blue-200 transition-colors">{opt.title}</h3>
@@ -366,15 +370,126 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
                 </div>
                 <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider group-hover:text-slate-300 transition-colors">{opt.desc}</p>
               </div>
-
               <div className="pr-10 opacity-40 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0 relative z-10">
                 <ArrowRightCircle size={24} className="text-white" />
               </div>
-              
-              <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-              <div className="absolute top-0 -right-20 w-40 h-full bg-white/5 skew-x-[35deg] group-hover:-translate-x-[600px] transition-transform duration-1000 ease-in-out"></div>
             </div>
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Monthly Correspondence Report Logic (Matching Image 1)
+  if (selectedReportType === 'মাসিক রিটারন: চিঠিপত্র সংক্রান্ত।') {
+    const thS = "border border-slate-300 px-1 py-2 font-black text-center text-[10px] md:text-[11px] bg-slate-100 text-slate-900 leading-tight align-middle sticky top-0 z-[100] shadow-[inset_0_-1px_0_#cbd5e1]";
+    const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
+
+    return (
+      <div className="space-y-4 py-2 w-full animate-report-page relative">
+        <IDBadge id="correspondence-report-view" />
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setSelectedReportType(null)} className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-all text-slate-600"><ChevronLeft size={20} /></button>
+            <div className="flex flex-col">
+              <span className="text-xs font-black text-emerald-600 uppercase tracking-tighter">রিপোর্ট টাইপ:</span>
+              <span className="text-lg font-black text-slate-900 leading-tight">চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <HistoricalFilter />
+            <button onClick={() => window.print()} className="h-[44px] px-6 bg-slate-900 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95"><Printer size={18} /> প্রিন্ট</button>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-6 relative animate-table-entrance">
+          <div className="text-center py-6 border-b-2 border-slate-100 mb-6">
+            <h1 className="text-2xl font-black uppercase text-slate-900 leading-tight">{OFFICE_HEADER.main}</h1>
+            <h2 className="text-xl font-bold text-slate-800 leading-tight">{OFFICE_HEADER.sub}</h2>
+            <h3 className="text-lg font-bold text-slate-700 leading-tight">{OFFICE_HEADER.address}</h3>
+            <div className="mt-4 inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
+              <span className="text-blue-400">অ-এসএফআই শাখার {toBengaliDigits(activeCycle.label)} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।</span>
+            </div>
+          </div>
+
+          <div className="table-container relative overflow-visible">
+            <table className="w-full border-separate table-fixed border-spacing-0">
+              <colgroup>
+                <col className="w-[45px]" />
+                <col className="w-[200px]" />
+                <col className="w-[100px]" />
+                <col className="w-[100px]" />
+                <col className="w-[65px]" />
+                <col className="w-[65px]" />
+                <col className="w-[65px]" />
+                <col className="w-[65px]" />
+                <col className="w-[65px]" />
+                <col className="w-[75px]" />
+                <col className="w-[100px]" />
+                <col className="w-[85px]" />
+                <col className="w-[100px]" />
+              </colgroup>
+              <thead className="sticky top-0 z-[110]">
+                <tr>
+                  <th rowSpan={2} className={`${thS} !top-0`}>ক্রমিক নং</th>
+                  <th rowSpan={2} className={`${thS} !top-0`}>এনটিটি/প্রতিষ্ঠানের নাম</th>
+                  <th rowSpan={2} className={`${thS} !top-0`}>ডায়েরি নং ও তারিখ</th>
+                  <th rowSpan={2} className={`${thS} !top-0`}>পত্রের স্মারক নং ও তারিখ</th>
+                  <th colSpan={5} className={`${thS} !top-0`}>চিঠি-পত্রের ধরণ ও অনুচ্ছেদ সংখ্যা</th>
+                  <th rowSpan={2} className={`${thS} !top-0`}>AMMS-এ এন্ট্রি হয়েছে কিনা? হ্যাঁ/না</th>
+                  <th rowSpan={2} className={`${thS} !top-0`}>উপস্থাপনের তারিখ</th>
+                  <th rowSpan={2} className={`${thS} !top-0`}>বর্তমান অবস্থান</th>
+                  <th rowSpan={2} className={`${thS} !top-0`}>মন্তব্য</th>
+                </tr>
+                <tr>
+                  <th className={`${thS} !top-[45px]`}>বিএসআর (SFI)</th>
+                  <th className={`${thS} !top-[45px]`}>বিএসআর (NON-SFI)</th>
+                  <th className={`${thS} !top-[45px]`}>ত্রি-পক্ষীয় (SFI)</th>
+                  <th className={`${thS} !top-[45px]`}>দ্বি-পক্ষীয় (NON-SFI)</th>
+                  <th className={`${thS} !top-[45px]`}>অন্যান্য</th>
+                </tr>
+                {/* Column Numbers Header Row */}
+                <tr className="h-[28px] no-print">
+                  {['১','২','৩','৪','৫','৬','৭','৮','৯','১০','১১','১২','১৩'].map(num => (
+                    <th key={num} className={`${thS} !top-[86px] bg-slate-200 py-1 text-[9px]`}>{num}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCorrespondence.length > 0 ? filteredCorrespondence.map((entry, idx) => (
+                  <tr key={entry.id} className="group hover:bg-blue-50/50 transition-colors">
+                    <td className={tdS}>{toBengaliDigits(idx + 1)}</td>
+                    <td className={tdS + " text-left px-3"}>{entry.description}</td>
+                    <td className={tdS}>{entry.diaryNo}<br/>{toBengaliDigits(entry.diaryDate)}</td>
+                    <td className={tdS}>{entry.letterNo}<br/>{toBengaliDigits(entry.letterDate)}</td>
+                    {/* BSR SFI */}
+                    <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'এসএফআই' ? `বিএসআর (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                    {/* BSR Non-SFI */}
+                    <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'নন এসএফআই' ? `বিএসআর (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                    {/* Tri-Party SFI */}
+                    <td className={tdS}>{entry.letterType === 'ত্রিপক্ষীয় সভা' && entry.paraType === 'এসএফআই' ? `ত্রিপক্ষীয় (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                    {/* Bi-Party Non-SFI */}
+                    <td className={tdS}>{entry.letterType === 'দ্বিপক্ষীয় সভা' && entry.paraType === 'নন এসএফআই' ? `দ্বিপক্ষীয় (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                    {/* Others */}
+                    <td className={tdS}>-</td>
+                    <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
+                    <td className={tdS}>{toBengaliDigits(entry.presentationDate)}</td>
+                    <td className={tdS}>এন্ডএও</td>
+                    <td className={tdS}>{entry.remarks || 'চলমান'}</td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan={13} className="py-20 text-center font-bold text-slate-400 bg-slate-50 italic">এই সাইকেলে কোনো চিঠিপত্র তথ্য পাওয়া যায়নি।</td></tr>
+                )}
+              </tbody>
+              <tfoot className="sticky bottom-0 z-[120]">
+                <tr className="bg-slate-900 text-white font-black text-[11px] h-11 shadow-[0_-5px_15px_rgba(0,0,0,0.2)]">
+                  <td colSpan={2} className="px-4 text-left border-t border-slate-700 bg-slate-900">সর্বমোট চিঠিপত্র সংখ্যা:</td>
+                  <td colSpan={2} className="px-4 text-center border-t border-slate-700 bg-slate-900 text-emerald-400">{toBengaliDigits(filteredCorrespondence.length)} টি</td>
+                  <td colSpan={9} className="border-t border-slate-700 bg-slate-900"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
       </div>
     );
@@ -586,7 +701,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
                 );
               })}
             </tbody>
-            {/* Added proper className for tfoot to avoid escaped quotes syntax error */}
             <tfoot className="sticky bottom-0 z-[190] shadow-2xl">
               <tr>
                 <td colSpan={2} className={grandStyle + " bg-slate-900 text-white uppercase tracking-widest text-[10px] shadow-[inset_0_1px_0_#0f172a]"}>সর্বমোট ইউনিফাইড সারাংশ:</td>
@@ -613,7 +727,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
               হিসাব: কলাম ৭ = (কলাম ৩ - কলাম ৬)।
             </p>
           </div>
-          <div className="px-8 py-3 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner flex items-center gap-4"><div className="flex flex-col items-end"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Calculated Status</span><span className="text-[12px] font-black text-emerald-600">ACCURATE & SYNCED</span></div><CheckCircle2 size={24} className="text-emerald-500" /></div>
+          <div className="px-8 py-3 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner flex items-center gap-4"><div className="flex items-center gap-4"><div className="flex flex-col items-end"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Calculated Status</span><span className="text-[12px] font-black text-emerald-600">ACCURATE & SYNCED</span></div><CheckCircle2 size={24} className="text-emerald-500" /></div></div>
         </div>
       )}
     </div>
