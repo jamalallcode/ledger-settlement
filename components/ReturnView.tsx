@@ -491,7 +491,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
                     <td className={tdS}>-</td>
                     <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
                     <td className={tdS}>{toBengaliDigits(entry.presentationDate)}</td>
-                    <td className={tdS}>এন্ডএও</td>
+                    <td className={tdS}>{entry.presentedToName || 'অডিটর'}</td>
                     <td className={tdS}>{entry.remarks || 'চলমান'}</td>
                   </tr>
                 )) : (
