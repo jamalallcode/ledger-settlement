@@ -98,7 +98,7 @@ const PremiumInlineSelect: React.FC<{
         onClick={() => { setIsOpen(!isOpen); setSearchTerm(''); }}
         className={`w-full h-7 px-1.5 bg-slate-50 border rounded-lg flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-blue-500 ring-2 ring-blue-50 bg-white shadow-sm' : 'border-slate-200 hover:border-slate-300'}`}
       >
-        <span className={`text-[9px] font-black truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>
+        <span className={`text-[10px] font-black truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>
           {value || 'বাছুন...'}
         </span>
         <ChevronDown size={10} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -120,7 +120,7 @@ const PremiumInlineSelect: React.FC<{
             {filtered.map((opt, i) => (
               <div 
                 key={i} onClick={() => { onSelect(opt); setIsOpen(false); }}
-                className={`px-3 py-1.5 cursor-pointer flex items-center justify-between transition-all ${value === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[9px]'}`}
+                className={`px-3 py-1.5 cursor-pointer flex items-center justify-between transition-all ${value === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[10px]'}`}
               >
                 <span>{opt}</span>
                 {value === opt && <Check size={10} strokeWidth={3} />}
@@ -133,7 +133,7 @@ const PremiumInlineSelect: React.FC<{
              searchTerm !== 'উপ-পরিচালক' && (
               <div 
                 onClick={handleAddNew}
-                className="px-3 py-1.5 cursor-pointer bg-emerald-50 text-emerald-600 font-black text-[9px] flex items-center gap-2 hover:bg-emerald-100"
+                className="px-3 py-1.5 cursor-pointer bg-emerald-50 text-emerald-600 font-black text-[10px] flex items-center gap-2 hover:bg-emerald-100"
               >
                 <Plus size={10} /> নতুন পদবি: "{searchTerm}"
               </div>
@@ -196,10 +196,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
     }
   };
 
-  const thCls = "border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[10px] bg-slate-100 sticky top-0 z-[100] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
-  const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[10px] text-slate-800 font-bold leading-tight align-top bg-white transition-colors group-hover:bg-blue-50/50 break-words";
-  const labelCls = "text-[9px] font-black text-emerald-700 mr-1 shrink-0";
-  const valCls = "text-[9px] font-bold text-slate-900";
+  const thCls = "border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[11px] bg-slate-100 sticky top-0 z-[100] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
+  const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-slate-800 font-bold leading-tight align-top bg-white transition-colors group-hover:bg-blue-50/50 break-words";
+  const labelCls = "text-[10px] font-black text-emerald-700 mr-1 shrink-0";
+  const valCls = "text-[10px] font-bold text-slate-900";
 
   const hasChanges = Object.keys(pendingChanges).length > 0;
 
@@ -334,32 +334,32 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                 <td className={tdCls + " text-center font-black text-blue-700"}>{toBengaliDigits(entry.sentParaCount)}</td>
                 <td className={tdCls + " text-center font-black"}>{toBengaliDigits(entry.totalAmount)}</td>
                 <td className={tdCls + " text-center"}>
-                   <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase ${entry.isOnline === 'হ্যাঁ' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
+                   <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase ${entry.isOnline === 'হ্যাঁ' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
                       {entry.isOnline}
                    </span>
                 </td>
                 <td className={tdCls}>
                    <div className="space-y-2">
                       <div className="p-1.5 bg-slate-50 border border-slate-100 rounded-lg relative">
-                         <div className="text-[8px] font-black text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1"><Inbox size={8} /> গ্রহণকারী</div>
-                         <div className="font-black text-slate-900 text-[9px] leading-tight truncate">{entry.receiverName || '-'}</div>
-                         <div className="text-[8px] text-slate-500 font-bold">{toBengaliDigits(entry.receivedDate)}</div>
+                         <div className="text-[9px] font-black text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1"><Inbox size={8} /> গ্রহণকারী</div>
+                         <div className="font-black text-slate-900 text-[10px] leading-tight truncate">{entry.receiverName || '-'}</div>
+                         <div className="text-[9px] text-slate-500 font-bold">{toBengaliDigits(entry.receivedDate)}</div>
                       </div>
 
                       <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.presentationDate || pending.presentedToName ? 'bg-blue-600/10 border-blue-400 ring-2 ring-blue-50' : 'bg-blue-50/50 border-blue-100'}`}>
-                         <div className="text-[8px] font-black text-blue-700 uppercase tracking-tighter flex items-center gap-1"><UserCheck size={8} /> উপস্থাপন</div>
+                         <div className="text-[9px] font-black text-blue-700 uppercase tracking-tighter flex items-center gap-1"><UserCheck size={8} /> উপস্থাপন</div>
                          <div className="space-y-1">
                            <div className="flex flex-col gap-0.5">
-                              <span className="text-[7px] font-black text-slate-400 uppercase">তারিখ</span>
+                              <span className="text-[8px] font-black text-slate-400 uppercase">তারিখ</span>
                               <input 
                                 type="date" 
-                                className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[9px] font-bold outline-none focus:border-blue-400 bg-white" 
+                                className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none focus:border-blue-400 bg-white" 
                                 value={currentPresDate} 
                                 onChange={e => handleInlineChange(entry.id, 'presentationDate', e.target.value)}
                               />
                            </div>
                            <div className="flex flex-col gap-0.5">
-                              <span className="text-[7px] font-black text-slate-400 uppercase">বরাবর</span>
+                              <span className="text-[8px] font-black text-slate-400 uppercase">বরাবর</span>
                               <PremiumInlineSelect 
                                 value={currentPresName} 
                                 onSelect={val => handleInlineChange(entry.id, 'presentedToName', val)}
@@ -371,23 +371,23 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                 </td>
                 <td className={tdCls}>
                    <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.issueLetterNo || pending.issueLetterDate ? 'bg-amber-600/10 border-amber-400 ring-2 ring-amber-50' : 'bg-amber-50/50 border-amber-100'}`}>
-                      <div className="text-[8px] font-black text-amber-700 uppercase tracking-tighter flex items-center gap-1"><Send size={8} /> জারিপত্র</div>
+                      <div className="text-[9px] font-black text-amber-700 uppercase tracking-tighter flex items-center gap-1"><Send size={8} /> জারিপত্র</div>
                       <div className="space-y-1">
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-[7px] font-black text-slate-400 uppercase">নং</span>
+                          <span className="text-[8px] font-black text-slate-400 uppercase">নং</span>
                           <input 
                             type="text" 
                             placeholder="নং"
-                            className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[9px] font-bold outline-none focus:border-amber-400 bg-white" 
+                            className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none focus:border-amber-400 bg-white" 
                             value={currentIssueNo} 
                             onChange={e => handleInlineChange(entry.id, 'issueLetterNo', toBengaliDigits(e.target.value))}
                           />
                         </div>
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-[7px] font-black text-slate-400 uppercase">তারিখ</span>
+                          <span className="text-[8px] font-black text-slate-400 uppercase">তারিখ</span>
                           <input 
                             type="date" 
-                            className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[9px] font-bold outline-none focus:border-amber-400 bg-white" 
+                            className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none focus:border-amber-400 bg-white" 
                             value={currentIssueDate} 
                             onChange={e => handleInlineChange(entry.id, 'issueLetterDate', e.target.value)}
                           />
@@ -396,7 +396,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                    </div>
                 </td>
                 <td className={tdCls + " relative group/action text-center"}>
-                   <span className="text-[8px] opacity-70">{entry.remarks || '-'}</span>
+                   <span className="text-[9px] opacity-70">{entry.remarks || '-'}</span>
                    {isAdmin && (
                      <div className="absolute right-0.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all no-print">
                        <button onClick={(e) => { e.stopPropagation(); onEdit?.(entry); }} className="p-1 bg-blue-600 text-white rounded-md shadow-md"><Pencil size={10} /></button>
@@ -417,7 +417,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             )}
           </tbody>
           <tfoot className="sticky bottom-0 z-[110]">
-            <tr className="bg-slate-900 text-white font-black text-[10px] h-9 shadow-[0_-5px_15px_rgba(0,0,0,0.2)]">
+            <tr className="bg-slate-900 text-white font-black text-[11px] h-9 shadow-[0_-5px_15px_rgba(0,0,0,0.2)]">
               <td colSpan={2} className="px-4 text-left border-t border-slate-700">সর্বমোট:</td>
               <td colSpan={1} className="px-2 text-center border-t border-slate-700 text-emerald-400">{toBengaliDigits(entries.length)} টি</td>
               <td colSpan={3} className="border-t border-slate-700"></td>
