@@ -483,6 +483,8 @@ const App: React.FC = () => {
                             onDelete={handleDelete}
                             onApprove={handleApproveEntry}
                             onReject={handleRejectEntry}
+                            showFilters={false}
+                            setShowFilters={() => {}}
                           />
                         </div>
                       )}
@@ -587,6 +589,8 @@ const App: React.FC = () => {
                         onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
                         onInlineUpdate={handleInlineUpdateEntry}
                         onDelete={handleDelete}
+                        showFilters={showRegisterFilters}
+                        setShowFilters={setShowRegisterFilters}
                       />
                     </div>
                   )}
