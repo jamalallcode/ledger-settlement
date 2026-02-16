@@ -247,9 +247,23 @@ const App: React.FC = () => {
     } else {
       await supabase.from('settlement_entries').upsert({ id: entryToSync.id, content: entryToSync });
     }
+  };
+
+  // Specialized update handler for inline fields (date/person) to avoid jumping tabs
+  const handleInlineUpdateEntry = async (updatedEntry: any) => {
+    if (updatedEntry.type === 'correspondence') {
+      setCorrespondenceEntries(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));
+    } else {
+      setEntries(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));
+    }
     
-    // REDIRECTS STRICTLY REMOVED AS PER USER REQUEST
-    // The component state now handles the success view properly.
+    // Silent sync to DB
+    if (navigator.onLine) {
+      await supabase.from('settlement_entries').upsert({ id: updatedEntry.id, content: updatedEntry });
+    } else {
+      const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+      localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify([...queue, updatedEntry]));
+    }
   };
 
   const handleViewRegister = (module: 'settlement' | 'correspondence') => {
@@ -465,6 +479,7 @@ const App: React.FC = () => {
                             isAdmin={isAdmin}
                             isLayoutEditable={isLayoutEditable}
                             onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
+                            onInlineUpdate={handleInlineUpdateEntry}
                             onDelete={handleDelete}
                             onApprove={handleApproveEntry}
                             onReject={handleRejectEntry}
@@ -570,6 +585,7 @@ const App: React.FC = () => {
                         isLayoutEditable={isLayoutEditable}
                         isAdmin={isAdmin}
                         onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
+                        onInlineUpdate={handleInlineUpdateEntry}
                         onDelete={handleDelete}
                       />
                     </div>
