@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles, Save, CalendarSearch, LayoutGrid, CalendarDays } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
@@ -695,7 +694,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                       </div>
                    </div>
                 </td>
-                <td className={tdCls + " relative group/approve-area"}>
+                <td className={tdCls}>
                    <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.issueLetterNo || pending.issueLetterDate ? 'bg-amber-600/10 border-amber-400 ring-2 ring-amber-50' : 'bg-amber-50/50 border-amber-100'}`}>
                       <div className="text-[9px] font-black text-amber-700 uppercase tracking-tighter flex items-center gap-1"><Send size={8} /> জারিপত্র</div>
                       <div className="space-y-1">
@@ -733,33 +732,46 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                         </div>
                       </div>
                    </div>
-
-                   {/* অনুমোদন আইকন সংযোজন (অপেক্ষমাণ এন্ট্রির জন্য) */}
-                   {isAdmin && isPendingForApproval && (
-                     <div className="absolute -right-1 top-1/2 -translate-y-1/2 hidden group-hover/approve-area:flex flex-col gap-1.5 no-print z-[200] animate-in fade-in slide-in-from-right-2 duration-300">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); onApprove?.(entry.id); }} 
-                          className="w-7 h-7 bg-emerald-500 text-white rounded-lg flex items-center justify-center shadow-lg hover:bg-emerald-600 transition-all active:scale-90 border border-white"
-                          title="অনুমোদন দিন"
-                        >
-                          <Check size={14} strokeWidth={3} />
-                        </button>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); onReject?.(entry.id); }} 
-                          className="w-7 h-7 bg-red-500 text-white rounded-lg flex items-center justify-center shadow-lg hover:bg-red-600 transition-all active:scale-90 border border-white"
-                          title="বাতিল করুন"
-                        >
-                          <XCircle size={14} />
-                        </button>
-                     </div>
-                   )}
                 </td>
                 <td className={tdCls + " relative group/action text-center"}>
                    <span className="text-[9px] opacity-70">{entry.remarks || '-'}</span>
                    {isAdmin && (
-                     <div className="absolute right-0.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all no-print">
-                       <button onClick={(e) => { e.stopPropagation(); onEdit?.(entry); }} className="p-1 bg-blue-600 text-white rounded-md shadow-md"><Pencil size={10} /></button>
-                       <button onClick={(e) => { e.stopPropagation(); onDelete?.(entry.id); }} className="p-1 bg-red-600 text-white rounded-md shadow-md"><Trash2 size={10} /></button>
+                     <div className="absolute right-0.5 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all no-print z-[500] bg-white/90 backdrop-blur-sm p-1 rounded-lg shadow-xl border border-slate-200">
+                       {/* অনুমোদন বাটন */}
+                       {isPendingForApproval && (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); onApprove?.(entry.id); }} 
+                            className="p-1.5 bg-emerald-500 text-white rounded-md shadow-md hover:bg-emerald-600 transition-colors"
+                            title="অনুমোদন দিন"
+                          >
+                            <Check size={12} strokeWidth={3} />
+                          </button>
+                       )}
+                       {/* বাতিল বাটন */}
+                       {isPendingForApproval && (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); onReject?.(entry.id); }} 
+                            className="p-1.5 bg-red-500 text-white rounded-md shadow-md hover:bg-red-600 transition-colors"
+                            title="বাতিল করুন"
+                          >
+                            <XCircle size={12} />
+                          </button>
+                       )}
+                       {/* এডিট বাটন */}
+                       <button onClick={(e) => { e.stopPropagation(); onEdit?.(entry); }} className="p-1.5 bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-700 transition-colors" title="এডিট করুন"><Pencil size={12} /></button>
+                       {/* ডিলিট বাটন (সতর্কতামূলক পপআপসহ) */}
+                       <button 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          if(window.confirm("আপনি কি নিশ্চিতভাবে এই এন্ট্রিটি মুছে ফেলতে চান?")) {
+                            onDelete?.(entry.id); 
+                          }
+                        }} 
+                        className="p-1.5 bg-rose-600 text-white rounded-md shadow-md hover:bg-rose-700 transition-colors" 
+                        title="মুছে ফেলুন"
+                       >
+                        <Trash2 size={12} />
+                       </button>
                      </div>
                    )}
                 </td>
