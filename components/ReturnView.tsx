@@ -176,6 +176,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
             const eMin = robustNormalize(e.ministryName || '');
             const eEnt = robustNormalize(e.entityName || '');
             if (eMin !== normMinistry || eEnt !== normEntity) return false;
+            // Fix: Refer to e.issueDateISO correctly
             if (!e.issueDateISO) return false;
             return isInCycle(e.issueDateISO, activeCycle.start, activeCycle.end);
           });
@@ -385,6 +386,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
     const thS = "border border-slate-300 px-1 py-2 font-black text-center text-[10px] md:text-[11px] bg-slate-100 text-slate-900 leading-tight align-middle sticky top-0 z-[100] shadow-[inset_0_-1px_0_#cbd5e1]";
     const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
 
+    // Calculate the last day of the starting month of the cycle
+    const reportingDateBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0), 'dd/MM/yyyy'));
+
     return (
       <div className="space-y-4 py-2 w-full animate-report-page relative">
         <IDBadge id="correspondence-report-view" />
@@ -408,7 +412,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
             <h2 className="text-xl font-bold text-slate-800 leading-tight">{OFFICE_HEADER.sub}</h2>
             <h3 className="text-lg font-bold text-slate-700 leading-tight">{OFFICE_HEADER.address}</h3>
             <div className="mt-4 inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
-              <span className="text-blue-400">অ-এসএফআই শাখার {toBengaliDigits(activeCycle.label)} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।</span>
+              <span className="text-blue-400">নন এসএফআই শাখার {reportingDateBN} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।</span>
             </div>
           </div>
 
