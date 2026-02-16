@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles, Save, CalendarSearch, LayoutGrid, CalendarDays } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
@@ -67,8 +66,8 @@ const SegmentedTableDateInput: React.FC<{
     onChange(`${finalY}-${finalM}-${finalD}`);
   };
 
-  const dayVal = d ? toBengaliDigits(d) : '';
-  const monthVal = m ? toBengaliDigits(m) : '';
+  const dayVal = d && d !== '00' ? toBengaliDigits(d) : '';
+  const monthVal = m && m !== '00' ? toBengaliDigits(m) : '';
   const yearVal = y && y !== '0000' ? toBengaliDigits(y) : '';
 
   const focusCls = accent === 'blue' 
@@ -121,12 +120,14 @@ const SegmentedTableDateInput: React.FC<{
 
 /**
  * Premium Dropdown Component for Inline Presentation Name Update
+ * Fixed: Added smart positioning to prevent overflowing out of the table.
  */
 const PremiumInlineSelect: React.FC<{
   value: string;
   onSelect: (val: string) => void;
 }> = ({ value, onSelect }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [openUp, setOpenUp] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -149,6 +150,17 @@ const PremiumInlineSelect: React.FC<{
       setSuggestions(defaultList);
     }
   }, []);
+
+  const handleToggle = () => {
+    if (!isOpen && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      // If less than 250px space below, open upwards
+      setOpenUp(spaceBelow < 250);
+    }
+    setIsOpen(!isOpen);
+    setSearchTerm('');
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -173,7 +185,7 @@ const PremiumInlineSelect: React.FC<{
   return (
     <div className="relative w-full" ref={dropdownRef}>
       <div 
-        onClick={() => { setIsOpen(!isOpen); setSearchTerm(''); }}
+        onClick={handleToggle}
         className={`w-full h-7 px-1.5 bg-slate-50 border rounded-lg flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-blue-500 ring-2 ring-blue-50 bg-white shadow-sm' : 'border-slate-200 hover:border-slate-300'}`}
       >
         <span className={`text-[10px] font-black truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>
@@ -183,7 +195,7 @@ const PremiumInlineSelect: React.FC<{
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+4px)] left-0 w-40 bg-white border border-slate-200 rounded-xl shadow-2xl z-[1000] overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 border-t-2 border-t-blue-600">
+        <div className={`absolute ${openUp ? 'bottom-[calc(100%+4px)]' : 'top-[calc(100%+4px)]'} left-0 w-40 bg-white border border-slate-200 rounded-xl shadow-2xl z-[1000] overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 border-t-2 border-t-blue-600`}>
           <div className="p-2 bg-slate-50 border-b border-slate-100">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" size={10} />
@@ -349,6 +361,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[48px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
 
   const hasChanges = Object.keys(pendingChanges).length > 0;
+
+  // Helper to format date correctly for display, filtering out zeroed out dates.
+  const formatDisplayDate = (iso: string) => {
+    if (!iso || iso === '0000-00-00' || iso.startsWith('0000')) return '';
+    return toBengaliDigits(iso.split('-').reverse().join('/'));
+  };
 
   return (
     <div id="section-correspondence-register" className="w-full space-y-4 animate-premium-page relative">
@@ -598,7 +616,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                       </div>
                       <div className="flex items-start gap-1">
                         <span className={labelCls}>৩. পত্র নং ও তারিখ:</span> 
-                        <span className={valCls}>{entry.letterNo}, {toBengaliDigits(entry.letterDate)}</span>
+                        <span className={valCls}>{entry.letterNo}, {formatDisplayDate(entry.letterDate)}</span>
                       </div>
                       <div className="flex items-start gap-1">
                         <span className={labelCls}>৪. প্রেরিত অনু: সংখ্যা:</span> 
@@ -615,11 +633,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                    <div className="space-y-1">
                       <div className="flex items-start gap-1">
                         <span className={labelCls}>১. ডায়েরি নং ও তারিখ:</span> 
-                        <span className={valCls}>{entry.diaryNo}, {toBengaliDigits(entry.diaryDate)}</span>
+                        <span className={valCls}>{entry.diaryNo}, {formatDisplayDate(entry.diaryDate)}</span>
                       </div>
                       <div className="flex items-start gap-1">
                         <span className={labelCls}>২. শাখায় প্রাপ্তির তারিখ:</span> 
-                        <span className={valCls}>{toBengaliDigits(entry.receiptDate)}</span>
+                        <span className={valCls}>{formatDisplayDate(entry.receiptDate)}</span>
                       </div>
                       <div className="flex items-start gap-1">
                         <span className={labelCls}>৩. ডিজিটাল নথি নং-:</span> 
@@ -627,7 +645,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                       </div>
                       <div className="flex items-start gap-1">
                         <span className={labelCls}>৪. গ্রহণের তারিখ:</span> 
-                        <span className={valCls}>{toBengaliDigits(entry.receivedDate)}</span>
+                        <span className={valCls}>{formatDisplayDate(entry.receivedDate)}</span>
                       </div>
                       <div className="flex items-start gap-1">
                         <span className={labelCls}>৫. অনলাইনে প্রাপ্তি:</span> 
@@ -647,14 +665,14 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                       <div className="p-1.5 bg-slate-50 border border-slate-100 rounded-lg relative">
                          <div className="text-[9px] font-black text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1"><Inbox size={8} /> গ্রহণকারী</div>
                          <div className="font-black text-slate-900 text-[10px] leading-tight truncate">{entry.receiverName || '-'}</div>
-                         <div className="text-[9px] text-slate-500 font-bold">{toBengaliDigits(entry.receivedDate)}</div>
+                         <div className="text-[9px] text-slate-500 font-bold">{formatDisplayDate(entry.receivedDate)}</div>
                       </div>
 
                       <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.presentationDate || pending.presentedToName ? 'bg-blue-600/10 border-blue-400 ring-2 ring-blue-50' : 'bg-blue-50/50 border-blue-100'}`}>
                          <div className="flex items-center justify-between">
                             <div className="text-[9px] font-black text-blue-700 uppercase tracking-tighter flex items-center gap-1"><UserCheck size={8} /> উপস্থাপন</div>
                             <div className="flex items-center gap-1.5">
-                               {currentPresDate && <span className="text-[8px] font-black text-blue-600">{toBengaliDigits(currentPresDate.split('-').reverse().join('/'))}</span>}
+                               {formatDisplayDate(currentPresDate) && <span className="text-[8px] font-black text-blue-600">{formatDisplayDate(currentPresDate)}</span>}
                                <div className="relative flex items-center h-3 w-3">
                                   <Calendar 
                                     size={11} 
@@ -697,7 +715,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                         <div className="flex items-center justify-between">
                           <span className="text-[8px] font-black text-slate-400 uppercase flex items-center gap-1">তারিখ</span>
                           <div className="flex items-center gap-1.5">
-                             {currentIssueDate && <span className="text-[8px] font-black text-amber-600">{toBengaliDigits(currentIssueDate.split('-').reverse().join('/'))}</span>}
+                             {formatDisplayDate(currentIssueDate) && <span className="text-[8px] font-black text-amber-600">{formatDisplayDate(currentIssueDate)}</span>}
                              <div className="relative flex items-center h-3 w-3">
                                 <Calendar 
                                   size={11} 
