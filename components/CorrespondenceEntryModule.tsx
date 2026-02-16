@@ -254,7 +254,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   value={formData.letterNo} 
                   onChange={e => setFormData({...formData, letterNo: toBengaliDigits(e.target.value)})} 
                 />
-                {/* Fixed escaped quote typo below */}
                 <div className="w-[1.5px] h-6 bg-slate-200 shrink-0"></div>
                 <input 
                   type="date" 
@@ -299,7 +298,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                     value={formData.diaryNo} 
                     onChange={e => setFormData({...formData, diaryNo: toBengaliDigits(e.target.value)})} 
                   />
-                  {/* Fixed escaped quote typo below */}
                   <div className="w-[1.5px] h-6 bg-slate-200 shrink-0"></div>
                   <input 
                     type="date" 
@@ -421,28 +419,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   type="button" onClick={() => setFormData({...formData, isOnline: 'না'})}
                   className={`flex-1 h-full rounded-xl font-black text-sm transition-all border-2 ${formData.isOnline === 'না' ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-400 border-slate-200'}`}
                 >না</button>
-              </div>
-            </div>
-
-            {/* Field 14 */}
-            <div className={`${colWrapper} border-amber-100`}>
-              <IDBadge id="corr-field-issue-letter" />
-              <label className={labelCls}><span className={numBadge}>১৪</span> <Send size={14} className="text-amber-600" /> জারিপত্র নং ও তারিখ:</label>
-              <div className="flex items-center w-full h-[52px] bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:bg-white focus-within:border-amber-500 focus-within:ring-4 focus-within:ring-amber-50 transition-all shadow-sm">
-                <input 
-                  type="text" placeholder="নং" 
-                  className="flex-[2] min-w-0 h-full px-3 bg-transparent border-none font-bold outline-none text-[14px]" 
-                  value={formData.issueLetterNo} 
-                  onChange={e => setFormData({...formData, issueLetterNo: toBengaliDigits(e.target.value)})} 
-                />
-                {/* Fixed escaped quote typo below */}
-                <div className="w-[1.5px] h-6 bg-slate-200 shrink-0"></div>
-                <input 
-                  type="date" 
-                  className="flex-[3] min-w-0 h-full px-2 bg-transparent border-none font-bold outline-none text-[13px] text-slate-700" 
-                  value={formData.issueLetterDate} 
-                  onChange={e => setFormData({...formData, issueLetterDate: e.target.value})} 
-                />
               </div>
             </div>
 
