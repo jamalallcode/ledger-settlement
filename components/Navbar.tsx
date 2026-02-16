@@ -79,7 +79,7 @@ const Navbar: React.FC<NavbarProps> = ({
   const navItems = [
     { id: 'landing', label: 'হোম', icon: Home },
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter },
-    { id: 'return', label: 'রিটার্ণ/সারাংশ', icon: PieChart },
+    { id: 'return', label: 'রিটার্ণ', icon: PieChart },
     { id: 'archive', label: 'লাইব্রেরি', icon: Library },
     { id: 'voting', label: 'ভোট', icon: Fingerprint },
   ];
