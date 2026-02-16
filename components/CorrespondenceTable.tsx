@@ -179,7 +179,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   };
 
   const thCls = "border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[10px] bg-slate-100 sticky top-0 z-[100] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
-  // Removed overflow-hidden from tdCls to fix dropdown clipping
   const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[10px] text-slate-800 font-bold leading-tight align-top bg-white transition-colors group-hover:bg-blue-50/50 break-words";
   const labelCls = "text-[9px] font-black text-emerald-700 mr-1 shrink-0";
   const valCls = "text-[9px] font-bold text-slate-900";
@@ -358,7 +357,16 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                    )}
                 </td>
               </tr>
-            )})}
+            )}) : (
+              <tr>
+                <td colSpan={11} className="py-20 text-center bg-white">
+                   <div className="flex flex-col items-center gap-3 opacity-30">
+                      <Mail size={40} />
+                      <p className="text-sm font-black text-slate-900 tracking-widest">রেজিস্টার খালি</p>
+                   </div>
+                </td>
+              </tr>
+            )}
           </tbody>
           <tfoot className="sticky bottom-0 z-[110]">
             <tr className="bg-slate-900 text-white font-black text-[10px] h-9 shadow-[0_-5px_15px_rgba(0,0,0,0.2)]">
