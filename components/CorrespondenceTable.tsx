@@ -82,21 +82,21 @@ const PremiumInlineSelect: React.FC<{
     <div className="relative w-full" ref={dropdownRef}>
       <div 
         onClick={() => { setIsOpen(!isOpen); setSearchTerm(''); }}
-        className={`w-full h-8 px-2 bg-slate-50 border rounded-lg flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-blue-500 ring-2 ring-blue-50 bg-white shadow-sm' : 'border-slate-200 hover:border-slate-300'}`}
+        className={`w-full h-7 px-1.5 bg-slate-50 border rounded-lg flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-blue-500 ring-2 ring-blue-50 bg-white shadow-sm' : 'border-slate-200 hover:border-slate-300'}`}
       >
-        <span className={`text-[10px] font-black truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>
-          {value || 'নাম নির্বাচন করুন...'}
+        <span className={`text-[9px] font-black truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>
+          {value || 'বাছুন...'}
         </span>
-        <ChevronDown size={12} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={10} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+4px)] left-0 w-48 bg-white border border-slate-200 rounded-xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 border-t-2 border-t-blue-600">
+        <div className="absolute top-[calc(100%+4px)] left-0 w-40 bg-white border border-slate-200 rounded-xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 border-t-2 border-t-blue-600">
           <div className="p-2 bg-slate-50 border-b border-slate-100">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" size={10} />
               <input 
-                autoFocus type="text" placeholder="খুঁজুন বা নতুন লিখুন..." 
+                autoFocus type="text" placeholder="খুঁজুন..." 
                 className="w-full h-7 pl-6 pr-2 bg-white border border-slate-200 rounded-lg text-[10px] font-bold outline-none focus:border-blue-400"
                 value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
               />
@@ -106,18 +106,18 @@ const PremiumInlineSelect: React.FC<{
             {filtered.map((opt, i) => (
               <div 
                 key={i} onClick={() => { onSelect(opt); setIsOpen(false); }}
-                className={`px-3 py-2 cursor-pointer flex items-center justify-between transition-all ${value === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[10px]'}`}
+                className={`px-3 py-1.5 cursor-pointer flex items-center justify-between transition-all ${value === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[9px]'}`}
               >
                 <span>{opt}</span>
-                {value === opt && <Check size={12} strokeWidth={3} />}
+                {value === opt && <Check size={10} strokeWidth={3} />}
               </div>
             ))}
             {searchTerm && !suggestions.includes(searchTerm) && (
               <div 
                 onClick={handleAddNew}
-                className="px-3 py-2 cursor-pointer bg-emerald-50 text-emerald-600 font-black text-[9px] flex items-center gap-2 hover:bg-emerald-100"
+                className="px-3 py-1.5 cursor-pointer bg-emerald-50 text-emerald-600 font-black text-[9px] flex items-center gap-2 hover:bg-emerald-100"
               >
-                <Plus size={10} /> নতুন যুক্ত করুন: "{searchTerm}"
+                <Plus size={10} /> যোগ: "{searchTerm}"
               </div>
             )}
           </div>
@@ -148,73 +148,71 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   };
 
   const handleInlineUpdate = (entry: CorrespondenceEntry, field: string, value: any) => {
-    // If inline handler is provided, use it to avoid jumping to entry form
     if (onInlineUpdate) {
       onInlineUpdate({ ...entry, [field]: value });
     } else if (onEdit) {
-      // Fallback to onEdit if no specialized inline handler is available
       onEdit({ ...entry, [field]: value });
     }
   };
 
-  const thCls = "border border-slate-300 px-1 py-3 text-center align-middle font-black text-slate-900 text-[11px] bg-slate-100 sticky top-0 z-[100] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
-  const tdCls = "border border-slate-300 px-2 py-2 text-[11px] text-slate-800 font-bold leading-tight align-top bg-white transition-colors group-hover:bg-blue-50/50 overflow-hidden break-words";
-  const labelCls = "text-[10px] font-black text-emerald-700 mr-1 shrink-0";
-  const valCls = "text-[10px] font-bold text-slate-900";
+  const thCls = "border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[10px] bg-slate-100 sticky top-0 z-[100] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
+  const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[10px] text-slate-800 font-bold leading-tight align-top bg-white transition-colors group-hover:bg-blue-50/50 overflow-hidden break-words";
+  const labelCls = "text-[9px] font-black text-emerald-700 mr-1 shrink-0";
+  const valCls = "text-[9px] font-bold text-slate-900";
 
   return (
-    <div id="section-correspondence-register" className="w-full space-y-6 animate-premium-page relative">
+    <div id="section-correspondence-register" className="w-full space-y-4 animate-premium-page relative">
       <IDBadge id="section-correspondence-register" />
       
       {/* Header Controls */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm no-print relative">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print relative">
         <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl transition-all shadow-sm"><ChevronRight className="rotate-180" size={20} /></button>
+          <button onClick={onBack} className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all shadow-sm"><ChevronRight className="rotate-180" size={18} /></button>
           <div>
-            <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3">
-              <Mail className="text-emerald-600" /> প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টার
+            <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
+              <Mail className="text-emerald-600" size={20} /> প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টার
             </h3>
-            <div className="flex items-center gap-3 mt-1">
-               <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Incoming Correspondence Ledger</p>
-               <div className="h-4 w-[1.5px] bg-slate-300"></div>
-               <div className="flex items-center gap-1.5 text-blue-600 font-black text-xs">
-                  <CalendarRange size={14} /> সাইকেল: {toBengaliDigits(cycleInfo.label)}
+            <div className="flex items-center gap-2 mt-0.5">
+               <p className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">Correspondence Ledger</p>
+               <div className="h-3 w-[1px] bg-slate-300"></div>
+               <div className="flex items-center gap-1 text-blue-600 font-black text-[10px]">
+                  <CalendarRange size={12} /> সাইকেল: {toBengaliDigits(cycleInfo.label)}
                </div>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-           <button onClick={() => window.print()} className="px-6 py-3 bg-slate-900 text-white rounded-xl font-black text-xs flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95"><Printer size={18} /> প্রিন্ট করুন</button>
+        <div className="flex items-center gap-2">
+           <button onClick={() => window.print()} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-black text-[11px] flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95"><Printer size={16} /> প্রিন্ট</button>
         </div>
       </div>
 
-      {/* Table Container - Width Optimized */}
-      <div className="table-container border border-slate-300 rounded-sm overflow-visible relative shadow-2xl bg-white max-w-full">
+      {/* Table Container - Optimized for Width */}
+      <div className="table-container border border-slate-300 rounded-sm overflow-visible relative shadow-xl bg-white max-w-full">
         <IDBadge id="table-correspondence-ledger" />
         <table className="w-full border-separate border-spacing-0 table-fixed">
           <colgroup>
-            <col className="w-[40px]" />  {/* ক্রমিক নং */}
-            <col className="w-[160px]" /> {/* পত্রের বিবরণ */}
-            <col className="w-[180px]" /> {/* পত্রের অন্যান্য তথ্য */}
-            <col className="w-[180px]" /> {/* অত্র অফিসের তথ্য */}
-            <col className="w-[100px]" /> {/* চিঠির ধরণ */}
-            <col className="w-[85px]" />  {/* প্রেরিত অনুচ্ছেদ */}
-            <col className="w-[100px]" /> {/* জড়িত টাকা */}
-            <col className="w-[70px]" />  {/* অনলাইনে প্রাপ্তি (New Column 8) */}
-            <col className="w-[160px]" /> {/* গ্রহণ ও উপস্থাপন (New Column 9) */}
-            <col className="w-[135px]" /> {/* জারিপত্র নং ও তারিখ (Increased Width) */}
-            <col className="w-[60px]" />  {/* মন্তব্য (Decreased Width) */}
+            <col className="w-[30px]" />  {/* ক্রমিক নং */}
+            <col className="w-[130px]" /> {/* পত্রের বিবরণ */}
+            <col className="w-[150px]" /> {/* পত্রের অন্যান্য তথ্য */}
+            <col className="w-[150px]" /> {/* অত্র অফিসের তথ্য */}
+            <col className="w-[80px]" />  {/* চিঠির ধরণ */}
+            <col className="w-[60px]" />  {/* প্রেরিত অনুচ্ছেদ */}
+            <col className="w-[85px]" />  {/* জড়িত টাকা */}
+            <col className="w-[60px]" />  {/* অনলাইনে প্রাপ্তি */}
+            <col className="w-[145px]" /> {/* গ্রহণ ও উপস্থাপন (Reduced for fit) */}
+            <col className="w-[135px]" /> {/* জারিপত্র নং ও তারিখ */}
+            <col className="w-[50px]" />  {/* মন্তব্য (Minimized) */}
           </colgroup>
           <thead>
             <tr>
-              <th className={thCls}>ক্রমিক নং</th>
+              <th className={thCls}>ক্র: নং</th>
               <th className={thCls}>পত্রের বিবরণ</th>
               <th className={thCls}>পত্রের অন্যান্য তথ্য</th>
               <th className={thCls}>অত্র অফিসের তথ্য</th>
-              <th className={thCls}>চিঠির ধরণ (SFI/NON-SFI)</th>
-              <th className={thCls}>প্রেরিত অনুচ্ছেদ সংখ্যা</th>
-              <th className={thCls}>মোট জড়িত টাকা</th>
-              <th className={thCls}>অনলাইনে প্রাপ্তি (হ্যাঁ/না)</th>
+              <th className={thCls}>শাখা ধরণ</th>
+              <th className={thCls}>প্রেরিত অনুচ্ছেদ</th>
+              <th className={thCls}>জড়িত টাকা</th>
+              <th className={thCls}>অনলাইন</th>
               <th className={thCls}>গ্রহণ ও উপস্থাপন</th>
               <th className={thCls}>জারিপত্র নং ও তারিখ</th>
               <th className={thCls}>মন্তব্য</th>
@@ -226,55 +224,52 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                 <td className={tdCls + " text-center font-black"}>{toBengaliDigits(idx + 1)}</td>
                 <td className={tdCls}>{entry.description}</td>
                 <td className={tdCls}>
-                   <div className="space-y-1">
-                      <div className="flex items-start"><span className={labelCls}>শাখার ধরণ:</span> <span className={valCls}>{entry.paraType}</span></div>
-                      <div className="flex items-start"><span className={labelCls}>পত্র নং ও তারিখ:</span> <span className={valCls}>{entry.letterNo} ({toBengaliDigits(entry.letterDate)})</span></div>
-                      <div className="flex items-start"><span className={labelCls}>প্রেরিত মোট অনুচ্ছেদ সংখ্যা:</span> <span className={valCls}>{toBengaliDigits(entry.totalParas)} টি</span></div>
-                      <div className="flex items-start"><span className={labelCls}>মোট জড়িত টাকা।</span> <span className={valCls}>{toBengaliDigits(entry.totalAmount)}</span></div>
+                   <div className="space-y-0.5">
+                      <div className="flex items-start"><span className={labelCls}>শাখা:</span> <span className={valCls}>{entry.paraType}</span></div>
+                      <div className="flex items-start"><span className={labelCls}>নং:</span> <span className={valCls}>{entry.letterNo}</span></div>
+                      <div className="flex items-start"><span className={labelCls}>তারিখ:</span> <span className={valCls}>{toBengaliDigits(entry.letterDate)}</span></div>
+                      <div className="flex items-start"><span className={labelCls}>অনুচ্ছেদ:</span> <span className={valCls}>{toBengaliDigits(entry.totalParas)} টি</span></div>
+                      <div className="flex items-start"><span className={labelCls}>টাকা:</span> <span className={valCls}>{toBengaliDigits(entry.totalAmount)}</span></div>
                    </div>
                 </td>
                 <td className={tdCls}>
-                   <div className="space-y-1">
-                      <div className="flex items-start"><span className={labelCls}>ডায়েরি নং ও তারিখ:</span> <span className={valCls}>{entry.diaryNo} ({toBengaliDigits(entry.diaryDate)})</span></div>
-                      <div className="flex items-start"><span className={labelCls}>শাখায় প্রাপ্তির তারিখ:</span> <span className={valCls}>{toBengaliDigits(entry.receiptDate)}</span></div>
-                      <div className="flex items-start"><span className={labelCls}>ডিজিটাল নথি নং-:</span> <span className={valCls}>{entry.digitalFileNo}</span></div>
+                   <div className="space-y-0.5">
+                      <div className="flex items-start"><span className={labelCls}>ডায়েরি:</span> <span className={valCls}>{entry.diaryNo}</span></div>
+                      <div className="flex items-start"><span className={labelCls}>ড: তারিখ:</span> <span className={valCls}>{toBengaliDigits(entry.diaryDate)}</span></div>
+                      <div className="flex items-start"><span className={labelCls}>প্রাপ্তি:</span> <span className={valCls}>{toBengaliDigits(entry.receiptDate)}</span></div>
+                      <div className="flex items-start"><span className={labelCls}>নথি:</span> <span className={valCls}>{entry.digitalFileNo}</span></div>
                    </div>
                 </td>
                 <td className={tdCls + " text-center"}>{entry.paraType}</td>
-                <td className={tdCls + " text-center font-black text-blue-700"}>{toBengaliDigits(entry.sentParaCount)} টি</td>
+                <td className={tdCls + " text-center font-black text-blue-700"}>{toBengaliDigits(entry.sentParaCount)}</td>
                 <td className={tdCls + " text-center font-black"}>{toBengaliDigits(entry.totalAmount)}</td>
                 <td className={tdCls + " text-center"}>
-                   <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${entry.isOnline === 'হ্যাঁ' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
+                   <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase ${entry.isOnline === 'হ্যাঁ' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
                       {entry.isOnline}
                    </span>
                 </td>
                 <td className={tdCls}>
-                   <div className="space-y-4">
-                      {/* Part 1: Receipt Info */}
-                      <div className="p-2 bg-slate-50 border border-slate-100 rounded-xl relative overflow-hidden">
-                         <div className="absolute top-0 right-0 w-1 h-full bg-emerald-500"></div>
-                         <div className="text-[9px] font-black text-emerald-700 uppercase tracking-tighter mb-1 flex items-center gap-1"><Inbox size={10} /> ১. গ্রহণকারীর তথ্য</div>
-                         <div className="font-black text-slate-900 text-[11px] leading-tight mb-1">{entry.receiverName || '-'}</div>
-                         <div className="text-[9px] text-slate-500 font-bold">{toBengaliDigits(entry.receivedDate)}</div>
+                   <div className="space-y-2">
+                      <div className="p-1.5 bg-slate-50 border border-slate-100 rounded-lg relative overflow-hidden">
+                         <div className="text-[8px] font-black text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1"><Inbox size={8} /> গ্রহণকারী</div>
+                         <div className="font-black text-slate-900 text-[9px] leading-tight truncate">{entry.receiverName || '-'}</div>
+                         <div className="text-[8px] text-slate-500 font-bold">{toBengaliDigits(entry.receivedDate)}</div>
                       </div>
 
-                      {/* Part 2: Presentation Info (Interactive) */}
-                      <div className="p-2 bg-blue-50/50 border border-blue-100 rounded-xl relative overflow-hidden">
-                         <div className="absolute top-0 right-0 w-1 h-full bg-blue-600"></div>
-                         <div className="text-[9px] font-black text-blue-700 uppercase tracking-tighter mb-2 flex items-center gap-1"><UserCheck size={10} /> ২. উপস্থাপনের তথ্য</div>
-                         
-                         <div className="space-y-2">
-                           <div className="flex flex-col gap-1">
-                              <span className="text-[8px] font-black text-slate-400 uppercase">উপস্থাপনের তারিখ</span>
+                      <div className="p-1.5 bg-blue-50/50 border border-blue-100 rounded-lg space-y-1.5">
+                         <div className="text-[8px] font-black text-blue-700 uppercase tracking-tighter flex items-center gap-1"><UserCheck size={8} /> উপস্থাপন</div>
+                         <div className="space-y-1">
+                           <div className="flex flex-col gap-0.5">
+                              <span className="text-[7px] font-black text-slate-400 uppercase">তারিখ</span>
                               <input 
                                 type="date" 
-                                className="w-full h-7 px-2 border border-slate-200 rounded-lg text-[10px] font-bold outline-none focus:border-blue-400 focus:bg-white transition-all bg-white" 
+                                className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[9px] font-bold outline-none focus:border-blue-400 bg-white" 
                                 value={entry.presentationDate || ''} 
                                 onChange={e => handleInlineUpdate(entry, 'presentationDate', e.target.value)}
                               />
                            </div>
-                           <div className="flex flex-col gap-1">
-                              <span className="text-[8px] font-black text-slate-400 uppercase">যার কাছে উপস্থাপন করা হবে</span>
+                           <div className="flex flex-col gap-0.5">
+                              <span className="text-[7px] font-black text-slate-400 uppercase">বরাবর</span>
                               <PremiumInlineSelect 
                                 value={entry.presentedToName || ''} 
                                 onSelect={val => handleInlineUpdate(entry, 'presentedToName', val)}
@@ -285,26 +280,24 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                    </div>
                 </td>
                 <td className={tdCls}>
-                   <div className="p-2 bg-amber-50/50 border border-amber-100 rounded-xl relative overflow-hidden space-y-2">
-                      <div className="absolute top-0 right-0 w-1 h-full bg-amber-500"></div>
-                      <div className="text-[9px] font-black text-amber-700 uppercase tracking-tighter mb-1 flex items-center gap-1"><Send size={10} /> জারিপত্র তথ্য</div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[8px] font-black text-slate-400 uppercase">জারিপত্র নং</span>
+                   <div className="p-1.5 bg-amber-50/50 border border-amber-100 rounded-lg space-y-1.5">
+                      <div className="text-[8px] font-black text-amber-700 uppercase tracking-tighter flex items-center gap-1"><Send size={8} /> জারিপত্র</div>
+                      <div className="space-y-1">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[7px] font-black text-slate-400 uppercase">নং</span>
                           <input 
                             type="text" 
-                            placeholder="নং লিখুন"
-                            className="w-full h-7 px-2 border border-slate-200 rounded-lg text-[10px] font-bold outline-none focus:border-amber-400 focus:bg-white transition-all bg-white" 
+                            placeholder="নং"
+                            className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[9px] font-bold outline-none focus:border-amber-400 bg-white" 
                             value={entry.issueLetterNo || ''} 
                             onChange={e => handleInlineUpdate(entry, 'issueLetterNo', toBengaliDigits(e.target.value))}
                           />
                         </div>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[8px] font-black text-slate-400 uppercase">জারিপত্রের তারিখ</span>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[7px] font-black text-slate-400 uppercase">তারিখ</span>
                           <input 
                             type="date" 
-                            className="w-full h-7 px-2 border border-slate-200 rounded-lg text-[10px] font-bold outline-none focus:border-amber-400 focus:bg-white transition-all bg-white" 
+                            className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[9px] font-bold outline-none focus:border-amber-400 bg-white" 
                             value={entry.issueLetterDate || ''} 
                             onChange={e => handleInlineUpdate(entry, 'issueLetterDate', e.target.value)}
                           />
@@ -312,42 +305,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                       </div>
                    </div>
                 </td>
-                <td className={tdCls + " relative group/action"}>
-                   {entry.remarks || '-'}
+                <td className={tdCls + " relative group/action text-center"}>
+                   <span className="text-[8px] opacity-70">{entry.remarks || '-'}</span>
                    {isAdmin && (
-                     <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all no-print">
-                       {entry.approvalStatus === 'pending' && onApprove && (
-                         <button 
-                           onClick={(e) => { e.stopPropagation(); onApprove(entry.id); }}
-                           className="p-1 bg-emerald-600 text-white rounded-lg shadow-lg hover:bg-emerald-700 transition-all active:scale-95 border border-emerald-400"
-                           title="অনুমোদন দিন"
-                         >
-                           <Check size={11} strokeWidth={3} />
-                         </button>
-                       )}
-                       {entry.approvalStatus === 'pending' && onReject && (
-                         <button 
-                           onClick={(e) => { e.stopPropagation(); onReject(entry.id); }}
-                           className="p-1 bg-rose-600 text-white rounded-lg shadow-lg hover:bg-rose-700 transition-all active:scale-95 border border-rose-400"
-                           title="বাতিল করুন"
-                         >
-                           <XCircle size={11} />
-                         </button>
-                       )}
-                       <button 
-                         onClick={(e) => { e.stopPropagation(); onEdit?.(entry); }}
-                         className="p-1 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-all active:scale-95 border border-blue-400"
-                         title="এডিট করুন"
-                       >
-                         <Pencil size={11} />
-                       </button>
-                       <button 
-                         onClick={(e) => { e.stopPropagation(); onDelete?.(entry.id); }}
-                         className="p-1 bg-red-600 text-white rounded-lg shadow-lg hover:bg-red-700 transition-all active:scale-95 border border-red-400"
-                         title="মুছে ফেলুন"
-                       >
-                         <Trash2 size={11} />
-                       </button>
+                     <div className="absolute right-0.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all no-print">
+                       <button onClick={(e) => { e.stopPropagation(); onEdit?.(entry); }} className="p-1 bg-blue-600 text-white rounded-md shadow-md"><Pencil size={10} /></button>
+                       <button onClick={(e) => { e.stopPropagation(); onDelete?.(entry.id); }} className="p-1 bg-red-600 text-white rounded-md shadow-md"><Trash2 size={10} /></button>
                      </div>
                    )}
                 </td>
@@ -355,20 +318,20 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             )) : (
               <tr>
                 <td colSpan={11} className="py-20 text-center bg-white">
-                   <div className="flex flex-col items-center gap-4 opacity-30">
-                      <Mail size={48} />
-                      <p className="text-lg font-black text-slate-900 tracking-widest">রেজিস্টারে কোনো তথ্য পাওয়া যায়নি</p>
+                   <div className="flex flex-col items-center gap-3 opacity-30">
+                      <Mail size={40} />
+                      <p className="text-sm font-black text-slate-900 tracking-widest">রেজিস্টার খালি</p>
                    </div>
                 </td>
               </tr>
             )}
           </tbody>
           <tfoot className="sticky bottom-0 z-[110]">
-            <tr className="bg-slate-900 text-white font-black text-[11px] h-11 shadow-[0_-5px_15px_rgba(0,0,0,0.2)]">
-              <td colSpan={2} className="px-4 text-left border-t border-slate-700">সর্বমোট (এন্ট্রি সংখ্যা):</td>
-              <td colSpan={1} className="px-4 text-center border-t border-slate-700 text-emerald-400">{toBengaliDigits(entries.length)} টি</td>
+            <tr className="bg-slate-900 text-white font-black text-[10px] h-9 shadow-[0_-5px_15px_rgba(0,0,0,0.2)]">
+              <td colSpan={2} className="px-4 text-left border-t border-slate-700">সর্বমোট:</td>
+              <td colSpan={1} className="px-2 text-center border-t border-slate-700 text-emerald-400">{toBengaliDigits(entries.length)} টি</td>
               <td colSpan={4} className="border-t border-slate-700"></td>
-              <td className="px-4 text-center border-t border-slate-700 text-blue-400">
+              <td className="px-2 text-center border-t border-slate-700 text-blue-400">
                 {toBengaliDigits(entries.reduce((sum, e) => sum + parseBengaliNumber(e.totalAmount), 0))}
               </td>
               <td colSpan={3} className="border-t border-slate-700"></td>
