@@ -254,6 +254,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   value={formData.letterNo} 
                   onChange={e => setFormData({...formData, letterNo: toBengaliDigits(e.target.value)})} 
                 />
+                {/* Fixed escaped quote typo below */}
                 <div className="w-[1.5px] h-6 bg-slate-200 shrink-0"></div>
                 <input 
                   type="date" 
@@ -298,6 +299,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                     value={formData.diaryNo} 
                     onChange={e => setFormData({...formData, diaryNo: toBengaliDigits(e.target.value)})} 
                   />
+                  {/* Fixed escaped quote typo below */}
                   <div className="w-[1.5px] h-6 bg-slate-200 shrink-0"></div>
                   <input 
                     type="date" 
@@ -337,19 +339,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             </div>
 
             {/* Field 10 */}
-            <div className={`${colWrapper} border-orange-100`}>
-              <IDBadge id="corr-field-9" />
-              <label className={labelCls}><span className={numBadge}>১০</span> <Calendar size={14} className="text-orange-600" /> উপস্থাপনের তারিখ:</label>
-              <input 
-                type="date" className={inputCls} 
-                value={formData.presentationDate} onChange={e => setFormData({...formData, presentationDate: e.target.value})}
-              />
-            </div>
-
-            {/* Field 11 */}
             <div className={`${colWrapper} border-teal-100`}>
               <IDBadge id="corr-field-10" />
-              <label className={labelCls}><span className={numBadge}>১১</span> <ListOrdered size={14} className="text-teal-600" /> প্রেরিত অনুচ্ছেদ সংখ্যা:</label>
+              <label className={labelCls}><span className={numBadge}>১০</span> <ListOrdered size={14} className="text-teal-600" /> প্রেরিত অনুচ্ছেদ সংখ্যা:</label>
               <input 
                 type="text" className={inputCls} 
                 value={rawInputs.sentParaCount || ''} onChange={e => handleNumericInput('sentParaCount', e.target.value)}
@@ -357,10 +349,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               />
             </div>
 
-            {/* Field 12 */}
+            {/* Field 11 */}
             <div className={`${colWrapper} border-slate-200`} ref={receiverRef}>
               <IDBadge id="corr-field-11" />
-              <label className={labelCls}><span className={numBadge}>১২</span> <User size={14} className="text-slate-600" /> গৃহীতার নাম:</label>
+              <label className={labelCls}><span className={numBadge}>১১</span> <User size={14} className="text-slate-600" /> গৃহীতার নাম:</label>
               <div className="relative group">
                 <input 
                   type="text" 
@@ -406,20 +398,20 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               </div>
             </div>
 
-            {/* Field 13 */}
+            {/* Field 12 */}
             <div className={`${colWrapper} border-blue-100`}>
               <IDBadge id="corr-field-12" />
-              <label className={labelCls}><span className={numBadge}>১৩</span> <Calendar size={14} className="text-blue-600" /> গ্রহণের তারিখ:</label>
+              <label className={labelCls}><span className={numBadge}>১২</span> <Calendar size={14} className="text-blue-600" /> গ্রহণের তারিখ:</label>
               <input 
                 type="date" className={inputCls} 
                 value={formData.receivedDate} onChange={e => setFormData({...formData, receivedDate: e.target.value})}
               />
             </div>
 
-            {/* Field 14 */}
+            {/* Field 13 */}
             <div className={`${colWrapper} border-emerald-100`}>
               <IDBadge id="corr-field-13" />
-              <label className={labelCls}><span className={numBadge}>১৪</span> <Computer size={14} className="text-emerald-600" /> অনলাইনে প্রাপ্তি:</label>
+              <label className={labelCls}><span className={numBadge}>১৩</span> <Computer size={14} className="text-emerald-600" /> অনলাইনে প্রাপ্তি:</label>
               <div className="flex gap-4 h-[52px] items-center px-2">
                 <button 
                   type="button" onClick={() => setFormData({...formData, isOnline: 'হ্যাঁ'})}
@@ -432,10 +424,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               </div>
             </div>
 
-            {/* Field 15 - New Field Added Here */}
+            {/* Field 14 */}
             <div className={`${colWrapper} border-amber-100`}>
               <IDBadge id="corr-field-issue-letter" />
-              <label className={labelCls}><span className={numBadge}>১৫</span> <Send size={14} className="text-amber-600" /> জারিপত্র নং ও তারিখ:</label>
+              <label className={labelCls}><span className={numBadge}>১৪</span> <Send size={14} className="text-amber-600" /> জারিপত্র নং ও তারিখ:</label>
               <div className="flex items-center w-full h-[52px] bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:bg-white focus-within:border-amber-500 focus-within:ring-4 focus-within:ring-amber-50 transition-all shadow-sm">
                 <input 
                   type="text" placeholder="নং" 
@@ -443,6 +435,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   value={formData.issueLetterNo} 
                   onChange={e => setFormData({...formData, issueLetterNo: toBengaliDigits(e.target.value)})} 
                 />
+                {/* Fixed escaped quote typo below */}
                 <div className="w-[1.5px] h-6 bg-slate-200 shrink-0"></div>
                 <input 
                   type="date" 
