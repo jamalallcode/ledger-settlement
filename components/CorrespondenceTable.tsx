@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles, Save } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
@@ -55,8 +56,12 @@ const PremiumInlineSelect: React.FC<{
 
   useEffect(() => {
     const saved = localStorage.getItem('ledger_correspondence_presented_to');
-    if (saved) setSuggestions(JSON.parse(saved));
-    else setSuggestions(['উপ-পরিচালক', 'পরিচালক', 'মহাপরিচালক']);
+    if (saved) {
+      setSuggestions(JSON.parse(saved));
+    } else {
+      // Updated default suggestions as per instructions
+      setSuggestions(['সুপার', 'এএন্ডএও', 'উপপরিচালক']);
+    }
   }, []);
 
   useEffect(() => {
@@ -117,7 +122,7 @@ const PremiumInlineSelect: React.FC<{
                 onClick={handleAddNew}
                 className="px-3 py-1.5 cursor-pointer bg-emerald-50 text-emerald-600 font-black text-[9px] flex items-center gap-2 hover:bg-emerald-100"
               >
-                <Plus size={10} /> যোগ: "{searchTerm}"
+                <Plus size={10} /> নতুন পদবি: "{searchTerm}"
               </div>
             )}
           </div>
@@ -133,6 +138,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
 
+  // Corrected IDBadge definition to use isLayoutEditable from component scope or prop
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = React.useState(false);
     if (!isLayoutEditable) return null;
