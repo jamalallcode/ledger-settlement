@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles } from 'lucide-react';
+import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles, Save } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { getCurrentCycle } from '../utils/cycleHelper';
 
@@ -91,7 +91,7 @@ const PremiumInlineSelect: React.FC<{
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+4px)] left-0 w-40 bg-white border border-slate-200 rounded-xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 border-t-2 border-t-blue-600">
+        <div className="absolute top-[calc(100%+4px)] left-0 w-40 bg-white border border-slate-200 rounded-xl shadow-2xl z-[1000] overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 border-t-2 border-t-blue-600">
           <div className="p-2 bg-slate-50 border-b border-slate-100">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" size={10} />
@@ -128,6 +128,8 @@ const PremiumInlineSelect: React.FC<{
 };
 
 const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBack, isLayoutEditable, isAdmin, onEdit, onInlineUpdate, onDelete, onApprove, onReject }) => {
+  const [pendingChanges, setPendingChanges] = useState<Record<string, Partial<CorrespondenceEntry>>>({});
+  const [isUpdating, setIsUpdating] = useState(false);
   
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
 
@@ -147,18 +149,42 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
     );
   };
 
-  const handleInlineUpdate = (entry: CorrespondenceEntry, field: string, value: any) => {
-    if (onInlineUpdate) {
-      onInlineUpdate({ ...entry, [field]: value });
-    } else if (onEdit) {
-      onEdit({ ...entry, [field]: value });
+  const handleInlineChange = (entryId: string, field: keyof CorrespondenceEntry, value: any) => {
+    setPendingChanges(prev => ({
+      ...prev,
+      [entryId]: {
+        ...prev[entryId],
+        [field]: value
+      }
+    }));
+  };
+
+  const saveAllChanges = async () => {
+    if (Object.keys(pendingChanges).length === 0) return;
+    setIsUpdating(true);
+    
+    try {
+      for (const entryId in pendingChanges) {
+        const entry = entries.find(e => e.id === entryId);
+        if (entry && onInlineUpdate) {
+          await onInlineUpdate({ ...entry, ...pendingChanges[entryId] });
+        }
+      }
+      setPendingChanges({});
+    } catch (err) {
+      console.error("Update failed", err);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   const thCls = "border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[10px] bg-slate-100 sticky top-0 z-[100] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
-  const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[10px] text-slate-800 font-bold leading-tight align-top bg-white transition-colors group-hover:bg-blue-50/50 overflow-hidden break-words";
+  // Removed overflow-hidden from tdCls to fix dropdown clipping
+  const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[10px] text-slate-800 font-bold leading-tight align-top bg-white transition-colors group-hover:bg-blue-50/50 break-words";
   const labelCls = "text-[9px] font-black text-emerald-700 mr-1 shrink-0";
   const valCls = "text-[9px] font-bold text-slate-900";
+
+  const hasChanges = Object.keys(pendingChanges).length > 0;
 
   return (
     <div id="section-correspondence-register" className="w-full space-y-4 animate-premium-page relative">
@@ -182,6 +208,16 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
           </div>
         </div>
         <div className="flex items-center gap-2">
+           {hasChanges && (
+             <button 
+              onClick={saveAllChanges}
+              disabled={isUpdating}
+              className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-black text-[11px] flex items-center gap-2 hover:shadow-xl hover:scale-105 active:scale-95 transition-all animate-in zoom-in-95 duration-300 border border-emerald-400 shadow-lg shadow-emerald-200/50"
+             >
+               {isUpdating ? <Clock size={16} className="animate-spin" /> : <Save size={16} />}
+               আপডেট করুন {toBengaliDigits(Object.keys(pendingChanges).length)} টি এন্ট্রি
+             </button>
+           )}
            <button onClick={() => window.print()} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-black text-[11px] flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95"><Printer size={16} /> প্রিন্ট</button>
         </div>
       </div>
@@ -199,9 +235,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             <col className="w-[60px]" />  {/* প্রেরিত অনুচ্ছেদ */}
             <col className="w-[85px]" />  {/* জড়িত টাকা */}
             <col className="w-[60px]" />  {/* অনলাইনে প্রাপ্তি */}
-            <col className="w-[145px]" /> {/* গ্রহণ ও উপস্থাপন (Reduced for fit) */}
+            <col className="w-[145px]" /> {/* গ্রহণ ও উপস্থাপন */}
             <col className="w-[135px]" /> {/* জারিপত্র নং ও তারিখ */}
-            <col className="w-[50px]" />  {/* মন্তব্য (Minimized) */}
+            <col className="w-[50px]" />  {/* মন্তব্য */}
           </colgroup>
           <thead>
             <tr>
@@ -219,7 +255,14 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             </tr>
           </thead>
           <tbody>
-            {entries.length > 0 ? entries.map((entry, idx) => (
+            {entries.length > 0 ? entries.map((entry, idx) => {
+              const pending = pendingChanges[entry.id] || {};
+              const currentPresDate = pending.presentationDate !== undefined ? pending.presentationDate : (entry.presentationDate || '');
+              const currentPresName = pending.presentedToName !== undefined ? pending.presentedToName : (entry.presentedToName || '');
+              const currentIssueNo = pending.issueLetterNo !== undefined ? pending.issueLetterNo : (entry.issueLetterNo || '');
+              const currentIssueDate = pending.issueLetterDate !== undefined ? pending.issueLetterDate : (entry.issueLetterDate || '');
+              
+              return (
               <tr key={entry.id} className="group transition-all">
                 <td className={tdCls + " text-center font-black"}>{toBengaliDigits(idx + 1)}</td>
                 <td className={tdCls}>{entry.description}</td>
@@ -250,13 +293,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                 </td>
                 <td className={tdCls}>
                    <div className="space-y-2">
-                      <div className="p-1.5 bg-slate-50 border border-slate-100 rounded-lg relative overflow-hidden">
+                      <div className="p-1.5 bg-slate-50 border border-slate-100 rounded-lg relative">
                          <div className="text-[8px] font-black text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1"><Inbox size={8} /> গ্রহণকারী</div>
                          <div className="font-black text-slate-900 text-[9px] leading-tight truncate">{entry.receiverName || '-'}</div>
                          <div className="text-[8px] text-slate-500 font-bold">{toBengaliDigits(entry.receivedDate)}</div>
                       </div>
 
-                      <div className="p-1.5 bg-blue-50/50 border border-blue-100 rounded-lg space-y-1.5">
+                      <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.presentationDate || pending.presentedToName ? 'bg-blue-600/10 border-blue-400 ring-2 ring-blue-50' : 'bg-blue-50/50 border-blue-100'}`}>
                          <div className="text-[8px] font-black text-blue-700 uppercase tracking-tighter flex items-center gap-1"><UserCheck size={8} /> উপস্থাপন</div>
                          <div className="space-y-1">
                            <div className="flex flex-col gap-0.5">
@@ -264,15 +307,15 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                               <input 
                                 type="date" 
                                 className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[9px] font-bold outline-none focus:border-blue-400 bg-white" 
-                                value={entry.presentationDate || ''} 
-                                onChange={e => handleInlineUpdate(entry, 'presentationDate', e.target.value)}
+                                value={currentPresDate} 
+                                onChange={e => handleInlineChange(entry.id, 'presentationDate', e.target.value)}
                               />
                            </div>
                            <div className="flex flex-col gap-0.5">
                               <span className="text-[7px] font-black text-slate-400 uppercase">বরাবর</span>
                               <PremiumInlineSelect 
-                                value={entry.presentedToName || ''} 
-                                onSelect={val => handleInlineUpdate(entry, 'presentedToName', val)}
+                                value={currentPresName} 
+                                onSelect={val => handleInlineChange(entry.id, 'presentedToName', val)}
                               />
                            </div>
                          </div>
@@ -280,7 +323,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                    </div>
                 </td>
                 <td className={tdCls}>
-                   <div className="p-1.5 bg-amber-50/50 border border-amber-100 rounded-lg space-y-1.5">
+                   <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.issueLetterNo || pending.issueLetterDate ? 'bg-amber-600/10 border-amber-400 ring-2 ring-amber-50' : 'bg-amber-50/50 border-amber-100'}`}>
                       <div className="text-[8px] font-black text-amber-700 uppercase tracking-tighter flex items-center gap-1"><Send size={8} /> জারিপত্র</div>
                       <div className="space-y-1">
                         <div className="flex flex-col gap-0.5">
@@ -289,8 +332,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                             type="text" 
                             placeholder="নং"
                             className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[9px] font-bold outline-none focus:border-amber-400 bg-white" 
-                            value={entry.issueLetterNo || ''} 
-                            onChange={e => handleInlineUpdate(entry, 'issueLetterNo', toBengaliDigits(e.target.value))}
+                            value={currentIssueNo} 
+                            onChange={e => handleInlineChange(entry.id, 'issueLetterNo', toBengaliDigits(e.target.value))}
                           />
                         </div>
                         <div className="flex flex-col gap-0.5">
@@ -298,8 +341,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                           <input 
                             type="date" 
                             className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[9px] font-bold outline-none focus:border-amber-400 bg-white" 
-                            value={entry.issueLetterDate || ''} 
-                            onChange={e => handleInlineUpdate(entry, 'issueLetterDate', e.target.value)}
+                            value={currentIssueDate} 
+                            onChange={e => handleInlineChange(entry.id, 'issueLetterDate', e.target.value)}
                           />
                         </div>
                       </div>
@@ -315,16 +358,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                    )}
                 </td>
               </tr>
-            )) : (
-              <tr>
-                <td colSpan={11} className="py-20 text-center bg-white">
-                   <div className="flex flex-col items-center gap-3 opacity-30">
-                      <Mail size={40} />
-                      <p className="text-sm font-black text-slate-900 tracking-widest">রেজিস্টার খালি</p>
-                   </div>
-                </td>
-              </tr>
-            )}
+            )})}
           </tbody>
           <tfoot className="sticky bottom-0 z-[110]">
             <tr className="bg-slate-900 text-white font-black text-[10px] h-9 shadow-[0_-5px_15px_rgba(0,0,0,0.2)]">
