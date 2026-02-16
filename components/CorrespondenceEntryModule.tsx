@@ -4,7 +4,7 @@ import {
   Inbox, Computer, User, CheckCircle2, Layout, Sparkles, 
   ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send
 } from 'lucide-react';
-import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
+import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { getCycleForDate } from '../utils/cycleHelper';
 
 /**
@@ -14,6 +14,109 @@ import { getCycleForDate } from '../utils/cycleHelper';
  * CorrespondenceEntryModule - প্রাপ্ত চিঠিপত্র এন্ট্রি মডিউল
  * AI MUST NOT change existing styles, colors, or core logic without permission.
  */
+
+/**
+ * Smart Segmented Date Input Component
+ * Handles auto-padding, max limits, smart year expansion, and auto-focus jump.
+ */
+const SegmentedInput = ({ 
+  id, icon: Icon, label, color, dayValue, monthValue, yearValue, 
+  daySetter, monthSetter, yearSetter, dayRef, monthRef, yearRef, 
+  isLayoutEditable, originalValue, onDateSelect 
+}: any) => {
+  
+  const handleSegmentChange = (val: string, type: 'day'|'month'|'year', setter: (v: string) => void, nextRef?: React.RefObject<HTMLInputElement>) => {
+    const cleaned = toEnglishDigits(val).replace(/[^0-9]/g, '');
+    const num = parseInt(cleaned);
+
+    if (type === 'day') {
+      if (cleaned.length <= 2) {
+        if (cleaned.length > 0 && num > 31) return;
+        setter(toBengaliDigits(cleaned));
+        if (cleaned.length === 2 || (cleaned.length === 1 && num > 3)) nextRef?.current?.focus();
+      }
+    } else if (type === 'month') {
+      if (cleaned.length <= 2) {
+        if (cleaned.length > 0 && num > 12) return;
+        setter(toBengaliDigits(cleaned));
+        if (cleaned.length === 2 || (cleaned.length === 1 && num > 1)) nextRef?.current?.focus();
+      }
+    } else if (type === 'year') {
+      if (cleaned.length <= 4) setter(toBengaliDigits(cleaned));
+    }
+  };
+
+  const handleSegmentBlur = (val: string, type: 'day'|'month'|'year', setter: (v: string) => void) => {
+    const eng = toEnglishDigits(val);
+    if (!eng) return;
+    if (type === 'year') {
+      if (eng.length === 1) setter(toBengaliDigits('200' + eng));
+      else if (eng.length === 2) setter(toBengaliDigits('20' + eng));
+    } else {
+      if (eng.length === 1) setter(toBengaliDigits('0' + eng));
+    }
+  };
+
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
+
+  const IDBadge = ({ id }: { id: string }) => {
+    const [copied, setCopied] = useState(false);
+    if (!isLayoutEditable) return null;
+    const handleCopy = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
+    return (
+      <span onClick={handleCopy} className={`absolute -top-3 left-2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 z-[300] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'bg-emerald-600' : ''}`}>
+        {copied ? 'COPIED!' : `#${id}`}
+      </span>
+    );
+  };
+
+  return (
+    <div className={`p-5 rounded-2xl border transition-all hover:shadow-lg relative min-w-0 bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`}>
+      <IDBadge id={id} />
+      <label className="block text-[13px] font-black text-slate-700 mb-2 flex items-center gap-1.5 truncate">
+        <Icon size={14} className={`text-${color}-600 shrink-0`} /> <span>{label}</span>
+      </label>
+      <div className={`relative w-full h-[55px] flex items-center border rounded-2xl bg-white transition-all duration-300 shadow-sm border-slate-200 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50`}>
+        <div className="flex items-center w-full px-4 h-full gap-2">
+          <div className="relative flex-1 h-full flex items-center justify-center gap-1 shrink-0">
+            <input 
+              ref={dayRef} type="text" className="w-7 bg-transparent border-none outline-none font-black text-slate-800 text-[14px] p-0 text-center placeholder-slate-300"
+              value={dayValue} onChange={e => handleSegmentChange(e.target.value, 'day', daySetter, monthRef)}
+              onBlur={(e) => handleSegmentBlur(e.target.value, 'day', daySetter)} placeholder="..."
+            />
+            <span className="text-slate-300 font-black text-[14px]">/</span>
+            <input 
+              ref={monthRef} type="text" className="w-7 bg-transparent border-none outline-none font-black text-slate-800 text-[14px] p-0 text-center placeholder-slate-300"
+              value={monthValue} onChange={e => handleSegmentChange(e.target.value, 'month', monthSetter, yearRef)}
+              onBlur={(e) => handleSegmentBlur(e.target.value, 'month', monthSetter)} placeholder="..."
+            />
+            <span className="text-slate-300 font-black text-[14px]">/</span>
+            <input 
+              ref={yearRef} type="text" className="w-12 bg-transparent border-none outline-none font-black text-slate-800 text-[14px] p-0 text-center placeholder-slate-300"
+              value={yearValue} onChange={e => handleSegmentChange(e.target.value, 'year', yearSetter)}
+              onBlur={(e) => handleSegmentBlur(e.target.value, 'year', yearSetter)} placeholder="...."
+            />
+          </div>
+          <div className="flex items-center ml-auto relative group shrink-0">
+            <Calendar 
+              size={16} className="text-slate-400 cursor-pointer hover:text-emerald-500 transition-colors" 
+              onClick={() => hiddenInputRef.current?.showPicker()}
+            />
+            <input 
+              ref={hiddenInputRef} type="date" className="absolute inset-0 opacity-0 w-6 h-6 cursor-pointer pointer-events-auto"
+              value={originalValue || ''} onChange={e => onDateSelect(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface CorrespondenceEntryModuleProps {
   onAdd: (data: any) => void;
@@ -48,7 +151,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     receiptDate: '',
     digitalFileNo: '',
     presentationDate: '',
-    // Added presentedToName to match reporting needs
     presentedToName: '',
     sentParaCount: '',
     receiverName: '',
@@ -58,21 +160,46 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     issueLetterDate: ''
   });
 
+  // Date segments state for each date field
+  const [ld, setLd] = useState(''), [lm, setLm] = useState(''), [ly, setLy] = useState('');
+  const [dd, setDd] = useState(''), [dm, setDm] = useState(''), [dy, setDy] = useState('');
+  const [rd, setRd] = useState(''), [rm, setRm] = useState(''), [ry, setRy] = useState('');
+  const [rcd, setRcd] = useState(''), [rcm, setRcm] = useState(''), [rcy, setRcy] = useState('');
+  const [isd, setIsd] = useState(''), [ism, setIsm] = useState(''), [isy, setIsy] = useState('');
+
+  // Refs for auto-focus jump logic
+  const ldRef = useRef<HTMLInputElement>(null), lmRef = useRef<HTMLInputElement>(null), lyRef = useRef<HTMLInputElement>(null);
+  const ddRef = useRef<HTMLInputElement>(null), dmRef = useRef<HTMLInputElement>(null), dyRef = useRef<HTMLInputElement>(null);
+  const rdRef = useRef<HTMLInputElement>(null), rmRef = useRef<HTMLInputElement>(null), ryRef = useRef<HTMLInputElement>(null);
+  const rcdRef = useRef<HTMLInputElement>(null), rcmRef = useRef<HTMLInputElement>(null), rcyRef = useRef<HTMLInputElement>(null);
+  const isdRef = useRef<HTMLInputElement>(null), ismRef = useRef<HTMLInputElement>(null), isyRef = useRef<HTMLInputElement>(null);
+
   const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
   const [receiverSuggestions, setReceiverSuggestions] = useState<string[]>([]);
   const [showReceiverDropdown, setShowReceiverDropdown] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const receiverRef = useRef<HTMLDivElement>(null);
 
-  // Load receiver names from localStorage on component mount
   useEffect(() => {
     const savedNames = localStorage.getItem('ledger_correspondence_receivers');
-    if (savedNames) {
-      setReceiverSuggestions(JSON.parse(savedNames));
-    }
+    if (savedNames) setReceiverSuggestions(JSON.parse(savedNames));
   }, []);
 
-  // Initialize for Edit Mode
+  const formatDateSegments = (d: string, m: string, y: string) => {
+    if (!d || !m || !y || y.length < 4) return '';
+    return `${toEnglishDigits(y)}-${toEnglishDigits(m).padStart(2, '0')}-${toEnglishDigits(d).padStart(2, '0')}`;
+  };
+
+  const setSegmentsFromDate = (date: string, sd: any, sm: any, sy: any) => {
+    if (!date) return;
+    const parts = date.split('-');
+    if (parts.length === 3) {
+      sd(toBengaliDigits(parts[2]));
+      sm(toBengaliDigits(parts[1]));
+      sy(toBengaliDigits(parts[0]));
+    }
+  };
+
   useEffect(() => {
     if (initialEntry) {
       setFormData({
@@ -97,6 +224,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         issueLetterDate: initialEntry.issueLetterDate || ''
       });
       
+      setSegmentsFromDate(initialEntry.letterDate, setLd, setLm, setLy);
+      setSegmentsFromDate(initialEntry.diaryDate, setDd, setDm, setDy);
+      setSegmentsFromDate(initialEntry.receiptDate, setRd, setRm, setRy);
+      setSegmentsFromDate(initialEntry.receivedDate, setRcd, setRcm, setRcy);
+      setSegmentsFromDate(initialEntry.issueLetterDate, setIsd, setIsm, setIsy);
+
       setRawInputs({
         totalParas: toBengaliDigits(initialEntry.totalParas),
         totalAmount: toBengaliDigits(initialEntry.totalAmount),
@@ -105,21 +238,31 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     }
   }, [initialEntry]);
 
-  // Calculate Cycle automatically when diaryDate changes
-  useEffect(() => {
-    if (formData.diaryDate) {
+  // Sync individual segment states to the main formData object
+  useEffect(() => { setFormData(prev => ({ ...prev, letterDate: formatDateSegments(ld, lm, ly) })); }, [ld, lm, ly]);
+  useEffect(() => { 
+    const date = formatDateSegments(dd, dm, dy);
+    setFormData(prev => ({ ...prev, diaryDate: date }));
+    if (date) {
       try {
-        const cycle = getCycleForDate(new Date(formData.diaryDate));
+        const cycle = getCycleForDate(new Date(date));
         setCalculatedCycle(toBengaliDigits(cycle.label));
-      } catch (e) {
-        setCalculatedCycle('');
-      }
-    } else {
-      setCalculatedCycle('');
-    }
-  }, [formData.diaryDate]);
+      } catch (e) { setCalculatedCycle(''); }
+    } else { setCalculatedCycle(''); }
+  }, [dd, dm, dy]);
+  useEffect(() => { setFormData(prev => ({ ...prev, receiptDate: formatDateSegments(rd, rm, ry) })); }, [rd, rm, ry]);
+  useEffect(() => { setFormData(prev => ({ ...prev, receivedDate: formatDateSegments(rcd, rcm, rcy) })); }, [rcd, rcm, rcy]);
+  useEffect(() => { setFormData(prev => ({ ...prev, issueLetterDate: formatDateSegments(isd, ism, isy) })); }, [isd, ism, isy]);
 
-  // Handle click outside for dropdown
+  const handleManualDateSelect = (iso: string, type: string) => {
+    if (!iso) return;
+    if (type === 'letter') setSegmentsFromDate(iso, setLd, setLm, setLy);
+    else if (type === 'diary') setSegmentsFromDate(iso, setDd, setDm, setDy);
+    else if (type === 'receipt') setSegmentsFromDate(iso, setRd, setRm, setRy);
+    else if (type === 'received') setSegmentsFromDate(iso, setRcd, setRcm, setRcy);
+    else if (type === 'issue') setSegmentsFromDate(iso, setIsd, setIsm, setIsy);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (receiverRef.current && !receiverRef.current.contains(event.target as Node)) {
@@ -138,23 +281,14 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Save receiver name if it's new
     if (formData.receiverName.trim()) {
       const updatedNames = Array.from(new Set([formData.receiverName.trim(), ...receiverSuggestions]));
       setReceiverSuggestions(updatedNames);
       localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updatedNames));
     }
-
-    // Trigger Success instantly
     setIsSuccess(true);
-    
-    // Call onAdd to notify parent app and save to database
     onAdd(formData);
-
-    setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    setTimeout(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, 100);
   };
 
   const IDBadge = ({ id }: { id: string }) => {
@@ -164,7 +298,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       e.stopPropagation();
       navigator.clipboard.writeText(id);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      setTimeout(() => setCopied(false), 2000);
     };
     return (
       <span onClick={handleCopy} title="Click to copy ID" className={`absolute -top-3 left-2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 z-[300] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'ring-2 ring-emerald-500 bg-emerald-600' : ''}`}>
@@ -254,26 +388,26 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               </select>
             </div>
 
-            {/* Field 4 */}
+            {/* Field 4.ক */}
             <div className={`${colWrapper} border-amber-100`}>
-              <IDBadge id="corr-field-letter-no-date" />
-              <label className={labelCls}><span className={numBadge}>৪</span> <Hash size={14} className="text-amber-600" /> পত্র নং ও তারিখ:</label>
-              <div className="flex items-center w-full h-[52px] bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:bg-white focus-within:border-amber-500 focus-within:ring-4 focus-within:ring-amber-50 transition-all shadow-sm">
-                <input 
-                  type="text" placeholder="নং" 
-                  className="flex-[2] min-w-0 h-full px-3 bg-transparent border-none font-bold outline-none text-[14px]" 
-                  value={formData.letterNo} 
-                  onChange={e => setFormData({...formData, letterNo: toBengaliDigits(e.target.value)})} 
-                />
-                <div className="w-[1.5px] h-6 bg-slate-200 shrink-0"></div>
-                <input 
-                  type="date" 
-                  className="flex-[3] min-w-0 h-full px-2 bg-transparent border-none font-bold outline-none text-[13px] text-slate-700" 
-                  value={formData.letterDate} 
-                  onChange={e => setFormData({...formData, letterDate: e.target.value})} 
-                />
-              </div>
+              <IDBadge id="corr-field-4a" />
+              <label className={labelCls}><span className={numBadge}>৪.ক</span> <Hash size={14} className="text-amber-600" /> পত্র নং:</label>
+              <input 
+                type="text" className={inputCls} 
+                value={formData.letterNo} onChange={e => setFormData({...formData, letterNo: toBengaliDigits(e.target.value)})} 
+                placeholder="নং লিখুন"
+              />
             </div>
+
+            {/* Field 4.খ - Smart Segmented Date */}
+            <SegmentedInput 
+              id="corr-field-4b" icon={Calendar} label="৪.খ পত্রের তারিখ" color="amber" 
+              dayValue={ld} monthValue={lm} yearValue={ly} 
+              daySetter={setLd} monthSetter={setLm} yearSetter={setLy} 
+              dayRef={ldRef} monthRef={lmRef} yearRef={lyRef} 
+              isLayoutEditable={isLayoutEditable} originalValue={formData.letterDate} 
+              onDateSelect={(iso: string) => handleManualDateSelect(iso, 'letter')} 
+            />
 
             {/* Field 5 */}
             <div className={`${colWrapper} border-purple-100`}>
@@ -303,48 +437,48 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                <h4 className={sectionTitleCls}>অত্র অফিসের তথ্য</h4>
             </div>
 
-            {/* Field 7 */}
+            {/* Field 7.ক */}
             <div className={`${colWrapper} border-emerald-100`}>
-              <IDBadge id="corr-field-diary" />
-              <label className={labelCls}><span className={numBadge}>৭</span> <BookOpen size={14} className="text-emerald-600" /> ডায়েরি নং ও তারিখ:</label>
-              <div className="space-y-2">
-                <div className="flex items-center w-full h-[52px] bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-50 transition-all shadow-sm">
-                  <input 
-                    type="text" placeholder="নং" 
-                    className="flex-[2] min-w-0 h-full px-3 bg-transparent border-none font-bold outline-none text-[14px]" 
-                    value={formData.diaryNo} 
-                    onChange={e => setFormData({...formData, diaryNo: toBengaliDigits(e.target.value)})} 
-                  />
-                  <div className="w-[1.5px] h-6 bg-slate-200 shrink-0"></div>
-                  <input 
-                    type="date" 
-                    className="flex-[3] min-w-0 h-full px-2 bg-transparent border-none font-bold outline-none text-[13px] text-slate-700" 
-                    value={formData.diaryDate} 
-                    onChange={e => setFormData({...formData, diaryDate: e.target.value})} 
-                  />
-                </div>
-                {calculatedCycle && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 w-fit animate-in slide-in-from-top-1 duration-300">
-                    <CalendarRange size={12} />
-                    <span className="text-[10px] font-black uppercase tracking-tighter">সাইকেল: {calculatedCycle}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Field 8 */}
-            <div className={`${colWrapper} border-sky-100`}>
-              <IDBadge id="corr-field-branch-receipt" />
-              <label className={labelCls}><span className={numBadge}>৮</span> <Inbox size={14} className="text-sky-600" /> শাখায় প্রাপ্তির তারিখ:</label>
+              <IDBadge id="corr-field-7a" />
+              <label className={labelCls}><span className={numBadge}>৭.ক</span> <BookOpen size={14} className="text-emerald-600" /> ডায়েরি নং:</label>
               <input 
-                type="date" className={inputCls} 
-                value={formData.receiptDate} onChange={e => setFormData({...formData, receiptDate: e.target.value})}
+                type="text" className={inputCls} 
+                value={formData.diaryNo} onChange={e => setFormData({...formData, diaryNo: toBengaliDigits(e.target.value)})} 
+                placeholder="নং লিখুন"
               />
             </div>
 
+            {/* Field 7.খ - Smart Segmented Date */}
+            <div className="space-y-2">
+              <SegmentedInput 
+                id="corr-field-7b" icon={Calendar} label="৭.খ ডায়েরি তারিখ" color="emerald" 
+                dayValue={dd} monthValue={dm} yearValue={dy} 
+                daySetter={setDd} monthSetter={setDm} yearSetter={setDy} 
+                dayRef={ddRef} monthRef={dmRef} yearRef={dyRef} 
+                isLayoutEditable={isLayoutEditable} originalValue={formData.diaryDate} 
+                onDateSelect={(iso: string) => handleManualDateSelect(iso, 'diary')} 
+              />
+              {calculatedCycle && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 w-fit animate-in slide-in-from-top-1 duration-300 ml-2">
+                  <CalendarRange size={12} />
+                  <span className="text-[10px] font-black uppercase tracking-tighter">সাইকেল: {calculatedCycle}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Field 8 - Smart Segmented Date */}
+            <SegmentedInput 
+              id="corr-field-8" icon={Inbox} label="৮ শাখায় প্রাপ্তির তারিখ" color="sky" 
+              dayValue={rd} monthValue={rm} yearValue={ry} 
+              daySetter={setRd} monthSetter={setRm} yearSetter={setRy} 
+              dayRef={rdRef} monthRef={rmRef} yearRef={ryRef} 
+              isLayoutEditable={isLayoutEditable} originalValue={formData.receiptDate} 
+              onDateSelect={(iso: string) => handleManualDateSelect(iso, 'receipt')} 
+            />
+
             {/* Field 9 */}
             <div className={`${colWrapper} border-indigo-100`}>
-              <IDBadge id="corr-field-digital-no" />
+              <IDBadge id="corr-field-9" />
               <label className={labelCls}><span className={numBadge}>৯</span> <Computer size={14} className="text-indigo-600" /> ডিজিটাল নথি নং-:</label>
               <input 
                 type="text" className={inputCls} 
@@ -353,9 +487,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               />
             </div>
 
-            {/* Field 10 (Previously 11) */}
+            {/* Field 10 */}
             <div className={`${colWrapper} border-slate-200`} ref={receiverRef}>
-              <IDBadge id="corr-field-receiver" />
+              <IDBadge id="corr-field-10" />
               <label className={labelCls}><span className={numBadge}>১০</span> <User size={14} className="text-slate-600" /> গৃহীতার নাম:</label>
               <div className="relative group">
                 <input 
@@ -402,19 +536,19 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               </div>
             </div>
 
-            {/* Field 11 (Previously 12) */}
-            <div className={`${colWrapper} border-blue-100`}>
-              <IDBadge id="corr-field-received-date" />
-              <label className={labelCls}><span className={numBadge}>১১</span> <Calendar size={14} className="text-blue-600" /> গ্রহণের তারিখ:</label>
-              <input 
-                type="date" className={inputCls} 
-                value={formData.receivedDate} onChange={e => setFormData({...formData, receivedDate: e.target.value})}
-              />
-            </div>
+            {/* Field 11 - Smart Segmented Date */}
+            <SegmentedInput 
+              id="corr-field-11" icon={Calendar} label="১১ গ্রহণের তারিখ" color="blue" 
+              dayValue={rcd} monthValue={rcm} yearValue={rcy} 
+              daySetter={setRcd} monthSetter={setRcm} yearSetter={setRcy} 
+              dayRef={rcdRef} monthRef={rcmRef} yearRef={rcyRef} 
+              isLayoutEditable={isLayoutEditable} originalValue={formData.receivedDate} 
+              onDateSelect={(iso: string) => handleManualDateSelect(iso, 'received')} 
+            />
 
-            {/* Field 12 (Previously 13) */}
+            {/* Field 12 */}
             <div className={`${colWrapper} border-emerald-100`}>
-              <IDBadge id="corr-field-is-online" />
+              <IDBadge id="corr-field-12" />
               <label className={labelCls}><span className={numBadge}>১২</span> <Computer size={14} className="text-emerald-600" /> অনলাইনে প্রাপ্তি:</label>
               <div className="flex gap-4 h-[52px] items-center px-2">
                 <button 
@@ -427,6 +561,33 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 >না</button>
               </div>
             </div>
+
+            {/* --- Section: জারিপত্র এন্ট্রি --- */}
+            <div className={sectionHeaderCls}>
+               <div className="w-1.5 h-6 bg-amber-600 rounded-full"></div>
+               <h4 className={sectionTitleCls}>জারিপত্র এন্ট্রি (ঐচ্ছিক)</h4>
+            </div>
+
+            {/* Field 13.ক */}
+            <div className={`${colWrapper} border-amber-100`}>
+              <IDBadge id="corr-field-13a" />
+              <label className={labelCls}><span className={numBadge}>১৩.ক</span> <Send size={14} className="text-amber-600" /> জারিপত্র নং:</label>
+              <input 
+                type="text" className={inputCls} 
+                value={formData.issueLetterNo} onChange={e => setFormData({...formData, issueLetterNo: toBengaliDigits(e.target.value)})} 
+                placeholder="নং লিখুন"
+              />
+            </div>
+
+            {/* Field 13.খ - Smart Segmented Date */}
+            <SegmentedInput 
+              id="corr-field-13b" icon={Calendar} label="১৩.খ জারিপত্রের তারিখ" color="amber" 
+              dayValue={isd} monthValue={ism} yearValue={isy} 
+              daySetter={setIsd} monthSetter={setIsm} yearSetter={setIsy} 
+              dayRef={isdRef} monthRef={ismRef} yearRef={isyRef} 
+              isLayoutEditable={isLayoutEditable} originalValue={formData.issueLetterDate} 
+              onDateSelect={(iso: string) => handleManualDateSelect(iso, 'issue')} 
+            />
 
           </div>
         </fieldset>
