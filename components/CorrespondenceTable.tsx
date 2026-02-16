@@ -1,5 +1,5 @@
+
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-/* Added CalendarDays to imports */
 import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles, Save, CalendarSearch, LayoutGrid, CalendarDays } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper';
@@ -304,7 +304,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
       e.stopPropagation();
       navigator.clipboard.writeText(id);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      setTimeout(() => setCopied(false), 2000);
     };
     return (
       <span onClick={handleCopy} className={`absolute -top-3 left-2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 z-[300] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'ring-2 ring-emerald-500 bg-emerald-600' : ''}`}>
@@ -386,7 +386,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
         </div>
       </div>
 
-      {/* Replicated Filter UI for Correspondence */}
+      {/* Filter UI for Correspondence */}
       {showFilters && (
         <div id="correspondence-filters" className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -694,13 +694,27 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                             onChange={e => handleInlineChange(entry.id, 'issueLetterNo', toBengaliDigits(e.target.value))}
                           />
                         </div>
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-[8px] font-black text-slate-400 uppercase">তারিখ</span>
-                          <SegmentedTableDateInput 
-                            value={currentIssueDate} 
-                            accent="amber"
-                            onChange={val => handleInlineChange(entry.id, 'issueLetterDate', val)} 
-                          />
+                        <div className="flex items-center justify-between">
+                          <span className="text-[8px] font-black text-slate-400 uppercase flex items-center gap-1">তারিখ</span>
+                          <div className="flex items-center gap-1.5">
+                             {currentIssueDate && <span className="text-[8px] font-black text-amber-600">{toBengaliDigits(currentIssueDate.split('-').reverse().join('/'))}</span>}
+                             <div className="relative flex items-center h-3 w-3">
+                                <Calendar 
+                                  size={11} 
+                                  className="text-amber-500 cursor-pointer hover:text-amber-700 transition-colors" 
+                                  onClick={(e) => {
+                                    const input = (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement);
+                                    if (input) input.showPicker();
+                                  }}
+                                />
+                                <input 
+                                  type="date" 
+                                  className="absolute inset-0 opacity-0 w-3 h-3 cursor-pointer"
+                                  value={currentIssueDate}
+                                  onChange={e => handleInlineChange(entry.id, 'issueLetterDate', e.target.value)}
+                                />
+                             </div>
+                          </div>
                         </div>
                       </div>
                    </div>
