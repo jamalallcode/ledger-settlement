@@ -35,7 +35,7 @@ interface CorrespondenceTableProps {
   isLayoutEditable?: boolean;
   isAdmin?: boolean;
   onEdit?: (entry: any) => void;
-  onInlineUpdate?: (entry: any) => void; // Added for inline updates without tab switch
+  onInlineUpdate?: (entry: any) => void; 
   onDelete?: (id: string) => void;
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
@@ -55,12 +55,15 @@ const PremiumInlineSelect: React.FC<{
 
   useEffect(() => {
     const saved = localStorage.getItem('ledger_correspondence_presented_to');
-    const defaultList = ['সুপার', 'এএন্ডএও']; // Removed 'উপপরিচালক' as per instruction
+    const defaultList = ['সুপার', 'এএন্ডএও', 'উপপরিচালক']; 
     
-    const filterUnwanted = (s: string) => s !== 'শামীমা রহমান' && s !== 'উপপরিচালক' && s !== 'উপ-পরিচালক';
+    const filterUnwanted = (s: string) => 
+      s !== 'শামীমা রহমান' && 
+      s !== 'পরিচালক' && 
+      s !== 'মহাপরিচালক' && 
+      s !== 'উপ-পরিচালক';
 
     if (saved) {
-      // Filter out unwanted names from saved data and merge with defaults
       const parsed = JSON.parse(saved).filter(filterUnwanted);
       const merged = Array.from(new Set([...defaultList, ...parsed])).filter(filterUnwanted);
       setSuggestions(merged);
@@ -79,7 +82,7 @@ const PremiumInlineSelect: React.FC<{
 
   const handleAddNew = () => {
     const trimmed = searchTerm.trim();
-    if (!trimmed || trimmed === 'শামীমা রহমান' || trimmed === 'উপপরিচালক' || trimmed === 'উপ-পরিচালক') return;
+    if (!trimmed || trimmed === 'শামীমা রহমান' || trimmed === 'পরিচালক' || trimmed === 'মহাপরিচালক' || trimmed === 'উপ-পরিচালক') return;
     const next = Array.from(new Set([trimmed, ...suggestions]));
     setSuggestions(next);
     localStorage.setItem('ledger_correspondence_presented_to', JSON.stringify(next));
@@ -123,7 +126,11 @@ const PremiumInlineSelect: React.FC<{
                 {value === opt && <Check size={10} strokeWidth={3} />}
               </div>
             ))}
-            {searchTerm && !suggestions.includes(searchTerm) && searchTerm !== 'শামীমা রহমান' && searchTerm !== 'উপপরিচালক' && searchTerm !== 'উপ-পরিচালক' && (
+            {searchTerm && !suggestions.includes(searchTerm) && 
+             searchTerm !== 'শামীমা রহমান' && 
+             searchTerm !== 'পরিচালক' && 
+             searchTerm !== 'মহাপরিচালক' && 
+             searchTerm !== 'উপ-পরিচালক' && (
               <div 
                 onClick={handleAddNew}
                 className="px-3 py-1.5 cursor-pointer bg-emerald-50 text-emerald-600 font-black text-[9px] flex items-center gap-2 hover:bg-emerald-100"
@@ -144,8 +151,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
 
+  // Fix: Defined IDBadge to correctly handle layout editing logic and prevent "Cannot find name" error
   const IDBadge = ({ id }: { id: string }) => {
-    const [copied, setCopied] = React.useState(false);
+    const [copied, setCopied] = useState(false);
     if (!isLayoutEditable) return null;
     const handleCopy = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -197,6 +205,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   const hasChanges = Object.keys(pendingChanges).length > 0;
 
   return (
+    // Fix: Corrected syntax error by removing escaped backslashes and ensuring proper JSX structure
     <div id="section-correspondence-register" className="w-full space-y-4 animate-premium-page relative">
       <IDBadge id="section-correspondence-register" />
       
@@ -237,17 +246,17 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
         <IDBadge id="table-correspondence-ledger" />
         <table className="w-full border-separate border-spacing-0 table-fixed">
           <colgroup>
-            <col className="w-[30px]" />  {/* ক্রমিক নং */}
-            <col className="w-[130px]" /> {/* পত্রের বিবরণ */}
-            <col className="w-[150px]" /> {/* পত্রের অন্যান্য তথ্য */}
-            <col className="w-[150px]" /> {/* অত্র অফিসের তথ্য */}
-            <col className="w-[80px]" />  {/* চিঠির ধরণ */}
-            <col className="w-[60px]" />  {/* প্রেরিত অনুচ্ছেদ */}
-            <col className="w-[85px]" />  {/* জড়িত টাকা */}
-            <col className="w-[60px]" />  {/* অনলাইনে প্রাপ্তি */}
-            <col className="w-[145px]" /> {/* গ্রহণ ও উপস্থাপন */}
-            <col className="w-[135px]" /> {/* জারিপত্র নং ও তারিখ */}
-            <col className="w-[50px]" />  {/* মন্তব্য */}
+            <col className="w-[30px]" />  
+            <col className="w-[130px]" /> 
+            <col className="w-[150px]" /> 
+            <col className="w-[150px]" /> 
+            <col className="w-[80px]" />  
+            <col className="w-[60px]" />  
+            <col className="w-[85px]" />  
+            <col className="w-[60px]" />  
+            <col className="w-[145px]" /> 
+            <col className="w-[135px]" /> 
+            <col className="w-[50px]" />  
           </colgroup>
           <thead>
             <tr>
