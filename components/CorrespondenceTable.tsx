@@ -120,7 +120,6 @@ const SegmentedTableDateInput: React.FC<{
 
 /**
  * Premium Dropdown Component for Inline Presentation Name Update
- * Fixed: Added smart positioning to prevent overflowing out of the table.
  */
 const PremiumInlineSelect: React.FC<{
   value: string;
@@ -155,7 +154,6 @@ const PremiumInlineSelect: React.FC<{
     if (!isOpen && dropdownRef.current) {
       const rect = dropdownRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
-      // If less than 250px space below, open upwards
       setOpenUp(spaceBelow < 250);
     }
     setIsOpen(!isOpen);
@@ -356,13 +354,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
 
   const thCls = "border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[11px] bg-slate-100 sticky top-0 z-[100] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
   const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-slate-800 font-bold leading-tight align-top bg-white transition-colors group-hover:bg-blue-50/50 break-words";
-  const labelCls = "text-[10px] font-black text-emerald-700 mr-1 shrink-0";
+  const labelCls = "text-[10px] font-black text-emerald-700 shrink-0";
   const valCls = "text-[10px] font-bold text-slate-900";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[48px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
 
   const hasChanges = Object.keys(pendingChanges).length > 0;
 
-  // Helper to format date correctly for display, filtering out zeroed out dates.
+  // Helper to format date correctly for display
   const formatDisplayDate = (iso: string) => {
     if (!iso || iso === '0000-00-00' || iso.startsWith('0000')) return '';
     return toBengaliDigits(iso.split('-').reverse().join('/'));
@@ -601,58 +599,58 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                 <td className={tdCls}>{entry.description}</td>
                 {/* Column 3: পত্রের অন্যান্য তথ্য */}
                 <td className={tdCls}>
-                   <div className="space-y-1">
-                      <div className="flex items-start gap-1">
+                   <div className="space-y-2">
+                      <div className="flex flex-col">
                         <span className={labelCls}>১. শাখার ধরণ:</span> 
-                        <span className={valCls}>{entry.paraType}</span>
+                        <span className={valCls + " pl-3"}>{entry.paraType}</span>
                       </div>
-                      <div className="flex items-start gap-1">
+                      <div className="flex flex-col">
                         <span className={labelCls}>২. পত্রের ধরণ:</span> 
-                        <span className={valCls}>{entry.letterType}</span>
+                        <span className={valCls + " pl-3"}>{entry.letterType}</span>
                       </div>
-                      <div className="flex items-start gap-1">
+                      <div className="flex flex-col">
                         <span className={labelCls}>৩. পত্র নং ও তারিখ:</span> 
-                        <span className={valCls}>{entry.letterNo}, {formatDisplayDate(entry.letterDate)}</span>
+                        <span className={valCls + " pl-3"}>{entry.letterNo}, {formatDisplayDate(entry.letterDate)}</span>
                       </div>
-                      <div className="flex items-start gap-1">
+                      <div className="flex flex-col">
                         <span className={labelCls}>৪. প্রেরিত অনু: সংখ্যা:</span> 
-                        <span className={valCls}>{toBengaliDigits(entry.totalParas)} টি</span>
+                        <span className={valCls + " pl-3"}>{toBengaliDigits(entry.totalParas)} টি</span>
                       </div>
-                      <div className="flex items-start gap-1">
+                      <div className="flex flex-col">
                         <span className={labelCls}>৫. মোট জড়িত টাকা:</span> 
-                        <span className={valCls}>{toBengaliDigits(entry.totalAmount)}</span>
+                        <span className={valCls + " pl-3"}>{toBengaliDigits(entry.totalAmount)}</span>
                       </div>
                    </div>
                 </td>
                 {/* Column 4: অত্র অফিসের তথ্য */}
                 <td className={tdCls}>
-                   <div className="space-y-1">
-                      <div className="flex items-start gap-1">
+                   <div className="space-y-2">
+                      <div className="flex flex-col">
                         <span className={labelCls}>১. ডায়েরি নং ও তারিখ:</span> 
-                        <span className={valCls}>{entry.diaryNo}, {formatDisplayDate(entry.diaryDate)}</span>
+                        <span className={valCls + " pl-3"}>{entry.diaryNo}, {formatDisplayDate(entry.diaryDate)}</span>
                       </div>
-                      <div className="flex items-start gap-1">
+                      <div className="flex flex-col">
                         <span className={labelCls}>২. শাখায় প্রাপ্তির তারিখ:</span> 
-                        <span className={valCls}>{formatDisplayDate(entry.receiptDate)}</span>
+                        <span className={valCls + " pl-3"}>{formatDisplayDate(entry.receiptDate)}</span>
                       </div>
-                      <div className="flex items-start gap-1">
+                      <div className="flex flex-col">
                         <span className={labelCls}>৩. ডিজিটাল নথি নং-:</span> 
-                        <span className={valCls}>{entry.digitalFileNo}</span>
+                        <span className={valCls + " pl-3"}>{entry.digitalFileNo}</span>
                       </div>
-                      <div className="flex items-start gap-1">
+                      <div className="flex flex-col">
                         <span className={labelCls}>৪. গ্রহণের তারিখ:</span> 
-                        <span className={valCls}>{formatDisplayDate(entry.receivedDate)}</span>
+                        <span className={valCls + " pl-3"}>{formatDisplayDate(entry.receivedDate)}</span>
                       </div>
-                      <div className="flex items-start gap-1">
+                      <div className="flex flex-col">
                         <span className={labelCls}>৫. অনলাইনে প্রাপ্তি:</span> 
-                        <span className={valCls}>{entry.isOnline}</span>
+                        <span className={valCls + " pl-3"}>{entry.isOnline}</span>
                       </div>
                    </div>
                 </td>
                 <td className={tdCls}>
                    <div className="space-y-2">
                       <div className="p-1.5 bg-slate-50 border border-slate-100 rounded-lg relative">
-                         <div className="text-[9px] font-black text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1\"><Inbox size={8} /> গ্রহণকারী</div>
+                         <div className="text-[9px] font-black text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1"><Inbox size={8} /> গ্রহণকারী</div>
                          <div className="font-black text-slate-900 text-[10px] leading-tight truncate">{entry.receiverName || '-'}</div>
                          <div className="text-[9px] text-slate-500 font-bold">{formatDisplayDate(entry.receivedDate)}</div>
                       </div>
