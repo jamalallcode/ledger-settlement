@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles, Save } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
@@ -56,11 +55,15 @@ const PremiumInlineSelect: React.FC<{
 
   useEffect(() => {
     const saved = localStorage.getItem('ledger_correspondence_presented_to');
+    const defaultList = ['সুপার', 'এএন্ডএও', 'উপপরিচালক'];
+    
     if (saved) {
-      setSuggestions(JSON.parse(saved));
+      // Filter out unwanted name from saved data and merge with defaults
+      const parsed = JSON.parse(saved).filter((s: string) => s !== 'শামীমা রহমান');
+      const merged = Array.from(new Set([...defaultList, ...parsed])).filter(s => s !== 'শামীমা রহমান');
+      setSuggestions(merged);
     } else {
-      // Updated default suggestions as per instructions
-      setSuggestions(['সুপার', 'এএন্ডএও', 'উপপরিচালক']);
+      setSuggestions(defaultList);
     }
   }, []);
 
@@ -73,7 +76,7 @@ const PremiumInlineSelect: React.FC<{
   }, []);
 
   const handleAddNew = () => {
-    if (!searchTerm.trim()) return;
+    if (!searchTerm.trim() || searchTerm.trim() === 'শামীমা রহমান') return;
     const next = Array.from(new Set([searchTerm.trim(), ...suggestions]));
     setSuggestions(next);
     localStorage.setItem('ledger_correspondence_presented_to', JSON.stringify(next));
@@ -117,7 +120,7 @@ const PremiumInlineSelect: React.FC<{
                 {value === opt && <Check size={10} strokeWidth={3} />}
               </div>
             ))}
-            {searchTerm && !suggestions.includes(searchTerm) && (
+            {searchTerm && !suggestions.includes(searchTerm) && searchTerm !== 'শামীমা রহমান' && (
               <div 
                 onClick={handleAddNew}
                 className="px-3 py-1.5 cursor-pointer bg-emerald-50 text-emerald-600 font-black text-[9px] flex items-center gap-2 hover:bg-emerald-100"
@@ -138,7 +141,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
 
-  // Corrected IDBadge definition to use isLayoutEditable from component scope or prop
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = React.useState(false);
     if (!isLayoutEditable) return null;
