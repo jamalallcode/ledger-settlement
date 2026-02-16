@@ -155,9 +155,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     sentParaCount: '',
     receiverName: '',
     receivedDate: '',
-    isOnline: 'না',
-    issueLetterNo: '',
-    issueLetterDate: ''
+    isOnline: 'না'
   });
 
   // Date segments state for each date field
@@ -165,14 +163,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const [dd, setDd] = useState(''), [dm, setDm] = useState(''), [dy, setDy] = useState('');
   const [rd, setRd] = useState(''), [rm, setRm] = useState(''), [ry, setRy] = useState('');
   const [rcd, setRcd] = useState(''), [rcm, setRcm] = useState(''), [rcy, setRcy] = useState('');
-  const [isd, setIsd] = useState(''), [ism, setIsm] = useState(''), [isy, setIsy] = useState('');
 
   // Refs for auto-focus jump logic
   const ldRef = useRef<HTMLInputElement>(null), lmRef = useRef<HTMLInputElement>(null), lyRef = useRef<HTMLInputElement>(null);
   const ddRef = useRef<HTMLInputElement>(null), dmRef = useRef<HTMLInputElement>(null), dyRef = useRef<HTMLInputElement>(null);
   const rdRef = useRef<HTMLInputElement>(null), rmRef = useRef<HTMLInputElement>(null), ryRef = useRef<HTMLInputElement>(null);
   const rcdRef = useRef<HTMLInputElement>(null), rcmRef = useRef<HTMLInputElement>(null), rcyRef = useRef<HTMLInputElement>(null);
-  const isdRef = useRef<HTMLInputElement>(null), ismRef = useRef<HTMLInputElement>(null), isyRef = useRef<HTMLInputElement>(null);
 
   const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
   const [receiverSuggestions, setReceiverSuggestions] = useState<string[]>([]);
@@ -219,16 +215,13 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         sentParaCount: initialEntry.sentParaCount || '',
         receiverName: initialEntry.receiverName || '',
         receivedDate: initialEntry.receivedDate || '',
-        isOnline: initialEntry.isOnline || 'না',
-        issueLetterNo: initialEntry.issueLetterNo || '',
-        issueLetterDate: initialEntry.issueLetterDate || ''
+        isOnline: initialEntry.isOnline || 'না'
       });
       
       setSegmentsFromDate(initialEntry.letterDate, setLd, setLm, setLy);
       setSegmentsFromDate(initialEntry.diaryDate, setDd, setDm, setDy);
       setSegmentsFromDate(initialEntry.receiptDate, setRd, setRm, setRy);
       setSegmentsFromDate(initialEntry.receivedDate, setRcd, setRcm, setRcy);
-      setSegmentsFromDate(initialEntry.issueLetterDate, setIsd, setIsm, setIsy);
 
       setRawInputs({
         totalParas: toBengaliDigits(initialEntry.totalParas),
@@ -252,7 +245,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   }, [dd, dm, dy]);
   useEffect(() => { setFormData(prev => ({ ...prev, receiptDate: formatDateSegments(rd, rm, ry) })); }, [rd, rm, ry]);
   useEffect(() => { setFormData(prev => ({ ...prev, receivedDate: formatDateSegments(rcd, rcm, rcy) })); }, [rcd, rcm, rcy]);
-  useEffect(() => { setFormData(prev => ({ ...prev, issueLetterDate: formatDateSegments(isd, ism, isy) })); }, [isd, ism, isy]);
 
   const handleManualDateSelect = (iso: string, type: string) => {
     if (!iso) return;
@@ -260,7 +252,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     else if (type === 'diary') setSegmentsFromDate(iso, setDd, setDm, setDy);
     else if (type === 'receipt') setSegmentsFromDate(iso, setRd, setRm, setRy);
     else if (type === 'received') setSegmentsFromDate(iso, setRcd, setRcm, setRcy);
-    else if (type === 'issue') setSegmentsFromDate(iso, setIsd, setIsm, setIsy);
   };
 
   useEffect(() => {
@@ -561,33 +552,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 >না</button>
               </div>
             </div>
-
-            {/* --- Section: জারিপত্র এন্ট্রি --- */}
-            <div className={sectionHeaderCls}>
-               <div className="w-1.5 h-6 bg-amber-600 rounded-full"></div>
-               <h4 className={sectionTitleCls}>জারিপত্র এন্ট্রি (ঐচ্ছিক)</h4>
-            </div>
-
-            {/* Field 13.ক */}
-            <div className={`${colWrapper} border-amber-100`}>
-              <IDBadge id="corr-field-13a" />
-              <label className={labelCls}><span className={numBadge}>১৩.ক</span> <Send size={14} className="text-amber-600" /> জারিপত্র নং:</label>
-              <input 
-                type="text" className={inputCls} 
-                value={formData.issueLetterNo} onChange={e => setFormData({...formData, issueLetterNo: toBengaliDigits(e.target.value)})} 
-                placeholder="নং লিখুন"
-              />
-            </div>
-
-            {/* Field 13.খ - Smart Segmented Date */}
-            <SegmentedInput 
-              id="corr-field-13b" icon={Calendar} label="১৩.খ জারিপত্রের তারিখ" color="amber" 
-              dayValue={isd} monthValue={ism} yearValue={isy} 
-              daySetter={setIsd} monthSetter={setIsm} yearSetter={setIsy} 
-              dayRef={isdRef} monthRef={ismRef} yearRef={isyRef} 
-              isLayoutEditable={isLayoutEditable} originalValue={formData.issueLetterDate} 
-              onDateSelect={(iso: string) => handleManualDateSelect(iso, 'issue')} 
-            />
 
           </div>
         </fieldset>
