@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Mail, X, FileText, Calendar, Hash, Banknote, BookOpen, 
@@ -271,7 +270,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             {/* Field 5 */}
             <div className={`${colWrapper} border-purple-100`}>
               <IDBadge id="corr-field-4" />
-              <label className={labelCls}><span className={numBadge}>৫</span> <ListOrdered size={14} className="text-purple-600" /> প্রেরিত মোট অনুচ্ছেদ সংখ্যা:</label>
+              <label className={labelCls}><span className={numBadge}>৫</span> <ListOrdered size={14} className="text-purple-600" /> প্রেরিত অনুচ্ছেদ সংখ্যা:</label>
               <input 
                 type="text" className={inputCls} 
                 value={rawInputs.totalParas || ''} onChange={e => handleNumericInput('totalParas', e.target.value)}
@@ -337,17 +336,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 type="text" className={inputCls} 
                 value={formData.digitalFileNo} onChange={e => setFormData({...formData, digitalFileNo: toBengaliDigits(e.target.value)})}
                 placeholder="নথি নং লিখুন"
-              />
-            </div>
-
-            {/* Field 10 */}
-            <div className={`${colWrapper} border-teal-100`}>
-              <IDBadge id="corr-field-10" />
-              <label className={labelCls}><span className={numBadge}>১০</span> <ListOrdered size={14} className="text-teal-600" /> প্রেরিত অনুচ্ছেদ সংখ্যা:</label>
-              <input 
-                type="text" className={inputCls} 
-                value={rawInputs.sentParaCount || ''} onChange={e => handleNumericInput('sentParaCount', e.target.value)}
-                placeholder="০"
               />
             </div>
 
