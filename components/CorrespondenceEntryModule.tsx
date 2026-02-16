@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Mail, X, FileText, Calendar, Hash, Banknote, BookOpen, 
@@ -48,6 +49,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     receiptDate: '',
     digitalFileNo: '',
     presentationDate: '',
+    // Added presentedToName to match reporting needs
+    presentedToName: '',
     sentParaCount: '',
     receiverName: '',
     receivedDate: '',
@@ -86,6 +89,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         receiptDate: initialEntry.receiptDate || '',
         digitalFileNo: initialEntry.digitalFileNo || '',
         presentationDate: initialEntry.presentationDate || '',
+        presentedToName: initialEntry.presentedToName || '',
         sentParaCount: initialEntry.sentParaCount || '',
         receiverName: initialEntry.receiverName || '',
         receivedDate: initialEntry.receivedDate || '',
