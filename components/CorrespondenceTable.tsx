@@ -200,10 +200,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             <col className="w-[100px]" /> {/* চিঠির ধরণ */}
             <col className="w-[85px]" />  {/* প্রেরিত অনুচ্ছেদ */}
             <col className="w-[100px]" /> {/* জড়িত টাকা */}
-            <col className="w-[150px]" /> {/* গ্রহণ ও উপস্থাপন (Updated size) */}
-            <col className="w-[70px]" />  {/* অনলাইন */}
-            <col className="w-[120px]" /> {/* জারিপত্র নং ও তারিখ */}
-            <col className="w-[100px]" /> {/* মন্তব্য */}
+            <col className="w-[70px]" />  {/* অনলাইনে প্রাপ্তি (New Column 8) */}
+            <col className="w-[160px]" /> {/* গ্রহণ ও উপস্থাপন (New Column 9) */}
+            <col className="w-[135px]" /> {/* জারিপত্র নং ও তারিখ (Increased Width) */}
+            <col className="w-[60px]" />  {/* মন্তব্য (Decreased Width) */}
           </colgroup>
           <thead>
             <tr>
@@ -214,8 +214,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
               <th className={thCls}>চিঠির ধরণ (SFI/NON-SFI)</th>
               <th className={thCls}>প্রেরিত অনুচ্ছেদ সংখ্যা</th>
               <th className={thCls}>মোট জড়িত টাকা</th>
-              <th className={thCls}>গ্রহণ ও উপস্থাপন</th>
               <th className={thCls}>অনলাইনে প্রাপ্তি (হ্যাঁ/না)</th>
+              <th className={thCls}>গ্রহণ ও উপস্থাপন</th>
               <th className={thCls}>জারিপত্র নং ও তারিখ</th>
               <th className={thCls}>মন্তব্য</th>
             </tr>
@@ -243,6 +243,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                 <td className={tdCls + " text-center"}>{entry.paraType}</td>
                 <td className={tdCls + " text-center font-black text-blue-700"}>{toBengaliDigits(entry.sentParaCount)} টি</td>
                 <td className={tdCls + " text-center font-black"}>{toBengaliDigits(entry.totalAmount)}</td>
+                <td className={tdCls + " text-center"}>
+                   <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${entry.isOnline === 'হ্যাঁ' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
+                      {entry.isOnline}
+                   </span>
+                </td>
                 <td className={tdCls}>
                    <div className="space-y-4">
                       {/* Part 1: Receipt Info */}
@@ -279,15 +284,32 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                       </div>
                    </div>
                 </td>
-                <td className={tdCls + " text-center"}>
-                   <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${entry.isOnline === 'হ্যাঁ' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
-                      {entry.isOnline}
-                   </span>
-                </td>
-                <td className={tdCls + " text-center"}>
-                   <div className="text-center space-y-1">
-                      <div className="font-black text-amber-700 text-[10px]">{entry.issueLetterNo || '-'}</div>
-                      {entry.issueLetterDate && <div className="text-[9px] bg-amber-50 rounded-lg px-2 py-0.5 inline-block text-amber-600 font-bold border border-amber-100">{toBengaliDigits(entry.issueLetterDate)}</div>}
+                <td className={tdCls}>
+                   <div className="p-2 bg-amber-50/50 border border-amber-100 rounded-xl relative overflow-hidden space-y-2">
+                      <div className="absolute top-0 right-0 w-1 h-full bg-amber-500"></div>
+                      <div className="text-[9px] font-black text-amber-700 uppercase tracking-tighter mb-1 flex items-center gap-1"><Send size={10} /> জারিপত্র তথ্য</div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[8px] font-black text-slate-400 uppercase">জারিপত্র নং</span>
+                          <input 
+                            type="text" 
+                            placeholder="নং লিখুন"
+                            className="w-full h-7 px-2 border border-slate-200 rounded-lg text-[10px] font-bold outline-none focus:border-amber-400 focus:bg-white transition-all bg-white" 
+                            value={entry.issueLetterNo || ''} 
+                            onChange={e => handleInlineUpdate(entry, 'issueLetterNo', toBengaliDigits(e.target.value))}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[8px] font-black text-slate-400 uppercase">জারিপত্রের তারিখ</span>
+                          <input 
+                            type="date" 
+                            className="w-full h-7 px-2 border border-slate-200 rounded-lg text-[10px] font-bold outline-none focus:border-amber-400 focus:bg-white transition-all bg-white" 
+                            value={entry.issueLetterDate || ''} 
+                            onChange={e => handleInlineUpdate(entry, 'issueLetterDate', e.target.value)}
+                          />
+                        </div>
+                      </div>
                    </div>
                 </td>
                 <td className={tdCls + " relative group/action"}>
@@ -345,11 +367,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             <tr className="bg-slate-900 text-white font-black text-[11px] h-11 shadow-[0_-5px_15px_rgba(0,0,0,0.2)]">
               <td colSpan={2} className="px-4 text-left border-t border-slate-700">সর্বমোট (এন্ট্রি সংখ্যা):</td>
               <td colSpan={1} className="px-4 text-center border-t border-slate-700 text-emerald-400">{toBengaliDigits(entries.length)} টি</td>
-              <td colSpan={3} className="border-t border-slate-700"></td>
+              <td colSpan={4} className="border-t border-slate-700"></td>
               <td className="px-4 text-center border-t border-slate-700 text-blue-400">
                 {toBengaliDigits(entries.reduce((sum, e) => sum + parseBengaliNumber(e.totalAmount), 0))}
               </td>
-              <td colSpan={4} className="border-t border-slate-700"></td>
+              <td colSpan={3} className="border-t border-slate-700"></td>
             </tr>
           </tfoot>
         </table>
