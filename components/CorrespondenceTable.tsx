@@ -151,7 +151,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
 
-  // Defined IDBadge to correctly handle layout editing logic and fix potential scope error
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = useState(false);
     if (!isLayoutEditable) return null;
@@ -247,8 +246,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
           <colgroup>
             <col className="w-[30px]" />  
             <col className="w-[130px]" /> 
-            <col className="w-[150px]" /> 
-            <col className="w-[150px]" /> 
+            <col className="w-[160px]" /> 
+            <col className="w-[160px]" /> 
             <col className="w-[80px]" />  
             <col className="w-[60px]" />  
             <col className="w-[85px]" />  
@@ -284,21 +283,58 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
               <tr key={entry.id} className="group transition-all">
                 <td className={tdCls + " text-center font-black"}>{toBengaliDigits(idx + 1)}</td>
                 <td className={tdCls}>{entry.description}</td>
+                {/* Column 3: পত্রের অন্যান্য তথ্য */}
                 <td className={tdCls}>
-                   <div className="space-y-0.5">
-                      <div className="flex items-start"><span className={labelCls}>শাখা:</span> <span className={valCls}>{entry.paraType}</span></div>
-                      <div className="flex items-start"><span className={labelCls}>নং:</span> <span className={valCls}>{entry.letterNo}</span></div>
-                      <div className="flex items-start"><span className={labelCls}>তারিখ:</span> <span className={valCls}>{toBengaliDigits(entry.letterDate)}</span></div>
-                      <div className="flex items-start"><span className={labelCls}>অনুচ্ছেদ:</span> <span className={valCls}>{toBengaliDigits(entry.totalParas)} টি</span></div>
-                      <div className="flex items-start"><span className={labelCls}>টাকা:</span> <span className={valCls}>{toBengaliDigits(entry.totalAmount)}</span></div>
+                   <div className="space-y-1">
+                      <div className="flex items-start gap-1">
+                        <span className={labelCls}>১. শাখার ধরণ:</span> 
+                        <span className={valCls}>{entry.paraType}</span>
+                      </div>
+                      <div className="flex items-start gap-1">
+                        <span className={labelCls}>২. পত্রের ধরণ:</span> 
+                        <span className={valCls}>{entry.letterType}</span>
+                      </div>
+                      <div className="flex items-start gap-1">
+                        <span className={labelCls}>৩. পত্র নং ও তারিখ:</span> 
+                        <span className={valCls}>{entry.letterNo}, {toBengaliDigits(entry.letterDate)}</span>
+                      </div>
+                      <div className="flex items-start gap-1">
+                        <span className={labelCls}>৪. প্রেরিত অনু: সংখ্যা:</span> 
+                        <span className={valCls}>{toBengaliDigits(entry.totalParas)} টি</span>
+                      </div>
+                      <div className="flex items-start gap-1">
+                        <span className={labelCls}>৫. মোট জড়িত টাকা:</span> 
+                        <span className={valCls}>{toBengaliDigits(entry.totalAmount)}</span>
+                      </div>
                    </div>
                 </td>
+                {/* Column 4: অত্র অফিসের তথ্য */}
                 <td className={tdCls}>
-                   <div className="space-y-0.5">
-                      <div className="flex items-start"><span className={labelCls}>ডায়েরি:</span> <span className={valCls}>{entry.diaryNo}</span></div>
-                      <div className="flex items-start"><span className={labelCls}>ড: তারিখ:</span> <span className={valCls}>{toBengaliDigits(entry.diaryDate)}</span></div>
-                      <div className="flex items-start"><span className={labelCls}>প্রাপ্তি:</span> <span className={valCls}>{toBengaliDigits(entry.receiptDate)}</span></div>
-                      <div className="flex items-start"><span className={labelCls}>নথি:</span> <span className={valCls}>{entry.digitalFileNo}</span></div>
+                   <div className="space-y-1">
+                      <div className="flex items-start gap-1">
+                        <span className={labelCls}>১. ডায়েরি নং ও তারিখ:</span> 
+                        <span className={valCls}>{entry.diaryNo}, {toBengaliDigits(entry.diaryDate)}</span>
+                      </div>
+                      <div className="flex items-start gap-1">
+                        <span className={labelCls}>২. শাখায় প্রাপ্তির তারিখ:</span> 
+                        <span className={valCls}>{toBengaliDigits(entry.receiptDate)}</span>
+                      </div>
+                      <div className="flex items-start gap-1">
+                        <span className={labelCls}>৩. ডিজিটাল নথি নং-:</span> 
+                        <span className={valCls}>{entry.digitalFileNo}</span>
+                      </div>
+                      <div className="flex items-start gap-1">
+                        <span className={labelCls}>৪. গৃহীতার নাম:</span> 
+                        <span className={valCls}>{entry.receiverName || '-'}</span>
+                      </div>
+                      <div className="flex items-start gap-1">
+                        <span className={labelCls}>৫. গ্রহণের তারিখ:</span> 
+                        <span className={valCls}>{toBengaliDigits(entry.receivedDate)}</span>
+                      </div>
+                      <div className="flex items-start gap-1">
+                        <span className={labelCls}>৬. অনলাইনে প্রাপ্তি:</span> 
+                        <span className={valCls}>{entry.isOnline}</span>
+                      </div>
                    </div>
                 </td>
                 <td className={tdCls + " text-center"}>{entry.paraType}</td>
