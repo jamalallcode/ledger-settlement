@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send } from 'lucide-react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { getCurrentCycle } from '../utils/cycleHelper';
 
@@ -17,6 +17,7 @@ interface CorrespondenceEntry {
   receiptDate: string;
   digitalFileNo: string;
   presentationDate: string;
+  presentedToName?: string;
   sentParaCount: string;
   receiverName: string;
   receivedDate: string;
@@ -39,6 +40,92 @@ interface CorrespondenceTableProps {
   onReject?: (id: string) => void;
 }
 
+/**
+ * Premium Dropdown Component for Inline Presentation Name Update
+ */
+const PremiumInlineSelect: React.FC<{
+  value: string;
+  onSelect: (val: string) => void;
+}> = ({ value, onSelect }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('ledger_correspondence_presented_to');
+    if (saved) setSuggestions(JSON.parse(saved));
+    else setSuggestions(['উপ-পরিচালক', 'পরিচালক', 'মহাপরিচালক']);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleAddNew = () => {
+    if (!searchTerm.trim()) return;
+    const next = Array.from(new Set([searchTerm.trim(), ...suggestions]));
+    setSuggestions(next);
+    localStorage.setItem('ledger_correspondence_presented_to', JSON.stringify(next));
+    onSelect(searchTerm.trim());
+    setIsOpen(false);
+  };
+
+  const filtered = suggestions.filter(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <div 
+        onClick={() => { setIsOpen(!isOpen); setSearchTerm(''); }}
+        className={`w-full h-8 px-2 bg-slate-50 border rounded-lg flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-blue-500 ring-2 ring-blue-50 bg-white shadow-sm' : 'border-slate-200 hover:border-slate-300'}`}
+      >
+        <span className={`text-[10px] font-black truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>
+          {value || 'নাম নির্বাচন করুন...'}
+        </span>
+        <ChevronDown size={12} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-[calc(100%+4px)] left-0 w-48 bg-white border border-slate-200 rounded-xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 border-t-2 border-t-blue-600">
+          <div className="p-2 bg-slate-50 border-b border-slate-100">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" size={10} />
+              <input 
+                autoFocus type="text" placeholder="খুঁজুন বা নতুন লিখুন..." 
+                className="w-full h-7 pl-6 pr-2 bg-white border border-slate-200 rounded-lg text-[10px] font-bold outline-none focus:border-blue-400"
+                value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="max-h-40 overflow-y-auto no-scrollbar py-1">
+            {filtered.map((opt, i) => (
+              <div 
+                key={i} onClick={() => { onSelect(opt); setIsOpen(false); }}
+                className={`px-3 py-2 cursor-pointer flex items-center justify-between transition-all ${value === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[10px]'}`}
+              >
+                <span>{opt}</span>
+                {value === opt && <Check size={12} strokeWidth={3} />}
+              </div>
+            ))}
+            {searchTerm && !suggestions.includes(searchTerm) && (
+              <div 
+                onClick={handleAddNew}
+                className="px-3 py-2 cursor-pointer bg-emerald-50 text-emerald-600 font-black text-[9px] flex items-center gap-2 hover:bg-emerald-100"
+              >
+                <Plus size={10} /> নতুন যুক্ত করুন: "{searchTerm}"
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBack, isLayoutEditable, isAdmin, onEdit, onDelete, onApprove, onReject }) => {
   
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
@@ -53,10 +140,15 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
       setTimeout(() => setCopied(false), 1500);
     };
     return (
-      <span onClick={handleCopy} className={`absolute -top-3 left-2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 z-[300] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'bg-emerald-600' : ''}`}>
+      <span onClick={handleCopy} className={`absolute -top-3 left-2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 z-[300] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'ring-2 ring-emerald-500 bg-emerald-600' : ''}`}>
         {copied ? 'COPIED!' : `#${id}`}
       </span>
     );
+  };
+
+  const handleInlineUpdate = (entry: CorrespondenceEntry, field: string, value: any) => {
+    if (!onEdit) return;
+    onEdit({ ...entry, [field]: value });
   };
 
   const thCls = "border border-slate-300 px-1 py-3 text-center align-middle font-black text-slate-900 text-[11px] bg-slate-100 sticky top-0 z-[100] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
@@ -102,7 +194,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             <col className="w-[100px]" /> {/* চিঠির ধরণ */}
             <col className="w-[85px]" />  {/* প্রেরিত অনুচ্ছেদ */}
             <col className="w-[100px]" /> {/* জড়িত টাকা */}
-            <col className="w-[125px]" /> {/* গৃহীতা ও তারিখ */}
+            <col className="w-[150px]" /> {/* গ্রহণ ও উপস্থাপন (Updated size) */}
             <col className="w-[70px]" />  {/* অনলাইন */}
             <col className="w-[120px]" /> {/* জারিপত্র নং ও তারিখ */}
             <col className="w-[100px]" /> {/* মন্তব্য */}
@@ -116,7 +208,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
               <th className={thCls}>চিঠির ধরণ (SFI/NON-SFI)</th>
               <th className={thCls}>প্রেরিত অনুচ্ছেদ সংখ্যা</th>
               <th className={thCls}>মোট জড়িত টাকা</th>
-              <th className={thCls}>গৃহীতার নাম ও গ্রহণের তারিখ</th>
+              <th className={thCls}>গ্রহণ ও উপস্থাপন</th>
               <th className={thCls}>অনলাইনে প্রাপ্তি (হ্যাঁ/না)</th>
               <th className={thCls}>জারিপত্র নং ও তারিখ</th>
               <th className={thCls}>মন্তব্য</th>
@@ -140,16 +232,46 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                       <div className="flex items-start"><span className={labelCls}>ডায়েরি নং ও তারিখ:</span> <span className={valCls}>{entry.diaryNo} ({toBengaliDigits(entry.diaryDate)})</span></div>
                       <div className="flex items-start"><span className={labelCls}>শাখায় প্রাপ্তির তারিখ:</span> <span className={valCls}>{toBengaliDigits(entry.receiptDate)}</span></div>
                       <div className="flex items-start"><span className={labelCls}>ডিজিটাল নথি নং-:</span> <span className={valCls}>{entry.digitalFileNo}</span></div>
-                      <div className="flex items-start"><span className={labelCls}>উপস্থাপনের তারিখ:</span> <span className={valCls}>{toBengaliDigits(entry.presentationDate)}</span></div>
+                      {/* Presentation Date removed from here as per instruction */}
                    </div>
                 </td>
                 <td className={tdCls + " text-center"}>{entry.paraType}</td>
                 <td className={tdCls + " text-center font-black text-blue-700"}>{toBengaliDigits(entry.sentParaCount)} টি</td>
                 <td className={tdCls + " text-center font-black"}>{toBengaliDigits(entry.totalAmount)}</td>
                 <td className={tdCls}>
-                   <div className="text-center space-y-1">
-                      <div className="font-black text-slate-900 text-[10px]">{entry.receiverName}</div>
-                      <div className="text-[9px] bg-slate-100 rounded-lg px-2 py-0.5 inline-block text-slate-500 font-bold">{toBengaliDigits(entry.receivedDate)}</div>
+                   <div className="space-y-4">
+                      {/* Part 1: Receipt Info */}
+                      <div className="p-2 bg-slate-50 border border-slate-100 rounded-xl relative overflow-hidden">
+                         <div className="absolute top-0 right-0 w-1 h-full bg-emerald-500"></div>
+                         <div className="text-[9px] font-black text-emerald-700 uppercase tracking-tighter mb-1 flex items-center gap-1"><Inbox size={10} /> ১. গ্রহণকারীর তথ্য</div>
+                         <div className="font-black text-slate-900 text-[11px] leading-tight mb-1">{entry.receiverName || '-'}</div>
+                         <div className="text-[9px] text-slate-500 font-bold">{toBengaliDigits(entry.receivedDate)}</div>
+                      </div>
+
+                      {/* Part 2: Presentation Info (Interactive) */}
+                      <div className="p-2 bg-blue-50/50 border border-blue-100 rounded-xl relative overflow-hidden">
+                         <div className="absolute top-0 right-0 w-1 h-full bg-blue-600"></div>
+                         <div className="text-[9px] font-black text-blue-700 uppercase tracking-tighter mb-2 flex items-center gap-1"><UserCheck size={10} /> ২. উপস্থাপনের তথ্য</div>
+                         
+                         <div className="space-y-2">
+                           <div className="flex flex-col gap-1">
+                              <span className="text-[8px] font-black text-slate-400 uppercase">উপস্থাপনের তারিখ</span>
+                              <input 
+                                type="date" 
+                                className="w-full h-7 px-2 border border-slate-200 rounded-lg text-[10px] font-bold outline-none focus:border-blue-400 focus:bg-white transition-all bg-white" 
+                                value={entry.presentationDate || ''} 
+                                onChange={e => handleInlineUpdate(entry, 'presentationDate', e.target.value)}
+                              />
+                           </div>
+                           <div className="flex flex-col gap-1">
+                              <span className="text-[8px] font-black text-slate-400 uppercase">যার কাছে উপস্থাপন করা হবে</span>
+                              <PremiumInlineSelect 
+                                value={entry.presentedToName || ''} 
+                                onSelect={val => handleInlineUpdate(entry, 'presentedToName', val)}
+                              />
+                           </div>
+                         </div>
+                      </div>
                    </div>
                 </td>
                 <td className={tdCls + " text-center"}>
