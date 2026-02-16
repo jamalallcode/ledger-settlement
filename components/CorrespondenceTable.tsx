@@ -244,17 +244,17 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
         <IDBadge id="table-correspondence-ledger" />
         <table className="w-full border-separate border-spacing-0 table-fixed">
           <colgroup>
-            <col className="w-[30px]" />  
-            <col className="w-[130px]" /> 
-            <col className="w-[160px]" /> 
-            <col className="w-[160px]" /> 
-            <col className="w-[80px]" />  
-            <col className="w-[60px]" />  
-            <col className="w-[85px]" />  
-            <col className="w-[60px]" />  
-            <col className="w-[145px]" /> 
-            <col className="w-[135px]" /> 
-            <col className="w-[50px]" />  
+            <col className="w-[30px]" />  {/* ক্র: নং */}
+            <col className="w-[130px]" /> {/* পত্রের বিবরণ */}
+            <col className="w-[160px]" /> {/* পত্রের অন্যান্য তথ্য */}
+            <col className="w-[160px]" /> {/* অত্র অফিসের তথ্য */}
+            <col className="w-[60px]" />  {/* শাখা ধরণ - প্রস্থ কমানো হয়েছে */}
+            <col className="w-[45px]" />  {/* প্রেরিত অনুচ্ছেদ - প্রস্থ কমানো হয়েছে */}
+            <col className="w-[65px]" />  {/* জড়িত টাকা - প্রস্থ কমানো হয়েছে */}
+            <col className="w-[45px]" />  {/* অনলাইন - প্রস্থ কমানো হয়েছে */}
+            <col className="w-[145px]" /> {/* গ্রহণ ও উপস্থাপন */}
+            <col className="w-[135px]" /> {/* জারিপত্র নং ও তারিখ */}
+            <col className="w-[50px]" />  {/* মন্তব্য */}
           </colgroup>
           <thead>
             <tr>
@@ -308,7 +308,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                       </div>
                    </div>
                 </td>
-                {/* Column 4: অত্র অফিসের তথ্য */}
+                {/* Column 4: অত্র অফিসের তথ্য - 'গৃহীতার নাম' বাদ দেওয়া হয়েছে */}
                 <td className={tdCls}>
                    <div className="space-y-1">
                       <div className="flex items-start gap-1">
@@ -324,15 +324,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                         <span className={valCls}>{entry.digitalFileNo}</span>
                       </div>
                       <div className="flex items-start gap-1">
-                        <span className={labelCls}>৪. গৃহীতার নাম:</span> 
-                        <span className={valCls}>{entry.receiverName || '-'}</span>
-                      </div>
-                      <div className="flex items-start gap-1">
-                        <span className={labelCls}>৫. গ্রহণের তারিখ:</span> 
+                        <span className={labelCls}>৪. গ্রহণের তারিখ:</span> 
                         <span className={valCls}>{toBengaliDigits(entry.receivedDate)}</span>
                       </div>
                       <div className="flex items-start gap-1">
-                        <span className={labelCls}>৬. অনলাইনে প্রাপ্তি:</span> 
+                        <span className={labelCls}>৫. অনলাইনে প্রাপ্তি:</span> 
                         <span className={valCls}>{entry.isOnline}</span>
                       </div>
                    </div>
