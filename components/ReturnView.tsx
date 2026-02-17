@@ -397,7 +397,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           <div className="table-container relative overflow-visible">
             <table className="w-full border-separate table-fixed border-spacing-0">
               <colgroup>
-                <col className="w-[30px]" />
+                <col className="w-[40px]" />
                 <col className="w-[150px]" />
                 <col className="w-[80px]" />
                 <col className="w-[80px]" />
@@ -438,8 +438,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                     <td className={`${tdS} text-left px-2`}>{entry.description}</td>
                     <td className={tdS}>{entry.diaryNo}<br/>{toBengaliDigits(entry.diaryDate)}</td>
                     <td className={tdS}>{entry.letterNo}<br/>{toBengaliDigits(entry.letterDate)}</td>
-                    <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'এসএফআই' ? `বিএসআর (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                    <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'নন এসএফআই' ? `বিএসআর (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                    <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'এসএফআই' ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                    <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'নন এসএফআই' ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                     <td className={tdS}>{entry.letterType === 'ত্রিপক্ষীয় সভা' && entry.paraType === 'এসএফআই' ? `ত্রিপক্ষীয় (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                     <td className={tdS}>{entry.letterType === 'দ্বিপক্ষীয় সভা' && entry.paraType === 'নন এসএফআই' ? `দ্বি-পক্ষীয় (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                     <td className={tdS}>-</td>
