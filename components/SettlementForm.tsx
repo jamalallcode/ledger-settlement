@@ -13,18 +13,21 @@ interface SettlementFormProps {
   onCancel?: () => void;
   isLayoutEditable?: boolean;
   isAdmin?: boolean;
+  preSelectedModule?: 'settlement' | 'correspondence' | null;
 }
 
-const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, nextSl, branchSuggestions, initialEntry, onCancel, isLayoutEditable, isAdmin = false }) => {
-  const [mainModule, setMainModule] = useState<'settlement' | 'correspondence' | null>(null);
+const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, nextSl, branchSuggestions, initialEntry, onCancel, isLayoutEditable, isAdmin = false, preSelectedModule = null }) => {
+  const [mainModule, setMainModule] = useState<'settlement' | 'correspondence' | null>(preSelectedModule);
 
   useEffect(() => {
     if (initialEntry) {
       // Determine module type based on entry structure or explicit 'type' field
       const isCorrespondence = initialEntry.type === 'correspondence' || !!initialEntry.description;
       setMainModule(isCorrespondence ? 'correspondence' : 'settlement');
+    } else if (preSelectedModule) {
+      setMainModule(preSelectedModule);
     }
-  }, [initialEntry]);
+  }, [initialEntry, preSelectedModule]);
 
   const IDBadge = ({ id, isLayoutEditable }: { id: string, isLayoutEditable?: boolean }) => {
     const [copied, setCopied] = useState(false);
