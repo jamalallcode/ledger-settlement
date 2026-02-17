@@ -364,7 +364,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
     const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-white text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
-    const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
+    const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-semibold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
     const reportingDateBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0), 'dd/MM/yyyy'));
 
     return (
@@ -402,7 +402,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 <col className="w-[80px]" />
                 <col className="w-[80px]" />
                 <col className="w-[55px]" />
-                <col className="w-[55px]" />
+                <col className="w-[75px]" />
                 <col className="w-[55px]" />
                 <col className="w-[55px]" />
                 <col className="w-[55px]" />
