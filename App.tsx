@@ -41,6 +41,9 @@ const App: React.FC = () => {
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
+  // State for direct module entry from sidebar
+  const [entryModule, setEntryModule] = useState<'settlement' | 'correspondence' | null>(null);
+  
   // Register Selection State
   const [registerSubModule, setRegisterSubModule] = useState<'settlement' | 'correspondence' | null>(null);
   
@@ -52,11 +55,20 @@ const App: React.FC = () => {
 
   const mainScrollRef = useRef<HTMLElement>(null);
 
-  const handleTabChange = (tab: string) => {
-    if (tab === activeTab) setResetKey(prev => prev + 1);
-    else { setActiveTab(tab); setResetKey(0); }
+  const handleTabChange = (tab: string, subModule?: 'settlement' | 'correspondence') => {
+    if (tab === activeTab && !subModule) setResetKey(prev => prev + 1);
+    else { 
+      setActiveTab(tab); 
+      setResetKey(0); 
+    }
+    
+    if (tab === 'entry' && subModule) {
+      setEntryModule(subModule);
+    } else if (tab !== 'entry') {
+      setEntryModule(null);
+    }
+
     setShowPendingOnly(false);
-    // Reset submodule selection when clicking register in sidebar
     if (tab === 'register') setRegisterSubModule(null);
   };
 
@@ -129,7 +141,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (mainScrollRef.current) mainScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [activeTab, resetKey]);
+  }, [activeTab, resetKey, entryModule]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -428,7 +440,7 @@ const App: React.FC = () => {
                 />
               )}
               
-              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={[]} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} />}
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={[]} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} preSelectedModule={entryModule} />}
               
               {activeTab === 'register' && (
                 <div className="space-y-6 relative">
