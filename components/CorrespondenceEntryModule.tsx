@@ -270,6 +270,34 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     setFormData(prev => ({ ...prev, [field]: val }));
   };
 
+  const resetForm = () => {
+    setFormData({
+      description: '',
+      paraType: 'এসএফআই',
+      letterType: 'বিএসআর',
+      letterNo: '',
+      letterDate: '',
+      totalParas: '',
+      totalAmount: '',
+      diaryNo: '',
+      diaryDate: '',
+      receiptDate: '',
+      digitalFileNo: '',
+      presentationDate: '',
+      presentedToName: '',
+      sentParaCount: '',
+      receiverName: '',
+      receivedDate: '',
+      isOnline: 'না'
+    });
+    setLd(''); setLm(''); setLy('');
+    setDd(''); setDm(''); setDy('');
+    setRd(''); setRm(''); setRy('');
+    setRcd(''); setRcm(''); setRcy('');
+    setRawInputs({});
+    setCalculatedCycle('');
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.receiverName.trim()) {
@@ -277,8 +305,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       setReceiverSuggestions(updatedNames);
       localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updatedNames));
     }
-    setIsSuccess(true);
     onAdd(formData);
+    setIsSuccess(true);
+    resetForm();
     setTimeout(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, 100);
   };
 
@@ -376,6 +405,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 <option value="বিএসআর">বিএসআর (BSR)</option>
                 <option value="দ্বিপক্ষীয় সভা">দ্বিপক্ষীয় সভা</option>
                 <option value="ত্রিপক্ষীয় সভা">ত্রিপক্ষীয় সভা</option>
+                <option value="মিলিকরণ">মিলিকরণ</option>
+                <option value="কার্যপত্র">কার্যপত্র</option>
               </select>
             </div>
 
@@ -578,6 +609,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                </div>
                
                <div className="flex flex-col md:flex-row items-center gap-4 mt-2">
+                  <button 
+                    onClick={() => setIsSuccess(false)}
+                    className="px-8 py-4 bg-white text-emerald-600 border-2 border-emerald-600 rounded-2xl font-black text-lg shadow-lg hover:bg-emerald-50 transition-all flex items-center gap-3 active:scale-95 group"
+                  >
+                    নতুন চিঠি এন্ট্রি দিন <Plus size={20} />
+                  </button>
                   <button 
                     onClick={onViewRegister}
                     className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-3 active:scale-95 group"
