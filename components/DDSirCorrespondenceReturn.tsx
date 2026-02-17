@@ -122,13 +122,13 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
   // Header font is font-bold
   const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[11px] leading-tight align-middle bg-slate-200";
-  // Data cells changed to font-medium for clarity as per instruction
-  const tdStyle = "border border-slate-300 px-1.5 py-1.5 text-[12px] text-center font-medium leading-tight bg-white align-middle transition-colors group-hover:bg-blue-50";
+  // Data cells reverted to font-bold
+  const tdStyle = "border border-slate-300 px-1.5 py-1.5 text-[12px] text-center font-bold leading-tight bg-white align-middle transition-colors group-hover:bg-blue-50";
   
-  // Changed sticky header from black to bold
-  const stickyThStyle = "border border-slate-300 px-1 py-3 font-bold text-center text-[10px] bg-slate-200";
-  // Changed sticky data from bold to medium
-  const stickyTdStyle = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-center font-medium leading-tight bg-white align-middle transition-colors group-hover:bg-blue-50";
+  // Reverted sticky header from bold to black
+  const stickyThStyle = "border border-slate-300 px-1 py-3 font-black text-center text-[10px] bg-slate-200";
+  // Reverted sticky data from medium to bold
+  const stickyTdStyle = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-center font-bold leading-tight bg-white align-middle transition-colors group-hover:bg-blue-50";
 
   return (
     <div className="space-y-6 py-2 w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view">
@@ -254,19 +254,19 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   <td colSpan={4} className="border border-slate-700 p-2">
                     <div className="flex justify-between items-center px-1">
                       <span className="font-bold text-[10px] text-white/80">১ মাসের কম:</span>
-                      <span className="font-bold text-[12px] text-white">{toBengaliDigits(grandTotalLess)} টি</span>
+                      <span className="font-black text-[12px] text-white">{toBengaliDigits(grandTotalLess)} টি</span>
                     </div>
                   </td>
                   <td colSpan={4} className="border border-slate-700 p-2">
                     <div className="flex justify-between items-center px-1">
                       <span className="font-bold text-[10px] text-white/80">১ মাসের বেশি:</span>
-                      <span className="font-bold text-[12px] text-white">{toBengaliDigits(grandTotalMore)} টি</span>
+                      <span className="font-black text-[12px] text-white">{toBengaliDigits(grandTotalMore)} টি</span>
                     </div>
                   </td>
                   <td colSpan={4} className="border border-slate-700 p-2">
                     <div className="flex justify-between items-center px-1">
                       <span className="font-bold text-[10px] text-white/80">মোট কাজ:</span>
-                      <span className="font-bold text-[12px] text-white">{toBengaliDigits(grandTotalLess + grandTotalMore)} টি</span>
+                      <span className="font-black text-[12px] text-white">{toBengaliDigits(grandTotalLess + grandTotalMore)} টি</span>
                     </div>
                   </td>
                 </tr>
@@ -278,7 +278,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         {/* SECTION 2: বিস্তারিত তালিকা টেবিল (Sticky by tableSticky.css logic) */}
         <div className="pt-10 border-t-4 border-double border-slate-200 flex flex-col items-center overflow-visible">
           <div className="text-center mb-6 w-full">
-             <div className="inline-block px-10 py-1 bg-black text-white text-[15px] font-bold tracking-widest uppercase mb-4">ছক</div>
+             <div className="inline-block px-10 py-1 bg-black text-white text-[15px] font-black tracking-widest uppercase mb-4">ছক</div>
              <div className="flex justify-between items-end border-b border-slate-300 pb-1">
                 <span className="font-bold text-[14px]">বকেয়া চিঠিপত্রের তালিকা ({entries[0]?.paraType || 'অনির্ধারিত'} শাখা)</span>
                 <span className="font-bold text-[14px]">তাং- {reportingDateBN} খ্রি:</span>
@@ -321,21 +321,21 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         <td className={stickyTdStyle}>{toBengaliDigits(globalIdx)}</td>
                         {rowIdx === 0 && (
                           <td rowSpan={group.rows.length} className={stickyTdStyle + " bg-slate-50/50 group-hover:bg-blue-100"}>
-                            <div className="font-medium text-slate-900 text-[10.5px] leading-tight">{group.auditor}</div>
+                            <div className="font-black text-slate-900 text-[10.5px] leading-tight">{group.auditor}</div>
                           </td>
                         )}
-                        <td className={stickyTdStyle + " text-left px-2 font-medium text-[10.5px]"}>{row.description}</td>
-                        <td className={stickyTdStyle}>{row.letterNo}<br/><span className="text-[9px] text-slate-500 font-medium">{toBengaliDigits(row.letterDate)}</span></td>
-                        <td className={stickyTdStyle}>{row.diaryNo}<br/><span className="text-[9px] text-slate-500 font-medium">{toBengaliDigits(row.diaryDate)}</span></td>
+                        <td className={stickyTdStyle + " text-left px-2 font-bold text-[10.5px]"}>{row.description}</td>
+                        <td className={stickyTdStyle}>{row.letterNo}<br/><span className="text-[9px] text-slate-500 font-bold">{toBengaliDigits(row.letterDate)}</span></td>
+                        <td className={stickyTdStyle}>{row.diaryNo}<br/><span className="text-[9px] text-slate-500 font-bold">{toBengaliDigits(row.diaryDate)}</span></td>
                         <td className={stickyTdStyle}>
                           <div className="flex flex-col gap-0.5">
-                             <span className="text-blue-700 text-[10.5px] font-medium">{row.letterType}</span>
-                             <span className="text-[9.5px] bg-slate-100 rounded px-1 group-hover:bg-white transition-colors font-medium">(অনু: {toBengaliDigits(row.totalParas)}টি)</span>
+                             <span className="text-blue-700 text-[10.5px] font-bold">{row.letterType}</span>
+                             <span className="text-[9.5px] bg-slate-100 rounded px-1 group-hover:bg-white transition-colors font-bold">(অনু: {toBengaliDigits(row.totalParas)}টি)</span>
                           </div>
                         </td>
                         <td className={stickyTdStyle}>{toBengaliDigits(row.presentationDate) || '-'}</td>
                         <td className={stickyTdStyle}>
-                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-[9px] font-medium uppercase group-hover:bg-white">
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-[9px] font-black uppercase group-hover:bg-white">
                             {row.presentedToName || 'অডিটর'}
                           </span>
                         </td>
@@ -353,10 +353,9 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               </tbody>
               {/* Footer text color white */}
               <tfoot>
-                {/* Fixed erroneous backslash in className on line 357 */}
-                <tr className="bg-slate-900 text-white font-bold text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] border-t border-slate-700">
+                <tr className="bg-slate-900 text-white font-black text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] border-t border-slate-700">
                   <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-slate-900">সর্বমোট চিঠিপত্র সংখ্যা:</td>
-                  <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-slate-900 text-white font-bold">{toBengaliDigits(entries.length)} টি</td>
+                  <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-slate-900 text-white font-black">{toBengaliDigits(entries.length)} টি</td>
                   <td colSpan={6} className="border-t border-slate-700 bg-slate-900"></td>
                 </tr>
               </tfoot>
