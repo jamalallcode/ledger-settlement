@@ -273,10 +273,10 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                       <span className="font-black text-[14px] text-red-600">{toBengaliDigits(grandTotalMore)} টি</span>
                     </div>
                   </td>
-                  <td colSpan={4} className="border border-slate-300 p-3 bg-slate-900">
+                  <td colSpan={4} className="border border-slate-300 p-3">
                     <div className="flex justify-between items-center px-2">
-                      <span className="font-bold text-[13px] text-white">মোট কাজ:</span>
-                      <span className="font-black text-[14px] text-emerald-400">{toBengaliDigits(grandTotalLess + grandTotalMore)} টি</span>
+                      <span className="font-bold text-[13px] text-slate-600">মোট কাজ:</span>
+                      <span className="font-black text-[14px] text-emerald-600">{toBengaliDigits(grandTotalLess + grandTotalMore)} টি</span>
                     </div>
                   </td>
                 </tr>
