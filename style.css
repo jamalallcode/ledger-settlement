@@ -1,3 +1,4 @@
+
 body {
   font-family: 'Hind Siliguri', sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -18,31 +19,32 @@ table {
   table-layout: fixed;
 }
 
-/* MULTI-LEVEL STICKY HEADER OFFSETS */
+/* MULTI-LEVEL STICKY HEADER OFFSETS (৮০পিক্সেল নেভবার বিবেচনা করে আপডেট করা হয়েছে) */
 thead th {
   position: -webkit-sticky !important;
   position: sticky !important;
   z-index: 50 !important;
-  background-color: #f8fafc !important; 
+  background-color: #ffffff !important; 
   box-shadow: inset 0 -1px 0 #cbd5e1, inset -1px 0 0 #cbd5e1 !important;
   white-space: normal !important;
   word-wrap: break-word !important;
+  background-clip: padding-box !important;
 }
 
-/* Fixed offsets for sticky rows to ensure smooth transition */
+/* Fixed offsets for sticky rows to ensure smooth transition and zero gaps */
 thead tr:nth-child(1) th {
-  top: 0px !important;
-  z-index: 95 !important;
+  top: 80px !important;
+  z-index: 150 !important;
 }
 
 thead tr:nth-child(2) th {
-  top: 45px !important; 
-  z-index: 90 !important;
+  top: 125px !important; 
+  z-index: 140 !important;
 }
 
 thead tr:nth-child(3) th {
-  top: 86px !important; 
-  z-index: 85 !important;
+  top: 166px !important; 
+  z-index: 130 !important;
 }
 
 /* Sticky Footer for all tables */
