@@ -19,7 +19,7 @@
 }
 
 .table-container thead tr:nth-child(2) th {
-  top: 42px !important; /* Fixed: Matches h-[42px] of the first row to eliminate gap */
+  top: 42px !important; /* Fixed: Matches h-[42px] of the first row */
   z-index: 215 !important;
 }
 
