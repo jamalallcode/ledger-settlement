@@ -16,31 +16,39 @@ import { getDateError } from '../utils/dateValidation';
  * AI MUST NOT change existing styles, colors, or core logic without permission.
  */
 
+// UI Constants moved to top for global access within the file
+const colWrapper = "p-5 rounded-2xl border bg-white transition-all hover:shadow-lg relative min-w-0";
+const inputCls = "w-full h-[52px] px-4 border border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 shadow-sm transition-all text-[14px]";
+const labelCls = "block text-[13px] font-black text-slate-700 mb-2 flex items-center gap-2";
+const numBadge = "inline-flex items-center justify-center w-5 h-5 bg-slate-900 text-white rounded-md text-[10px] font-black shadow-sm shrink-0";
+const sectionHeaderCls = "col-span-full mt-6 mb-2 py-2 border-b border-slate-100 flex items-center gap-3";
+const sectionTitleCls = "text-[12px] font-black text-slate-400 uppercase tracking-[0.2em]";
+
 /**
  * Segmented Date Input Component (Mirrored from Settlement Module Logic)
  * Handles auto-padding, max limits, smart year expansion, and auto-focus jump.
  */
 const SegmentedInput = ({ 
-  id, icon: Icon, label, color, dayValue, monthValue, yearValue, 
+  id, icon: Icon, num, label, color, dayValue, monthValue, yearValue, 
   daySetter, monthSetter, yearSetter, dayRef, monthRef, yearRef, 
   isLayoutEditable, originalValue, onDateSelect, error 
 }: any) => {
   
   const handleSegmentChange = (val: string, type: 'day'|'month'|'year', setter: (v: string) => void, nextRef?: React.RefObject<HTMLInputElement>) => {
     const cleaned = toEnglishDigits(val).replace(/[^0-9]/g, '');
-    const num = parseInt(cleaned);
+    const numVal = parseInt(cleaned);
 
     if (type === 'day') {
       if (cleaned.length <= 2) {
-        if (cleaned.length > 0 && num > 31) return;
+        if (cleaned.length > 0 && numVal > 31) return;
         setter(toBengaliDigits(cleaned));
-        if (cleaned.length === 2 || (cleaned.length === 1 && num > 3)) nextRef?.current?.focus();
+        if (cleaned.length === 2 || (cleaned.length === 1 && numVal > 3)) nextRef?.current?.focus();
       }
     } else if (type === 'month') {
       if (cleaned.length <= 2) {
-        if (cleaned.length > 0 && num > 12) return;
+        if (cleaned.length > 0 && numVal > 12) return;
         setter(toBengaliDigits(cleaned));
-        if (cleaned.length === 2 || (cleaned.length === 1 && num > 1)) nextRef?.current?.focus();
+        if (cleaned.length === 2 || (cleaned.length === 1 && numVal > 1)) nextRef?.current?.focus();
       }
     } else if (type === 'year') {
       if (cleaned.length <= 4) setter(toBengaliDigits(cleaned));
@@ -70,7 +78,7 @@ const SegmentedInput = ({
       setTimeout(() => setCopied(false), 2000);
     };
     return (
-      <span onClick={handleCopy} className={`absolute -top-3 left-2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 z-[300] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'bg-emerald-600' : ''}`}>
+      <span onClick={handleCopy} className={`absolute -top-3 left-2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 z-[300] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'ring-2 ring-emerald-500 bg-emerald-600' : ''}`}>
         {copied ? 'COPIED!' : `#${id}`}
       </span>
     );
@@ -79,8 +87,9 @@ const SegmentedInput = ({
   return (
     <div className={`p-5 rounded-2xl border transition-all hover:shadow-lg relative min-w-0 ${error ? 'bg-red-50 border-red-200' : `bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`}`}>
       <IDBadge id={id} />
-      <label className="block text-[13px] font-black text-slate-700 mb-2 flex items-center gap-1.5 truncate">
-        <Icon size={14} className={`${error ? 'text-red-600' : `text-${color}-600`} shrink-0`} /> <span>{label}</span>
+      <label className="block text-[13px] font-black text-slate-700 mb-2 flex items-center gap-2 truncate">
+        {/* Adjusted Serial and Icon Position as per request */}
+        <span className={numBadge}>{num}</span> <Icon size={14} className={`${error ? 'text-red-600' : `text-${color}-600`} shrink-0`} /> <span className="truncate">{label}</span>
       </label>
       <div className={`relative w-full h-[55px] flex items-center border rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : 'border-slate-200 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50'}`}>
         <div className="flex items-center w-full px-4 h-full gap-2">
@@ -379,13 +388,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     );
   };
 
-  const colWrapper = "p-5 rounded-2xl border bg-white transition-all hover:shadow-lg relative min-w-0";
-  const inputCls = "w-full h-[52px] px-4 border border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 shadow-sm transition-all text-[14px]";
-  const labelCls = "block text-[13px] font-black text-slate-700 mb-2 flex items-center gap-2";
-  const numBadge = "inline-flex items-center justify-center w-5 h-5 bg-slate-900 text-white rounded-md text-[10px] font-black shadow-sm shrink-0";
-  const sectionHeaderCls = "col-span-full mt-6 mb-2 py-2 border-b border-slate-100 flex items-center gap-3";
-  const sectionTitleCls = "text-[12px] font-black text-slate-400 uppercase tracking-[0.2em]";
-
   return (
     <div id="form-container-correspondence" className="bg-white p-4 md:p-10 rounded-[2.5rem] border border-slate-200 shadow-2xl animate-landing-premium max-w-7xl mx-auto overflow-x-hidden relative">
       <IDBadge id="view-correspondence-form" />
@@ -527,7 +529,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 4.খ - Smart Segmented Date */}
             <SegmentedInput 
-              id="corr-field-4b" icon={Calendar} label="৪.খ পত্রের তারিখ" color="amber" 
+              id="corr-field-4b" icon={Calendar} num="৪.খ" label="পত্রের তারিখ" color="amber" 
               dayValue={ld} monthValue={lm} yearValue={ly} 
               daySetter={setLd} monthSetter={setLm} yearSetter={setLy} 
               dayRef={ldRef} monthRef={lmRef} yearRef={lyRef} 
@@ -577,7 +579,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             {/* Field 7.খ - Smart Segmented Date */}
             <div className="space-y-2">
               <SegmentedInput 
-                id="corr-field-7b" icon={Calendar} label="৭.খ ডায়েরি তারিখ" color="emerald" 
+                id="corr-field-7b" icon={Calendar} num="৭.খ" label="ডায়েরি তারিখ" color="emerald" 
                 dayValue={dd} monthValue={dm} yearValue={dy} 
                 daySetter={setDd} monthSetter={setDm} yearSetter={setDy} 
                 dayRef={ddRef} monthRef={dmRef} yearRef={dyRef} 
@@ -595,7 +597,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 8 - Smart Segmented Date */}
             <SegmentedInput 
-              id="corr-field-8" icon={Inbox} label="৮ শাখায় প্রাপ্তির তারিখ" color="sky" 
+              id="corr-field-8" icon={Inbox} num="৮" label="শাখায় প্রাপ্তির তারিখ" color="sky" 
               dayValue={rd} monthValue={rm} yearValue={ry} 
               daySetter={setRd} monthSetter={setRm} yearSetter={setRy} 
               dayRef={rdRef} monthRef={rmRef} yearRef={ryRef} 
@@ -666,7 +668,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 11 - Smart Segmented Date */}
             <SegmentedInput 
-              id="corr-field-11" icon={Calendar} label="১১ গ্রহণের তারিখ" color="blue" 
+              id="corr-field-11" icon={Calendar} num="১১" label="গ্রহণের তারিখ" color="blue" 
               dayValue={rcd} monthValue={rcm} yearValue={rcy} 
               daySetter={setRcd} monthSetter={setRcm} yearSetter={setRcy} 
               dayRef={rcdRef} monthRef={rcmRef} yearRef={rcyRef} 
