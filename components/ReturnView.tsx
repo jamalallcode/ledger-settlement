@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect, useRef } from 'react';
 import React from 'react';
 import { SettlementEntry, ParaType, CumulativeStats, MinistryPrevStats } from '../types';
@@ -21,45 +22,18 @@ interface ReturnViewProps {
   isLayoutEditable?: boolean;
   resetKey?: number;
   isAdmin?: boolean;
+  selectedReportType: string | null;
+  setSelectedReportType: (type: string | null) => void;
 }
 
-const reportOptions = [
-  { 
-    id: 'monthly-letter', 
-    title: 'মাসিক রিটারন: চিঠিপত্র সংক্রান্ত।', 
-    desc: 'চিঠিপত্র আদান-প্রদান এবং নিষ্পত্তির পরিসংখ্যান', 
-    icon: FileStack, 
-    accent: 'from-blue-600 to-indigo-700'
-  },
-  { 
-    id: 'monthly-para', 
-    title: 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।', 
-    desc: 'মাসিক ভিত্তিতে অনুচ্ছেদ নিষ্পত্তির বিস্তারিত রিপোর্ট', 
-    icon: BarChart3, 
-    accent: 'from-emerald-600 to-teal-700'
-  },
-  { 
-    id: 'quarterly-para', 
-    title: 'ত্রৈমাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।', 
-    desc: 'তিন মাসের সমন্বিত নিষ্পত্তি প্রতিবেদন', 
-    icon: History, 
-    accent: 'from-amber-600 to-orange-700'
-  },
-  { 
-    id: 'setup-mode', 
-    title: 'পূর্ব জের সেটআপ উইন্ডো', 
-    desc: 'মন্ত্রণালয় ও সংস্থাভিত্তিক প্রারম্ভিক জের ইনপুট দিন', 
-    icon: Settings, 
-    accent: 'from-slate-700 to-slate-900'
-  }
-];
-
-const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries = [], cycleLabel, prevStats, setPrevStats, isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister, isAdmin }) => {
-  const [selectedReportType, setSelectedReportType] = useState<string | null>(null);
+const ReturnView: React.FC<ReturnViewProps> = ({ 
+  entries, correspondenceEntries = [], cycleLabel, prevStats, setPrevStats, 
+  isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister, isAdmin,
+  selectedReportType, setSelectedReportType
+}) => {
   const [isSetupMode, setIsSetupMode] = useState(false);
   const [isEditingSetup, setIsEditingSetup] = useState(false);
   const [tempPrevStats, setTempPrevStats] = useState<Record<string, MinistryPrevStats>>({});
-  const [isCorrespondenceExpanded, setIsCorrespondenceExpanded] = useState(false);
   
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   
@@ -72,10 +46,17 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
     if (resetKey && resetKey > 0) {
       setSelectedReportType(null);
       setIsSetupMode(false);
-      setIsCorrespondenceExpanded(false);
       setSelectedCycleDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
     }
   }, [resetKey]);
+
+  useEffect(() => {
+    if (selectedReportType === 'পূর্ব জের সেটআপ উইন্ডো') {
+      setIsSetupMode(true);
+    } else if (selectedReportType !== null) {
+      setIsSetupMode(false);
+    }
+  }, [selectedReportType]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -163,7 +144,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
   }, [isSetupMode, prevStats, activeCycle, ministryGroups]);
 
   const reportData = useMemo(() => {
-    if (!selectedReportType || selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' || selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
+    if (!selectedReportType || selectedReportType.includes('চিঠিপত্র সংক্রান্ত')) return [];
     
     return ministryGroups.map(ministryName => {
       const normMinistry = robustNormalize(ministryName);
@@ -257,6 +238,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
       entitiesNonSFI: {} 
     });
     setIsSetupMode(false);
+    setSelectedReportType(null);
     setIsEditingSetup(false);
   };
 
@@ -311,6 +293,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
     return (
       <div onClick={handleCopy} className="absolute top-0 left-0 -translate-y-full z-[9995] pointer-events-auto no-print">
         <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md font-black text-[9px] bg-black text-white border border-white/30 shadow-2xl transition-all duration-300 hover:scale-150 hover:bg-blue-600 hover:z-[99999] active:scale-95 cursor-copy origin-bottom-left ${copied ? 'bg-emerald-600 border-emerald-400 ring-4 ring-emerald-500/30 !scale-125' : ''}`}>
+          {/* Fixed typo: changed size(10) to size={10} */}
           {copied ? <><CheckCircle2 size={10} /> COPIED</> : `#${id}`}
         </span>
       </div>
@@ -344,95 +327,19 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
 
   if (!selectedReportType && !isSetupMode) {
     return (
-      <div id="section-report-selector" className="max-w-4xl pb-10 animate-report-page relative pt-0">
+      <div id="section-report-selector" className="max-w-4xl py-20 animate-report-page relative pt-0 text-center">
         <IDBadge id="section-report-selector" />
-        <div className="grid grid-cols-1 gap-5">
-          {reportOptions.filter(opt => isAdmin || opt.id !== 'setup-mode').map((opt, index) => {
-            const isMonthlyLetter = opt.id === 'monthly-letter';
-            
-            return (
-              <React.Fragment key={opt.id}>
-                <div 
-                  onClick={() => {
-                    if (opt.id === 'setup-mode') setIsSetupMode(true);
-                    else if (isMonthlyLetter) setIsCorrespondenceExpanded(!isCorrespondenceExpanded);
-                    else setSelectedReportType(opt.title);
-                  }} 
-                  className={`
-                    group relative flex items-center h-[82px] w-full 
-                    bg-gradient-to-r from-slate-900 to-slate-800
-                    rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5
-                    transition-all duration-500 cursor-pointer overflow-hidden border border-white/10
-                    animate-in slide-in-from-right-10 fill-mode-forwards
-                  `}
-                  style={{ animationDelay: `${index * 150}ms` }}
-                >
-                  <IDBadge id={`report-opt-${opt.id}`} />
-                  <div className={`absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b ${opt.accent} shadow-[0_0_15px_rgba(255,255,255,0.2)]`}></div>
-                  <div className="flex items-center justify-center pl-7 relative z-10">
-                    <div className={`w-12 h-12 bg-slate-800/50 rounded-2xl border border-white/10 shadow-inner flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:bg-gradient-to-br ${opt.accent}`}>
-                      <opt.icon size={22} className="text-white group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
-                    </div>
-                  </div>
-                  <div className="flex flex-col justify-center pl-8 flex-1 relative z-10">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-[20px] font-black text-white tracking-tight leading-tight mb-0.5 group-hover:text-blue-200 transition-colors">{opt.title}</h3>
-                      {opt.id === 'setup-mode' && <Lock size={14} className="text-white/30" />}
-                    </div>
-                    <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider group-hover:text-slate-300 transition-colors">{opt.desc}</p>
-                  </div>
-                  <div className={`pr-10 opacity-40 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0 relative z-10 ${isMonthlyLetter && isCorrespondenceExpanded ? 'rotate-90' : ''}`}>
-                    <ArrowRightCircle size={24} className="text-white" />
-                  </div>
-                </div>
-
-                {/* Sub-menu for Monthly Correspondence Return */}
-                {isMonthlyLetter && isCorrespondenceExpanded && (
-                  <div className="pl-12 space-y-4 animate-in slide-in-from-top-4 duration-500 mb-4">
-                    {/* Option 1: Sending to Dhaka */}
-                    <div 
-                      onClick={() => setSelectedReportType('চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')}
-                      className="group relative flex items-center h-[72px] w-full bg-gradient-to-r from-blue-900 to-blue-800 rounded-[1.25rem] shadow-md hover:shadow-xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/5"
-                    >
-                      <div className="absolute top-0 left-0 w-1 h-full bg-blue-400"></div>
-                      <div className="flex items-center pl-6">
-                        <div className="w-10 h-10 bg-blue-700/50 rounded-xl border border-white/10 flex items-center justify-center group-hover:bg-blue-600 transition-all">
-                          <Send size={18} className="text-white" />
-                        </div>
-                      </div>
-                      <div className="flex flex-col justify-center pl-6 flex-1">
-                        <h4 className="text-[16px] font-black text-white leading-tight">১. চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।</h4>
-                        <p className="text-blue-300 font-bold text-[9px] uppercase tracking-widest mt-0.5">বিদ্যমান ফরম্যাট (Existing Format)</p>
-                      </div>
-                      <div className="pr-8 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
-                        <ArrowRight size={18} className="text-white" />
-                      </div>
-                    </div>
-
-                    {/* Option 2: For DD Sir */}
-                    <div 
-                      onClick={() => setSelectedReportType('চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।')}
-                      className="group relative flex items-center h-[72px] w-full bg-gradient-to-r from-indigo-900 to-indigo-800 rounded-[1.25rem] shadow-md hover:shadow-xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/5"
-                    >
-                      <div className="absolute top-0 left-0 w-1 h-full bg-indigo-400"></div>
-                      <div className="flex items-center pl-6">
-                        <div className="w-10 h-10 bg-indigo-700/50 rounded-xl border border-white/10 flex items-center justify-center group-hover:bg-indigo-600 transition-all">
-                          <UserCheck size={18} className="text-white" />
-                        </div>
-                      </div>
-                      <div className="flex flex-col justify-center pl-6 flex-1">
-                        <h4 className="text-[16px] font-black text-white leading-tight">২. চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।</h4>
-                        <p className="text-indigo-300 font-bold text-[9px] uppercase tracking-widest mt-0.5">নতুন বিশেষ ফরম্যাট (Special DD Sir View)</p>
-                      </div>
-                      <div className="pr-8 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
-                        <ArrowRight size={18} className="text-white" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </React.Fragment>
-            )
-          })}
+        <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-16 rounded-[3rem] space-y-6">
+           <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto shadow-xl">
+              <PieChart size={40} />
+           </div>
+           <div className="space-y-2">
+              <h3 className="text-3xl font-black text-slate-800">রিটার্ণ মডিউলে স্বাগতম</h3>
+              <p className="text-slate-500 font-bold max-w-sm mx-auto">অনুগ্রহ করে বাম পাশের সাইডবার মেনু থেকে কাঙ্ক্ষিত রিটার্ণ বা সারাংশের ধরনটি নির্বাচন করুন।</p>
+           </div>
+           <div className="flex justify-center items-center gap-4 text-slate-400 font-black text-sm uppercase tracking-widest pt-4">
+              <ArrowRightCircle size={20} className="text-blue-500 animate-pulse" /> সাইডবার থেকে সিলেক্ট করুন
+           </div>
         </div>
       </div>
     );
@@ -579,7 +486,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
         <div id="container-setup-controls" className="flex flex-col md:flex-row items-center justify-between bg-white p-6 rounded-3xl border border-slate-200 shadow-xl gap-4 no-print relative">
           <IDBadge id="container-setup-controls" />
           <div className="flex items-center gap-4">
-            <button onClick={() => setIsSetupMode(false)} className="p-3 bg-slate-100 border border-slate-200 rounded-2xl hover:bg-slate-200 text-slate-600 shadow-sm transition-all"><ChevronLeft size={22} /></button>
+            <button onClick={() => { setIsSetupMode(false); setSelectedReportType(null); }} className="p-3 bg-slate-100 border border-slate-200 rounded-2xl hover:bg-slate-200 text-slate-600 shadow-sm transition-all"><ChevronLeft size={22} /></button>
             <div className="flex flex-col">
               <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3"><Settings2 size={28} className="text-blue-600" /> প্রারম্ভিক জের সেটআপ</h2>
               <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter">সমন্বিত (Unified) ব্যালেন্স ইনপুট উইন্ডো</span>
@@ -695,7 +602,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
 
         <div className="table-container border-t border-slate-300 overflow-visible relative">
           <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0">
-            <colgroup><col className="w-[58px]" /><col className="w-[125px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[36px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /></colgroup>
+            <colgroup><col className="w-[58px]" /><col className="w-[125px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="text-[9.5px] w-[74px]" /><col className="w-[36px]" /><col className="w-[36px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /></colgroup>
             <thead>
               <tr className="h-[42px]">
                 <th rowSpan={2} className={`${reportThStyle} !top-0`}>মন্ত্রণালয়</th>
