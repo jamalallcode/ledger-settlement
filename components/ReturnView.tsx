@@ -159,8 +159,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             const eMin = robustNormalize(e.ministryName || '');
             const eEnt = robustNormalize(e.entityName || '');
             if (eMin !== normMinistry || eEnt !== normEntity) return false;
-            if (!e.issueDateISO) return false;
-            return isInCycle(e.issueDateISO, activeCycle.start, activeCycle.end);
+            // FIXED: Removed undefined 'eUpdateISO' and used consistent date detection fallback
+            const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+            return isInCycle(entryDate, activeCycle.start, activeCycle.end);
           });
           
           let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0;
@@ -396,19 +397,19 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           <div className="table-container relative overflow-visible">
             <table className="w-full border-separate table-fixed border-spacing-0">
               <colgroup>
-                <col className="w-[45px]" />
-                <col className="w-[200px]" />
-                <col className="w-[100px]" />
-                <col className="w-[100px]" />
-                <col className="w-[65px]" />
-                <col className="w-[65px]" />
-                <col className="w-[65px]" />
-                <col className="w-[65px]" />
-                <col className="w-[65px]" />
-                <col className="w-[75px]" />
-                <col className="w-[100px]" />
+                <col className="w-[30px]" />
+                <col className="w-[150px]" />
+                <col className="w-[80px]" />
+                <col className="w-[80px]" />
+                <col className="w-[55px]" />
+                <col className="w-[55px]" />
+                <col className="w-[55px]" />
+                <col className="w-[55px]" />
+                <col className="w-[55px]" />
+                <col className="w-[60px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
                 <col className="w-[85px]" />
-                <col className="w-[100px]" />
               </colgroup>
               <thead>
                 {/* Fixed Heights to match exactly with tableSticky.css global offsets (0, 42, 80) */}
@@ -440,7 +441,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 {filteredCorrespondence.length > 0 ? filteredCorrespondence.map((entry, idx) => (
                   <tr key={entry.id} className="group hover:bg-blue-50/50 transition-colors">
                     <td className={tdS}>{toBengaliDigits(idx + 1)}</td>
-                    <td className={tdS + " text-left px-3"}>{entry.description}</td>
+                    <td className={tdS + " text-left px-2"}>{entry.description}</td>
                     <td className={tdS}>{entry.diaryNo}<br/>{toBengaliDigits(entry.diaryDate)}</td>
                     <td className={tdS}>{entry.letterNo}<br/>{toBengaliDigits(entry.letterDate)}</td>
                     <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'এসএফআই' ? `বিএসআর (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
@@ -607,7 +608,26 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
         <div className="table-container border border-slate-300 overflow-visible relative">
           <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0">
-            <colgroup><col className="w-[58px]" /><col className="w-[125px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="text-[9.5px] w-[74px]" /><col className="w-[36px]" /><col className="w-[36px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /></colgroup>
+            <colgroup>
+              <col className="w-[50px]" />
+              <col className="w-[110px]" />
+              <col className="w-[30px]" />
+              <col className="w-[55px]" />
+              <col className="w-[30px]" />
+              <col className="w-[55px]" />
+              <col className="w-[30px]" />
+              <col className="w-[55px]" />
+              <col className="w-[30px]" />
+              <col className="w-[55px]" />
+              <col className="w-[30px]" />
+              <col className="w-[30px]" />
+              <col className="w-[30px]" />
+              <col className="w-[55px]" />
+              <col className="w-[30px]" />
+              <col className="w-[55px]" />
+              <col className="w-[30px]" />
+              <col className="w-[55px]" />
+            </colgroup>
             <thead>
               {/* Row height changed to 42px to match global sticky offset of 42px */}
               <tr className="h-[42px]">
