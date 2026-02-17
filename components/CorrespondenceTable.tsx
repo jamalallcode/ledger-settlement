@@ -63,7 +63,11 @@ const SegmentedTableDateInput: React.FC<{
     const finalY = nY.padStart(4, '0');
     const finalM = nM.padStart(2, '0');
     const finalD = nD.padStart(2, '0');
-    onChange(`${finalY}-${finalM}-${finalD}`);
+    updateValue(`${finalY}-${finalM}-${finalD}`);
+  };
+
+  const updateValue = (val: string) => {
+    onChange(val);
   };
 
   const dayVal = d && d !== '00' ? toBengaliDigits(d) : '';
@@ -120,6 +124,7 @@ const SegmentedTableDateInput: React.FC<{
 
 /**
  * Premium Dropdown Component for Inline Presentation Name Update
+ * Fix: Added toggle logic to allow unselecting an already selected value.
  */
 const PremiumInlineSelect: React.FC<{
   value: string;
@@ -207,7 +212,13 @@ const PremiumInlineSelect: React.FC<{
           <div className="max-h-40 overflow-y-auto no-scrollbar py-1">
             {filtered.map((opt, i) => (
               <div 
-                key={i} onClick={() => { onSelect(opt); setIsOpen(false); }}
+                key={i} 
+                onClick={() => { 
+                  // Toggle logic: if already selected, set to empty string (unselect)
+                  const nextVal = value === opt ? '' : opt;
+                  onSelect(nextVal); 
+                  setIsOpen(false); 
+                }}
                 className={`px-3 py-1.5 cursor-pointer flex items-center justify-between transition-all ${value === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[10px]'}`}
               >
                 <span>{opt}</span>
