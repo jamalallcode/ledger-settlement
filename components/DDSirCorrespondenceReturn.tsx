@@ -119,8 +119,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const grandTotalMore = totals.kpM + totals.kbM + totals.bsM + totals.rcM + totals.otM;
 
   // thStyle for Table 1 (Overriding global sticky to make it scrollable, lighter borders)
-  const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[13px] leading-tight align-middle bg-slate-50 !static !top-auto";
-  const tdStyle = "border border-slate-300 px-2 py-2 text-[14px] text-center font-bold leading-tight bg-white align-middle";
+  const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[12px] leading-tight align-middle bg-slate-50 !static !top-auto";
+  const tdStyle = "border border-slate-300 px-2 py-2 text-[13px] text-center font-bold leading-tight bg-white align-middle";
   
   // Sticky Styles for Table 2 (Ensuring it sticks below Navbar at 80px, lighter borders)
   const stickyThStyle = "border border-slate-300 px-1 py-3 font-black text-center text-[11px] bg-slate-100 sticky !top-[80px] z-[100] shadow-[inset_0_-1px_0_#cbd5e1]";
@@ -177,22 +177,22 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         </div>
 
         {/* SECTION 1: সারসংক্ষেপ টেবিল (Non-Sticky Header/Footer) */}
-        <div className="mb-10">
-          <div className="table-container">
+        <div className="mb-10 flex justify-center">
+          <div className="table-container max-w-[1000px] w-full">
             <table className="w-full border-separate table-fixed border-collapse border border-slate-300">
               <colgroup>
-                <col className="w-[50px]" />
-                <col className="w-[180px]" />
-                <col className="w-[70px]" />
-                <col className="w-[70px]" />
-                <col className="w-[70px]" />
-                <col className="w-[70px]" />
-                <col className="w-[70px]" />
-                <col className="w-[70px]" />
-                <col className="w-[70px]" />
-                <col className="w-[70px]" />
-                <col className="w-[70px]" />
-                <col className="w-[70px]" />
+                <col className="w-[40px]" />
+                <col className="w-[160px]" />
+                <col className="w-[80px]" />
+                <col className="w-[80px]" />
+                <col className="w-[80px]" />
+                <col className="w-[80px]" />
+                <col className="w-[80px]" />
+                <col className="w-[80px]" />
+                <col className="w-[80px]" />
+                <col className="w-[80px]" />
+                <col className="w-[80px]" />
+                <col className="w-[80px]" />
               </colgroup>
               <thead>
                 {/* Fixed Top Header integrated into the table for border alignment (Non-sticky) */}
@@ -263,20 +263,20 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <tr className="bg-slate-50">
                   <td colSpan={4} className="border border-slate-300 p-3">
                     <div className="flex justify-between items-center px-2">
-                      <span className="font-bold text-[13px] text-slate-600">এক মাসের কম অনিষ্পন্ন কাজ:</span>
-                      <span className="font-black text-[14px] text-blue-700">{toBengaliDigits(grandTotalLess)} টি</span>
+                      <span className="font-bold text-[11px] text-slate-600">এক মাসের কম:</span>
+                      <span className="font-black text-[13px] text-blue-700">{toBengaliDigits(grandTotalLess)} টি</span>
                     </div>
                   </td>
                   <td colSpan={4} className="border border-slate-300 p-3">
                     <div className="flex justify-between items-center px-2">
-                      <span className="font-bold text-[13px] text-slate-600">এক মাসের বেশি অনিষ্পন্ন কাজ:</span>
-                      <span className="font-black text-[14px] text-red-600">{toBengaliDigits(grandTotalMore)} টি</span>
+                      <span className="font-bold text-[11px] text-slate-600">এক মাসের বেশি:</span>
+                      <span className="font-black text-[13px] text-red-600">{toBengaliDigits(grandTotalMore)} টি</span>
                     </div>
                   </td>
                   <td colSpan={4} className="border border-slate-300 p-3">
                     <div className="flex justify-between items-center px-2">
-                      <span className="font-bold text-[13px] text-slate-600">মোট কাজ:</span>
-                      <span className="font-black text-[14px] text-emerald-600">{toBengaliDigits(grandTotalLess + grandTotalMore)} টি</span>
+                      <span className="font-bold text-[11px] text-slate-600">মোট কাজ:</span>
+                      <span className="font-black text-[13px] text-emerald-600">{toBengaliDigits(grandTotalLess + grandTotalMore)} টি</span>
                     </div>
                   </td>
                 </tr>
@@ -286,28 +286,27 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         </div>
 
         {/* SECTION 2: বিস্তারিত তালিকা টেবিল (Sticky Header/Footer) */}
-        <div className="pt-10 border-t-4 border-double border-slate-200">
-          <div className="text-center mb-6">
+        <div className="pt-10 border-t-4 border-double border-slate-200 flex flex-col items-center">
+          <div className="text-center mb-6 w-full max-w-[1000px]">
              <div className="inline-block px-10 py-1 bg-black text-white text-[16px] font-black tracking-widest uppercase mb-4">ছক</div>
              <div className="flex justify-between items-end border-b border-slate-300 pb-1">
                 <span className="font-bold text-[15px]">বকেয়া চিঠিপত্রের তালিকা ({entries[0]?.paraType || 'অনির্ধারিত'} শাখা)</span>
-                {/* Fixed syntax error on the next line (line 294 in original file) */}
                 <span className="font-bold text-[15px]">তাং- {reportingDateBN} খ্রি:</span>
              </div>
           </div>
 
-          <div className="table-container relative overflow-visible">
+          <div className="table-container relative overflow-visible max-w-[1000px] w-full">
             <table className="w-full border-separate table-fixed border-spacing-0 border border-slate-300">
               <colgroup>
-                <col className="w-[45px]" />
+                <col className="w-[40px]" />
+                <col className="w-[100px]" />
+                <col className="w-[180px]" />
                 <col className="w-[120px]" />
-                <col className="w-[220px]" />
-                <col className="w-[140px]" />
-                <col className="w-[140px]" />
+                <col className="w-[120px]" />
                 <col className="w-[160px]" />
                 <col className="w-[90px]" />
-                <col className="w-[85px]" />
-                <col className="w-[80px]" />
+                <col className="w-[90px]" />
+                <col className="w-[100px]" />
               </colgroup>
               <thead>
                 <tr>
@@ -332,15 +331,15 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         <td className={stickyTdStyle}>{toBengaliDigits(globalIdx)}</td>
                         {rowIdx === 0 && (
                           <td rowSpan={group.rows.length} className={stickyTdStyle + " bg-slate-50/50"}>
-                            <div className="font-black text-slate-900">{group.auditor}</div>
+                            <div className="font-black text-slate-900 text-[11px]">{group.auditor}</div>
                           </td>
                         )}
-                        <td className={stickyTdStyle + " text-left px-3 font-medium"}>{row.description}</td>
+                        <td className={stickyTdStyle + " text-left px-3 font-medium text-[11px]"}>{row.description}</td>
                         <td className={stickyTdStyle}>{row.letterNo}<br/><span className="text-[10px] text-slate-500 font-bold">{toBengaliDigits(row.letterDate)}</span></td>
                         <td className={stickyTdStyle}>{row.diaryNo}<br/><span className="text-[10px] text-slate-500 font-bold">{toBengaliDigits(row.diaryDate)}</span></td>
                         <td className={stickyTdStyle}>
                           <div className="flex flex-col gap-0.5">
-                             <span className="text-blue-700">{row.letterType}</span>
+                             <span className="text-blue-700 text-[11px]">{row.letterType}</span>
                              <span className="text-[10px] bg-slate-100 rounded px-1">(অনু: {toBengaliDigits(row.totalParas)}টি)</span>
                           </div>
                         </td>
@@ -350,7 +349,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                             {row.presentedToName || 'অডিটর'}
                           </span>
                         </td>
-                        <td className={stickyTdStyle + " italic text-slate-400"}>{row.remarks || '-'}</td>
+                        <td className={stickyTdStyle + " italic text-slate-400 text-[10px]"}>{row.remarks || '-'}</td>
                       </tr>
                     );
                   }));
@@ -363,7 +362,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 )}
               </tbody>
               <tfoot className="sticky bottom-0 z-[100]">
-                <tr className="bg-slate-900 text-white font-black text-[13px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.3)]">
+                <tr className="bg-slate-900 text-white font-black text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.3)]">
                   <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-slate-900">সর্বমোট চিঠিপত্র সংখ্যা:</td>
                   <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-slate-900 text-emerald-400">{toBengaliDigits(entries.length)} টি</td>
                   <td colSpan={6} className="border-t border-slate-700 bg-slate-900"></td>
