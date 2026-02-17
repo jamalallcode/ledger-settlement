@@ -249,23 +249,23 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 )}
               </tbody>
               <tfoot className="no-print">
-                <tr className="bg-slate-50">
-                  <td colSpan={4} className="border border-slate-300 p-2">
+                <tr className="bg-slate-900 text-white">
+                  <td colSpan={4} className="border border-slate-700 p-2">
                     <div className="flex justify-between items-center px-1">
-                      <span className="font-bold text-[10px] text-slate-600">১ মাসের কম:</span>
-                      <span className="font-black text-[12px] text-blue-700">{toBengaliDigits(grandTotalLess)} টি</span>
+                      <span className="font-bold text-[10px] text-white/80">১ মাসের কম:</span>
+                      <span className="font-black text-[12px] text-white">{toBengaliDigits(grandTotalLess)} টি</span>
                     </div>
                   </td>
-                  <td colSpan={4} className="border border-slate-300 p-2">
+                  <td colSpan={4} className="border border-slate-700 p-2">
                     <div className="flex justify-between items-center px-1">
-                      <span className="font-bold text-[10px] text-slate-600">১ মাসের বেশি:</span>
-                      <span className="font-black text-[12px] text-red-600">{toBengaliDigits(grandTotalMore)} টি</span>
+                      <span className="font-bold text-[10px] text-white/80">১ মাসের বেশি:</span>
+                      <span className="font-black text-[12px] text-white">{toBengaliDigits(grandTotalMore)} টি</span>
                     </div>
                   </td>
-                  <td colSpan={4} className="border border-slate-300 p-2">
+                  <td colSpan={4} className="border border-slate-700 p-2">
                     <div className="flex justify-between items-center px-1">
-                      <span className="font-bold text-[10px] text-slate-600">মোট কাজ:</span>
-                      <span className="font-black text-[12px] text-emerald-600">{toBengaliDigits(grandTotalLess + grandTotalMore)} টি</span>
+                      <span className="font-bold text-[10px] text-white/80">মোট কাজ:</span>
+                      <span className="font-black text-[12px] text-white">{toBengaliDigits(grandTotalLess + grandTotalMore)} টি</span>
                     </div>
                   </td>
                 </tr>
@@ -350,12 +350,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   </tr>
                 )}
               </tbody>
-              {/* Modified Footer Background: From bg-slate-900 to bg-slate-50 for a lighter professional look */}
+              {/* Updated Footer: Dark background with completely white text */}
               <tfoot>
-                <tr className="bg-slate-50 text-slate-900 font-black text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] border-t border-slate-300">
-                  <td colSpan={2} className="px-6 text-left border-t border-slate-300 bg-slate-50">সর্বমোট চিঠিপত্র সংখ্যা:</td>
-                  <td colSpan={1} className="px-4 text-center border-t border-slate-300 bg-slate-50 text-emerald-600">{toBengaliDigits(entries.length)} টি</td>
-                  <td colSpan={6} className="border-t border-slate-300 bg-slate-50"></td>
+                <tr className="bg-slate-900 text-white font-black text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] border-t border-slate-700">
+                  <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-slate-900">সর্বমোট চিঠিপত্র সংখ্যা:</td>
+                  <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-slate-900 text-white">{toBengaliDigits(entries.length)} টি</td>
+                  <td colSpan={6} className="border-t border-slate-700 bg-slate-900"></td>
                 </tr>
               </tfoot>
             </table>
