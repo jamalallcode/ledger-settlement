@@ -62,14 +62,21 @@ const App: React.FC = () => {
       setResetKey(0); 
     }
     
+    // Handle Direct Entry Modules
     if (tab === 'entry' && subModule) {
       setEntryModule(subModule);
     } else if (tab !== 'entry') {
       setEntryModule(null);
     }
 
+    // Handle Direct Register Modules
+    if (tab === 'register' && subModule) {
+      setRegisterSubModule(subModule);
+    } else if (tab === 'register' && !subModule) {
+      setRegisterSubModule(null);
+    }
+
     setShowPendingOnly(false);
-    if (tab === 'register') setRegisterSubModule(null);
   };
 
   // --- AUTO SYNC LOGIC ---
@@ -141,7 +148,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (mainScrollRef.current) mainScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [activeTab, resetKey, entryModule]);
+  }, [activeTab, resetKey, entryModule, registerSubModule]);
 
   useEffect(() => {
     const fetchData = async () => {
