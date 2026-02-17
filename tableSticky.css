@@ -42,7 +42,9 @@
 
 /* --- MULTI-TABLE VIEW SPECIFIC OVERRIDES --- */
 
-/* Logic: Force the FIRST table in multi-view to be COMPLETELY STATIC */
+/* Logic: Force the FIRST table inside a multi-table view container to be COMPLETELY STATIC */
+.multi-table-view div:first-child .table-container,
+.multi-table-view div:first-of-type .table-container,
 .multi-table-view .table-container:first-of-type,
 .multi-table-view .table-container:first-of-type thead,
 .multi-table-view .table-container:first-of-type thead tr,
@@ -51,7 +53,7 @@
 .multi-table-view .table-container:first-of-type tfoot tr,
 .multi-table-view .table-container:first-of-type tfoot td {
   position: static !important;
-  z-index: auto !important;
+  z-index: 1 !important;
   box-shadow: none !important;
   top: auto !important;
   bottom: auto !important;
