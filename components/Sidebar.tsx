@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 
 interface SidebarProps {
   activeTab: string;
-  setActiveTab: (tab: string, subModule?: 'settlement' | 'correspondence') => void;
+  setActiveTab: (tab: string, subModule?: any, reportType?: string) => void;
   onToggleVisibility?: () => void;
   onDemoLoad?: () => void;
   isLockedMode: boolean;
@@ -40,6 +40,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   // --- Sub-menu States ---
   const [isEntryExpanded, setIsEntryExpanded] = useState(false);
   const [isRegisterExpanded, setIsRegisterExpanded] = useState(false);
+  const [isReturnExpanded, setIsReturnExpanded] = useState(false);
+  const [isMonthlyExpanded, setIsMonthlyExpanded] = useState(false);
+  const [isMonthlyCorrExpanded, setIsMonthlyCorrExpanded] = useState(false);
 
   // --- Important Links State ---
   const [isLinksOpen, setIsLinksOpen] = useState(false);
@@ -109,7 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'landing', label: 'হোম', icon: Home, badgeId: 'side-nav-home' },
     { id: 'entry', label: 'নতুন এন্ট্রি', icon: FilePlus2, badgeId: 'side-nav-entry', isDropdown: true },
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter, badgeId: 'side-nav-register', isDropdown: true },
-    { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return' },
+    { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return', isDropdown: true },
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, badgeId: 'side-nav-archive' },
     { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, badgeId: 'side-nav-voting' },
   ];
@@ -161,6 +164,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                     setIsEntryExpanded(!isEntryExpanded);
                   } else if (item.id === 'register') {
                     setIsRegisterExpanded(!isRegisterExpanded);
+                  } else if (item.id === 'return') {
+                    setIsReturnExpanded(!isReturnExpanded);
                   } else {
                     setActiveTab(item.id);
                   }
@@ -174,7 +179,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                   <span className="text-sm">{item.label}</span>
                 </div>
-                {item.isDropdown && <ChevronDown size={14} className={`transition-transform duration-300 ${(item.id === 'entry' && isEntryExpanded) || (item.id === 'register' && isRegisterExpanded) ? 'rotate-180' : ''}`} />}
+                {item.isDropdown && <ChevronDown size={14} className={`transition-transform duration-300 ${(item.id === 'entry' && isEntryExpanded) || (item.id === 'register' && isRegisterExpanded) || (item.id === 'return' && isReturnExpanded) ? 'rotate-180' : ''}`} />}
               </button>
 
               {/* Nested Sub-menu for Entry */}
@@ -214,6 +219,105 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <ClipboardList size={14} className="group-hover:scale-110 transition-transform" />
                     <span>২. মীমাংসিত রেজি:</span>
                   </button>
+                </div>
+              )}
+
+              {/* Nested Sub-menu for Return & Summary (Updated) */}
+              {item.id === 'return' && isReturnExpanded && (
+                <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
+                  {/* ১. মাসিক (Toggle) */}
+                  <button 
+                    onClick={() => setIsMonthlyExpanded(!isMonthlyExpanded)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[12px] font-black transition-all ${isMonthlyExpanded ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                      <span>১. মাসিক</span>
+                    </div>
+                    <ChevronDown size={12} className={`transition-transform duration-300 ${isMonthlyExpanded ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Monthly Sub-items */}
+                  {isMonthlyExpanded && (
+                    <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                      {/* ১. চিঠিপত্র (Toggle) */}
+                      <button 
+                        onClick={() => setIsMonthlyCorrExpanded(!isMonthlyCorrExpanded)}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-[11px] font-black transition-all ${isMonthlyCorrExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Mail size={12} />
+                          <span>১. চিঠিপত্র</span>
+                        </div>
+                        <ChevronDown size={10} className={`transition-transform duration-300 ${isMonthlyCorrExpanded ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {/* Corr Sub-items */}
+                      {isMonthlyCorrExpanded && (
+                        <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                          <button 
+                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')}
+                            className="w-full text-left px-3 py-1.5 text-[10px] font-black text-slate-500 hover:text-white transition-all border-l border-slate-700 ml-1"
+                          >
+                            ১. ঢাকা
+                          </button>
+                          <button 
+                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।')}
+                            className="w-full text-left px-3 py-1.5 text-[10px] font-black text-slate-500 hover:text-white transition-all border-l border-slate-700 ml-1"
+                          >
+                            ২. ডিডি স্যার
+                          </button>
+                        </div>
+                      )}
+
+                      {/* ২. অনুচ্ছেদ */}
+                      <button 
+                        onClick={() => setActiveTab('return', null, 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-[11px] font-black text-slate-500 hover:text-blue-400 transition-all"
+                      >
+                        <BarChart3 size={12} />
+                        <span>২. অনুচ্ছেদ</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* ২. ত্রৈমাসিক */}
+                  <button 
+                    onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black text-slate-400 hover:bg-amber-600/10 hover:text-amber-400 transition-all"
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                    <span>২. ত্রৈমাসিক</span>
+                  </button>
+
+                  {/* ৩. ষান্মাসিক */}
+                  <button 
+                    onClick={() => setActiveTab('return', null, 'ষান্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black text-slate-400 hover:bg-purple-600/10 hover:text-purple-400 transition-all"
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
+                    <span>৩. ষান্মাসিক</span>
+                  </button>
+
+                  {/* ৪. বাৎসরিক */}
+                  <button 
+                    onClick={() => setActiveTab('return', null, 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black text-slate-400 hover:bg-rose-600/10 hover:text-rose-400 transition-all"
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
+                    <span>৪. বাৎসরিক</span>
+                  </button>
+
+                  {/* Setup Mode for Admin only */}
+                  {isAdmin && (
+                    <button 
+                      onClick={() => setActiveTab('return', null, 'পূর্ব জের সেটআপ উইন্ডো')}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[11px] font-black text-slate-500 hover:bg-slate-800 hover:text-white transition-all border-t border-slate-800 mt-2"
+                    >
+                      <Lock size={12} className="text-slate-600" />
+                      <span>প্রারম্ভিক জের সেটআপ</span>
+                    </button>
+                  )}
                 </div>
               )}
             </React.Fragment>
