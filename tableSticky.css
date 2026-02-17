@@ -42,7 +42,8 @@
 
 /* --- MULTI-TABLE VIEW SPECIFIC OVERRIDES --- */
 
-/* Logic: If a section contains multiple tables, the FIRST one is ALWAYS STATIC */
+/* Logic: Force the FIRST table in multi-view to be COMPLETELY STATIC */
+.multi-table-view .table-container:first-of-type,
 .multi-table-view .table-container:first-of-type thead,
 .multi-table-view .table-container:first-of-type thead tr,
 .multi-table-view .table-container:first-of-type thead th,
@@ -50,10 +51,12 @@
 .multi-table-view .table-container:first-of-type tfoot tr,
 .multi-table-view .table-container:first-of-type tfoot td {
   position: static !important;
-  z-index: 1 !important;
+  z-index: auto !important;
   box-shadow: none !important;
   top: auto !important;
   bottom: auto !important;
+  -webkit-transform: none !important;
+  transform: none !important;
 }
 
 /* Ensure the LAST table header sticks correctly in multi-view */
