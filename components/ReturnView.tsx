@@ -356,8 +356,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }
 
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
-    // হেডার স্টাইল আপডেট (Opaque white bg and clip-padding to prevent leak)
-    const thS = "border border-slate-300 px-1 py-2 font-black text-center text-[10px] md:text-[11px] bg-white text-slate-900 leading-tight align-middle sticky z-[150] shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-padding";
+    // হেডার স্টাইল আপডেট (Using tableSticky.css offsets)
+    const thS = "border border-slate-300 px-1 py-2 font-black text-center text-[10px] md:text-[11px] bg-white text-slate-900 leading-tight align-middle sticky z-[210] shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-padding";
     const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
     const reportingDateBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0), 'dd/MM/yyyy'));
 
@@ -406,28 +406,28 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 <col className="w-[100px]" />
               </colgroup>
               <thead>
-                {/* অফসেট এবং উচ্চতা ফিক্স করা হয়েছে (৮০px নেভবার গ্যাপসহ) - thead থেকে সরাসরি স্টিকি ক্লাস সরানো হয়েছে */}
-                <tr className="h-[45px]">
-                  <th rowSpan={2} className={`${thS} !top-[80px] !z-[155]`}>ক্রমিক নং</th>
-                  <th rowSpan={2} className={`${thS} !top-[80px] !z-[155]`}>এনটিটি/প্রতিষ্ঠানের নাম</th>
-                  <th rowSpan={2} className={`${thS} !top-[80px] !z-[155]`}>ডায়েরি নং ও তারিখ</th>
-                  <th rowSpan={2} className={`${thS} !top-[80px] !z-[155]`}>পত্রের স্মারক নং ও তারিখ</th>
-                  <th colSpan={5} className={`${thS} !top-[80px] !z-[155]`}>চিঠি-পত্রের ধরণ ও অনুচ্ছেদ সংখ্যা</th>
-                  <th rowSpan={2} className={`${thS} !top-[80px] !z-[155]`}>AMMS-এ এন্ট্রি হয়েছে কিনা? হ্যাঁ/না</th>
-                  <th rowSpan={2} className={`${thS} !top-[80px] !z-[155]`}>উপস্থাপনের তারিখ</th>
-                  <th rowSpan={2} className={`${thS} !top-[80px] !z-[155]`}>বর্তমান অবস্থান</th>
-                  <th rowSpan={2} className={`${thS} !top-[80px] !z-[155]`}>মন্তব্য</th>
+                {/* অফসেট এবং উচ্চতা ফিক্স করা হয়েছে (এখন একেবারে উপরে top: 0 তে বসবে) */}
+                <tr>
+                  <th rowSpan={2} className={`${thS}`}>ক্রমিক নং</th>
+                  <th rowSpan={2} className={`${thS}`}>এনটিটি/প্রতিষ্ঠানের নাম</th>
+                  <th rowSpan={2} className={`${thS}`}>ডায়েরি নং ও তারিখ</th>
+                  <th rowSpan={2} className={`${thS}`}>পত্রের স্মারক নং ও তারিখ</th>
+                  <th colSpan={5} className={`${thS}`}>চিঠি-পত্রের ধরণ ও অনুচ্ছেদ সংখ্যা</th>
+                  <th rowSpan={2} className={`${thS}`}>AMMS-এ এন্ট্রি হয়েছে কিনা? হ্যাঁ/না</th>
+                  <th rowSpan={2} className={`${thS}`}>উপস্থাপনের তারিখ</th>
+                  <th rowSpan={2} className={`${thS}`}>বর্তমান অবস্থান</th>
+                  <th rowSpan={2} className={`${thS}`}>মন্তব্য</th>
                 </tr>
-                <tr className="h-[41px]">
-                  <th className={`${thS} !top-[125px] !z-[150]`}>বিএসআর (SFI)</th>
-                  <th className={`${thS} !top-[125px] !z-[150]`}>বিএসআর (NON-SFI)</th>
-                  <th className={`${thS} !top-[125px] !z-[150]`}>ত্রি-পক্ষীয় (SFI)</th>
-                  <th className={`${thS} !top-[125px] !z-[150]`}>দ্বি-পক্ষীয় (NON-SFI)</th>
-                  <th className={`${thS} !top-[125px] !z-[150]`}>অন্যান্য</th>
+                <tr>
+                  <th className={`${thS}`}>বিএসআর (SFI)</th>
+                  <th className={`${thS}`}>বিএসআর (NON-SFI)</th>
+                  <th className={`${thS}`}>ত্রি-পক্ষীয় (SFI)</th>
+                  <th className={`${thS}`}>দ্বি-পক্ষীয় (NON-SFI)</th>
+                  <th className={`${thS}`}>অন্যান্য</th>
                 </tr>
-                <tr className="h-[28px] no-print">
+                <tr className="no-print">
                   {['১','২','৩','৪','৫','৬','৭','৮','৯','১০','১১','১২','১৩'].map(num => (
-                    <th key={num} className={`${thS} !top-[166px] !z-[145] bg-slate-100 py-1 text-[9px]`}>{num}</th>
+                    <th key={num} className={`${thS} bg-slate-100 py-1 text-[9px]`}>{num}</th>
                   ))}
                 </tr>
               </thead>
@@ -467,7 +467,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }
 
   if (isSetupMode) {
-    const setupThCls = "p-4 text-center font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] uppercase bg-slate-100 leading-tight h-20 align-middle sticky top-[80px] z-[195] shadow-[inset_0_-1px_0_#cbd5e1]";
+    const setupThCls = "p-4 text-center font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] uppercase bg-slate-100 leading-tight h-20 align-middle sticky top-0 z-[210] shadow-[inset_0_-1px_0_#cbd5e1]";
     const setupFooterTdCls = "p-4 border border-slate-300 text-center text-[15px] bg-blue-50 font-black sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1]";
     
     const totalStats = ministryGroups.reduce((acc, m) => {
@@ -508,7 +508,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
            <table className="w-full text-sm border-separate border-spacing-0">
              <thead>
                 <tr>
-                  <th className="p-5 text-left font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] w-[35%] bg-slate-100 leading-tight h-20 align-middle sticky top-[80px] z-[195] shadow-[inset_0_-1px_0_#cbd5e1]">মন্ত্রণালয় ও সংস্থা</th>
+                  <th className="p-5 text-left font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] w-[35%] bg-slate-100 leading-tight h-20 align-middle sticky top-0 z-[210] shadow-[inset_0_-1px_0_#cbd5e1]">মন্ত্রণালয় ও সংস্থা</th>
                   <th className={setupThCls}>অমী: সংখ্যা <br/><span className="text-[10px] text-slate-500 font-bold">(প্রারম্ভিক)</span></th>
                   <th className={setupThCls}>অমী: টাকা <br/><span className="text-[10px] text-slate-500 font-bold">(প্রারম্ভিক)</span></th>
                   <th className={setupThCls}>মী: সংখ্যা <br/><span className="text-[10px] text-slate-500 font-bold">(প্রারম্ভিক)</span></th>
@@ -568,7 +568,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   }
 
-  const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-white sticky z-[160] shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-padding relative";
+  const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-white sticky z-[210] shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-padding relative";
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight bg-white group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
   const grandStyle = "px-0.5 py-2 text-center font-black text-white text-[9.5px] bg-slate-800 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#1e293b,inset_0_0_0_1px_#1e293b] h-[45px] align-middle whitespace-nowrap transition-all relative";
 
@@ -604,25 +604,25 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0">
             <colgroup><col className="w-[58px]" /><col className="w-[125px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="text-[9.5px] w-[74px]" /><col className="w-[36px]" /><col className="w-[36px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /></colgroup>
             <thead>
-              <tr className="h-[42px]">
-                <th rowSpan={2} className={`${reportThStyle} !top-[80px]`}>মন্ত্রণালয়</th>
-                <th rowSpan={2} className={`${reportThStyle} !top-[80px]`}>সংস্থা</th>
-                <th colSpan={2} className={`${reportThStyle} !top-[80px]`}>প্রারম্ভিক অমীমাংসিত</th>
-                <th colSpan={2} className={`${reportThStyle} !top-[80px]`}>বর্তমান উত্থাপিত</th>
-                <th colSpan={2} className={`${reportThStyle} !top-[80px]`}>মোট অমীমাংসিত</th>
-                <th colSpan={2} className={`${reportThStyle} !top-[80px]`}>প্রারম্ভিক মীমাংসিত</th>
-                <th colSpan={4} className={`${reportThStyle} !top-[80px]`}>চলতি মীমাংসিত</th>
-                <th colSpan={2} className={`${reportThStyle} !top-[80px]`}>মোট মীমাংসিত</th>
-                <th colSpan={2} className={`${reportThStyle} !top-[80px]`}>সর্বমোট অমীমাংসিত</th>
+              <tr>
+                <th rowSpan={2} className={`${reportThStyle}`}>মন্ত্রণালয়</th>
+                <th rowSpan={2} className={`${reportThStyle}`}>সংস্থা</th>
+                <th colSpan={2} className={`${reportThStyle}`}>প্রারম্ভিক অমীমাংসিত</th>
+                <th colSpan={2} className={`${reportThStyle}`}>বর্তমান উত্থাপিত</th>
+                <th colSpan={2} className={`${reportThStyle}`}>মোট অমীমাংসিত</th>
+                <th colSpan={2} className={`${reportThStyle}`}>প্রারম্ভিক মীমাংসিত</th>
+                <th colSpan={4} className={`${reportThStyle}`}>চলতি মীমাংসিত</th>
+                <th colSpan={2} className={`${reportThStyle}`}>মোট মীমাংসিত</th>
+                <th colSpan={2} className={`${reportThStyle}`}>সর্বমোট অমীমাংসিত</th>
               </tr>
-              <tr className="h-[38px]">
-                <th className={`${reportThStyle} !top-[122px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[122px]`}>টাকা</th>
-                <th className={`${reportThStyle} !top-[122px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[122px]`}>টাকা</th>
-                <th className={`${reportThStyle} !top-[122px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[122px]`}>টাকা</th>
-                <th className={`${reportThStyle} !top-[122px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[122px]`}>টাকা</th>
-                <th className={`${reportThStyle} !top-[122px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[122px]`}>পূর্ণাঙ্গ</th><th className={`${reportThStyle} !top-[122px]`}>আংশিক</th><th className={`${reportThStyle} !top-[122px]`}>টাকা</th>
-                <th className={`${reportThStyle} !top-[122px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[122px]`}>টাকা</th>
-                <th className={`${reportThStyle} !top-[122px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[122px]`}>টাকা</th>
+              <tr>
+                <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
+                <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
+                <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
+                <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
+                <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>পূর্ণাঙ্গ</th><th className={`${reportThStyle}`}>আংশিক</th><th className={`${reportThStyle}`}>টাকা</th>
+                <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
+                <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
               </tr>
             </thead>
             <tbody>
@@ -671,7 +671,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 );
               })}
             </tbody>
-            <tfoot className="sticky bottom-0 z-[190] shadow-2xl">
+            <tfoot className="sticky bottom-0 z-[230] shadow-2xl">
               <tr>
                 <td colSpan={2} className={grandStyle + " bg-slate-900 text-white uppercase tracking-widest text-[10px] shadow-[inset_0_1px_0_#0f172a]"}>সর্বমোট ইউনিফাইড সারাংশ:</td>
                 <td className={grandStyle}>{toBengaliDigits(grandTotals.pUC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.pUA))}</td>
