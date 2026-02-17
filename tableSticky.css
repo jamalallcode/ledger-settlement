@@ -42,23 +42,23 @@
   height: 30px !important;
   min-height: 30px !important;
   max-height: 30px !important;
+  display: table-row !important;
 }
 
 .table-container thead tr:nth-child(3) th {
   top: 80px !important; /* Matches exactly row 1 + row 2 height (42+38) */
   z-index: 215 !important;
   
-  /* HARD LOCK: Prevent any height recalculation during scroll */
+  /* HARD LOCK: Force exactly 30px height on the cells */
   height: 30px !important;
   min-height: 30px !important;
   max-height: 30px !important;
   
-  /* Reset padding to ensure exact height control */
+  /* Reset padding and line-height to maintain rigid geometry */
   padding: 0 !important;
-  
-  /* Center text precisely using line-height equal to height */
   line-height: 30px !important;
   vertical-align: middle !important;
+  display: table-cell !important;
   
   /* Stability fixes for Chrome/Edge sticky sub-pixel rendering */
   overflow: hidden;
