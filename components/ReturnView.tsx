@@ -409,7 +409,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 <col className="w-[60px]" />
                 <col className="w-[70px]" />
                 <col className="w-[70px]" />
-                <col className="w-[85px]" />
+                <col className="w-[50px]" />
               </colgroup>
               <thead>
                 <tr className="h-[42px]">
