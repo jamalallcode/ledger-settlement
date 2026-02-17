@@ -176,17 +176,10 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           <h4 className="text-[16px] font-bold text-black leading-tight">খুলনা-৯০০০</h4>
         </div>
 
-        {/* SECTION 1: সারসংক্ষেপ টেবিল (Non-Sticky) */}
+        {/* SECTION 1: সারসংক্ষেপ টেবিল (Non-Sticky Header/Footer) */}
         <div className="mb-10">
-          <div className="grid grid-cols-4 w-full border border-black mb-0">
-            <div className="border-r border-black p-2 text-center font-bold text-[14px]">অনিষ্পন্ন কাজের তালিকা</div>
-            <div className="border-r border-black p-2 text-center font-bold text-[14px]">শাখার নাম: {entries[0]?.paraType || 'অনির্ধারিত'}</div>
-            <div className="border-r border-black p-2 text-center font-bold text-[14px]">মাস: {reportingMonthBN}</div>
-            <div className="p-2 text-center font-bold text-[14px]">তারিখ: {reportingDateBN} খ্রি:</div>
-          </div>
-
           <div className="table-container">
-            <table className="w-full border-separate table-fixed border-collapse">
+            <table className="w-full border-separate table-fixed border-collapse border border-black">
               <colgroup>
                 <col className="w-[50px]" />
                 <col className="w-[180px]" />
@@ -202,6 +195,13 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <col className="w-[70px]" />
               </colgroup>
               <thead>
+                {/* Fixed Top Header integrated into the table for border alignment */}
+                <tr className="bg-white">
+                  <th colSpan={2} className="border border-black p-2 text-center font-bold text-[14px]">অনিষ্পন্ন কাজের তালিকা</th>
+                  <th colSpan={4} className="border border-black p-2 text-center font-bold text-[14px]">শাখার নাম: {entries[0]?.paraType || 'অনির্ধারিত'}</th>
+                  <th colSpan={3} className="border border-black p-2 text-center font-bold text-[14px]">মাস: {reportingMonthBN}</th>
+                  <th colSpan={3} className="border border-black p-2 text-center font-bold text-[14px]">তারিখ: {reportingDateBN} খ্রি:</th>
+                </tr>
                 <tr>
                   <th rowSpan={2} className={thStyle}>ক্রমিক নং</th>
                   <th rowSpan={2} className={thStyle}>দায়িত্বপ্রাপ্ত অডিটরের নাম</th>
