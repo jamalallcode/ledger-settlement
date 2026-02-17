@@ -37,7 +37,7 @@
   min-height: 38px !important;
 }
 
-/* FIX: Specifically target Row 3 (Numbering Row) with absolute constraints */
+/* FIX: Specifically target Row 3 (Numbering Row) with absolute constraints to prevent any shrinkage */
 .table-container thead tr:nth-child(3) {
   height: 30px !important;
   min-height: 30px !important;
@@ -56,7 +56,7 @@
   /* Reset padding to ensure exact height control */
   padding: 0 !important;
   
-  /* Center text precisely using line-height */
+  /* Center text precisely using line-height equal to height */
   line-height: 30px !important;
   vertical-align: middle !important;
   
