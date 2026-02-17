@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { getCycleForDate } from '../utils/cycleHelper';
+import { getDateError } from '../utils/dateValidation';
 
 /**
  * @security-protocol LOCKED_MODE
@@ -22,7 +23,7 @@ import { getCycleForDate } from '../utils/cycleHelper';
 const SegmentedInput = ({ 
   id, icon: Icon, label, color, dayValue, monthValue, yearValue, 
   daySetter, monthSetter, yearSetter, dayRef, monthRef, yearRef, 
-  isLayoutEditable, originalValue, onDateSelect 
+  isLayoutEditable, originalValue, onDateSelect, error 
 }: any) => {
   
   const handleSegmentChange = (val: string, type: 'day'|'month'|'year', setter: (v: string) => void, nextRef?: React.RefObject<HTMLInputElement>) => {
@@ -76,12 +77,12 @@ const SegmentedInput = ({
   };
 
   return (
-    <div className={`p-5 rounded-2xl border transition-all hover:shadow-lg relative min-w-0 bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`}>
+    <div className={`p-5 rounded-2xl border transition-all hover:shadow-lg relative min-w-0 ${error ? 'bg-red-50 border-red-200' : `bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`}`}>
       <IDBadge id={id} />
       <label className="block text-[13px] font-black text-slate-700 mb-2 flex items-center gap-1.5 truncate">
-        <Icon size={14} className={`text-${color}-600 shrink-0`} /> <span>{label}</span>
+        <Icon size={14} className={`${error ? 'text-red-600' : `text-${color}-600`} shrink-0`} /> <span>{label}</span>
       </label>
-      <div className={`relative w-full h-[55px] flex items-center border rounded-2xl bg-white transition-all duration-300 shadow-sm border-slate-200 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50`}>
+      <div className={`relative w-full h-[55px] flex items-center border rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : 'border-slate-200 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50'}`}>
         <div className="flex items-center w-full px-4 h-full gap-2">
           <div className="relative flex-1 h-full flex items-center justify-center gap-1 shrink-0">
             <input 
@@ -114,6 +115,11 @@ const SegmentedInput = ({
           </div>
         </div>
       </div>
+      {error && (
+        <div className="mt-2 text-[10px] font-black text-red-600 animate-in slide-in-from-top-1 flex items-center gap-1">
+          <AlertCircle size={10} /> {error}
+        </div>
+      )}
     </div>
   );
 };
@@ -352,6 +358,11 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     setTimeout(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, 100);
   };
 
+  // Chronological Validations
+  const diaryDateError = getDateError(formData.diaryDate, formData.letterDate, 'ডায়েরি তারিখ', 'পত্রের তারিখ');
+  const receiptDateError = getDateError(formData.receiptDate, formData.diaryDate, 'শাখায় প্রাপ্তির তারিখ', 'ডায়েরি তারিখ');
+  const receivedDateError = getDateError(formData.receivedDate, formData.receiptDate, 'গ্রহণের তারিখ', 'শাখায় প্রাপ্তির তারিখ');
+
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = useState(false);
     if (!isLayoutEditable) return null;
@@ -571,7 +582,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 daySetter={setDd} monthSetter={setDm} yearSetter={setDy} 
                 dayRef={ddRef} monthRef={dmRef} yearRef={dyRef} 
                 isLayoutEditable={isLayoutEditable} originalValue={formData.diaryDate} 
-                onDateSelect={(iso: string) => handleManualDateSelect(iso, 'diary')} 
+                onDateSelect={(iso: string) => handleManualDateSelect(iso, 'diary')}
+                error={diaryDateError}
               />
               {calculatedCycle && (
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 w-fit animate-in slide-in-from-top-1 duration-300 ml-2">
@@ -589,6 +601,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               dayRef={rdRef} monthRef={rmRef} yearRef={ryRef} 
               isLayoutEditable={isLayoutEditable} originalValue={formData.receiptDate} 
               onDateSelect={(iso: string) => handleManualDateSelect(iso, 'receipt')} 
+              error={receiptDateError}
             />
 
             {/* Field 9 */}
@@ -658,7 +671,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               daySetter={setRcd} monthSetter={setRcm} yearSetter={setRcy} 
               dayRef={rcdRef} monthRef={rcmRef} yearRef={rcyRef} 
               isLayoutEditable={isLayoutEditable} originalValue={formData.receivedDate} 
-              onDateSelect={(iso: string) => handleManualDateSelect(iso, 'received')} 
+              onDateSelect={(iso: string) => handleManualDateSelect(iso, 'received')}
+              error={receivedDateError}
             />
 
             {/* Field 12 */}
@@ -733,10 +747,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                >বাতিল করুন</button>
                <button 
                   type="submit"
-                  disabled={isDuplicate}
-                  className={`flex-[2] py-5 rounded-[2rem] font-black text-xl shadow-[0_20px_40px_rgba(5,150,105,0.3)] transition-all active:scale-95 flex items-center justify-center gap-4 group relative overflow-hidden ${isDuplicate ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                  disabled={isDuplicate || !!diaryDateError || !!receiptDateError || !!receivedDateError}
+                  className={`flex-[2] py-5 rounded-[2rem] font-black text-xl shadow-[0_20px_40px_rgba(5,150,105,0.3)] transition-all active:scale-95 flex items-center justify-center gap-4 group relative overflow-hidden ${isDuplicate || diaryDateError || receiptDateError || receivedDateError ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
                >
-                 {!isDuplicate && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>}
+                 {(!isDuplicate && !diaryDateError && !receiptDateError && !receivedDateError) && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>}
                  <CheckCircle2 size={24} /> {initialEntry ? 'তথ্য আপডেট করুন' : 'তথ্য সংরক্ষণ করুন'}
                </button>
             </div>
