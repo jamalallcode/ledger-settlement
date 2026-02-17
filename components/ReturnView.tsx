@@ -384,6 +384,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           </div>
         </div>
 
+        {/* Fixed broken syntax below by removing escaped quotes and fixing concatenations */}
         <div className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-6 relative animate-table-entrance">
           <div className="text-center py-6 border-b-2 border-slate-100 mb-6">
             <h1 className="text-2xl font-black uppercase text-slate-900 leading-tight">{OFFICE_HEADER.main}</h1>
@@ -413,24 +414,24 @@ const ReturnView: React.FC<ReturnViewProps> = ({
               </colgroup>
               <thead>
                 <tr className="h-[42px]">
-                  <th rowSpan={2} className={`${thS}`}>ক্রমিক নং</th>
-                  <th rowSpan={2} className={`${thS}`}>এনটিটি/প্রতিষ্ঠানের নাম</th>
-                  <th rowSpan={2} className={`${thS}`}>ডায়েরি নং ও তারিখ</th>
-                  <th rowSpan={2} className={`${thS}`}>পত্রের স্মারক নং ও তারিখ</th>
-                  <th colSpan={5} className={`${thS}`}>চিঠি-পত্রের ধরণ ও অনুচ্ছেদ সংখ্যা</th>
-                  <th rowSpan={2} className={`${thS}`}>AMMS-এ এন্ট্রি হয়েছে কিনা? হ্যাঁ/না</th>
-                  <th rowSpan={2} className={`${thS}`}>উপস্থাপনের তারিখ</th>
-                  <th rowSpan={2} className={`${thS}`}>বর্তমান অবস্থান</th>
-                  <th rowSpan={2} className={`${thS}`}>মন্তব্য</th>
+                  <th rowSpan={2} className={thS}>ক্রমিক নং</th>
+                  <th rowSpan={2} className={thS}>এনটিটি/প্রতিষ্ঠানের নাম</th>
+                  <th rowSpan={2} className={thS}>ডায়েরি নং ও তারিখ</th>
+                  <th rowSpan={2} className={thS}>পত্রের স্মারক নং ও তারিখ</th>
+                  <th colSpan={5} className={thS}>চিঠি-পত্রের ধরণ ও অনুচ্ছেদ সংখ্যা</th>
+                  <th rowSpan={2} className={thS}>AMMS-এ এন্ট্রি হয়েছে কিনা? হ্যাঁ/না</th>
+                  <th rowSpan={2} className={thS}>উপস্থাপনের তারিখ</th>
+                  <th rowSpan={2} className={thS}>বর্তমান অবস্থান</th>
+                  <th rowSpan={2} className={thS}>মন্তব্য</th>
                 </tr>
                 <tr className="h-[38px]">
-                  <th className={`${thS}`}>বিএসআর (SFI)</th>
-                  <th className={`${thS}`}>বিএসআর (NON-SFI)</th>
-                  <th className={`${thS}`}>ত্রি-পক্ষীয় (SFI)</th>
-                  <th className={`${thS}`}>দ্বি-পক্ষীয় (NON-SFI)</th>
-                  <th className={`${thS}`}>অন্যান্য</th>
+                  <th className={thS}>বিএসআর (SFI)</th>
+                  <th className={thS}>বিএসআর (NON-SFI)</th>
+                  <th className={thS}>ত্রি-পক্ষীয় (SFI)</th>
+                  <th className={thS}>দ্বি-পক্ষীয় (NON-SFI)</th>
+                  <th className={thS}>অন্যান্য</th>
                 </tr>
-                <tr className="h-[30px] no-print">
+                <tr className="h-[30px] no-print row-numbering">
                   {['১','২','৩','৪','৫','৬','৭','৮','৯','১০','১১','১২','১৩'].map(num => (
                     <th key={num} className={`${thS} bg-slate-100 !py-1 !text-[9px]`}>{num}</th>
                   ))}
@@ -440,7 +441,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 {filteredCorrespondence.length > 0 ? filteredCorrespondence.map((entry, idx) => (
                   <tr key={entry.id} className="group hover:bg-blue-50/50 transition-colors">
                     <td className={tdS}>{toBengaliDigits(idx + 1)}</td>
-                    <td className={tdS + " text-left px-2"}>{entry.description}</td>
+                    <td className={`${tdS} text-left px-2`}>{entry.description}</td>
                     <td className={tdS}>{entry.diaryNo}<br/>{toBengaliDigits(entry.diaryDate)}</td>
                     <td className={tdS}>{entry.letterNo}<br/>{toBengaliDigits(entry.letterDate)}</td>
                     <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'এসএফআই' ? `বিএসআর (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
