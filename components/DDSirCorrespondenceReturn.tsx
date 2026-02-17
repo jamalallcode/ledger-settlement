@@ -178,21 +178,21 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
         {/* SECTION 1: সারসংক্ষেপ টেবিল (Non-Sticky Header/Footer) */}
         <div className="mb-10 flex justify-center">
-          <div className="table-container max-w-[1150px] w-full">
+          <div className="table-container max-w-[1050px] w-full">
             <table className="w-full border-separate table-fixed border-collapse border border-slate-300">
               <colgroup>
                 <col className="w-[40px]" />
-                <col className="w-[210px]" />
-                <col className="w-[90px]" />
-                <col className="w-[90px]" />
-                <col className="w-[90px]" />
-                <col className="w-[90px]" />
-                <col className="w-[90px]" />
-                <col className="w-[90px]" />
-                <col className="w-[90px]" />
-                <col className="w-[90px]" />
-                <col className="w-[90px]" />
-                <col className="w-[90px]" />
+                <col className="w-[160px]" />
+                <col className="w-[85px]" />
+                <col className="w-[85px]" />
+                <col className="w-[85px]" />
+                <col className="w-[85px]" />
+                <col className="w-[85px]" />
+                <col className="w-[85px]" />
+                <col className="w-[85px]" />
+                <col className="w-[85px]" />
+                <col className="w-[85px]" />
+                <col className="w-[85px]" />
               </colgroup>
               <thead>
                 {/* Fixed Top Header integrated into the table for border alignment (Non-sticky) */}
@@ -287,7 +287,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
         {/* SECTION 2: বিস্তারিত তালিকা টেবিল (Sticky Header/Footer) */}
         <div className="pt-10 border-t-4 border-double border-slate-200 flex flex-col items-center">
-          <div className="text-center mb-6 w-full max-w-[1150px]">
+          <div className="text-center mb-6 w-full max-w-[1050px]">
              <div className="inline-block px-10 py-1 bg-black text-white text-[16px] font-black tracking-widest uppercase mb-4">ছক</div>
              <div className="flex justify-between items-end border-b border-slate-300 pb-1">
                 <span className="font-bold text-[15px]">বকেয়া চিঠিপত্রের তালিকা ({entries[0]?.paraType || 'অনির্ধারিত'} শাখা)</span>
@@ -295,17 +295,17 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
              </div>
           </div>
 
-          <div className="table-container relative overflow-visible max-w-[1150px] w-full">
+          <div className="table-container relative overflow-visible max-w-[1050px] w-full">
             <table className="w-full border-separate table-fixed border-spacing-0 border border-slate-300">
               <colgroup>
                 <col className="w-[40px]" />
+                <col className="w-[100px]" />
+                <col className="w-[200px]" />
                 <col className="w-[120px]" />
-                <col className="w-[220px]" />
-                <col className="w-[140px]" />
-                <col className="w-[140px]" />
-                <col className="w-[180px]" />
-                <col className="w-[100px]" />
-                <col className="w-[100px]" />
+                <col className="w-[120px]" />
+                <col className="w-[150px]" />
+                <col className="w-[90px]" />
+                <col className="w-[120px]" />
                 <col className="w-[110px]" />
               </colgroup>
               <thead>
