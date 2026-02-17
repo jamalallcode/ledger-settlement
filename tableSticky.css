@@ -9,22 +9,46 @@
   z-index: 210 !important; /* Above Navbar (z-200) */
   background-clip: padding-box !important;
   box-shadow: inset 0 -1px 0 #cbd5e1, inset -1px 0 0 #cbd5e1 !important;
+  
+  /* FIX: Ensure height and alignment are maintained on scroll */
+  height: inherit !important;
+  vertical-align: middle !important;
+  line-height: 1.2 !important;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
-/* Multi-row header offset logic - Using precise heights to prevent gaps */
+/* Multi-row header offset logic - Enforcing precise heights to prevent shrinking */
+.table-container thead tr:nth-child(1) {
+  height: 42px !important;
+}
 .table-container thead tr:nth-child(1) th {
   top: 0 !important;
-  z-index: 220 !important;
+  z-index: 225 !important;
+  min-height: 42px !important;
 }
 
+.table-container thead tr:nth-child(2) {
+  height: 38px !important;
+}
 .table-container thead tr:nth-child(2) th {
-  top: 42px !important; /* Fixed: Matches h-[42px] of the first row */
-  z-index: 215 !important;
+  top: 42px !important; /* Matches exactly row 1 height */
+  z-index: 220 !important;
+  min-height: 38px !important;
 }
 
+.table-container thead tr:nth-child(3) {
+  height: 30px !important;
+}
 .table-container thead tr:nth-child(3) th {
-  top: 80px !important; /* Fixed: 42px + 38px to match row heights precisely */
-  z-index: 210 !important;
+  top: 80px !important; /* Matches exactly row 1 + row 2 height (42+38) */
+  z-index: 215 !important;
+  min-height: 30px !important;
+}
+
+/* Ensure cells with rowSpan stay on top and don't get overlapped incorrectly */
+.table-container thead th[rowspan] {
+  z-index: 230 !important;
 }
 
 /* Sticky Footer (General) */
@@ -37,6 +61,7 @@
   background-color: #0f172a !important;
   color: white !important;
   box-shadow: inset 0 1px 0 #334155, inset -1px 0 0 #334155 !important;
+  height: inherit !important;
 }
 
 /* --- MULTI-TABLE VIEW SPECIFIC OVERRIDES --- */
@@ -45,7 +70,6 @@
    CRITICAL FIX: 
    If a page has multiple tables (multi-table-view), 
    the FIRST table must NEVER stick. 
-   We reset ALL sticky properties for the first table container and its rows.
 */
 
 .multi-table-view .table-container:first-of-type,
