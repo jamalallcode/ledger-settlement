@@ -573,7 +573,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   }
 
-  const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-white sticky z-[210] shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border relative";
+  const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-white sticky z-[210] shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight bg-white group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
   const grandStyle = "px-0.5 py-2 text-center font-black text-white text-[9.5px] bg-slate-800 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#1e293b,inset_0_0_0_1px_#1e293b] h-[45px] align-middle whitespace-nowrap transition-all relative";
 
@@ -605,11 +605,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           </div>
         </div>
 
-        <div className="table-container border-t border-slate-300 overflow-visible relative">
+        <div className="table-container border border-slate-300 overflow-visible relative">
           <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0">
             <colgroup><col className="w-[58px]" /><col className="w-[125px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="text-[9.5px] w-[74px]" /><col className="w-[36px]" /><col className="w-[36px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /></colgroup>
             <thead>
-              <tr className="h-[45px]">
+              {/* Row height changed to 42px to match global sticky offset of 42px */}
+              <tr className="h-[42px]">
                 <th rowSpan={2} className={`${reportThStyle}`}>মন্ত্রণালয়</th>
                 <th rowSpan={2} className={`${reportThStyle}`}>সংস্থা</th>
                 <th colSpan={2} className={`${reportThStyle}`}>প্রারম্ভিক অমীমাংসিত</th>
@@ -620,7 +621,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 <th colSpan={2} className={`${reportThStyle}`}>মোট মীমাংসিত</th>
                 <th colSpan={2} className={`${reportThStyle}`}>সর্বমোট অমীমাংসিত</th>
               </tr>
-              <tr className="h-[41px]">
+              {/* Row height changed to 38px (total 80px offset matching register table pattern) */}
+              <tr className="h-[38px]">
                 <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
                 <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
                 <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
@@ -650,7 +652,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
                       return (
                         <tr key={row.entity} className="group hover:bg-blue-50/50">
-                          {rIdx === 0 && <td rowSpan={m.entityRows.length + 1} className={tdStyle + " bg-slate-50 border-r border-slate-300"}>{m.ministry}</td>}
+                          {rIdx === 0 && <td rowSpan={m.entityRows.length + 1} className={tdStyle + " bg-slate-50 border-l border-r border-slate-300"}>{m.ministry}</td>}
                           <td className={tdStyle + " text-left border-r border-slate-300"}>{row.entity}</td>
                           <td className={tdStyle}>{toBengaliDigits(row.prev.unsettledCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.prev.unsettledAmount))}</td>
                           <td className={tdStyle}>{toBengaliDigits(row.currentRaisedCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.currentRaisedAmount))}</td>
@@ -663,7 +665,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                       );
                     })}
                     <tr className="bg-blue-50/80 font-bold text-blue-950 h-[42px] border-y-2 border-slate-200">
-                      <td className={tdStyle + " text-right italic pr-3 border-r border-slate-300 text-[10px] bg-blue-50/80"}>উপ-মোট: {m.ministry}</td>
+                      <td className={tdStyle + " text-right italic pr-3 border-l border-r border-slate-300 text-[10px] bg-blue-50/80"}>উপ-মোট: {m.ministry}</td>
                       <td className={tdStyle}>{toBengaliDigits(mTotals.pUC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.pUA))}</td>
                       <td className={tdStyle}>{toBengaliDigits(mTotals.cRC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.cRA))}</td>
                       <td className={tdStyle + " bg-slate-200/50"}>{toBengaliDigits(mTotals.pUC + mTotals.cRC)}</td><td className={tdStyle + " text-center bg-slate-200/50 border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.pUA + mTotals.cRA))}</td>
@@ -678,7 +680,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             </tbody>
             <tfoot className="sticky bottom-0 z-[230] shadow-2xl">
               <tr>
-                <td colSpan={2} className={grandStyle + " bg-slate-900 text-white uppercase tracking-widest text-[10px] shadow-[inset_0_1px_0_#0f172a]"}>সর্বমোট ইউনিফাইড সারাংশ:</td>
+                <td colSpan={2} className={grandStyle + " bg-slate-900 text-white uppercase tracking-widest text-[10px] shadow-[inset_0_1px_0_#0f172a] border-l border-slate-700"}>সর্বমোট ইউনিফাইড সারাংশ:</td>
                 <td className={grandStyle}>{toBengaliDigits(grandTotals.pUC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.pUA))}</td>
                 <td className={grandStyle}>{toBengaliDigits(grandTotals.cRC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.cRA))}</td>
                 <td className={grandStyle + " !bg-slate-700"}>{toBengaliDigits(grandTotals.pUC + grandTotals.cRC)}</td><td className={grandStyle + " text-center !bg-slate-700"}>{toBengaliDigits(Math.round(grandTotals.pUA + grandTotals.cRA))}</td>
