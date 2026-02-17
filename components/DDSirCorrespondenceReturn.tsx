@@ -119,16 +119,16 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const grandTotalLess = totals.kpL + totals.kbL + totals.bsL + totals.rcL + totals.otL;
   const grandTotalMore = totals.kpM + totals.kbM + totals.bsM + totals.rcM + totals.otM;
 
-  // thStyle for Table 1 (Overriding global sticky to make it scrollable, lighter borders)
-  const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[12px] leading-tight align-middle bg-slate-50 !static !top-auto";
+  // thStyle for Table 1 (Summary table should not stick)
+  const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[12px] leading-tight align-middle bg-slate-50";
   const tdStyle = "border border-slate-300 px-2 py-2 text-[13px] text-center font-bold leading-tight bg-white align-middle";
   
-  // Sticky Styles for Table 2 (Ensuring it sticks below Navbar at 80px, lighter borders)
-  const stickyThStyle = "border border-slate-300 px-1 py-3 font-black text-center text-[11px] bg-slate-100 sticky !top-[80px] z-[100] shadow-[inset_0_-1px_0_#cbd5e1]";
+  // Sticky Styles for Table 2 (Will follow tableSticky.css logic)
+  const stickyThStyle = "border border-slate-300 px-1 py-3 font-black text-center text-[11px] bg-slate-100";
   const stickyTdStyle = "border border-slate-300 px-2 py-2 text-[12px] text-center font-bold leading-tight bg-white align-middle";
 
   return (
-    <div className="space-y-6 py-2 w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white">
+    <div className="space-y-6 py-2 w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view">
       {/* Control Bar (No Print) */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
         <div className="flex items-center gap-3">
@@ -177,7 +177,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           <h4 className="text-[16px] font-bold text-black leading-tight">খুলনা-৯০০০</h4>
         </div>
 
-        {/* SECTION 1: সারসংক্ষেপ টেবিল (Non-Sticky Header/Footer) */}
+        {/* SECTION 1: সারসংক্ষেপ টেবিল (Non-Sticky by multi-table-view logic) */}
         <div className="mb-10 flex justify-center">
           <div className="table-container max-w-[1050px] w-full">
             <table className="w-full border-separate table-fixed border-collapse border border-slate-300">
@@ -196,12 +196,11 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <col className="w-[85px]" />
               </colgroup>
               <thead>
-                {/* Fixed Top Header integrated into the table for border alignment (Non-sticky) */}
                 <tr className="bg-white">
-                  <th colSpan={2} className="border border-slate-300 p-2 text-center font-bold text-[14px] !static !top-auto">অনিষ্পন্ন কাজের তালিকা</th>
-                  <th colSpan={4} className="border border-slate-300 p-2 text-center font-bold text-[14px] !static !top-auto">শাখার নাম: {entries[0]?.paraType || 'অনির্ধারিত'}</th>
-                  <th colSpan={3} className="border border-slate-300 p-2 text-center font-bold text-[14px] !static !top-auto">মাস: {reportingMonthBN}</th>
-                  <th colSpan={3} className="border border-slate-300 p-2 text-center font-bold text-[14px] !static !top-auto">তারিখ: {reportingDateBN} খ্রি:</th>
+                  <th colSpan={2} className="border border-slate-300 p-2 text-center font-bold text-[14px]">অনিষ্পন্ন কাজের তালিকা</th>
+                  <th colSpan={4} className="border border-slate-300 p-2 text-center font-bold text-[14px]">শাখার নাম: {entries[0]?.paraType || 'অনির্ধারিত'}</th>
+                  <th colSpan={3} className="border border-slate-300 p-2 text-center font-bold text-[14px]">মাস: {reportingMonthBN}</th>
+                  <th colSpan={3} className="border border-slate-300 p-2 text-center font-bold text-[14px]">তারিখ: {reportingDateBN} খ্রি:</th>
                 </tr>
                 <tr>
                   <th rowSpan={2} className={thStyle}>ক্রমিক নং</th>
@@ -273,7 +272,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           </div>
         </div>
 
-        {/* SECTION 2: বিস্তারিত তালিকা টেবিল (Sticky Header/Footer) */}
+        {/* SECTION 2: বিস্তারিত তালিকা টেবিল (Sticky by tableSticky.css logic) */}
         <div className="pt-10 border-t-4 border-double border-slate-200 flex flex-col items-center">
           <div className="text-center mb-6 w-full max-w-[1050px]">
              <div className="inline-block px-10 py-1 bg-black text-white text-[16px] font-black tracking-widest uppercase mb-4">ছক</div>
@@ -349,7 +348,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   </tr>
                 )}
               </tbody>
-              <tfoot className="sticky bottom-0 z-[100]">
+              <tfoot>
                 <tr className="bg-slate-900 text-white font-black text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.3)]">
                   <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-slate-900">সর্বমোট চিঠিপত্র সংখ্যা:</td>
                   <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-slate-900 text-emerald-400">{toBengaliDigits(entries.length)} টি</td>
