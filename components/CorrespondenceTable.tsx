@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles, Save, CalendarSearch, LayoutGrid, CalendarDays } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
@@ -204,7 +203,7 @@ const PremiumInlineSelect: React.FC<{
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" size={10} />
               <input 
                 autoFocus type="text" placeholder="খুঁজুন..." 
-                className="w-full h-7 pl-6 pr-2 bg-white border border-slate-200 rounded-lg text-[10px] font-bold outline-none focus:border-blue-400"
+                className="w-full h-7 pl-6 pr-2 bg-white border border-slate-200 rounded-lg text-[10px] font-black outline-none focus:border-blue-400"
                 value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
@@ -227,7 +226,7 @@ const PremiumInlineSelect: React.FC<{
                   onSelect(nextVal); 
                   setIsOpen(false); 
                 }}
-                className={`px-3 py-1.5 cursor-pointer flex items-center justify-between transition-all ${value === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[10px]'}`}
+                className={`px-3 py-1.5 cursor-pointer flex items-center justify-between transition-all ${value === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-black text-[10px]'}`}
               >
                 <span>{opt}</span>
                 {value === opt && <Check size={10} strokeWidth={3} />}
@@ -379,11 +378,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
     }
   };
 
-  // Changed bg-slate-100 to bg-slate-200 for a more premium header
+  // Header font-black
   const thCls = "border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[11px] bg-slate-200 sticky top-0 z-[100] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
+  // Data cells reverted to font-bold
   const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-slate-800 font-bold leading-tight align-top bg-white transition-colors group-hover:bg-blue-50/50 break-words";
-  const labelCls = "text-[10px] font-black text-emerald-700 shrink-0";
-  const valCls = "text-[10px] font-bold text-slate-900";
+  const labelCls = "text-[10px] font-bold text-emerald-700 shrink-0";
+  const valCls = "text-[10px] font-black text-slate-900";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[48px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
 
   const hasChanges = Object.keys(pendingChanges).length > 0;
@@ -410,7 +410,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             <div className="flex items-center gap-2 mt-0.5">
                <p className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">Correspondence Ledger</p>
                <div className="h-3 w-[1px] bg-slate-300"></div>
-               <div className="flex items-center gap-1 text-blue-600 font-black text-[10px]">
+               <div className="flex items-center gap-1 text-blue-600 font-bold text-[10px]">
                   <CalendarRange size={12} /> সাইকেল: {toBengaliDigits(cycleInfo.label)}
                </div>
             </div>
@@ -438,13 +438,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             
             {/* Cycle Selection */}
             <div className="space-y-1.5" ref={cycleDropdownRef}>
-              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">সময়কাল নির্বাচন (সাইকেল)</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">সময়কাল নির্বাচন (সাইকেল)</label>
               <div 
                 onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
                 className={customDropdownCls(isCycleDropdownOpen)}
               >
                 <CalendarDays size={18} className="text-blue-600" />
-                <span className="font-black text-[13px] text-slate-900 truncate">
+                <span className="font-bold text-[13px] text-slate-900 truncate">
                   {!selectedCycleDate ? 'সকল সাইকেল' : (cycleOptions.find(o => o.cycleLabel === activeCycle?.label)?.label || toBengaliDigits(activeCycle?.label || ''))}
                 </span>
                 <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isCycleDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
@@ -453,7 +453,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                   <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
                     <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
                       <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
-                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
                           <CalendarSearch size={12} /> সাইকেল নির্বাচন
                         </span>
                       </div>
@@ -485,13 +485,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             
             {/* Branch Selection */}
             <div className="space-y-1.5" ref={branchDropdownRef}>
-              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">শাখা</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">শাখা</label>
               <div 
                 onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)} 
                 className={customDropdownCls(isBranchDropdownOpen)}
               >
                 <LayoutGrid className="text-blue-600" size={16} />
-                <span className="font-black text-[13px] text-slate-900 truncate">
+                <span className="font-bold text-[13px] text-slate-900 truncate">
                   {filterParaType === '' ? 'সকল শাখা' : filterParaType}
                 </span>
                 <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isBranchDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
@@ -500,7 +500,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                   <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
                     <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
                       <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
-                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
                           <LayoutGrid size={12} /> শাখা নির্বাচন
                         </span>
                       </div>
@@ -528,13 +528,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             
             {/* Letter Type Selection */}
             <div className="space-y-1.5" ref={typeDropdownRef}>
-              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">চিঠির ধরণ</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">চিঠির ধরণ</label>
               <div 
                 onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)} 
                 className={customDropdownCls(isTypeDropdownOpen)}
               >
                 <FileText className="text-blue-600" size={16} />
-                <span className="font-black text-[13px] text-slate-900 truncate">
+                <span className="font-bold text-[13px] text-slate-900 truncate">
                   {filterType === '' ? 'সকল ধরণ' : filterType}
                 </span>
                 <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isTypeDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
@@ -543,7 +543,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                   <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
                     <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
                       <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
-                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
                           <FileText size={12} /> ধরণ নির্বাচন
                         </span>
                       </div>
@@ -574,7 +574,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             
             {/* Search Input */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">অনুসন্ধান</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">অনুসন্ধান</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600" size={16} />
                 <input 
@@ -582,7 +582,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                   value={searchTerm} 
                   onChange={e => setSearchTerm(e.target.value)} 
                   placeholder="বিবরণ বা নং দিয়ে খুঁজুন..." 
-                  className="w-full pl-9 pr-4 h-[48px] bg-white border border-slate-300 rounded-xl font-black text-slate-900 text-[13px] outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold" 
+                  className="w-full pl-9 pr-4 h-[48px] bg-white border border-slate-300 rounded-xl font-bold text-slate-900 text-[13px] outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold" 
                 />
               </div>
             </div>
@@ -647,7 +647,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                             <CalendarDays size={18} />
                           </div>
                           <span className="font-black text-[13px] text-slate-800 tracking-tight uppercase">
-                            সময়কাল: <span className="text-blue-700">{toBengaliDigits(currentCycleLabel)}</span>
+                            সময়কাল: <span className="text-blue-700 font-black">{toBengaliDigits(currentCycleLabel)}</span>
                           </span>
                         </div>
                       </td>
@@ -707,14 +707,14 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                     <td className={tdCls}>
                        <div className="space-y-2">
                           <div className="p-1.5 bg-slate-50 border border-slate-100 rounded-lg relative">
-                             <div className="text-[9px] font-black text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1"><Inbox size={8} /> গ্রহণকারী</div>
-                             <div className="font-black text-slate-900 text-[10px] leading-tight truncate">{entry.receiverName || '-'}</div>
+                             <div className="text-[9px] font-bold text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1"><Inbox size={8} /> গ্রহণকারী</div>
+                             <div className="font-bold text-slate-900 text-[10px] leading-tight truncate">{entry.receiverName || '-'}</div>
                              <div className="text-[9px] text-slate-500 font-bold">{formatDisplayDate(entry.receivedDate)}</div>
                           </div>
 
                           <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.presentationDate || pending.presentedToName ? 'bg-blue-600/10 border-blue-400 ring-2 ring-blue-50' : 'bg-blue-50/50 border-blue-100'}`}>
                              <div className="flex items-center justify-between">
-                                <div className="text-[9px] font-black text-blue-700 uppercase tracking-tighter flex items-center gap-1"><UserCheck size={8} /> উপস্থাপন</div>
+                                <div className="text-[9px] font-bold text-blue-700 uppercase tracking-tighter flex items-center gap-1"><UserCheck size={8} /> উপস্থাপন</div>
                                 {(currentPresDate || currentPresName) && (
                                   <button 
                                     type="button"
@@ -757,10 +757,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                     </td>
                     <td className={tdCls}>
                        <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.issueLetterNo || pending.issueLetterDate ? 'bg-amber-600/10 border-amber-400 ring-2 ring-amber-50' : 'bg-amber-50/50 border-amber-100'}`}>
-                          <div className="text-[9px] font-black text-amber-700 uppercase tracking-tighter flex items-center gap-1"><Send size={8} /> জারিপত্র</div>
+                          <div className="text-[9px] font-bold text-amber-700 uppercase tracking-tighter flex items-center gap-1"><Send size={8} /> জারিপত্র</div>
                           <div className="space-y-1">
                             <div className="flex flex-col gap-0.5">
-                              <span className="text-[8px] font-black text-slate-400 uppercase">নং</span>
+                              <span className="text-[8px] font-bold text-slate-400 uppercase">নং</span>
                               <input 
                                 type="text" 
                                 placeholder="নং"
@@ -770,7 +770,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                               />
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-[8px] font-black text-slate-400 uppercase flex items-center gap-1">তারিখ</span>
+                              <span className="text-[8px] font-bold text-slate-400 uppercase flex items-center gap-1">তারিখ</span>
                               <div className="flex items-center gap-1.5">
                                  {formatDisplayDate(currentIssueDate) && <span className="text-[8px] font-black text-amber-600">{formatDisplayDate(currentIssueDate)}</span>}
                                  <div className="relative flex items-center h-3 w-3">
@@ -795,7 +795,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                        </div>
                     </td>
                     <td className={tdCls + " relative group/action text-center"}>
-                       <span className="text-[9px] opacity-70">{entry.remarks || '-'}</span>
+                       <span className="text-[9px] opacity-70 font-bold">{entry.remarks || '-'}</span>
                        {isAdmin && (
                          <div className="absolute right-0.5 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all no-print z-[500] bg-white/90 backdrop-blur-sm p-1 rounded-lg shadow-xl border border-slate-200">
                            {isPendingForApproval && (
