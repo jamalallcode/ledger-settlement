@@ -3,9 +3,10 @@ import React from 'react';
 import { SettlementEntry, ParaType, CumulativeStats, MinistryPrevStats } from '../types';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP, OFFICE_HEADER } from '../constants';
-import { ChevronLeft, ArrowRight, ClipboardCheck, CalendarRange, Printer, Database, Settings2, BarChart3, FileStack, ClipboardList, Settings, CheckCircle2, CalendarDays, UserCheck, ChevronDown, Check, LayoutGrid, PieChart, History, Search, CalendarSearch, Sparkles, X, Lock, KeyRound, ShieldAlert, Pencil, Unlock, ArrowRightCircle } from 'lucide-react';
+import { ChevronLeft, ArrowRight, ClipboardCheck, CalendarRange, Printer, Database, Settings2, BarChart3, FileStack, ClipboardList, Settings, CheckCircle2, CalendarDays, UserCheck, ChevronDown, Check, LayoutGrid, PieChart, History, Search, CalendarSearch, Sparkles, X, Lock, KeyRound, ShieldAlert, Pencil, Unlock, ArrowRightCircle, Mail, Send, FileEdit } from 'lucide-react';
 import { isWithinInterval, addMonths, format as dateFnsFormat, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { getCycleForDate, isInCycle } from '../utils/cycleHelper';
+import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
 
 interface ReturnViewProps {
   entries: SettlementEntry[];
@@ -58,6 +59,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
   const [isSetupMode, setIsSetupMode] = useState(false);
   const [isEditingSetup, setIsEditingSetup] = useState(false);
   const [tempPrevStats, setTempPrevStats] = useState<Record<string, MinistryPrevStats>>({});
+  const [isCorrespondenceExpanded, setIsCorrespondenceExpanded] = useState(false);
   
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   
@@ -70,6 +72,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
     if (resetKey && resetKey > 0) {
       setSelectedReportType(null);
       setIsSetupMode(false);
+      setIsCorrespondenceExpanded(false);
       setSelectedCycleDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
     }
   }, [resetKey]);
@@ -160,7 +163,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
   }, [isSetupMode, prevStats, activeCycle, ministryGroups]);
 
   const reportData = useMemo(() => {
-    if (!selectedReportType || selectedReportType === 'মাসিক রিটারন: চিঠিপত্র সংক্রান্ত।') return [];
+    if (!selectedReportType || selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' || selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
     
     return ministryGroups.map(ministryName => {
       const normMinistry = robustNormalize(ministryName);
@@ -214,31 +217,21 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
   }, [entries, selectedReportType, prevStats, activeCycle, ministryGroups]);
 
   const filteredCorrespondence = useMemo(() => {
-    if (selectedReportType !== 'মাসিক রিটারন: চিঠিপত্র সংক্রান্ত।') return [];
+    if (selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
     
-    // Calculate the reporting boundary (last day of the calendar month relative to the cycle start)
-    // Example: If cycle is 16/02 - 15/03, start month is Feb. Reporting date = 28/02.
     const reportingDateObj = endOfDay(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0));
 
     return correspondenceEntries.filter(e => {
       if (!e.diaryDate) return false;
-      
-      // Robust date comparison
       const diaryDateStr = toEnglishDigits(e.diaryDate);
       const diaryDateObj = startOfDay(new Date(diaryDateStr));
       if (isNaN(diaryDateObj.getTime())) return false;
       
       const isBeforeOrOnReportingDate = diaryDateObj.getTime() <= reportingDateObj.getTime();
-      
-      // Filter by "Issued" status: Only show if NOT fully issued.
-      // We check both Number and Date. If BOTH are present and valid, it's Issued (Removed from return).
-      // If either is missing, or Number is '০'/'0', it stays in the report as pending.
       const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
       const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
-      
       const hasValidNo = rawNo !== '' && rawNo !== '০' && rawNo !== '0' && !rawNo.includes('নং-');
       const hasValidDate = rawDate !== '' && rawDate !== '0000-00-00';
-      
       const isIssued = hasValidNo && hasValidDate;
       
       return isBeforeOrOnReportingDate && !isIssued;
@@ -274,7 +267,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
     if (!pasteData) return;
     
     const rows = pasteData.split(/\r?\n/).filter(row => row.trim() !== '');
-    
     const allEntities: string[] = [];
     ministryGroups.forEach(m => {
       const entities = MINISTRY_ENTITY_MAP[m] || [];
@@ -286,20 +278,17 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
 
     const fields: (keyof MinistryPrevStats)[] = ['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount'];
     const fieldStartIdx = fields.indexOf(startField);
-
     const newStats = { ...tempPrevStats };
 
     rows.forEach((row, rowOffset) => {
       const entityIdx = startIdx + rowOffset;
       if (entityIdx >= allEntities.length) return;
       const entityName = allEntities[entityIdx];
-      
       const cells = row.split(/\t/); 
       cells.forEach((cell, cellOffset) => {
         const fieldIdx = fieldStartIdx + cellOffset;
         if (fieldIdx >= fields.length) return;
         const fieldName = fields[fieldIdx];
-        
         const value = parseBengaliNumber(cell.trim());
         newStats[entityName] = { 
           ...(newStats[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 }), 
@@ -307,7 +296,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
         };
       });
     });
-
     setTempPrevStats(newStats);
   };
 
@@ -359,50 +347,112 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
       <div id="section-report-selector" className="max-w-4xl pb-10 animate-report-page relative pt-0">
         <IDBadge id="section-report-selector" />
         <div className="grid grid-cols-1 gap-5">
-          {reportOptions.filter(opt => isAdmin || opt.id !== 'setup-mode').map((opt, index) => (
-            <div 
-              key={opt.id} 
-              onClick={() => {
-                if (opt.id === 'setup-mode') setIsSetupMode(true);
-                else setSelectedReportType(opt.title);
-              }} 
-              className={`
-                group relative flex items-center h-[82px] w-full 
-                bg-gradient-to-r from-slate-900 to-slate-800
-                rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5
-                transition-all duration-500 cursor-pointer overflow-hidden border border-white/10
-                animate-in slide-in-from-right-10 fill-mode-forwards
-              `}
-              style={{ animationDelay: `${index * 150}ms` }}
-            >
-              <IDBadge id={`report-opt-${opt.id}`} />
-              <div className={`absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b ${opt.accent} shadow-[0_0_15px_rgba(255,255,255,0.2)]`}></div>
-              <div className="flex items-center justify-center pl-7 relative z-10">
-                <div className={`w-12 h-12 bg-slate-800/50 rounded-2xl border border-white/10 shadow-inner flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:bg-gradient-to-br ${opt.accent}`}>
-                   <opt.icon size={22} className="text-white group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
+          {reportOptions.filter(opt => isAdmin || opt.id !== 'setup-mode').map((opt, index) => {
+            const isMonthlyLetter = opt.id === 'monthly-letter';
+            
+            return (
+              <React.Fragment key={opt.id}>
+                <div 
+                  onClick={() => {
+                    if (opt.id === 'setup-mode') setIsSetupMode(true);
+                    else if (isMonthlyLetter) setIsCorrespondenceExpanded(!isCorrespondenceExpanded);
+                    else setSelectedReportType(opt.title);
+                  }} 
+                  className={`
+                    group relative flex items-center h-[82px] w-full 
+                    bg-gradient-to-r from-slate-900 to-slate-800
+                    rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5
+                    transition-all duration-500 cursor-pointer overflow-hidden border border-white/10
+                    animate-in slide-in-from-right-10 fill-mode-forwards
+                  `}
+                  style={{ animationDelay: `${index * 150}ms` }}
+                >
+                  <IDBadge id={`report-opt-${opt.id}`} />
+                  <div className={`absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b ${opt.accent} shadow-[0_0_15px_rgba(255,255,255,0.2)]`}></div>
+                  <div className="flex items-center justify-center pl-7 relative z-10">
+                    <div className={`w-12 h-12 bg-slate-800/50 rounded-2xl border border-white/10 shadow-inner flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:bg-gradient-to-br ${opt.accent}`}>
+                      <opt.icon size={22} className="text-white group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
+                    </div>
+                  </div>
+                  <div className="flex flex-col justify-center pl-8 flex-1 relative z-10">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-[20px] font-black text-white tracking-tight leading-tight mb-0.5 group-hover:text-blue-200 transition-colors">{opt.title}</h3>
+                      {opt.id === 'setup-mode' && <Lock size={14} className="text-white/30" />}
+                    </div>
+                    <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider group-hover:text-slate-300 transition-colors">{opt.desc}</p>
+                  </div>
+                  <div className={`pr-10 opacity-40 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0 relative z-10 ${isMonthlyLetter && isCorrespondenceExpanded ? 'rotate-90' : ''}`}>
+                    <ArrowRightCircle size={24} className="text-white" />
+                  </div>
                 </div>
-              </div>
-              <div className="flex flex-col justify-center pl-8 flex-1 relative z-10">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-[20px] font-black text-white tracking-tight leading-tight mb-0.5 group-hover:text-blue-200 transition-colors">{opt.title}</h3>
-                  {opt.id === 'setup-mode' && <Lock size={14} className="text-white/30" />}
-                </div>
-                <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider group-hover:text-slate-300 transition-colors">{opt.desc}</p>
-              </div>
-              <div className="pr-10 opacity-40 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0 relative z-10">
-                <ArrowRightCircle size={24} className="text-white" />
-              </div>
-            </div>
-          ))}
+
+                {/* Sub-menu for Monthly Correspondence Return */}
+                {isMonthlyLetter && isCorrespondenceExpanded && (
+                  <div className="pl-12 space-y-4 animate-in slide-in-from-top-4 duration-500 mb-4">
+                    {/* Option 1: Sending to Dhaka */}
+                    <div 
+                      onClick={() => setSelectedReportType('চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')}
+                      className="group relative flex items-center h-[72px] w-full bg-gradient-to-r from-blue-900 to-blue-800 rounded-[1.25rem] shadow-md hover:shadow-xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/5"
+                    >
+                      <div className="absolute top-0 left-0 w-1 h-full bg-blue-400"></div>
+                      <div className="flex items-center pl-6">
+                        <div className="w-10 h-10 bg-blue-700/50 rounded-xl border border-white/10 flex items-center justify-center group-hover:bg-blue-600 transition-all">
+                          <Send size={18} className="text-white" />
+                        </div>
+                      </div>
+                      <div className="flex flex-col justify-center pl-6 flex-1">
+                        <h4 className="text-[16px] font-black text-white leading-tight">১. চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।</h4>
+                        <p className="text-blue-300 font-bold text-[9px] uppercase tracking-widest mt-0.5">বিদ্যমান ফরম্যাট (Existing Format)</p>
+                      </div>
+                      <div className="pr-8 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                        <ArrowRight size={18} className="text-white" />
+                      </div>
+                    </div>
+
+                    {/* Option 2: For DD Sir */}
+                    <div 
+                      onClick={() => setSelectedReportType('চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।')}
+                      className="group relative flex items-center h-[72px] w-full bg-gradient-to-r from-indigo-900 to-indigo-800 rounded-[1.25rem] shadow-md hover:shadow-xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/5"
+                    >
+                      <div className="absolute top-0 left-0 w-1 h-full bg-indigo-400"></div>
+                      <div className="flex items-center pl-6">
+                        <div className="w-10 h-10 bg-indigo-700/50 rounded-xl border border-white/10 flex items-center justify-center group-hover:bg-indigo-600 transition-all">
+                          <UserCheck size={18} className="text-white" />
+                        </div>
+                      </div>
+                      <div className="flex flex-col justify-center pl-6 flex-1">
+                        <h4 className="text-[16px] font-black text-white leading-tight">২. চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।</h4>
+                        <p className="text-indigo-300 font-bold text-[9px] uppercase tracking-widest mt-0.5">নতুন বিশেষ ফরম্যাট (Special DD Sir View)</p>
+                      </div>
+                      <div className="pr-8 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                        <ArrowRight size={18} className="text-white" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </React.Fragment>
+            )
+          })}
         </div>
       </div>
     );
   }
 
-  if (selectedReportType === 'মাসিক রিটারন: চিঠিপত্র সংক্রান্ত।') {
+  // Render DD Sir Special Return
+  if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
+    return (
+      <DDSirCorrespondenceReturn 
+        entries={filteredCorrespondence}
+        activeCycle={activeCycle}
+        onBack={() => setSelectedReportType(null)}
+        isLayoutEditable={isLayoutEditable}
+      />
+    );
+  }
+
+  if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
     const thS = "border border-slate-300 px-1 py-2 font-black text-center text-[10px] md:text-[11px] bg-slate-100 text-slate-900 leading-tight align-middle sticky top-0 z-[100] shadow-[inset_0_-1px_0_#cbd5e1]";
     const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
-
     const reportingDateBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0), 'dd/MM/yyyy'));
 
     return (
@@ -413,7 +463,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
             <button onClick={() => setSelectedReportType(null)} className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-all text-slate-600"><ChevronLeft size={20} /></button>
             <div className="flex flex-col">
               <span className="text-xs font-black text-emerald-600 uppercase tracking-tighter">রিপোর্ট টাইপ:</span>
-              <span className="text-lg font-black text-slate-900 leading-tight">চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন</span>
+              <span className="text-lg font-black text-slate-900 leading-tight">চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন (ঢাকা)</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -683,7 +733,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, correspondenceEntries 
                       const totalUA = (row.prev.unsettledAmount || 0) + (row.currentRaisedAmount || 0);
                       const totalSC = (row.prev.settledCount || 0) + (row.currentSettledCount || 0); 
                       const totalSA = (row.prev.settledAmount || 0) + (row.currentSettledAmount || 0);
-                      
                       const closingUC = totalUC - totalSC; 
                       const closingUA = totalUA - totalSA;
 
