@@ -412,11 +412,6 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
           <thead>
             <tr className="h-[42px]"><th rowSpan={2} className={thBase}>ক্র: নং</th><th rowSpan={2} className={thBase}>বিস্তারিত বিবরণ (২০ ফিল্ড দেখতে ক্লিক)</th><th rowSpan={2} className={thBase}>অনু: নং</th><th rowSpan={2} className={thBase}>জড়িত টাকা</th><th colSpan={2} className={thBase}>উত্থাপিত আপত্তি</th><th colSpan={2} className={thBase}>ভ্যাট</th><th colSpan={2} className={thBase}>আয়কর</th><th colSpan={2} className={thBase}>অন্যান্য</th><th colSpan={2} className={thBase}>মোট মীমাংসিত</th></tr>
             <tr className="h-[38px]"><th className={thBase}>সংখ্যা</th><th className={thBase}>টাকা</th><th className={thBase}>আদায়</th><th className={thBase}>সমন্বয়</th><th className={thBase}>আদায়</th><th className={thBase}>সমন্বয়</th><th className={thBase}>আদায়</th><th className={thBase}>সমন্বয়</th><th className={thBase}>আদায়</th><th className={thBase}>সমন্বয়</th></tr>
-            <tr className="h-[30px] no-print row-numbering">
-              {['১','২','৩','৪','৫','৬','৭','৮','৯','১০','১১','১২','১৩','১৪'].map(num => (
-                <th key={num} className={thBase + " !bg-slate-100 !py-1 !text-[9px]"}>{num}</th>
-              ))}
-            </tr>
           </thead>
           <tbody>
             {filteredEntries.map((entry, idx) => {
