@@ -406,8 +406,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 <col className="w-[100px]" />
               </colgroup>
               <thead>
-                {/* অফসেট এবং উচ্চতা ফিক্স করা হয়েছে (এখন একেবারে উপরে top: 0 তে বসবে, gaps removed) */}
-                <tr className="h-[45px]">
+                {/* অফসেট এবং উচ্চতা ফিক্স করা হয়েছে (এখন ৩য় নম্বর রো-টি সঠিক উচ্চতায় ফিক্সড থাকবে) */}
+                <tr className="h-[42px]">
                   <th rowSpan={2} className={`${thS}`}>ক্রমিক নং</th>
                   <th rowSpan={2} className={`${thS}`}>এনটিটি/প্রতিষ্ঠানের নাম</th>
                   <th rowSpan={2} className={`${thS}`}>ডায়েরি নং ও তারিখ</th>
@@ -418,7 +418,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   <th rowSpan={2} className={`${thS}`}>বর্তমান অবস্থান</th>
                   <th rowSpan={2} className={`${thS}`}>মন্তব্য</th>
                 </tr>
-                <tr className="h-[41px]">
+                <tr className="h-[38px]">
                   <th className={`${thS}`}>বিএসআর (SFI)</th>
                   <th className={`${thS}`}>বিএসআর (NON-SFI)</th>
                   <th className={`${thS}`}>ত্রি-পক্ষীয় (SFI)</th>
@@ -441,7 +441,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                     <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'এসএফআই' ? `বিএসআর (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                     <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'নন এসএফআই' ? `বিএসআর (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                     <td className={tdS}>{entry.letterType === 'ত্রিপক্ষীয় সভা' && entry.paraType === 'এসএফআই' ? `ত্রিপক্ষীয় (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                    <td className={tdS}>{entry.letterType === 'দ্বিপক্ষীয় সভা' && entry.paraType === 'নন এসএফআই' ? `দ্বিপক্ষীয় (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                    <td className={tdS}>{entry.letterType === 'দ্বিপক্ষীয় সভা' && entry.paraType === 'নন এসএফআই' ? `দ্বি-পক্ষীয় (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                     <td className={tdS}>-</td>
                     <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
                     <td className={tdS}>{toBengaliDigits(entry.presentationDate)}</td>
