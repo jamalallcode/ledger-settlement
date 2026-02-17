@@ -28,13 +28,15 @@
   z-index: 210 !important;
 }
 
-/* Logic: If a section contains multiple tables, only the BOTTOM one sticks */
-.multi-table-view .table-container:first-of-type thead th {
+/* Logic: If a section contains multiple tables, the FIRST one is STATIC (No Fixed) */
+.multi-table-view .table-container:first-of-type thead th,
+.multi-table-view .table-container:first-of-type tfoot td {
   position: static !important;
   z-index: 10 !important;
   box-shadow: none !important;
 }
 
+/* Logic: If a section contains multiple tables, only the LAST one sticks to top */
 .multi-table-view .table-container:last-of-type thead th {
   position: sticky !important;
   top: 0 !important;
