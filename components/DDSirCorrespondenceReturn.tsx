@@ -245,19 +245,6 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                     <td colSpan={12} className="py-12 text-center italic border border-slate-300 font-bold text-slate-400">কোনো তথ্য পাওয়া যায়নি</td>
                   </tr>
                 )}
-                <tr className="bg-slate-50">
-                  <td colSpan={2} className={tdStyle + " text-center"}>উপ-মোট</td>
-                  <td className={tdStyle}>{totals.kpL > 0 ? toBengaliDigits(totals.kpL) + ' টি' : '-'}</td>
-                  <td className={tdStyle}>{totals.kpM > 0 ? toBengaliDigits(totals.kpM) + ' টি' : '-'}</td>
-                  <td className={tdStyle}>{totals.kbL > 0 ? toBengaliDigits(totals.kbL) + ' টি' : '-'}</td>
-                  <td className={tdStyle}>{totals.kbM > 0 ? toBengaliDigits(totals.kbM) + ' টি' : '-'}</td>
-                  <td className={tdStyle}>{totals.bsL > 0 ? toBengaliDigits(totals.bsL) + ' টি' : '-'}</td>
-                  <td className={tdStyle}>{totals.bsM > 0 ? toBengaliDigits(totals.bsM) + ' টি' : '-'}</td>
-                  <td className={tdStyle}>{totals.rcL > 0 ? toBengaliDigits(totals.rcL) + ' টি' : '-'}</td>
-                  <td className={tdStyle}>{totals.rcM > 0 ? toBengaliDigits(totals.rcM) + ' টি' : '-'}</td>
-                  <td className={tdStyle}>{totals.otL > 0 ? toBengaliDigits(totals.otL) + ' টি' : '-'}</td>
-                  <td className={tdStyle}>{totals.otM > 0 ? toBengaliDigits(totals.otM) + ' টি' : '-'}</td>
-                </tr>
               </tbody>
               <tfoot className="no-print">
                 <tr className="bg-slate-50">
