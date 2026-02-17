@@ -118,7 +118,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const grandTotalLess = totals.kpL + totals.kbL + totals.bsL + totals.rcL + totals.otL;
   const grandTotalMore = totals.kpM + totals.kbM + totals.bsM + totals.rcM + totals.otM;
 
-  const thStyle = "border border-black px-1 py-2 font-bold text-center text-[13px] leading-tight align-middle bg-white";
+  // thStyle for Table 1 (Overriding global sticky to make it scrollable)
+  const thStyle = "border border-black px-1 py-2 font-bold text-center text-[13px] leading-tight align-middle bg-white !static !top-auto";
   const tdStyle = "border border-black px-2 py-2 text-[14px] text-center font-bold leading-tight bg-white align-middle";
   
   // Sticky Styles for Table 2
