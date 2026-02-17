@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
-import { ChevronLeft, Printer, Mail } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { ChevronLeft, Printer, Mail, Calendar, RotateCcw } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
-import { format, startOfMonth, addDays, isBefore, subMonths } from 'date-fns';
+import { format, startOfMonth, addDays, isBefore, subMonths, parseISO } from 'date-fns';
 
 interface DDSirCorrespondenceReturnProps {
   entries: any[];
@@ -17,18 +17,31 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   onBack, 
   isLayoutEditable 
 }) => {
-  // --- Logic for 2nd Sunday Calculation ---
-  const reportingDate = useMemo(() => {
+  // --- Logic for 2nd Sunday Calculation (Default) ---
+  const defaultReportingDate = useMemo(() => {
     const end = activeCycle.end;
     const firstDay = startOfMonth(end);
     let firstSunday = 1 + (7 - firstDay.getDay()) % 7;
     if (firstDay.getDay() === 0) firstSunday = 1; 
-    const secondSundayDate = addDays(firstDay, firstSunday + 6); // Add 7 days to first Sunday
-    return secondSundayDate;
+    const secondSundayDate = addDays(firstDay, firstSunday + 6);
+    return format(secondSundayDate, 'yyyy-MM-dd');
   }, [activeCycle.end]);
 
+  const [selectedReportingDate, setSelectedReportingDate] = useState<string>(defaultReportingDate);
+
+  // Sync state if cycle changes
+  useEffect(() => {
+    setSelectedReportingDate(defaultReportingDate);
+  }, [defaultReportingDate]);
+
+  const reportingDate = useMemo(() => new Date(selectedReportingDate), [selectedReportingDate]);
+
   const reportingDateBN = toBengaliDigits(format(reportingDate, 'dd/MM/yyyy'));
-  const reportingMonthBN = toBengaliDigits(format(reportingDate, 'MMMM/yy')).replace('January', 'জানুয়ারি').replace('February', 'ফেব্রুয়ারি').replace('March', 'মার্চ').replace('April', 'এপ্রিল').replace('May', 'মে').replace('June', 'জুন').replace('July', 'জুলাই').replace('August', 'আগস্ট').replace('September', 'সেপ্টেম্বর').replace('October', 'অক্টোবর').replace('November', 'নভেম্বর').replace('December', 'ডিসেম্বর');
+  const reportingMonthBN = toBengaliDigits(format(reportingDate, 'MMMM/yy'))
+    .replace('January', 'জানুয়ারি').replace('February', 'ফেব্রুয়ারি').replace('March', 'মার্চ')
+    .replace('April', 'এপ্রিল').replace('May', 'মে').replace('June', 'জুন')
+    .replace('July', 'জুলাই').replace('August', 'আগস্ট').replace('September', 'সেপ্টেম্বর')
+    .replace('October', 'অক্টোবর').replace('November', 'নভেম্বর').replace('December', 'ডিসেম্বর');
 
   // --- Grouping & Calculation Logic ---
   const reportTableData = useMemo(() => {
@@ -102,9 +115,33 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             <span className="text-lg font-black text-slate-900 leading-tight">ডিডি স্যার ফরম্যাট</span>
           </div>
         </div>
-        <button onClick={() => window.print()} className="h-[44px] px-6 bg-slate-900 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95">
-          <Printer size={18} /> প্রিন্ট করুন
-        </button>
+
+        <div className="flex items-center gap-3">
+          {/* Date Selection Option */}
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 h-[44px] rounded-xl">
+             <Calendar size={16} className="text-blue-600" />
+             <label className="text-[11px] font-black text-slate-500 uppercase tracking-tighter mr-1">রিপোর্টিং তারিখ:</label>
+             <input 
+               type="date" 
+               className="bg-transparent border-none outline-none font-black text-slate-900 text-xs cursor-pointer"
+               value={selectedReportingDate}
+               onChange={(e) => setSelectedReportingDate(e.target.value)}
+             />
+             {selectedReportingDate !== defaultReportingDate && (
+               <button 
+                onClick={() => setSelectedReportingDate(defaultReportingDate)}
+                className="p-1 hover:bg-white rounded-md text-blue-400 hover:text-blue-600 transition-all"
+                title="ডিফল্ট তারিখে ফিরুন"
+               >
+                 <RotateCcw size={14} />
+               </button>
+             )}
+          </div>
+          
+          <button onClick={() => window.print()} className="h-[44px] px-6 bg-slate-900 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95">
+            <Printer size={18} /> প্রিন্ট করুন
+          </button>
+        </div>
       </div>
 
       <div className="w-full bg-white p-4 md:p-8 relative">
@@ -126,7 +163,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
         {/* Main Table */}
         <div className="table-container">
-          <table className="w-full border-collapse border border-black table-fixed">
+          <table className="w-full border-separate table-fixed border-collapse">
             <colgroup>
               <col className="w-[50px]" />
               <col className="w-[180px]" />
