@@ -347,7 +347,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         <td className={stickyTdStyle}>{toBengaliDigits(row.presentationDate) || '-'}</td>
                         <td className={stickyTdStyle}>
                           <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-[10px] font-black uppercase">
-                            {row.presentedToName || row.receiverName || 'অডিটর'}
+                            {row.presentedToName || 'অডিটর'}
                           </span>
                         </td>
                         <td className={stickyTdStyle + " italic text-slate-400"}>{row.remarks || '-'}</td>
