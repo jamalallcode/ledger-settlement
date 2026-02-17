@@ -44,37 +44,6 @@
   line-height: 1.2 !important;
 }
 
-/* Row 3: Numbering Row - CLASS: .row-numbering (Strictly 30px) */
-.table-container thead tr.row-numbering {
-  height: 30px !important;
-  min-height: 30px !important;
-  max-height: 30px !important;
-}
-
-.table-container thead tr.row-numbering th {
-  top: 80px !important; /* Offset by Row 1 (42) + Row 2 (38) */
-  z-index: 215 !important;
-  
-  /* HARD HEIGHT LOCK - Use this class to change height manually */
-  height: 30px !important;
-  min-height: 30px !important;
-  max-height: 30px !important;
-  
-  /* Reset padding to prevent browser expansion */
-  padding: 0 !important;
-  
-  /* Perfect vertical centering */
-  line-height: 30px !important;
-  vertical-align: middle !important;
-  
-  overflow: hidden;
-  display: table-cell !important;
-  
-  /* Prevent browser from squashing row on scroll */
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-}
-
 /* Ensure cells with rowSpan stay on top of the stack */
 .table-container thead th[rowspan] {
   z-index: 235 !important;
