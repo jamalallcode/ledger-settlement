@@ -160,7 +160,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
     return info.replace(/জারিপত্র নং-/g, '').replace(/জারিপত্রের তারিখ-/g, '').trim() + " খ্রি:";
   };
 
-  const thBase = "border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-50 relative";
+  // Changed bg-slate-50 to bg-slate-200 for a more premium look
+  const thBase = "border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-200 relative";
   const tdBase = "border border-slate-300 px-0.5 py-1.5 text-center align-middle text-[10px] leading-tight font-bold text-slate-900 relative";
   const tdMoney = "border border-slate-300 px-0.5 py-1 text-center align-middle text-[10px] font-black text-slate-950 relative";
 
@@ -177,7 +178,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center"><AlertCircle size={24} /></div>
                <div>
                  <p className="text-xs font-black text-slate-900">এটি একটি অপেক্ষমাণ এন্ট্রি</p>
-                 <p className="text-[10px] font-bold text-slate-500">অনুমোদন দিলে এটি মূল রেজিস্টারে দেখা যাবে।</p>
+                 <p className="text-[10px] font-bold text-slate-500">অনুমোদন দিলে এটি মূল রেজিস্টারে যুক্ত করা যাবে।</p>
                </div>
             </div>
             <div className="flex gap-3">
