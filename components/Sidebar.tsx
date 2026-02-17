@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe } from 'lucide-react';
+import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 
 interface SidebarProps {
   activeTab: string;
-  setActiveTab: (tab: string) => void;
+  setActiveTab: (tab: string, subModule?: 'settlement' | 'correspondence') => void;
   onToggleVisibility?: () => void;
   onDemoLoad?: () => void;
   isLockedMode: boolean;
@@ -36,6 +36,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [adminPassword, setAdminPassword] = useState('');
   const clickCount = useRef(0);
   const lastClickTime = useRef(0);
+
+  // --- Sub-menu State ---
+  const [isEntryExpanded, setIsEntryExpanded] = useState(false);
 
   // --- Important Links State ---
   const [isLinksOpen, setIsLinksOpen] = useState(false);
@@ -103,7 +106,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const menuItems = [
     { id: 'landing', label: 'হোম', icon: Home, badgeId: 'side-nav-home' },
-    { id: 'entry', label: 'নতুন এন্ট্রি', icon: FilePlus2, badgeId: 'side-nav-entry' },
+    { id: 'entry', label: 'নতুন এন্ট্রি', icon: FilePlus2, badgeId: 'side-nav-entry', isDropdown: true },
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter, badgeId: 'side-nav-register' },
     { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return' },
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, badgeId: 'side-nav-archive' },
@@ -146,21 +149,51 @@ const Sidebar: React.FC<SidebarProps> = ({
             <ChevronLeft size={20} />
           </button>
         </div>
-        <nav id="sidebar-nav" className="flex-1 overflow-y-auto py-4 px-4 space-y-2 relative no-scrollbar">
+        <nav id="sidebar-nav" className="flex-1 overflow-y-auto py-4 px-4 space-y-1 relative no-scrollbar">
           <IDBadge id="sidebar-nav" />
           {menuItems.map((item) => (
-            <button 
-              key={item.id} 
-              id={item.badgeId} 
-              onClick={() => setActiveTab(item.id)} 
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-bold transition-all relative group ${activeTab === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
-            >
-              <IDBadge id={item.badgeId} />
-              <div className="relative">
-                <item.icon size={18} />
-              </div>
-              <span className="text-sm">{item.label}</span>
-            </button>
+            <React.Fragment key={item.id}>
+              <button 
+                id={item.badgeId} 
+                onClick={() => {
+                  if (item.isDropdown) {
+                    setIsEntryExpanded(!isEntryExpanded);
+                  } else {
+                    setActiveTab(item.id);
+                  }
+                }} 
+                className={`w-full flex items-center justify-between px-3 py-3 rounded-xl font-bold transition-all relative group ${activeTab === item.id || (item.id === 'entry' && activeTab === 'entry') ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
+              >
+                <IDBadge id={item.badgeId} />
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <item.icon size={18} />
+                  </div>
+                  <span className="text-sm">{item.label}</span>
+                </div>
+                {item.isDropdown && <ChevronDown size={14} className={`transition-transform duration-300 ${isEntryExpanded ? 'rotate-180' : ''}`} />}
+              </button>
+
+              {/* Nested Sub-menu for Entry */}
+              {item.isDropdown && isEntryExpanded && (
+                <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
+                  <button 
+                    onClick={() => setActiveTab('entry', 'correspondence')}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black text-slate-400 hover:bg-emerald-600/10 hover:text-emerald-400 transition-all group"
+                  >
+                    <Mail size={14} className="group-hover:scale-110 transition-transform" />
+                    <span>১. চিঠিপত্র এন্ট্রি</span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('entry', 'settlement')}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black text-slate-400 hover:bg-blue-600/10 hover:text-blue-400 transition-all group"
+                  >
+                    <ClipboardList size={14} className="group-hover:scale-110 transition-transform" />
+                    <span>২. অনুচ্ছেদ এন্ট্রি</span>
+                  </button>
+                </div>
+              )}
+            </React.Fragment>
           ))}
 
           {/* New Important Links Section */}
@@ -229,7 +262,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
       {showAdminModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-[2rem] shadow-2xl p-8 space-y-6 animate-in zoom-in-95 duration-300">
+          <div className="w-full max-sm bg-slate-900 border border-slate-800 rounded-[2rem] shadow-2xl p-8 space-y-6 animate-in zoom-in-95 duration-300">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-600/20 text-blue-500 rounded-xl flex items-center justify-center">
