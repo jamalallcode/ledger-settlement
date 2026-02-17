@@ -172,13 +172,19 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
   const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
   const [receiverSuggestions, setReceiverSuggestions] = useState<string[]>([]);
+  const [descriptionSuggestions, setDescriptionSuggestions] = useState<string[]>([]);
   const [showReceiverDropdown, setShowReceiverDropdown] = useState(false);
+  const [showDescriptionDropdown, setShowDescriptionDropdown] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const receiverRef = useRef<HTMLDivElement>(null);
+  const descriptionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const savedNames = localStorage.getItem('ledger_correspondence_receivers');
     if (savedNames) setReceiverSuggestions(JSON.parse(savedNames));
+
+    const savedDescriptions = localStorage.getItem('ledger_correspondence_descriptions');
+    if (savedDescriptions) setDescriptionSuggestions(JSON.parse(savedDescriptions));
   }, []);
 
   const formatDateSegments = (d: string, m: string, y: string) => {
@@ -259,6 +265,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       if (receiverRef.current && !receiverRef.current.contains(event.target as Node)) {
         setShowReceiverDropdown(false);
       }
+      if (descriptionRef.current && !descriptionRef.current.contains(event.target as Node)) {
+        setShowDescriptionDropdown(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -305,6 +314,13 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       setReceiverSuggestions(updatedNames);
       localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updatedNames));
     }
+    
+    if (formData.description.trim()) {
+      const updatedDesc = Array.from(new Set([formData.description.trim(), ...descriptionSuggestions]));
+      setDescriptionSuggestions(updatedDesc);
+      localStorage.setItem('ledger_correspondence_descriptions', JSON.stringify(updatedDesc));
+    }
+
     onAdd(formData);
     setIsSuccess(true);
     resetForm();
@@ -364,15 +380,54 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         <fieldset disabled={isSuccess} className="space-y-8 border-none p-0 m-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             
-            {/* Field 1 - Full Width Description */}
-            <div className={`${colWrapper} border-emerald-100 lg:col-span-4`}>
+            {/* Field 1 - Full Width Description with Suggestions */}
+            <div className={`${colWrapper} border-emerald-100 lg:col-span-4`} ref={descriptionRef}>
               <IDBadge id="corr-field-1" />
               <label className={labelCls}><span className={numBadge}>১</span> <FileText size={14} className="text-emerald-600" /> পত্রের বিবরণ নিরীক্ষা সালসহ:</label>
-              <input 
-                type="text" required className={inputCls} 
-                value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}
-                placeholder="বিবরণ লিখুন..."
-              />
+              <div className="relative group">
+                <input 
+                  type="text" 
+                  required 
+                  className={inputCls} 
+                  value={formData.description} 
+                  onFocus={() => setShowDescriptionDropdown(true)}
+                  onChange={e => setFormData({...formData, description: e.target.value})}
+                  placeholder="বিবরণ লিখুন বা সাজেশন্স থেকে বাছুন..."
+                  autoComplete="off"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowDescriptionDropdown(!showDescriptionDropdown)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition-colors"
+                >
+                  <ChevronDown size={18} className={`transition-transform duration-300 ${showDescriptionDropdown ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showDescriptionDropdown && descriptionSuggestions.length > 0 && (
+                  <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
+                    <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                       <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2"><Sparkles size={12} /> পূর্ববর্তী বিবরণসমূহ</span>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
+                      {descriptionSuggestions
+                        .filter(desc => desc.toLowerCase().includes(formData.description.toLowerCase()))
+                        .map((desc, idx) => (
+                        <div 
+                          key={idx}
+                          onClick={() => {
+                            setFormData({...formData, description: desc});
+                            setShowDescriptionDropdown(false);
+                          }}
+                          className={`px-5 py-3.5 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.description === desc ? 'bg-emerald-600 text-white shadow-lg' : 'hover:bg-emerald-50 text-slate-700 font-bold'}`}
+                        >
+                          <span className="text-[13px] leading-relaxed">{desc}</span>
+                          {formData.description === desc && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* --- Section: পিত্রের অন্যান্য তথ্য --- */}
