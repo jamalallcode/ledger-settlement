@@ -1,4 +1,6 @@
-import React, { useMemo, useState, useEffect } from 'react';
+
+import { useMemo, useState, useEffect } from 'react';
+import React from 'react';
 import { ChevronLeft, Printer, Mail, Calendar, RotateCcw } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
@@ -348,11 +350,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   </tr>
                 )}
               </tbody>
+              {/* Modified Footer Background: From bg-slate-900 to bg-slate-50 for a lighter professional look */}
               <tfoot>
-                <tr className="bg-slate-900 text-white font-black text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.3)]">
-                  <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-slate-900">সর্বমোট চিঠিপত্র সংখ্যা:</td>
-                  <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-slate-900 text-emerald-400">{toBengaliDigits(entries.length)} টি</td>
-                  <td colSpan={6} className="border-t border-slate-700 bg-slate-900"></td>
+                <tr className="bg-slate-50 text-slate-900 font-black text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] border-t border-slate-300">
+                  <td colSpan={2} className="px-6 text-left border-t border-slate-300 bg-slate-50">সর্বমোট চিঠিপত্র সংখ্যা:</td>
+                  <td colSpan={1} className="px-4 text-center border-t border-slate-300 bg-slate-50 text-emerald-600">{toBengaliDigits(entries.length)} টি</td>
+                  <td colSpan={6} className="border-t border-slate-300 bg-slate-50"></td>
                 </tr>
               </tfoot>
             </table>
