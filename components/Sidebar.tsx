@@ -205,14 +205,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black text-slate-400 hover:bg-emerald-600/10 hover:text-emerald-400 transition-all group"
                   >
                     <Mail size={14} className="group-hover:scale-110 transition-transform" />
-                    <span>১. চিঠিপত্র রেজিস্টার</span>
+                    <span>১. চিঠিপত্র রেজি:</span>
                   </button>
                   <button 
                     onClick={() => setActiveTab('register', 'settlement')}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black text-slate-400 hover:bg-blue-600/10 hover:text-blue-400 transition-all group"
                   >
                     <ClipboardList size={14} className="group-hover:scale-110 transition-transform" />
-                    <span>২. মীমাংসা রেজিস্টার</span>
+                    <span>২. মীমাংসিত রেজি:</span>
                   </button>
                 </div>
               )}
