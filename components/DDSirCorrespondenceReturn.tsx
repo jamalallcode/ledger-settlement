@@ -67,13 +67,14 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       const lType = entry.letterType || '';
       const desc = (entry.description || '').toLowerCase();
 
-      if (lType === 'দ্বিপক্ষীয় সভা') {
+      // FIXED LOGIC: Both 'দ্বিপক্ষীয় সভা' and 'কার্যপত্র' are categorized as Workpaper (karyapatra)
+      if (lType === 'দ্বিপক্ষীয় সভা' || lType === 'কার্যপত্র') {
         grouped[auditor].karyapatra[durationKey]++;
       } else if (lType === 'ত্রিপক্ষীয় সভা') {
         grouped[auditor].karyabibarani[durationKey]++;
       } else if (lType === 'বিএসআর') {
         grouped[auditor].broadsheet[durationKey]++;
-      } else if (desc.includes('মিলিকরণ') || desc.includes('সমন্বয়')) {
+      } else if (lType === 'মিলিকরণ' || desc.includes('মিলিকরণ') || desc.includes('সমন্বয়')) {
         grouped[auditor].reconciliation[durationKey]++;
       } else {
         grouped[auditor].others[durationKey]++;
