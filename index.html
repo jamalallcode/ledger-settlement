@@ -138,25 +138,32 @@
         table-layout: fixed;
       }
       
-      /* টেবিল হেডারের স্টিকি লজিক */
+      /* টেবিল হেডারের স্টিকি লজিক (নিচে নেভবার ৮০পিক্সেল অফসেট যুক্ত করা হয়েছে) */
       thead th {
         position: -webkit-sticky !important;
         position: sticky !important;
-        background-color: #f1f5f9 !important;
+        background-color: #ffffff !important;
         box-shadow: inset 0 -1px 0 #cbd5e1, inset -1px 0 0 #cbd5e1 !important;
         z-index: 50 !important;
+        background-clip: padding-box !important;
       }
 
-      /* সারি ১: একদম উপরে */
+      /* সারি ১: নেভবারের ঠিক নিচে (৮০px) */
       thead tr:nth-child(1) th {
-        top: 0px !important;
-        z-index: 90 !important;
+        top: 80px !important;
+        z-index: 150 !important;
       }
       
-      /* সারি ২: ৪২ পিক্সেল নিচে */
+      /* সারি ২: প্রথম সারির উচ্চতা (৪৫px) যোগ করে (১২৫px) */
       thead tr:nth-child(2) th {
-        top: 42px !important; 
-        z-index: 80 !important;
+        top: 125px !important; 
+        z-index: 140 !important;
+      }
+
+      /* সারি ৩: দ্বিতীয় সারির উচ্চতা (৪১px) যোগ করে (১৬৬px) */
+      thead tr:nth-child(3) th {
+        top: 166px !important; 
+        z-index: 130 !important;
       }
 
       /* ফুটার স্টিকি লজিক */
