@@ -405,8 +405,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 <col className="w-[85px]" />
                 <col className="w-[100px]" />
               </colgroup>
-              <thead className="sticky top-0 z-[110]">
-                {/* অফসেট এবং উচ্চতা ফিক্স করা হয়েছে (৮০px নেভবার গ্যাপসহ) */}
+              <thead>
+                {/* অফসেট এবং উচ্চতা ফিক্স করা হয়েছে (৮০px নেভবার গ্যাপসহ) - thead থেকে সরাসরি স্টিকি ক্লাস সরানো হয়েছে */}
                 <tr className="h-[45px]">
                   <th rowSpan={2} className={`${thS} !top-[80px] !z-[155]`}>ক্রমিক নং</th>
                   <th rowSpan={2} className={`${thS} !top-[80px] !z-[155]`}>এনটিটি/প্রতিষ্ঠানের নাম</th>
