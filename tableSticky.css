@@ -28,22 +28,7 @@
   z-index: 210 !important;
 }
 
-/* Logic: If a section contains multiple tables, the FIRST one is STATIC (No Fixed) */
-.multi-table-view .table-container:first-of-type thead th,
-.multi-table-view .table-container:first-of-type tfoot td {
-  position: static !important;
-  z-index: 10 !important;
-  box-shadow: none !important;
-}
-
-/* Logic: If a section contains multiple tables, only the LAST one sticks to top */
-.multi-table-view .table-container:last-of-type thead th {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 210 !important;
-}
-
-/* Sticky Footer */
+/* Sticky Footer (General) */
 .table-container tfoot td, 
 .table-container tfoot th {
   position: -webkit-sticky !important;
@@ -53,6 +38,30 @@
   background-color: #0f172a !important;
   color: white !important;
   box-shadow: inset 0 1px 0 #334155, inset -1px 0 0 #334155 !important;
+}
+
+/* --- MULTI-TABLE VIEW SPECIFIC OVERRIDES --- */
+
+/* Logic: If a section contains multiple tables, the FIRST one is ALWAYS STATIC */
+.multi-table-view .table-container:first-of-type thead,
+.multi-table-view .table-container:first-of-type thead tr,
+.multi-table-view .table-container:first-of-type thead th,
+.multi-table-view .table-container:first-of-type tfoot,
+.multi-table-view .table-container:first-of-type tfoot tr,
+.multi-table-view .table-container:first-of-type tfoot td {
+  position: static !important;
+  z-index: 1 !important;
+  box-shadow: none !important;
+  top: auto !important;
+  bottom: auto !important;
+}
+
+/* Ensure the LAST table header sticks correctly in multi-view */
+.multi-table-view .table-container:last-of-type thead th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 210 !important;
 }
 
 @media print {
