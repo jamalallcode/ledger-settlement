@@ -210,6 +210,15 @@ const PremiumInlineSelect: React.FC<{
             </div>
           </div>
           <div className="max-h-40 overflow-y-auto no-scrollbar py-1">
+            {value && (
+              <div 
+                onClick={() => { onSelect(''); setIsOpen(false); }}
+                className="px-3 py-1.5 mx-1 mb-1 rounded-lg cursor-pointer flex items-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 transition-all border border-red-100"
+              >
+                <XCircle size={10} />
+                <span className="text-[10px] font-black uppercase tracking-tighter">সিলেকশন মুছুন</span>
+              </div>
+            )}
             {filtered.map((opt, i) => (
               <div 
                 key={i} 
@@ -708,7 +717,20 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                           <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.presentationDate || pending.presentedToName ? 'bg-blue-600/10 border-blue-400 ring-2 ring-blue-50' : 'bg-blue-50/50 border-blue-100'}`}>
                              <div className="flex items-center justify-between">
                                 <div className="text-[9px] font-black text-blue-700 uppercase tracking-tighter flex items-center gap-1"><UserCheck size={8} /> উপস্থাপন</div>
-                                <div className="flex items-center gap-1.5">
+                                {(currentPresDate || currentPresName) && (
+                                  <button 
+                                    type="button"
+                                    onClick={() => {
+                                      handleInlineChange(entry.id, 'presentationDate', '');
+                                      handleInlineChange(entry.id, 'presentedToName', '');
+                                    }}
+                                    className="p-1 hover:bg-red-100 text-red-400 hover:text-red-600 rounded transition-all animate-in zoom-in duration-300 ml-1"
+                                    title="তথ্য মুছুন"
+                                  >
+                                    <XCircle size={10} />
+                                  </button>
+                                )}
+                                <div className="flex items-center gap-1.5 ml-auto">
                                    {formatDisplayDate(currentPresDate) && <span className="text-[8px] font-black text-blue-600">{formatDisplayDate(currentPresDate)}</span>}
                                    <div className="relative flex items-center h-3 w-3">
                                       <Calendar 
