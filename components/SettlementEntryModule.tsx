@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOption } from '../types.ts';
 import SearchableSelect from './SearchableSelect.tsx';
 import { MINISTRIES_LIST, MINISTRY_ENTITY_MAP, ENTITY_BRANCH_MAP, AUDIT_YEARS_OPTIONS } from '../constants.ts';
 import { Trash2, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils.ts';
 import { getCycleForDate, isEntryLate } from '../utils/cycleHelper.ts';
+import { getDateError } from '../utils/dateValidation';
 import { format } from 'date-fns';
 
 /**
@@ -40,7 +41,7 @@ const IDBadge = ({ id, isLayoutEditable }: { id: string, isLayoutEditable?: bool
 const SegmentedInput = ({ 
   id, icon: Icon, label, color, noValue, dayValue, monthValue, yearValue, 
   noSetter, daySetter, monthSetter, yearSetter, dayRef, monthRef, yearRef, 
-  isFocused, focusSetter, isLayoutEditable, extra 
+  isFocused, focusSetter, isLayoutEditable, extra, error 
 }: any) => {
   
   const handleSegmentChange = (val: string, type: 'day'|'month'|'year', setter: (v: string) => void, nextRef?: React.RefObject<HTMLInputElement>) => {
@@ -69,10 +70,10 @@ const SegmentedInput = ({
   };
 
   return (
-    <div id={id} className={colWrapperCls + ` bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`}>
+    <div id={id} className={colWrapperCls + ` ${error ? 'bg-red-50 border-red-200' : `bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`}`}>
       <IDBadge id={id} isLayoutEditable={isLayoutEditable} />
-      <label className={labelCls + " truncate"}><span className={numBadge}>{id.split('-')[1]}</span> <Icon size={14} className={`text-${color}-600 shrink-0`} /> <span className="truncate">{label}</span></label>
-      <div className={`relative w-full h-[55px] flex items-center border rounded-2xl bg-white transition-all duration-300 shadow-sm border-slate-200 hover:border-slate-300 focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-50`}>
+      <label className={labelCls + " truncate"}><span className={numBadge}>{id.split('-')[1]}</span> <Icon size={14} className={`${error ? 'text-red-600' : `text-${color}-600`} shrink-0`} /> <span className="truncate">{label}</span></label>
+      <div className={`relative w-full h-[55px] flex items-center border rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : 'border-slate-200 hover:border-slate-300 focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-50'}`}>
         {extra}
         <div className="flex items-center w-full px-2 sm:px-4 h-full">
           <div className="relative flex-[2.5] h-full flex items-center min-w-0">
@@ -130,6 +131,11 @@ const SegmentedInput = ({
           </div>
         </div>
       </div>
+      {error && (
+        <div className="mt-2 text-[10px] font-black text-red-600 animate-in slide-in-from-top-1 flex items-center gap-1">
+          <AlertCircle size={10} /> {error}
+        </div>
+      )}
     </div>
   );
 };
@@ -330,6 +336,18 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     return `${noPrefix} ${no}${formattedDate ? `, ${datePrefix} ${formattedDate}` : ''}`;
   };
 
+  const getIsoFromSegments = (d: string, m: string, y: string) => {
+    const day = toEnglishDigits(d), month = toEnglishDigits(m); let year = toEnglishDigits(y);
+    if (year.length === 2) year = '20' + year;
+    if (day && month && year.length === 4) {
+      try {
+        const parsed = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        if (!isNaN(parsed.getTime())) return format(parsed, 'yyyy-MM-dd');
+      } catch (e) {}
+    }
+    return '';
+  };
+
   useEffect(() => {
     setFormData(prev => ({ ...prev, letterNoDate: buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear, 'পত্র নং-', 'পত্রের তারিখ-') }));
   }, [letterNoPart, letterDay, letterMonth, letterYear]);
@@ -342,23 +360,19 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     setFormData(prev => ({ ...prev, minutesNoDate: buildCombinedString(minNoPart, minDay, minMonth, minYear, 'কার্যবিবরণী নং-', 'কার্যবিবরণীর তারিখ-') }));
   }, [minNoPart, minDay, minMonth, minYear]);
 
+  /* useMemo added to track values for validation */
+  const currentDiaryISO = useMemo(() => getIsoFromSegments(diaryDay, diaryMonth, diaryYear), [diaryDay, diaryMonth, diaryYear]);
+  const currentLetterISO = useMemo(() => getIsoFromSegments(letterDay, letterMonth, letterYear), [letterDay, letterMonth, letterYear]);
+  const currentIssueISO = useMemo(() => getIsoFromSegments(dayPart, monthPart, yearPart), [dayPart, monthPart, yearPart]);
+
   useEffect(() => {
     setFormData(prev => ({ ...prev, workpaperNoDate: buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear, 'ডায়েরি নং-', 'ডায়েরির তারিখ-') }));
   }, [diaryNoPart, diaryDay, diaryMonth, diaryYear]);
 
   useEffect(() => {
     const combined = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
-    let iso = '';
-    const d = toEnglishDigits(dayPart), m = toEnglishDigits(monthPart); let y = toEnglishDigits(yearPart);
-    if (y.length === 2) y = '20' + y;
-    if (d && m && y.length === 4) {
-      try {
-        const parsedDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
-        if (!isNaN(parsedDate.getTime())) iso = format(parsedDate, 'yyyy-MM-dd');
-      } catch (e) {}
-    }
-    setFormData(prev => ({ ...prev, issueLetterNoDate: combined, issueDateISO: iso }));
-  }, [issueNoPart, dayPart, monthPart, yearPart]);
+    setFormData(prev => ({ ...prev, issueLetterNoDate: combined, issueDateISO: currentIssueISO }));
+  }, [issueNoPart, dayPart, monthPart, yearPart, currentIssueISO]);
 
   const [paragraphs, setParagraphs] = useState<ParagraphDetail[]>([]);
   const [bulkParaInput, setBulkParaInput] = useState('');
@@ -463,6 +477,10 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const isUpdateMode = !!initialEntry;
   const deletedCount = isUpdateMode ? (initialEntry?.paragraphs?.length || 0) - paragraphs.length : 0;
 
+  // Chronological Validations for Settlement
+  const diaryDateError = getDateError(currentDiaryISO, currentLetterISO, 'ডায়েরি তারিখ', 'পত্রের তারিখ');
+  const issueDateError = getDateError(currentIssueISO, currentDiaryISO, 'জারিপত্র তারিখ', 'ডায়েরি তারিখ');
+
   if (wizardStep === 'selection') {
     return (
       <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border border-slate-100 mb-8 max-w-4xl mx-auto animate-in zoom-in-95 duration-300 relative">
@@ -517,7 +535,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
           >
             <div className={`absolute top-0 left-0 w-2 h-full ${formData.paraType === 'নন এসএফআই' ? 'bg-indigo-600 shadow-[0_0_15px_rgba(79,70,229,0.4)]' : 'bg-slate-200'}`}></div>
             <div className="flex items-center pl-8 gap-6 flex-1 pr-6 py-4">
-               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${formData.paraType === 'নন এসএফআই' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-500'}`}>
+               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${formData.paraType === 'নন এসএফআই' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500'}`}>
                   <Building size={30} />
                </div>
                <div className="flex-1 space-y-3">
@@ -598,7 +616,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             <SegmentedInput id="field-7" icon={FileText} label="পত্র নং ও তারিখ" color="amber" noValue={letterNoPart} dayValue={letterDay} monthValue={letterMonth} yearValue={letterYear} noSetter={setLetterNoPart} daySetter={setLetterDay} monthSetter={setLetterMonth} yearSetter={setLetterYear} dayRef={letterDayRef} monthRef={letterMonthRef} yearRef={letterYearRef} isFocused={isLetterFocused} focusSetter={setIsLetterFocused} isLayoutEditable={isLayoutEditable} />
             <SegmentedInput id="field-8" icon={FileEdit} label="কার্যপত্র নং ও তারিখ" color="purple" noValue={wpNoPart} dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} noSetter={setWpNoPart} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} isFocused={isWpFocused} focusSetter={setIsWpFocused} isLayoutEditable={isLayoutEditable} />
             <SegmentedInput id="field-9" icon={Info} label="কার্যবিবরণী নং ও তারিখ" color="sky" noValue={minNoPart} dayValue={minDay} monthValue={minMonth} yearValue={minYear} noSetter={setMinNoPart} daySetter={setMinDay} monthSetter={setMinMonth} yearSetter={setMinYear} dayRef={minDayRef} monthRef={minMonthRef} yearRef={minYearRef} isFocused={isMinFocused} focusSetter={setIsMinFocused} isLayoutEditable={isLayoutEditable} />
-            <SegmentedInput id="field-10" icon={BookOpen} label="ডায়েরি নং ও তারিখ" color="emerald" noValue={diaryNoPart} dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryYear} noSetter={setDiaryNoPart} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} isLayoutEditable={isLayoutEditable} />
+            <SegmentedInput id="field-10" icon={BookOpen} label="ডায়েরি নং ও তারিখ" color="emerald" noValue={diaryNoPart} dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryYear} noSetter={setDiaryNoPart} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} isLayoutEditable={isLayoutEditable} error={diaryDateError} />
 
             <SegmentedInput 
               id="field-11" icon={Send} label="জারিপত্র নং ও তারিখ" color="amber" 
@@ -606,6 +624,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               noSetter={setIssueNoPart} daySetter={setDayPart} monthSetter={setMonthPart} yearSetter={setYearPart} 
               dayRef={issueDayRef} monthRef={issueMonthRef} yearRef={issueYearRef} 
               isFocused={isIssueFocused} focusSetter={setIsIssueFocused} isLayoutEditable={isLayoutEditable}
+              error={issueDateError}
               extra={formData.issueDateISO && (
                 <div className="absolute -right-2 -top-2 z-[310] flex items-center justify-center w-6 h-6 bg-emerald-500 text-white rounded-full shadow-lg border-2 border-white animate-in zoom-in duration-500">
                   <Check size={14} strokeWidth={4} />
@@ -737,12 +756,12 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                  </div>
                  <div className="p-8 space-y-6 bg-blue-600 text-white">
                    <div className="flex items-center justify-between">
-                     <span className="text-[13px] font-black text-blue-100 uppercase tracking-widest">মোট আদায় টাকা:</span>
+                     <span className="text-[13px] font-black text-blue-100 uppercase tracking-widest">মোট আদায় টাকা:</span>
                      <span className="text-2xl font-black">{formatSummaryNum(summaryData.totalRec)}</span>
                    </div>
                    <div className="h-[1px] w-full bg-white/10"></div>
                    <div className="flex items-center justify-between">
-                     <span className="text-[13px] font-black text-blue-100 uppercase tracking-widest">মোট সমন্বয় টাকা:</span>
+                     <span className="text-[13px] font-black text-blue-100 uppercase tracking-widest">মোট সমন্বয় টাকা:</span>
                      <span className="text-2xl font-black">{formatSummaryNum(summaryData.totalAdj)}</span>
                    </div>
                  </div>
@@ -758,9 +777,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                   <div className={`w-24 h-24 ${isDeletingPara || deletedCount > 0 ? 'bg-red-600' : 'bg-emerald-600'} text-white rounded-[2.5rem] flex items-center justify-center shadow-[0_15px_35px_rgba(5,150,105,0.4)] animate-in spin-in-12 duration-700 border-4 border-white`}>
                      {isDeletingPara || deletedCount > 0 ? <Trash size={56} strokeWidth={2.5} className="animate-pulse" /> : (isUpdateMode ? <ShieldCheck size={56} strokeWidth={2.5} className="animate-pulse" /> : <CheckCircle2 size={56} strokeWidth={2.5} className="animate-pulse" />)}
                   </div>
-                  <div className="absolute -right-2 -bottom-2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg border border-emerald-100">
-                     <Sparkles size={22} className="text-amber-500" />
-                  </div>
+                  <div className="absolute -right-2 -bottom-2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg border border-emerald-100"><Sparkles size={22} className="text-amber-500" /></div>
                </div>
                
                <div className="text-center space-y-3 relative z-10 px-6">
@@ -804,11 +821,11 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             <button 
               id="btn-submit-entry"
               type="submit"
-              className="w-full py-5 text-white text-xl font-black rounded-[2.5rem] bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] shadow-[0_20px_40px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-4 group relative overflow-hidden"
+              disabled={!!diaryDateError || !!issueDateError}
+              className={`w-full py-5 text-white text-xl font-black rounded-[2.5rem] bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] shadow-[0_20px_40px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-4 group relative overflow-hidden ${diaryDateError || issueDateError ? 'bg-slate-300 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600'}`}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-              <IDBadge id="btn-submit-entry" isLayoutEditable={isLayoutEditable} />
-              <CheckCircle2 size={24} strokeWidth={2.5} /> {isUpdateMode ? 'তথ্য আপডেট করুন' : 'রেজিস্টার তথ্য সংরক্ষণ করুন'}
+              {!diaryDateError && !issueDateError && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>}
+              <IDBadge id="btn-submit-entry" isLayoutEditable={isLayoutEditable} /><CheckCircle2 size={24} strokeWidth={2.5} /> {isUpdateMode ? 'তথ্য আপডেট করুন' : 'রেজিস্টার তথ্য সংরক্ষণ করুন'}
             </button>
           )}
         </div>
