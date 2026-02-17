@@ -8,7 +8,7 @@
   background-color: #ffffff !important;
   z-index: 210 !important; /* Above Navbar (z-200) */
   background-clip: padding-box !important;
-  box-shadow: inset 0 -1px 0 #cbd5e1, inset -1px 0 0 #cbd5e1 !important
+  box-shadow: inset 0 -1px 0 #cbd5e1, inset -1px 0 0 #cbd5e1 !important;
 }
 
 /* Multi-row header offset logic - Using precise heights to prevent gaps */
