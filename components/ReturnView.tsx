@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect, useRef } from 'react';
 import React from 'react';
 import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
@@ -318,7 +317,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       {isCycleDropdownOpen && (
         <div className="absolute top-[55px] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="p-2 max-h-[350px] overflow-y-auto no-scrollbar">
-            <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between"><span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2"><CalendarSearch size={12} /> মাস ও বছর নির্বাচন</span></div>
+            <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between"><span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2"><CalendarSearch size={12} /> মাস ও বছর নির্বাচন</span></div>
             {cycleOptions.map((opt, idx) => (
               <div key={idx} onClick={() => { setSelectedCycleDate(opt.date); setIsCycleDropdownOpen(false); }} className={`flex items-center justify-between px-4 py-2.5 mb-1 rounded-xl cursor-pointer transition-all ${opt.cycleLabel === activeCycle.label ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-slate-50 text-slate-700 font-bold'}`}>
                 <span className="text-[13px]">{opt.label}</span>
@@ -363,9 +362,10 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }
 
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
-    // Changed bg-white to bg-slate-200 for headers
+    // Header font-black
     const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
-    const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-black leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
+    // Data cells reverted to font-bold
+    const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
     const reportingDateBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0), 'dd/MM/yyyy'));
 
     return (
@@ -388,8 +388,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         <div className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-6 relative animate-table-entrance">
           <div className="text-center py-6 border-b-2 border-slate-100 mb-6">
             <h1 className="text-2xl font-black uppercase text-slate-900 leading-tight">{OFFICE_HEADER.main}</h1>
-            <h2 className="text-xl font-bold text-slate-800 leading-tight">{OFFICE_HEADER.sub}</h2>
-            <h3 className="text-lg font-bold text-slate-700 leading-tight">{OFFICE_HEADER.address}</h3>
+            <h2 className="text-xl font-black text-slate-800 leading-tight">{OFFICE_HEADER.sub}</h2>
+            <h3 className="text-lg font-black text-slate-700 leading-tight">{OFFICE_HEADER.address}</h3>
             <div className="mt-4 inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
               <span className="text-blue-400">শাখা ভিত্তিক {reportingDateBN} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।</span>
             </div>
@@ -450,10 +450,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                     <td className={tdS}>{entry.remarks || 'চলমান'}</td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={13} className="py-20 text-center font-bold text-slate-400 bg-slate-50 italic">এই সাইকেলে কোনো চিঠিপত্র তথ্য পাওয়া যায়নি।</td></tr>
+                  <tr><td colSpan={13} className="py-20 text-center font-black text-slate-400 bg-slate-50 italic">এই সাইকেলে কোনো চিঠিপত্র তথ্য পাওয়া যায়নি।</td></tr>
                 )}
               </tbody>
-              {/* Modified Footer Background: From bg-slate-900 to bg-slate-50 for a lighter professional look */}
               <tfoot className="sticky bottom-0 z-[120]">
                 <tr className="bg-slate-50 text-slate-900 font-black text-[11px] h-11 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] border-t-2 border-slate-300">
                   <td colSpan={2} className="px-4 text-left border-t border-slate-300 bg-slate-50">সর্বমোট চিঠিপত্র সংখ্যা:</td>
@@ -469,7 +468,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }
 
   if (isSetupMode) {
-    // Changed bg-slate-100 to bg-slate-200 for setup headers
+    // Header font-black
     const setupThCls = "p-4 text-center font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-20 align-middle sticky top-0 z-[210] shadow-[inset_0_-1px_0_#cbd5e1]";
     const setupFooterTdCls = "p-4 border border-slate-300 text-center text-[15px] bg-blue-50 font-black sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1]";
     
@@ -492,7 +491,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             <button onClick={() => { setIsSetupMode(false); setSelectedReportType(null); }} className="p-3 bg-slate-100 border border-slate-200 rounded-2xl hover:bg-slate-200 text-slate-600 shadow-sm transition-all"><ChevronLeft size={22} /></button>
             <div className="flex flex-col">
               <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3"><Settings2 size={28} className="text-blue-600" /> প্রারম্ভিক জের সেটআপ</h2>
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter">সমন্বিত (Unified) ব্যালেন্স ইনপুট উইন্ডো</span>
+              <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">সমন্বিত (Unified) ব্যালেন্স ইনপুট উইন্ডো</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -512,10 +511,10 @@ const ReturnView: React.FC<ReturnViewProps> = ({
              <thead>
                 <tr>
                   <th className="p-5 text-left font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] w-[35%] bg-slate-200 leading-tight h-20 align-middle sticky top-0 z-[210] shadow-[inset_0_-1px_0_#cbd5e1]">মন্ত্রণালয় ও সংস্থা</th>
-                  <th className={setupThCls}>অমী: সংখ্যা <br/><span className="text-[10px] text-slate-500 font-bold">(প্রারম্ভিক)</span></th>
-                  <th className={setupThCls}>অমী: টাকা <br/><span className="text-[10px] text-slate-500 font-bold">(প্রারম্ভিক)</span></th>
-                  <th className={setupThCls}>মী: সংখ্যা <br/><span className="text-[10px] text-slate-500 font-bold">(প্রারম্ভিক)</span></th>
-                  <th className={setupThCls}>মী: টাকা <br/><span className="text-[10px] text-slate-500 font-bold">(প্রারম্ভিক)</span></th>
+                  <th className={setupThCls}>অমী: সংখ্যা <br/><span className="text-[10px] text-slate-500 font-black">(প্রারম্ভিক)</span></th>
+                  <th className={setupThCls}>অমী: টাকা <br/><span className="text-[10px] text-slate-500 font-black">(প্রারম্ভিক)</span></th>
+                  <th className={setupThCls}>মী: সংখ্যা <br/><span className="text-[10px] text-slate-500 font-black">(প্রারম্ভিক)</span></th>
+                  <th className={setupThCls}>মী: টাকা <br/><span className="text-[10px] text-slate-500 font-black">(প্রারম্ভিক)</span></th>
                 </tr>
              </thead>
              <tbody>
@@ -539,7 +538,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                              <input 
                                type="text" 
                                readOnly={!isEditingSetup}
-                               className={`w-full h-11 text-center font-black text-[15px] outline-none border-0 transition-all ${isEditingSetup ? 'bg-white text-slate-900 cursor-text' : 'bg-slate-50 text-slate-400 cursor-not-allowed'}`} 
+                               className={`w-full h-11 text-center font-bold text-[15px] outline-none border-0 transition-all ${isEditingSetup ? 'bg-white text-slate-900 cursor-text' : 'bg-slate-50 text-slate-400 cursor-not-allowed'}`} 
                                placeholder="০" 
                                value={tempPrevStats[ent]?.[field] !== undefined && tempPrevStats[ent]![field] !== 0 ? toBengaliDigits(tempPrevStats[ent]![field]) : ''} 
                                onPaste={(e) => handleSetupPaste(e, ent, field)} 
@@ -571,10 +570,11 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   }
 
-  // Changed bg-white to bg-slate-200 for summary report headers
+  // Header font-black
   const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
+  // Data cells reverted to font-bold
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight bg-white group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
-  // Modified grandStyle Background: From bg-slate-800 to bg-slate-100 for a lighter professional look
+  // Grand totals font-black
   const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[9.5px] bg-slate-100 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1,inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
 
   return (
@@ -599,7 +599,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       <div id="card-report-table-container" className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-1 relative animate-table-entrance">
         <div className="text-center py-6 bg-white border-b-2 border-slate-100">
           <h1 className="text-2xl font-black uppercase text-slate-900">{OFFICE_HEADER.main}</h1>
-          <h2 className="text-lg font-bold text-slate-800">{OFFICE_HEADER.sub}</h2>
+          <h2 className="text-lg font-black text-slate-800">{OFFICE_HEADER.sub}</h2>
           <div className="mt-3 inline-flex items-center gap-3 px-6 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
             <span className="text-blue-400">{selectedReportType}</span> | {toBengaliDigits(activeCycle.label)}
           </div>
@@ -670,42 +670,42 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                       return (
                         <tr key={row.entity} className="group hover:bg-blue-50/50">
                           {rIdx === 0 && <td rowSpan={m.entityRows.length + 1} className={tdStyle + " bg-slate-50 border-l border-r border-slate-300"}>{m.ministry}</td>}
-                          <td className={tdStyle + " text-left border-r border-slate-300"}>{row.entity}</td>
+                          <td className={tdStyle + " text-left border-r border-slate-300 font-bold"}>{row.entity}</td>
                           <td className={tdStyle}>{toBengaliDigits(row.prev.unsettledCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.prev.unsettledAmount))}</td>
                           <td className={tdStyle}>{toBengaliDigits(row.currentRaisedCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.currentRaisedAmount))}</td>
-                          <td className={tdStyle + " bg-slate-100/50"}>{toBengaliDigits(totalUC)}</td><td className={tdStyle + " text-center bg-slate-100/50 border-r border-slate-300"}>{toBengaliDigits(Math.round(totalUA))}</td>
+                          <td className={tdStyle + " bg-slate-100/50 font-bold"}>{toBengaliDigits(totalUC)}</td><td className={tdStyle + " text-center bg-slate-100/50 border-r border-slate-300 font-bold"}>{toBengaliDigits(Math.round(totalUA))}</td>
                           <td className={tdStyle}>{toBengaliDigits(row.prev.settledCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.prev.settledAmount))}</td>
                           <td className={tdStyle}>{toBengaliDigits(row.currentSettledCount)}</td><td className={tdStyle}>{toBengaliDigits(row.currentFullCount)}</td><td className={tdStyle}>{toBengaliDigits(row.currentPartialCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.currentSettledAmount))}</td>
-                          <td className={tdStyle + " bg-emerald-50/50"}>{toBengaliDigits(totalSC)}</td><td className={tdStyle + " text-center bg-emerald-50/50 border-r border-slate-300"}>{toBengaliDigits(Math.round(totalSA))}</td>
-                          <td className={tdStyle + " bg-amber-50 text-blue-700"}>{toBengaliDigits(closingUC)}</td><td className={tdStyle + " text-center bg-amber-50 text-blue-700"}>{toBengaliDigits(Math.round(closingUA))}</td>
+                          <td className={tdStyle + " bg-emerald-50/50 font-bold"}>{toBengaliDigits(totalSC)}</td><td className={tdStyle + " text-center bg-emerald-50/50 border-r border-slate-300 font-bold"}>{toBengaliDigits(Math.round(totalSA))}</td>
+                          <td className={tdStyle + " bg-amber-50 text-blue-700 font-bold"}>{toBengaliDigits(closingUC)}</td><td className={tdStyle + " text-center bg-amber-50 text-blue-700 font-bold"}>{toBengaliDigits(Math.round(closingUA))}</td>
                         </tr>
                       );
                     })}
-                    <tr className="bg-blue-50/80 font-bold text-blue-950 h-[42px] border-y-2 border-slate-200">
-                      <td className={tdStyle + " text-right italic pr-3 border-l border-r border-slate-300 text-[10px] bg-blue-50/80"}>উপ-মোট: {m.ministry}</td>
-                      <td className={tdStyle}>{toBengaliDigits(mTotals.pUC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.pUA))}</td>
-                      <td className={tdStyle}>{toBengaliDigits(mTotals.cRC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.cRA))}</td>
-                      <td className={tdStyle + " bg-slate-200/50"}>{toBengaliDigits(mTotals.pUC + mTotals.cRC)}</td><td className={tdStyle + " text-center bg-slate-200/50 border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.pUA + mTotals.cRA))}</td>
-                      <td className={tdStyle}>{toBengaliDigits(mTotals.pSC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.pSA))}</td>
-                      <td className={tdStyle}>{toBengaliDigits(mTotals.cSC)}</td><td className={tdStyle}>{toBengaliDigits(mTotals.cFC)}</td><td className={tdStyle}>{toBengaliDigits(mTotals.cPC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.cSA))}</td>
-                      <td className={tdStyle + " bg-emerald-200/50"}>{toBengaliDigits(mTotals.pSC + mTotals.cSC)}</td><td className={tdStyle + " text-center bg-emerald-200/50 border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.pSA + mTotals.cSA))}</td>
-                      <td className={tdStyle + " bg-amber-100/30"}>{toBengaliDigits((mTotals.pUC + mTotals.cRC) - (mTotals.pSC + mTotals.cSC))}</td><td className={tdStyle + " text-center bg-amber-100/30"}>{toBengaliDigits(Math.round((mTotals.pUA + mTotals.cRA) - (mTotals.pSA + mTotals.cSA)))}</td>
+                    <tr className="bg-blue-50/80 font-black text-blue-950 h-[42px] border-y-2 border-slate-200">
+                      <td className={tdStyle + " text-right italic pr-3 border-l border-r border-slate-300 text-[10px] bg-blue-50/80 font-black"}>উপ-মোট: {m.ministry}</td>
+                      <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.pUC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pUA))}</td>
+                      <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.cRC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.cRA))}</td>
+                      <td className={tdStyle + " bg-slate-200/50 font-black"}>{toBengaliDigits(mTotals.pUC + mTotals.cRC)}</td><td className={tdStyle + " text-center bg-slate-200/50 border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pUA + mTotals.cRA))}</td>
+                      <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.pSC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pSA))}</td>
+                      <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.cSC)}</td><td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.cFC)}</td><td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.cPC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.cSA))}</td>
+                      <td className={tdStyle + " bg-emerald-200/50 font-black"}>{toBengaliDigits(mTotals.pSC + mTotals.cSC)}</td><td className={tdStyle + " text-center bg-emerald-200/50 border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pSA + mTotals.cSA))}</td>
+                      <td className={tdStyle + " bg-amber-100/30 font-black"}>{toBengaliDigits((mTotals.pUC + mTotals.cRC) - (mTotals.pSC + mTotals.cSC))}</td><td className={tdStyle + " text-center bg-amber-100/30 font-black"}>{toBengaliDigits(Math.round((mTotals.pUA + mTotals.cRA) - (mTotals.pSA + mTotals.cSA)))}</td>
                     </tr>
                   </React.Fragment>
                 );
               })}
             </tbody>
-            {/* Modified Unified Summary Footer: Lighter Background and Colors */}
+            {/* Unified Summary Footer: Reverted Colors to Black/Bold */}
             <tfoot className="sticky bottom-0 z-[230] shadow-2xl">
               <tr>
-                <td colSpan={2} className={grandStyle + " !bg-slate-200 text-slate-900 uppercase tracking-widest text-[10px] shadow-[inset_0_1px_0_#94a3b8] border-l border-slate-400"}>সর্বমোট ইউনিফাইড সারাংশ:</td>
+                <td colSpan={2} className={grandStyle + " !bg-slate-200 text-slate-900 uppercase tracking-widest text-[10px] shadow-[inset_0_1px_0_#94a3b8] border-l border-slate-400 font-black"}>সর্বমোট ইউনিফাইড সারাংশ:</td>
                 <td className={grandStyle}>{toBengaliDigits(grandTotals.pUC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.pUA))}</td>
                 <td className={grandStyle}>{toBengaliDigits(grandTotals.cRC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.cRA))}</td>
-                <td className={grandStyle + " !bg-slate-200/80"}>{toBengaliDigits(grandTotals.pUC + grandTotals.cRC)}</td><td className={grandStyle + " text-center !bg-slate-200/80"}>{toBengaliDigits(Math.round(grandTotals.pUA + grandTotals.cRA))}</td>
+                <td className={grandStyle + " !bg-slate-200/80 font-black"}>{toBengaliDigits(grandTotals.pUC + grandTotals.cRC)}</td><td className={grandStyle + " text-center !bg-slate-200/80 font-black"}>{toBengaliDigits(Math.round(grandTotals.pUA + grandTotals.cRA))}</td>
                 <td className={grandStyle}>{toBengaliDigits(grandTotals.pSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.pSA))}</td>
                 <td className={grandStyle}>{toBengaliDigits(grandTotals.cSC)}</td><td className={grandStyle}>{toBengaliDigits(grandTotals.cFC)}</td><td className={grandStyle}>{toBengaliDigits(grandTotals.cPC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.cSA))}</td>
-                <td className={grandStyle + " !bg-emerald-100/80"}>{toBengaliDigits(grandTotals.pSC + grandTotals.cSC)}</td><td className={grandStyle + " text-center !bg-emerald-100/80"}>{toBengaliDigits(Math.round(grandTotals.pSA + grandTotals.cSA))}</td>
-                <td className={grandStyle + " !bg-orange-100 text-slate-900"}>{toBengaliDigits((grandTotals.pUC + grandTotals.cRC) - (grandTotals.pSC + grandTotals.cSC))}</td><td className={grandStyle + " text-center !bg-orange-100 text-slate-900"}>{toBengaliDigits(Math.round((grandTotals.pUA + grandTotals.cRA) - (grandTotals.pSA + grandTotals.cSA)))}</td>
+                <td className={grandStyle + " !bg-emerald-100/80 font-black"}>{toBengaliDigits(grandTotals.pSC + grandTotals.cSC)}</td><td className={grandStyle + " text-center !bg-emerald-100/80 font-black"}>{toBengaliDigits(Math.round(grandTotals.pSA + grandTotals.cSA))}</td>
+                <td className={grandStyle + " !bg-orange-100 text-slate-900 font-black"}>{toBengaliDigits((grandTotals.pUC + grandTotals.cRC) - (grandTotals.pSC + grandTotals.cSC))}</td><td className={grandStyle + " text-center !bg-orange-100 text-slate-900 font-black"}>{toBengaliDigits(Math.round((grandTotals.pUA + grandTotals.cRA) - (grandTotals.pSA + grandTotals.cSA)))}</td>
               </tr>
             </tfoot>
           </table>
@@ -717,12 +717,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0"><Database size={28} /></div>
           <div className="text-center md:text-left flex-1">
             <p className="text-[17px] font-black text-slate-900 mb-1.5">অ্যাকাউন্টিং চেইন লজিক (Chain Integrity) ভেরিফাইড</p>
-            <p className="text-[12px] font-bold text-slate-500 leading-relaxed uppercase tracking-tight">
+            <p className="text-[12px] font-black text-slate-500 leading-relaxed uppercase tracking-tight">
               সিস্টেম বর্তমানে <span className="text-blue-600">{toBengaliDigits(activeCycle.label)}</span> পিরিয়ডের প্রারম্ভিক জের বিগত সকল মাসের লেনদেনের ভিত্তিতে স্বয়ংক্রিয়ভাবে সমন্বিত উপায়ে গণনা করছে।
               হিসাব: কলাম ৭ = (কলাম ৩ - কলাম ৬)।
             </p>
           </div>
-          <div className="px-8 py-3 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner flex items-center gap-4"><div className="flex items-center gap-4"><div className="flex flex-col items-end"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Calculated Status</span><span className="text-[12px] font-black text-emerald-600">ACCURATE & SYNCED</span></div><CheckCircle2 size={24} className="text-emerald-500" /></div></div>
+          <div className="px-8 py-3 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner flex items-center gap-4"><div className="flex items-center gap-4"><div className="flex flex-col items-end"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Calculated Status</span><span className="text-[12px] font-black text-emerald-600">ACCURATE & SYNCED</span></div><CheckCircle2 size={24} className="text-emerald-500" /></div></div>
         </div>
       )}
     </div>
