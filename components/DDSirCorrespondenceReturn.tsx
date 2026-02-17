@@ -122,8 +122,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const thStyle = "border border-black px-1 py-2 font-bold text-center text-[13px] leading-tight align-middle bg-white !static !top-auto";
   const tdStyle = "border border-black px-2 py-2 text-[14px] text-center font-bold leading-tight bg-white align-middle";
   
-  // Sticky Styles for Table 2
-  const stickyThStyle = "border border-black px-1 py-3 font-black text-center text-[11px] bg-slate-100 sticky top-[80px] z-[50] shadow-[inset_0_-1px_0_#000]";
+  // Sticky Styles for Table 2 (Ensuring it sticks below Navbar at 80px)
+  const stickyThStyle = "border border-black px-1 py-3 font-black text-center text-[11px] bg-slate-100 sticky !top-[80px] z-[100] shadow-[inset_0_-1px_0_#000]";
   const stickyTdStyle = "border border-black px-2 py-2 text-[12px] text-center font-bold leading-tight bg-white align-middle";
 
   return (
@@ -195,12 +195,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <col className="w-[70px]" />
               </colgroup>
               <thead>
-                {/* Fixed Top Header integrated into the table for border alignment */}
+                {/* Fixed Top Header integrated into the table for border alignment (Non-sticky) */}
                 <tr className="bg-white">
-                  <th colSpan={2} className="border border-black p-2 text-center font-bold text-[14px]">অনিষ্পন্ন কাজের তালিকা</th>
-                  <th colSpan={4} className="border border-black p-2 text-center font-bold text-[14px]">শাখার নাম: {entries[0]?.paraType || 'অনির্ধারিত'}</th>
-                  <th colSpan={3} className="border border-black p-2 text-center font-bold text-[14px]">মাস: {reportingMonthBN}</th>
-                  <th colSpan={3} className="border border-black p-2 text-center font-bold text-[14px]">তারিখ: {reportingDateBN} খ্রি:</th>
+                  <th colSpan={2} className="border border-black p-2 text-center font-bold text-[14px] !static !top-auto">অনিষ্পন্ন কাজের তালিকা</th>
+                  <th colSpan={4} className="border border-black p-2 text-center font-bold text-[14px] !static !top-auto">শাখার নাম: {entries[0]?.paraType || 'অনির্ধারিত'}</th>
+                  <th colSpan={3} className="border border-black p-2 text-center font-bold text-[14px] !static !top-auto">মাস: {reportingMonthBN}</th>
+                  <th colSpan={3} className="border border-black p-2 text-center font-bold text-[14px] !static !top-auto">তারিখ: {reportingDateBN} খ্রি:</th>
                 </tr>
                 <tr>
                   <th rowSpan={2} className={thStyle}>ক্রমিক নং</th>
@@ -354,7 +354,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   </tr>
                 )}
               </tbody>
-              <tfoot className="sticky bottom-0 z-[50]">
+              <tfoot className="sticky bottom-0 z-[100]">
                 <tr className="bg-slate-900 text-white font-black text-[13px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.3)]">
                   <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-slate-900">সর্বমোট চিঠিপত্র সংখ্যা:</td>
                   <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-slate-900 text-emerald-400">{toBengaliDigits(entries.length)} টি</td>
