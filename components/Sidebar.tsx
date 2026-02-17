@@ -37,8 +37,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   const clickCount = useRef(0);
   const lastClickTime = useRef(0);
 
-  // --- Sub-menu State ---
+  // --- Sub-menu States ---
   const [isEntryExpanded, setIsEntryExpanded] = useState(false);
+  const [isRegisterExpanded, setIsRegisterExpanded] = useState(false);
 
   // --- Important Links State ---
   const [isLinksOpen, setIsLinksOpen] = useState(false);
@@ -107,7 +108,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const menuItems = [
     { id: 'landing', label: 'হোম', icon: Home, badgeId: 'side-nav-home' },
     { id: 'entry', label: 'নতুন এন্ট্রি', icon: FilePlus2, badgeId: 'side-nav-entry', isDropdown: true },
-    { id: 'register', label: 'রেজিস্টার', icon: ListFilter, badgeId: 'side-nav-register' },
+    { id: 'register', label: 'রেজিস্টার', icon: ListFilter, badgeId: 'side-nav-register', isDropdown: true },
     { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return' },
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, badgeId: 'side-nav-archive' },
     { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, badgeId: 'side-nav-voting' },
@@ -156,13 +157,15 @@ const Sidebar: React.FC<SidebarProps> = ({
               <button 
                 id={item.badgeId} 
                 onClick={() => {
-                  if (item.isDropdown) {
+                  if (item.id === 'entry') {
                     setIsEntryExpanded(!isEntryExpanded);
+                  } else if (item.id === 'register') {
+                    setIsRegisterExpanded(!isRegisterExpanded);
                   } else {
                     setActiveTab(item.id);
                   }
                 }} 
-                className={`w-full flex items-center justify-between px-3 py-3 rounded-xl font-bold transition-all relative group ${activeTab === item.id || (item.id === 'entry' && activeTab === 'entry') ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
+                className={`w-full flex items-center justify-between px-3 py-3 rounded-xl font-bold transition-all relative group ${activeTab === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
               >
                 <IDBadge id={item.badgeId} />
                 <div className="flex items-center gap-3">
@@ -171,11 +174,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                   <span className="text-sm">{item.label}</span>
                 </div>
-                {item.isDropdown && <ChevronDown size={14} className={`transition-transform duration-300 ${isEntryExpanded ? 'rotate-180' : ''}`} />}
+                {item.isDropdown && <ChevronDown size={14} className={`transition-transform duration-300 ${(item.id === 'entry' && isEntryExpanded) || (item.id === 'register' && isRegisterExpanded) ? 'rotate-180' : ''}`} />}
               </button>
 
               {/* Nested Sub-menu for Entry */}
-              {item.isDropdown && isEntryExpanded && (
+              {item.id === 'entry' && isEntryExpanded && (
                 <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
                   <button 
                     onClick={() => setActiveTab('entry', 'correspondence')}
@@ -190,6 +193,26 @@ const Sidebar: React.FC<SidebarProps> = ({
                   >
                     <ClipboardList size={14} className="group-hover:scale-110 transition-transform" />
                     <span>২. অনুচ্ছেদ এন্ট্রি</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Nested Sub-menu for Register */}
+              {item.id === 'register' && isRegisterExpanded && (
+                <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
+                  <button 
+                    onClick={() => setActiveTab('register', 'correspondence')}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black text-slate-400 hover:bg-emerald-600/10 hover:text-emerald-400 transition-all group"
+                  >
+                    <Mail size={14} className="group-hover:scale-110 transition-transform" />
+                    <span>১. চিঠিপত্র রেজিস্টার</span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('register', 'settlement')}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black text-slate-400 hover:bg-blue-600/10 hover:text-blue-400 transition-all group"
+                  >
+                    <ClipboardList size={14} className="group-hover:scale-110 transition-transform" />
+                    <span>২. মীমাংসা রেজিস্টার</span>
                   </button>
                 </div>
               )}
