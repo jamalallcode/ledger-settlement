@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   Mail, X, FileText, Calendar, Hash, Banknote, BookOpen, 
   Inbox, Computer, User, CheckCircle2, Layout, Sparkles, 
@@ -125,6 +125,7 @@ interface CorrespondenceEntryModuleProps {
   isLayoutEditable?: boolean;
   initialEntry?: any;
   isAdmin?: boolean;
+  existingEntries?: any[];
 }
 
 const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ 
@@ -133,7 +134,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   onBackToMenu, 
   isLayoutEditable, 
   initialEntry, 
-  isAdmin = false 
+  isAdmin = false,
+  existingEntries = []
 }) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [calculatedCycle, setCalculatedCycle] = useState<string>('');
@@ -201,6 +203,27 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       sy(toBengaliDigits(parts[0]));
     }
   };
+
+  /**
+   * Duplicate Check Logic
+   */
+  const isDuplicate = useMemo(() => {
+    if (!formData.diaryNo || !formData.letterNo) return false;
+    
+    // Normalize for robust comparison (convert Bengali to English digits)
+    const normalizedDiary = toEnglishDigits(formData.diaryNo).trim();
+    const normalizedLetter = toEnglishDigits(formData.letterNo).trim();
+    
+    return existingEntries.some(entry => {
+      // If editing, skip the current entry itself
+      if (initialEntry && entry.id === initialEntry.id) return false;
+      
+      const eDiary = toEnglishDigits(entry.diaryNo || '').trim();
+      const eLetter = toEnglishDigits(entry.letterNo || '').trim();
+      
+      return eDiary === normalizedDiary && eLetter === normalizedLetter;
+    });
+  }, [formData.diaryNo, formData.letterNo, existingEntries, initialEntry]);
 
   useEffect(() => {
     if (initialEntry) {
@@ -309,6 +332,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isDuplicate) return;
+
     if (formData.receiverName.trim()) {
       const updatedNames = Array.from(new Set([formData.receiverName.trim(), ...receiverSuggestions]));
       setReceiverSuggestions(updatedNames);
@@ -375,6 +400,19 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Duplicate Warning Message */}
+      {isDuplicate && !isSuccess && (
+        <div className="mb-8 p-6 bg-red-50 border-2 border-dashed border-red-200 rounded-[2rem] flex items-center gap-6 animate-in slide-in-from-top-4 duration-500 shadow-lg shadow-red-100">
+           <div className="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-red-200 animate-pulse">
+              <AlertCircle size={32} />
+           </div>
+           <div className="space-y-1">
+              <h4 className="text-xl font-black text-red-900 tracking-tight">চিঠিচি ইতোমধ্যেই এন্ট্রি করা হয়েছে</h4>
+              <p className="text-sm font-bold text-red-700/80">ডায়েরি নং: <span className="underline underline-offset-4">{toBengaliDigits(formData.diaryNo)}</span> এবং স্মারক নং: <span className="underline underline-offset-4">{toBengaliDigits(formData.letterNo)}</span> সম্বলিত একটি চিঠি আগে থেকেই ডাটাবেজে বিদ্যমান। অনুগ্রহ করে তথ্য যাচাই করুন।</p>
+           </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <fieldset disabled={isSuccess} className="space-y-8 border-none p-0 m-0">
@@ -695,9 +733,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                >বাতিল করুন</button>
                <button 
                   type="submit"
-                  className="flex-[2] py-5 bg-emerald-600 text-white rounded-[2rem] font-black text-xl shadow-[0_20px_40px_rgba(5,150,105,0.3)] hover:bg-emerald-700 transition-all active:scale-95 flex items-center justify-center gap-4 group relative overflow-hidden"
+                  disabled={isDuplicate}
+                  className={`flex-[2] py-5 rounded-[2rem] font-black text-xl shadow-[0_20px_40px_rgba(5,150,105,0.3)] transition-all active:scale-95 flex items-center justify-center gap-4 group relative overflow-hidden ${isDuplicate ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
                >
-                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                 {!isDuplicate && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>}
                  <CheckCircle2 size={24} /> {initialEntry ? 'তথ্য আপডেট করুন' : 'তথ্য সংরক্ষণ করুন'}
                </button>
             </div>
