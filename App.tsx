@@ -46,6 +46,9 @@ const App: React.FC = () => {
   
   // Register Selection State
   const [registerSubModule, setRegisterSubModule] = useState<'settlement' | 'correspondence' | null>(null);
+
+  // New state for direct report selection from sidebar
+  const [reportType, setReportType] = useState<string | null>(null);
   
   const [prevStats, setPrevStats] = useState<CumulativeStats>({
     inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0,
@@ -55,8 +58,8 @@ const App: React.FC = () => {
 
   const mainScrollRef = useRef<HTMLElement>(null);
 
-  const handleTabChange = (tab: string, subModule?: 'settlement' | 'correspondence') => {
-    if (tab === activeTab && !subModule) setResetKey(prev => prev + 1);
+  const handleTabChange = (tab: string, subModule?: 'settlement' | 'correspondence', rType?: string) => {
+    if (tab === activeTab && !subModule && !rType) setResetKey(prev => prev + 1);
     else { 
       setActiveTab(tab); 
       setResetKey(0); 
@@ -74,6 +77,13 @@ const App: React.FC = () => {
       setRegisterSubModule(subModule);
     } else if (tab === 'register' && !subModule) {
       setRegisterSubModule(null);
+    }
+
+    // Handle Direct Report Selection
+    if (tab === 'return') {
+      setReportType(rType || null);
+    } else {
+      setReportType(null);
     }
 
     setShowPendingOnly(false);
@@ -148,7 +158,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (mainScrollRef.current) mainScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [activeTab, resetKey, entryModule, registerSubModule]);
+  }, [activeTab, resetKey, entryModule, registerSubModule, reportType]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -616,7 +626,7 @@ const App: React.FC = () => {
                 </div>
               )}
               
-              {activeTab === 'return' && <ReturnView key={`return-reset-${resetKey}`} entries={approvedEntries} correspondenceEntries={approvedCorrespondence} cycleLabel={cycleLabelBengali} prevStats={prevStats} setPrevStats={setPrevStats} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} />}
+              {activeTab === 'return' && <ReturnView key={`return-reset-${resetKey}`} entries={approvedEntries} correspondenceEntries={approvedCorrespondence} cycleLabel={cycleLabelBengali} prevStats={prevStats} setPrevStats={setPrevStats} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} selectedReportType={reportType} setSelectedReportType={setReportType} />}
               
               {activeTab === 'archive' && <DocumentArchive isAdmin={isAdmin} />}
 
