@@ -12,19 +12,19 @@
   box-shadow: inset 0 -1px 0 #cbd5e1, inset -1px 0 0 #cbd5e1 !important;
 }
 
-/* Multi-row header offset logic (Resetting to absolute top alignment) */
+/* Multi-row header offset logic - Using 1px overlap to prevent gaps */
 .table-container thead tr:nth-child(1) th {
   top: 0 !important;
   z-index: 220 !important;
 }
 
 .table-container thead tr:nth-child(2) th {
-  top: 45px !important; /* Offset by row 1 height */
+  top: 44px !important; /* Overlap 1px with Row 1 (45px) */
   z-index: 215 !important;
 }
 
 .table-container thead tr:nth-child(3) th {
-  top: 86px !important; /* Offset by row 1+2 height */
+  top: 84px !important; /* Overlap 1px with Row 1+2 (45+40) */
   z-index: 210 !important;
 }
 
