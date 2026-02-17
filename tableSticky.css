@@ -17,6 +17,8 @@
 /* Row 1: Main Titles (42px) */
 .table-container thead tr:nth-child(1) {
   height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
 }
 .table-container thead tr:nth-child(1) th {
   top: 0 !important;
@@ -30,6 +32,8 @@
 /* Row 2: Sub-titles (38px) */
 .table-container thead tr:nth-child(2) {
   height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
 }
 .table-container thead tr:nth-child(2) th {
   top: 42px !important; /* Offset by Row 1 */
@@ -45,13 +49,14 @@
   height: 30px !important;
   min-height: 30px !important;
   max-height: 30px !important;
+  display: table-row !important;
 }
 
 .table-container thead tr:nth-child(3) th {
   top: 80px !important; /* Offset by Row 1 (42) + Row 2 (38) */
   z-index: 215 !important;
   
-  /* HARD HEIGHT LOCK */
+  /* HARD HEIGHT LOCK: Prevent any shrinking on scroll */
   height: 30px !important;
   min-height: 30px !important;
   max-height: 30px !important;
@@ -61,6 +66,7 @@
   
   /* Center text precisely using line-height equal to total height */
   line-height: 30px !important;
+  vertical-align: middle !important;
   
   /* Rendering Stability */
   overflow: hidden;
@@ -89,34 +95,18 @@
 
 /* --- MULTI-TABLE VIEW SPECIFIC OVERRIDES --- */
 
-/* 
-   If a page has multiple tables (multi-table-view), 
-   the FIRST table must NEVER stick. 
-*/
 .multi-table-view .table-container:first-of-type,
 .multi-table-view .table-container:first-of-type thead,
 .multi-table-view .table-container:first-of-type thead tr,
-.multi-table-view .table-container:first-of-type thead tr th,
-.multi-table-view .table-container:first-of-type thead tr td,
-.multi-table-view .table-container:first-of-type tfoot,
-.multi-table-view .table-container:first-of-type tfoot tr,
-.multi-table-view .table-container:first-of-type tfoot tr th,
-.multi-table-view .table-container:first-of-type tfoot tr td {
+.multi-table-view .table-container:first-of-type thead tr th {
   position: static !important;
   top: auto !important;
-  bottom: auto !important;
-  z-index: auto !important;
   box-shadow: none !important;
-  transform: none !important;
-  -webkit-transform: none !important;
 }
 
-/* Ensure the LAST table (the detailed list) still sticks correctly in multi-view */
 .multi-table-view .table-container:last-of-type thead th {
   position: -webkit-sticky !important;
   position: sticky !important;
-  top: 0 !important;
-  z-index: 210 !important;
 }
 
 @media print {
