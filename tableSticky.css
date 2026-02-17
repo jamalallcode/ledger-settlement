@@ -37,24 +37,34 @@
   min-height: 38px !important;
 }
 
-/* FIX: Specifically target Row 3 to prevent any shrinkage on scroll */
+/* FIX: Specifically target Row 3 (Numbering Row) with absolute constraints */
 .table-container thead tr:nth-child(3) {
   height: 30px !important;
   min-height: 30px !important;
+  max-height: 30px !important;
 }
 
 .table-container thead tr:nth-child(3) th {
   top: 80px !important; /* Matches exactly row 1 + row 2 height (42+38) */
   z-index: 215 !important;
+  
+  /* HARD LOCK: Prevent any height recalculation during scroll */
   height: 30px !important;
   min-height: 30px !important;
   max-height: 30px !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
+  
+  /* Reset padding to ensure exact height control */
+  padding: 0 !important;
+  
+  /* Center text precisely using line-height */
   line-height: 30px !important;
   vertical-align: middle !important;
+  
+  /* Stability fixes for Chrome/Edge sticky sub-pixel rendering */
   overflow: hidden;
   box-sizing: border-box !important;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 /* Ensure cells with rowSpan stay on top and don't get overlapped incorrectly */
