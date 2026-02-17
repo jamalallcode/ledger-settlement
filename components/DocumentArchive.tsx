@@ -187,16 +187,28 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
       {/* Controls Bar - Sticky, height reduced (p-6 to p-5, input h-55 to h-50) */}
       <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border border-slate-200 p-5 rounded-3xl shadow-lg flex flex-col lg:flex-row items-center gap-5 transition-all duration-300">
-         <div className="relative flex-1 w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="শিরোনাম বা কী-ওয়ার্ড দিয়ে খুঁজুন..." 
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-4 h-[50px] bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-sm"
-            />
+         <div className="relative flex-1 w-full flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input 
+                type="text" 
+                placeholder="শিরোনাম বা কী-ওয়ার্ড দিয়ে খুঁজুন..." 
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-11 pr-4 h-[50px] bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-sm"
+              />
+            </div>
+            
+            {/* Work: Added Premium Quick Upload Plus Button */}
+            <button 
+              onClick={() => setShowAddModal(true)}
+              className="h-[50px] w-[50px] shrink-0 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 hover:scale-110 active:scale-95 transition-all duration-300 group"
+              title="দ্রুত আপলোড"
+            >
+              <Plus size={24} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-500" />
+            </button>
          </div>
+
          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0 justify-center">
             {categories.map(cat => (
               <button 
