@@ -44,31 +44,26 @@
   line-height: 1.2 !important;
 }
 
-/* Row 3: Numbering Row (Strictly 30px) */
-.table-container thead tr:nth-child(3) {
+/* Row 3: Numbering Row - CLASS: .row-numbering (Strictly 30px) */
+.table-container thead tr.row-numbering {
   height: 30px !important;
   min-height: 30px !important;
   max-height: 30px !important;
-  display: table-row !important;
 }
 
-.table-container thead tr:nth-child(3) th {
+.table-container thead tr.row-numbering th {
   top: 80px !important; /* Offset by Row 1 (42) + Row 2 (38) */
   z-index: 215 !important;
   
-  /* HARD HEIGHT LOCK: Prevent any shrinking on scroll */
+  /* HARD HEIGHT LOCK */
   height: 30px !important;
   min-height: 30px !important;
   max-height: 30px !important;
   
-  /* Reset padding to ensure exact height control */
   padding: 0 !important;
-  
-  /* Center text precisely using line-height equal to total height */
   line-height: 30px !important;
   vertical-align: middle !important;
   
-  /* Rendering Stability */
   overflow: hidden;
   display: table-cell !important;
   -webkit-transform: translateZ(0);
