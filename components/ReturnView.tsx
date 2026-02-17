@@ -356,8 +356,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }
 
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
-    // হেডার স্টাইল আপডেট (Using tableSticky.css offsets)
-    const thS = "border border-slate-300 px-1 py-2 font-black text-center text-[10px] md:text-[11px] bg-white text-slate-900 leading-tight align-middle sticky z-[210] shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-padding";
+    // হেডার স্টাইল আপডেট (Using tableSticky.css offsets via class simplification)
+    const thS = "border border-slate-300 px-1 py-2 font-black text-center text-[10px] md:text-[11px] bg-white text-slate-900 leading-tight align-middle sticky z-[150] shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
     const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
     const reportingDateBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0), 'dd/MM/yyyy'));
 
@@ -406,8 +406,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 <col className="w-[100px]" />
               </colgroup>
               <thead>
-                {/* অফসেট এবং উচ্চতা ফিক্স করা হয়েছে (এখন একেবারে উপরে top: 0 তে বসবে) */}
-                <tr>
+                {/* অফসেট এবং উচ্চতা ফিক্স করা হয়েছে (এখন একেবারে উপরে top: 0 তে বসবে, gaps removed) */}
+                <tr className="h-[45px]">
                   <th rowSpan={2} className={`${thS}`}>ক্রমিক নং</th>
                   <th rowSpan={2} className={`${thS}`}>এনটিটি/প্রতিষ্ঠানের নাম</th>
                   <th rowSpan={2} className={`${thS}`}>ডায়েরি নং ও তারিখ</th>
@@ -418,14 +418,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   <th rowSpan={2} className={`${thS}`}>বর্তমান অবস্থান</th>
                   <th rowSpan={2} className={`${thS}`}>মন্তব্য</th>
                 </tr>
-                <tr>
+                <tr className="h-[41px]">
                   <th className={`${thS}`}>বিএসআর (SFI)</th>
                   <th className={`${thS}`}>বিএসআর (NON-SFI)</th>
                   <th className={`${thS}`}>ত্রি-পক্ষীয় (SFI)</th>
                   <th className={`${thS}`}>দ্বি-পক্ষীয় (NON-SFI)</th>
                   <th className={`${thS}`}>অন্যান্য</th>
                 </tr>
-                <tr className="no-print">
+                <tr className="h-[30px] no-print">
                   {['১','২','৩','৪','৫','৬','৭','৮','৯','১০','১১','১২','১৩'].map(num => (
                     <th key={num} className={`${thS} bg-slate-100 py-1 text-[9px]`}>{num}</th>
                   ))}
@@ -568,7 +568,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   }
 
-  const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-white sticky z-[210] shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-padding relative";
+  const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-white sticky z-[210] shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border relative";
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight bg-white group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
   const grandStyle = "px-0.5 py-2 text-center font-black text-white text-[9.5px] bg-slate-800 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#1e293b,inset_0_0_0_1px_#1e293b] h-[45px] align-middle whitespace-nowrap transition-all relative";
 
@@ -604,7 +604,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0">
             <colgroup><col className="w-[58px]" /><col className="w-[125px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="text-[9.5px] w-[74px]" /><col className="w-[36px]" /><col className="w-[36px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /></colgroup>
             <thead>
-              <tr>
+              <tr className="h-[45px]">
                 <th rowSpan={2} className={`${reportThStyle}`}>মন্ত্রণালয়</th>
                 <th rowSpan={2} className={`${reportThStyle}`}>সংস্থা</th>
                 <th colSpan={2} className={`${reportThStyle}`}>প্রারম্ভিক অমীমাংসিত</th>
@@ -615,7 +615,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 <th colSpan={2} className={`${reportThStyle}`}>মোট মীমাংসিত</th>
                 <th colSpan={2} className={`${reportThStyle}`}>সর্বমোট অমীমাংসিত</th>
               </tr>
-              <tr>
+              <tr className="h-[41px]">
                 <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
                 <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
                 <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
