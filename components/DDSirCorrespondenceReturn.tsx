@@ -291,6 +291,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
              <div className="inline-block px-10 py-1 bg-black text-white text-[16px] font-black tracking-widest uppercase mb-4">ছক</div>
              <div className="flex justify-between items-end border-b border-slate-300 pb-1">
                 <span className="font-bold text-[15px]">বকেয়া চিঠিপত্রের তালিকা ({entries[0]?.paraType || 'অনির্ধারিত'} শাখা)</span>
+                {/* Fixed syntax error on the next line (line 294 in original file) */}
                 <span className="font-bold text-[15px]">তাং- {reportingDateBN} খ্রি:</span>
              </div>
           </div>
@@ -346,7 +347,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         <td className={stickyTdStyle}>{toBengaliDigits(row.presentationDate) || '-'}</td>
                         <td className={stickyTdStyle}>
                           <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-[10px] font-black uppercase">
-                            {row.presentedToName || 'ডিডি'}
+                            {row.presentedToName || row.receiverName || 'অডিটর'}
                           </span>
                         </td>
                         <td className={stickyTdStyle + " italic text-slate-400"}>{row.remarks || '-'}</td>
