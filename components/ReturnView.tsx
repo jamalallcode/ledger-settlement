@@ -25,7 +25,6 @@ interface ReturnViewProps {
   setSelectedReportType: (type: string | null) => void;
 }
 
-// Added missing default export and fixed overall JSX parsing errors
 const ReturnView: React.FC<ReturnViewProps> = ({ 
   entries, correspondenceEntries = [], cycleLabel, prevStats, setPrevStats, 
   isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister, isAdmin,
@@ -394,7 +393,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             </div>
           </div>
 
-          <div className="table-container dhaka-return-container relative overflow-visible">
+          <div className="table-container relative overflow-visible">
             <table className="w-full border-separate table-fixed border-spacing-0">
               <colgroup>
                 <col className="w-[45px]" />
@@ -412,7 +411,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 <col className="w-[100px]" />
               </colgroup>
               <thead>
-                <tr className="h-[48px]">
+                {/* Fixed Heights to match exactly with tableSticky.css global offsets (0, 42, 80) */}
+                <tr className="h-[42px]">
                   <th rowSpan={2} className={`${thS}`}>ক্রমিক নং</th>
                   <th rowSpan={2} className={`${thS}`}>এনটিটি/প্রতিষ্ঠানের নাম</th>
                   <th rowSpan={2} className={`${thS}`}>ডায়েরি নং ও তারিখ</th>
@@ -423,14 +423,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   <th rowSpan={2} className={`${thS}`}>বর্তমান অবস্থান</th>
                   <th rowSpan={2} className={`${thS}`}>মন্তব্য</th>
                 </tr>
-                <tr className="h-[42px]">
+                <tr className="h-[38px]">
                   <th className={`${thS}`}>বিএসআর (SFI)</th>
                   <th className={`${thS}`}>বিএসআর (NON-SFI)</th>
                   <th className={`${thS}`}>ত্রি-পক্ষীয় (SFI)</th>
                   <th className={`${thS}`}>দ্বি-পক্ষীয় (NON-SFI)</th>
                   <th className={`${thS}`}>অন্যান্য</th>
                 </tr>
-                <tr className="h-[32px] no-print">
+                <tr className="h-[30px] no-print">
                   {['১','২','৩','৪','৫','৬','৭','৮','৯','১০','১১','১২','১৩'].map(num => (
                     <th key={num} className={`${thS} bg-slate-100 py-1 text-[9px]`}>{num}</th>
                   ))}
