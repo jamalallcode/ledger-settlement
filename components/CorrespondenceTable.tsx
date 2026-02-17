@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles, Save, CalendarSearch, LayoutGrid, CalendarDays } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
@@ -124,7 +125,6 @@ const SegmentedTableDateInput: React.FC<{
 
 /**
  * Premium Dropdown Component for Inline Presentation Name Update
- * Fix: Added toggle logic to allow unselecting an already selected value.
  */
 const PremiumInlineSelect: React.FC<{
   value: string;
@@ -223,7 +223,6 @@ const PremiumInlineSelect: React.FC<{
               <div 
                 key={i} 
                 onClick={() => { 
-                  // Toggle logic: if already selected, set to empty string (unselect)
                   const nextVal = value === opt ? '' : opt;
                   onSelect(nextVal); 
                   setIsOpen(false); 
@@ -334,6 +333,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
     });
   }, [entries, searchTerm, filterParaType, filterType, activeCycle]);
 
+  // IDBadge definition inside component
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = useState(false);
     if (!isLayoutEditable) return null;
@@ -387,13 +387,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
 
   const hasChanges = Object.keys(pendingChanges).length > 0;
 
-  // Helper to format date correctly for display
   const formatDisplayDate = (iso: string) => {
     if (!iso || iso === '0000-00-00' || iso.startsWith('0000')) return '';
     return toBengaliDigits(iso.split('-').reverse().join('/'));
   };
 
-  // Variable to track cycle header rendering
   let lastRenderedCycle = "";
 
   return (
@@ -553,7 +551,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                           { val: '', label: 'সকল ধরণ' },
                           { val: 'বিএসআর', label: 'বিএসআর (BSR)' },
                           { val: 'ত্রিপক্ষীয় সভা', label: 'ত্রিপক্ষীয় সভা' },
-                          { val: 'দ্বিপক্ষীয় সভা', label: 'দ্বিপক্ষীয় সভা' }
+                          { val: 'দ্বিপক্ষীয় সভা', label: 'দ্বিপক্ষীয় সভা' },
+                          { val: 'কার্যপত্র', label: 'কার্যপত্র' },
+                          { val: 'মিলিকরণ', label: 'মিলিকরণ' }
                         ].map((opt, idx) => (
                           <div 
                             key={idx} 
@@ -589,18 +589,18 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
         </div>
       )}
 
-      {/* Table Container - Optimized for Width */}
+      {/* Table Container */}
       <div className="table-container border border-slate-300 rounded-sm overflow-visible relative shadow-xl bg-white max-w-full">
         <IDBadge id="table-correspondence-ledger" />
         <table className="w-full border-separate border-spacing-0 table-fixed">
           <colgroup>
-            <col className="w-[30px]" />  {/* ক্র: নং */}
-            <col className="w-[130px]" /> {/* পত্রের বিবরণ */}
-            <col className="w-[160px]" /> {/* পত্রের অন্যান্য তথ্য */}
-            <col className="w-[160px]" /> {/* অত্র অফিসের তথ্য */}
-            <col className="w-[145px]" /> {/* গ্রহণ ও উপস্থাপন */}
-            <col className="w-[135px]" /> {/* জারিপত্র নং ও তারিখ */}
-            <col className="w-[50px]" />  {/* মন্তব্য */}
+            <col className="w-[30px]" />
+            <col className="w-[130px]" />
+            <col className="w-[160px]" />
+            <col className="w-[160px]" />
+            <col className="w-[145px]" />
+            <col className="w-[135px]" />
+            <col className="w-[50px]" />
           </colgroup>
           <thead>
             <tr>
@@ -615,7 +615,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
           </thead>
           <tbody>
             {filteredEntries.length > 0 ? filteredEntries.map((entry, idx) => {
-              // Dynamic Cycle Calculation Logic
               let currentCycleLabel = "";
               if (entry.diaryDate) {
                 try {
@@ -656,7 +655,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                   <tr className="group transition-all">
                     <td className={tdCls + " text-center font-black"}>{toBengaliDigits(idx + 1)}</td>
                     <td className={tdCls}>{entry.description}</td>
-                    {/* Column 3: পত্রের অন্যান্য তথ্য */}
                     <td className={tdCls}>
                        <div className="space-y-2">
                           <div className="flex flex-col">
@@ -681,7 +679,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                           </div>
                        </div>
                     </td>
-                    {/* Column 4: অত্র অফিসের তথ্য */}
                     <td className={tdCls}>
                        <div className="space-y-2">
                           <div className="flex flex-col">
@@ -800,7 +797,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                        <span className="text-[9px] opacity-70">{entry.remarks || '-'}</span>
                        {isAdmin && (
                          <div className="absolute right-0.5 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all no-print z-[500] bg-white/90 backdrop-blur-sm p-1 rounded-lg shadow-xl border border-slate-200">
-                           {/* অনুমোদন বাটন */}
                            {isPendingForApproval && (
                               <button 
                                 onClick={(e) => { e.stopPropagation(); onApprove?.(entry.id); }} 
@@ -810,7 +806,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                                 <Check size={12} strokeWidth={3} />
                               </button>
                            )}
-                           {/* বাতিল বাটন */}
                            {isPendingForApproval && (
                               <button 
                                 onClick={(e) => { e.stopPropagation(); onReject?.(entry.id); }} 
@@ -820,9 +815,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                                 <XCircle size={12} />
                               </button>
                            )}
-                           {/* এডিট বাটন */}
                            <button onClick={(e) => { e.stopPropagation(); onEdit?.(entry); }} className="p-1.5 bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-700 transition-colors" title="এডিট করুন"><Pencil size={12} /></button>
-                           {/* ডিলিট বাটন (সতর্কতামূলক পপআপসহ) */}
                            <button 
                             onClick={(e) => { 
                               e.stopPropagation(); 
