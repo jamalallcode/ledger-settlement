@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef, useEffect } from 'react';
 import React from 'react';
 import { SettlementEntry } from '../types.ts';
@@ -160,8 +159,9 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
     return info.replace(/জারিপত্র নং-/g, '').replace(/জারিপত্রের তারিখ-/g, '').trim() + " খ্রি:";
   };
 
-  // Changed bg-slate-50 to bg-slate-200 for a more premium look
+  // Headers reverted to font-black
   const thBase = "border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-200 relative";
+  // Body cells reverted to font-bold
   const tdBase = "border border-slate-300 px-0.5 py-1.5 text-center align-middle text-[10px] leading-tight font-bold text-slate-900 relative";
   const tdMoney = "border border-slate-300 px-0.5 py-1 text-center align-middle text-[10px] font-black text-slate-950 relative";
 
@@ -213,8 +213,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             <div key={i} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
               <div className={`p-2 rounded-lg bg-${item.col}-50 text-${item.col}-600`}><item.icon size={14} /></div>
               <div>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-tight">{item.label}</p>
-                <p className="text-[11px] font-black text-slate-900 leading-tight">{item.value}</p>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">{item.label}</p>
+                <p className="text-[11px] font-bold text-slate-900 leading-tight">{item.value}</p>
               </div>
             </div>
           ))}
@@ -224,8 +224,9 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   };
 
   let lastRenderedCycle = "";
+  // Footer text font-black
   const footerTdCls = "p-1 text-center font-black text-[10px] bg-slate-900 border border-slate-700";
-  const filterInputCls = "w-full pl-9 pr-4 h-[48px] bg-white border border-slate-300 rounded-xl font-black text-slate-900 text-[13px] outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold";
+  const filterInputCls = "w-full pl-9 pr-4 h-[48px] bg-white border border-slate-300 rounded-xl font-bold text-slate-900 text-[13px] outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[48px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
 
   return (
@@ -239,7 +240,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             <div className="relative z-10 flex flex-col items-center gap-4">
               <div className="w-14 h-14 bg-emerald-50 rounded-[1.2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100"><ClipboardList size={30} strokeWidth={2.5} /></div>
               <div className="space-y-0.5"><h2 className="text-4xl font-black text-slate-900 tracking-tighter drop-shadow-sm">মীমাংসা রেজিস্টার</h2></div>
-              <div className="inline-flex items-center gap-4 px-8 py-2.5 bg-emerald-600 text-white rounded-2xl font-black text-[14px] shadow-[0_10px_30px_-5px_rgba(16,185,129,0.4)] border-2 border-emerald-400">
+              <div className="inline-flex items-center gap-4 px-8 py-2.5 bg-emerald-600 text-white rounded-2xl font-bold text-[14px] shadow-[0_10px_30px_-5px_rgba(16,185,129,0.4)] border-2 border-emerald-400">
                 <div className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-100 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-white shadow-md"></span></div>
                 <span>চলমান মাস:</span><span className="text-emerald-50 tracking-tight">{toBengaliDigits(cycleInfo.label)}</span>
               </div>
@@ -255,13 +256,13 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             
             {/* Cycle Selection */}
             <div className="space-y-1.5" ref={cycleDropdownRef}>
-              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">সময়কাল নির্বাচন (সাইকেল)</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">সময়কাল নির্বাচন (সাইকেল)</label>
               <div 
                 onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
                 className={customDropdownCls(isCycleDropdownOpen)}
               >
                 <CalendarDays size={18} className="text-blue-600" />
-                <span className="font-black text-[13px] text-slate-900 truncate">
+                <span className="font-bold text-[13px] text-slate-900 truncate">
                   {!selectedCycleDate ? 'সকল সাইকেল' : (cycleOptions.find(o => o.cycleLabel === activeCycle?.label)?.label || toBengaliDigits(activeCycle?.label || ''))}
                 </span>
                 <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isCycleDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
@@ -270,7 +271,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                   <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
                     <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
                       <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
-                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
                           <CalendarSearch size={12} /> সাইকেল নির্বাচন
                         </span>
                       </div>
@@ -302,13 +303,13 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             
             {/* Branch Selection */}
             <div className="space-y-1.5" ref={branchDropdownRef}>
-              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">শাখা</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">শাখা</label>
               <div 
                 onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)} 
                 className={customDropdownCls(isBranchDropdownOpen)}
               >
                 <LayoutGrid className="text-blue-600" size={16} />
-                <span className="font-black text-[13px] text-slate-900 truncate">
+                <span className="font-bold text-[13px] text-slate-900 truncate">
                   {filterParaType === '' ? 'সকল শাখা' : filterParaType}
                 </span>
                 <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isBranchDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
@@ -317,7 +318,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                   <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
                     <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
                       <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
-                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
                           <LayoutGrid size={12} /> শাখা নির্বাচন
                         </span>
                       </div>
@@ -345,13 +346,13 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             
             {/* Letter Type Selection */}
             <div className="space-y-1.5" ref={typeDropdownRef}>
-              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">চিঠির ধরণ</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">চিঠির ধরণ</label>
               <div 
                 onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)} 
                 className={customDropdownCls(isTypeDropdownOpen)}
               >
                 <FileText className="text-blue-600" size={16} />
-                <span className="font-black text-[13px] text-slate-900 truncate">
+                <span className="font-bold text-[13px] text-slate-900 truncate">
                   {filterType === '' ? 'সকল ধরণ' : (filterType === 'বিএসআর' ? 'বিএসআর (BSR)' : filterType)}
                 </span>
                 <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isTypeDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
@@ -360,7 +361,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                   <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
                     <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
                       <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
-                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
                           <FileText size={12} /> ধরণ নির্বাচন
                         </span>
                       </div>
@@ -389,7 +390,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             
             {/* Search Input */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">অনুসন্ধান</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">অনুসন্ধান</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600" size={16} />
                 <input 
@@ -448,7 +449,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                               <CalendarDays size={18} />
                             </div>
                             <span className="font-black text-[13px] text-slate-800 tracking-tight uppercase">
-                              সময়কাল: <span className="text-blue-700">{toBengaliDigits(currentCycle)}</span>
+                              সময়কাল: <span className="text-blue-700 font-black">{toBengaliDigits(currentCycle)}</span>
                             </span>
                           </div>
                           
@@ -479,11 +480,11 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                           <td rowSpan={paras.length} onClick={() => toggleExpand(entry.id)} className={tdBase + " cursor-pointer bg-white group-hover:bg-blue-50/50 transition-all text-left p-3"}>
                             <div className="flex items-start justify-between">
                               <div className="space-y-1 text-left flex-1">
-                                <p className="text-[10px] leading-tight"><span className="font-bold text-emerald-700">মন্ত্রণালয়:</span> <span className="font-bold text-slate-900">{entry.ministryName}</span></p>
-                                <p className="text-[10px] leading-tight"><span className="font-bold text-emerald-700">এনটিটি:</span> <span className="font-bold text-slate-900">{entry.entityName}</span></p>
-                                <p className="text-[10px] leading-tight"><span className="font-bold text-emerald-700">শাখা:</span> <span className="font-bold text-slate-900">{entry.branchName}</span></p>
-                                <p className="text-[10px] leading-tight"><span className="font-bold text-emerald-700">নিরীক্ষা সাল:</span> <span className="font-bold text-slate-900">{toBengaliDigits(entry.auditYear)}</span></p>
-                                <p className="text-[10px] leading-tight"><span className="font-bold text-emerald-700">জারিপত্র নং ও তারিখ:</span> <span className="font-bold text-slate-900">{formatIssueInfoForDisplay(entry.issueLetterNoDate)}</span></p>
+                                <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">মন্ত্রণালয়:</span> <span className="font-bold text-slate-900">{entry.ministryName}</span></p>
+                                <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">এনটিটি:</span> <span className="font-bold text-slate-900">{entry.entityName}</span></p>
+                                <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">শাখা:</span> <span className="font-bold text-slate-900">{entry.branchName}</span></p>
+                                <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">নিরীক্ষা সাল:</span> <span className="font-bold text-slate-900">{toBengaliDigits(entry.auditYear)}</span></p>
+                                <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">জারিপত্র নং ও তারিখ:</span> <span className="font-bold text-slate-900">{formatIssueInfoForDisplay(entry.issueLetterNoDate)}</span></p>
                               </div>
                               <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
                                 {isExpanded ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}
@@ -492,7 +493,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                           </td>
                         </>
                       )}
-                      <td className={tdBase}><span className="font-black">{toBengaliDigits(p.paraNo)}</span><br/><span className={`px-1 text-[8px] text-white font-black rounded ${p.status === 'পূর্ণাঙ্গ' ? 'bg-emerald-600' : 'bg-red-600'}`}>{p.status}</span></td>
+                      <td className={tdBase}><span className="font-bold">{toBengaliDigits(p.paraNo)}</span><br/><span className={`px-1 text-[8px] text-white font-black rounded ${p.status === 'পূর্ণাঙ্গ' ? 'bg-emerald-600' : 'bg-red-600'}`}>{p.status}</span></td>
                       <td className={tdMoney}>{toBengaliDigits(Math.round(p.involvedAmount))}</td>
                       {pIdx === 0 && (
                         <>
@@ -539,8 +540,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                         <div className="flex items-start justify-between">
                           <div className="space-y-1 text-left flex-1">
                             <p className="text-[10px] leading-tight font-black text-red-600 underline underline-offset-2 tracking-tighter">উত্থাপিত এন্ট্রি (কোন অনুচ্ছেদ নেই)</p>
-                            <p className="text-[10px] leading-tight"><span className="font-bold text-emerald-700">সংস্থা:</span> <span className="font-bold text-slate-900">{entry.entityName}</span></p>
-                            <p className="text-[10px] leading-tight"><span className="font-bold text-emerald-700">জারিপত্র:</span> <span className="font-bold text-slate-900">{formatIssueInfoForDisplay(entry.issueLetterNoDate)}</span></p>
+                            <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">সংস্থা:</span> <span className="font-bold text-slate-900">{entry.entityName}</span></p>
+                            <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">জারিপত্র:</span> <span className="font-bold text-slate-900">{formatIssueInfoForDisplay(entry.issueLetterNoDate)}</span></p>
                           </div>
                           <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
                             {isExpanded ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}
