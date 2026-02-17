@@ -178,11 +178,10 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               </div>
               <p className="text-slate-400 font-bold max-w-xl text-sm md:text-base leading-relaxed">সরকারি অর্ডার, সার্কুলার এবং গুরুত্বপূর্ণ সকল ডকুমেন্ট এখন এক জায়গার। Archive.org ইন্টিগ্রেশনের মাধ্যমে আপনার ফাইলগুলো থাকছে নিরাপদ।</p>
            </div>
-           {isAdmin && (
-             <button onClick={() => setShowAddModal(true)} className="px-7 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black flex items-center gap-3 shadow-xl shadow-blue-900/40 active:scale-95 transition-all shrink-0">
-                <Plus size={18} /> নতুন ডকুমেন্ট যুক্ত করুন
-             </button>
-           )}
+           {/* Work: Removed {isAdmin && (...)} wrapper to allow all users to upload */}
+           <button onClick={() => setShowAddModal(true)} className="px-7 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black flex items-center gap-3 shadow-xl shadow-blue-900/40 active:scale-95 transition-all shrink-0">
+              <Plus size={18} /> নতুন ডকুমেন্ট যুক্ত করুন
+           </button>
         </div>
       </div>
 
