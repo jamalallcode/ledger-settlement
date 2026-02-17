@@ -120,12 +120,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const grandTotalMore = totals.kpM + totals.kbM + totals.bsM + totals.rcM + totals.otM;
 
   // thStyle for Table 1 (Summary table should not stick)
-  const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[12px] leading-tight align-middle bg-slate-50";
-  const tdStyle = "border border-slate-300 px-2 py-2 text-[13px] text-center font-bold leading-tight bg-white align-middle";
+  const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[11px] leading-tight align-middle bg-slate-50";
+  const tdStyle = "border border-slate-300 px-1.5 py-1.5 text-[12px] text-center font-bold leading-tight bg-white align-middle";
   
   // Sticky Styles for Table 2 (Will follow tableSticky.css logic)
-  const stickyThStyle = "border border-slate-300 px-1 py-3 font-black text-center text-[11px] bg-slate-100";
-  const stickyTdStyle = "border border-slate-300 px-2 py-2 text-[12px] text-center font-bold leading-tight bg-white align-middle";
+  const stickyThStyle = "border border-slate-300 px-1 py-3 font-black text-center text-[10px] bg-slate-100";
+  const stickyTdStyle = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-center font-bold leading-tight bg-white align-middle";
 
   return (
     <div className="space-y-6 py-2 w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view">
@@ -168,43 +168,43 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         </div>
       </div>
 
-      <div className="w-full bg-white p-4 md:p-8 relative">
+      <div className="w-full bg-white p-2 md:p-6 relative">
         {/* Office Header */}
         <div className="text-center space-y-1 mb-8">
-          <h1 className="text-[20px] font-bold text-black leading-tight">{OFFICE_HEADER.main}</h1>
-          <h2 className="text-[18px] font-bold text-black leading-tight">{OFFICE_HEADER.sub}</h2>
-          <h3 className="text-[17px] font-bold text-black leading-tight">{OFFICE_HEADER.address}</h3>
-          <h4 className="text-[16px] font-bold text-black leading-tight">খুলনা-৯০০০</h4>
+          <h1 className="text-[19px] font-bold text-black leading-tight">{OFFICE_HEADER.main}</h1>
+          <h2 className="text-[17px] font-bold text-black leading-tight">{OFFICE_HEADER.sub}</h2>
+          <h3 className="text-[16px] font-bold text-black leading-tight">{OFFICE_HEADER.address}</h3>
+          <h4 className="text-[15px] font-bold text-black leading-tight">খুলনা-৯০০০</h4>
         </div>
 
         {/* SECTION 1: সারসংক্ষেপ টেবিল (Non-Sticky by multi-table-view logic) */}
-        <div className="mb-10 flex justify-center">
-          <div className="table-container max-w-[1050px] w-full">
+        <div className="mb-10 flex justify-center overflow-visible">
+          <div className="table-container max-w-full w-full">
             <table className="w-full border-separate table-fixed border-collapse border border-slate-300">
               <colgroup>
-                <col className="w-[40px]" />
-                <col className="w-[160px]" />
-                <col className="w-[85px]" />
-                <col className="w-[85px]" />
-                <col className="w-[85px]" />
-                <col className="w-[85px]" />
-                <col className="w-[85px]" />
-                <col className="w-[85px]" />
-                <col className="w-[85px]" />
-                <col className="w-[85px]" />
-                <col className="w-[85px]" />
-                <col className="w-[85px]" />
+                <col className="w-[30px]" />
+                <col className="w-[130px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
               </colgroup>
               <thead>
                 <tr className="bg-white">
-                  <th colSpan={2} className="border border-slate-300 p-2 text-center font-bold text-[14px]">অনিষ্পন্ন কাজের তালিকা</th>
-                  <th colSpan={4} className="border border-slate-300 p-2 text-center font-bold text-[14px]">শাখার নাম: {entries[0]?.paraType || 'অনির্ধারিত'}</th>
-                  <th colSpan={3} className="border border-slate-300 p-2 text-center font-bold text-[14px]">মাস: {reportingMonthBN}</th>
-                  <th colSpan={3} className="border border-slate-300 p-2 text-center font-bold text-[14px]">তারিখ: {reportingDateBN} খ্রি:</th>
+                  <th colSpan={2} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">অনিষ্পন্ন কাজের তালিকা</th>
+                  <th colSpan={4} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">শাখা: {entries[0]?.paraType || 'অনির্ধারিত'}</th>
+                  <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">মাস: {reportingMonthBN}</th>
+                  <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">তারিখ: {reportingDateBN} খ্রি:</th>
                 </tr>
                 <tr>
                   <th rowSpan={2} className={thStyle}>ক্রমিক নং</th>
-                  <th rowSpan={2} className={thStyle}>দায়িত্বপ্রাপ্ত অডিটরের নাম</th>
+                  <th rowSpan={2} className={thStyle}>দায়িত্বপ্রাপ্ত অডিটর</th>
                   <th colSpan={2} className={thStyle}>দ্বিপক্ষীয় সভার কার্যপত্র</th>
                   <th colSpan={2} className={thStyle}>দ্বিপক্ষীয় সভার কার্যবিবরণী</th>
                   <th colSpan={2} className={thStyle}>ব্রডশীট জবাব</th>
@@ -212,33 +212,33 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   <th colSpan={2} className={thStyle}>অন্যান্য</th>
                 </tr>
                 <tr>
-                  <th className={thStyle}>এক মাসের কম</th>
-                  <th className={thStyle}>এক মাসের বেশি</th>
-                  <th className={thStyle}>এক মাসের কম</th>
-                  <th className={thStyle}>এক মাসের বেশি</th>
-                  <th className={thStyle}>এক মাসের কম</th>
-                  <th className={thStyle}>এক মাসের বেশি</th>
-                  <th className={thStyle}>এক মাসের কম</th>
-                  <th className={thStyle}>এক মাসের বেশি</th>
-                  <th className={thStyle}>এক মাসের কম</th>
-                  <th className={thStyle}>এক মাসের বেশি</th>
+                  <th className={thStyle}>১ মাস-</th>
+                  <th className={thStyle}>১ মাস+</th>
+                  <th className={thStyle}>১ মাস-</th>
+                  <th className={thStyle}>১ মাস+</th>
+                  <th className={thStyle}>১ মাস-</th>
+                  <th className={thStyle}>১ মাস+</th>
+                  <th className={thStyle}>১ মাস-</th>
+                  <th className={thStyle}>১ মাস+</th>
+                  <th className={thStyle}>১ মাস-</th>
+                  <th className={thStyle}>১ মাস+</th>
                 </tr>
               </thead>
               <tbody>
                 {reportTableData.length > 0 ? reportTableData.map((row, idx) => (
                   <tr key={idx}>
                     <td className={tdStyle}>{toBengaliDigits(idx + 1)}</td>
-                    <td className={tdStyle + " text-left"}>{row.name}</td>
-                    <td className={tdStyle}>{row.karyapatra.less > 0 ? toBengaliDigits(row.karyapatra.less) + ' টি' : '-'}</td>
-                    <td className={tdStyle}>{row.karyapatra.more > 0 ? toBengaliDigits(row.karyapatra.more) + ' টি' : '-'}</td>
-                    <td className={tdStyle}>{row.karyabibarani.less > 0 ? toBengaliDigits(row.karyabibarani.less) + ' টি' : '-'}</td>
-                    <td className={tdStyle}>{row.karyabibarani.more > 0 ? toBengaliDigits(row.karyabibarani.more) + ' টি' : '-'}</td>
-                    <td className={tdStyle}>{row.broadsheet.less > 0 ? toBengaliDigits(row.broadsheet.less) + ' টি' : '-'}</td>
-                    <td className={tdStyle}>{row.broadsheet.more > 0 ? toBengaliDigits(row.broadsheet.more) + ' টি' : '-'}</td>
-                    <td className={tdStyle}>{row.reconciliation.less > 0 ? toBengaliDigits(row.reconciliation.less) + ' টি' : '-'}</td>
-                    <td className={tdStyle}>{row.reconciliation.more > 0 ? toBengaliDigits(row.reconciliation.more) + ' টি' : '-'}</td>
-                    <td className={tdStyle}>{row.others.less > 0 ? toBengaliDigits(row.others.less) + ' টি' : '-'}</td>
-                    <td className={tdStyle}>{row.others.more > 0 ? toBengaliDigits(row.others.more) + ' টি' : '-'}</td>
+                    <td className={tdStyle + " text-left text-[11px]"}>{row.name}</td>
+                    <td className={tdStyle}>{row.karyapatra.less > 0 ? toBengaliDigits(row.karyapatra.less) : '-'}</td>
+                    <td className={tdStyle}>{row.karyapatra.more > 0 ? toBengaliDigits(row.karyapatra.more) : '-'}</td>
+                    <td className={tdStyle}>{row.karyabibarani.less > 0 ? toBengaliDigits(row.karyabibarani.less) : '-'}</td>
+                    <td className={tdStyle}>{row.karyabibarani.more > 0 ? toBengaliDigits(row.karyabibarani.more) : '-'}</td>
+                    <td className={tdStyle}>{row.broadsheet.less > 0 ? toBengaliDigits(row.broadsheet.less) : '-'}</td>
+                    <td className={tdStyle}>{row.broadsheet.more > 0 ? toBengaliDigits(row.broadsheet.more) : '-'}</td>
+                    <td className={tdStyle}>{row.reconciliation.less > 0 ? toBengaliDigits(row.reconciliation.less) : '-'}</td>
+                    <td className={tdStyle}>{row.reconciliation.more > 0 ? toBengaliDigits(row.reconciliation.more) : '-'}</td>
+                    <td className={tdStyle}>{row.others.less > 0 ? toBengaliDigits(row.others.less) : '-'}</td>
+                    <td className={tdStyle}>{row.others.more > 0 ? toBengaliDigits(row.others.more) : '-'}</td>
                   </tr>
                 )) : (
                   <tr>
@@ -248,22 +248,22 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               </tbody>
               <tfoot className="no-print">
                 <tr className="bg-slate-50">
-                  <td colSpan={4} className="border border-slate-300 p-3">
-                    <div className="flex justify-between items-center px-2">
-                      <span className="font-bold text-[11px] text-slate-600">এক মাসের কম:</span>
-                      <span className="font-black text-[13px] text-blue-700">{toBengaliDigits(grandTotalLess)} টি</span>
+                  <td colSpan={4} className="border border-slate-300 p-2">
+                    <div className="flex justify-between items-center px-1">
+                      <span className="font-bold text-[10px] text-slate-600">১ মাসের কম:</span>
+                      <span className="font-black text-[12px] text-blue-700">{toBengaliDigits(grandTotalLess)} টি</span>
                     </div>
                   </td>
-                  <td colSpan={4} className="border border-slate-300 p-3">
-                    <div className="flex justify-between items-center px-2">
-                      <span className="font-bold text-[11px] text-slate-600">এক মাসের বেশি:</span>
-                      <span className="font-black text-[13px] text-red-600">{toBengaliDigits(grandTotalMore)} টি</span>
+                  <td colSpan={4} className="border border-slate-300 p-2">
+                    <div className="flex justify-between items-center px-1">
+                      <span className="font-bold text-[10px] text-slate-600">১ মাসের বেশি:</span>
+                      <span className="font-black text-[12px] text-red-600">{toBengaliDigits(grandTotalMore)} টি</span>
                     </div>
                   </td>
-                  <td colSpan={4} className="border border-slate-300 p-3">
-                    <div className="flex justify-between items-center px-2">
-                      <span className="font-bold text-[11px] text-slate-600">মোট কাজ:</span>
-                      <span className="font-black text-[13px] text-emerald-600">{toBengaliDigits(grandTotalLess + grandTotalMore)} টি</span>
+                  <td colSpan={4} className="border border-slate-300 p-2">
+                    <div className="flex justify-between items-center px-1">
+                      <span className="font-bold text-[10px] text-slate-600">মোট কাজ:</span>
+                      <span className="font-black text-[12px] text-emerald-600">{toBengaliDigits(grandTotalLess + grandTotalMore)} টি</span>
                     </div>
                   </td>
                 </tr>
@@ -273,36 +273,36 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         </div>
 
         {/* SECTION 2: বিস্তারিত তালিকা টেবিল (Sticky by tableSticky.css logic) */}
-        <div className="pt-10 border-t-4 border-double border-slate-200 flex flex-col items-center">
-          <div className="text-center mb-6 w-full max-w-[1050px]">
-             <div className="inline-block px-10 py-1 bg-black text-white text-[16px] font-black tracking-widest uppercase mb-4">ছক</div>
+        <div className="pt-10 border-t-4 border-double border-slate-200 flex flex-col items-center overflow-visible">
+          <div className="text-center mb-6 w-full">
+             <div className="inline-block px-10 py-1 bg-black text-white text-[15px] font-black tracking-widest uppercase mb-4">ছক</div>
              <div className="flex justify-between items-end border-b border-slate-300 pb-1">
-                <span className="font-bold text-[15px]">বকেয়া চিঠিপত্রের তালিকা ({entries[0]?.paraType || 'অনির্ধারিত'} শাখা)</span>
-                <span className="font-bold text-[15px]">তাং- {reportingDateBN} খ্রি:</span>
+                <span className="font-bold text-[14px]">বকেয়া চিঠিপত্রের তালিকা ({entries[0]?.paraType || 'অনির্ধারিত'} শাখা)</span>
+                <span className="font-bold text-[14px]">তাং- {reportingDateBN} খ্রি:</span>
              </div>
           </div>
 
-          <div className="table-container relative overflow-visible max-w-[1050px] w-full">
+          <div className="table-container relative overflow-visible w-full">
             <table className="w-full border-separate table-fixed border-spacing-0 border border-slate-300">
               <colgroup>
-                <col className="w-[40px]" />
+                <col className="w-[30px]" />
+                <col className="w-[80px]" />
+                <col className="w-[160px]" />
+                <col className="w-[95px]" />
+                <col className="w-[95px]" />
+                <col className="w-[120px]" />
+                <col className="w-[80px]" />
                 <col className="w-[100px]" />
-                <col className="w-[200px]" />
-                <col className="w-[120px]" />
-                <col className="w-[120px]" />
-                <col className="w-[150px]" />
                 <col className="w-[90px]" />
-                <col className="w-[120px]" />
-                <col className="w-[110px]" />
               </colgroup>
               <thead>
                 <tr>
                   <th className={stickyThStyle}>ক্রমিক নং</th>
-                  <th className={stickyThStyle}>দায়িত্বপ্রাপ্ত অডিটরের নাম</th>
+                  <th className={stickyThStyle}>অডিটর</th>
                   <th className={stickyThStyle}>এনটিটি/প্রতিষ্ঠানের নাম</th>
                   <th className={stickyThStyle}>স্মারক নং ও তারিখ</th>
-                  <th className={stickyThStyle}>শাখার ডায়েরি নং ও তারিখ</th>
-                  <th className={stickyThStyle}>চিঠিপত্রের ধরণ ও অনুচ্ছেদের সংখ্যা</th>
+                  <th className={stickyThStyle}>ডায়েরি নং ও তারিখ</th>
+                  <th className={stickyThStyle}>চিঠির ধরণ ও অনুচ্ছেদ</th>
                   <th className={stickyThStyle}>উপস্থাপনের তারিখ</th>
                   <th className={stickyThStyle}>বর্তমান অবস্থান</th>
                   <th className={stickyThStyle}>মন্তব্য</th>
@@ -318,25 +318,25 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         <td className={stickyTdStyle}>{toBengaliDigits(globalIdx)}</td>
                         {rowIdx === 0 && (
                           <td rowSpan={group.rows.length} className={stickyTdStyle + " bg-slate-50/50"}>
-                            <div className="font-black text-slate-900 text-[11px]">{group.auditor}</div>
+                            <div className="font-black text-slate-900 text-[10.5px] leading-tight">{group.auditor}</div>
                           </td>
                         )}
-                        <td className={stickyTdStyle + " text-left px-3 font-medium text-[11px]"}>{row.description}</td>
-                        <td className={stickyTdStyle}>{row.letterNo}<br/><span className="text-[10px] text-slate-500 font-bold">{toBengaliDigits(row.letterDate)}</span></td>
-                        <td className={stickyTdStyle}>{row.diaryNo}<br/><span className="text-[10px] text-slate-500 font-bold">{toBengaliDigits(row.diaryDate)}</span></td>
+                        <td className={stickyTdStyle + " text-left px-2 font-medium text-[10.5px]"}>{row.description}</td>
+                        <td className={stickyTdStyle}>{row.letterNo}<br/><span className="text-[9px] text-slate-500 font-bold">{toBengaliDigits(row.letterDate)}</span></td>
+                        <td className={stickyTdStyle}>{row.diaryNo}<br/><span className="text-[9px] text-slate-500 font-bold">{toBengaliDigits(row.diaryDate)}</span></td>
                         <td className={stickyTdStyle}>
                           <div className="flex flex-col gap-0.5">
-                             <span className="text-blue-700 text-[11px]">{row.letterType}</span>
-                             <span className="text-[10px] bg-slate-100 rounded px-1">(অনু: {toBengaliDigits(row.totalParas)}টি)</span>
+                             <span className="text-blue-700 text-[10.5px]">{row.letterType}</span>
+                             <span className="text-[9.5px] bg-slate-100 rounded px-1">(অনু: {toBengaliDigits(row.totalParas)}টি)</span>
                           </div>
                         </td>
                         <td className={stickyTdStyle}>{toBengaliDigits(row.presentationDate) || '-'}</td>
                         <td className={stickyTdStyle}>
-                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-[10px] font-black uppercase">
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-[9px] font-black uppercase">
                             {row.presentedToName || 'অডিটর'}
                           </span>
                         </td>
-                        <td className={stickyTdStyle + " italic text-slate-400 text-[10px]"}>{row.remarks || '-'}</td>
+                        <td className={stickyTdStyle + " italic text-slate-400 text-[9px]"}>{row.remarks || '-'}</td>
                       </tr>
                     );
                   }));
