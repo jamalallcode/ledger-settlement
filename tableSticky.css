@@ -1,0 +1,61 @@
+
+/* TABLE STICKY HEADER & FOOTER LOGIC */
+
+/* General Sticky Header - Sticks to the very top (0px) */
+.table-container thead th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0 !important;
+  background-color: #ffffff !important;
+  z-index: 210 !important; /* Above Navbar (z-200) */
+  background-clip: padding-box !important;
+  box-shadow: inset 0 -1px 0 #cbd5e1, inset -1px 0 0 #cbd5e1 !important;
+}
+
+/* Multi-row header offset logic (Resetting to absolute top alignment) */
+.table-container thead tr:nth-child(1) th {
+  top: 0 !important;
+  z-index: 220 !important;
+}
+
+.table-container thead tr:nth-child(2) th {
+  top: 45px !important; /* Offset by row 1 height */
+  z-index: 215 !important;
+}
+
+.table-container thead tr:nth-child(3) th {
+  top: 86px !important; /* Offset by row 1+2 height */
+  z-index: 210 !important;
+}
+
+/* Logic: If a section contains multiple tables, only the BOTTOM one sticks */
+.multi-table-view .table-container:first-of-type thead th {
+  position: static !important;
+  z-index: 10 !important;
+  box-shadow: none !important;
+}
+
+.multi-table-view .table-container:last-of-type thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 210 !important;
+}
+
+/* Sticky Footer */
+.table-container tfoot td, 
+.table-container tfoot th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 230 !important;
+  background-color: #0f172a !important;
+  color: white !important;
+  box-shadow: inset 0 1px 0 #334155, inset -1px 0 0 #334155 !important;
+}
+
+@media print {
+  .table-container thead th, 
+  .table-container tfoot td { 
+    position: static !important; 
+  }
+}
