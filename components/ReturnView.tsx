@@ -384,7 +384,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           </div>
         </div>
 
-        {/* Fixed broken syntax below by removing escaped quotes and fixing concatenations */}
         <div className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-6 relative animate-table-entrance">
           <div className="text-center py-6 border-b-2 border-slate-100 mb-6">
             <h1 className="text-2xl font-black uppercase text-slate-900 leading-tight">{OFFICE_HEADER.main}</h1>
@@ -430,11 +429,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   <th className={thS}>ত্রি-পক্ষীয় (SFI)</th>
                   <th className={thS}>দ্বি-পক্ষীয় (NON-SFI)</th>
                   <th className={thS}>অন্যান্য</th>
-                </tr>
-                <tr className="h-[30px] no-print row-numbering">
-                  {['১','২','৩','৪','৫','৬','৭','৮','৯','১০','১১','১২','১৩'].map(num => (
-                    <th key={num} className={`${thS} bg-slate-100 !py-1 !text-[9px]`}>{num}</th>
-                  ))}
                 </tr>
               </thead>
               <tbody>
