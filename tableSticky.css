@@ -40,10 +40,17 @@
 .table-container thead tr:nth-child(3) {
   height: 30px !important;
 }
+
+/* FIX: Specifically target Row 3 cells to prevent shrinkage on scroll in Dhaka Report */
 .table-container thead tr:nth-child(3) th {
   top: 80px !important; /* Matches exactly row 1 + row 2 height (42+38) */
   z-index: 215 !important;
+  height: 30px !important;
   min-height: 30px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: 30px !important;
+  overflow: hidden;
 }
 
 /* Ensure cells with rowSpan stay on top and don't get overlapped incorrectly */
