@@ -122,7 +122,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
   // Header font is font-bold
   const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[11px] leading-tight align-middle bg-slate-200";
-  // Data cells reverted to font-bold
+  // Data cells reverted to font-bold (700 weight as per instruction)
   const tdStyle = "border border-slate-300 px-1.5 py-1.5 text-[12px] text-center font-bold leading-tight bg-white align-middle transition-colors group-hover:bg-blue-50";
   
   // Reverted sticky header from bold to black
@@ -231,7 +231,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 {reportTableData.length > 0 ? reportTableData.map((row, idx) => (
                   <tr key={idx} className="group">
                     <td className={tdStyle}>{toBengaliDigits(idx + 1)}</td>
-                    <td className={tdStyle + " text-left text-[11px]"}>{row.name}</td>
+                    <td className={tdStyle + " text-left text-[11px] font-bold"}>{row.name}</td>
                     <td className={tdStyle}>{row.karyapatra.less > 0 ? toBengaliDigits(row.karyapatra.less) : '-'}</td>
                     <td className={tdStyle}>{row.karyapatra.more > 0 ? toBengaliDigits(row.karyapatra.more) : '-'}</td>
                     <td className={tdStyle}>{row.karyabibarani.less > 0 ? toBengaliDigits(row.karyabibarani.less) : '-'}</td>
@@ -278,7 +278,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         {/* SECTION 2: বিস্তারিত তালিকা টেবিল (Sticky by tableSticky.css logic) */}
         <div className="pt-10 border-t-4 border-double border-slate-200 flex flex-col items-center overflow-visible">
           <div className="text-center mb-6 w-full">
-             <div className="inline-block px-10 py-1 bg-black text-white text-[15px] font-black tracking-widest uppercase mb-4">ছক</div>
+             <div className="inline-block px-10 py-1 bg-black text-white text-[15px] font-bold tracking-widest uppercase mb-4">ছক</div>
              <div className="flex justify-between items-end border-b border-slate-300 pb-1">
                 <span className="font-bold text-[14px]">বকেয়া চিঠিপত্রের তালিকা ({entries[0]?.paraType || 'অনির্ধারিত'} শাখা)</span>
                 <span className="font-bold text-[14px]">তাং- {reportingDateBN} খ্রি:</span>
@@ -321,7 +321,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         <td className={stickyTdStyle}>{toBengaliDigits(globalIdx)}</td>
                         {rowIdx === 0 && (
                           <td rowSpan={group.rows.length} className={stickyTdStyle + " bg-slate-50/50 group-hover:bg-blue-100"}>
-                            <div className="font-black text-slate-900 text-[10.5px] leading-tight">{group.auditor}</div>
+                            {/* Auditor Name Weight set to 700 (font-bold) */}
+                            <div className="font-bold text-slate-900 text-[10.5px] leading-tight">{group.auditor}</div>
                           </td>
                         )}
                         <td className={stickyTdStyle + " text-left px-2 font-bold text-[10.5px]"}>{row.description}</td>
@@ -335,7 +336,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         </td>
                         <td className={stickyTdStyle}>{toBengaliDigits(row.presentationDate) || '-'}</td>
                         <td className={stickyTdStyle}>
-                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-[9px] font-black uppercase group-hover:bg-white">
+                          {/* Position Badge Weight set to 700 (font-bold) */}
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-[9px] font-bold uppercase group-hover:bg-white">
                             {row.presentedToName || 'অডিটর'}
                           </span>
                         </td>
@@ -353,9 +355,9 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               </tbody>
               {/* Footer text color white */}
               <tfoot>
-                <tr className="bg-slate-900 text-white font-black text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] border-t border-slate-700">
+                <tr className="bg-slate-900 text-white font-bold text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] border-t border-slate-700">
                   <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-slate-900">সর্বমোট চিঠিপত্র সংখ্যা:</td>
-                  <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-slate-900 text-white font-black">{toBengaliDigits(entries.length)} টি</td>
+                  <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-slate-900 text-white font-bold">{toBengaliDigits(entries.length)} টি</td>
                   <td colSpan={6} className="border-t border-slate-700 bg-slate-900"></td>
                 </tr>
               </tfoot>
