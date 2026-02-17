@@ -121,12 +121,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const grandTotalLess = totals.kpL + totals.kbL + totals.bsL + totals.rcL + totals.otL;
   const grandTotalMore = totals.kpM + totals.kbM + totals.bsM + totals.rcM + totals.otM;
 
-  // thStyle for Table 1 (Summary table should not stick)
-  const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[11px] leading-tight align-middle bg-slate-50";
+  // Changed bg-slate-50 to bg-slate-200 for premium feel
+  const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[11px] leading-tight align-middle bg-slate-200";
   const tdStyle = "border border-slate-300 px-1.5 py-1.5 text-[12px] text-center font-bold leading-tight bg-white align-middle";
   
-  // Sticky Styles for Table 2 (Will follow tableSticky.css logic)
-  const stickyThStyle = "border border-slate-300 px-1 py-3 font-black text-center text-[10px] bg-slate-100";
+  // Changed bg-slate-100 to bg-slate-200 for premium feel
+  const stickyThStyle = "border border-slate-300 px-1 py-3 font-black text-center text-[10px] bg-slate-200";
   const stickyTdStyle = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-center font-bold leading-tight bg-white align-middle";
 
   return (
