@@ -43,26 +43,24 @@
 
 /* 
    CRITICAL FIX: 
-   If a container has the '.multi-table-view' class (like Special View), 
+   If a page has multiple tables (multi-table-view), 
    the FIRST table must NEVER stick. 
-   We aggressively reset position and offsets for all its child elements.
+   We reset ALL sticky properties for the first table container and its rows.
 */
 
 .multi-table-view .table-container:first-of-type,
 .multi-table-view .table-container:first-of-type thead,
 .multi-table-view .table-container:first-of-type thead tr,
-.multi-table-view .table-container:first-of-type thead th,
+.multi-table-view .table-container:first-of-type thead tr th,
+.multi-table-view .table-container:first-of-type thead tr td,
 .multi-table-view .table-container:first-of-type tfoot,
 .multi-table-view .table-container:first-of-type tfoot tr,
-.multi-table-view .table-container:first-of-type tfoot td,
-.multi-table-view div:first-child .table-container thead th,
-.multi-table-view div:first-child .table-container tfoot td,
-.multi-table-view div:first-of-type .table-container thead th,
-.multi-table-view div:first-of-type .table-container tfoot td {
+.multi-table-view .table-container:first-of-type tfoot tr th,
+.multi-table-view .table-container:first-of-type tfoot tr td {
   position: static !important;
   top: auto !important;
   bottom: auto !important;
-  z-index: 1 !important;
+  z-index: auto !important;
   box-shadow: none !important;
   transform: none !important;
   -webkit-transform: none !important;
