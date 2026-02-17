@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import React from 'react';
-import { SettlementEntry, ParaType, CumulativeStats, MinistryPrevStats } from '../types';
+import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP, OFFICE_HEADER } from '../constants';
-import { ChevronLeft, ArrowRight, ClipboardCheck, CalendarRange, Printer, Database, Settings2, BarChart3, FileStack, ClipboardList, Settings, CheckCircle2, CalendarDays, UserCheck, ChevronDown, Check, LayoutGrid, PieChart, History, Search, CalendarSearch, Sparkles, X, Lock, KeyRound, ShieldAlert, Pencil, Unlock, ArrowRightCircle, Mail, Send, FileEdit } from 'lucide-react';
-import { isWithinInterval, addMonths, format as dateFnsFormat, parseISO, startOfDay, endOfDay } from 'date-fns';
+import { ChevronLeft, ArrowRightCircle, Printer, Database, Settings2, CheckCircle2, CalendarDays, ChevronDown, Check, LayoutGrid, PieChart, Search, CalendarSearch, X, Lock, KeyRound, Pencil, Unlock, Mail, Send, FileEdit } from 'lucide-react';
+import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
 import { getCycleForDate, isInCycle } from '../utils/cycleHelper';
 import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
 
@@ -25,6 +25,7 @@ interface ReturnViewProps {
   setSelectedReportType: (type: string | null) => void;
 }
 
+// Added missing default export and fixed overall JSX parsing errors
 const ReturnView: React.FC<ReturnViewProps> = ({ 
   entries, correspondenceEntries = [], cycleLabel, prevStats, setPrevStats, 
   isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister, isAdmin,
@@ -47,7 +48,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       setIsSetupMode(false);
       setSelectedCycleDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
     }
-  }, [resetKey]);
+  }, [resetKey, setSelectedReportType]);
 
   useEffect(() => {
     if (selectedReportType === 'পূর্ব জের সেটআপ উইন্ডো') {
@@ -140,7 +141,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       
       setTempPrevStats(rawMasterStats);
     }
-  }, [isSetupMode, prevStats, activeCycle, ministryGroups]);
+  }, [isSetupMode, prevStats, ministryGroups]);
 
   const reportData = useMemo(() => {
     if (!selectedReportType || selectedReportType.includes('চিঠিপত্র সংক্রান্ত')) return [];
@@ -194,7 +195,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         })
       };
     });
-  }, [entries, selectedReportType, prevStats, activeCycle, ministryGroups]);
+  }, [entries, selectedReportType, calculateRecursiveOpening, activeCycle, ministryGroups]);
 
   const filteredCorrespondence = useMemo(() => {
     if (selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
@@ -222,9 +223,16 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     if (!reportData || reportData.length === 0) return { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0 };
     return reportData.reduce((acc, mGroup) => {
       mGroup.entityRows.forEach(row => {
-        acc.pUC += (row.prev.unsettledCount || 0); acc.pUA += (row.prev.unsettledAmount || 0); acc.cRC += (row.currentRaisedCount || 0); acc.cRA += (row.currentRaisedAmount || 0);
-        acc.pSC += (row.prev.settledCount || 0); acc.pSA += (row.prev.settledAmount || 0); acc.cSC += (row.currentSettledCount || 0); acc.cSA += (row.currentSettledAmount || 0);
-        acc.cFC += (row.currentFullCount || 0); acc.cPC += (row.currentPartialCount || 0);
+        acc.pUC += (row.prev.unsettledCount || 0); 
+        acc.pUA += (row.prev.unsettledAmount || 0); 
+        acc.cRC += (row.currentRaisedCount || 0); 
+        acc.cRA += (row.currentRaisedAmount || 0);
+        acc.pSC += (row.prev.settledCount || 0); 
+        acc.pSA += (row.prev.settledAmount || 0); 
+        acc.cSC += (row.currentSettledCount || 0); 
+        acc.cSA += (row.currentSettledAmount || 0);
+        acc.cFC += (row.currentFullCount || 0); 
+        acc.cPC += (row.currentPartialCount || 0);
       });
       return acc;
     }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0 });
@@ -343,7 +351,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   }
 
-  // Render DD Sir Special Return
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
     return (
       <DDSirCorrespondenceReturn 
@@ -356,8 +363,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }
 
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
-    // হেডার স্টাইল আপডেট (Using tableSticky.css offsets via class simplification)
-    const thS = "border border-slate-300 px-1 py-2 font-black text-center text-[10px] md:text-[11px] bg-white text-slate-900 leading-tight align-middle sticky z-[150] shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
+    const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-white text-slate-900 leading-tight align-middle sticky z-[150] shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
     const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
     const reportingDateBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0), 'dd/MM/yyyy'));
 
@@ -388,7 +394,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             </div>
           </div>
 
-          <div className="table-container relative overflow-visible">
+          <div className="table-container dhaka-return-container relative overflow-visible">
             <table className="w-full border-separate table-fixed border-spacing-0">
               <colgroup>
                 <col className="w-[45px]" />
@@ -406,8 +412,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 <col className="w-[100px]" />
               </colgroup>
               <thead>
-                {/* অফসেট এবং উচ্চতা ফিক্স করা হয়েছে (এখন ৩য় নম্বর রো-টি সঠিক উচ্চতায় ফিক্সড থাকবে) */}
-                <tr className="h-[42px]">
+                <tr className="h-[48px]">
                   <th rowSpan={2} className={`${thS}`}>ক্রমিক নং</th>
                   <th rowSpan={2} className={`${thS}`}>এনটিটি/প্রতিষ্ঠানের নাম</th>
                   <th rowSpan={2} className={`${thS}`}>ডায়েরি নং ও তারিখ</th>
@@ -418,14 +423,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   <th rowSpan={2} className={`${thS}`}>বর্তমান অবস্থান</th>
                   <th rowSpan={2} className={`${thS}`}>মন্তব্য</th>
                 </tr>
-                <tr className="h-[38px]">
+                <tr className="h-[42px]">
                   <th className={`${thS}`}>বিএসআর (SFI)</th>
                   <th className={`${thS}`}>বিএসআর (NON-SFI)</th>
                   <th className={`${thS}`}>ত্রি-পক্ষীয় (SFI)</th>
                   <th className={`${thS}`}>দ্বি-পক্ষীয় (NON-SFI)</th>
                   <th className={`${thS}`}>অন্যান্য</th>
                 </tr>
-                <tr className="h-[30px] no-print">
+                <tr className="h-[32px] no-print">
                   {['১','২','৩','৪','৫','৬','৭','৮','৯','১০','১১','১২','১৩'].map(num => (
                     <th key={num} className={`${thS} bg-slate-100 py-1 text-[9px]`}>{num}</th>
                   ))}
