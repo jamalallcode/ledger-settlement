@@ -422,6 +422,9 @@ const App: React.FC = () => {
           isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
           isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} setIsAdmin={setIsAdmin}
           pendingCount={totalPendingCount}
+          entryModule={entryModule}
+          registerSubModule={registerSubModule}
+          reportType={reportType}
         />
       )}
 
