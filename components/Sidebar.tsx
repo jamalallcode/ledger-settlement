@@ -15,6 +15,9 @@ interface SidebarProps {
   isAdmin: boolean;
   setIsAdmin: (status: boolean) => void;
   pendingCount?: number;
+  entryModule?: 'settlement' | 'correspondence' | null;
+  registerSubModule?: 'settlement' | 'correspondence' | null;
+  reportType?: string | null;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -29,7 +32,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   onImportSystem,
   isAdmin,
   setIsAdmin,
-  pendingCount = 0
+  pendingCount = 0,
+  entryModule,
+  registerSubModule,
+  reportType
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -43,6 +49,23 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isReturnExpanded, setIsReturnExpanded] = useState(false);
   const [isMonthlyExpanded, setIsMonthlyExpanded] = useState(false);
   const [isMonthlyCorrExpanded, setIsMonthlyCorrExpanded] = useState(false);
+
+  // Auto-expand menus based on active state
+  useEffect(() => {
+    if (activeTab === 'entry') setIsEntryExpanded(true);
+    if (activeTab === 'register') setIsRegisterExpanded(true);
+    if (activeTab === 'return') {
+      setIsReturnExpanded(true);
+      if (reportType) {
+        if (reportType.includes('মাসিক')) {
+          setIsMonthlyExpanded(true);
+          if (reportType.includes('চিঠিপত্র')) {
+            setIsMonthlyCorrExpanded(true);
+          }
+        }
+      }
+    }
+  }, [activeTab, reportType]);
 
   // --- Important Links State ---
   const [isLinksOpen, setIsLinksOpen] = useState(false);
@@ -135,6 +158,13 @@ const Sidebar: React.FC<SidebarProps> = ({
     );
   };
 
+  // Helper for active styling
+  const getSubItemCls = (isActive: boolean) => 
+    `w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black transition-all group ${isActive ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`;
+
+  const getSubIconCls = (isActive: boolean, hoverColor: string = 'emerald') => 
+    `${isActive ? 'text-white' : `text-slate-400 group-hover:text-${hoverColor}-400`} transition-transform group-hover:scale-110`;
+
   return (
     <>
       <div id="sidebar-container" className="w-48 bg-slate-900 h-screen text-slate-300 flex flex-col border-r border-slate-800 shadow-2xl overflow-hidden relative">
@@ -187,16 +217,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
                   <button 
                     onClick={() => setActiveTab('entry', 'correspondence')}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black text-slate-400 hover:bg-emerald-600/10 hover:text-emerald-400 transition-all group"
+                    className={getSubItemCls(activeTab === 'entry' && entryModule === 'correspondence')}
                   >
-                    <Mail size={14} className="group-hover:scale-110 transition-transform" />
+                    <Mail size={14} className={getSubIconCls(activeTab === 'entry' && entryModule === 'correspondence', 'emerald')} />
                     <span>১. চিঠিপত্র এন্ট্রি</span>
                   </button>
                   <button 
                     onClick={() => setActiveTab('entry', 'settlement')}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black text-slate-400 hover:bg-blue-600/10 hover:text-blue-400 transition-all group"
+                    className={getSubItemCls(activeTab === 'entry' && entryModule === 'settlement')}
                   >
-                    <ClipboardList size={14} className="group-hover:scale-110 transition-transform" />
+                    <ClipboardList size={14} className={getSubIconCls(activeTab === 'entry' && entryModule === 'settlement', 'blue')} />
                     <span>২. অনুচ্ছেদ এন্ট্রি</span>
                   </button>
                 </div>
@@ -207,22 +237,22 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
                   <button 
                     onClick={() => setActiveTab('register', 'correspondence')}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black text-slate-400 hover:bg-emerald-600/10 hover:text-emerald-400 transition-all group"
+                    className={getSubItemCls(activeTab === 'register' && registerSubModule === 'correspondence')}
                   >
-                    <Mail size={14} className="group-hover:scale-110 transition-transform" />
+                    <Mail size={14} className={getSubIconCls(activeTab === 'register' && registerSubModule === 'correspondence', 'emerald')} />
                     <span>১. চিঠিপত্র রেজি:</span>
                   </button>
                   <button 
                     onClick={() => setActiveTab('register', 'settlement')}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black text-slate-400 hover:bg-blue-600/10 hover:text-blue-400 transition-all group"
+                    className={getSubItemCls(activeTab === 'register' && registerSubModule === 'settlement')}
                   >
-                    <ClipboardList size={14} className="group-hover:scale-110 transition-transform" />
+                    <ClipboardList size={14} className={getSubIconCls(activeTab === 'register' && registerSubModule === 'settlement', 'blue')} />
                     <span>২. মীমাংসিত রেজি:</span>
                   </button>
                 </div>
               )}
 
-              {/* Nested Sub-menu for Return & Summary (Updated) */}
+              {/* Nested Sub-menu for Return & Summary */}
               {item.id === 'return' && isReturnExpanded && (
                 <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
                   {/* ১. মাসিক (Toggle) */}
@@ -231,7 +261,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[12px] font-black transition-all ${isMonthlyExpanded ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                      <div className={`w-1.5 h-1.5 rounded-full ${reportType?.includes('মাসিক') ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]' : 'bg-blue-500'}`}></div>
                       <span>১. মাসিক</span>
                     </div>
                     <ChevronDown size={12} className={`transition-transform duration-300 ${isMonthlyExpanded ? 'rotate-180' : ''}`} />
@@ -257,13 +287,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
                           <button 
                             onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')}
-                            className="w-full text-left px-3 py-1.5 text-[10px] font-black text-slate-500 hover:text-white transition-all border-l border-slate-700 ml-1"
+                            className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                           >
                             ১. ঢাকা
                           </button>
                           <button 
                             onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।')}
-                            className="w-full text-left px-3 py-1.5 text-[10px] font-black text-slate-500 hover:text-white transition-all border-l border-slate-700 ml-1"
+                            className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                           >
                             ২. ডিডি স্যার
                           </button>
@@ -272,8 +302,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                       {/* ২. অনুচ্ছেদ */}
                       <button 
-                        onClick={() => setActiveTab('return', null, 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-[11px] font-black text-slate-500 hover:text-blue-400 transition-all"
+                        onClick={() => setActiveTab('return', null, 'মাসিক রিটারন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-[11px] font-black transition-all ${reportType === 'মাসিক রিটারন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-blue-400'}`}
                       >
                         <BarChart3 size={12} />
                         <span>২. অনুচ্ছেদ</span>
@@ -284,27 +314,27 @@ const Sidebar: React.FC<SidebarProps> = ({
                   {/* ২. ত্রৈমাসিক */}
                   <button 
                     onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black text-slate-400 hover:bg-amber-600/10 hover:text-amber-400 transition-all"
+                    className={getSubItemCls(reportType === 'ত্রৈমাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
                   >
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                    <div className={`w-1.5 h-1.5 rounded-full ${reportType === 'ত্রৈমাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-white' : 'bg-amber-500'}`}></div>
                     <span>২. ত্রৈমাসিক</span>
                   </button>
 
                   {/* ৩. ষান্মাসিক */}
                   <button 
                     onClick={() => setActiveTab('return', null, 'ষান্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black text-slate-400 hover:bg-purple-600/10 hover:text-purple-400 transition-all"
+                    className={getSubItemCls(reportType === 'ষান্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
                   >
-                    <div className="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
+                    <div className={`w-1.5 h-1.5 rounded-full ${reportType === 'ষান্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-white' : 'bg-purple-500'}`}></div>
                     <span>৩. ষান্মাসিক</span>
                   </button>
 
                   {/* ৪. বাৎসরিক */}
                   <button 
                     onClick={() => setActiveTab('return', null, 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black text-slate-400 hover:bg-rose-600/10 hover:text-rose-400 transition-all"
+                    className={getSubItemCls(reportType === 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
                   >
-                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
+                    <div className={`w-1.5 h-1.5 rounded-full ${reportType === 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-white' : 'bg-rose-500'}`}></div>
                     <span>৪. বাৎসরিক</span>
                   </button>
 
@@ -312,9 +342,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                   {isAdmin && (
                     <button 
                       onClick={() => setActiveTab('return', null, 'পূর্ব জের সেটআপ উইন্ডো')}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[11px] font-black text-slate-500 hover:bg-slate-800 hover:text-white transition-all border-t border-slate-800 mt-2"
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[11px] font-black transition-all border-t border-slate-800 mt-2 ${reportType === 'পূর্ব জের সেটআপ উইন্ডো' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-800 hover:text-white'}`}
                     >
-                      <Lock size={12} className="text-slate-600" />
+                      <Lock size={12} className={reportType === 'পূর্ব জের সেটআপ উইন্ডো' ? 'text-white' : 'text-slate-600'} />
                       <span>প্রারম্ভিক জের সেটআপ</span>
                     </button>
                   )}
