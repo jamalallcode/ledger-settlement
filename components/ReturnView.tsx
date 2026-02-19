@@ -104,6 +104,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     });
 
     let pastRC = 0, pastRA = 0, pastSC = 0, pastSA = 0;
+    const processedParaIds = new Set<string>();
+
     pastEntries.forEach(entry => {
         const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
         if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
@@ -111,19 +113,24 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         }
         if (entry.manualRaisedAmount) pastRA += Number(entry.manualRaisedAmount);
 
-        if (entry.paragraphs) entry.paragraphs.forEach(p => {
-            if (p.status === 'পূর্ণাঙ্গ') {
-                pastSC++;
+        if (entry.paragraphs) {
+          entry.paragraphs.forEach(p => {
+            if (p.id && !processedParaIds.has(p.id)) {
+              processedParaIds.add(p.id);
+              if (p.status === 'পূর্ণাঙ্গ') {
+                  pastSC++;
+              }
+              pastSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
             }
-            pastSA += Math.round((Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0));
-        });
+          });
+        }
     });
 
     return {
         unsettledCount: Math.max(0, base.unsettledCount + pastRC),
         unsettledAmount: Math.max(0, base.unsettledAmount + pastRA),
         settledCount: base.settledCount + pastSC,
-        settledAmount: base.settledAmount + pastSA
+        settledAmount: base.settledAmount + Math.round(pastSA)
     };
   };
 
@@ -164,17 +171,23 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           });
           
           let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0;
+          const processedParaIds = new Set<string>();
+
           matchingEntries.forEach(entry => {
             if (entry.paragraphs && entry.paragraphs.length > 0) {
               entry.paragraphs.forEach(p => { 
-                const paraAmount = Math.round((Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0));
-                
-                if (p.status === 'পূর্ণাঙ্গ') { 
-                  curFC++; curSC++; 
-                  curSA += paraAmount;
-                } else if (p.status === 'আংশিক') {
-                  curPC++;
-                  curSA += paraAmount;
+                if (p.id && !processedParaIds.has(p.id)) {
+                  processedParaIds.add(p.id);
+                  const rawParaAmount = (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
+                  
+                  if (p.status === 'পূর্ণাঙ্গ') { 
+                    curFC++; 
+                    curSC++; 
+                    curSA += rawParaAmount;
+                  } else if (p.status === 'আংশিক') {
+                    curPC++;
+                    curSA += rawParaAmount;
+                  }
                 }
               });
             }
@@ -184,13 +197,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({
               curRC += parseBengaliNumber(rCountRaw);
             }
             if (entry.manualRaisedAmount) {
-              curRA += Math.round(Number(entry.manualRaisedAmount));
+              curRA += Number(entry.manualRaisedAmount);
             }
           });
+          
           return { 
             entity: entityName, 
-            currentRaisedCount: curRC, currentRaisedAmount: curRA, 
-            currentSettledCount: curSC, currentSettledAmount: curSA, 
+            currentRaisedCount: curRC, currentRaisedAmount: Math.round(curRA), 
+            currentSettledCount: curSC, currentSettledAmount: Math.round(curSA), 
             currentFullCount: curFC, currentPartialCount: curPC,
             prev: ePrev 
           };
@@ -226,13 +240,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     return reportData.reduce((acc, mGroup) => {
       mGroup.entityRows.forEach(row => {
         acc.pUC += (row.prev.unsettledCount || 0); 
-        acc.pUA += Math.round(row.prev.unsettledAmount || 0); 
+        acc.pUA += (row.prev.unsettledAmount || 0); 
         acc.cRC += (row.currentRaisedCount || 0); 
-        acc.cRA += Math.round(row.currentRaisedAmount || 0);
+        acc.cRA += (row.currentRaisedAmount || 0);
         acc.pSC += (row.prev.settledCount || 0); 
-        acc.pSA += Math.round(row.prev.settledAmount || 0); 
+        acc.pSA += (row.prev.settledAmount || 0); 
         acc.cSC += (row.currentSettledCount || 0); 
-        acc.cSA += Math.round(row.currentSettledAmount || 0);
+        acc.cSA += (row.currentSettledAmount || 0);
         acc.cFC += (row.currentFullCount || 0); 
         acc.cPC += (row.currentPartialCount || 0);
       });
@@ -290,6 +304,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     setTempPrevStats(newStats);
   };
 
+  /**
+   * Fixed IDBadge component by removing incorrect backslash escaping.
+   */
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = useState(false);
     if (!isLayoutEditable) return null;
@@ -308,6 +325,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   };
 
+  /**
+   * Fixed HistoricalFilter component by removing incorrect backslash escaping.
+   */
   const HistoricalFilter = () => (
     <div className="relative no-print" ref={dropdownRef}>
       <div onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} className={`flex items-center gap-3 px-5 h-[48px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isCycleDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}>
@@ -333,6 +353,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     </div>
   );
 
+  /**
+   * Fixed main return blocks by removing incorrect backslash escaping from JSX attributes.
+   */
   if (!selectedReportType && !isSetupMode) {
     return (
       <div id="section-report-selector" className="max-w-4xl py-20 animate-report-page relative pt-0 text-center">
@@ -572,7 +595,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
   const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight bg-white group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
-  const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[9.5px] bg-slate-100 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1,inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
+  const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[9.5px] bg-slate-100 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#94a3b8,inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
 
   return (
     <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative">
@@ -652,8 +675,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   acc.cFC += (row.currentFullCount || 0); acc.cPC += (row.currentPartialCount || 0);
                   return acc;
                 }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0 });
-                return (
-                  <React.Fragment key={m.ministry}>
+                return (                    <React.Fragment key={m.ministry}>
                     {m.entityRows.map((row, rIdx) => {
                       const totalUC = (row.prev.unsettledCount || 0) + (row.currentRaisedCount || 0); 
                       const totalUA = Math.round((row.prev.unsettledAmount || 0) + (row.currentRaisedAmount || 0));
