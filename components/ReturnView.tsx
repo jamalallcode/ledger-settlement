@@ -123,7 +123,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
               processedParaIds.add(p.id);
               const status = robustNormalize(p.status || '');
               const settledAmt = (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
-              
+
               if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                   pastSC++; 
               }
