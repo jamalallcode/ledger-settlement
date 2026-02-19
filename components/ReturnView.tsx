@@ -104,8 +104,16 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     
     const pastEntries = entries.filter(e => {
         if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
+        
+        // Strictly exclude entries belonging to the current cycle by label
         if (e.cycleLabel && toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon) return false;
+        
+        // For entries without a specific label or assigned to other labels, check the primary date
         const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+        
+        // If it belongs to current cycle period by date, exclude it from opening
+        if (!e.cycleLabel && entryDate >= cycleStartStr) return false;
+
         return entryDate !== '' && entryDate < cycleStartStr;
     });
 
@@ -176,7 +184,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             const eMin = robustNormalize(e.ministryName || '');
             const eEnt = robustNormalize(e.entityName || '');
             if (eMin !== normMinistry || eEnt !== normEntity) return false;
-            if (e.cycleLabel) return toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon;
+            
+            // PRIORITY: If entry has a cycle label, it MUST match exactly
+            if (e.cycleLabel) {
+              return toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon;
+            }
+            
+            // FALLBACK: If no cycle label, check date range
             const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
             return entryDate >= cycleStartStr && entryDate <= cycleEndStr;
           });
