@@ -111,16 +111,18 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
             pastRC += parseBengaliNumber(rCountRaw);
         }
-        if (entry.manualRaisedAmount) pastRA += Number(entry.manualRaisedAmount);
+        if (entry.manualRaisedAmount) pastRA += Math.round(Number(entry.manualRaisedAmount));
 
         if (entry.paragraphs) {
           entry.paragraphs.forEach(p => {
-            if (p.id && !processedParaIds.has(p.id)) {
+            if (p.id && !processedParaIds.has(p.id) && p.paraNo) {
               processedParaIds.add(p.id);
               if (p.status === 'পূর্ণাঙ্গ') {
                   pastSC++;
+                  pastSA += Math.round(Number(p.involvedAmount) || 0);
+              } else if (p.status === 'আংশিক') {
+                  pastSA += Math.round((Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0));
               }
-              pastSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
             }
           });
         }
@@ -130,7 +132,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         unsettledCount: Math.max(0, base.unsettledCount + pastRC),
         unsettledAmount: Math.max(0, base.unsettledAmount + pastRA),
         settledCount: base.settledCount + pastSC,
-        settledAmount: base.settledAmount + Math.round(pastSA)
+        settledAmount: base.settledAmount + pastSA
     };
   };
 
@@ -176,17 +178,16 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           matchingEntries.forEach(entry => {
             if (entry.paragraphs && entry.paragraphs.length > 0) {
               entry.paragraphs.forEach(p => { 
-                if (p.id && !processedParaIds.has(p.id)) {
+                if (p.id && !processedParaIds.has(p.id) && p.paraNo) {
                   processedParaIds.add(p.id);
-                  const rawParaAmount = (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
                   
                   if (p.status === 'পূর্ণাঙ্গ') { 
                     curFC++; 
                     curSC++; 
-                    curSA += rawParaAmount;
+                    curSA += Math.round(Number(p.involvedAmount) || 0);
                   } else if (p.status === 'আংশিক') {
                     curPC++;
-                    curSA += rawParaAmount;
+                    curSA += Math.round((Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0));
                   }
                 }
               });
@@ -197,14 +198,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({
               curRC += parseBengaliNumber(rCountRaw);
             }
             if (entry.manualRaisedAmount) {
-              curRA += Number(entry.manualRaisedAmount);
+              curRA += Math.round(Number(entry.manualRaisedAmount));
             }
           });
           
           return { 
             entity: entityName, 
-            currentRaisedCount: curRC, currentRaisedAmount: Math.round(curRA), 
-            currentSettledCount: curSC, currentSettledAmount: Math.round(curSA), 
+            currentRaisedCount: curRC, currentRaisedAmount: curRA, 
+            currentSettledCount: curSC, currentSettledAmount: curSA, 
             currentFullCount: curFC, currentPartialCount: curPC,
             prev: ePrev 
           };
@@ -304,9 +305,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     setTempPrevStats(newStats);
   };
 
-  /**
-   * Fixed IDBadge component by removing incorrect backslash escaping.
-   */
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = useState(false);
     if (!isLayoutEditable) return null;
@@ -325,9 +323,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   };
 
-  /**
-   * Fixed HistoricalFilter component by removing incorrect backslash escaping.
-   */
   const HistoricalFilter = () => (
     <div className="relative no-print" ref={dropdownRef}>
       <div onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} className={`flex items-center gap-3 px-5 h-[48px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isCycleDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}>
@@ -353,9 +348,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     </div>
   );
 
-  /**
-   * Fixed main return blocks by removing incorrect backslash escaping from JSX attributes.
-   */
   if (!selectedReportType && !isSetupMode) {
     return (
       <div id="section-report-selector" className="max-w-4xl py-20 animate-report-page relative pt-0 text-center">
@@ -595,7 +587,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
   const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight bg-white group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
-  const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[9.5px] bg-slate-100 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#94a3b8,inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
+  const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[9.5px] bg-slate-100 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1,inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
 
   return (
     <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative">
@@ -714,7 +706,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             </tbody>
             <tfoot className="sticky bottom-0 z-[230] shadow-2xl">
               <tr>
-                <td colSpan={2} className={grandStyle + " !bg-slate-200 text-slate-900 uppercase tracking-widest text-[10px] shadow-[inset_0_1px_0_#94a3b8] border-l border-slate-400 font-black"}>সর্বমোট ইউনিফাইড সারাংশ:</td>
+                <td colSpan={2} className={grandStyle + " !bg-slate-200 text-slate-900 uppercase tracking-widest text-[10px] shadow-[inset_0_1px_0_#cbd5e1] border-l border-slate-400 font-black"}>সর্বমোট ইউনিফাইড সারাংশ:</td>
                 <td className={grandStyle}>{toBengaliDigits(grandTotals.pUC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.pUA))}</td>
                 <td className={grandStyle}>{toBengaliDigits(grandTotals.cRC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.cRA))}</td>
                 <td className={grandStyle + " !bg-slate-200/80 font-black"}>{toBengaliDigits(grandTotals.pUC + grandTotals.cRC)}</td><td className={grandStyle + " text-center !bg-slate-200/80 font-black"}>{toBengaliDigits(Math.round(grandTotals.pUA + grandTotals.cRA))}</td>
