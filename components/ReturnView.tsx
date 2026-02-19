@@ -105,14 +105,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     const pastEntries = entries.filter(e => {
         if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
         
-        // Strictly exclude entries belonging to the current cycle by label
-        if (e.cycleLabel && robustNormalize(toEnglishDigits(e.cycleLabel)) === activeLabelCanon) return false;
-        
-        // For entries without a specific label or assigned to other labels, check the primary date
+        // Strictly exclude entries belonging to the current cycle by label or date
         const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
-        
-        // If it belongs to current cycle period by date, exclude it from opening
-        if (!e.cycleLabel && entryDate >= cycleStartStr) return false;
+        const isCurrentByLabel = e.cycleLabel && robustNormalize(toEnglishDigits(e.cycleLabel)) === activeLabelCanon;
+        const isCurrentByDate = !e.cycleLabel && entryDate >= cycleStartStr;
+
+        if (isCurrentByLabel || isCurrentByDate) return false;
 
         return entryDate !== '' && entryDate < cycleStartStr;
     });
@@ -185,15 +183,17 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             const eEnt = robustNormalize(e.entityName || '');
             if (eMin !== normMinistry || eEnt !== normEntity) return false;
             
-            // PRIORITY: If entry has a cycle label, it MUST match exactly with robust normalization
-            if (e.cycleLabel) {
-              return robustNormalize(toEnglishDigits(e.cycleLabel)) === activeLabelCanon;
-            }
+            // Match by Label with robust normalization
+            const matchByLabel = e.cycleLabel && robustNormalize(toEnglishDigits(e.cycleLabel)) === activeLabelCanon;
             
-            // FALLBACK: If no cycle label, check date range
+            // Match by Date Range
             const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
-            return entryDate >= cycleStartStr && entryDate <= cycleEndStr;
+            const matchByDate = entryDate >= cycleStartStr && entryDate <= cycleEndStr;
+
+            // Include if either matches to ensure Sonali Bank entry is caught
+            return matchByLabel || matchByDate;
           });
+
           let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0;
           const processedParaIds = new Set<string>();
           matchingEntries.forEach(entry => {
