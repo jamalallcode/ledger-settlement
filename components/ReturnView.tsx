@@ -100,7 +100,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     
     const pastEntries = entries.filter(e => {
         if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
-        // Logic match with Register: if entry cycle is before current, it's opening
         const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
         return entryDate !== '' && entryDate < cycleStartStr;
     });
@@ -118,7 +117,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         if (entry.paragraphs) {
           entry.paragraphs.forEach(p => {
             const cleanParaNo = String(p.paraNo || '').trim();
-            if (p.id && !processedParaIds.has(p.id) && cleanParaNo !== '' && cleanParaNo !== '০') {
+            // Regex ensure only numbered paras are counted to prevent overcounting
+            const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
+            if (p.id && !processedParaIds.has(p.id) && hasDigit) {
               processedParaIds.add(p.id);
               if (p.status === 'পূর্ণাঙ্গ') {
                   pastSC++;
@@ -170,13 +171,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           const normEntity = robustNormalize(entityName);
           const ePrev = calculateRecursiveOpening(entityName, activeCycle.start);
 
-          // CRITICAL FIX: Filtering by cycle label to match Register parity
+          // MATCHING LOGIC FIXED: Priority to cycleLabel to ensure Return matches Register visual count
           const matchingEntries = entries.filter(e => {
             const eMin = robustNormalize(e.ministryName || '');
             const eEnt = robustNormalize(e.entityName || '');
             if (eMin !== normMinistry || eEnt !== normEntity) return false;
             
-            // If entry has a cycle label, use it. Otherwise fallback to date comparison.
             if (e.cycleLabel) return e.cycleLabel === activeCycle.label;
             
             const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
@@ -190,8 +190,11 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             if (entry.paragraphs && entry.paragraphs.length > 0) {
               entry.paragraphs.forEach(p => { 
                 const cleanParaNo = String(p.paraNo || '').trim();
+                // REGEX FIX: Para must have digits to be counted (avoids ghost/zero paras)
+                const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
                 const invAmt = (Number(p.involvedAmount) || 0);
-                if (p.id && !processedParaIds.has(p.id) && cleanParaNo !== '' && cleanParaNo !== '০' && invAmt > 0) {
+
+                if (p.id && !processedParaIds.has(p.id) && hasDigit) {
                   processedParaIds.add(p.id);
                   
                   if (p.status === 'পূর্ণাঙ্গ') { 
@@ -217,8 +220,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           
           return { 
             entity: entityName, 
-            currentRaisedCount: curRC, currentRaisedAmount: curRA, // Store as float
-            currentSettledCount: curSC, currentSettledAmount: curSA, // Store as float
+            currentRaisedCount: curRC, currentRaisedAmount: curRA, // Float summation for precision
+            currentSettledCount: curSC, currentSettledAmount: curSA, // Float summation for precision
             currentFullCount: curFC, currentPartialCount: curPC,
             prev: ePrev 
           };
@@ -228,7 +231,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }, [entries, selectedReportType, calculateRecursiveOpening, activeCycle, ministryGroups]);
 
   const filteredCorrespondence = useMemo(() => {
-    if (selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
+    if (selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ। ' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
     
     const reportingDateObj = endOfDay(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0));
 
