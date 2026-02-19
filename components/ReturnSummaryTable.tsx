@@ -114,8 +114,8 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                       const totalPoolAmount = (row.prev.unsettledAmount || 0) + (row.currentRaisedAmount || 0);
                       const totalSC = (row.prev.settledCount || 0) + (row.currentSettledCount || 0); 
                       const totalSA = (row.prev.settledAmount || 0) + (row.currentSettledAmount || 0);
-                      const closingUC = totalPoolCount - (row.currentSettledCount || 0);
-                      const closingUA = totalPoolAmount - (row.currentSettledAmount || 0);
+                      const closingUC = totalPoolCount - totalSC;
+                      const closingUA = totalPoolAmount - totalSA;
 
                       return (
                         <tr key={row.entity} className="group hover:bg-blue-50/50">
@@ -139,7 +139,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                       <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.pSC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pSA))}</td>
                       <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.cSC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.cSA))}</td>
                       <td className={tdStyle + " bg-emerald-200/50 font-black"}>{toBengaliDigits(mTotals.pSC + mTotals.cSC)}</td><td className={tdStyle + " text-center bg-emerald-200/50 border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pSA + mTotals.cSA))}</td>
-                      <td className={tdStyle + " bg-amber-100/30 font-black"}>{toBengaliDigits((mTotals.pUC + mTotals.cRC) - mTotals.cSC)}</td><td className={tdStyle + " text-center bg-amber-100/30 font-black"}>{toBengaliDigits(Math.round((mTotals.pUA + mTotals.cRA) - mTotals.cSA))}</td>
+                      <td className={tdStyle + " bg-amber-100/30 font-black"}>{toBengaliDigits((mTotals.pUC + mTotals.cRC) - (mTotals.pSC + mTotals.cSC))}</td><td className={tdStyle + " text-center bg-amber-100/30 font-black"}>{toBengaliDigits(Math.round((mTotals.pUA + mTotals.cRA) - (mTotals.pSA + mTotals.cSA)))}</td>
                     </tr>
                   </React.Fragment>
                 );
@@ -154,7 +154,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                 <td className={grandStyle}>{toBengaliDigits(grandTotals.pSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.pSA))}</td>
                 <td className={grandStyle}>{toBengaliDigits(grandTotals.cSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.cSA))}</td>
                 <td className={grandStyle + " !bg-emerald-100/80 font-black"}>{toBengaliDigits(grandTotals.pSC + grandTotals.cSC)}</td><td className={grandStyle + " text-center !bg-emerald-100/80 font-black"}>{toBengaliDigits(Math.round(grandTotals.pSA + grandTotals.cSA))}</td>
-                <td className={grandStyle + " !bg-orange-100 text-slate-900 font-black"}>{toBengaliDigits((grandTotals.pUC + grandTotals.cRC) - grandTotals.cSC)}</td><td className={grandStyle + " text-center !bg-orange-100 text-slate-900 font-black"}>{toBengaliDigits(Math.round((grandTotals.pUA + grandTotals.cRA) - grandTotals.cSA))}</td>
+                <td className={grandStyle + " !bg-orange-100 text-slate-900 font-black"}>{toBengaliDigits((grandTotals.pUC + grandTotals.cRC) - (grandTotals.pSC + grandTotals.cSC))}</td><td className={grandStyle + " text-center !bg-orange-100 text-slate-900 font-black"}>{toBengaliDigits(Math.round((grandTotals.pUA + grandTotals.cRA) - (grandTotals.pSA + grandTotals.cSA)))}</td>
               </tr>
             </tfoot>
           </table>
@@ -168,7 +168,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             <p className="text-[17px] font-black text-slate-900 mb-1.5">অ্যাকাউন্টিং চেইন লজিক (Chain Integrity) ভেরিফাইড</p>
             <p className="text-[12px] font-black text-slate-500 leading-relaxed uppercase tracking-tight">
               সিস্টেম বর্তমানে <span className="text-blue-600">{toBengaliDigits(activeCycle.label)}</span> পিরিয়ডের প্রারম্ভিক জের বিগত সকল মাসের লেনদেনের ভিত্তিতে স্বয়ংক্রিয়ভাবে সমন্বিত উপায়ে গণনা করছে।
-              হিসাব: কলাম ৯ = (কলাম ৫ - কলাম ৭)।
+              হিসাব: কলাম ১৩ = (কলাম ৫ - কলাম ১১)।
             </p>
           </div>
           <div className="px-8 py-3 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner flex items-center gap-4">
