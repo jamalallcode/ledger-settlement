@@ -92,8 +92,13 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       // IMPROVED FILTERING LOGIC: Checks both Date Range AND Cycle Label
       let matchCycle = !activeCycle;
       if (activeCycle) {
-        const matchByLabel = entry.cycleLabel && robustNormalize(toEnglishDigits(entry.cycleLabel)) === robustNormalize(toEnglishDigits(activeCycle.label));
+        // Robust normalization for string comparison (handles Bengali digits and spaces)
+        const entryLabel = robustNormalize(toEnglishDigits(entry.cycleLabel || ''));
+        const targetLabel = robustNormalize(toEnglishDigits(activeCycle.label));
+        
+        const matchByLabel = entryLabel !== '' && entryLabel === targetLabel;
         const matchByDate = entryDate >= format(activeCycle.start, 'yyyy-MM-dd') && entryDate <= format(activeCycle.end, 'yyyy-MM-dd');
+        
         matchCycle = matchByLabel || matchByDate;
       }
       
