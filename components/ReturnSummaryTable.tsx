@@ -115,7 +115,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                       const totalSC = (row.prev.settledCount || 0) + (row.currentSettledCount || 0); 
                       const totalSA = (row.prev.settledAmount || 0) + (row.currentSettledAmount || 0);
                       
-                      // Correct Accounting Formula: Outstanding = Total Pool - Current Settled
+                      // Accounting Formula: Closing Outstanding = (Opening + Current Raised) - Current Settled
                       const closingUC = totalPoolCount - (row.currentSettledCount || 0);
                       const closingUA = totalPoolAmount - (row.currentSettledAmount || 0);
 
