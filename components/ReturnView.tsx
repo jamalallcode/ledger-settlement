@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import React from 'react';
 import { SettlementEntry, ParaType, CumulativeStats, MinistryPrevStats } from '../types';
-import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
+import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP, OFFICE_HEADER } from '../constants';
 import { ChevronLeft, ArrowRight, ClipboardCheck, CalendarRange, Printer, Database, Settings2, BarChart3, FileStack, ClipboardList, Settings, CheckCircle2, CalendarDays, UserCheck, ChevronDown, Check, LayoutGrid, PieChart, History, Search, CalendarSearch, Sparkles, X, Lock, KeyRound, ShieldAlert, Pencil, Unlock, ArrowRightCircle } from 'lucide-react';
 import { isWithinInterval, addMonths, format as dateFnsFormat, parseISO, startOfDay, endOfDay } from 'date-fns';
@@ -116,12 +116,17 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
     const pastEntries = entries.filter(e => {
         if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
         if (!e.issueDateISO) return false;
+        
+        // Ensure we don't include entries from the current selected cycle in the opening balance
+        const entryLabel = robustNormalize(toEnglishDigits(e.cycleLabel || ''));
+        const targetLabel = robustNormalize(toEnglishDigits(activeCycle.label));
+        if (entryLabel === targetLabel) return false;
+
         return new Date(e.issueDateISO).getTime() < cycleStart.getTime();
     });
 
     let pastRC = 0, pastRA = 0, pastSC = 0, pastSA = 0;
     pastEntries.forEach(entry => {
-        // Correct logic implementation for opening balance calculation
         const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
         if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
             pastRC += parseBengaliNumber(rCountRaw);
@@ -219,13 +224,19 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
             const eMin = robustNormalize(e.ministryName || '');
             const eEnt = robustNormalize(e.entityName || '');
             if (eMin !== normMinistry || eEnt !== normEntity) return false;
-            if (!e.issueDateISO) return false;
-            return isInCycle(e.issueDateISO, activeCycle.start, activeCycle.end);
+            
+            // IMPROVED MATCHING: Check both Date Range AND Cycle Label
+            const entryLabel = robustNormalize(toEnglishDigits(e.cycleLabel || ''));
+            const targetLabel = robustNormalize(toEnglishDigits(activeCycle.label));
+            
+            const matchByLabel = entryLabel !== '' && entryLabel === targetLabel;
+            const matchByDate = e.issueDateISO && e.issueDateISO >= dateFnsFormat(activeCycle.start, 'yyyy-MM-dd') && e.issueDateISO <= dateFnsFormat(activeCycle.end, 'yyyy-MM-dd');
+            
+            return matchByLabel || matchByDate;
           });
           
           let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0;
           matchingEntries.forEach(entry => {
-            // Processing paragraphs and raised amounts for each entry within cycle
             if (entry.paragraphs && entry.paragraphs.length > 0) {
               entry.paragraphs.forEach(p => { 
                 if (p.status === 'পূর্ণাঙ্গ') { 
@@ -279,9 +290,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
     setIsEditingSetup(false);
   };
 
-  /**
-   * IDBadge component for showing element IDs when layout is editable
-   */
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = useState(false);
     if (!isLayoutEditable) return null;
@@ -300,9 +308,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
     );
   };
 
-  /**
-   * HistoricalFilter component for selecting report cycle
-   */
   const HistoricalFilter = () => (
     <div className="relative no-print" ref={dropdownRef}>
       <div onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} className={`flex items-center gap-3 px-5 h-[48px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isCycleDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}>
@@ -318,6 +323,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
             <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between"><span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2"><CalendarSearch size={12} /> মাস ও বছর নির্বাচন</span></div>
             {cycleOptions.map((opt, idx) => (
               <div key={idx} onClick={() => { setSelectedCycleDate(opt.date); setIsCycleDropdownOpen(false); }} className={`flex items-center justify-between px-4 py-2.5 mb-1 rounded-xl cursor-pointer transition-all ${opt.cycleLabel === activeCycle.label ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-slate-50 text-slate-700 font-bold'}`}>
+                {/* Fixed escaped quotes in className attribute below */}
                 <span className="text-[13px]">{opt.label}</span>
                 {opt.cycleLabel === activeCycle.label && <Check size={16} strokeWidth={3} />}
               </div>
@@ -586,7 +592,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
                 );
               })}
             </tbody>
-            {/* Added proper className for tfoot to avoid escaped quotes syntax error */}
             <tfoot className="sticky bottom-0 z-[190] shadow-2xl">
               <tr>
                 <td colSpan={2} className={grandStyle + " bg-slate-900 text-white uppercase tracking-widest text-[10px] shadow-[inset_0_1px_0_#0f172a]"}>সর্বমোট ইউনিফাইড সারাংশ:</td>
