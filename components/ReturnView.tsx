@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect, useRef } from 'react';
 import React from 'react';
 import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
@@ -124,14 +123,17 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           entry.paragraphs.forEach(p => {
             const cleanParaNo = String(p.paraNo || '').trim();
             const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
+            const status = (p.status || '').trim();
+            const settledAmt = (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
+
             if (p.id && !processedParaIds.has(p.id) && hasDigit) {
               processedParaIds.add(p.id);
-              // FIXED: Only Full settlements count towards count, but both Full/Partial count towards amount as per instruction
-              if (p.status === 'পূর্ণাঙ্গ') {
+              // FIXED LOGIC: Count only 'Full', but add Money for both Full/Partial
+              if (status === 'পূর্ণাঙ্গ') {
                   pastSC++;
-                  pastSA += (Number(p.involvedAmount) || 0);
-              } else if (p.status === 'আংশিক') {
-                  pastSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
+                  pastSA += settledAmt;
+              } else if (status === 'আংশিক') {
+                  pastSA += settledAmt;
               }
             }
           });
@@ -196,22 +198,23 @@ const ReturnView: React.FC<ReturnViewProps> = ({
               entry.paragraphs.forEach(p => { 
                 const cleanParaNo = String(p.paraNo || '').trim();
                 const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
-                const invAmt = (Number(p.involvedAmount) || 0);
+                const status = (p.status || '').trim();
+                const settledAmt = (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
 
                 if (p.id && !processedParaIds.has(p.id) && hasDigit) {
                   processedParaIds.add(p.id);
                   
-                  // UPDATED LOGIC: 
-                  // If Partial: count is NOT added to curSC (to satisfy 3->2 requirement), 
-                  // but its money IS added to curSA (to satisfy "don't exclude from money" requirement).
-                  if (p.status === 'পূর্ণাঙ্গ') { 
+                  // CORE FIX: 
+                  // If status is 'Full' (পূর্ণাঙ্গ), increment count and add money.
+                  // If status is 'Partial' (আংশিক), ONLY add money, DO NOT increment count.
+                  if (status === 'পূর্ণাঙ্গ') { 
                     curFC++; 
                     curSC++; 
-                    curSA += invAmt;
-                  } else if (p.status === 'আংশিক') {
+                    curSA += settledAmt;
+                  } else if (status === 'আংশিক') {
                     curPC++;
-                    // Money added even if count is not incremented
-                    curSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
+                    // Add money from partial recoveries but keep the paragraph count intact in the "Settled" column
+                    curSA += settledAmt;
                   }
                 }
               });
@@ -421,7 +424,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           </div>
           <div className="flex items-center gap-4">
             <HistoricalFilter />
-            {/* Fixed typo in className ending and printer icon syntax */}
             <button onClick={() => window.print()} className="h-[44px] px-6 bg-slate-900 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95"><Printer size={18} /> প্রিন্ট</button>
           </div>
         </div>
@@ -465,7 +467,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   <th rowSpan={2} className={thS}>বর্তমান অবস্থান</th>
                   <th rowSpan={2} className={thS}>মন্তব্য</th>
                 </tr>
-                {/* Fixed escaped quote typo */}
                 <tr className="h-[38px]">
                   <th className={thS}>বিএসআর (SFI)</th>
                   <th className={thS}>বিএসআর (NON-SFI)</th>
@@ -593,7 +594,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                          ))}
                        </tr>
                      ))}
-                     {/* Fixed typo in className quote and backslash */}
                      <tr className="bg-sky-50/50 font-black italic text-slate-700"><td className="px-6 py-3 border border-slate-300 text-right text-[11px] uppercase">উপ-মোট: {m}</td><td className="p-3 border border-slate-300 text-center text-blue-600">{toBengaliDigits(mSubTotal.uC)}</td><td className="p-3 border border-slate-300 text-center text-blue-600">{toBengaliDigits(Math.round(mSubTotal.uA))}</td><td className="p-3 border border-slate-300 text-center text-emerald-600">{toBengaliDigits(mSubTotal.sC)}</td><td className="p-3 border border-slate-300 text-center text-emerald-600">{toBengaliDigits(Math.round(mSubTotal.sA))}</td></tr>
                    </React.Fragment>
                  );
@@ -631,12 +631,10 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         
         <div className="flex flex-wrap items-center gap-4">
           <HistoricalFilter />
-          {/* Fixed backslash and printer icon syntax */}
           <button onClick={() => window.print()} className="h-[44px] px-6 bg-slate-900 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95"><Printer size={18} /> প্রিন্ট</button>
         </div>
       </div>
 
-      {/* Fixed escaped quotes in the entire report table block below */}
       <div id="card-report-table-container" className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-1 relative animate-table-entrance">
         <div className="text-center py-6 bg-white border-b-2 border-slate-100">
           <h1 className="text-2xl font-black uppercase text-slate-900">{OFFICE_HEADER.main}</h1>
@@ -751,7 +749,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         </div>
       </div>
 
-      {/* Fixed shorthand property and escaped quotes in admin block */}
       {isAdmin && (
         <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 flex flex-col md:flex-row items-center gap-6 no-print animate-in slide-in-from-left duration-1000 shadow-sm mt-6">
           <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0"><Database size={28} /></div>
