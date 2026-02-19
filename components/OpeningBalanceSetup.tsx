@@ -15,6 +15,7 @@ interface OpeningBalanceSetupProps {
   setIsSetupMode: (val: boolean) => void;
   setSelectedReportType: (type: string | null) => void;
   IDBadge: React.FC<{ id: string }>;
+  isAdmin?: boolean;
 }
 
 const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
@@ -27,7 +28,8 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
   handleSetupPaste,
   setIsSetupMode,
   setSelectedReportType,
-  IDBadge
+  IDBadge,
+  isAdmin = false
 }) => {
   const setupThCls = "p-4 text-center font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-20 align-middle sticky top-0 z-[210] shadow-[inset_0_-1px_0_#cbd5e1]";
   const setupFooterTdCls = "p-4 border border-slate-300 text-center text-[15px] bg-blue-50 font-black sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1]";
@@ -55,13 +57,15 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
           </div>
         </div>
         <div className="flex items-center gap-4">
-           <button 
-             onClick={() => setIsEditingSetup(!isEditingSetup)} 
-             className={`px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all border-b-4 active:scale-95 ${isEditingSetup ? 'bg-amber-500 text-white border-amber-700 hover:bg-amber-600' : 'bg-indigo-600 text-white border-indigo-800 hover:bg-indigo-700'}`}
-           >
-             {isEditingSetup ? <Unlock size={18} /> : <Pencil size={18} />}
-             {isEditingSetup ? 'এডিট মোড বন্ধ' : 'এডিট করুন'}
-           </button>
+           {isAdmin && (
+             <button 
+               onClick={() => setIsEditingSetup(!isEditingSetup)} 
+               className={`px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all border-b-4 active:scale-95 ${isEditingSetup ? 'bg-amber-500 text-white border-amber-700 hover:bg-amber-600' : 'bg-indigo-600 text-white border-indigo-800 hover:bg-indigo-700'}`}
+             >
+               {isEditingSetup ? <Unlock size={18} /> : <Pencil size={18} />}
+               {isEditingSetup ? 'এডিট মোড বন্ধ' : 'এডিট করুন'}
+             </button>
+           )}
            <button onClick={handleSaveSetup} className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-blue-700 shadow-2xl transition-all border-b-4 border-blue-800 active:scale-95">সংরক্ষণ করুন</button>
         </div>
       </div>
