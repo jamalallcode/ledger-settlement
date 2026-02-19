@@ -111,17 +111,18 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
             pastRC += parseBengaliNumber(rCountRaw);
         }
-        if (entry.manualRaisedAmount) pastRA += Math.round(Number(entry.manualRaisedAmount));
+        if (entry.manualRaisedAmount) pastRA += Number(entry.manualRaisedAmount);
 
         if (entry.paragraphs) {
           entry.paragraphs.forEach(p => {
-            if (p.id && !processedParaIds.has(p.id) && p.paraNo) {
+            const cleanParaNo = String(p.paraNo || '').trim();
+            if (p.id && !processedParaIds.has(p.id) && cleanParaNo !== '' && cleanParaNo !== '০') {
               processedParaIds.add(p.id);
               if (p.status === 'পূর্ণাঙ্গ') {
                   pastSC++;
-                  pastSA += Math.round(Number(p.involvedAmount) || 0);
+                  pastSA += (Number(p.involvedAmount) || 0);
               } else if (p.status === 'আংশিক') {
-                  pastSA += Math.round((Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0));
+                  pastSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
               }
             }
           });
@@ -130,9 +131,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
     return {
         unsettledCount: Math.max(0, base.unsettledCount + pastRC),
-        unsettledAmount: Math.max(0, base.unsettledAmount + pastRA),
+        unsettledAmount: Math.max(0, base.unsettledAmount + Math.round(pastRA)),
         settledCount: base.settledCount + pastSC,
-        settledAmount: base.settledAmount + pastSA
+        settledAmount: base.settledAmount + Math.round(pastSA)
     };
   };
 
@@ -178,16 +179,17 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           matchingEntries.forEach(entry => {
             if (entry.paragraphs && entry.paragraphs.length > 0) {
               entry.paragraphs.forEach(p => { 
-                if (p.id && !processedParaIds.has(p.id) && p.paraNo) {
+                const cleanParaNo = String(p.paraNo || '').trim();
+                if (p.id && !processedParaIds.has(p.id) && cleanParaNo !== '' && cleanParaNo !== '০') {
                   processedParaIds.add(p.id);
                   
                   if (p.status === 'পূর্ণাঙ্গ') { 
                     curFC++; 
                     curSC++; 
-                    curSA += Math.round(Number(p.involvedAmount) || 0);
+                    curSA += (Number(p.involvedAmount) || 0);
                   } else if (p.status === 'আংশিক') {
                     curPC++;
-                    curSA += Math.round((Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0));
+                    curSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
                   }
                 }
               });
@@ -198,14 +200,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({
               curRC += parseBengaliNumber(rCountRaw);
             }
             if (entry.manualRaisedAmount) {
-              curRA += Math.round(Number(entry.manualRaisedAmount));
+              curRA += Number(entry.manualRaisedAmount);
             }
           });
           
           return { 
             entity: entityName, 
-            currentRaisedCount: curRC, currentRaisedAmount: curRA, 
-            currentSettledCount: curSC, currentSettledAmount: curSA, 
+            currentRaisedCount: curRC, currentRaisedAmount: Math.round(curRA), 
+            currentSettledCount: curSC, currentSettledAmount: Math.round(curSA), 
             currentFullCount: curFC, currentPartialCount: curPC,
             prev: ePrev 
           };
@@ -379,7 +381,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   }
 
-  if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
+  if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
     const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
     const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
     const reportingDateBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0), 'dd/MM/yyyy'));
@@ -667,7 +669,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   acc.cFC += (row.currentFullCount || 0); acc.cPC += (row.currentPartialCount || 0);
                   return acc;
                 }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0 });
-                return (                    <React.Fragment key={m.ministry}>
+                
+                return (
+                  <React.Fragment key={m.ministry}>
                     {m.entityRows.map((row, rIdx) => {
                       const totalUC = (row.prev.unsettledCount || 0) + (row.currentRaisedCount || 0); 
                       const totalUA = Math.round((row.prev.unsettledAmount || 0) + (row.currentRaisedAmount || 0));
@@ -730,7 +734,15 @@ const ReturnView: React.FC<ReturnViewProps> = ({
               হিসাব: কলাম ৭ = (কলাম ৩ - কলাম ৬)।
             </p>
           </div>
-          <div className="px-8 py-3 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner flex items-center gap-4"><div className="flex items-center gap-4"><div className="flex flex-col items-end"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Calculated Status</span><span className="text-[12px] font-black text-emerald-600">ACCURATE & SYNCED</span></div><CheckCircle2 size={24} className="text-emerald-500" /></div></div>
+          <div className="px-8 py-3 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner flex items-center gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Calculated Status</span>
+                <span className="text-[12px] font-black text-emerald-600">ACCURATE & SYNCED</span>
+              </div>
+              <CheckCircle2 size={24} className="text-emerald-500" />
+            </div>
+          </div>
         </div>
       )}
     </div>
