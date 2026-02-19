@@ -115,7 +115,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             if (p.status === 'পূর্ণাঙ্গ') {
                 pastSC++;
             }
-            pastSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
+            pastSA += Math.round((Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0));
         });
     });
 
@@ -167,12 +167,15 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           matchingEntries.forEach(entry => {
             if (entry.paragraphs && entry.paragraphs.length > 0) {
               entry.paragraphs.forEach(p => { 
+                const paraAmount = Math.round((Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0));
+                
                 if (p.status === 'পূর্ণাঙ্গ') { 
                   curFC++; curSC++; 
+                  curSA += paraAmount;
                 } else if (p.status === 'আংশিক') {
                   curPC++;
+                  curSA += paraAmount;
                 }
-                curSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0); 
               });
             }
             
@@ -181,7 +184,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
               curRC += parseBengaliNumber(rCountRaw);
             }
             if (entry.manualRaisedAmount) {
-              curRA += Number(entry.manualRaisedAmount);
+              curRA += Math.round(Number(entry.manualRaisedAmount));
             }
           });
           return { 
@@ -223,13 +226,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     return reportData.reduce((acc, mGroup) => {
       mGroup.entityRows.forEach(row => {
         acc.pUC += (row.prev.unsettledCount || 0); 
-        acc.pUA += (row.prev.unsettledAmount || 0); 
+        acc.pUA += Math.round(row.prev.unsettledAmount || 0); 
         acc.cRC += (row.currentRaisedCount || 0); 
-        acc.cRA += (row.currentRaisedAmount || 0);
+        acc.cRA += Math.round(row.currentRaisedAmount || 0);
         acc.pSC += (row.prev.settledCount || 0); 
-        acc.pSA += (row.prev.settledAmount || 0); 
+        acc.pSA += Math.round(row.prev.settledAmount || 0); 
         acc.cSC += (row.currentSettledCount || 0); 
-        acc.cSA += (row.currentSettledAmount || 0);
+        acc.cSA += Math.round(row.currentSettledAmount || 0);
         acc.cFC += (row.currentFullCount || 0); 
         acc.cPC += (row.currentPartialCount || 0);
       });
@@ -362,9 +365,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }
 
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
-    // Header font-black
     const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
-    // Data cells reverted to font-bold
     const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
     const reportingDateBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0), 'dd/MM/yyyy'));
 
@@ -468,7 +469,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }
 
   if (isSetupMode) {
-    // Header font-black
     const setupThCls = "p-4 text-center font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-20 align-middle sticky top-0 z-[210] shadow-[inset_0_-1px_0_#cbd5e1]";
     const setupFooterTdCls = "p-4 border border-slate-300 text-center text-[15px] bg-blue-50 font-black sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1]";
     
@@ -476,8 +476,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       const entities = MINISTRY_ENTITY_MAP[m] || [];
       entities.forEach(ent => {
         const stats = tempPrevStats[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
-        acc.uC += stats.unsettledCount; acc.uA += stats.unsettledAmount;
-        acc.sC += stats.settledCount; acc.sA += stats.settledAmount;
+        acc.uC += stats.unsettledCount; acc.uA += Math.round(stats.unsettledAmount);
+        acc.sC += stats.settledCount; acc.sA += Math.round(stats.settledAmount);
       });
       return acc;
     }, { uC: 0, uA: 0, sC: 0, sA: 0 });
@@ -522,8 +522,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                  const entities = MINISTRY_ENTITY_MAP[m] || [];
                  const mSubTotal = entities.reduce((acc, ent) => {
                    const s = tempPrevStats[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
-                   acc.uC += s.unsettledCount; acc.uA += s.unsettledAmount;
-                   acc.sC += s.settledCount; acc.sA += s.settledAmount;
+                   acc.uC += s.unsettledCount; acc.uA += Math.round(s.unsettledAmount);
+                   acc.sC += s.settledCount; acc.sA += Math.round(s.settledAmount);
                    return acc;
                  }, { uC: 0, uA: 0, sC: 0, sA: 0 });
 
@@ -570,11 +570,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   }
 
-  // Header font-black
   const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
-  // Data cells reverted to font-bold
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight bg-white group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
-  // Grand totals font-black
   const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[9.5px] bg-slate-100 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1,inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
 
   return (
@@ -650,8 +647,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             <tbody>
               {reportData.map(m => {
                 const mTotals = m.entityRows.reduce((acc, row) => {
-                  acc.pUC += (row.prev.unsettledCount || 0); acc.pUA += (row.prev.unsettledAmount || 0); acc.cRC += (row.currentRaisedCount || 0); acc.cRA += (row.currentRaisedAmount || 0);
-                  acc.pSC += (row.prev.settledCount || 0); acc.pSA += (row.prev.settledAmount || 0); acc.cSC += (row.currentSettledCount || 0); acc.cSA += (row.currentSettledAmount || 0);
+                  acc.pUC += (row.prev.unsettledCount || 0); acc.pUA += Math.round(row.prev.unsettledAmount || 0); acc.cRC += (row.currentRaisedCount || 0); acc.cRA += Math.round(row.currentRaisedAmount || 0);
+                  acc.pSC += (row.prev.settledCount || 0); acc.pSA += Math.round(row.prev.settledAmount || 0); acc.cSC += (row.currentSettledCount || 0); acc.cSA += Math.round(row.currentSettledAmount || 0);
                   acc.cFC += (row.currentFullCount || 0); acc.cPC += (row.currentPartialCount || 0);
                   return acc;
                 }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0 });
@@ -659,9 +656,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   <React.Fragment key={m.ministry}>
                     {m.entityRows.map((row, rIdx) => {
                       const totalUC = (row.prev.unsettledCount || 0) + (row.currentRaisedCount || 0); 
-                      const totalUA = (row.prev.unsettledAmount || 0) + (row.currentRaisedAmount || 0);
+                      const totalUA = Math.round((row.prev.unsettledAmount || 0) + (row.currentRaisedAmount || 0));
                       const totalSC = (row.prev.settledCount || 0) + (row.currentSettledCount || 0); 
-                      const totalSA = (row.prev.settledAmount || 0) + (row.currentSettledAmount || 0);
+                      const totalSA = Math.round((row.prev.settledAmount || 0) + (row.currentSettledAmount || 0));
                       const closingUC = totalUC - totalSC; 
                       const closingUA = totalUA - totalSA;
 
@@ -693,7 +690,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 );
               })}
             </tbody>
-            {/* Unified Summary Footer: Reverted Colors to Black/Bold */}
             <tfoot className="sticky bottom-0 z-[230] shadow-2xl">
               <tr>
                 <td colSpan={2} className={grandStyle + " !bg-slate-200 text-slate-900 uppercase tracking-widest text-[10px] shadow-[inset_0_1px_0_#94a3b8] border-l border-slate-400 font-black"}>সর্বমোট ইউনিফাইড সারাংশ:</td>
