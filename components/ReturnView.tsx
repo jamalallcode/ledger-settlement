@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect, useRef } from 'react';
 import React from 'react';
 import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
@@ -98,12 +97,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   const calculateRecursiveOpening = (entityName: string, cycleStart: Date) => {
     const base = prevStats.entitiesSFI[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
     const cycleStartStr = dateFnsFormat(cycleStart, 'yyyy-MM-dd');
+    const activeLabelCanon = toEnglishDigits(activeCycle.label).trim();
     
     const pastEntries = entries.filter(e => {
         if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
         
-        // CRITICAL FIX: Exclude current cycle entries from opening balance recursion
-        if (e.cycleLabel && e.cycleLabel === activeCycle.label) return false;
+        // Use normalized English-digit comparison for cycle label
+        if (e.cycleLabel && toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon) return false;
 
         const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
         return entryDate !== '' && entryDate < cycleStartStr;
@@ -128,11 +128,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
               const status = robustNormalize(p.status || '');
               const settledAmt = (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
 
-              // REFINED LOGIC: Only full settlement increments the count
               if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                   pastSC++; 
               }
-              // Amount is summed regardless of status
               pastSA += settledAmt;
             }
           });
@@ -167,6 +165,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     
     const cycleStartStr = dateFnsFormat(activeCycle.start, 'yyyy-MM-dd');
     const cycleEndStr = dateFnsFormat(activeCycle.end, 'yyyy-MM-dd');
+    const activeLabelCanon = toEnglishDigits(activeCycle.label).trim();
 
     return ministryGroups.map(ministryName => {
       const normMinistry = robustNormalize(ministryName);
@@ -183,9 +182,10 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             const eEnt = robustNormalize(e.entityName || '');
             if (eMin !== normMinistry || eEnt !== normEntity) return false;
             
-            // PRIORITY: Label match ensures alignment with Register visual grouping
-            if (e.cycleLabel) return e.cycleLabel === activeCycle.label;
+            // Strictly check normalized cycle label for attribution
+            if (e.cycleLabel) return toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon;
             
+            // Fallback for non-labeled entries
             const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
             return entryDate >= cycleStartStr && entryDate <= cycleEndStr;
           });
@@ -205,14 +205,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   const status = robustNormalize(p.status || '');
                   const settledAmt = (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
 
-                  // USER REQUESTED LOGIC: Only full settlements increment counts
                   if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                     curFC++; 
                     curSC++; 
                   } else if (status === robustNormalize('আংশিক')) {
                     curPC++;
                   }
-                  // Amount sums for both full and partial
                   curSA += settledAmt;
                 }
               });
@@ -330,6 +328,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     setTempPrevStats(newStats);
   };
 
+  // FIX: Fixed component definitions that were corrupted by backslashes and literal newlines
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = useState(false);
     if (!isLayoutEditable) return null;
@@ -404,7 +403,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   }
 
-  /* Fixed syntax errors: Replaced escaped quotes with regular quotes and fixed nested components */
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
     const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
     const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
@@ -509,7 +507,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   }
 
-  /* Fixed syntax errors: Replaced escaped quotes with regular quotes and ensured variables are in scope */
   if (isSetupMode) {
     const setupThCls = "p-4 text-center font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-20 align-middle sticky top-0 z-[210] shadow-[inset_0_-1px_0_#cbd5e1]";
     const setupFooterTdCls = "p-4 border border-slate-300 text-center text-[15px] bg-blue-50 font-black sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1]";
@@ -616,7 +613,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight bg-white group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
   const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[9.5px] bg-slate-100 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1,inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
 
-  /* Fixed syntax errors: Replaced escaped quotes with regular quotes and ensured proper block structure */
   return (
     <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative">
       <IDBadge id="section-report-summary" />
@@ -703,7 +699,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                       const totalUA = (row.prev.unsettledAmount || 0) + (row.currentRaisedAmount || 0);
                       const totalSC = (row.prev.settledCount || 0) + (row.currentSettledCount || 0); 
                       const totalSA = (row.prev.settledAmount || 0) + (row.currentSettledAmount || 0);
-                      const closingUC = totalUC - totalSC; 
+                      const closingUC = totalUC - totalSC;
                       const closingUA = totalUA - totalSA;
 
                       return (
