@@ -6,7 +6,6 @@ import { MINISTRY_ENTITY_MAP, OFFICE_HEADER } from '../constants';
 import { ChevronLeft, ArrowRightCircle, Printer, Database, Settings2, CheckCircle2, CalendarDays, ChevronDown, Check, LayoutGrid, PieChart, Search, CalendarSearch, X, Lock, KeyRound, Pencil, Unlock, Mail, Send, FileEdit } from 'lucide-react';
 import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
 import { getCycleForDate, isInCycle } from '../utils/cycleHelper';
-import { getDateError } from '../utils/dateValidation';
 import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
 
 interface ReturnViewProps {
@@ -101,6 +100,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     
     const pastEntries = entries.filter(e => {
         if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
+        // Logic match with Register: if entry cycle is before current, it's opening
         const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
         return entryDate !== '' && entryDate < cycleStartStr;
     });
@@ -118,9 +118,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         if (entry.paragraphs) {
           entry.paragraphs.forEach(p => {
             const cleanParaNo = String(p.paraNo || '').trim();
-            // Para number must contain at least one digit to be counted
-            const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
-            if (p.id && !processedParaIds.has(p.id) && hasDigit) {
+            if (p.id && !processedParaIds.has(p.id) && cleanParaNo !== '' && cleanParaNo !== '০') {
               processedParaIds.add(p.id);
               if (p.status === 'পূর্ণাঙ্গ') {
                   pastSC++;
@@ -172,10 +170,15 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           const normEntity = robustNormalize(entityName);
           const ePrev = calculateRecursiveOpening(entityName, activeCycle.start);
 
+          // CRITICAL FIX: Filtering by cycle label to match Register parity
           const matchingEntries = entries.filter(e => {
             const eMin = robustNormalize(e.ministryName || '');
             const eEnt = robustNormalize(e.entityName || '');
             if (eMin !== normMinistry || eEnt !== normEntity) return false;
+            
+            // If entry has a cycle label, use it. Otherwise fallback to date comparison.
+            if (e.cycleLabel) return e.cycleLabel === activeCycle.label;
+            
             const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
             return entryDate >= cycleStartStr && entryDate <= cycleEndStr;
           });
@@ -187,17 +190,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             if (entry.paragraphs && entry.paragraphs.length > 0) {
               entry.paragraphs.forEach(p => { 
                 const cleanParaNo = String(p.paraNo || '').trim();
-                // Regex check ensures only valid numbered paragraphs increment the count
-                const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
-                
-                if (p.id && !processedParaIds.has(p.id) && hasDigit) {
+                const invAmt = (Number(p.involvedAmount) || 0);
+                if (p.id && !processedParaIds.has(p.id) && cleanParaNo !== '' && cleanParaNo !== '০' && invAmt > 0) {
                   processedParaIds.add(p.id);
                   
                   if (p.status === 'পূর্ণাঙ্গ') { 
                     curFC++; 
                     curSC++; 
-                    // Add raw number to float sum for precision before rounding at return
-                    curSA += (Number(p.involvedAmount) || 0);
+                    curSA += invAmt;
                   } else if (p.status === 'আংশিক') {
                     curPC++;
                     curSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
@@ -217,8 +217,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           
           return { 
             entity: entityName, 
-            currentRaisedCount: curRC, currentRaisedAmount: Math.round(curRA), 
-            currentSettledCount: curSC, currentSettledAmount: Math.round(curSA), 
+            currentRaisedCount: curRC, currentRaisedAmount: curRA, // Store as float
+            currentSettledCount: curSC, currentSettledAmount: curSA, // Store as float
             currentFullCount: curFC, currentPartialCount: curPC,
             prev: ePrev 
           };
