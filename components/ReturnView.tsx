@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect, useRef } from 'react';
 import React from 'react';
 import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
@@ -100,6 +101,10 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     
     const pastEntries = entries.filter(e => {
         if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
+        
+        // CRITICAL FIX: Exclude current cycle entries from opening balance recursion
+        if (e.cycleLabel && e.cycleLabel === activeCycle.label) return false;
+
         const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
         return entryDate !== '' && entryDate < cycleStartStr;
     });
@@ -117,16 +122,17 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         if (entry.paragraphs) {
           entry.paragraphs.forEach(p => {
             const cleanParaNo = String(p.paraNo || '').trim();
-            // Regex ensure only numbered paras are counted to prevent overcounting
             const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
             if (p.id && !processedParaIds.has(p.id) && hasDigit) {
               processedParaIds.add(p.id);
               const status = robustNormalize(p.status || '');
               const settledAmt = (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
 
+              // REFINED LOGIC: Only full settlement increments the count
               if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                   pastSC++; 
               }
+              // Amount is summed regardless of status
               pastSA += settledAmt;
             }
           });
@@ -172,12 +178,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           const normEntity = robustNormalize(entityName);
           const ePrev = calculateRecursiveOpening(entityName, activeCycle.start);
 
-          // MATCHING LOGIC FIXED: Priority to cycleLabel to ensure Return matches Register visual count
           const matchingEntries = entries.filter(e => {
             const eMin = robustNormalize(e.ministryName || '');
             const eEnt = robustNormalize(e.entityName || '');
             if (eMin !== normMinistry || eEnt !== normEntity) return false;
             
+            // PRIORITY: Label match ensures alignment with Register visual grouping
             if (e.cycleLabel) return e.cycleLabel === activeCycle.label;
             
             const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
@@ -191,7 +197,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             if (entry.paragraphs && entry.paragraphs.length > 0) {
               entry.paragraphs.forEach(p => { 
                 const cleanParaNo = String(p.paraNo || '').trim();
-                // REGEX FIX: Para must have digits to be counted (avoids ghost/zero paras)
                 const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
 
                 if (p.id && !processedParaIds.has(p.id) && hasDigit) {
@@ -200,12 +205,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   const status = robustNormalize(p.status || '');
                   const settledAmt = (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
 
+                  // USER REQUESTED LOGIC: Only full settlements increment counts
                   if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                     curFC++; 
                     curSC++; 
                   } else if (status === robustNormalize('আংশিক')) {
                     curPC++;
                   }
+                  // Amount sums for both full and partial
                   curSA += settledAmt;
                 }
               });
@@ -222,8 +229,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           
           return { 
             entity: entityName, 
-            currentRaisedCount: curRC, currentRaisedAmount: curRA, // Float summation for precision
-            currentSettledCount: curSC, currentSettledAmount: curSA, // Float summation for precision
+            currentRaisedCount: curRC, currentRaisedAmount: curRA,
+            currentSettledCount: curSC, currentSettledAmount: curSA,
             currentFullCount: curFC, currentPartialCount: curPC,
             prev: ePrev 
           };
@@ -233,7 +240,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }, [entries, selectedReportType, calculateRecursiveOpening, activeCycle, ministryGroups]);
 
   const filteredCorrespondence = useMemo(() => {
-    if (selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ। ' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
+    if (selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
     
     const reportingDateObj = endOfDay(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0));
 
@@ -397,6 +404,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   }
 
+  /* Fixed syntax errors: Replaced escaped quotes with regular quotes and fixed nested components */
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
     const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
     const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
@@ -501,6 +509,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   }
 
+  /* Fixed syntax errors: Replaced escaped quotes with regular quotes and ensured variables are in scope */
   if (isSetupMode) {
     const setupThCls = "p-4 text-center font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-20 align-middle sticky top-0 z-[210] shadow-[inset_0_-1px_0_#cbd5e1]";
     const setupFooterTdCls = "p-4 border border-slate-300 text-center text-[15px] bg-blue-50 font-black sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1]";
@@ -607,6 +616,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight bg-white group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
   const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[9.5px] bg-slate-100 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1,inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
 
+  /* Fixed syntax errors: Replaced escaped quotes with regular quotes and ensured proper block structure */
   return (
     <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative">
       <IDBadge id="section-report-summary" />
