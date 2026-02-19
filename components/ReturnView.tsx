@@ -113,18 +113,20 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
             pastRC += parseBengaliNumber(rCountRaw);
         }
-        if (entry.manualRaisedAmount) pastRA += Math.round(Number(entry.manualRaisedAmount) || 0);
+        if (entry.manualRaisedAmount) pastRA += (Number(entry.manualRaisedAmount) || 0);
 
         if (entry.paragraphs) {
           entry.paragraphs.forEach(p => {
             const cleanParaNo = String(p.paraNo || '').trim();
-            if (p.id && !processedParaIds.has(p.id) && cleanParaNo !== '' && cleanParaNo !== '০') {
+            // Para number must contain at least one digit to be counted
+            const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
+            if (p.id && !processedParaIds.has(p.id) && hasDigit) {
               processedParaIds.add(p.id);
               if (p.status === 'পূর্ণাঙ্গ') {
                   pastSC++;
-                  pastSA += Math.round(Number(p.involvedAmount) || 0);
+                  pastSA += (Number(p.involvedAmount) || 0);
               } else if (p.status === 'আংশিক') {
-                  pastSA += Math.round((Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0));
+                  pastSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
               }
             }
           });
@@ -133,9 +135,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
     return {
         unsettledCount: Math.max(0, base.unsettledCount + pastRC),
-        unsettledAmount: Math.max(0, base.unsettledAmount + pastRA),
+        unsettledAmount: Math.max(0, base.unsettledAmount + Math.round(pastRA)),
         settledCount: base.settledCount + pastSC,
-        settledAmount: base.settledAmount + pastSA
+        settledAmount: base.settledAmount + Math.round(pastSA)
     };
   };
 
@@ -185,17 +187,20 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             if (entry.paragraphs && entry.paragraphs.length > 0) {
               entry.paragraphs.forEach(p => { 
                 const cleanParaNo = String(p.paraNo || '').trim();
-                const invAmt = Math.round(Number(p.involvedAmount) || 0);
-                if (p.id && !processedParaIds.has(p.id) && cleanParaNo !== '' && cleanParaNo !== '০' && invAmt > 0) {
+                // Regex check ensures only valid numbered paragraphs increment the count
+                const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
+                
+                if (p.id && !processedParaIds.has(p.id) && hasDigit) {
                   processedParaIds.add(p.id);
                   
                   if (p.status === 'পূর্ণাঙ্গ') { 
                     curFC++; 
                     curSC++; 
-                    curSA += invAmt;
+                    // Add raw number to float sum for precision before rounding at return
+                    curSA += (Number(p.involvedAmount) || 0);
                   } else if (p.status === 'আংশিক') {
                     curPC++;
-                    curSA += Math.round((Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0));
+                    curSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
                   }
                 }
               });
@@ -206,14 +211,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({
               curRC += parseBengaliNumber(rCountRaw);
             }
             if (entry.manualRaisedAmount) {
-              curRA += Math.round(Number(entry.manualRaisedAmount) || 0);
+              curRA += (Number(entry.manualRaisedAmount) || 0);
             }
           });
           
           return { 
             entity: entityName, 
-            currentRaisedCount: curRC, currentRaisedAmount: curRA, 
-            currentSettledCount: curSC, currentSettledAmount: curSA, 
+            currentRaisedCount: curRC, currentRaisedAmount: Math.round(curRA), 
+            currentSettledCount: curSC, currentSettledAmount: Math.round(curSA), 
             currentFullCount: curFC, currentPartialCount: curPC,
             prev: ePrev 
           };
@@ -600,9 +605,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   return (
     <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative">
       <IDBadge id="section-report-summary" />
-      {/* 
-        FIX: Removed incorrectly escaped quotes (backslashes) on line 602 
-      */}
       <div id="summary-header-controls" className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print relative">
         <IDBadge id="summary-header-controls" />
         <div className="flex items-center gap-3">
@@ -693,25 +695,25 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                         <tr key={row.entity} className="group hover:bg-blue-50/50">
                           {rIdx === 0 && <td rowSpan={m.entityRows.length + 1} className={tdStyle + " bg-slate-50 border-l border-r border-slate-300"}>{m.ministry}</td>}
                           <td className={tdStyle + " text-left border-r border-slate-300 font-bold"}>{row.entity}</td>
-                          <td className={tdStyle}>{toBengaliDigits(row.prev.unsettledCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(row.prev.unsettledAmount)}</td>
-                          <td className={tdStyle}>{toBengaliDigits(row.currentRaisedCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(row.currentRaisedAmount)}</td>
-                          <td className={tdStyle + " bg-slate-100/50 font-bold"}>{toBengaliDigits(totalUC)}</td><td className={tdStyle + " text-center bg-slate-100/50 border-r border-slate-300 font-bold"}>{toBengaliDigits(totalUA)}</td>
-                          <td className={tdStyle}>{toBengaliDigits(row.prev.settledCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(row.prev.settledAmount)}</td>
-                          <td className={tdStyle}>{toBengaliDigits(row.currentSettledCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(row.currentSettledAmount)}</td>
-                          <td className={tdStyle + " bg-emerald-50/50 font-bold"}>{toBengaliDigits(totalSC)}</td><td className={tdStyle + " text-center bg-emerald-50/50 border-r border-slate-300 font-bold"}>{toBengaliDigits(totalSA)}</td>
-                          <td className={tdStyle + " bg-amber-50 text-blue-700 font-bold"}>{toBengaliDigits(closingUC)}</td><td className={tdStyle + " text-center bg-amber-50 text-blue-700 font-bold"}>{toBengaliDigits(closingUA)}</td>
+                          <td className={tdStyle}>{toBengaliDigits(row.prev.unsettledCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.prev.unsettledAmount))}</td>
+                          <td className={tdStyle}>{toBengaliDigits(row.currentRaisedCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.currentRaisedAmount))}</td>
+                          <td className={tdStyle + " bg-slate-100/50 font-bold"}>{toBengaliDigits(totalUC)}</td><td className={tdStyle + " text-center bg-slate-100/50 border-r border-slate-300 font-bold"}>{toBengaliDigits(Math.round(totalUA))}</td>
+                          <td className={tdStyle}>{toBengaliDigits(row.prev.settledCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.prev.settledAmount))}</td>
+                          <td className={tdStyle}>{toBengaliDigits(row.currentSettledCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.currentSettledAmount))}</td>
+                          <td className={tdStyle + " bg-emerald-50/50 font-bold"}>{toBengaliDigits(totalSC)}</td><td className={tdStyle + " text-center bg-emerald-50/50 border-r border-slate-300 font-bold"}>{toBengaliDigits(Math.round(totalSA))}</td>
+                          <td className={tdStyle + " bg-amber-50 text-blue-700 font-bold"}>{toBengaliDigits(closingUC)}</td><td className={tdStyle + " text-center bg-amber-50 text-blue-700 font-bold"}>{toBengaliDigits(Math.round(closingUA))}</td>
                         </tr>
                       );
                     })}
                     <tr className="bg-blue-50/80 font-black text-blue-950 h-[42px] border-y-2 border-slate-200">
                       <td className={tdStyle + " text-right italic pr-3 border-l border-r border-slate-300 text-[10px] bg-blue-50/80 font-black"}>উপ-মোট: {m.ministry}</td>
-                      <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.pUC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(mTotals.pUA)}</td>
-                      <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.cRC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(mTotals.cRA)}</td>
-                      <td className={tdStyle + " bg-slate-200/50 font-black"}>{toBengaliDigits(mTotals.pUC + mTotals.cRC)}</td><td className={tdStyle + " text-center bg-slate-200/50 border-r border-slate-300 font-black"}>{toBengaliDigits(mTotals.pUA + mTotals.cRA)}</td>
-                      <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.pSC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(mTotals.pSA)}</td>
-                      <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.cSC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(mTotals.cSA)}</td>
-                      <td className={tdStyle + " bg-emerald-200/50 font-black"}>{toBengaliDigits(mTotals.pSC + mTotals.cSC)}</td><td className={tdStyle + " text-center bg-emerald-200/50 border-r border-slate-300 font-black"}>{toBengaliDigits(mTotals.pSA + mTotals.cSA)}</td>
-                      <td className={tdStyle + " bg-amber-100/30 font-black"}>{toBengaliDigits((mTotals.pUC + mTotals.cRC) - (mTotals.pSC + mTotals.cSC))}</td><td className={tdStyle + " text-center bg-amber-100/30 font-black"}>{toBengaliDigits((mTotals.pUA + mTotals.cRA) - (mTotals.pSA + mTotals.cSA))}</td>
+                      <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.pUC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pUA))}</td>
+                      <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.cRC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.cRA))}</td>
+                      <td className={tdStyle + " bg-slate-200/50 font-black"}>{toBengaliDigits(mTotals.pUC + mTotals.cRC)}</td><td className={tdStyle + " text-center bg-slate-200/50 border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pUA + mTotals.cRA))}</td>
+                      <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.pSC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pSA))}</td>
+                      <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.cSC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.cSA))}</td>
+                      <td className={tdStyle + " bg-emerald-200/50 font-black"}>{toBengaliDigits(mTotals.pSC + mTotals.cSC)}</td><td className={tdStyle + " text-center bg-emerald-200/50 border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pSA + mTotals.cSA))}</td>
+                      <td className={tdStyle + " bg-amber-100/30 font-black"}>{toBengaliDigits((mTotals.pUC + mTotals.cRC) - (mTotals.pSC + mTotals.cSC))}</td><td className={tdStyle + " text-center bg-amber-100/30 font-black"}>{toBengaliDigits(Math.round((mTotals.pUA + mTotals.cRA) - (mTotals.pSA + mTotals.cSA)))}</td>
                     </tr>
                   </React.Fragment>
                 );
@@ -720,13 +722,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             <tfoot className="sticky bottom-0 z-[230] shadow-2xl">
               <tr>
                 <td colSpan={2} className={grandStyle + " !bg-slate-200 text-slate-900 uppercase tracking-widest text-[10px] shadow-[inset_0_1px_0_#cbd5e1] border-l border-slate-400 font-black"}>সর্বমোট ইউনিফাইড সারাংশ:</td>
-                <td className={grandStyle}>{toBengaliDigits(grandTotals.pUC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(grandTotals.pUA)}</td>
-                <td className={grandStyle}>{toBengaliDigits(grandTotals.cRC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(grandTotals.cRA)}</td>
-                <td className={grandStyle + " !bg-slate-200/80 font-black"}>{toBengaliDigits(grandTotals.pUC + grandTotals.cRC)}</td><td className={grandStyle + " text-center !bg-slate-200/80 font-black"}>{toBengaliDigits(grandTotals.pUA + grandTotals.cRA)}</td>
-                <td className={grandStyle}>{toBengaliDigits(grandTotals.pSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(grandTotals.pSA)}</td>
-                <td className={grandStyle}>{toBengaliDigits(grandTotals.cSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(grandTotals.cSA)}</td>
-                <td className={grandStyle + " !bg-emerald-100/80 font-black"}>{toBengaliDigits(grandTotals.pSC + grandTotals.cSC)}</td><td className={grandStyle + " text-center !bg-emerald-100/80 font-black"}>{toBengaliDigits(grandTotals.pSA + grandTotals.cSA)}</td>
-                <td className={grandStyle + " !bg-orange-100 text-slate-900 font-black"}>{toBengaliDigits((grandTotals.pUC + grandTotals.cRC) - (grandTotals.pSC + grandTotals.cSC))}</td><td className={grandStyle + " text-center !bg-orange-100 text-slate-900 font-black"}>{toBengaliDigits((grandTotals.pUA + grandTotals.cRA) - (grandTotals.pSA + grandTotals.cSA))}</td>
+                <td className={grandStyle}>{toBengaliDigits(grandTotals.pUC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.pUA))}</td>
+                <td className={grandStyle}>{toBengaliDigits(grandTotals.cRC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.cRA))}</td>
+                <td className={grandStyle + " !bg-slate-200/80 font-black"}>{toBengaliDigits(grandTotals.pUC + grandTotals.cRC)}</td><td className={grandStyle + " text-center !bg-slate-200/80 font-black"}>{toBengaliDigits(Math.round(grandTotals.pUA + grandTotals.cRA))}</td>
+                <td className={grandStyle}>{toBengaliDigits(grandTotals.pSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.pSA))}</td>
+                <td className={grandStyle}>{toBengaliDigits(grandTotals.cSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.cSA))}</td>
+                <td className={grandStyle + " !bg-emerald-100/80 font-black"}>{toBengaliDigits(grandTotals.pSC + grandTotals.cSC)}</td><td className={grandStyle + " text-center !bg-emerald-100/80 font-black"}>{toBengaliDigits(Math.round(grandTotals.pSA + grandTotals.cSA))}</td>
+                <td className={grandStyle + " !bg-orange-100 text-slate-900 font-black"}>{toBengaliDigits((grandTotals.pUC + grandTotals.cRC) - (grandTotals.pSC + grandTotals.cSC))}</td><td className={grandStyle + " text-center !bg-orange-100 text-slate-900 font-black"}>{toBengaliDigits(Math.round((grandTotals.pUA + grandTotals.cRA) - (grandTotals.pSA + grandTotals.cSA)))}</td>
               </tr>
             </tfoot>
           </table>
