@@ -1,15 +1,19 @@
-
 import { useState, useMemo, useEffect, useRef } from 'react';
 import React from 'react';
-import { SettlementEntry, ParaType, CumulativeStats, MinistryPrevStats } from '../types';
-import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
-import { MINISTRY_ENTITY_MAP, OFFICE_HEADER } from '../constants';
-import { ChevronLeft, ArrowRight, ClipboardCheck, CalendarRange, Printer, Database, Settings2, BarChart3, FileStack, ClipboardList, Settings, CheckCircle2, CalendarDays, UserCheck, ChevronDown, Check, LayoutGrid, PieChart, History, Search, CalendarSearch, Sparkles, X } from 'lucide-react';
-import { isWithinInterval, addMonths, format as dateFnsFormat, parseISO, startOfDay, endOfDay } from 'date-fns';
-import { getCycleForDate, isInCycle } from '../utils/cycleHelper';
+import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
+import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
+import { MINISTRY_ENTITY_MAP } from '../constants';
+import { ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2 } from 'lucide-react';
+import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
+import { getCycleForDate } from '../utils/cycleHelper';
+import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
+import CorrespondenceDhakaReturn from './CorrespondenceDhakaReturn';
+import OpeningBalanceSetup from './OpeningBalanceSetup';
+import ReturnSummaryTable from './ReturnSummaryTable';
 
 interface ReturnViewProps {
   entries: SettlementEntry[];
+  correspondenceEntries?: any[];
   cycleLabel: string;
   onDownloadPDF?: () => void;
   isGeneratingPDF?: boolean;
@@ -20,46 +24,17 @@ interface ReturnViewProps {
   isLayoutEditable?: boolean;
   resetKey?: number;
   isAdmin?: boolean;
+  selectedReportType: string | null;
+  setSelectedReportType: (type: string | null) => void;
 }
 
-const reportOptions = [
-  { 
-    id: 'monthly-letter', 
-    title: 'মাসিক রিটারন: চিঠিপত্র সংক্রান্ত।', 
-    desc: 'চিঠিপত্র আদান-প্রদান এবং নিষ্পত্তির পরিসংখ্যান', 
-    icon: FileStack, 
-    bg: 'bg-[#507db5]', 
-    circleColor: 'bg-[#e67e22]' 
-  },
-  { 
-    id: 'monthly-para', 
-    title: 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।', 
-    desc: 'মাসিক ভিত্তিতে অনুচ্ছেদ নিষ্পত্তির বিস্তারিত রিপোর্ট', 
-    icon: BarChart3, 
-    bg: 'bg-[#507db5]', 
-    circleColor: 'bg-[#e67e22]' 
-  },
-  { 
-    id: 'quarterly-para', 
-    title: 'ত্রৈমাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।', 
-    desc: 'তিন মাসের সমন্বিত নিষ্পত্তি প্রতিবেদন', 
-    icon: History, 
-    bg: 'bg-[#507db5]', 
-    circleColor: 'bg-[#e67e22]' 
-  },
-  { 
-    id: 'setup-mode', 
-    title: 'পূর্ব জের সেটআপ উইন্ডো', 
-    desc: 'মন্ত্রণালয় ও সংস্থাভিত্তিক প্রারম্ভিক জের ইনপুট দিন', 
-    icon: Settings, 
-    bg: 'bg-[#1e293b]', 
-    circleColor: 'bg-[#e67e22]' 
-  }
-];
-
-const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats, setPrevStats, isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister, isAdmin }) => {
-  const [selectedReportType, setSelectedReportType] = useState<string | null>(null);
+const ReturnView: React.FC<ReturnViewProps> = ({ 
+  entries, correspondenceEntries = [], cycleLabel, prevStats, setPrevStats, 
+  isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister, isAdmin,
+  selectedReportType, setSelectedReportType
+}) => {
   const [isSetupMode, setIsSetupMode] = useState(false);
+  const [isEditingSetup, setIsEditingSetup] = useState(false);
   const [tempPrevStats, setTempPrevStats] = useState<Record<string, MinistryPrevStats>>({});
   
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
@@ -75,7 +50,15 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
       setIsSetupMode(false);
       setSelectedCycleDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
     }
-  }, [resetKey]);
+  }, [resetKey, setSelectedReportType]);
+
+  useEffect(() => {
+    if (selectedReportType === 'পূর্ব জের সেটআপ উইন্ডো') {
+      setIsSetupMode(true);
+    } else if (selectedReportType !== null) {
+      setIsSetupMode(false);
+    }
+  }, [selectedReportType]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -116,97 +99,75 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
 
   const calculateRecursiveOpening = (entityName: string, cycleStart: Date) => {
     const base = prevStats.entitiesSFI[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+    const cycleStartStr = dateFnsFormat(cycleStart, 'yyyy-MM-dd');
+    const activeLabelCanon = robustNormalize(toEnglishDigits(activeCycle.label));
     
     const pastEntries = entries.filter(e => {
         if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
-        if (!e.issueDateISO) return false;
-        return new Date(e.issueDateISO).getTime() < cycleStart.getTime();
+        
+        const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+        const isCurrentByLabel = e.cycleLabel && robustNormalize(toEnglishDigits(e.cycleLabel)) === activeLabelCanon;
+        const isCurrentByDate = !e.cycleLabel && entryDate >= cycleStartStr;
+
+        if (isCurrentByLabel || isCurrentByDate) return false;
+
+        return entryDate !== '' && entryDate < cycleStartStr;
     });
 
     let pastRC = 0, pastRA = 0, pastSC = 0, pastSA = 0;
+    const processedParaIds = new Set<string>();
+
     pastEntries.forEach(entry => {
         const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
         if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
             pastRC += parseBengaliNumber(rCountRaw);
         }
-        if (entry.manualRaisedAmount) pastRA += Number(entry.manualRaisedAmount);
+        if (entry.manualRaisedAmount) pastRA += (Number(entry.manualRaisedAmount) || 0);
 
-        if (entry.paragraphs) entry.paragraphs.forEach(p => {
-            if (p.status === 'পূর্ণাঙ্গ') {
-                pastSC++;
+        if (entry.paragraphs) {
+          entry.paragraphs.forEach(p => {
+            const cleanParaNo = String(p.paraNo || '').trim();
+            const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
+            if (p.id && !processedParaIds.has(p.id) && hasDigit) {
+              processedParaIds.add(p.id);
+              const status = robustNormalize(p.status || '');
+              const settledAmt = (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
+              if (status === robustNormalize('পূর্ণাঙ্গ')) { 
+                  pastSC++; 
+              }
+              pastSA += settledAmt;
             }
-            pastSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
-        });
+          });
+        }
     });
 
     return {
         unsettledCount: Math.max(0, base.unsettledCount + pastRC),
-        unsettledAmount: Math.max(0, base.unsettledAmount + pastRA),
+        unsettledAmount: Math.max(0, base.unsettledAmount + Math.round(pastRA)),
         settledCount: base.settledCount + pastSC,
-        settledAmount: base.settledAmount + pastSA
+        settledAmount: base.settledAmount + Math.round(pastSA)
     };
   };
 
   useEffect(() => {
     if (isSetupMode) {
       const rawMasterStats: Record<string, MinistryPrevStats> = {};
-      
       ministryGroups.forEach(m => {
         const entities = MINISTRY_ENTITY_MAP[m] || [];
         entities.forEach(ent => {
           rawMasterStats[ent] = prevStats.entitiesSFI[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
         });
       });
-      
       setTempPrevStats(rawMasterStats);
     }
-  }, [isSetupMode, prevStats, activeCycle, ministryGroups]);
-
-  const handleSetupPaste = (e: React.ClipboardEvent, startEnt: string, startField: string) => {
-    e.preventDefault();
-    const pasteData = e.clipboardData.getData('text');
-    if (!pasteData) return;
-
-    const rows = pasteData.split(/\r?\n/).filter(row => row.trim() !== '');
-    const flatEntities = ministryGroups.flatMap(m => MINISTRY_ENTITY_MAP[m] || []);
-    const fields = ['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount'];
-    
-    const startEntIdx = flatEntities.indexOf(startEnt);
-    const startFieldIdx = fields.indexOf(startField);
-
-    if (startEntIdx === -1) return;
-
-    const updatedStats = { ...tempPrevStats };
-
-    rows.forEach((row, rowOffset) => {
-      const cols = row.split('\t');
-      const targetEntIdx = startEntIdx + rowOffset;
-      if (targetEntIdx >= flatEntities.length) return;
-      
-      const targetEnt = flatEntities[targetEntIdx];
-      if (!updatedStats[targetEnt]) {
-        updatedStats[targetEnt] = { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
-      }
-
-      cols.forEach((cellValue, colOffset) => {
-        const targetFieldIdx = startFieldIdx + colOffset;
-        if (targetFieldIdx >= fields.length) return;
-        
-        const targetField = fields[targetFieldIdx] as keyof MinistryPrevStats;
-        const num = parseBengaliNumber(cellValue);
-        updatedStats[targetEnt] = {
-          ...updatedStats[targetEnt],
-          [targetField]: num
-        };
-      });
-    });
-
-    setTempPrevStats(updatedStats);
-  };
+  }, [isSetupMode, prevStats, ministryGroups]);
 
   const reportData = useMemo(() => {
-    if (!selectedReportType) return [];
-    
+    if (!selectedReportType || selectedReportType.includes('চিঠিপত্র সংক্রান্ত')) return [];
+    const cycleStartStr = dateFnsFormat(activeCycle.start, 'yyyy-MM-dd');
+    const cycleEndStr = dateFnsFormat(activeCycle.end, 'yyyy-MM-dd');
+    const activeLabelCanon = robustNormalize(toEnglishDigits(activeCycle.label));
+
     return ministryGroups.map(ministryName => {
       const normMinistry = robustNormalize(ministryName);
       const mapKey = Object.keys(MINISTRY_ENTITY_MAP).find(k => robustNormalize(k) === normMinistry);
@@ -216,56 +177,113 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
         entityRows: entities.map(entityName => {
           const normEntity = robustNormalize(entityName);
           const ePrev = calculateRecursiveOpening(entityName, activeCycle.start);
-
           const matchingEntries = entries.filter(e => {
             const eMin = robustNormalize(e.ministryName || '');
             const eEnt = robustNormalize(e.entityName || '');
             if (eMin !== normMinistry || eEnt !== normEntity) return false;
-            if (!e.issueDateISO) return false;
-            return isInCycle(e.issueDateISO, activeCycle.start, activeCycle.end);
-          });
-          
-          let curRC = 0, curRA = 0, curSC = 0, curSA = 0;
-          matchingEntries.forEach(entry => {
-            if (entry.paragraphs) entry.paragraphs.forEach(p => { 
-              if (p.status === 'পূর্ণাঙ্গ') { 
-                curSC++; 
-              } 
-              curSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0); 
-            });
             
-            const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
-            if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
-              curRC += parseBengaliNumber(rCountRaw);
-            }
-            if (entry.manualRaisedAmount) {
-              curRA += Number(entry.manualRaisedAmount);
-            }
+            const matchByLabel = e.cycleLabel && robustNormalize(toEnglishDigits(e.cycleLabel)) === activeLabelCanon;
+            const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+            const matchByDate = entryDate >= cycleStartStr && entryDate <= cycleEndStr;
+
+            return matchByLabel || matchByDate;
           });
-          return { entity: entityName, currentRaisedCount: curRC, currentRaisedAmount: curRA, currentSettledCount: curSC, currentSettledAmount: curSA, prev: ePrev };
+
+          let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0;
+          const processedParaIds = new Set<string>();
+          matchingEntries.forEach(entry => {
+            if (entry.paragraphs && entry.paragraphs.length > 0) {
+              entry.paragraphs.forEach(p => { 
+                const cleanParaNo = String(p.paraNo || '').trim();
+                const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
+                if (p.id && !processedParaIds.has(p.id) && hasDigit) {
+                  processedParaIds.add(p.id);
+                  const status = robustNormalize(p.status || '');
+                  const settledAmt = (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
+                  if (status === robustNormalize('পূর্ণাঙ্গ')) { 
+                    curFC++; curSC++; 
+                  } else if (status === robustNormalize('আংশিক')) {
+                    curPC++;
+                  }
+                  curSA += settledAmt;
+                }
+              });
+            }
+            const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
+            if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") curRC += parseBengaliNumber(rCountRaw);
+            if (entry.manualRaisedAmount) curRA += (Number(entry.manualRaisedAmount) || 0);
+          });
+          return { 
+            entity: entityName, 
+            currentRaisedCount: curRC, currentRaisedAmount: curRA,
+            currentSettledCount: curSC, currentSettledAmount: curSA,
+            currentFullCount: curFC, currentPartialCount: curPC,
+            prev: ePrev 
+          };
         })
       };
     });
-  }, [entries, selectedReportType, prevStats, activeCycle, ministryGroups]);
+  }, [entries, selectedReportType, calculateRecursiveOpening, activeCycle, ministryGroups]);
+
+  const filteredCorrespondence = useMemo(() => {
+    if (selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
+    const reportingDateObj = endOfDay(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0));
+    return (correspondenceEntries || []).filter(e => {
+      if (!e.diaryDate) return false;
+      const diaryDateStr = toEnglishDigits(e.diaryDate);
+      const diaryDateObj = startOfDay(new Date(diaryDateStr));
+      if (isNaN(diaryDateObj.getTime())) return false;
+      const isBeforeOrOnReportingDate = diaryDateObj.getTime() <= reportingDateObj.getTime();
+      const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
+      const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
+      const hasValidNo = rawNo !== '' && rawNo !== '০' && rawNo !== '0' && !rawNo.includes('নং-');
+      const hasValidDate = rawDate !== '' && rawDate !== '0000-00-00';
+      const isIssued = hasValidNo && hasValidDate;
+      return isBeforeOrOnReportingDate && !isIssued;
+    }).sort((a, b) => new Date(toEnglishDigits(b.diaryDate)).getTime() - new Date(toEnglishDigits(a.diaryDate)).getTime());
+  }, [correspondenceEntries, selectedReportType, activeCycle]);
 
   const grandTotals = useMemo(() => {
-    if (!reportData || reportData.length === 0) return { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0 };
+    if (!reportData || reportData.length === 0) return { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0 };
     return reportData.reduce((acc, mGroup) => {
-      mGroup.entityRows.forEach(row => {
-        acc.pUC += (row.prev.unsettledCount || 0); acc.pUA += (row.prev.unsettledAmount || 0); acc.cRC += (row.currentRaisedCount || 0); acc.cRA += (row.currentRaisedAmount || 0);
-        acc.pSC += (row.prev.settledCount || 0); acc.pSA += (row.prev.settledAmount || 0); acc.cSC += (row.currentSettledCount || 0); acc.cSA += (row.currentSettledAmount || 0);
+      mGroup.entityRows.forEach((row: any) => {
+        acc.pUC += (row.prev.unsettledCount || 0); acc.pUA += (row.prev.unsettledAmount || 0); 
+        acc.cRC += (row.currentRaisedCount || 0); acc.cRA += (row.currentRaisedAmount || 0);
+        acc.pSC += (row.prev.settledCount || 0); acc.pSA += (row.prev.settledAmount || 0); 
+        acc.cSC += (row.currentSettledCount || 0); acc.cSA += (row.currentSettledAmount || 0);
+        acc.cFC += (row.currentFullCount || 0); acc.cPC += (row.currentPartialCount || 0);
       });
       return acc;
-    }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0 });
+    }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0 });
   }, [reportData]);
 
   const handleSaveSetup = () => {
-    setPrevStats({ 
-      ...prevStats, 
-      entitiesSFI: tempPrevStats,
-      entitiesNonSFI: {} 
+    setPrevStats({ ...prevStats, entitiesSFI: tempPrevStats, entitiesNonSFI: {} });
+    setIsSetupMode(false); setSelectedReportType(null); setIsEditingSetup(false);
+  };
+
+  const handleSetupPaste = (e: React.ClipboardEvent, startEntity: string, startField: keyof MinistryPrevStats) => {
+    if (!isEditingSetup) return;
+    e.preventDefault(); const pasteData = e.clipboardData.getData('text');
+    if (!pasteData) return;
+    const rows = pasteData.split(/\r?\n/).filter(row => row.trim() !== '');
+    const allEntities: string[] = [];
+    ministryGroups.forEach(m => { (MINISTRY_ENTITY_MAP[m] || []).forEach(ent => allEntities.push(ent)); });
+    const startIdx = allEntities.indexOf(startEntity);
+    if (startIdx === -1) return;
+    const fields: (keyof MinistryPrevStats)[] = ['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount'];
+    const fieldStartIdx = fields.indexOf(startField);
+    const newStats = { ...tempPrevStats };
+    rows.forEach((row, rowOffset) => {
+      const entityIdx = startIdx + rowOffset; if (entityIdx >= allEntities.length) return;
+      const entityName = allEntities[entityIdx]; const cells = row.split(/\t/); 
+      cells.forEach((cell, cellOffset) => {
+        const fieldIdx = fieldStartIdx + cellOffset; if (fieldIdx >= fields.length) return;
+        const fieldName = fields[fieldIdx]; const value = parseBengaliNumber(cell.trim());
+        newStats[entityName] = { ...(newStats[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 }), [fieldName]: value };
+      });
     });
-    setIsSetupMode(false);
+    setTempPrevStats(newStats);
   };
 
   const IDBadge = ({ id }: { id: string }) => {
@@ -296,9 +314,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
          <ChevronDown size={18} className={`text-slate-400 ml-2 transition-transform duration-300 ${isCycleDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
       </div>
       {isCycleDropdownOpen && (
-        <div className="absolute top-[55px] right-0 w-[280px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="absolute top-[55px] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="p-2 max-h-[350px] overflow-y-auto no-scrollbar">
-            <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between"><span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2"><CalendarSearch size={12} /> মাস ও বছর নির্বাচন</span></div>
+            <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between"><span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2"><CalendarSearch size={12} /> মাস ও বছর নির্বাচন</span></div>
             {cycleOptions.map((opt, idx) => (
               <div key={idx} onClick={() => { setSelectedCycleDate(opt.date); setIsCycleDropdownOpen(false); }} className={`flex items-center justify-between px-4 py-2.5 mb-1 rounded-xl cursor-pointer transition-all ${opt.cycleLabel === activeCycle.label ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-slate-50 text-slate-700 font-bold'}`}>
                 <span className="text-[13px]">{opt.label}</span>
@@ -313,270 +331,30 @@ const ReturnView: React.FC<ReturnViewProps> = ({ entries, cycleLabel, prevStats,
 
   if (!selectedReportType && !isSetupMode) {
     return (
-      <div id="section-report-selector" className="max-w-3xl pb-10 animate-report-page relative pt-0">
+      <div id="section-report-selector" className="max-w-4xl py-20 animate-report-page relative pt-0 text-center">
         <IDBadge id="section-report-selector" />
-        <div className="flex flex-col gap-4">
-          {reportOptions.filter(opt => isAdmin || opt.id !== 'setup-mode').map((opt, index) => (
-            <div 
-              key={opt.id} 
-              onClick={() => {
-                if (opt.id === 'setup-mode') setIsSetupMode(true);
-                else setSelectedReportType(opt.title);
-              }} 
-              className={`
-                group relative flex items-center h-[72px] w-full ${opt.bg} 
-                rounded-xl shadow-md hover:shadow-xl hover:translate-x-1
-                transition-all duration-300 cursor-pointer overflow-hidden border border-white/5
-                animate-in slide-in-from-right-10 fill-mode-forwards
-              `}
-              style={{ animationDelay: `${index * 150}ms` }}
-            >
-              <IDBadge id={`report-opt-${opt.id}`} />
-              
-              {/* Compact circular icon wrapper */}
-              <div className="flex items-center justify-center pl-5">
-                <div className={`w-11 h-11 ${opt.circleColor} rounded-full border-[3px] border-white/20 shadow-lg flex items-center justify-center transition-transform group-hover:scale-105`}>
-                   <opt.icon size={20} className="text-white" />
-                </div>
-              </div>
-
-              {/* Title Section shifted to left with height adjustment */}
-              <div className="flex flex-col justify-center pl-6 flex-1">
-                <h3 className="text-[19px] font-black text-white tracking-tight leading-tight mb-0.5">{opt.title}</h3>
-                <p className="text-white/50 font-bold text-[10px] uppercase tracking-wider">{opt.desc}</p>
-              </div>
-
-              {/* Compact Arrow Decoration */}
-              <div className="pr-8 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
-                <ArrowRight size={20} className="text-white" />
-              </div>
-              
-              {/* Premium Glow Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            </div>
-          ))}
+        <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-16 rounded-[3rem] space-y-6">
+           <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto shadow-xl"><PieChart size={40} /></div>
+           <div className="space-y-2"><h3 className="text-3xl font-black text-slate-800">রিটার্ণ মডিউলে স্বাগতম</h3><p className="text-slate-500 font-bold max-w-sm mx-auto">অনুগ্রহ করে বাম পাশের সাইডবার মেনু থেকে কাঙ্ক্ষিত রিটার্ণ বা সারাংশের ধরনটি নির্বাচন করুন।</p></div>
+           <div className="flex justify-center items-center gap-4 text-slate-400 font-black text-sm uppercase tracking-widest pt-4"><ArrowRightCircle size={20} className="text-blue-500 animate-pulse" /> সাইডবার থেকে সিলেক্ট করুন</div>
         </div>
       </div>
     );
+  }
+
+  if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
+    return <DDSirCorrespondenceReturn entries={filteredCorrespondence} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} />;
+  }
+
+  if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
+    return <CorrespondenceDhakaReturn filteredCorrespondence={filteredCorrespondence} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} />;
   }
 
   if (isSetupMode) {
-    const setupThCls = "p-4 text-center font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] uppercase bg-slate-100 leading-tight h-20 align-middle sticky top-0 z-[195] shadow-[inset_0_-1px_0_#cbd5e1]";
-    const setupFooterTdCls = "p-4 border border-slate-300 text-center text-[15px] bg-blue-50 font-black sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1]";
-    
-    const totalStats = ministryGroups.reduce((acc, m) => {
-      const entities = MINISTRY_ENTITY_MAP[m] || [];
-      entities.forEach(ent => {
-        const stats = tempPrevStats[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
-        acc.uC += stats.unsettledCount; acc.uA += stats.unsettledAmount;
-        acc.sC += stats.settledCount; acc.sA += stats.settledAmount;
-      });
-      return acc;
-    }, { uC: 0, uA: 0, sC: 0, sA: 0 });
-
-    return (
-      <div id="section-prev-stats-setup" className="max-w-full mx-auto space-y-6 py-4 animate-table-entrance relative px-2">
-        <IDBadge id="section-prev-stats-setup" />
-        <div id="container-setup-controls" className="flex flex-col md:flex-row items-center justify-between bg-white p-6 rounded-3xl border border-slate-200 shadow-xl gap-4 no-print relative">
-          <IDBadge id="container-setup-controls" />
-          <div className="flex items-center gap-4">
-            <button onClick={() => setIsSetupMode(false)} className="p-3 bg-slate-100 border border-slate-200 rounded-2xl hover:bg-slate-200 text-slate-600 shadow-sm transition-all"><ChevronLeft size={22} /></button>
-            <div className="flex flex-col">
-              <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3"><Settings2 size={28} className="text-blue-600" /> প্রারম্ভিক জের সেটআপ</h2>
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter">সমন্বিত (Unified) ব্যালেন্স ইনপুট উইন্ডো</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-             <button onClick={handleSaveSetup} className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-blue-700 shadow-2xl transition-all border-b-4 border-blue-800 active:scale-95">সংরক্ষণ করুন</button>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-3xl border border-slate-300 shadow-2xl relative w-full overflow-visible">
-           <table className="w-full text-sm border-separate border-spacing-0">
-             <thead>
-                <tr>
-                  <th className="p-5 text-left font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] w-[35%] bg-slate-100 leading-tight h-20 align-middle sticky top-0 z-[195] shadow-[inset_0_-1px_0_#cbd5e1]">মন্ত্রণালয় ও সংস্থা</th>
-                  <th className={setupThCls}>অমী: সংখ্যা <br/><span className="text-[10px] text-slate-500 font-bold">(প্রারম্ভিক)</span></th>
-                  <th className={setupThCls}>অমী: টাকা <br/><span className="text-[10px] text-slate-500 font-bold">(প্রারম্ভিক)</span></th>
-                  <th className={setupThCls}>মী: সংখ্যা <br/><span className="text-[10px] text-slate-500 font-bold">(প্রারম্ভিক)</span></th>
-                  <th className={setupThCls}>মী: টাকা <br/><span className="text-[10px] text-slate-500 font-bold">(প্রারম্ভিক)</span></th>
-                </tr>
-             </thead>
-             <tbody>
-               {ministryGroups.map(m => {
-                 const entities = MINISTRY_ENTITY_MAP[m] || [];
-                 const mSubTotal = entities.reduce((acc, ent) => {
-                   const s = tempPrevStats[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
-                   acc.uC += s.unsettledCount; acc.uA += s.unsettledAmount;
-                   acc.sC += s.settledCount; acc.sA += s.settledAmount;
-                   return acc;
-                 }, { uC: 0, uA: 0, sC: 0, sA: 0 });
-
-                 return (
-                   <React.Fragment key={m}>
-                     <tr className="bg-[#1e293b]"><td colSpan={5} className="px-5 py-3 border border-slate-300 bg-[#1e293b]"><div className="flex items-center gap-2 font-black uppercase text-[12px] tracking-wide text-white"><LayoutGrid size={15} className="text-blue-400" /> {m}</div></td></tr>
-                     {entities.map(ent => (
-                       <tr key={ent} className="hover:bg-blue-50/40 transition-all group bg-white">
-                         <td className="px-6 py-4 font-bold text-slate-800 border border-slate-300 text-[13px] bg-white group-hover:text-blue-700">{ent}</td>
-                         {['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount'].map(field => (
-                           <td key={field} className="p-1.5 border border-slate-300 text-center align-middle h-14 bg-white group-hover:bg-blue-50 transition-colors">
-                             <input type="text" className="w-full h-11 bg-white text-center font-black text-slate-900 text-[15px] outline-none border-0" placeholder="০" value={tempPrevStats[ent]?.[field as keyof MinistryPrevStats] !== undefined && tempPrevStats[ent]![field as keyof MinistryPrevStats] !== 0 ? toBengaliDigits(tempPrevStats[ent]![field as keyof MinistryPrevStats]) : ''} onPaste={(e) => handleSetupPaste(e, ent, field)} onChange={e => { const num = parseBengaliNumber(e.target.value); setTempPrevStats(prev => ({ ...prev, [ent]: { ...(prev[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 }), [field]: num } })); }} />
-                           </td>
-                         ))}
-                       </tr>
-                     ))}
-                     <tr className="bg-sky-50/50 font-black italic text-slate-700"><td className="px-6 py-3 border border-slate-300 text-right text-[11px] uppercase">উপ-মোট: {m}</td><td className="p-3 border border-slate-300 text-center text-blue-600">{toBengaliDigits(mSubTotal.uC)}</td><td className="p-3 border border-slate-300 text-center text-blue-600">{toBengaliDigits(Math.round(mSubTotal.uA))}</td><td className="p-3 border border-slate-300 text-center text-emerald-600">{toBengaliDigits(mSubTotal.sC)}</td><td className="p-3 border border-slate-300 text-center text-emerald-600">{toBengaliDigits(Math.round(mSubTotal.sA))}</td></tr>
-                   </React.Fragment>
-                 );
-               })}
-             </tbody>
-             <tfoot>
-               <tr className="bg-blue-50 font-black text-slate-900 border-t-2 border-slate-400">
-                 <td className="px-6 py-4 border border-slate-300 text-right text-[13px] uppercase tracking-tighter sticky bottom-0 z-[190] bg-blue-50 shadow-[inset_0_1px_0_#cbd5e1]">সর্বমোট সেটআপ তথ্য:</td>
-                 <td className={`${setupFooterTdCls} text-blue-700`}>{toBengaliDigits(totalStats.uC)}</td><td className={`${setupFooterTdCls} text-blue-700`}>{toBengaliDigits(Math.round(totalStats.uA))}</td>
-                 <td className={`${setupFooterTdCls} text-emerald-700`}>{toBengaliDigits(totalStats.sC)}</td><td className={`${setupFooterTdCls} text-emerald-700`}>{toBengaliDigits(Math.round(totalStats.sA))}</td>
-               </tr>
-             </tfoot>
-           </table>
-        </div>
-      </div>
-    );
+    return <OpeningBalanceSetup ministryGroups={ministryGroups} tempPrevStats={tempPrevStats} setTempPrevStats={setTempPrevStats} isEditingSetup={isEditingSetup} setIsEditingSetup={setIsEditingSetup} handleSaveSetup={handleSaveSetup} handleSetupPaste={handleSetupPaste} setIsSetupMode={setIsSetupMode} setSelectedReportType={setSelectedReportType} IDBadge={IDBadge} isAdmin={isAdmin} />;
   }
 
-  const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-slate-50 sticky z-[160] shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-padding relative";
-  const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight bg-white group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
-  
-  const grandStyle = "px-0.5 py-2 text-center font-black text-white text-[10.5px] bg-slate-800 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#1e293b,inset_0_0_0_1px_#1e293b] h-[45px] align-middle whitespace-normal break-words bg-clip-padding transition-all relative";
-
-  return (
-    <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative">
-      <IDBadge id="section-report-summary" />
-      <div id="summary-header-controls" className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print relative">
-        <IDBadge id="summary-header-controls" />
-        <div className="flex items-center gap-3">
-          <button onClick={() => setSelectedReportType(null)} className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-all text-slate-600 relative"><ChevronLeft size={20} /></button>
-          <div className="flex flex-col">
-            <span className="text-xs font-black text-blue-600 uppercase tracking-tighter">রিপোর্ট টাইপ:</span>
-            <span className="text-lg font-black text-slate-900 leading-tight">{selectedReportType}</span>
-          </div>
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-4">
-          <HistoricalFilter />
-          <button onClick={() => window.print()} className="h-[44px] px-6 bg-slate-900 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95"><Printer size={18} /> প্রিন্ট</button>
-        </div>
-      </div>
-
-      <div id="card-report-table-container" className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-1 relative animate-table-entrance">
-        <div className="text-center py-6 bg-white border-b-2 border-slate-100">
-          <h1 className="text-2xl font-black uppercase text-slate-900">{OFFICE_HEADER.main}</h1>
-          <h2 className="text-lg font-bold text-slate-800">{OFFICE_HEADER.sub}</h2>
-          <div className="mt-3 inline-flex items-center gap-3 px-6 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
-            <span className="text-blue-400">{selectedReportType}</span> | {toBengaliDigits(activeCycle.label)}
-          </div>
-        </div>
-
-        <div className="table-container border-t border-slate-300 overflow-visible relative">
-          <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0">
-            <colgroup><col className="w-[58px]" /><col className="w-[125px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /><col className="w-[36px]" /><col className="w-[74px]" /></colgroup>
-            <thead>
-              <tr className="h-[42px]">
-                <th rowSpan={2} className={`${reportThStyle} !top-0`}>মন্ত্রণালয়</th>
-                <th rowSpan={2} className={`${reportThStyle} !top-0`}>সংস্থা</th>
-                <th colSpan={2} className={`${reportThStyle} !top-0`}>প্রারম্ভিক অমীমাংসিত</th>
-                <th colSpan={2} className={`${reportThStyle} !top-0`}>বর্তমান উত্থাপিত</th>
-                <th colSpan={2} className={`${reportThStyle} !top-0`}>মোট অমীমাংসিত</th>
-                <th colSpan={2} className={`${reportThStyle} !top-0`}>প্রারম্ভিক মীমাংসিত</th>
-                <th colSpan={2} className={`${reportThStyle} !top-0`}>চলতি মীমাংসিত</th>
-                <th colSpan={2} className={`${reportThStyle} !top-0`}>মোট মীমাংসিত</th>
-                <th colSpan={2} className={`${reportThStyle} !top-0`}>সর্বমোট অমীমাংসিত</th>
-              </tr>
-              <tr className="h-[38px]">
-                <th className={`${reportThStyle} !top-[42px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[42px]`}>টাকা</th>
-                <th className={`${reportThStyle} !top-[42px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[42px]`}>টাকা</th>
-                <th className={`${reportThStyle} !top-[42px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[42px]`}>টাকা</th>
-                <th className={`${reportThStyle} !top-[42px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[42px]`}>টাকা</th>
-                <th className={`${reportThStyle} !top-[42px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[42px]`}>টাকা</th>
-                <th className={`${reportThStyle} !top-[42px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[42px]`}>টাকা</th>
-                <th className={`${reportThStyle} !top-[42px]`}>সংখ্যা</th><th className={`${reportThStyle} !top-[42px]`}>টাকা</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reportData.map(m => {
-                const mTotals = m.entityRows.reduce((acc, row) => {
-                  acc.pUC += (row.prev.unsettledCount || 0); acc.pUA += (row.prev.unsettledAmount || 0); acc.cRC += (row.currentRaisedCount || 0); acc.cRA += (row.currentRaisedAmount || 0);
-                  acc.pSC += (row.prev.settledCount || 0); acc.pSA += (row.prev.settledAmount || 0); acc.cSC += (row.currentSettledCount || 0); acc.cSA += (row.currentSettledAmount || 0);
-                  return acc;
-                }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0 });
-                return (
-                  <React.Fragment key={m.ministry}>
-                    {m.entityRows.map((row, rIdx) => {
-                      const totalUC = (row.prev.unsettledCount || 0) + (row.currentRaisedCount || 0); 
-                      const totalUA = (row.prev.unsettledAmount || 0) + (row.currentRaisedAmount || 0);
-                      const totalSC = (row.prev.settledCount || 0) + (row.currentSettledCount || 0); 
-                      const totalSA = (row.prev.settledAmount || 0) + (row.currentSettledAmount || 0);
-                      
-                      const closingUC = totalUC - totalSC; 
-                      const closingUA = totalUA - totalSA;
-
-                      return (
-                        <tr key={row.entity} className="group hover:bg-blue-50/50">
-                          {rIdx === 0 && <td rowSpan={m.entityRows.length + 1} className={tdStyle + " bg-slate-50 font-black border-r border-slate-300"}>{m.ministry}</td>}
-                          <td className={tdStyle + " text-left border-r border-slate-300"}>{row.entity}</td>
-                          <td className={tdStyle}>{toBengaliDigits(row.prev.unsettledCount)}</td><td className={tdStyle + " text-center font-black border-r border-slate-300"}>{toBengaliDigits(Math.round(row.prev.unsettledAmount))}</td>
-                          <td className={tdStyle}>{toBengaliDigits(row.currentRaisedCount)}</td><td className={tdStyle + " text-center font-black border-r border-slate-300"}>{toBengaliDigits(Math.round(row.currentRaisedAmount))}</td>
-                          <td className={tdStyle + " bg-slate-100/50"}>{toBengaliDigits(totalUC)}</td><td className={tdStyle + " text-center font-black bg-slate-100/50 border-r border-slate-300"}>{toBengaliDigits(Math.round(totalUA))}</td>
-                          <td className={tdStyle}>{toBengaliDigits(row.prev.settledCount)}</td><td className={tdStyle + " text-center font-black border-r border-slate-300"}>{toBengaliDigits(Math.round(row.prev.settledAmount))}</td>
-                          <td className={tdStyle}>{toBengaliDigits(row.currentSettledCount)}</td><td className={tdStyle + " text-center font-black border-r border-slate-300"}>{toBengaliDigits(Math.round(row.currentSettledAmount))}</td>
-                          <td className={tdStyle + " bg-emerald-50/50"}>{toBengaliDigits(totalSC)}</td><td className={tdStyle + " text-center font-black bg-emerald-50/50 border-r border-slate-300"}>{toBengaliDigits(Math.round(totalSA))}</td>
-                          <td className={tdStyle + " bg-amber-50 font-black text-blue-700"}>{toBengaliDigits(closingUC)}</td><td className={tdStyle + " text-center bg-amber-50 font-black text-blue-700"}>{toBengaliDigits(Math.round(closingUA))}</td>
-                        </tr>
-                      );
-                    })}
-                    <tr className="bg-blue-50/80 font-black text-blue-950 h-[42px] border-y-2 border-slate-200">
-                      <td className={tdStyle + " text-right italic pr-3 border-r border-slate-300 text-[10px] bg-blue-50/80"}>উপ-মোট: {m.ministry}</td>
-                      <td className={tdStyle}>{toBengaliDigits(mTotals.pUC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.pUA))}</td>
-                      <td className={tdStyle}>{toBengaliDigits(mTotals.cRC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.cRA))}</td>
-                      <td className={tdStyle + " bg-slate-200/50"}>{toBengaliDigits(mTotals.pUC + mTotals.cRC)}</td><td className={tdStyle + " text-center bg-slate-200/50 border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.pUA + mTotals.cRA))}</td>
-                      <td className={tdStyle}>{toBengaliDigits(mTotals.pSC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.pSA))}</td>
-                      <td className={tdStyle}>{toBengaliDigits(mTotals.cSC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.cSA))}</td>
-                      <td className={tdStyle + " bg-emerald-200/50"}>{toBengaliDigits(mTotals.pSC + mTotals.cSC)}</td><td className={tdStyle + " text-center bg-emerald-200/50 border-r border-slate-300"}>{toBengaliDigits(Math.round(mTotals.pSA + mTotals.cSA))}</td>
-                      <td className={tdStyle + " bg-amber-100/30"}>{toBengaliDigits((mTotals.pUC + mTotals.cRC) - (mTotals.pSC + mTotals.cSC))}</td><td className={tdStyle + " text-center bg-amber-100/30"}>{toBengaliDigits(Math.round((mTotals.pUA + mTotals.cRA) - (mTotals.pSA + mTotals.cSA)))}</td>
-                    </tr>
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-            <tfoot className="sticky bottom-0 z-[190] shadow-2xl">
-              <tr>
-                <td colSpan={2} className={grandStyle + " bg-slate-900 text-white uppercase tracking-widest text-[11px] shadow-[inset_0_1px_0_#0f172a]"}>সর্বমোট ইউনিফাইড সারাংশ:</td>
-                <td className={grandStyle}>{toBengaliDigits(grandTotals.pUC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.pUA))}</td>
-                <td className={grandStyle}>{toBengaliDigits(grandTotals.cRC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.cRA))}</td>
-                <td className={grandStyle + " !bg-slate-700"}>{toBengaliDigits(grandTotals.pUC + grandTotals.cRC)}</td><td className={grandStyle + " text-center !bg-slate-700"}>{toBengaliDigits(Math.round(grandTotals.pUA + grandTotals.cRA))}</td>
-                <td className={grandStyle}>{toBengaliDigits(grandTotals.pSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.pSA))}</td>
-                <td className={grandStyle}>{toBengaliDigits(grandTotals.cSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.cSA))}</td>
-                <td className={grandStyle + " !bg-emerald-700"}>{toBengaliDigits(grandTotals.pSC + grandTotals.cSC)}</td><td className={grandStyle + " text-center !bg-emerald-700"}>{toBengaliDigits(Math.round(grandTotals.pSA + grandTotals.cSA))}</td>
-                <td className={grandStyle + " !bg-orange-600 text-white"}>{toBengaliDigits((grandTotals.pUC + grandTotals.cRC) - (grandTotals.pSC + grandTotals.cSC))}</td><td className={grandStyle + " text-center !bg-orange-600 text-white"}>{toBengaliDigits(Math.round((grandTotals.pUA + grandTotals.cRA) - (grandTotals.pSA + grandTotals.cSA)))}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
-
-      <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 flex flex-col md:flex-row items-center gap-6 no-print animate-in slide-in-from-left duration-1000 shadow-sm mt-6">
-        <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0"><Database size={28} /></div>
-        <div className="text-center md:text-left flex-1">
-          <p className="text-[17px] font-black text-slate-900 mb-1.5">অ্যাকাউন্টিং চেইন লজিক (Chain Integrity) ভেরিফাইড</p>
-          <p className="text-[12px] font-bold text-slate-500 leading-relaxed uppercase tracking-tight">
-            সিস্টেম বর্তমানে <span className="text-blue-600">{toBengaliDigits(activeCycle.label)}</span> পিরিয়ডের প্রারম্ভিক জের বিগত সকল মাসের লেনদেনের ভিত্তিতে স্বয়ংক্রিয়ভাবে সমন্বিত উপায়ে গণনা করছে।
-            হিসাব: কলাম ৭ = (কলাম ৩ - কলাম ৬)।
-          </p>
-        </div>
-        <div className="px-8 py-3 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner flex items-center gap-4"><div className="flex flex-col items-end"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Calculated Status</span><span className="text-[12px] font-black text-emerald-600">ACCURATE & SYNCED</span></div><CheckCircle2 size={24} className="text-emerald-500" /></div>
-      </div>
-    </div>
-  );
+  return <ReturnSummaryTable reportData={reportData} grandTotals={grandTotals} activeCycle={activeCycle} selectedReportType={selectedReportType} setSelectedReportType={setSelectedReportType} isAdmin={isAdmin || false} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} />;
 };
 
 export default ReturnView;
-
