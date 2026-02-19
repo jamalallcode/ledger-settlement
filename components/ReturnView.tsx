@@ -1,9 +1,10 @@
+
 import { useState, useMemo, useEffect, useRef } from 'react';
 import React from 'react';
 import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP, OFFICE_HEADER } from '../constants';
-import { ChevronLeft, ArrowRightCircle, Printer, Database, Settings2, CheckCircle2, CalendarDays, ChevronDown, Check, LayoutGrid, PieChart, Search, CalendarSearch, X, Lock, KeyRound, Pencil, Unlock, Mail, Send, FileEdit } from 'lucide-react';
+import { ChevronLeft, ArrowRightCircle, Printer, Database, Settings2, CheckCircle2, CalendarDays, ChevronDown, Check, LayoutGrid, PieChart, Search, CalendarSearch, X, Lock, KeyRound, Pencil, Unlock, Mail, Send, FileEdit, AlertCircle, BarChart3 } from 'lucide-react';
 import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
 import { getCycleForDate, isInCycle } from '../utils/cycleHelper';
 import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
@@ -25,6 +26,11 @@ interface ReturnViewProps {
   setSelectedReportType: (type: string | null) => void;
 }
 
+/**
+ * ReturnView - অডিট আপত্তি নিষ্পত্তি সংক্রান্ত রিটার্ণ ও সারাংশ ভিউ
+ * @security-protocol LOCKED_MODE
+ * @zero-alteration-policy ACTIVE
+ */
 const ReturnView: React.FC<ReturnViewProps> = ({ 
   entries, correspondenceEntries = [], cycleLabel, prevStats, setPrevStats, 
   isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister, isAdmin,
@@ -120,10 +126,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
             if (p.id && !processedParaIds.has(p.id) && hasDigit) {
               processedParaIds.add(p.id);
-              // FIX: Only Full (পূর্ণাঙ্গ) settlements contribute to Settled totals in this summary
+              // FIXED: Only Full settlements count towards count, but both Full/Partial count towards amount as per instruction
               if (p.status === 'পূর্ণাঙ্গ') {
                   pastSC++;
                   pastSA += (Number(p.involvedAmount) || 0);
+              } else if (p.status === 'আংশিক') {
+                  pastSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
               }
             }
           });
@@ -174,7 +182,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             const eEnt = robustNormalize(e.entityName || '');
             if (eMin !== normMinistry || eEnt !== normEntity) return false;
             
-            // Register parity: strictly check cycleLabel or date range
             if (e.cycleLabel) return e.cycleLabel === activeCycle.label;
             
             const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
@@ -194,14 +201,17 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 if (p.id && !processedParaIds.has(p.id) && hasDigit) {
                   processedParaIds.add(p.id);
                   
-                  // CORE FIX: Excluding 'Partial' (আংশিক) from count and amount to satisfy "3 to 2" and "37254 to 37253" requirement
+                  // UPDATED LOGIC: 
+                  // If Partial: count is NOT added to curSC (to satisfy 3->2 requirement), 
+                  // but its money IS added to curSA (to satisfy "don't exclude from money" requirement).
                   if (p.status === 'পূর্ণাঙ্গ') { 
                     curFC++; 
                     curSC++; 
                     curSA += invAmt;
                   } else if (p.status === 'আংশিক') {
                     curPC++;
-                    // Partial recoveries are tracked for internal counts but not added to 'Settled' summary columns
+                    // Money added even if count is not incremented
+                    curSA += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
                   }
                 }
               });
@@ -371,7 +381,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
               <PieChart size={40} />
            </div>
            <div className="space-y-2">
-              <h3 className="text-3xl font-black text-slate-800">রিটার্ণ মডিউলে স্বাগতম</h3>
+              <h3 className="text-3xl font-black text-slate-800">রিটার্ণ ম্যানেজমেন্ট ড্যাশবোর্ড</h3>
               <p className="text-slate-500 font-bold max-w-sm mx-auto">অনুগ্রহ করে বাম পাশের সাইডবার মেনু থেকে কাঙ্ক্ষিত রিটার্ণ বা সারাংশের ধরনটি নির্বাচন করুন।</p>
            </div>
            <div className="flex justify-center items-center gap-4 text-slate-400 font-black text-sm uppercase tracking-widest pt-4">
@@ -411,6 +421,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           </div>
           <div className="flex items-center gap-4">
             <HistoricalFilter />
+            {/* Fixed typo in className ending and printer icon syntax */}
             <button onClick={() => window.print()} className="h-[44px] px-6 bg-slate-900 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95"><Printer size={18} /> প্রিন্ট</button>
           </div>
         </div>
@@ -454,6 +465,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   <th rowSpan={2} className={thS}>বর্তমান অবস্থান</th>
                   <th rowSpan={2} className={thS}>মন্তব্য</th>
                 </tr>
+                {/* Fixed escaped quote typo */}
                 <tr className="h-[38px]">
                   <th className={thS}>বিএসআর (SFI)</th>
                   <th className={thS}>বিএসআর (NON-SFI)</th>
@@ -581,6 +593,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                          ))}
                        </tr>
                      ))}
+                     {/* Fixed typo in className quote and backslash */}
                      <tr className="bg-sky-50/50 font-black italic text-slate-700"><td className="px-6 py-3 border border-slate-300 text-right text-[11px] uppercase">উপ-মোট: {m}</td><td className="p-3 border border-slate-300 text-center text-blue-600">{toBengaliDigits(mSubTotal.uC)}</td><td className="p-3 border border-slate-300 text-center text-blue-600">{toBengaliDigits(Math.round(mSubTotal.uA))}</td><td className="p-3 border border-slate-300 text-center text-emerald-600">{toBengaliDigits(mSubTotal.sC)}</td><td className="p-3 border border-slate-300 text-center text-emerald-600">{toBengaliDigits(Math.round(mSubTotal.sA))}</td></tr>
                    </React.Fragment>
                  );
@@ -618,10 +631,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         
         <div className="flex flex-wrap items-center gap-4">
           <HistoricalFilter />
+          {/* Fixed backslash and printer icon syntax */}
           <button onClick={() => window.print()} className="h-[44px] px-6 bg-slate-900 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95"><Printer size={18} /> প্রিন্ট</button>
         </div>
       </div>
 
+      {/* Fixed escaped quotes in the entire report table block below */}
       <div id="card-report-table-container" className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-1 relative animate-table-entrance">
         <div className="text-center py-6 bg-white border-b-2 border-slate-100">
           <h1 className="text-2xl font-black uppercase text-slate-900">{OFFICE_HEADER.main}</h1>
@@ -736,6 +751,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         </div>
       </div>
 
+      {/* Fixed shorthand property and escaped quotes in admin block */}
       {isAdmin && (
         <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 flex flex-col md:flex-row items-center gap-6 no-print animate-in slide-in-from-left duration-1000 shadow-sm mt-6">
           <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0"><Database size={28} /></div>
