@@ -100,13 +100,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   const calculateRecursiveOpening = (entityName: string, cycleStart: Date) => {
     const base = prevStats.entitiesSFI[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
     const cycleStartStr = dateFnsFormat(cycleStart, 'yyyy-MM-dd');
-    const activeLabelCanon = robustNormalize(toEnglishDigits(activeCycle.label));
+    const activeLabelCanon = toEnglishDigits(activeCycle.label).trim();
     
     const pastEntries = entries.filter(e => {
         if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
         
         // Strictly exclude entries belonging to the current cycle by label
-        if (e.cycleLabel && robustNormalize(toEnglishDigits(e.cycleLabel)) === activeLabelCanon) return false;
+        if (e.cycleLabel && toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon) return false;
         
         // For entries without a specific label or assigned to other labels, check the primary date
         const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
@@ -169,7 +169,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     if (!selectedReportType || selectedReportType.includes('চিঠিপত্র সংক্রান্ত')) return [];
     const cycleStartStr = dateFnsFormat(activeCycle.start, 'yyyy-MM-dd');
     const cycleEndStr = dateFnsFormat(activeCycle.end, 'yyyy-MM-dd');
-    const activeLabelCanon = robustNormalize(toEnglishDigits(activeCycle.label));
+    const activeLabelCanon = toEnglishDigits(activeCycle.label).trim();
 
     return ministryGroups.map(ministryName => {
       const normMinistry = robustNormalize(ministryName);
@@ -185,9 +185,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             const eEnt = robustNormalize(e.entityName || '');
             if (eMin !== normMinistry || eEnt !== normEntity) return false;
             
-            // PRIORITY: If entry has a cycle label, it MUST match exactly with robust normalization
+            // PRIORITY: If entry has a cycle label, it MUST match exactly
             if (e.cycleLabel) {
-              return robustNormalize(toEnglishDigits(e.cycleLabel)) === activeLabelCanon;
+              return toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon;
             }
             
             // FALLBACK: If no cycle label, check date range
@@ -297,8 +297,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     const handleCopy = (e: React.MouseEvent) => {
       e.preventDefault(); e.stopPropagation();
       navigator.clipboard.writeText(id);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopied(true); setTimeout(() => setCopied(false), 2000);
     };
     return (
       <div onClick={handleCopy} className="absolute top-0 left-0 -translate-y-full z-[9995] pointer-events-auto no-print">
@@ -363,3 +362,4 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 };
 
 export default ReturnView;
+
