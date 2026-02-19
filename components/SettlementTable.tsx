@@ -43,12 +43,10 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
 
   // Click outside listener to close custom dropdowns
   useEffect(() => {
-    // FIX: Consolidated click-outside handler to resolve 'dropdownRef' undefined error.
-    // The previous 'handleClickOutside' was redundant and contained invalid references.
     const handleGlobalClick = (e: MouseEvent) => {
-        if (cycleDropdownRef.current && !cycleDropdownRef.current.contains(e.target as Node)) setIsCycleDropdownOpen(false);
-        if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) setIsBranchDropdownOpen(false);
-        if (typeDropdownRef.current && !typeDropdownRef.current.contains(e.target as Node)) setIsTypeDropdownOpen(false);
+        if (cycleDropdownRef.current && !cycleDropdownRef.current.contains(event.target as Node)) setIsCycleDropdownOpen(false);
+        if (branchDropdownRef.current && !branchDropdownRef.current.contains(event.target as Node)) setIsBranchDropdownOpen(false);
+        if (typeDropdownRef.current && !typeDropdownRef.current.contains(event.target as Node)) setIsTypeDropdownOpen(false);
     };
     document.addEventListener('mousedown', handleGlobalClick);
     return () => document.removeEventListener('mousedown', handleGlobalClick);
@@ -155,9 +153,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
     return info.replace(/জারিপত্র নং-/g, '').replace(/জারিপত্রের তারিখ-/g, '').trim() + " খ্রি:";
   };
 
-  // Headers reverted to font-black
   const thBase = "border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-200 relative";
-  // Body cells reverted to font-bold
   const tdBase = "border border-slate-300 px-0.5 py-1.5 text-center align-middle text-[10px] leading-tight font-bold text-slate-900 relative";
   const tdMoney = "border border-slate-300 px-0.5 py-1 text-center align-middle text-[10px] font-black text-slate-950 relative";
 
@@ -220,7 +216,6 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   };
 
   let lastRenderedCycle = "";
-  // Footer text font-black
   const footerTdCls = "p-1 text-center font-black text-[10px] bg-slate-900 border border-slate-700";
   const filterInputCls = "w-full pl-9 pr-4 h-[48px] bg-white border border-slate-300 rounded-xl font-bold text-slate-900 text-[13px] outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[48px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
@@ -234,8 +229,19 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
           <div id="section-register-hero-banner" className="pt-0 text-center space-y-3 relative overflow-hidden group transition-all duration-500">
             <IDBadge id="section-register-hero-banner" />
             <div className="relative z-10 flex flex-col items-center gap-4">
-              <div className="w-14 h-14 bg-emerald-50 rounded-[1.2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100"><ClipboardList size={30} strokeWidth={2.5} /></div>
-              <div className="space-y-0.5"><h2 className="text-4xl font-black text-slate-900 tracking-tighter drop-shadow-sm">মীমাংসা রেজিস্টার</h2></div>
+              <div className="w-14 h-14 bg-emerald-50 rounded-[1.2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100 relative">
+                <ClipboardList size={30} strokeWidth={2.5} />
+                {isAdmin && (
+                  <button className="absolute -top-1 -right-1 p-1 bg-white text-blue-600 rounded-full shadow-lg border border-blue-100 hover:scale-110 transition-transform">
+                    <Pencil size={10} strokeWidth={3} />
+                  </button>
+                )}
+              </div>
+              <div className="space-y-0.5 relative group/title">
+                <h2 className="text-4xl font-black text-slate-900 tracking-tighter drop-shadow-sm flex items-center gap-3 justify-center">
+                  মীমাংসা রেজিস্টার
+                </h2>
+              </div>
               <div className="inline-flex items-center gap-4 px-8 py-2.5 bg-emerald-600 text-white rounded-2xl font-bold text-[14px] shadow-[0_10px_30px_-5px_rgba(16,185,129,0.4)] border-2 border-emerald-400">
                 <div className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-100 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-white shadow-md"></span></div>
                 <span>চলমান মাস:</span><span className="text-emerald-50 tracking-tight">{toBengaliDigits(cycleInfo.label)}</span>
@@ -250,7 +256,6 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
           <IDBadge id="register-filters" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             
-            {/* Cycle Selection */}
             <div className="space-y-1.5" ref={cycleDropdownRef}>
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">সময়কাল নির্বাচন (সাইকেল)</label>
               <div 
@@ -297,7 +302,6 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
               </div>
             </div>
             
-            {/* Branch Selection */}
             <div className="space-y-1.5" ref={branchDropdownRef}>
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">শাখা</label>
               <div 
@@ -340,7 +344,6 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
               </div>
             </div>
             
-            {/* Letter Type Selection */}
             <div className="space-y-1.5" ref={typeDropdownRef}>
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">চিঠির ধরণ</label>
               <div 
@@ -384,7 +387,6 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
               </div>
             </div>
             
-            {/* Search Input */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">অনুসন্ধান</label>
               <div className="relative">
@@ -424,7 +426,6 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
               const mRaisedCount = (mRaisedCountRaw === "" || mRaisedCountRaw === "0" || mRaisedCountRaw === "০") ? "০" : toBengaliDigits(mRaisedCountRaw);
               const mRaisedAmount = (entry.manualRaisedAmount !== null && entry.manualRaisedAmount !== undefined && entry.manualRaisedAmount !== 0) ? entry.manualRaisedAmount : 0;
 
-              // Calculate Cycle Statistics
               const cycleEntries = filteredEntries.filter(e => (e.cycleLabel || "অনির্ধারিত") === currentCycle);
               const totalLetters = cycleEntries.length;
               const sfiEntries = cycleEntries.filter(e => e.paraType === 'এসএফআই');
@@ -434,7 +435,6 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
               const nonSfiBSR = nonSfiEntries.filter(e => !e.isMeeting || e.meetingType === 'বিএসআর').length;
               const nonSfiBi = nonSfiEntries.filter(e => e.meetingType === 'দ্বিপক্ষীয় সভা').length;
 
-              // New Work: Additional details for Settled Paras
               const cycleSettledParasCount = cycleEntries.reduce((acc, ent) => acc + (ent.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').length || 0), 0);
               
               const getSettledDetails = (typeEntries: SettlementEntry[]) => {
@@ -484,7 +484,6 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                             </div>
                           </div>
 
-                          {/* Extra Detailed Info Row */}
                           <div className="flex items-center gap-6 px-4 py-2 bg-white/60 rounded-xl border border-slate-200 text-[11px] font-black shadow-inner">
                              <div className="flex items-center gap-2">
                                 <CheckCircle2 size={14} className="text-emerald-600" />
