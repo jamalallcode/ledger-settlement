@@ -248,15 +248,20 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 h-[44px] rounded-xl">
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 h-[44px] rounded-xl relative group">
              <Calendar size={16} className="text-blue-600" />
              <label className="text-[11px] font-black text-slate-500 uppercase tracking-tighter mr-1">রিপোর্টিং তারিখ:</label>
-             <input 
-               type="date" 
-               className="bg-transparent border-none outline-none font-black text-slate-900 text-xs cursor-pointer"
-               value={selectedReportingDate}
-               onChange={(e) => setSelectedReportingDate(e.target.value)}
-             />
+             <div className="relative flex items-center">
+               <span className="font-black text-slate-900 text-xs pointer-events-none">
+                 {toBengaliDigits(format(reportingDate, 'dd/MM/yyyy'))}
+               </span>
+               <input 
+                 type="date" 
+                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                 value={selectedReportingDate}
+                 onChange={(e) => setSelectedReportingDate(e.target.value)}
+               />
+             </div>
              {selectedReportingDate !== defaultReportingDate && (
                <button 
                 onClick={() => setSelectedReportingDate(defaultReportingDate)}
@@ -442,7 +447,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         <td className={stickyTdStyle}>
                           <div className="flex flex-col gap-0.5">
                              <span className="text-blue-700 text-[10.5px] font-bold">{row.letterType}</span>
-                             <span className="text-[9.5px] bg-slate-100 rounded px-1 group-hover:bg-white transition-colors font-bold">(অনু: {toBengaliDigits(row.totalParas)}টি)</span>
+                             <span className="text-[9.5px] font-bold">(অনু: {toBengaliDigits(row.totalParas)}টি)</span>
                           </div>
                         </td>
                         <td className={stickyTdStyle}>{formatDateBN(row.presentationDate) || '-'}</td>
