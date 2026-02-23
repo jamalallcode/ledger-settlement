@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   Mail, X, FileText, Calendar, Hash, Banknote, BookOpen, 
   Inbox, Computer, User, CheckCircle2, Layout, Sparkles, 
-  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send, FileEdit
+  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send, FileEdit, ClipboardCheck
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { getCycleForDate } from '../utils/cycleHelper';
@@ -23,6 +23,156 @@ const labelCls = "block text-[13px] font-black text-slate-700 mb-2 flex items-ce
 const numBadge = "inline-flex items-center justify-center w-5 h-5 bg-slate-900 text-white rounded-md text-[10px] font-black shadow-sm shrink-0";
 const sectionHeaderCls = "col-span-full mt-6 mb-2 py-2 border-b border-slate-100 flex items-center gap-3";
 const sectionTitleCls = "text-[12px] font-black text-slate-400 uppercase tracking-[0.2em]";
+
+/**
+ * Premium Multi-level Dropdown for Letter Type
+ */
+const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const mainOptions = [
+    { id: 'broadsheet', label: 'বিএসআর (BSR)', value: 'বিএসআর', icon: FileText, color: 'emerald' },
+    { id: 'bilateral', label: 'দ্বিপক্ষীয় সভা', hasSub: true, icon: User, color: 'blue' },
+    { id: 'trilateral', label: 'ত্রিপক্ষীয় সভা', hasSub: true, icon: Layout, color: 'indigo' },
+    { id: 'reconciliation', label: 'মিলিকরণ', value: 'মিলিকরণ', icon: Sparkles, color: 'amber' },
+  ];
+
+  const subOptions = [
+    { label: 'কার্যপত্র', suffix: '(কার্যপত্র)', icon: FileEdit },
+    { label: 'কার্যবিবরণী', suffix: '(কার্যবিবরণী)', icon: ClipboardCheck },
+  ];
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+        setHoveredItem(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <IDBadge id="corr-field-letter-type-custom" />
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`${inputCls} flex items-center justify-between cursor-pointer group hover:border-emerald-400 hover:ring-4 hover:ring-emerald-50 transition-all duration-300 ${isOpen ? 'border-emerald-500 ring-4 ring-emerald-50 bg-white shadow-md' : 'border-slate-200 shadow-sm'}`}
+      >
+        <div className="flex items-center gap-3">
+          {value ? (
+            <>
+              <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
+                <Send size={16} />
+              </div>
+              <span className="text-slate-900 font-black">{value}</span>
+            </>
+          ) : (
+            <>
+              <div className="w-8 h-8 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center">
+                <Plus size={16} />
+              </div>
+              <span className="text-slate-400 font-bold">পত্রের ধরণ বাছুন...</span>
+            </>
+          )}
+        </div>
+        <ChevronDown size={18} className={`text-slate-400 transition-transform duration-500 ${isOpen ? 'rotate-180 text-emerald-600' : 'group-hover:text-emerald-500'}`} />
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-[calc(100%+12px)] left-0 w-full bg-white border border-slate-200 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.15)] z-[1000] overflow-visible animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 border-t-4 border-t-emerald-600">
+          <div className="p-3 space-y-1">
+            <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Sparkles size={12} className="text-emerald-500" /> ক্যাটাগরি নির্বাচন করুন
+              </span>
+            </div>
+            {mainOptions.map((opt) => (
+              <div 
+                key={opt.id}
+                onMouseEnter={() => setHoveredItem(opt.hasSub ? opt.id : null)}
+                onClick={() => {
+                  if (!opt.hasSub) {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }
+                }}
+                className={`px-4 py-3.5 mx-1 rounded-2xl cursor-pointer flex items-center justify-between transition-all group relative ${
+                  (opt.hasSub && hoveredItem === opt.id) || (!opt.hasSub && value === opt.value)
+                    ? `bg-${opt.color}-50 text-${opt.color}-700 shadow-sm` 
+                    : 'hover:bg-slate-50 text-slate-600'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                    (opt.hasSub && hoveredItem === opt.id) || (!opt.hasSub && value === opt.value)
+                      ? `bg-${opt.color}-600 text-white shadow-lg shadow-${opt.color}-200`
+                      : 'bg-slate-100 text-slate-400 group-hover:bg-white group-hover:shadow-md'
+                  }`}>
+                    <opt.icon size={20} />
+                  </div>
+                  <span className={`text-[14px] font-black transition-colors ${
+                    (opt.hasSub && hoveredItem === opt.id) || (!opt.hasSub && value === opt.value)
+                      ? `text-${opt.color}-700`
+                      : 'text-slate-700'
+                  }`}>{opt.label}</span>
+                </div>
+                
+                {opt.hasSub ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest group-hover:text-emerald-400 transition-colors">সাব-আইটেম</span>
+                    <ArrowRight size={16} className="text-slate-300 group-hover:text-emerald-500 transition-all group-hover:translate-x-1" />
+                  </div>
+                ) : (
+                  value === opt.value && <div className={`w-6 h-6 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-md animate-in zoom-in duration-300`}><Check size={14} strokeWidth={3} /></div>
+                )}
+
+                {opt.hasSub && hoveredItem === opt.id && (
+                  <div className="absolute left-[calc(100%+16px)] top-0 w-64 bg-white border border-slate-200 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.2)] z-[1001] overflow-hidden animate-in fade-in slide-in-from-left-4 duration-300 border-l-4 border-l-emerald-600">
+                    <div className="p-3 space-y-1">
+                      <div className="px-4 py-2 mb-2 border-b border-slate-100">
+                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                          <Layout size={12} /> {opt.label}
+                        </span>
+                      </div>
+                      {subOptions.map((sub) => {
+                        const fullVal = `${opt.label} ${sub.suffix}`;
+                        const isSelected = value === fullVal;
+                        return (
+                          <div 
+                            key={sub.label}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onChange(fullVal);
+                              setIsOpen(false);
+                              setHoveredItem(null);
+                            }}
+                            className={`px-4 py-3 mx-1 rounded-xl cursor-pointer flex items-center justify-between transition-all group/sub ${
+                              isSelected ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'hover:bg-emerald-50 text-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                               <sub.icon size={16} className={isSelected ? 'text-white' : 'text-slate-400 group-hover/sub:text-emerald-500'} />
+                               <span className="text-[13px] font-black">{sub.label}</span>
+                            </div>
+                            {isSelected && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 /**
  * Segmented Date Input Component (Mirrored from Settlement Module Logic)
@@ -502,18 +652,13 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 3 */}
             <div className={`${colWrapper} border-indigo-100`}>
-              <IDBadge id="corr-field-letter-type" />
               <label className={labelCls}><span className={numBadge}>৩</span> <FileText size={14} className="text-indigo-600" /> পত্রের ধরণ:</label>
-              <select 
-                className={inputCls} value={formData.letterType}
-                onChange={e => setFormData({...formData, letterType: e.target.value})}
-              >
-                <option value="বিএসআর">বিএসআর (BSR)</option>
-                <option value="দ্বিপক্ষীয় সভা">দ্বিপক্ষীয় সভা</option>
-                <option value="ত্রিপক্ষীয় সভা">ত্রিপক্ষীয় সভা</option>
-                <option value="মিলিকরণ">মিলিকরণ</option>
-                <option value="কার্যপত্র">কার্যপত্র</option>
-              </select>
+              <PremiumLetterTypeSelect 
+                value={formData.letterType}
+                onChange={(val: string) => setFormData({...formData, letterType: val})}
+                isLayoutEditable={isLayoutEditable}
+                IDBadge={IDBadge}
+              />
             </div>
 
             {/* Field 4.ক */}
