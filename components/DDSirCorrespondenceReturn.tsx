@@ -1,5 +1,5 @@
-import { useMemo, useState, useEffect } from 'react';
-import { ChevronLeft, Printer, Mail, Calendar, RotateCcw, Search, X } from 'lucide-react';
+import { useMemo, useState, useEffect, useRef } from 'react';
+import { ChevronLeft, Printer, Mail, Calendar, RotateCcw, Search, X, User, ChevronDown, Check } from 'lucide-react';
 import React from 'react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
@@ -19,16 +19,40 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   isLayoutEditable 
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterAuditor, setFilterAuditor] = useState('সকল');
+  const [isAuditorDropdownOpen, setIsAuditorDropdownOpen] = useState(false);
+  const auditorDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (auditorDropdownRef.current && !auditorDropdownRef.current.contains(e.target as Node)) {
+        setIsAuditorDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const auditorOptions = useMemo(() => {
+    const unique = Array.from(new Set(entries.map(e => e.receiverName || e.presentedToName).filter(Boolean)));
+    return ['সকল', ...unique];
+  }, [entries]);
 
   const filteredEntries = useMemo(() => {
-    if (!searchTerm.trim()) return entries;
-    return entries.filter(entry => 
+    let data = entries;
+    
+    if (filterAuditor !== 'সকল') {
+      data = data.filter(e => (e.receiverName || e.presentedToName) === filterAuditor);
+    }
+
+    if (!searchTerm.trim()) return data;
+    return data.filter(entry => 
       (entry.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (entry.diaryNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (entry.letterNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (entry.receiverName || entry.presentedToName || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [entries, searchTerm]);
+  }, [entries, searchTerm, filterAuditor]);
 
   // --- Logic for 2nd Sunday Calculation (Default) ---
   const defaultReportingDate = useMemo(() => {
@@ -54,6 +78,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     .replace('April', 'এপ্রিল').replace('May', 'মে').replace('June', 'জুন')
     .replace('July', 'জুলাই').replace('August', 'আগস্ট').replace('September', 'সেপ্টেম্বর')
     .replace('October', 'অক্টোবর').replace('November', 'নভেম্বর').replace('December', 'ডিসেম্বর');
+
+  const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-300'}`;
 
   // --- Grouping & Calculation Logic for Table 1 (Summary) ---
   const reportTableData = useMemo(() => {
@@ -157,6 +183,37 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Auditor Filter */}
+          <div className="space-y-1" ref={auditorDropdownRef}>
+            <div 
+              onClick={() => setIsAuditorDropdownOpen(!isAuditorDropdownOpen)} 
+              className={customDropdownCls(isAuditorDropdownOpen) + " min-w-[180px]"}
+            >
+              <User size={16} className="text-blue-600" />
+              <span className="font-bold text-[12px] text-slate-900 truncate">
+                {filterAuditor === 'সকল' ? 'সকল অডিটর' : filterAuditor}
+              </span>
+              <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isAuditorDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+              
+              {isAuditorDropdownOpen && (
+                <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[200px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200">
+                  <div className="max-h-[250px] overflow-y-auto no-scrollbar py-2">
+                    {auditorOptions.map((opt, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={(e) => { e.stopPropagation(); setFilterAuditor(opt); setIsAuditorDropdownOpen(false); }} 
+                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterAuditor === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
+                      >
+                        <span>{opt === 'সকল' ? 'সকল অডিটর' : opt}</span>
+                        {filterAuditor === opt && <Check size={14} strokeWidth={3} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="relative group min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={16} />
             <input 
