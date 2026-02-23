@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles, Save, CalendarSearch, LayoutGrid, CalendarDays } from 'lucide-react';
-import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
+import { toBengaliDigits, parseBengaliNumber, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper';
 import { format, addMonths } from 'date-fns';
 
@@ -388,10 +388,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
 
   const hasChanges = Object.keys(pendingChanges).length > 0;
 
-  const formatDisplayDate = (iso: string) => {
-    if (!iso || iso === '0000-00-00' || iso.startsWith('0000')) return '';
-    return toBengaliDigits(iso.split('-').reverse().join('/'));
-  };
 
   let lastRenderedCycle = "";
 
@@ -669,7 +665,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                           </div>
                           <div className="flex flex-col">
                             <span className={labelCls}>৩. পত্র নং ও তারিখ:</span> 
-                            <span className={valCls + " pl-3"}>{entry.letterNo}, {formatDisplayDate(entry.letterDate)}</span>
+                            <span className={valCls + " pl-3"}>{entry.letterNo}, {formatDateBN(entry.letterDate)}</span>
                           </div>
                           <div className="flex flex-col">
                             <span className={labelCls}>৪. প্রেরিত অনু: সংখ্যা:</span> 
@@ -685,11 +681,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                        <div className="space-y-2">
                           <div className="flex flex-col">
                             <span className={labelCls}>১. ডায়েরি নং ও তারিখ:</span> 
-                            <span className={valCls + " pl-3"}>{entry.diaryNo}, {formatDisplayDate(entry.diaryDate)}</span>
+                            <span className={valCls + " pl-3"}>{entry.diaryNo}, {formatDateBN(entry.diaryDate)}</span>
                           </div>
                           <div className="flex flex-col">
                             <span className={labelCls}>২. শাখায় প্রাপ্তির তারিখ:</span> 
-                            <span className={valCls + " pl-3"}>{formatDisplayDate(entry.receiptDate)}</span>
+                            <span className={valCls + " pl-3"}>{formatDateBN(entry.receiptDate)}</span>
                           </div>
                           <div className="flex flex-col">
                             <span className={labelCls}>৩. ডিজিটাল নথি নং-:</span> 
@@ -697,7 +693,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                           </div>
                           <div className="flex flex-col">
                             <span className={labelCls}>৪. গ্রহণের তারিখ:</span> 
-                            <span className={valCls + " pl-3"}>{formatDisplayDate(entry.receivedDate)}</span>
+                            <span className={valCls + " pl-3"}>{formatDateBN(entry.receivedDate)}</span>
                           </div>
                           <div className="flex flex-col">
                             <span className={labelCls}>৫. অনলাইনে প্রাপ্তি:</span> 
@@ -710,7 +706,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                           <div className="p-1.5 bg-slate-50 border border-slate-100 rounded-lg relative">
                              <div className="text-[9px] font-bold text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1"><Inbox size={8} /> গ্রহণকারী</div>
                              <div className="font-bold text-slate-900 text-[10px] leading-tight truncate">{entry.receiverName || '-'}</div>
-                             <div className="text-[9px] text-slate-500 font-bold">{formatDisplayDate(entry.receivedDate)}</div>
+                             <div className="text-[9px] text-slate-500 font-bold">{formatDateBN(entry.receivedDate)}</div>
                           </div>
 
                           <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.presentationDate || pending.presentedToName ? 'bg-blue-600/10 border-blue-400 ring-2 ring-blue-50' : 'bg-blue-50/50 border-blue-100'}`}>
@@ -730,7 +726,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                                   </button>
                                 )}
                                 <div className="flex items-center gap-1.5 ml-auto">
-                                   {formatDisplayDate(currentPresDate) && <span className="text-[8px] font-black text-blue-600">{formatDisplayDate(currentPresDate)}</span>}
+                                   {formatDateBN(currentPresDate) && <span className="text-[8px] font-black text-blue-600">{formatDateBN(currentPresDate)}</span>}
                                    <div className="relative flex items-center h-3 w-3">
                                       <Calendar 
                                         size={11} 
@@ -773,7 +769,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                             <div className="flex items-center justify-between">
                               <span className="text-[8px] font-bold text-slate-400 uppercase flex items-center gap-1">তারিখ</span>
                               <div className="flex items-center gap-1.5">
-                                 {formatDisplayDate(currentIssueDate) && <span className="text-[8px] font-black text-amber-600">{formatDisplayDate(currentIssueDate)}</span>}
+                                 {formatDateBN(currentIssueDate) && <span className="text-[8px] font-black text-amber-600">{formatDateBN(currentIssueDate)}</span>}
                                  <div className="relative flex items-center h-3 w-3">
                                     <Calendar 
                                       size={11} 
