@@ -226,8 +226,8 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                   <td className={tdS}>{entry.letterNo}<br/>{formatDateBN(entry.letterDate)}</td>
                   <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'এসএফআই' ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                   <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'নন এসএফআই' ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                  <td className={tdS}>{entry.letterType.includes('ত্রিপক্ষীয় সভা') && entry.paraType === 'এসএফআই' ? `ত্রিপক্ষীয় (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                  <td className={tdS}>{entry.letterType.includes('দ্বিপক্ষীয় সভা') && entry.paraType === 'নন এসএফআই' ? `দ্বি-পক্ষীয় (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                  <td className={tdS}>{(entry.letterType.includes('ত্রিপক্ষীয় সভা') || entry.letterType === 'কার্যপত্র' || entry.letterType === 'কার্যবিবরণী') && entry.paraType === 'এসএফআই' ? `${entry.letterType} (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                  <td className={tdS}>{(entry.letterType.includes('দ্বিপক্ষীয় সভা') || entry.letterType === 'কার্যপত্র' || entry.letterType === 'কার্যবিবরণী') && entry.paraType === 'নন এসএফআই' ? `${entry.letterType} (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                   <td className={tdS}>-</td>
                   <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
                   <td className={tdS}>{formatDateBN(entry.presentationDate)}</td>
