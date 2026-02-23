@@ -227,7 +227,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       const isBeforeOrOnReportingDate = diaryDateObj.getTime() <= reportingDateObj.getTime();
       
       // Exclude specific letter types as requested (Milikaran, Karjapatra)
-      const isExcludedType = e.letterType === 'মিলিকরণ' || e.letterType === 'কার্যপত্র';
+      const isExcludedType = e.letterType === 'মিলিকরণ' || e.letterType.includes('কার্যপত্র');
       if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && isExcludedType) return false;
 
       const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
