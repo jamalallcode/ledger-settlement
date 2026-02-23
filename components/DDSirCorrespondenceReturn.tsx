@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { ChevronLeft, Printer, Mail, Calendar, RotateCcw } from 'lucide-react';
+import { ChevronLeft, Printer, Mail, Calendar, RotateCcw, Search, X } from 'lucide-react';
 import React from 'react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
@@ -18,6 +18,18 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   onBack, 
   isLayoutEditable 
 }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredEntries = useMemo(() => {
+    if (!searchTerm.trim()) return entries;
+    return entries.filter(entry => 
+      (entry.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (entry.diaryNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (entry.letterNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (entry.receiverName || entry.presentedToName || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [entries, searchTerm]);
+
   // --- Logic for 2nd Sunday Calculation (Default) ---
   const defaultReportingDate = useMemo(() => {
     const end = activeCycle.end;
@@ -48,7 +60,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     const grouped: Record<string, any> = {};
     const thresholdDate = subMonths(reportingDate, 1);
 
-    entries.forEach(entry => {
+    filteredEntries.forEach(entry => {
       const auditor = entry.receiverName || entry.presentedToName || 'অনির্ধারিত';
       if (!grouped[auditor]) {
         grouped[auditor] = {
@@ -83,11 +95,11 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     });
 
     return Object.values(grouped);
-  }, [entries, reportingDate]);
+  }, [filteredEntries, reportingDate]);
 
   // --- Grouping & Logic for Table 2 (Detailed List) ---
   const detailedListData = useMemo(() => {
-    const sorted = [...entries].sort((a, b) => {
+    const sorted = [...filteredEntries].sort((a, b) => {
       const audA = a.receiverName || a.presentedToName || 'অনির্ধারিত';
       const audB = b.receiverName || b.presentedToName || 'অনির্ধারিত';
       return audA.localeCompare(audB);
@@ -145,6 +157,25 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
+          <div className="relative group min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={16} />
+            <input 
+              type="text"
+              placeholder="ডায়েরি, স্মারক বা বিবরণ দিয়ে খুঁজুন..."
+              className="w-full pl-10 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
           <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 h-[44px] rounded-xl">
              <Calendar size={16} className="text-blue-600" />
              <label className="text-[11px] font-black text-slate-500 uppercase tracking-tighter mr-1">রিপোর্টিং তারিখ:</label>
@@ -200,8 +231,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               </colgroup>
               <thead>
                 <tr className="bg-white">
-                  <th colSpan={2} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">অনিষ্পন্ন কাজের তালিকা</th>
-                  <th colSpan={4} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">শাখা: {entries[0]?.paraType || 'অনির্ধারিত'}</th>
+                  <th colSpan={2} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">অনিষ্পন্ন কাজের তালিকা (ফিল্টারকৃত)</th>
+                  <th colSpan={4} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">শাখা: {filteredEntries[0]?.paraType || 'অনির্ধারিত'}</th>
                   <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">মাস: {reportingMonthBN}</th>
                   <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">তারিখ: {reportingDateBN} খ্রি:</th>
                 </tr>
@@ -280,7 +311,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           <div className="text-center mb-6 w-full">
              <div className="inline-block px-10 py-1 bg-black text-white text-[15px] font-bold tracking-widest uppercase mb-4">ছক</div>
              <div className="flex justify-between items-end border-b border-slate-300 pb-1">
-                <span className="font-bold text-[14px]">বকেয়া চিঠিপত্রের তালিকা ({entries[0]?.paraType || 'অনির্ধারিত'} শাখা)</span>
+                <span className="font-bold text-[14px]">বকেয়া চিঠিপত্রের তালিকা ({filteredEntries[0]?.paraType || 'অনির্ধারিত'} শাখা)</span>
                 <span className="font-bold text-[14px]">তাং- {reportingDateBN} খ্রি:</span>
              </div>
           </div>
@@ -356,8 +387,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               {/* Footer text color white */}
               <tfoot>
                 <tr className="bg-slate-900 text-white font-bold text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] border-t border-slate-700">
-                  <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-slate-900">সর্বমোট চিঠিপত্র সংখ্যা:</td>
-                  <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-slate-900 text-white font-bold">{toBengaliDigits(entries.length)} টি</td>
+                  <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-slate-900">সর্বমোট চিঠিপত্র (ফিল্টারকৃত):</td>
+                  <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-slate-900 text-white font-bold">{toBengaliDigits(filteredEntries.length)} টি</td>
                   <td colSpan={6} className="border-t border-slate-700 bg-slate-900"></td>
                 </tr>
               </tfoot>
