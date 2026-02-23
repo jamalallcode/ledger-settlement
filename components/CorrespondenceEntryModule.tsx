@@ -342,6 +342,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const [descriptionSuggestions, setDescriptionSuggestions] = useState<string[]>([]);
   const [showReceiverDropdown, setShowReceiverDropdown] = useState(false);
   const [showDescriptionDropdown, setShowDescriptionDropdown] = useState(false);
+  const [showAuditYearWarning, setShowAuditYearWarning] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const receiverRef = useRef<HTMLDivElement>(null);
   const descriptionRef = useRef<HTMLDivElement>(null);
@@ -465,6 +466,22 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     const bDigits = toBengaliDigits(val);
     setRawInputs(prev => ({ ...prev, [field]: bDigits }));
     setFormData(prev => ({ ...prev, [field]: val }));
+  };
+
+  const checkAuditYear = (value: string) => {
+    const desc = value.trim();
+    if (!desc) {
+      setShowAuditYearWarning(false);
+      return;
+    }
+    
+    // Regex to check for 4 consecutive digits (English or Bengali)
+    const yearRegex = /[0-9]{4}|[০-৯]{4}/;
+    if (!yearRegex.test(desc)) {
+      setShowAuditYearWarning(true);
+    } else {
+      setShowAuditYearWarning(false);
+    }
   };
 
   const resetForm = () => {
@@ -591,8 +608,17 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   required 
                   className={inputCls} 
                   value={formData.description} 
-                  onFocus={() => setShowDescriptionDropdown(true)}
-                  onChange={e => setFormData({...formData, description: e.target.value})}
+                  onFocus={() => {
+                    setShowDescriptionDropdown(true);
+                    setShowAuditYearWarning(false);
+                  }}
+                  onBlur={() => {
+                    checkAuditYear(formData.description);
+                  }}
+                  onChange={e => {
+                    setFormData({...formData, description: e.target.value});
+                    if (showAuditYearWarning) setShowAuditYearWarning(false);
+                  }}
                   placeholder="বিবরণ লিখুন বা সাজেশন্স থেকে বাছুন..."
                   autoComplete="off"
                 />
@@ -603,6 +629,13 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 >
                   <ChevronDown size={18} className={`transition-transform duration-300 ${showDescriptionDropdown ? 'rotate-180' : ''}`} />
                 </button>
+
+                {showAuditYearWarning && (
+                  <div className="mt-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl text-[11px] font-black text-amber-700 flex items-center gap-2 animate-in slide-in-from-top-1 duration-300 shadow-sm">
+                    <AlertCircle size={14} className="shrink-0" />
+                    <span>আপনি পত্রটির নিরীক্ষা সাল উল্লেখ করেননি</span>
+                  </div>
+                )}
 
                 {showDescriptionDropdown && descriptionSuggestions.length > 0 && (
                   <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
