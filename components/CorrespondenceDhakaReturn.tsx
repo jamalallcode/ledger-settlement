@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Printer, ChevronLeft } from 'lucide-react';
-import { toBengaliDigits } from '../utils/numberUtils';
+import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 import { format as dateFnsFormat } from 'date-fns';
 
@@ -93,15 +93,15 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                 <tr key={entry.id} className="group hover:bg-blue-50/50 transition-colors">
                   <td className={tdS}>{toBengaliDigits(idx + 1)}</td>
                   <td className={`${tdS} text-left px-2`}>{entry.description}</td>
-                  <td className={tdS}>{entry.diaryNo}<br/>{toBengaliDigits(entry.diaryDate)}</td>
-                  <td className={tdS}>{entry.letterNo}<br/>{toBengaliDigits(entry.letterDate)}</td>
+                  <td className={tdS}>{entry.diaryNo}<br/>{formatDateBN(entry.diaryDate)}</td>
+                  <td className={tdS}>{entry.letterNo}<br/>{formatDateBN(entry.letterDate)}</td>
                   <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'এসএফআই' ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                   <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'নন এসএফআই' ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                   <td className={tdS}>{entry.letterType.includes('ত্রিপক্ষীয় সভা') && entry.paraType === 'এসএফআই' ? `ত্রিপক্ষীয় (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                   <td className={tdS}>{entry.letterType.includes('দ্বিপক্ষীয় সভা') && entry.paraType === 'নন এসএফআই' ? `দ্বি-পক্ষীয় (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                   <td className={tdS}>-</td>
                   <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
-                  <td className={tdS}>{toBengaliDigits(entry.presentationDate)}</td>
+                  <td className={tdS}>{formatDateBN(entry.presentationDate)}</td>
                   <td className={tdS}>{entry.presentedToName || 'অডিটর'}</td>
                   <td className={tdS}>{entry.remarks || 'চলমান'}</td>
                 </tr>
