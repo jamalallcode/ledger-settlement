@@ -1,9 +1,18 @@
-
 export type ParaType = 'এসএফআই' | 'নন এসএফআই';
 export type SettlementStatus = 'পূর্ণাঙ্গ' | 'আংশিক';
 export type FinancialCategory = 'ভ্যাট' | 'আয়কর' | 'অন্যান্য';
 export type EntryMode = 'আদায়' | 'সমন্বয়';
 export type DesignMode = 'modern' | 'classic';
+
+export interface ArchiveDoc {
+  id: string;
+  title: string;
+  category: 'সার্কুলার' | 'অফিস আদেশ' | 'গেজেট' | 'অন্যান্য';
+  archiveId: string; // Archive.org identifier
+  docDate: string;
+  description: string;
+  createdAt: string;
+}
 
 export interface MinistryPrevStats {
   unsettledCount: number;
@@ -74,6 +83,8 @@ export interface SettlementEntry {
   meetingSentParaCount?: string;
   meetingRecommendedParaCount?: string; 
   meetingSettledParaCount?: string;
+  meetingFullSettledParaCount?: string;
+  meetingPartialSettledParaCount?: string;
   meetingUnsettledParas?: string;
   meetingUnsettledAmount?: number;
   archiveNo?: string;
@@ -83,6 +94,7 @@ export interface SettlementEntry {
   receiverName?: string;           
   isSentOnline?: 'হ্যাঁ' | 'না';    
   presentationDate?: string;       
+  presentedToName?: string; // New field for the person to whom it's presented
   remarks?: string;
   approvalStatus?: 'approved' | 'pending';
 }

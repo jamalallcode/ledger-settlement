@@ -191,11 +191,19 @@ const App: React.FC = () => {
               setPrevStats(content);
               localStorage.setItem(PREV_STATS_KEY, JSON.stringify(content));
             } else if (row.id.startsWith('id-')) {
-              // Distinguish between entry types
-              if (content.type === 'correspondence') {
-                corrEntries.push(content);
+              // Distinguish between entry types - robust check
+              const isCorrespondence = content.type === 'correspondence' || (content.description !== undefined && content.description !== null);
+              
+              // Ensure type is set correctly in the content object for consistent handling
+              const normalizedContent = {
+                ...content,
+                type: isCorrespondence ? 'correspondence' : 'settlement'
+              };
+
+              if (isCorrespondence) {
+                corrEntries.push(normalizedContent);
               } else {
-                processedEntries.push(content);
+                processedEntries.push(normalizedContent);
               }
             }
           });
@@ -229,7 +237,7 @@ const App: React.FC = () => {
 
   const handleAddOrUpdateEntry = async (data: any) => {
     // If data comes from Correspondence Module, it will have a specific structure
-    const isCorrespondence = data.description !== undefined;
+    const isCorrespondence = data.description !== undefined && data.description !== null;
 
     if (editingEntry && !isAdmin) {
       alert("দুঃখিত, শুধুমাত্র এডমিন তথ্য এডিট করতে পারেন।");
@@ -243,12 +251,24 @@ const App: React.FC = () => {
     let entryToSync: any;
 
     if (editingEntry) {
-      entryToSync = { ...editingEntry, ...data, approvalStatus: status };
+      entryToSync = { 
+        ...editingEntry, 
+        ...data, 
+        approvalStatus: status,
+        type: isCorrespondence ? 'correspondence' : 'settlement'
+      };
+      
+      // Remove from both lists first to handle potential type changes or misidentifications
+      setEntries(prev => prev.filter(e => e.id !== editingEntry.id));
+      setCorrespondenceEntries(prev => prev.filter(e => e.id !== editingEntry.id));
+      
+      // Add to the correct list
       if (isCorrespondence) {
-        setCorrespondenceEntries(prev => prev.map(e => e.id === editingEntry.id ? entryToSync : e));
+        setCorrespondenceEntries(prev => [entryToSync, ...prev]);
       } else {
-        setEntries(prev => prev.map(e => e.id === editingEntry.id ? entryToSync : e));
+        setEntries(prev => [...prev, entryToSync]);
       }
+      
       setEditingEntry(null);
     } else {
       const newId = generateId();
@@ -280,7 +300,9 @@ const App: React.FC = () => {
 
   // Specialized update handler for inline fields (date/person) to avoid jumping tabs
   const handleInlineUpdateEntry = async (updatedEntry: any) => {
-    if (updatedEntry.type === 'correspondence') {
+    const isCorrespondence = updatedEntry.type === 'correspondence' || (updatedEntry.description !== undefined && updatedEntry.description !== null);
+    
+    if (isCorrespondence) {
       setCorrespondenceEntries(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));
     } else {
       setEntries(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));

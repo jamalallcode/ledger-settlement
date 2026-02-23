@@ -79,7 +79,7 @@ const Navbar: React.FC<NavbarProps> = ({
   const navItems = [
     { id: 'landing', label: 'হোম', icon: Home },
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter },
-    { id: 'return', label: 'রিটার্ন', icon: PieChart },
+    { id: 'return', label: 'রিটার্ণ/সারাংশ', icon: PieChart },
     { id: 'archive', label: 'লাইব্রেরি', icon: Library },
     { id: 'voting', label: 'ভোট', icon: Fingerprint },
   ];
@@ -120,7 +120,7 @@ const Navbar: React.FC<NavbarProps> = ({
                     >
                       <IDBadge id="nav-quick-entry" /> 
                       <FilePlus2 size={20} className="text-blue-600" /> 
-                      নতুন এন্ট্রি
+                      নতুন তথ্য এন্ট্রি
                     </button>
                   </div>
                 )}
