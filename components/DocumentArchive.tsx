@@ -6,7 +6,7 @@ import {
   ExternalLink, Trash2, LayoutGrid, List, X, 
   ChevronRight, BookOpen, Clock, Download, Eye, Loader2, Sparkles, AlertCircle
 } from 'lucide-react';
-import { toBengaliDigits } from '../utils/numberUtils';
+import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 
 const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const [documents, setDocuments] = useState<ArchiveDoc[]>([]);
@@ -155,15 +155,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       });
   }, [documents, searchTerm, activeCategory]);
 
-  const safeFormatDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    try {
-      const d = new Date(dateStr);
-      return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString();
-    } catch (e) {
-      return dateStr;
-    }
-  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-landing-premium pb-20">
@@ -261,8 +252,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                        <div className="space-y-2 px-2">
                           <h4 className="text-lg font-black text-slate-900 leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">{doc.title}</h4>
                           <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-tighter">
-                             <div className="flex items-center gap-1.5"><Calendar size={12} /> {toBengaliDigits(doc.docDate)}</div>
-                             <div className="flex items-center gap-1.5"><Clock size={12} /> {toBengaliDigits(safeFormatDate(doc.createdAt))}</div>
+                             <div className="flex items-center gap-1.5"><Calendar size={12} /> {formatDateBN(doc.docDate)}</div>
+                             <div className="flex items-center gap-1.5"><Clock size={12} /> {formatDateBN(doc.createdAt)}</div>
                           </div>
                        </div>
                     </div>
@@ -288,7 +279,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                           <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 mt-1 uppercase">
                              <span className="text-blue-600">{doc.category}</span>
                              <span>•</span>
-                             <span>{toBengaliDigits(doc.docDate)}</span>
+                             <span>{formatDateBN(doc.docDate)}</span>
                           </div>
                        </div>
                     </div>
@@ -339,7 +330,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                        <span className="px-5 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-black rounded-full uppercase tracking-widest border border-blue-100">{selectedDoc.category}</span>
                        <h3 className="text-2xl font-black text-slate-900 leading-tight">{selectedDoc.title}</h3>
                        <div className="flex items-center gap-3 text-slate-400 font-bold text-sm">
-                          <Calendar size={16} /> <span>{toBengaliDigits(selectedDoc.docDate)}</span>
+                          <Calendar size={16} /> <span>{formatDateBN(selectedDoc.docDate)}</span>
                        </div>
                     </div>
                     
