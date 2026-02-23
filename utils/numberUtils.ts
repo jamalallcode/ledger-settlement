@@ -40,3 +40,18 @@ export const formatBengaliAmount = (num: number): string => {
   const formatted = num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return toBengaliDigits(formatted);
 };
+
+/**
+ * Formats an ISO date string (YYYY-MM-DD) to Bengali DD/MM/YYYY format.
+ */
+export const formatDateBN = (iso: string | undefined | null): string => {
+  if (!iso || iso === '0000-00-00' || iso.startsWith('0000')) return '';
+  // If it's already in DD/MM/YYYY format (contains /), just convert digits
+  if (iso.includes('/')) return toBengaliDigits(iso);
+  // If it's ISO YYYY-MM-DD
+  const parts = iso.split('-');
+  if (parts.length === 3) {
+    return toBengaliDigits(`${parts[2]}/${parts[1]}/${parts[0]}`);
+  }
+  return toBengaliDigits(iso);
+};
