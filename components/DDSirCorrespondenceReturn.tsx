@@ -309,7 +309,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               <thead>
                 <tr className="bg-white">
                   <th colSpan={2} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">অনিষ্পন্ন কাজের তালিকা (ফিল্টারকৃত)</th>
-                  <th colSpan={4} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">শাখা: {filterBranch === 'সকল' ? (filteredEntries[0]?.paraType || 'অনির্ধারিত') : filterBranch}</th>
+                  <th colSpan={4} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">শাখা: {filterBranch === 'সকল' ? 'সকল' : filterBranch}</th>
                   <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">মাস: {reportingMonthBN}</th>
                   <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">তারিখ: {reportingDateBN} খ্রি:</th>
                 </tr>
@@ -396,7 +396,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           <div className="text-center mb-6 w-full">
              <div className="inline-block px-10 py-1 bg-black text-white text-[15px] font-bold tracking-widest uppercase mb-4">ছক</div>
              <div className="flex justify-between items-end border-b border-slate-300 pb-1">
-                <span className="font-bold text-[14px]">বকেয়া চিঠিপত্রের তালিকা ({filterBranch === 'সকল' ? (filteredEntries[0]?.paraType || 'অনির্ধারিত') : filterBranch} শাখা)</span>
+                <span className="font-bold text-[14px]">বকেয়া চিঠিপত্রের তালিকা ({filterBranch === 'সকল' ? 'সকল' : filterBranch} শাখা)</span>
                 <span className="font-bold text-[14px]">তাং- {reportingDateBN} খ্রি:</span>
              </div>
           </div>
@@ -446,7 +446,17 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         <td className={stickyTdStyle}>{row.diaryNo}<br/><span className="text-[9px] text-slate-500 font-bold">{formatDateBN(row.diaryDate)}</span></td>
                         <td className={stickyTdStyle}>
                           <div className="flex flex-col gap-0.5">
-                             <span className="text-blue-700 text-[10.5px] font-bold">{row.letterType}</span>
+                             <span className="text-blue-700 text-[10.5px] font-bold">
+                               {row.paraType === 'এসএফআই' ? (
+                                 row.letterType === 'কার্যপত্র' ? 'ত্রিপক্ষীয় সভার কার্যপত্র' :
+                                 row.letterType === 'কার্যবিবরণী' ? 'ত্রিপক্ষীয় সভার কার্যবিবরণী' :
+                                 row.letterType
+                               ) : row.paraType === 'নন এসএফআই' ? (
+                                 row.letterType === 'কার্যপত্র' ? 'দ্বিপক্ষীয় সভার কার্যপত্র' :
+                                 row.letterType === 'কার্যবিবরণী' ? 'দ্বিপক্ষীয় সভার কার্যবিবরণী' :
+                                 row.letterType
+                               ) : row.letterType}
+                             </span>
                              <span className="text-[9.5px] font-bold">(অনু: {toBengaliDigits(row.totalParas)}টি)</span>
                           </div>
                         </td>
