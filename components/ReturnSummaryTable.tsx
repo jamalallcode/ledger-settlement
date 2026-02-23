@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { ChevronLeft, Printer, Database, CheckCircle2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { ChevronLeft, Printer, Database, CheckCircle2, Search, X } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 
@@ -25,6 +25,40 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   HistoricalFilter,
   IDBadge
 }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredReportData = useMemo(() => {
+    if (!searchTerm.trim()) return reportData;
+    
+    return reportData.map(m => {
+      const filteredRows = m.entityRows.filter((row: any) => 
+        row.entity.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        m.ministry.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      return { ...m, entityRows: filteredRows };
+    }).filter(m => m.entityRows.length > 0);
+  }, [reportData, searchTerm]);
+
+  const filteredGrandTotals = useMemo(() => {
+    if (!searchTerm.trim()) return grandTotals;
+    
+    return filteredReportData.reduce((acc: any, m: any) => {
+      const mTotals = m.entityRows.reduce((mAcc: any, row: any) => {
+        mAcc.pUC += (row.prev.unsettledCount || 0); mAcc.pUA += (row.prev.unsettledAmount || 0);
+        mAcc.cRC += (row.currentRaisedCount || 0); mAcc.cRA += (row.currentRaisedAmount || 0);
+        mAcc.pSC += (row.prev.settledCount || 0); mAcc.pSA += (row.prev.settledAmount || 0);
+        mAcc.cSC += (row.currentSettledCount || 0); mAcc.cSA += (row.currentSettledAmount || 0);
+        return mAcc;
+      }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0 });
+      
+      acc.pUC += mTotals.pUC; acc.pUA += mTotals.pUA;
+      acc.cRC += mTotals.cRC; acc.cRA += mTotals.cRA;
+      acc.pSC += mTotals.pSC; acc.pSA += mTotals.pSA;
+      acc.cSC += mTotals.cSC; acc.cSA += mTotals.cSA;
+      return acc;
+    }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0 });
+  }, [filteredReportData, searchTerm, grandTotals]);
+
   const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight bg-white group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
   const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[9.5px] bg-slate-100 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1,inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
@@ -43,6 +77,24 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
         </div>
         
         <div className="flex flex-wrap items-center gap-4">
+          <div className="relative group min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={16} />
+            <input 
+              type="text"
+              placeholder="মন্ত্রণালয় বা সংস্থা দিয়ে খুঁজুন..."
+              className="w-full pl-10 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
           <HistoricalFilter />
           <button onClick={() => window.print()} className="h-[44px] px-6 bg-slate-900 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95"><Printer size={18} /> প্রিন্ট</button>
         </div>
@@ -100,7 +152,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
               </tr>
             </thead>
             <tbody>
-              {reportData.map(m => {
+              {filteredReportData.map(m => {
                 const mTotals = m.entityRows.reduce((acc: any, row: any) => {
                   acc.pUC += (row.prev.unsettledCount || 0); acc.pUA += (row.prev.unsettledAmount || 0); acc.cRC += (row.currentRaisedCount || 0); acc.cRA += (row.currentRaisedAmount || 0);
                   acc.pSC += (row.prev.settledCount || 0); acc.pSA += (row.prev.settledAmount || 0); acc.cSC += (row.currentSettledCount || 0); acc.cSA += (row.currentSettledAmount || 0);
@@ -148,14 +200,14 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             </tbody>
             <tfoot className="sticky bottom-0 z-[230] shadow-2xl">
               <tr>
-                <td colSpan={2} className={grandStyle + " !bg-slate-200 text-slate-900 uppercase tracking-widest text-[10px] shadow-[inset_0_1px_0_#cbd5e1] border-l border-slate-400 font-black"}>সর্বমোট ইউনিফাইড সারাংশ:</td>
-                <td className={grandStyle}>{toBengaliDigits(grandTotals.pUC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.pUA))}</td>
-                <td className={grandStyle}>{toBengaliDigits(grandTotals.cRC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.cRA))}</td>
-                <td className={grandStyle + " !bg-slate-200/80 font-black"}>{toBengaliDigits(grandTotals.pUC + grandTotals.cRC)}</td><td className={grandStyle + " text-center !bg-slate-200/80 font-black"}>{toBengaliDigits(Math.round(grandTotals.pUA + grandTotals.cRA))}</td>
-                <td className={grandStyle}>{toBengaliDigits(grandTotals.pSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.pSA))}</td>
-                <td className={grandStyle}>{toBengaliDigits(grandTotals.cSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(grandTotals.cSA))}</td>
-                <td className={grandStyle + " !bg-emerald-100/80 font-black"}>{toBengaliDigits(grandTotals.pSC + grandTotals.cSC)}</td><td className={grandStyle + " text-center !bg-emerald-100/80 font-black"}>{toBengaliDigits(Math.round(grandTotals.pSA + grandTotals.cSA))}</td>
-                <td className={grandStyle + " !bg-orange-100 text-slate-900 font-black"}>{toBengaliDigits((grandTotals.pUC + grandTotals.cRC) - (grandTotals.pSC + grandTotals.cSC))}</td><td className={grandStyle + " text-center !bg-orange-100 text-slate-900 font-black"}>{toBengaliDigits(Math.round((grandTotals.pUA + grandTotals.cRA) - (grandTotals.pSA + grandTotals.cSA)))}</td>
+                <td colSpan={2} className={grandStyle + " !bg-slate-200 text-slate-900 uppercase tracking-widest text-[10px] shadow-[inset_0_1px_0_#cbd5e1] border-l border-slate-400 font-black"}>সর্বমোট (ফিল্টারকৃত):</td>
+                <td className={grandStyle}>{toBengaliDigits(filteredGrandTotals.pUC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(filteredGrandTotals.pUA))}</td>
+                <td className={grandStyle}>{toBengaliDigits(filteredGrandTotals.cRC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(filteredGrandTotals.cRA))}</td>
+                <td className={grandStyle + " !bg-slate-200/80 font-black"}>{toBengaliDigits(filteredGrandTotals.pUC + filteredGrandTotals.cRC)}</td><td className={grandStyle + " text-center !bg-slate-200/80 font-black"}>{toBengaliDigits(Math.round(filteredGrandTotals.pUA + filteredGrandTotals.cRA))}</td>
+                <td className={grandStyle}>{toBengaliDigits(filteredGrandTotals.pSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(filteredGrandTotals.pSA))}</td>
+                <td className={grandStyle}>{toBengaliDigits(filteredGrandTotals.cSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(filteredGrandTotals.cSA))}</td>
+                <td className={grandStyle + " !bg-emerald-100/80 font-black"}>{toBengaliDigits(filteredGrandTotals.pSC + filteredGrandTotals.cSC)}</td><td className={grandStyle + " text-center !bg-emerald-100/80 font-black"}>{toBengaliDigits(Math.round(filteredGrandTotals.pSA + filteredGrandTotals.cSA))}</td>
+                <td className={grandStyle + " !bg-orange-100 text-slate-900 font-black"}>{toBengaliDigits((filteredGrandTotals.pUC + filteredGrandTotals.cRC) - (filteredGrandTotals.pSC + filteredGrandTotals.cSC))}</td><td className={grandStyle + " text-center !bg-orange-100 text-slate-900 font-black"}>{toBengaliDigits(Math.round((filteredGrandTotals.pUA + filteredGrandTotals.cRA) - (filteredGrandTotals.pSA + filteredGrandTotals.cSA)))}</td>
               </tr>
             </tfoot>
           </table>
