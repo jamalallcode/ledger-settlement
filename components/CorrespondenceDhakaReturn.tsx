@@ -46,8 +46,14 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
 
   const typeOptions = useMemo(() => {
     const unique = Array.from(new Set(filteredCorrespondence.map(e => e.letterType).filter(Boolean)));
-    return ['সকল', ...unique];
-  }, [filteredCorrespondence]);
+    const mapped = unique.map(type => {
+      if (filterParaType === 'এসএফআই' && type === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)') {
+        return 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)';
+      }
+      return type;
+    });
+    return ['সকল', ...Array.from(new Set(mapped))];
+  }, [filteredCorrespondence, filterParaType]);
 
   const filteredData = useMemo(() => {
     let data = filteredCorrespondence;
@@ -57,7 +63,12 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     }
     
     if (filterLetterType !== 'সকল') {
-      data = data.filter(e => e.letterType === filterLetterType);
+      data = data.filter(e => {
+        const mappedType = (filterParaType === 'এসএফআই' && e.letterType === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)') 
+          ? 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)' 
+          : e.letterType;
+        return mappedType === filterLetterType;
+      });
     }
 
     if (!searchTerm.trim()) return data;
