@@ -18,15 +18,20 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   onBack, 
   isLayoutEditable 
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [filterBranch, setFilterBranch] = useState('সকল');
   const [filterAuditor, setFilterAuditor] = useState('সকল');
   const [isAuditorDropdownOpen, setIsAuditorDropdownOpen] = useState(false);
+  const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const auditorDropdownRef = useRef<HTMLDivElement>(null);
+  const branchDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (auditorDropdownRef.current && !auditorDropdownRef.current.contains(e.target as Node)) {
         setIsAuditorDropdownOpen(false);
+      }
+      if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) {
+        setIsBranchDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -45,14 +50,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       data = data.filter(e => (e.receiverName || e.presentedToName) === filterAuditor);
     }
 
-    if (!searchTerm.trim()) return data;
-    return data.filter(entry => 
-      (entry.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (entry.diaryNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (entry.letterNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (entry.receiverName || entry.presentedToName || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [entries, searchTerm, filterAuditor]);
+    if (filterBranch !== 'সকল') {
+      data = data.filter(e => e.paraType === filterBranch);
+    }
+
+    return data;
+  }, [entries, filterAuditor, filterBranch]);
 
   // --- Logic for 2nd Sunday Calculation (Default) ---
   const defaultReportingDate = useMemo(() => {
@@ -183,6 +186,37 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Branch Filter */}
+          <div className="space-y-1" ref={branchDropdownRef}>
+            <div 
+              onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)} 
+              className={customDropdownCls(isBranchDropdownOpen) + " min-w-[150px]"}
+            >
+              <Mail size={16} className="text-blue-600" />
+              <span className="font-bold text-[12px] text-slate-900 truncate">
+                {filterBranch === 'সকল' ? 'সকল শাখা' : filterBranch}
+              </span>
+              <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isBranchDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+              
+              {isBranchDropdownOpen && (
+                <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[180px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200">
+                  <div className="max-h-[250px] overflow-y-auto no-scrollbar py-2">
+                    {['সকল', 'এসএফআই', 'নন এসএফআই'].map((opt, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={(e) => { e.stopPropagation(); setFilterBranch(opt); setIsBranchDropdownOpen(false); }} 
+                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterBranch === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
+                      >
+                        <span>{opt === 'সকল' ? 'সকল শাখা' : opt}</span>
+                        {filterBranch === opt && <Check size={14} strokeWidth={3} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Auditor Filter */}
           <div className="space-y-1" ref={auditorDropdownRef}>
             <div 
@@ -212,25 +246,6 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 </div>
               )}
             </div>
-          </div>
-
-          <div className="relative group min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={16} />
-            <input 
-              type="text"
-              placeholder="ডায়েরি, স্মারক বা বিবরণ দিয়ে খুঁজুন..."
-              className="w-full pl-10 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {searchTerm && (
-              <button 
-                onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors"
-              >
-                <X size={14} />
-              </button>
-            )}
           </div>
 
           <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 h-[44px] rounded-xl">
@@ -289,15 +304,23 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               <thead>
                 <tr className="bg-white">
                   <th colSpan={2} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">অনিষ্পন্ন কাজের তালিকা (ফিল্টারকৃত)</th>
-                  <th colSpan={4} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">শাখা: {filteredEntries[0]?.paraType || 'অনির্ধারিত'}</th>
+                  <th colSpan={4} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">শাখা: {filterBranch === 'সকল' ? (filteredEntries[0]?.paraType || 'অনির্ধারিত') : filterBranch}</th>
                   <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">মাস: {reportingMonthBN}</th>
                   <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">তারিখ: {reportingDateBN} খ্রি:</th>
                 </tr>
                 <tr>
                   <th rowSpan={2} className={thStyle}>ক্রমিক নং</th>
                   <th rowSpan={2} className={thStyle}>দায়িত্বপ্রাপ্ত অডিটর</th>
-                  <th colSpan={2} className={thStyle}>দ্বি/ত্রিপক্ষীয় সভার কার্যপত্র</th>
-                  <th colSpan={2} className={thStyle}>দ্বি/ত্রিপক্ষীয় সভার কার্যবিবরণী</th>
+                  <th colSpan={2} className={thStyle}>
+                    {filterBranch === 'এসএফআই' ? 'ত্রিপক্ষীয় সভার কার্যপত্র' : 
+                     filterBranch === 'নন এসএফআই' ? 'দ্বিপক্ষীয় সভার কার্যপত্র' : 
+                     'দ্বি/ত্রিপক্ষীয় সভার কার্যপত্র'}
+                  </th>
+                  <th colSpan={2} className={thStyle}>
+                    {filterBranch === 'এসএফআই' ? 'ত্রিপক্ষীয় সভার কার্যবিবরণী' : 
+                     filterBranch === 'নন এসএফআই' ? 'দ্বিপক্ষীয় সভার কার্যবিবরণী' : 
+                     'দ্বি/ত্রিপক্ষীয় সভার কার্যবিবরণী'}
+                  </th>
                   <th colSpan={2} className={thStyle}>ব্রডশীট জবাব</th>
                   <th colSpan={2} className={thStyle}>মিলিকরণ</th>
                   <th colSpan={2} className={thStyle}>অন্যান্য</th>
@@ -368,7 +391,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           <div className="text-center mb-6 w-full">
              <div className="inline-block px-10 py-1 bg-black text-white text-[15px] font-bold tracking-widest uppercase mb-4">ছক</div>
              <div className="flex justify-between items-end border-b border-slate-300 pb-1">
-                <span className="font-bold text-[14px]">বকেয়া চিঠিপত্রের তালিকা ({filteredEntries[0]?.paraType || 'অনির্ধারিত'} শাখা)</span>
+                <span className="font-bold text-[14px]">বকেয়া চিঠিপত্রের তালিকা ({filterBranch === 'সকল' ? (filteredEntries[0]?.paraType || 'অনির্ধারিত') : filterBranch} শাখা)</span>
                 <span className="font-bold text-[14px]">তাং- {reportingDateBN} খ্রি:</span>
              </div>
           </div>
