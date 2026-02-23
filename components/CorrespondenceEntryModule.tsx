@@ -516,22 +516,25 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     e.preventDefault();
     if (isDuplicate) return;
 
-    if (formData.receiverName.trim()) {
-      const updatedNames = Array.from(new Set([formData.receiverName.trim(), ...receiverSuggestions]));
-      setReceiverSuggestions(updatedNames);
-      localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updatedNames));
-    }
-    
-    if (formData.description.trim()) {
-      const updatedDesc = Array.from(new Set([formData.description.trim(), ...descriptionSuggestions]));
-      setDescriptionSuggestions(updatedDesc);
-      localStorage.setItem('ledger_correspondence_descriptions', JSON.stringify(updatedDesc));
-    }
+    // Defer heavy work to next tick to avoid blocking UI (INP fix)
+    setTimeout(() => {
+      if (formData.receiverName.trim()) {
+        const updatedNames = Array.from(new Set([formData.receiverName.trim(), ...receiverSuggestions]));
+        setReceiverSuggestions(updatedNames);
+        localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updatedNames));
+      }
+      
+      if (formData.description.trim()) {
+        const updatedDesc = Array.from(new Set([formData.description.trim(), ...descriptionSuggestions]));
+        setDescriptionSuggestions(updatedDesc);
+        localStorage.setItem('ledger_correspondence_descriptions', JSON.stringify(updatedDesc));
+      }
 
-    onAdd(formData);
-    setIsSuccess(true);
-    resetForm();
-    setTimeout(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, 100);
+      onAdd(formData);
+      setIsSuccess(true);
+      resetForm();
+      setTimeout(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, 100);
+    }, 0);
   };
 
   // Chronological Validations
