@@ -145,7 +145,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       }
     });
     return groups;
-  }, [entries]);
+  }, [filteredEntries]);
 
   const totals = useMemo(() => {
     return reportTableData.reduce((acc, row) => {
