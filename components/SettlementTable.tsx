@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import React from 'react';
 import { SettlementEntry } from '../types.ts';
 import { Trash2, Pencil, Calendar, Printer, CheckCircle2, ChevronDown, ChevronUp, FileText, Fingerprint, Banknote, ListOrdered, Archive, MapPin, CalendarDays, Sparkles, ClipboardList, Filter, X, Search, LayoutGrid, CalendarSearch, Check, ShieldCheck, XCircle, AlertCircle, MessageSquare } from 'lucide-react';
-import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils.ts';
+import { toBengaliDigits, parseBengaliNumber, formatDateBN } from '../utils/numberUtils.ts';
 import { OFFICE_HEADER } from '../constants.ts';
 import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper.ts';
 import { format, addMonths } from 'date-fns';
@@ -203,7 +203,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             { label: '১৬. অমীমাংসিত টাকা', value: toBengaliDigits(entry.meetingUnsettledAmount ?? 0), icon: Banknote, col: 'purple' },
             { label: '১৭. পূর্ণাঙ্গ আদায়', value: toBengaliDigits(Math.round(fullMoney)), icon: CheckCircle2, col: 'sky' },
             { label: '১৮. আংশিক আদায়', value: toBengaliDigits(Math.round(partialMoney)), icon: CheckCircle2, col: 'emerald' },
-            { label: '১৯. সভার তারিখ', value: toBengaliDigits(entry.meetingDate || 'N/A'), icon: Calendar, col: 'amber' },
+            { label: '১৯. সভার তারিখ', value: formatDateBN(entry.meetingDate) || 'N/A', icon: Calendar, col: 'amber' },
             { label: '২০. মন্তব্য', value: entry.remarks || 'N/A', icon: MessageSquare, col: 'purple' }
           ].map((item, i) => (
             <div key={i} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
