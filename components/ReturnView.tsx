@@ -217,7 +217,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }, [entries, selectedReportType, calculateRecursiveOpening, activeCycle, ministryGroups]);
 
   const filteredCorrespondence = useMemo(() => {
-    if (selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
+    if (selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
     const reportingDateObj = endOfDay(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0));
     return (correspondenceEntries || []).filter(e => {
       if (!e.diaryDate) return false;
@@ -228,13 +228,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       
       // Exclude specific letter types as requested (Milikaran, Karjapatra)
       const isExcludedType = e.letterType === 'মিলিকরণ' || e.letterType === 'কার্যপত্র';
-      if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && isExcludedType) return false;
+      if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && isExcludedType) return false;
 
       const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
       const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
       const hasValidNo = rawNo !== '' && rawNo !== '০' && rawNo !== '0' && !rawNo.includes('নং-');
       const hasValidDate = rawDate !== '' && rawDate !== '0000-00-00';
-      const isIssued = hasValidNo || hasValidDate;
+      const isIssued = hasValidNo && hasValidDate;
       return isBeforeOrOnReportingDate && !isIssued;
     }).sort((a, b) => new Date(toEnglishDigits(b.diaryDate)).getTime() - new Date(toEnglishDigits(a.diaryDate)).getTime());
   }, [correspondenceEntries, selectedReportType, activeCycle]);
