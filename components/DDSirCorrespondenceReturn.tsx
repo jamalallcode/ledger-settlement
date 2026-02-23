@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { ChevronLeft, Printer, Mail, Calendar, RotateCcw } from 'lucide-react';
 import React from 'react';
-import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 import { format, startOfMonth, addDays, isBefore, subMonths, parseISO } from 'date-fns';
 
@@ -326,15 +326,15 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                           </td>
                         )}
                         <td className={stickyTdStyle + " text-left px-2 font-bold text-[10.5px]"}>{row.description}</td>
-                        <td className={stickyTdStyle}>{row.letterNo}<br/><span className="text-[9px] text-slate-500 font-bold">{toBengaliDigits(row.letterDate)}</span></td>
-                        <td className={stickyTdStyle}>{row.diaryNo}<br/><span className="text-[9px] text-slate-500 font-bold">{toBengaliDigits(row.diaryDate)}</span></td>
+                        <td className={stickyTdStyle}>{row.letterNo}<br/><span className="text-[9px] text-slate-500 font-bold">{formatDateBN(row.letterDate)}</span></td>
+                        <td className={stickyTdStyle}>{row.diaryNo}<br/><span className="text-[9px] text-slate-500 font-bold">{formatDateBN(row.diaryDate)}</span></td>
                         <td className={stickyTdStyle}>
                           <div className="flex flex-col gap-0.5">
                              <span className="text-blue-700 text-[10.5px] font-bold">{row.letterType}</span>
                              <span className="text-[9.5px] bg-slate-100 rounded px-1 group-hover:bg-white transition-colors font-bold">(অনু: {toBengaliDigits(row.totalParas)}টি)</span>
                           </div>
                         </td>
-                        <td className={stickyTdStyle}>{toBengaliDigits(row.presentationDate) || '-'}</td>
+                        <td className={stickyTdStyle}>{formatDateBN(row.presentationDate) || '-'}</td>
                         <td className={stickyTdStyle}>
                           {/* Position Badge Weight set to 700 (font-bold) */}
                           <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-[9px] font-bold uppercase group-hover:bg-white">
