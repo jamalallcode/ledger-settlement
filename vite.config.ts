@@ -18,6 +18,10 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      // এখানে নতুন অংশটুকু যুক্ত করা হয়েছে যা হলুদ ওয়ার্নিং দূর করবে
+      build: {
+        chunkSizeWarningLimit: 1000,
       }
     };
 });
