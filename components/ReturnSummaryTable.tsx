@@ -1,6 +1,6 @@
 
-import React, { useState, useMemo } from 'react';
-import { ChevronLeft, Printer, Database, CheckCircle2, Search, X } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { ChevronLeft, Printer, Database, CheckCircle2, Search, X, ChevronDown, Check, LayoutGrid, MapPin } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 
@@ -26,18 +26,42 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   IDBadge
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterMinistry, setFilterMinistry] = useState('সকল');
+  const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
+  const ministryDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ministryDropdownRef.current && !ministryDropdownRef.current.contains(e.target as Node)) {
+        setIsMinistryDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const ministryOptions = useMemo(() => {
+    const unique = Array.from(new Set(reportData.map(m => m.ministry)));
+    return ['সকল', ...unique];
+  }, [reportData]);
 
   const filteredReportData = useMemo(() => {
-    if (!searchTerm.trim()) return reportData;
+    let data = reportData;
     
-    return reportData.map(m => {
+    if (filterMinistry !== 'সকল') {
+      data = data.filter(m => m.ministry === filterMinistry);
+    }
+
+    if (!searchTerm.trim()) return data;
+    
+    return data.map(m => {
       const filteredRows = m.entityRows.filter((row: any) => 
         row.entity.toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.ministry.toLowerCase().includes(searchTerm.toLowerCase())
       );
       return { ...m, entityRows: filteredRows };
     }).filter(m => m.entityRows.length > 0);
-  }, [reportData, searchTerm]);
+  }, [reportData, searchTerm, filterMinistry]);
 
   const filteredGrandTotals = useMemo(() => {
     if (!searchTerm.trim()) return grandTotals;
@@ -62,6 +86,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight bg-white group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
   const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[9.5px] bg-slate-100 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1,inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
+  const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-200 shadow-sm hover:border-slate-300'}`;
 
   return (
     <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative">
@@ -77,6 +102,37 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
         </div>
         
         <div className="flex flex-wrap items-center gap-4">
+          {/* Ministry Filter */}
+          <div className="space-y-1" ref={ministryDropdownRef}>
+            <div 
+              onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)} 
+              className={customDropdownCls(isMinistryDropdownOpen) + " min-w-[180px]"}
+            >
+              <MapPin size={16} className="text-blue-600" />
+              <span className="font-bold text-[12px] text-slate-900 truncate">
+                {filterMinistry === 'সকল' ? 'সকল মন্ত্রণালয়' : filterMinistry}
+              </span>
+              <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isMinistryDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+              
+              {isMinistryDropdownOpen && (
+                <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[200px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200">
+                  <div className="max-h-[250px] overflow-y-auto no-scrollbar py-2">
+                    {ministryOptions.map((opt, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={(e) => { e.stopPropagation(); setFilterMinistry(opt); setIsMinistryDropdownOpen(false); }} 
+                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterMinistry === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
+                      >
+                        <span>{opt === 'সকল' ? 'সকল মন্ত্রণালয়' : opt}</span>
+                        {filterMinistry === opt && <Check size={14} strokeWidth={3} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="relative group min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={16} />
             <input 
