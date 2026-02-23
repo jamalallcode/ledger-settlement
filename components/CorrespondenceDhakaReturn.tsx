@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Printer, ChevronLeft } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Printer, ChevronLeft, Search, X } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 import { format as dateFnsFormat } from 'date-fns';
@@ -20,6 +20,17 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   HistoricalFilter,
   IDBadge
 }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredData = useMemo(() => {
+    if (!searchTerm.trim()) return filteredCorrespondence;
+    return filteredCorrespondence.filter(entry => 
+      (entry.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (entry.diaryNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (entry.letterNo || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [filteredCorrespondence, searchTerm]);
+
   const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
   const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
   const reportingDateBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0), 'dd/MM/yyyy'));
@@ -36,6 +47,24 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           </div>
         </div>
         <div className="flex items-center gap-4">
+          <div className="relative group min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={16} />
+            <input 
+              type="text"
+              placeholder="ডায়েরি, স্মারক বা বিবরণ দিয়ে খুঁজুন..."
+              className="w-full pl-10 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
           <HistoricalFilter />
           <button onClick={() => window.print()} className="h-[44px] px-6 bg-slate-900 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95"><Printer size={18} /> প্রিন্ট</button>
         </div>
@@ -89,7 +118,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               </tr>
             </thead>
             <tbody>
-              {filteredCorrespondence.length > 0 ? filteredCorrespondence.map((entry, idx) => (
+              {filteredData.length > 0 ? filteredData.map((entry, idx) => (
                 <tr key={entry.id} className="group hover:bg-blue-50/50 transition-colors">
                   <td className={tdS}>{toBengaliDigits(idx + 1)}</td>
                   <td className={`${tdS} text-left px-2`}>{entry.description}</td>
@@ -111,8 +140,8 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
             </tbody>
             <tfoot className="sticky bottom-0 z-[120]">
               <tr className="bg-slate-50 text-slate-900 font-black text-[11px] h-11 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] border-t-2 border-slate-300">
-                <td colSpan={2} className="px-4 text-left border-t border-slate-300 bg-slate-50">সর্বমোট চিঠিপত্র সংখ্যা:</td>
-                <td colSpan={2} className="px-4 text-center border-t border-slate-300 bg-slate-50 text-emerald-600">{toBengaliDigits(filteredCorrespondence.length)} টি</td>
+                <td colSpan={2} className="px-4 text-left border-t border-slate-300 bg-slate-50">সর্বমোট চিঠিপত্র (ফিল্টারকৃত):</td>
+                <td colSpan={2} className="px-4 text-center border-t border-slate-300 bg-slate-50 text-emerald-600">{toBengaliDigits(filteredData.length)} টি</td>
                 <td colSpan={9} className="border-t border-slate-300 bg-slate-50"></td>
               </tr>
             </tfoot>
