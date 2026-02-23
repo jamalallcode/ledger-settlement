@@ -348,16 +348,16 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   <tr key={idx} className="group">
                     <td className={tdStyle}>{toBengaliDigits(idx + 1)}</td>
                     <td className={tdStyle + " text-left text-[11px] font-bold"}>{row.name}</td>
-                    <td className={tdStyle}>{row.karyapatra.less > 0 ? toBengaliDigits(row.karyapatra.less) : '-'}</td>
-                    <td className={tdStyle}>{row.karyapatra.more > 0 ? toBengaliDigits(row.karyapatra.more) : '-'}</td>
-                    <td className={tdStyle}>{row.karyabibarani.less > 0 ? toBengaliDigits(row.karyabibarani.less) : '-'}</td>
-                    <td className={tdStyle}>{row.karyabibarani.more > 0 ? toBengaliDigits(row.karyabibarani.more) : '-'}</td>
-                    <td className={tdStyle}>{row.broadsheet.less > 0 ? toBengaliDigits(row.broadsheet.less) : '-'}</td>
-                    <td className={tdStyle}>{row.broadsheet.more > 0 ? toBengaliDigits(row.broadsheet.more) : '-'}</td>
-                    <td className={tdStyle}>{row.reconciliation.less > 0 ? toBengaliDigits(row.reconciliation.less) : '-'}</td>
-                    <td className={tdStyle}>{row.reconciliation.more > 0 ? toBengaliDigits(row.reconciliation.more) : '-'}</td>
-                    <td className={tdStyle}>{row.others.less > 0 ? toBengaliDigits(row.others.less) : '-'}</td>
-                    <td className={tdStyle}>{row.others.more > 0 ? toBengaliDigits(row.others.more) : '-'}</td>
+                    <td className={tdStyle}>{row.karyapatra.less > 0 ? `${toBengaliDigits(row.karyapatra.less)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.karyapatra.more > 0 ? `${toBengaliDigits(row.karyapatra.more)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.karyabibarani.less > 0 ? `${toBengaliDigits(row.karyabibarani.less)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.karyabibarani.more > 0 ? `${toBengaliDigits(row.karyabibarani.more)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.broadsheet.less > 0 ? `${toBengaliDigits(row.broadsheet.less)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.broadsheet.more > 0 ? `${toBengaliDigits(row.broadsheet.more)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.reconciliation.less > 0 ? `${toBengaliDigits(row.reconciliation.less)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.reconciliation.more > 0 ? `${toBengaliDigits(row.reconciliation.more)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.others.less > 0 ? `${toBengaliDigits(row.others.less)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.others.more > 0 ? `${toBengaliDigits(row.others.more)} টি` : '-'}</td>
                   </tr>
                 )) : (
                   <tr>
