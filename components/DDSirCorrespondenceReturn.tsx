@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
-import React from 'react';
 import { ChevronLeft, Printer, Mail, Calendar, RotateCcw } from 'lucide-react';
+import React from 'react';
 import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 import { format, startOfMonth, addDays, isBefore, subMonths, parseISO } from 'date-fns';
@@ -68,10 +68,10 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       const lType = entry.letterType || '';
       const desc = (entry.description || '').toLowerCase();
 
-      // FIXED LOGIC: Both 'দ্বিপক্ষীয় সভা' and 'কার্যপত্র' are categorized as Workpaper (karyapatra)
-      if (lType === 'দ্বিপক্ষীয় সভা' || lType === 'কার্যপত্র') {
+      // UPDATED LOGIC: Categorize based on Workpaper (কার্যপত্র) or Minutes (কার্যবিবরণী)
+      if (lType.includes('কার্যপত্র')) {
         grouped[auditor].karyapatra[durationKey]++;
-      } else if (lType === 'ত্রিপক্ষীয় সভা') {
+      } else if (lType.includes('কার্যবিবরণী')) {
         grouped[auditor].karyabibarani[durationKey]++;
       } else if (lType === 'বিএসআর') {
         grouped[auditor].broadsheet[durationKey]++;
@@ -208,8 +208,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <tr>
                   <th rowSpan={2} className={thStyle}>ক্রমিক নং</th>
                   <th rowSpan={2} className={thStyle}>দায়িত্বপ্রাপ্ত অডিটর</th>
-                  <th colSpan={2} className={thStyle}>দ্বিপক্ষীয় সভার কার্যপত্র</th>
-                  <th colSpan={2} className={thStyle}>দ্বিপক্ষীয় সভার কার্যবিবরণী</th>
+                  <th colSpan={2} className={thStyle}>দ্বি/ত্রিপক্ষীয় সভার কার্যপত্র</th>
+                  <th colSpan={2} className={thStyle}>দ্বি/ত্রিপক্ষীয় সভার কার্যবিবরণী</th>
                   <th colSpan={2} className={thStyle}>ব্রডশীট জবাব</th>
                   <th colSpan={2} className={thStyle}>মিলিকরণ</th>
                   <th colSpan={2} className={thStyle}>অন্যান্য</th>
