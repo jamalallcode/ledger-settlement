@@ -1016,41 +1016,57 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                         </td>
                         <td className={tdCls}>
                            <div className="space-y-2">
-                              <div className={`p-1.5 border rounded-lg space-y-1 transition-colors ${pending.issueLetterNo ? 'bg-amber-600/10 border-amber-400 ring-2 ring-amber-50' : 'bg-amber-50/50 border-amber-100'}`}>
-                                 <div className="text-[9px] font-bold text-amber-700 uppercase tracking-tighter flex items-center gap-1"><Hash size={8} /> জারিপত্র নং</div>
-                                 <input 
-                                   type="text" 
-                                   placeholder="নং"
-                                   className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none focus:border-amber-400 bg-white" 
-                                   value={currentIssueNo} 
-                                   onChange={e => handleInlineChange(entry.id, 'issueLetterNo', toBengaliDigits(e.target.value))}
-                                 />
-                              </div>
+                              {(() => {
+                                const isIssueComplete = !!currentIssueNo && !!currentIssueDate;
+                                const issueColorCls = isIssueComplete 
+                                  ? 'bg-emerald-600/10 border-emerald-400 ring-2 ring-emerald-50' 
+                                  : (pending.issueLetterNo || pending.issueLetterDate)
+                                    ? 'bg-amber-600/10 border-amber-400 ring-2 ring-amber-50' 
+                                    : 'bg-amber-50/50 border-amber-100';
+                                
+                                const labelColorCls = isIssueComplete ? 'text-emerald-700' : 'text-amber-700';
+                                const iconColorCls = isIssueComplete ? 'text-emerald-500' : 'text-amber-500';
 
-                              <div className={`p-1.5 border rounded-lg space-y-1 transition-colors ${pending.issueLetterDate ? 'bg-amber-600/10 border-amber-400 ring-2 ring-amber-50' : 'bg-amber-50/50 border-amber-100'}`}>
-                                 <div className="flex items-center justify-between">
-                                    <div className="text-[9px] font-bold text-amber-700 uppercase tracking-tighter flex items-center gap-1"><Calendar size={8} /> জারিপত্র তারিখ</div>
-                                    <div className="flex items-center gap-1.5">
-                                       {formatDateBN(currentIssueDate) && <span className="text-[8px] font-black text-amber-600">{formatDateBN(currentIssueDate)}</span>}
-                                       <div className="relative flex items-center h-3 w-3">
-                                          <Calendar 
-                                            size={11} 
-                                            className="text-amber-500 cursor-pointer hover:text-amber-700 transition-colors" 
-                                            onClick={(e) => {
-                                              const input = (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement);
-                                              if (input) input.showPicker();
-                                            }}
-                                          />
-                                          <input 
-                                            type="date" 
-                                            className="absolute inset-0 opacity-0 w-3 h-3 cursor-pointer"
-                                            value={currentIssueDate}
-                                            onChange={e => handleInlineChange(entry.id, 'issueLetterDate', e.target.value)}
-                                          />
+                                return (
+                                  <>
+                                    <div className={`p-1.5 border rounded-lg space-y-1 transition-colors ${issueColorCls}`}>
+                                       <div className={`text-[9px] font-bold uppercase tracking-tighter flex items-center gap-1 ${labelColorCls}`}><Hash size={8} /> জারিপত্র নং</div>
+                                       <input 
+                                         type="text" 
+                                         placeholder="নং"
+                                         className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none focus:border-emerald-400 bg-white" 
+                                         value={currentIssueNo} 
+                                         onChange={e => handleInlineChange(entry.id, 'issueLetterNo', toBengaliDigits(e.target.value))}
+                                       />
+                                    </div>
+
+                                    <div className={`p-1.5 border rounded-lg space-y-1 transition-colors ${issueColorCls}`}>
+                                       <div className="flex items-center justify-between">
+                                          <div className={`text-[9px] font-bold uppercase tracking-tighter flex items-center gap-1 ${labelColorCls}`}><Calendar size={8} /> জারিপত্র তারিখ</div>
+                                          <div className="flex items-center gap-1.5">
+                                             {formatDateBN(currentIssueDate) && <span className={`text-[8px] font-black ${isIssueComplete ? 'text-emerald-600' : 'text-amber-600'}`}>{formatDateBN(currentIssueDate)}</span>}
+                                             <div className="relative flex items-center h-3 w-3">
+                                                <Calendar 
+                                                  size={11} 
+                                                  className={`${iconColorCls} cursor-pointer hover:opacity-80 transition-colors`} 
+                                                  onClick={(e) => {
+                                                    const input = (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement);
+                                                    if (input) input.showPicker();
+                                                  }}
+                                                />
+                                                <input 
+                                                  type="date" 
+                                                  className="absolute inset-0 opacity-0 w-3 h-3 cursor-pointer"
+                                                  value={currentIssueDate}
+                                                  onChange={e => handleInlineChange(entry.id, 'issueLetterDate', e.target.value)}
+                                                />
+                                             </div>
+                                          </div>
                                        </div>
                                     </div>
-                                 </div>
-                              </div>
+                                  </>
+                                );
+                              })()}
                            </div>
                         </td>
                         <td className={tdCls + " relative group/action text-center"}>
