@@ -443,7 +443,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
         if (el) {
           const rect = el.getBoundingClientRect();
           // If the header's top is at or above the sticky threshold (with a small buffer)
-          if (rect.top <= stickyTop + 5) {
+          // Using a slightly larger buffer for better detection during fast scroll
+          if (rect.top <= stickyTop + 10) {
             activeLabel = group.label;
           }
         }
@@ -823,9 +824,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                           </div>
                         </div>
                       </div>
-                      
-                      {expandedCycles[group.label] && (
-                        <div className="bg-white p-4 border-b border-slate-200 animate-in fade-in slide-in-from-top-1 duration-200">
+                    </td>
+                  </tr>
+                  
+                  {expandedCycles[group.label] && (
+                    <tr className="sticky top-[82px] z-[85] no-print">
+                      <td colSpan={7} className="p-0 border border-slate-300">
+                        <div className="bg-white p-4 border-b border-slate-200 animate-in fade-in slide-in-from-top-1 duration-200 shadow-md">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* SFI Stats */}
                             <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-3 space-y-2">
@@ -882,9 +887,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                             </div>
                           </div>
                         </div>
-                      )}
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+                  )}
                   {/* Print-only cycle header */}
                   <tr className="hidden print:table-row bg-slate-100 border-y border-slate-300">
                     <td colSpan={7} className="px-4 py-2 border border-slate-300">
