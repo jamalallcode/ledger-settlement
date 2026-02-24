@@ -489,6 +489,28 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
     }
   };
 
+  const saveRowChanges = async (entryId: string) => {
+    const rowChanges = pendingChanges[entryId];
+    if (!rowChanges) return;
+    setIsUpdating(true);
+    
+    try {
+      const entry = entries.find(e => e.id === entryId);
+      if (entry && onInlineUpdate) {
+        await onInlineUpdate({ ...entry, ...rowChanges });
+      }
+      setPendingChanges(prev => {
+        const next = { ...prev };
+        delete next[entryId];
+        return next;
+      });
+    } catch (err) {
+      console.error("Update failed", err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   // Header font-black
   const thCls = "border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[11px] bg-slate-200 sticky top-0 z-[100] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
   // Data cells reverted to font-bold
@@ -1034,7 +1056,16 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                         <td className={tdCls + " relative group/action text-center"}>
                            <span className="text-[9px] opacity-70 font-bold">{entry.remarks || '-'}</span>
                            {isAdmin && (
-                             <div className="absolute right-0.5 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all no-print z-[500] bg-white/90 backdrop-blur-sm p-1 rounded-lg shadow-xl border border-slate-200">
+                             <div className="absolute right-0.5 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1 opacity-0 group-hover:opacity-100 transition-all no-print z-[500] bg-white/90 backdrop-blur-sm p-1 rounded-lg shadow-xl border border-slate-200">
+                               {pendingChanges[entry.id] && (
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); saveRowChanges(entry.id); }} 
+                                    className="p-1.5 bg-emerald-600 text-white rounded-md shadow-md hover:bg-emerald-700 transition-all animate-bounce"
+                                    title="আপডেট করুন"
+                                  >
+                                    <Save size={12} />
+                                  </button>
+                               )}
                                {isPendingForApproval && (
                                   <button 
                                     onClick={(e) => { e.stopPropagation(); onApprove?.(entry.id); }} 
