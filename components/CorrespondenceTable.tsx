@@ -443,7 +443,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
         if (el) {
           const rect = el.getBoundingClientRect();
           // If the header's top is at or above the sticky threshold (with a small buffer)
-          if (rect.top <= stickyTop + 10) {
+          if (rect.top <= stickyTop + 5) {
             activeLabel = group.label;
           }
         }
@@ -825,7 +825,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                       </div>
                       
                       {expandedCycles[group.label] && (
-                        <div className="bg-white p-4 border-b border-slate-200 animate-in fade-in slide-in-from-top-2 duration-500">
+                        <div className="bg-white p-4 border-b border-slate-200 animate-in fade-in slide-in-from-top-1 duration-200">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* SFI Stats */}
                             <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-3 space-y-2">
