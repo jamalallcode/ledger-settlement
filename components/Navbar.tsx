@@ -79,8 +79,6 @@ const Navbar: React.FC<NavbarProps> = ({
   const navItems = [
     { id: 'landing', label: 'হোম', icon: Home },
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter },
-    { id: 'archive', label: 'লাইব্রেরি', icon: Library },
-    { id: 'voting', label: 'ভোট', icon: Fingerprint },
   ];
 
   const IDBadge = ({ id }: { id: string }) => {
