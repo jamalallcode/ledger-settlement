@@ -405,6 +405,18 @@ const App: React.FC = () => {
   const approvedEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'approved' || !e.approvalStatus), [entries]);
   const approvedCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'approved' || !e.approvalStatus), [correspondenceEntries]);
   
+  const branchSuggestions: GroupOption[] = useMemo(() => {
+    const branches = new Set<string>();
+    entries.forEach(e => {
+      if (e.branchName) branches.add(e.branchName);
+    });
+    correspondenceEntries.forEach(e => {
+      if (e.branchName) branches.add(e.branchName);
+    });
+    const sortedBranches = Array.from(branches).sort();
+    return sortedBranches.length > 0 ? [{ label: 'পূর্বের শাখা তালিকা', options: sortedBranches }] : [];
+  }, [entries, correspondenceEntries]);
+
   const pendingEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'pending'), [entries]);
   const pendingCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'pending'), [correspondenceEntries]);
   
@@ -482,7 +494,7 @@ const App: React.FC = () => {
                 />
               )}
               
-              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={[]} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} />}
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} />}
               
               {activeTab === 'register' && (
                 <div className="space-y-6 relative">
