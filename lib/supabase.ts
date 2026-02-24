@@ -34,9 +34,25 @@ const isValidUrl = (url: string) => {
 export const isSupabaseConfigured = isValidUrl(supabaseUrl) && !!supabaseAnonKey;
 
 const createMockClient = () => {
+  const mockAuth = {
+    onAuthStateChange: (callback: any) => {
+      // Return a dummy subscription object that matches Supabase's structure
+      return { data: { subscription: { unsubscribe: () => {} } } };
+    },
+    getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+    getUser: () => Promise.resolve({ data: { user: null }, error: null }),
+    signInWithPassword: () => Promise.resolve({ data: { user: null, session: null }, error: { message: 'Mock mode active' } }),
+    signOut: () => Promise.resolve({ error: null }),
+  };
+
   const chainable = () => new Proxy({}, handler);
   const handler: ProxyHandler<any> = {
     get(target, prop) {
+      // Provide the mock auth object when requested
+      if (prop === 'auth') {
+        return mockAuth;
+      }
+      
       if (prop === 'then') {
         return (onfulfilled: any) => 
           Promise.resolve({ 

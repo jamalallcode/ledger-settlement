@@ -425,40 +425,44 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     e.preventDefault();
     if (isSubmitting.current || isSuccess) return;
     isSubmitting.current = true;
-    setIsSuccess(true);
-    setIsDeletingPara(false);
     
+    // Defer heavy work to next tick to avoid blocking UI (INP fix)
     setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+      setIsSuccess(true);
+      setIsDeletingPara(false);
+      
+      setTimeout(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
 
-    const now = new Date();
-    let cycleLabel = '';
-    let isLate = false;
-    if (formData.issueDateISO) {
-      const cycle = getCycleForDate(new Date(formData.issueDateISO));
-      cycleLabel = cycle.label;
-      isLate = isEntryLate(now, cycle.end);
-    }
-    const totals = paragraphs.reduce((acc, p) => {
-      if (p.category === 'ভ্যাট') { acc.vR += p.recoveredAmount; acc.vA += p.adjustedAmount; }
-      else if (p.category === 'আয়কর') { acc.iR += p.recoveredAmount; acc.iA += p.adjustedAmount; }
-      else { acc.oR += p.recoveredAmount; acc.oA += p.adjustedAmount; }
-      return acc;
-    }, { vR: 0, vA: 0, iR: 0, iA: 0, oR: 0, oA: 0 });
-    const paraInvTotal = paragraphs.reduce((s, p) => s + p.involvedAmount, 0);
-    
-    const finalData = {
-      ...formData, 
-      meetingFullSettledParaCount: Math.round(summaryData.fullInvolved).toString(),
-      meetingPartialSettledParaCount: Math.round(summaryData.partialInvolved).toString(),
-      isMeeting: formData.meetingType !== 'বিএসআর', 
-      paragraphs, cycleLabel, isLate, actualEntryDate: now.toISOString(), involvedAmount: paraInvTotal + (formData.meetingUnsettledAmount || 0),
-      vatRec: totals.vR, vatAdj: totals.vA, itRec: totals.iR, itAdj: totals.iA, othersRec: totals.oR, othersAdj: totals.oA, totalRec: totals.vR + totals.iR + totals.oR, totalAdj: totals.vA + totals.iA + totals.oA 
-    };
+      const now = new Date();
+      let cycleLabel = '';
+      let isLate = false;
+      if (formData.issueDateISO) {
+        const cycle = getCycleForDate(new Date(formData.issueDateISO));
+        cycleLabel = cycle.label;
+        isLate = isEntryLate(now, cycle.end);
+      }
+      const totals = paragraphs.reduce((acc, p) => {
+        if (p.category === 'ভ্যাট') { acc.vR += p.recoveredAmount; acc.vA += p.adjustedAmount; }
+        else if (p.category === 'আয়কর') { acc.iR += p.recoveredAmount; acc.iA += p.adjustedAmount; }
+        else { acc.oR += p.recoveredAmount; acc.oA += p.adjustedAmount; }
+        return acc;
+      }, { vR: 0, vA: 0, iR: 0, iA: 0, oR: 0, oA: 0 });
+      const paraInvTotal = paragraphs.reduce((s, p) => s + p.involvedAmount, 0);
+      
+      const finalData = {
+        ...formData, 
+        meetingFullSettledParaCount: Math.round(summaryData.fullInvolved).toString(),
+        meetingPartialSettledParaCount: Math.round(summaryData.partialInvolved).toString(),
+        isMeeting: formData.meetingType !== 'বিএসআর', 
+        paragraphs, cycleLabel, isLate, actualEntryDate: now.toISOString(), involvedAmount: paraInvTotal + (formData.meetingUnsettledAmount || 0),
+        vatRec: totals.vR, vatAdj: totals.vA, itRec: totals.iR, itAdj: totals.iA, othersRec: totals.oR, othersAdj: totals.oA, totalRec: totals.vR + totals.iR + totals.oR, totalAdj: totals.vA + totals.iA + totals.oA 
+      };
 
-    onAdd(finalData);
-    isSubmitting.current = false;
+      onAdd(finalData);
+      isSubmitting.current = false;
+    }, 0);
   };
 
   const formatSummaryNum = (val: number) => {

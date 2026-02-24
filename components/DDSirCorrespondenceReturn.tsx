@@ -1,7 +1,7 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
+import { ChevronLeft, Printer, Mail, Calendar, RotateCcw, Search, X, User, ChevronDown, Check, Sparkles } from 'lucide-react';
 import React from 'react';
-import { ChevronLeft, Printer, Mail, Calendar, RotateCcw } from 'lucide-react';
-import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 import { format, startOfMonth, addDays, isBefore, subMonths, parseISO } from 'date-fns';
 
@@ -18,6 +18,46 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   onBack, 
   isLayoutEditable 
 }) => {
+  const [filterBranch, setFilterBranch] = useState('সকল');
+  const [filterAuditor, setFilterAuditor] = useState('সকল');
+  const [showStats, setShowStats] = useState(false);
+  const [isAuditorDropdownOpen, setIsAuditorDropdownOpen] = useState(false);
+  const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+  const auditorDropdownRef = useRef<HTMLDivElement>(null);
+  const branchDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (auditorDropdownRef.current && !auditorDropdownRef.current.contains(e.target as Node)) {
+        setIsAuditorDropdownOpen(false);
+      }
+      if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) {
+        setIsBranchDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const auditorOptions = useMemo(() => {
+    const unique = Array.from(new Set(entries.map(e => e.receiverName || e.presentedToName).filter(Boolean)));
+    return ['সকল', ...unique];
+  }, [entries]);
+
+  const filteredEntries = useMemo(() => {
+    let data = entries;
+    
+    if (filterAuditor !== 'সকল') {
+      data = data.filter(e => (e.receiverName || e.presentedToName) === filterAuditor);
+    }
+
+    if (filterBranch !== 'সকল') {
+      data = data.filter(e => e.paraType === filterBranch);
+    }
+
+    return data;
+  }, [entries, filterAuditor, filterBranch]);
+
   // --- Logic for 2nd Sunday Calculation (Default) ---
   const defaultReportingDate = useMemo(() => {
     const end = activeCycle.end;
@@ -43,12 +83,14 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     .replace('July', 'জুলাই').replace('August', 'আগস্ট').replace('September', 'সেপ্টেম্বর')
     .replace('October', 'অক্টোবর').replace('November', 'নভেম্বর').replace('December', 'ডিসেম্বর');
 
+  const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-300'}`;
+
   // --- Grouping & Calculation Logic for Table 1 (Summary) ---
   const reportTableData = useMemo(() => {
     const grouped: Record<string, any> = {};
     const thresholdDate = subMonths(reportingDate, 1);
 
-    entries.forEach(entry => {
+    filteredEntries.forEach(entry => {
       const auditor = entry.receiverName || entry.presentedToName || 'অনির্ধারিত';
       if (!grouped[auditor]) {
         grouped[auditor] = {
@@ -68,10 +110,10 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       const lType = entry.letterType || '';
       const desc = (entry.description || '').toLowerCase();
 
-      // FIXED LOGIC: Both 'দ্বিপক্ষীয় সভা' and 'কার্যপত্র' are categorized as Workpaper (karyapatra)
-      if (lType === 'দ্বিপক্ষীয় সভা' || lType === 'কার্যপত্র') {
+      // UPDATED LOGIC: Categorize based on Workpaper (কার্যপত্র) or Minutes (কার্যবিবরণী)
+      if (lType.includes('কার্যপত্র')) {
         grouped[auditor].karyapatra[durationKey]++;
-      } else if (lType === 'ত্রিপক্ষীয় সভা') {
+      } else if (lType.includes('কার্যবিবরণী')) {
         grouped[auditor].karyabibarani[durationKey]++;
       } else if (lType === 'বিএসআর') {
         grouped[auditor].broadsheet[durationKey]++;
@@ -83,11 +125,11 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     });
 
     return Object.values(grouped);
-  }, [entries, reportingDate]);
+  }, [filteredEntries, reportingDate]);
 
   // --- Grouping & Logic for Table 2 (Detailed List) ---
   const detailedListData = useMemo(() => {
-    const sorted = [...entries].sort((a, b) => {
+    const sorted = [...filteredEntries].sort((a, b) => {
       const audA = a.receiverName || a.presentedToName || 'অনির্ধারিত';
       const audB = b.receiverName || b.presentedToName || 'অনির্ধারিত';
       return audA.localeCompare(audB);
@@ -104,7 +146,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       }
     });
     return groups;
-  }, [entries]);
+  }, [filteredEntries]);
 
   const totals = useMemo(() => {
     return reportTableData.reduce((acc, row) => {
@@ -119,6 +161,28 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
   const grandTotalLess = totals.kpL + totals.kbL + totals.bsL + totals.rcL + totals.otL;
   const grandTotalMore = totals.kpM + totals.kbM + totals.bsM + totals.rcM + totals.otM;
+
+  const summaryStats = useMemo(() => {
+    const stats = {
+      total: entries.length,
+      sfi: { total: 0, bsr: 0, kp: 0, kb: 0 },
+      nonSfi: { total: 0, bsr: 0, kp: 0, kb: 0 }
+    };
+    entries.forEach(e => {
+      if (e.paraType === 'এসএফআই') {
+        stats.sfi.total++;
+        if (e.letterType === 'বিএসআর') stats.sfi.bsr++;
+        if (e.letterType?.includes('কার্যপত্র')) stats.sfi.kp++;
+        if (e.letterType?.includes('কার্যবিবরণী')) stats.sfi.kb++;
+      } else if (e.paraType === 'নন এসএফআই') {
+        stats.nonSfi.total++;
+        if (e.letterType === 'বিএসআর') stats.nonSfi.bsr++;
+        if (e.letterType?.includes('কার্যপত্র')) stats.nonSfi.kp++;
+        if (e.letterType?.includes('কার্যবিবরণী')) stats.nonSfi.kb++;
+      }
+    });
+    return stats;
+  }, [entries]);
 
   // Header font is font-bold
   const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[11px] leading-tight align-middle bg-slate-200";
@@ -142,18 +206,93 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             <span className="text-xs font-black text-blue-600 uppercase tracking-tighter">স্পেশাল ভিউ:</span>
             <span className="text-lg font-black text-slate-900 leading-tight">ডিডি স্যার ফরম্যাট</span>
           </div>
+          
+          <button 
+            onClick={() => setShowStats(!showStats)}
+            className={`ml-4 px-4 py-2 rounded-xl border transition-all flex items-center gap-2 font-bold text-[12px] no-print ${showStats ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm'}`}
+          >
+            <Sparkles size={14} className={showStats ? 'animate-pulse' : ''} />
+            পরিসংখ্যান {showStats ? <ChevronDown size={14} className="rotate-180" /> : <ChevronDown size={14} />}
+          </button>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 h-[44px] rounded-xl">
+          {/* Branch Filter */}
+          <div className="space-y-1" ref={branchDropdownRef}>
+            <div 
+              onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)} 
+              className={customDropdownCls(isBranchDropdownOpen) + " min-w-[150px]"}
+            >
+              <Mail size={16} className="text-blue-600" />
+              <span className="font-bold text-[12px] text-slate-900 truncate">
+                {filterBranch === 'সকল' ? 'সকল শাখা' : filterBranch}
+              </span>
+              <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isBranchDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+              
+              {isBranchDropdownOpen && (
+                <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[180px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200">
+                  <div className="max-h-[250px] overflow-y-auto no-scrollbar py-2">
+                    {['সকল', 'এসএফআই', 'নন এসএফআই'].map((opt, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={(e) => { e.stopPropagation(); setFilterBranch(opt); setIsBranchDropdownOpen(false); }} 
+                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterBranch === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
+                      >
+                        <span>{opt === 'সকল' ? 'সকল শাখা' : opt}</span>
+                        {filterBranch === opt && <Check size={14} strokeWidth={3} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Auditor Filter */}
+          <div className="space-y-1" ref={auditorDropdownRef}>
+            <div 
+              onClick={() => setIsAuditorDropdownOpen(!isAuditorDropdownOpen)} 
+              className={customDropdownCls(isAuditorDropdownOpen) + " min-w-[180px]"}
+            >
+              <User size={16} className="text-blue-600" />
+              <span className="font-bold text-[12px] text-slate-900 truncate">
+                {filterAuditor === 'সকল' ? 'সকল অডিটর' : filterAuditor}
+              </span>
+              <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isAuditorDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+              
+              {isAuditorDropdownOpen && (
+                <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[200px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200">
+                  <div className="max-h-[250px] overflow-y-auto no-scrollbar py-2">
+                    {auditorOptions.map((opt, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={(e) => { e.stopPropagation(); setFilterAuditor(opt); setIsAuditorDropdownOpen(false); }} 
+                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterAuditor === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
+                      >
+                        <span>{opt === 'সকল' ? 'সকল অডিটর' : opt}</span>
+                        {filterAuditor === opt && <Check size={14} strokeWidth={3} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 h-[44px] rounded-xl relative group">
              <Calendar size={16} className="text-blue-600" />
              <label className="text-[11px] font-black text-slate-500 uppercase tracking-tighter mr-1">রিপোর্টিং তারিখ:</label>
-             <input 
-               type="date" 
-               className="bg-transparent border-none outline-none font-black text-slate-900 text-xs cursor-pointer"
-               value={selectedReportingDate}
-               onChange={(e) => setSelectedReportingDate(e.target.value)}
-             />
+             <div className="relative flex items-center">
+               <span className="font-black text-slate-900 text-xs pointer-events-none">
+                 {toBengaliDigits(format(reportingDate, 'dd/MM/yyyy'))}
+               </span>
+               <input 
+                 type="date" 
+                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                 value={selectedReportingDate}
+                 onChange={(e) => setSelectedReportingDate(e.target.value)}
+               />
+             </div>
              {selectedReportingDate !== defaultReportingDate && (
                <button 
                 onClick={() => setSelectedReportingDate(defaultReportingDate)}
@@ -170,6 +309,40 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Summary Stats Panel */}
+      {showStats && (
+        <div className="mx-4 p-5 bg-blue-50/50 border border-blue-100 rounded-2xl no-print animate-in slide-in-from-top-2 duration-300 shadow-sm">
+          <div className="flex flex-col gap-3 font-bold text-slate-700">
+            <div className="flex items-center gap-2 text-[14px]">
+              <span className="text-blue-700">মোট চিঠি:</span>
+              <span className="text-slate-900">{toBengaliDigits(summaryStats.total)} টি</span>
+            </div>
+            <div className="flex items-center gap-2 text-[13px]">
+              <span className="text-blue-700">এসএফআই:</span>
+              <span className="text-slate-900">
+                {toBengaliDigits(summaryStats.sfi.total)} টি 
+                <span className="text-slate-500 font-medium ml-1">
+                  (বিএসআর: {toBengaliDigits(summaryStats.sfi.bsr)} টি, 
+                  ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.sfi.kp)} টি, 
+                  ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি।
+                </span>
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-[13px]">
+              <span className="text-blue-700">নন এসএফআই:</span>
+              <span className="text-slate-900">
+                {toBengaliDigits(summaryStats.nonSfi.total)} টি 
+                <span className="text-slate-500 font-medium ml-1">
+                  (বিএসআর: {toBengaliDigits(summaryStats.nonSfi.bsr)} টি, 
+                  দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.nonSfi.kp)} টি, 
+                  দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি।
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="w-full bg-white p-2 md:p-6 relative">
         {/* Office Header */}
@@ -200,16 +373,24 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               </colgroup>
               <thead>
                 <tr className="bg-white">
-                  <th colSpan={2} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">অনিষ্পন্ন কাজের তালিকা</th>
-                  <th colSpan={4} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">শাখা: {entries[0]?.paraType || 'অনির্ধারিত'}</th>
+                  <th colSpan={2} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">অনিষ্পন্ন কাজের তালিকা (ফিল্টারকৃত)</th>
+                  <th colSpan={4} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">শাখা: {filterBranch === 'সকল' ? 'সকল' : filterBranch}</th>
                   <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">মাস: {reportingMonthBN}</th>
                   <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">তারিখ: {reportingDateBN} খ্রি:</th>
                 </tr>
                 <tr>
                   <th rowSpan={2} className={thStyle}>ক্রমিক নং</th>
                   <th rowSpan={2} className={thStyle}>দায়িত্বপ্রাপ্ত অডিটর</th>
-                  <th colSpan={2} className={thStyle}>দ্বিপক্ষীয় সভার কার্যপত্র</th>
-                  <th colSpan={2} className={thStyle}>দ্বিপক্ষীয় সভার কার্যবিবরণী</th>
+                  <th colSpan={2} className={thStyle}>
+                    {filterBranch === 'এসএফআই' ? 'ত্রিপক্ষীয় সভার কার্যপত্র' : 
+                     filterBranch === 'নন এসএফআই' ? 'দ্বিপক্ষীয় সভার কার্যপত্র' : 
+                     'দ্বি/ত্রিপক্ষীয় সভার কার্যপত্র'}
+                  </th>
+                  <th colSpan={2} className={thStyle}>
+                    {filterBranch === 'এসএফআই' ? 'ত্রিপক্ষীয় সভার কার্যবিবরণী' : 
+                     filterBranch === 'নন এসএফআই' ? 'দ্বিপক্ষীয় সভার কার্যবিবরণী' : 
+                     'দ্বি/ত্রিপক্ষীয় সভার কার্যবিবরণী'}
+                  </th>
                   <th colSpan={2} className={thStyle}>ব্রডশীট জবাব</th>
                   <th colSpan={2} className={thStyle}>মিলিকরণ</th>
                   <th colSpan={2} className={thStyle}>অন্যান্য</th>
@@ -232,16 +413,16 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   <tr key={idx} className="group">
                     <td className={tdStyle}>{toBengaliDigits(idx + 1)}</td>
                     <td className={tdStyle + " text-left text-[11px] font-bold"}>{row.name}</td>
-                    <td className={tdStyle}>{row.karyapatra.less > 0 ? toBengaliDigits(row.karyapatra.less) : '-'}</td>
-                    <td className={tdStyle}>{row.karyapatra.more > 0 ? toBengaliDigits(row.karyapatra.more) : '-'}</td>
-                    <td className={tdStyle}>{row.karyabibarani.less > 0 ? toBengaliDigits(row.karyabibarani.less) : '-'}</td>
-                    <td className={tdStyle}>{row.karyabibarani.more > 0 ? toBengaliDigits(row.karyabibarani.more) : '-'}</td>
-                    <td className={tdStyle}>{row.broadsheet.less > 0 ? toBengaliDigits(row.broadsheet.less) : '-'}</td>
-                    <td className={tdStyle}>{row.broadsheet.more > 0 ? toBengaliDigits(row.broadsheet.more) : '-'}</td>
-                    <td className={tdStyle}>{row.reconciliation.less > 0 ? toBengaliDigits(row.reconciliation.less) : '-'}</td>
-                    <td className={tdStyle}>{row.reconciliation.more > 0 ? toBengaliDigits(row.reconciliation.more) : '-'}</td>
-                    <td className={tdStyle}>{row.others.less > 0 ? toBengaliDigits(row.others.less) : '-'}</td>
-                    <td className={tdStyle}>{row.others.more > 0 ? toBengaliDigits(row.others.more) : '-'}</td>
+                    <td className={tdStyle}>{row.karyapatra.less > 0 ? `${toBengaliDigits(row.karyapatra.less)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.karyapatra.more > 0 ? `${toBengaliDigits(row.karyapatra.more)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.karyabibarani.less > 0 ? `${toBengaliDigits(row.karyabibarani.less)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.karyabibarani.more > 0 ? `${toBengaliDigits(row.karyabibarani.more)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.broadsheet.less > 0 ? `${toBengaliDigits(row.broadsheet.less)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.broadsheet.more > 0 ? `${toBengaliDigits(row.broadsheet.more)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.reconciliation.less > 0 ? `${toBengaliDigits(row.reconciliation.less)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.reconciliation.more > 0 ? `${toBengaliDigits(row.reconciliation.more)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.others.less > 0 ? `${toBengaliDigits(row.others.less)} টি` : '-'}</td>
+                    <td className={tdStyle}>{row.others.more > 0 ? `${toBengaliDigits(row.others.more)} টি` : '-'}</td>
                   </tr>
                 )) : (
                   <tr>
@@ -280,7 +461,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           <div className="text-center mb-6 w-full">
              <div className="inline-block px-10 py-1 bg-black text-white text-[15px] font-bold tracking-widest uppercase mb-4">ছক</div>
              <div className="flex justify-between items-end border-b border-slate-300 pb-1">
-                <span className="font-bold text-[14px]">বকেয়া চিঠিপত্রের তালিকা ({entries[0]?.paraType || 'অনির্ধারিত'} শাখা)</span>
+                <span className="font-bold text-[14px]">বকেয়া চিঠিপত্রের তালিকা ({filterBranch === 'সকল' ? 'সকল' : filterBranch} শাখা)</span>
                 <span className="font-bold text-[14px]">তাং- {reportingDateBN} খ্রি:</span>
              </div>
           </div>
@@ -326,15 +507,25 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                           </td>
                         )}
                         <td className={stickyTdStyle + " text-left px-2 font-bold text-[10.5px]"}>{row.description}</td>
-                        <td className={stickyTdStyle}>{row.letterNo}<br/><span className="text-[9px] text-slate-500 font-bold">{toBengaliDigits(row.letterDate)}</span></td>
-                        <td className={stickyTdStyle}>{row.diaryNo}<br/><span className="text-[9px] text-slate-500 font-bold">{toBengaliDigits(row.diaryDate)}</span></td>
+                        <td className={stickyTdStyle}>{row.letterNo}<br/><span className="text-[9px] text-slate-500 font-bold">{formatDateBN(row.letterDate)}</span></td>
+                        <td className={stickyTdStyle}>{row.diaryNo}<br/><span className="text-[9px] text-slate-500 font-bold">{formatDateBN(row.diaryDate)}</span></td>
                         <td className={stickyTdStyle}>
                           <div className="flex flex-col gap-0.5">
-                             <span className="text-blue-700 text-[10.5px] font-bold">{row.letterType}</span>
-                             <span className="text-[9.5px] bg-slate-100 rounded px-1 group-hover:bg-white transition-colors font-bold">(অনু: {toBengaliDigits(row.totalParas)}টি)</span>
+                             <span className="text-blue-700 text-[10.5px] font-bold">
+                               {row.paraType === 'এসএফআই' ? (
+                                 row.letterType === 'কার্যপত্র' ? 'ত্রিপক্ষীয় সভার কার্যপত্র' :
+                                 row.letterType === 'কার্যবিবরণী' ? 'ত্রিপক্ষীয় সভার কার্যবিবরণী' :
+                                 row.letterType
+                               ) : row.paraType === 'নন এসএফআই' ? (
+                                 row.letterType === 'কার্যপত্র' ? 'দ্বিপক্ষীয় সভার কার্যপত্র' :
+                                 row.letterType === 'কার্যবিবরণী' ? 'দ্বিপক্ষীয় সভার কার্যবিবরণী' :
+                                 row.letterType
+                               ) : row.letterType}
+                             </span>
+                             <span className="text-[9.5px] font-bold">(অনু: {toBengaliDigits(row.totalParas)}টি)</span>
                           </div>
                         </td>
-                        <td className={stickyTdStyle}>{toBengaliDigits(row.presentationDate) || '-'}</td>
+                        <td className={stickyTdStyle}>{formatDateBN(row.presentationDate) || '-'}</td>
                         <td className={stickyTdStyle}>
                           {/* Position Badge Weight set to 700 (font-bold) */}
                           <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-[9px] font-bold uppercase group-hover:bg-white">
@@ -356,8 +547,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               {/* Footer text color white */}
               <tfoot>
                 <tr className="bg-slate-900 text-white font-bold text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] border-t border-slate-700">
-                  <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-slate-900">সর্বমোট চিঠিপত্র সংখ্যা:</td>
-                  <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-slate-900 text-white font-bold">{toBengaliDigits(entries.length)} টি</td>
+                  <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-slate-900">সর্বমোট চিঠিপত্র (ফিল্টারকৃত):</td>
+                  <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-slate-900 text-white font-bold">{toBengaliDigits(filteredEntries.length)} টি</td>
                   <td colSpan={6} className="border-t border-slate-700 bg-slate-900"></td>
                 </tr>
               </tfoot>

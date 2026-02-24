@@ -1,6 +1,7 @@
-import React from 'react';
-import { Printer, ChevronLeft } from 'lucide-react';
-import { toBengaliDigits } from '../utils/numberUtils';
+
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Printer, ChevronLeft, Search, X, ChevronDown, Check, LayoutGrid, FileText } from 'lucide-react';
+import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 import { format as dateFnsFormat } from 'date-fns';
 
@@ -19,7 +20,67 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   HistoricalFilter,
   IDBadge
 }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterParaType, setFilterParaType] = useState('সকল');
+  const [filterLetterType, setFilterLetterType] = useState('সকল');
+  
+  const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+  const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
+  
+  const branchDropdownRef = useRef<HTMLDivElement>(null);
+  const typeDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) setIsBranchDropdownOpen(false);
+      if (typeDropdownRef.current && !typeDropdownRef.current.contains(e.target as Node)) setIsTypeDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const branchOptions = useMemo(() => {
+    const unique = Array.from(new Set(filteredCorrespondence.map(e => e.paraType).filter(Boolean)));
+    return ['সকল', ...unique];
+  }, [filteredCorrespondence]);
+
+  const typeOptions = useMemo(() => {
+    const unique = Array.from(new Set(filteredCorrespondence.map(e => e.letterType).filter(Boolean)));
+    const mapped = unique.map(type => {
+      if (filterParaType === 'এসএফআই' && type === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)') {
+        return 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)';
+      }
+      return type;
+    });
+    return ['সকল', ...Array.from(new Set(mapped))];
+  }, [filteredCorrespondence, filterParaType]);
+
+  const filteredData = useMemo(() => {
+    let data = filteredCorrespondence;
+    
+    if (filterParaType !== 'সকল') {
+      data = data.filter(e => e.paraType === filterParaType);
+    }
+    
+    if (filterLetterType !== 'সকল') {
+      data = data.filter(e => {
+        const mappedType = (filterParaType === 'এসএফআই' && e.letterType === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)') 
+          ? 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)' 
+          : e.letterType;
+        return mappedType === filterLetterType;
+      });
+    }
+
+    if (!searchTerm.trim()) return data;
+    return data.filter(entry => 
+      (entry.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (entry.diaryNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (entry.letterNo || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [filteredCorrespondence, searchTerm, filterParaType, filterLetterType]);
+
   const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
+  const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-emerald-600 ring-4 ring-emerald-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-300'}`;
   const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
   const reportingDateBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0), 'dd/MM/yyyy'));
 
@@ -35,6 +96,86 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           </div>
         </div>
         <div className="flex items-center gap-4">
+          {/* Branch Filter */}
+          <div className="space-y-1" ref={branchDropdownRef}>
+            <div 
+              onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)} 
+              className={customDropdownCls(isBranchDropdownOpen) + " min-w-[160px]"}
+            >
+              <LayoutGrid size={16} className="text-emerald-600" />
+              <span className="font-bold text-[12px] text-slate-900 truncate">
+                {filterParaType === 'সকল' ? 'সকল শাখা' : filterParaType}
+              </span>
+              <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isBranchDropdownOpen ? 'rotate-180 text-emerald-600' : ''}`} />
+              
+              {isBranchDropdownOpen && (
+                <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[180px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200">
+                  <div className="max-h-[250px] overflow-y-auto no-scrollbar py-2">
+                    {branchOptions.map((opt, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={(e) => { e.stopPropagation(); setFilterParaType(opt); setIsBranchDropdownOpen(false); }} 
+                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterParaType === opt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[12px]'}`}
+                      >
+                        <span>{opt === 'সকল' ? 'সকল শাখা' : opt}</span>
+                        {filterParaType === opt && <Check size={14} strokeWidth={3} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Type Filter */}
+          <div className="space-y-1" ref={typeDropdownRef}>
+            <div 
+              onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)} 
+              className={customDropdownCls(isTypeDropdownOpen) + " min-w-[160px]"}
+            >
+              <FileText size={16} className="text-emerald-600" />
+              <span className="font-bold text-[12px] text-slate-900 truncate">
+                {filterLetterType === 'সকল' ? 'সকল ধরণ' : filterLetterType}
+              </span>
+              <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isTypeDropdownOpen ? 'rotate-180 text-emerald-600' : ''}`} />
+              
+              {isTypeDropdownOpen && (
+                <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[180px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200">
+                  <div className="max-h-[250px] overflow-y-auto no-scrollbar py-2">
+                    {typeOptions.map((opt, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={(e) => { e.stopPropagation(); setFilterLetterType(opt); setIsTypeDropdownOpen(false); }} 
+                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterLetterType === opt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[12px]'}`}
+                      >
+                        <span>{opt === 'সকল' ? 'সকল ধরণ' : opt}</span>
+                        {filterLetterType === opt && <Check size={14} strokeWidth={3} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="relative group min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={16} />
+            <input 
+              type="text"
+              placeholder="ডায়েরি, স্মারক বা বিবরণ দিয়ে খুঁজুন..."
+              className="w-full pl-10 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
           <HistoricalFilter />
           <button onClick={() => window.print()} className="h-[44px] px-6 bg-slate-900 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95"><Printer size={18} /> প্রিন্ট</button>
         </div>
@@ -88,19 +229,19 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               </tr>
             </thead>
             <tbody>
-              {filteredCorrespondence.length > 0 ? filteredCorrespondence.map((entry, idx) => (
+              {filteredData.length > 0 ? filteredData.map((entry, idx) => (
                 <tr key={entry.id} className="group hover:bg-blue-50/50 transition-colors">
                   <td className={tdS}>{toBengaliDigits(idx + 1)}</td>
                   <td className={`${tdS} text-left px-2`}>{entry.description}</td>
-                  <td className={tdS}>{entry.diaryNo}<br/>{toBengaliDigits(entry.diaryDate)}</td>
-                  <td className={tdS}>{entry.letterNo}<br/>{toBengaliDigits(entry.letterDate)}</td>
+                  <td className={tdS}>{entry.diaryNo}<br/>{formatDateBN(entry.diaryDate)}</td>
+                  <td className={tdS}>{entry.letterNo}<br/>{formatDateBN(entry.letterDate)}</td>
                   <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'এসএফআই' ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                   <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'নন এসএফআই' ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                  <td className={tdS}>{entry.letterType === 'ত্রিপক্ষীয় সভা' && entry.paraType === 'এসএফআই' ? `ত্রিপক্ষীয় (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                  <td className={tdS}>{entry.letterType === 'দ্বিপক্ষীয় সভা' && entry.paraType === 'নন এসএফআই' ? `দ্বি-পক্ষীয় (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                  <td className={tdS}>{(entry.letterType.includes('ত্রিপক্ষীয় সভা') || entry.letterType === 'কার্যপত্র' || entry.letterType === 'কার্যবিবরণী') && entry.paraType === 'এসএফআই' ? `${entry.letterType} (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                  <td className={tdS}>{(entry.letterType.includes('দ্বিপক্ষীয় সভা') || entry.letterType === 'কার্যপত্র' || entry.letterType === 'কার্যবিবরণী') && entry.paraType === 'নন এসএফআই' ? `${entry.letterType} (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                   <td className={tdS}>-</td>
                   <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
-                  <td className={tdS}>{toBengaliDigits(entry.presentationDate)}</td>
+                  <td className={tdS}>{formatDateBN(entry.presentationDate)}</td>
                   <td className={tdS}>{entry.presentedToName || 'অডিটর'}</td>
                   <td className={tdS}>{entry.remarks || 'চলমান'}</td>
                 </tr>
@@ -110,8 +251,8 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
             </tbody>
             <tfoot className="sticky bottom-0 z-[120]">
               <tr className="bg-slate-50 text-slate-900 font-black text-[11px] h-11 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] border-t-2 border-slate-300">
-                <td colSpan={2} className="px-4 text-left border-t border-slate-300 bg-slate-50">সর্বমোট চিঠিপত্র সংখ্যা:</td>
-                <td colSpan={2} className="px-4 text-center border-t border-slate-300 bg-slate-50 text-emerald-600">{toBengaliDigits(filteredCorrespondence.length)} টি</td>
+                <td colSpan={2} className="px-4 text-left border-t border-slate-300 bg-slate-50">সর্বমোট চিঠিপত্র (ফিল্টারকৃত):</td>
+                <td colSpan={2} className="px-4 text-center border-t border-slate-300 bg-slate-50 text-emerald-600">{toBengaliDigits(filteredData.length)} টি</td>
                 <td colSpan={9} className="border-t border-slate-300 bg-slate-50"></td>
               </tr>
             </tfoot>
