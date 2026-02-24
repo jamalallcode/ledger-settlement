@@ -757,7 +757,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                   <tr className="sticky top-[32px] z-[90] no-print">
                     <td colSpan={7} className="p-0 border border-slate-300">
                       <div 
-                        onClick={() => setExpandedCycles(prev => ({ ...prev, [group.label]: !prev[group.label] }))}
+                        onClick={() => setExpandedCycles(prev => ({ [group.label]: !prev[group.label] }))}
                         className="bg-slate-100/95 backdrop-blur-sm border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
                       >
                         <div className="flex items-center gap-3">
