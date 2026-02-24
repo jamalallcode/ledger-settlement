@@ -432,22 +432,27 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
       const isAnyExpanded = Object.values(expandedCycles).some(v => v);
       if (!isAnyExpanded) return;
 
-      // Find the cycle header that is currently "active" (sticky at the top)
-      // We iterate through groupedEntries to ensure we respect the visual order
       let activeLabel = "";
-      const threshold = 40; // Sticky point is 32px, so 40px is a safe threshold
+      const stickyTop = 32; // The CSS top position of sticky headers
 
-      for (const group of groupedEntries) {
+      // Find the cycle header that is currently "active" (sticky at the top)
+      // We iterate in reverse to find the last header that has reached the sticky point
+      for (let i = groupedEntries.length - 1; i >= 0; i--) {
+        const group = groupedEntries[i];
         const el = cycleRefs.current[group.label];
         if (el) {
           const rect = el.getBoundingClientRect();
-          // The active sticky header is the last one that has reached the top
-          if (rect.top <= threshold) {
+          // If the header's top is at or above the sticky position (with a small buffer), 
+          // it's the current active one. Since we iterate in reverse, the first one 
+          // we find is the "latest" one that has reached the top.
+          if (rect.top <= stickyTop + 10) {
             activeLabel = group.label;
+            break;
           }
         }
       }
 
+      // Update expansion to the new active cycle if it changed
       if (activeLabel && !expandedCycles[activeLabel]) {
         setExpandedCycles({ [activeLabel]: true });
       }
