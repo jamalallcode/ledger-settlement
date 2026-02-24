@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { ChevronLeft, Printer, Mail, Calendar, RotateCcw, Search, X, User, ChevronDown, Check } from 'lucide-react';
+import { ChevronLeft, Printer, Mail, Calendar, RotateCcw, Search, X, User, ChevronDown, Check, Sparkles } from 'lucide-react';
 import React from 'react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
@@ -20,6 +20,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 }) => {
   const [filterBranch, setFilterBranch] = useState('সকল');
   const [filterAuditor, setFilterAuditor] = useState('সকল');
+  const [showStats, setShowStats] = useState(false);
   const [isAuditorDropdownOpen, setIsAuditorDropdownOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const auditorDropdownRef = useRef<HTMLDivElement>(null);
@@ -161,6 +162,28 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const grandTotalLess = totals.kpL + totals.kbL + totals.bsL + totals.rcL + totals.otL;
   const grandTotalMore = totals.kpM + totals.kbM + totals.bsM + totals.rcM + totals.otM;
 
+  const summaryStats = useMemo(() => {
+    const stats = {
+      total: entries.length,
+      sfi: { total: 0, bsr: 0, kp: 0, kb: 0 },
+      nonSfi: { total: 0, bsr: 0, kp: 0, kb: 0 }
+    };
+    entries.forEach(e => {
+      if (e.paraType === 'এসএফআই') {
+        stats.sfi.total++;
+        if (e.letterType === 'বিএসআর') stats.sfi.bsr++;
+        if (e.letterType?.includes('কার্যপত্র')) stats.sfi.kp++;
+        if (e.letterType?.includes('কার্যবিবরণী')) stats.sfi.kb++;
+      } else if (e.paraType === 'নন এসএফআই') {
+        stats.nonSfi.total++;
+        if (e.letterType === 'বিএসআর') stats.nonSfi.bsr++;
+        if (e.letterType?.includes('কার্যপত্র')) stats.nonSfi.kp++;
+        if (e.letterType?.includes('কার্যবিবরণী')) stats.nonSfi.kb++;
+      }
+    });
+    return stats;
+  }, [entries]);
+
   // Header font is font-bold
   const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[11px] leading-tight align-middle bg-slate-200";
   // Data cells reverted to font-bold (700 weight as per instruction)
@@ -183,6 +206,14 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             <span className="text-xs font-black text-blue-600 uppercase tracking-tighter">স্পেশাল ভিউ:</span>
             <span className="text-lg font-black text-slate-900 leading-tight">ডিডি স্যার ফরম্যাট</span>
           </div>
+          
+          <button 
+            onClick={() => setShowStats(!showStats)}
+            className={`ml-4 px-4 py-2 rounded-xl border transition-all flex items-center gap-2 font-bold text-[12px] no-print ${showStats ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm'}`}
+          >
+            <Sparkles size={14} className={showStats ? 'animate-pulse' : ''} />
+            পরিসংখ্যান {showStats ? <ChevronDown size={14} className="rotate-180" /> : <ChevronDown size={14} />}
+          </button>
         </div>
 
         <div className="flex items-center gap-3">
@@ -278,6 +309,40 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Summary Stats Panel */}
+      {showStats && (
+        <div className="mx-4 p-5 bg-blue-50/50 border border-blue-100 rounded-2xl no-print animate-in slide-in-from-top-2 duration-300 shadow-sm">
+          <div className="flex flex-col gap-3 font-bold text-slate-700">
+            <div className="flex items-center gap-2 text-[14px]">
+              <span className="text-blue-700">মোট চিঠি:</span>
+              <span className="text-slate-900">{toBengaliDigits(summaryStats.total)} টি</span>
+            </div>
+            <div className="flex items-center gap-2 text-[13px]">
+              <span className="text-blue-700">এসএফআই:</span>
+              <span className="text-slate-900">
+                {toBengaliDigits(summaryStats.sfi.total)} টি 
+                <span className="text-slate-500 font-medium ml-1">
+                  (বিএসআর: {toBengaliDigits(summaryStats.sfi.bsr)} টি, 
+                  ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.sfi.kp)} টি, 
+                  ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি।
+                </span>
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-[13px]">
+              <span className="text-blue-700">নন এসএফআই:</span>
+              <span className="text-slate-900">
+                {toBengaliDigits(summaryStats.nonSfi.total)} টি 
+                <span className="text-slate-500 font-medium ml-1">
+                  (বিএসআর: {toBengaliDigits(summaryStats.nonSfi.bsr)} টি, 
+                  দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.nonSfi.kp)} টি, 
+                  দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি।
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="w-full bg-white p-2 md:p-6 relative">
         {/* Office Header */}
