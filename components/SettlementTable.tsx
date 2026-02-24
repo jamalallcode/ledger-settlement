@@ -24,7 +24,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   entries, onDelete, onEdit, isLayoutEditable, showFilters, setShowFilters,
   isAdminView = false, onApprove, onReject, isAdmin = false 
 }) => {
-  const [expandedCycles, setExpandedCycles] = useState<Record<string, boolean>>({});
+  const [showCycleStats, setShowCycleStats] = useState<Record<string, boolean>>({});
   const lastActiveLabel = useRef<string>("");
   const cycleRefs = useRef<Record<string, HTMLDivElement | null>>({});
   
@@ -202,9 +202,6 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
 
   useEffect(() => {
     const handleScroll = () => {
-      const isAnyExpanded = Object.values(expandedCycles).some(v => v);
-      if (!isAnyExpanded) return;
-
       let activeLabel = "";
       const stickyTop = 42; 
 
@@ -220,13 +217,12 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
 
       if (activeLabel && activeLabel !== lastActiveLabel.current) {
         lastActiveLabel.current = activeLabel;
-        setExpandedCycles({ [activeLabel]: true });
       }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [expandedCycles, groupedEntries]);
+  }, [groupedEntries]);
 
   const grandTotals = useMemo(() => {
     return filteredEntries.reduce((acc, entry) => {
@@ -520,10 +516,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                         <div 
                           ref={el => { cycleRefs.current[group.label] = el; }}
                           onClick={() => {
-                            const nextState = !expandedCycles[group.label];
-                            setExpandedCycles({ [group.label]: nextState });
-                            if (nextState) lastActiveLabel.current = group.label;
-                            else lastActiveLabel.current = "";
+                            const nextState = !showCycleStats[group.label];
+                            setShowCycleStats({ ...showCycleStats, [group.label]: nextState });
                           }}
                           className="bg-slate-100/95 backdrop-blur-sm border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
                         >
@@ -543,16 +537,16 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <div className={`px-3 py-1 rounded-full text-[10px] font-black transition-all flex items-center gap-1.5 ${expandedCycles[group.label] ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white text-blue-600 border border-blue-200 hover:border-blue-400'}`}>
-                              {expandedCycles[group.label] ? 'সংক্ষিপ্ত করুন' : 'বিস্তারিত দেখুন'}
-                              <ChevronDown size={12} className={`transition-transform duration-300 ${expandedCycles[group.label] ? 'rotate-180' : ''}`} />
+                            <div className={`px-3 py-1 rounded-full text-[10px] font-black transition-all flex items-center gap-1.5 ${showCycleStats[group.label] ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white text-blue-600 border border-blue-200 hover:border-blue-400'}`}>
+                              {showCycleStats[group.label] ? 'সংক্ষিপ্ত করুন' : 'বিস্তারিত দেখুন'}
+                              <ChevronDown size={12} className={`transition-transform duration-300 ${showCycleStats[group.label] ? 'rotate-180' : ''}`} />
                             </div>
                           </div>
                         </div>
                       </td>
                     </tr>
 
-                    {expandedCycles[group.label] && (
+                    {showCycleStats[group.label] && (
                       <tr className="sticky top-[82px] z-[85] no-print">
                         <td colSpan={14} className="p-0 border border-slate-300">
                           <div className="bg-white p-4 border-b border-slate-200 animate-in fade-in slide-in-from-top-1 duration-200 shadow-md">
@@ -609,7 +603,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                       </td>
                     </tr>
 
-                    {expandedCycles[group.label] && group.entries.map((entry, idx) => {
+                    {group.entries.map((entry, idx) => {
                       const isExpanded = expandedEntries.has(entry.id);
                       const paras = entry.paragraphs || [];
                       const entrySettledCount = paras.filter(p => p.status === 'পূর্ণাঙ্গ').length;
