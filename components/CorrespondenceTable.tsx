@@ -284,35 +284,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      // Only sync if at least one cycle is currently expanded
-      const isAnyExpanded = Object.values(expandedCycles).some(v => v);
-      if (!isAnyExpanded) return;
-
-      // Find the cycle header that is currently "active" (sticky at the top)
-      // We look for the last header that has reached the sticky threshold
-      let activeLabel = "";
-      const threshold = 120; // Buffer to detect when header is near the top sticky position
-
-      Object.entries(cycleRefs.current).forEach(([label, el]) => {
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          if (rect.top <= threshold) {
-            activeLabel = label;
-          }
-        }
-      });
-
-      if (activeLabel && !expandedCycles[activeLabel]) {
-        setExpandedCycles({ [activeLabel]: true });
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [expandedCycles]);
-
   const cycleOptions = useMemo(() => {
     const options = [];
     const banglaMonths: Record<string, string> = {
@@ -454,6 +425,37 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
 
     return groups;
   }, [filteredEntries]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      // Only sync if at least one cycle is currently expanded
+      const isAnyExpanded = Object.values(expandedCycles).some(v => v);
+      if (!isAnyExpanded) return;
+
+      // Find the cycle header that is currently "active" (sticky at the top)
+      // We iterate through groupedEntries to ensure we respect the visual order
+      let activeLabel = "";
+      const threshold = 40; // Sticky point is 32px, so 40px is a safe threshold
+
+      for (const group of groupedEntries) {
+        const el = cycleRefs.current[group.label];
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          // The active sticky header is the last one that has reached the top
+          if (rect.top <= threshold) {
+            activeLabel = group.label;
+          }
+        }
+      }
+
+      if (activeLabel && !expandedCycles[activeLabel]) {
+        setExpandedCycles({ [activeLabel]: true });
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [expandedCycles, groupedEntries]);
 
   // IDBadge definition inside component
   const IDBadge = ({ id }: { id: string }) => {
