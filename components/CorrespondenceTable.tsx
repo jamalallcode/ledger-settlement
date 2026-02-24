@@ -254,6 +254,7 @@ const PremiumInlineSelect: React.FC<{
 const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBack, isLayoutEditable, isAdmin, onEdit, onInlineUpdate, onDelete, onApprove, onReject, showFilters, setShowFilters }) => {
   const [pendingChanges, setPendingChanges] = useState<Record<string, Partial<CorrespondenceEntry>>>({});
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
   
   // Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -331,6 +332,31 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
       return dateB.localeCompare(dateA);
     });
   }, [entries, searchTerm, filterParaType, filterType, activeCycle]);
+
+  const stats = useMemo(() => {
+    const total = filteredEntries.length;
+    const sfi = filteredEntries.filter(e => e.paraType === 'এসএফআই');
+    const nonSfi = filteredEntries.filter(e => e.paraType === 'নন এসএফআই');
+
+    const getLetterTypeCount = (list: CorrespondenceEntry[], type: string) => 
+      list.filter(e => e.letterType === type).length;
+
+    return {
+      total,
+      sfi: {
+        total: sfi.length,
+        bsr: getLetterTypeCount(sfi, 'বিএসআর'),
+        triWork: getLetterTypeCount(sfi, 'ত্রিপক্ষীয় সভা (কার্যপত্র)'),
+        triMin: getLetterTypeCount(sfi, 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)'),
+      },
+      nonSfi: {
+        total: nonSfi.length,
+        bsr: getLetterTypeCount(nonSfi, 'বিএসআর'),
+        biWork: getLetterTypeCount(nonSfi, 'দ্বিপক্ষীয় সভা (কার্যপত্র)'),
+        biMin: getLetterTypeCount(nonSfi, 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)'),
+      }
+    };
+  }, [filteredEntries]);
 
   // IDBadge definition inside component
   const IDBadge = ({ id }: { id: string }) => {
@@ -413,6 +439,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
           </div>
         </div>
         <div className="flex items-center gap-2">
+           <button 
+             onClick={() => setShowSummary(!showSummary)} 
+             className={`px-4 py-2.5 rounded-xl font-black text-[11px] flex items-center gap-2 transition-all shadow-lg active:scale-95 ${showSummary ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100'}`}
+           >
+             <Sparkles size={16} /> রেজিস্টার সারসংক্ষেপ
+           </button>
            {hasChanges && (
              <button 
               onClick={saveAllChanges}
@@ -612,6 +644,45 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
             </tr>
           </thead>
           <tbody>
+            {showSummary && (
+              <tr className="no-print">
+                <td colSpan={7} className="p-0 border border-slate-300">
+                  <div className="bg-blue-50/80 p-4 animate-in fade-in slide-in-from-top-2 duration-500 border-b border-blue-200">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg">
+                          <Sparkles size={20} />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-blue-900">রেজিস্টার সারসংক্ষেপ</h4>
+                          <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Register Summary Statistics</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-6">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase">মোট চিঠি</span>
+                          <span className="text-lg font-black text-slate-900">{toBengaliDigits(stats.total)} টি</span>
+                        </div>
+                        <div className="h-8 w-[1px] bg-blue-200 hidden md:block"></div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-emerald-600 uppercase">এসএফআই: {toBengaliDigits(stats.sfi.total)} টি</span>
+                          <span className="text-[11px] font-black text-slate-700">
+                            (বিএসআর: {toBengaliDigits(stats.sfi.bsr)} টি, ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(stats.sfi.triWork)} টি, ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(stats.sfi.triMin)} টি)
+                          </span>
+                        </div>
+                        <div className="h-8 w-[1px] bg-blue-200 hidden md:block"></div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-amber-600 uppercase">নন এসএফআই: {toBengaliDigits(stats.nonSfi.total)} টি</span>
+                          <span className="text-[11px] font-black text-slate-700">
+                            (বিএসআর: {toBengaliDigits(stats.nonSfi.bsr)} টি, দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(stats.nonSfi.biWork)} টি, দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(stats.nonSfi.biMin)} টি)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            )}
             {filteredEntries.length > 0 ? filteredEntries.map((entry, idx) => {
               let currentCycleLabel = "";
               if (entry.diaryDate) {
