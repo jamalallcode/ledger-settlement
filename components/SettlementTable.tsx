@@ -24,6 +24,10 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   entries, onDelete, onEdit, isLayoutEditable, showFilters, setShowFilters,
   isAdminView = false, onApprove, onReject, isAdmin = false 
 }) => {
+  const [expandedCycles, setExpandedCycles] = useState<Record<string, boolean>>({});
+  const lastActiveLabel = useRef<string>("");
+  const cycleRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
   const tableRef = useRef<HTMLTableElement>(null);
   const cycleDropdownRef = useRef<HTMLDivElement>(null);
@@ -130,6 +134,99 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }, [entries, searchTerm, filterParaType, filterType, activeCycle]);
+
+  const { cycleStats, groupedEntries } = useMemo(() => {
+    const groupsMap: Record<string, SettlementEntry[]> = {};
+    const groupsList: { label: string; entries: SettlementEntry[] }[] = [];
+    
+    filteredEntries.forEach(entry => {
+      let label = "Unknown";
+      const entryDate = entry.issueDateISO || new Date(entry.createdAt).toISOString().split('T')[0];
+      if (entryDate) {
+        try {
+          const dateObj = new Date(entryDate);
+          if (!isNaN(dateObj.getTime())) {
+            label = getCycleForDate(dateObj).label;
+          }
+        } catch (e) {}
+      }
+      
+      if (!groupsMap[label]) {
+        groupsMap[label] = [];
+        groupsList.push({ label, entries: groupsMap[label] });
+      }
+      groupsMap[label].push(entry);
+    });
+
+    const statsMap: Record<string, any> = {};
+    groupsList.forEach(group => {
+      const totalLetters = group.entries.length;
+      const sfiEntries = group.entries.filter(e => e.paraType === 'এসএফআই');
+      const nonSfiEntries = group.entries.filter(e => e.paraType === 'নন এসএফআই');
+      const sfiBSR = sfiEntries.filter(e => !e.isMeeting || e.meetingType === 'বিএসআর').length;
+      const sfiTri = sfiEntries.filter(e => e.meetingType === 'ত্রিপক্ষীয় সভা').length;
+      const nonSfiBSR = nonSfiEntries.filter(e => !e.isMeeting || e.meetingType === 'বিএসআর').length;
+      const nonSfiBi = nonSfiEntries.filter(e => e.meetingType === 'দ্বিপক্ষীয় সভা').length;
+      const cycleSettledParasCount = group.entries.reduce((acc, ent) => acc + (ent.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').length || 0), 0);
+      
+      const getSettledDetails = (typeEntries: SettlementEntry[]) => {
+        const grouped = typeEntries.reduce((acc, ent) => {
+            const count = ent.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').length || 0;
+            if (count > 0) acc[ent.entityName] = (acc[ent.entityName] || 0) + count;
+            return acc;
+        }, {} as Record<string, number>);
+        const total = Object.values(grouped).reduce((a, b) => a + b, 0);
+        const details = Object.entries(grouped).map(([name, count]) => `${name} ${toBengaliDigits(count)} টি`).join(', ');
+        return { total, details };
+      };
+
+      const sfiSettled = getSettledDetails(sfiEntries);
+      const nonSfiSettled = getSettledDetails(nonSfiEntries);
+
+      statsMap[group.label] = {
+        totalLetters,
+        sfiEntries,
+        nonSfiEntries,
+        sfiBSR,
+        sfiTri,
+        nonSfiBSR,
+        nonSfiBi,
+        cycleSettledParasCount,
+        sfiSettled,
+        nonSfiSettled
+      };
+    });
+
+    return { cycleStats: statsMap, groupedEntries: groupsList };
+  }, [filteredEntries]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const isAnyExpanded = Object.values(expandedCycles).some(v => v);
+      if (!isAnyExpanded) return;
+
+      let activeLabel = "";
+      const stickyTop = 42; 
+
+      for (const group of groupedEntries) {
+        const el = cycleRefs.current[group.label];
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= stickyTop + 10) {
+            activeLabel = group.label;
+          }
+        }
+      }
+
+      if (activeLabel && activeLabel !== lastActiveLabel.current) {
+        lastActiveLabel.current = activeLabel;
+        setExpandedCycles({ [activeLabel]: true });
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [expandedCycles, groupedEntries]);
 
   const grandTotals = useMemo(() => {
     return filteredEntries.reduce((acc, entry) => {
@@ -412,221 +509,249 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             <tr className="h-[38px]"><th className={thBase}>সংখ্যা</th><th className={thBase}>টাকা</th><th className={thBase}>আদায়</th><th className={thBase}>সমন্বয়</th><th className={thBase}>আদায়</th><th className={thBase}>সমন্বয়</th><th className={thBase}>আদায়</th><th className={thBase}>সমন্বয়</th><th className={thBase}>আদায়</th><th className={thBase}>সমন্বয়</th></tr>
           </thead>
           <tbody>
-            {filteredEntries.map((entry, idx) => {
-              const currentCycle = entry.cycleLabel || "অনির্ধারিত";
-              const showCycleHeader = currentCycle !== lastRenderedCycle;
-              if (showCycleHeader) lastRenderedCycle = currentCycle;
-              const isExpanded = expandedEntries.has(entry.id);
-              const paras = entry.paragraphs || [];
-              const entrySettledCount = paras.filter(p => p.status === 'পূর্ণাঙ্গ').length;
-              const entryInvolvedAmount = paras.reduce((sum, p) => sum + (p.involvedAmount || 0), 0);
-              const mRaisedCountRaw = entry.manualRaisedCount?.toString().trim() || "";
-              const mRaisedCount = (mRaisedCountRaw === "" || mRaisedCountRaw === "0" || mRaisedCountRaw === "০") ? "০" : toBengaliDigits(mRaisedCountRaw);
-              const mRaisedAmount = (entry.manualRaisedAmount !== null && entry.manualRaisedAmount !== undefined && entry.manualRaisedAmount !== 0) ? entry.manualRaisedAmount : 0;
-
-              // Calculate Cycle Statistics
-              const cycleEntries = filteredEntries.filter(e => (e.cycleLabel || "অনির্ধারিত") === currentCycle);
-              const totalLetters = cycleEntries.length;
-              const sfiEntries = cycleEntries.filter(e => e.paraType === 'এসএফআই');
-              const nonSfiEntries = cycleEntries.filter(e => e.paraType === 'নন এসএফআই');
-              const sfiBSR = sfiEntries.filter(e => !e.isMeeting || e.meetingType === 'বিএসআর').length;
-              const sfiTri = sfiEntries.filter(e => e.meetingType === 'ত্রিপক্ষীয় সভা').length;
-              const nonSfiBSR = nonSfiEntries.filter(e => !e.isMeeting || e.meetingType === 'বিএসআর').length;
-              const nonSfiBi = nonSfiEntries.filter(e => e.meetingType === 'দ্বিপক্ষীয় সভা').length;
-
-              // New Work: Additional details for Settled Paras
-              const cycleSettledParasCount = cycleEntries.reduce((acc, ent) => acc + (ent.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').length || 0), 0);
-              
-              const getSettledDetails = (typeEntries: SettlementEntry[]) => {
-                const grouped = typeEntries.reduce((acc, ent) => {
-                    const count = ent.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').length || 0;
-                    if (count > 0) acc[ent.entityName] = (acc[ent.entityName] || 0) + count;
-                    return acc;
-                }, {} as Record<string, number>);
-                const total = Object.values(grouped).reduce((a, b) => a + b, 0);
-                const details = Object.entries(grouped).map(([name, count]) => `${name} ${toBengaliDigits(count)} টি`).join(', ');
-                return { total, details };
-              };
-
-              const sfiSettled = getSettledDetails(sfiEntries);
-              const nonSfiSettled = getSettledDetails(nonSfiEntries);
-
-              return (
-                <React.Fragment key={entry.id}>
-                  {showCycleHeader && (
-                    <tr className="bg-slate-100/80 border-y border-slate-300 relative group/cycle-header">
-                      <td colSpan={14} className="px-4 py-3 border border-slate-300">
-                        <div className="flex flex-col gap-3">
-                          <div className="flex items-center justify-start gap-12">
-                            <div className="flex items-center gap-3 shrink-0">
-                              <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-md">
-                                <CalendarDays size={18} />
-                              </div>
+            {groupedEntries.length > 0 ? (
+              groupedEntries.map((group) => {
+                const stats = cycleStats[group.label];
+                return (
+                  <React.Fragment key={group.label}>
+                    {/* Sticky Cycle Header */}
+                    <tr className="sticky top-[42px] z-[90] no-print">
+                      <td colSpan={14} className="p-0 border border-slate-300">
+                        <div 
+                          ref={el => { cycleRefs.current[group.label] = el; }}
+                          onClick={() => {
+                            const nextState = !expandedCycles[group.label];
+                            setExpandedCycles({ [group.label]: nextState });
+                            if (nextState) lastActiveLabel.current = group.label;
+                            else lastActiveLabel.current = "";
+                          }}
+                          className="bg-slate-100/95 backdrop-blur-sm border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-md group-hover/cycle-header:scale-110 transition-transform">
+                              <CalendarDays size={18} />
+                            </div>
+                            <div className="flex flex-col">
                               <span className="font-black text-[13px] text-slate-800 tracking-tight uppercase">
-                                সময়কাল: <span className="text-blue-700 font-black">{toBengaliDigits(currentCycle)}</span>
+                                সময়কাল: <span className="text-blue-700 font-black">{toBengaliDigits(group.label)}</span>
                               </span>
-                            </div>
-                            
-                            <div className="hidden md:flex items-center gap-4 text-[12px] font-bold text-slate-700">
-                               <span className="px-4 py-1.5 bg-white border border-slate-300 rounded-full shadow-sm flex items-center gap-2">
-                                  মোট চিঠি: <span className="text-blue-700 font-black text-[13px]">{toBengaliDigits(totalLetters)} টি</span>
-                               </span>
-                               <div className="w-[1.5px] h-5 bg-slate-300 mx-1"></div>
-                               <span className="flex items-center gap-2">
-                                  এসএফআই: <span className="text-emerald-700 font-black text-[13px]">{toBengaliDigits(sfiEntries.length)} টি</span>
-                                  <span className="text-slate-500 text-[11px] font-bold">(বিএসআর {toBengaliDigits(sfiBSR)}, সভা {toBengaliDigits(sfiTri)})</span>
-                               </span>
-                               <div className="w-[1.5px] h-4 bg-slate-300 mx-1"></div>
-                               <span className="flex items-center gap-2">
-                                  নন এসএফআই: <span className="text-indigo-700 font-black text-[13px]">{toBengaliDigits(nonSfiEntries.length)} টি</span>
-                                  <span className="text-slate-500 text-[11px] font-bold">(বিএসআর {toBengaliDigits(nonSfiBSR)}, সভা {toBengaliDigits(nonSfiBi)})</span>
-                               </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Cycle Statistics</span>
+                                <div className="h-1 w-1 bg-slate-300 rounded-full"></div>
+                                <span className="text-[9px] font-black text-blue-600">মোট {toBengaliDigits(stats.totalLetters)} টি চিঠি</span>
+                              </div>
                             </div>
                           </div>
+                          <div className="flex items-center gap-3">
+                            <div className={`px-3 py-1 rounded-full text-[10px] font-black transition-all flex items-center gap-1.5 ${expandedCycles[group.label] ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white text-blue-600 border border-blue-200 hover:border-blue-400'}`}>
+                              {expandedCycles[group.label] ? 'সংক্ষিপ্ত করুন' : 'বিস্তারিত দেখুন'}
+                              <ChevronDown size={12} className={`transition-transform duration-300 ${expandedCycles[group.label] ? 'rotate-180' : ''}`} />
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
 
-                          {/* Extra Detailed Info Row */}
-                          <div className="flex items-center gap-6 px-4 py-2 bg-white/60 rounded-xl border border-slate-200 text-[11px] font-black shadow-inner">
-                             <div className="flex items-center gap-2">
-                                <CheckCircle2 size={14} className="text-emerald-600" />
-                                <span>মোট মীমাংসিত অনুচ্ছেদ:</span>
-                                <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">{toBengaliDigits(cycleSettledParasCount)} টি</span>
-                             </div>
-                             <div className="w-[1px] h-4 bg-slate-300"></div>
-                             <div className="flex items-center gap-2">
-                                <span className="text-slate-500">এসএফআই:</span>
-                                <span className="text-blue-700">{toBengaliDigits(sfiSettled.total)} টি</span>
-                                {sfiSettled.details && <span className="text-slate-400 font-bold">({sfiSettled.details})</span>}
-                             </div>
-                             <div className="w-[1px] h-4 bg-slate-300"></div>
-                             <div className="flex items-center gap-2">
-                                <span className="text-slate-500">নন এসএফআই:</span>
-                                <span className="text-indigo-700">{toBengaliDigits(nonSfiSettled.total)} টি</span>
-                                {nonSfiSettled.details && <span className="text-slate-400 font-bold">({nonSfiSettled.details})</span>}
-                             </div>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                  {paras.length > 0 ? paras.map((p, pIdx) => (
-                    <tr key={p.id} className={`transition-colors group ${isAdminView ? 'bg-amber-50/30 hover:bg-amber-100/50' : 'hover:bg-blue-50/30'}`}>
-                      {pIdx === 0 && (
-                        <>
-                          <td rowSpan={paras.length} className={tdBase + " font-black bg-white"}>{toBengaliDigits(idx + 1)}</td>
-                          <td rowSpan={paras.length} onClick={() => toggleExpand(entry.id)} className={tdBase + " cursor-pointer bg-white group-hover:bg-blue-50/50 transition-all text-left p-3"}>
-                            <div className="flex items-start justify-between">
-                              <div className="space-y-1 text-left flex-1">
-                                <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">মন্ত্রণালয়:</span> <span className="font-bold text-slate-900">{entry.ministryName}</span></p>
-                                <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">এনটিটি:</span> <span className="font-bold text-slate-900">{entry.entityName}</span></p>
-                                <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">শাখা:</span> <span className="font-bold text-slate-900">{entry.branchName}</span></p>
-                                <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">নিরীক্ষা সাল:</span> <span className="font-bold text-slate-900">{toBengaliDigits(entry.auditYear)}</span></p>
-                                <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">জারিপত্র নং ও তারিখ:</span> <span className="font-bold text-slate-900">{formatIssueInfoForDisplay(entry.issueLetterNoDate)}</span></p>
+                    {expandedCycles[group.label] && (
+                      <tr className="sticky top-[82px] z-[85] no-print">
+                        <td colSpan={14} className="p-0 border border-slate-300">
+                          <div className="bg-white p-4 border-b border-slate-200 animate-in fade-in slide-in-from-top-1 duration-200 shadow-md">
+                            <div className="flex flex-col gap-3">
+                              <div className="flex items-center justify-start gap-12">
+                                <div className="hidden md:flex items-center gap-4 text-[12px] font-bold text-slate-700">
+                                   <span className="px-4 py-1.5 bg-white border border-slate-300 rounded-full shadow-sm flex items-center gap-2">
+                                      মোট চিঠি: <span className="text-blue-700 font-black text-[13px]">{toBengaliDigits(stats.totalLetters)} টি</span>
+                                   </span>
+                                   <div className="w-[1.5px] h-5 bg-slate-300 mx-1"></div>
+                                   <span className="flex items-center gap-2">
+                                      এসএফআই: <span className="text-emerald-700 font-black text-[13px]">{toBengaliDigits(stats.sfiEntries.length)} টি</span>
+                                      <span className="text-slate-500 text-[11px] font-bold">(বিএসআর {toBengaliDigits(stats.sfiBSR)}, সভা {toBengaliDigits(stats.sfiTri)})</span>
+                                   </span>
+                                   <div className="w-[1.5px] h-4 bg-slate-300 mx-1"></div>
+                                   <span className="flex items-center gap-2">
+                                      নন এসএফআই: <span className="text-indigo-700 font-black text-[13px]">{toBengaliDigits(stats.nonSfiEntries.length)} টি</span>
+                                      <span className="text-slate-500 text-[11px] font-bold">(বিএসআর {toBengaliDigits(stats.nonSfiBSR)}, সভা {toBengaliDigits(stats.nonSfiBi)})</span>
+                                   </span>
+                                </div>
                               </div>
-                              <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
-                                {isExpanded ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}
+
+                              <div className="flex items-center gap-6 px-4 py-2 bg-white/60 rounded-xl border border-slate-200 text-[11px] font-black shadow-inner">
+                                 <div className="flex items-center gap-2">
+                                    <CheckCircle2 size={14} className="text-emerald-600" />
+                                    <span>মোট মীমাংসিত অনুচ্ছেদ:</span>
+                                    <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">{toBengaliDigits(stats.cycleSettledParasCount)} টি</span>
+                                 </div>
+                                 <div className="w-[1px] h-4 bg-slate-300"></div>
+                                 <div className="flex items-center gap-2">
+                                    <span className="text-slate-500">এসএফআই:</span>
+                                    <span className="text-blue-700">{toBengaliDigits(stats.sfiSettled.total)} টি</span>
+                                    {stats.sfiSettled.details && <span className="text-slate-400 font-bold">({stats.sfiSettled.details})</span>}
+                                 </div>
+                                 <div className="w-[1px] h-4 bg-slate-300"></div>
+                                 <div className="flex items-center gap-2">
+                                    <span className="text-slate-500">নন এসএফআই:</span>
+                                    <span className="text-indigo-700">{toBengaliDigits(stats.nonSfiSettled.total)} টি</span>
+                                    {stats.nonSfiSettled.details && <span className="text-slate-400 font-bold">({stats.nonSfiSettled.details})</span>}
+                                 </div>
                               </div>
                             </div>
-                          </td>
-                        </>
-                      )}
-                      <td className={tdBase}><span className="font-bold">{toBengaliDigits(p.paraNo)}</span><br/><span className={`px-1 text-[8px] text-white font-black rounded ${p.status === 'পূর্ণাঙ্গ' ? 'bg-emerald-600' : 'bg-red-600'}`}>{p.status}</span></td>
-                      <td className={tdMoney}>{toBengaliDigits(Math.round(p.involvedAmount))}</td>
-                      {pIdx === 0 && (
-                        <>
-                          <td rowSpan={paras.length} className={tdBase + " text-blue-700 bg-white"}>{mRaisedCount}</td>
-                          <td rowSpan={paras.length} className={tdMoney + " text-blue-800 bg-white"}>{toBengaliDigits(Math.round(mRaisedAmount))}</td>
-                        </>
-                      )}
-                      <td className={tdMoney}>{toBengaliDigits(Math.round(p.category === 'ভ্যাট' ? p.recoveredAmount : 0))}</td><td className={tdMoney}>{toBengaliDigits(Math.round(p.category === 'ভ্যাট' ? p.adjustedAmount : 0))}</td>
-                      <td className={tdMoney}>{toBengaliDigits(Math.round(p.category === 'আয়কর' ? p.recoveredAmount : 0))}</td><td className={tdMoney}>{toBengaliDigits(Math.round(p.category === 'আয়কর' ? p.adjustedAmount : 0))}</td>
-                      <td className={tdMoney}>{toBengaliDigits(Math.round(p.category === 'অন্যান্য' ? p.recoveredAmount : 0))}</td><td className={tdMoney}>{toBengaliDigits(Math.round(p.category === 'অন্যান্য' ? p.adjustedAmount : 0))}</td>
-                      <td className={tdMoney}>{toBengaliDigits(Math.round(p.recoveredAmount))}</td>
-                      <td className={tdMoney + " relative"}>
-                        {toBengaliDigits(Math.round(p.adjustedAmount))}
-                        {!isAdminView && isAdmin && (
-                          <div className="absolute right-0 bottom-0.5 hidden group-hover:flex gap-0.5 no-print p-0.5">
-                             <button onClick={(e) => { e.stopPropagation(); onEdit(entry); }} className="p-1 text-blue-600 bg-white border rounded shadow-sm hover:bg-blue-50"><Pencil size={11}/></button>
-                             <button onClick={(e) => { e.stopPropagation(); if (window.confirm("আপনি কি নিশ্চিতভাবে এই অনুচ্ছেদটি মুছে ফেলতে চান?")) onDelete(entry.id, p.id); }} className="p-1 text-red-600 bg-white border rounded shadow-sm ml-0.5 hover:bg-red-50"><Trash2 size={11}/></button>
                           </div>
-                        )}
-                        {isAdminView && (
-                          <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover:flex flex-col gap-1.5 no-print z-[100] animate-in fade-in slide-in-from-right-2 duration-300">
-                             <button 
-                               onClick={(e) => { e.stopPropagation(); onApprove?.(entry.id); }} 
-                               className="w-7 h-7 bg-emerald-500/10 text-emerald-500 rounded-lg flex items-center justify-center border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all shadow-lg backdrop-blur-sm"
-                               title="অনুমোদন দিন"
-                             >
-                               <Check size={16} strokeWidth={3} />
-                             </button>
-                             <button 
-                               onClick={(e) => { e.stopPropagation(); onReject?.(entry.id); }} 
-                               className="w-7 h-7 bg-red-500/10 text-red-500 rounded-lg flex items-center justify-center border border-red-500/20 hover:bg-red-500 hover:text-white transition-all shadow-lg backdrop-blur-sm"
-                               title="বাতিল করুন"
-                             >
-                               <XCircle size={16} />
-                             </button>
-                          </div>
-                        )}
+                        </td>
+                      </tr>
+                    )}
+
+                    {/* Print-only cycle header */}
+                    <tr className="hidden print:table-row bg-slate-100 border-y border-slate-300">
+                      <td colSpan={14} className="px-4 py-2 border border-slate-300">
+                        <span className="font-black text-[13px] text-slate-800 tracking-tight uppercase">
+                          সময়কাল: <span className="text-blue-700 font-black">{toBengaliDigits(group.label)}</span>
+                        </span>
                       </td>
                     </tr>
-                  )) : (
-                    <tr className={`transition-colors group ${isAdminView ? 'bg-amber-50/30' : 'hover:bg-blue-50/30'}`}>
-                      <td className={tdBase + " font-black bg-white"}>{toBengaliDigits(idx + 1)}</td>
-                      <td onClick={() => toggleExpand(entry.id)} className={tdBase + " cursor-pointer bg-white group-hover:bg-blue-50/50 transition-all text-left p-3"}>
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1 text-left flex-1">
-                            <p className="text-[10px] leading-tight font-black text-red-600 underline underline-offset-2 tracking-tighter">উত্থাপিত এন্ট্রি (কোন অনুচ্ছেদ নেই)</p>
-                            <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">সংস্থা:</span> <span className="font-bold text-slate-900">{entry.entityName}</span></p>
-                            <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">জারিপত্র:</span> <span className="font-bold text-slate-900">{formatIssueInfoForDisplay(entry.issueLetterNoDate)}</span></p>
-                          </div>
-                          <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
-                            {isExpanded ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}
-                          </div>
-                        </div>
-                      </td>
-                      <td className={tdBase}>-</td><td className={tdMoney}>০</td><td className={tdBase + " text-blue-700 bg-white font-black"}>{mRaisedCount}</td><td className={tdMoney + " text-blue-800 bg-white"}>{toBengaliDigits(Math.round(mRaisedAmount))}</td>
-                      <td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td>
-                      <td className={tdMoney + " relative"}>০
-                        {!isAdminView && isAdmin && (
-                          <div className="absolute right-0 bottom-0.5 hidden group-hover:flex gap-0.5 no-print p-0.5">
-                             <button onClick={(e) => { e.stopPropagation(); onEdit(entry); }} className="p-1 text-blue-600 bg-white border rounded shadow-sm hover:bg-blue-50"><Pencil size={11}/></button>
-                             <button onClick={(e) => { e.stopPropagation(); if (window.confirm("আপনি কি নিশ্চিতভাবে সম্পূর্ণ এন্ট্রিটি মুছে ফেলতে চান?")) onDelete(entry.id); }} className="p-1 text-red-600 bg-white border rounded shadow-sm ml-0.5 hover:bg-red-50"><Trash2 size={11}/></button>
-                          </div>
-                        )}
-                        {isAdminView && (
-                          <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover:flex flex-col gap-1.5 no-print z-[100] animate-in fade-in slide-in-from-right-2 duration-300">
-                             <button 
-                               onClick={(e) => { e.stopPropagation(); onApprove?.(entry.id); }} 
-                               className="w-7 h-7 bg-emerald-500/10 text-emerald-500 rounded-lg flex items-center justify-center border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all shadow-lg backdrop-blur-sm"
-                               title="অনুমোদন দিন"
-                             >
-                               <Check size={16} strokeWidth={3} />
-                             </button>
-                             <button 
-                               onClick={(e) => { e.stopPropagation(); onReject?.(entry.id); }} 
-                               className="w-7 h-7 bg-red-500/10 text-red-500 rounded-lg flex items-center justify-center border border-red-500/20 hover:bg-red-500 hover:text-white transition-all shadow-lg backdrop-blur-sm"
-                               title="বাতিল করুন"
-                             >
-                               <XCircle size={16} />
-                             </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  )}
-                  <tr className={`${isAdminView ? 'bg-amber-100/40' : 'bg-blue-50/60'} font-black border-t border-slate-300 h-[38px]`}>
-                    <td colSpan={2} className="px-4 text-left italic text-[10px] text-blue-900 border border-slate-300">মোট মিমাংসিত অনুচ্ছেদ: <span className="text-emerald-700">{toBengaliDigits(entrySettledCount)} টি</span> | মোট জড়িত টাকা: <span className="text-blue-700">{toBengaliDigits(Math.round(entryInvolvedAmount))}</span></td>
-                    <td className="text-center text-[10px] text-emerald-800 border border-slate-300 bg-emerald-50/30">{toBengaliDigits(entrySettledCount)}</td><td className="text-center text-[10px] text-blue-800 border border-slate-300 bg-blue-50/30">{toBengaliDigits(Math.round(entryInvolvedAmount))}</td>
-                    <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{mRaisedCount}</td><td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(mRaisedAmount))}</td>
-                    <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(entry.vatRec || 0))}</td><td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(entry.vatAdj || 0))}</td>
-                    <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(entry.itRec || 0))}</td><td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(entry.itAdj || 0))}</td>
-                    <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(entry.othersRec || 0))}</td><td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(entry.othersAdj || 0))}</td>
-                    <td className="text-center text-[10px] text-blue-900 border border-slate-300 bg-emerald-100/30 font-black">{toBengaliDigits(Math.round(entry.totalRec))}</td><td className="text-center text-[10px] text-blue-900 border border-slate-300 bg-emerald-100/30 font-black">{toBengaliDigits(Math.round(entry.totalAdj))}</td>
-                  </tr>
-                  {isExpanded && (<tr className="no-print"><td colSpan={14} className="p-0 border-none">{renderMetadataGrid(entry)}</td></tr>)}
-                </React.Fragment>
-              );
-            })}
+
+                    {expandedCycles[group.label] && group.entries.map((entry, idx) => {
+                      const isExpanded = expandedEntries.has(entry.id);
+                      const paras = entry.paragraphs || [];
+                      const entrySettledCount = paras.filter(p => p.status === 'পূর্ণাঙ্গ').length;
+                      const entryInvolvedAmount = paras.reduce((sum, p) => sum + (p.involvedAmount || 0), 0);
+                      const mRaisedCountRaw = entry.manualRaisedCount?.toString().trim() || "";
+                      const mRaisedCount = (mRaisedCountRaw === "" || mRaisedCountRaw === "0" || mRaisedCountRaw === "০") ? "০" : toBengaliDigits(mRaisedCountRaw);
+                      const mRaisedAmount = (entry.manualRaisedAmount !== null && entry.manualRaisedAmount !== undefined && entry.manualRaisedAmount !== 0) ? entry.manualRaisedAmount : 0;
+
+                      return (
+                        <React.Fragment key={entry.id}>
+                          {paras.length > 0 ? paras.map((p, pIdx) => (
+                            <tr key={p.id} className={`transition-colors group ${isAdminView ? 'bg-amber-50/30 hover:bg-amber-100/50' : 'hover:bg-blue-50/30'}`}>
+                              {pIdx === 0 && (
+                                <>
+                                  <td rowSpan={paras.length} className={tdBase + " font-black bg-white"}>{toBengaliDigits(idx + 1)}</td>
+                                  <td rowSpan={paras.length} onClick={() => toggleExpand(entry.id)} className={tdBase + " cursor-pointer bg-white group-hover:bg-blue-50/50 transition-all text-left p-3"}>
+                                    <div className="flex items-start justify-between">
+                                      <div className="space-y-1 text-left flex-1">
+                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">মন্ত্রণালয়:</span> <span className="font-bold text-slate-900">{entry.ministryName}</span></p>
+                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">এনটিটি:</span> <span className="font-bold text-slate-900">{entry.entityName}</span></p>
+                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">শাখা:</span> <span className="font-bold text-slate-900">{entry.branchName}</span></p>
+                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">নিরীক্ষা সাল:</span> <span className="font-bold text-slate-900">{toBengaliDigits(entry.auditYear)}</span></p>
+                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">জারিপত্র নং ও তারিখ:</span> <span className="font-bold text-slate-900">{formatIssueInfoForDisplay(entry.issueLetterNoDate)}</span></p>
+                                      </div>
+                                      <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
+                                        {isExpanded ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}
+                                      </div>
+                                    </div>
+                                  </td>
+                                </>
+                              )}
+                              <td className={tdBase}><span className="font-bold">{toBengaliDigits(p.paraNo)}</span><br/><span className={`px-1 text-[8px] text-white font-black rounded ${p.status === 'পূর্ণাঙ্গ' ? 'bg-emerald-600' : 'bg-red-600'}`}>{p.status}</span></td>
+                              <td className={tdMoney}>{toBengaliDigits(Math.round(p.involvedAmount))}</td>
+                              {pIdx === 0 && (
+                                <>
+                                  <td rowSpan={paras.length} className={tdBase + " text-blue-700 bg-white"}>{mRaisedCount}</td>
+                                  <td rowSpan={paras.length} className={tdMoney + " text-blue-800 bg-white"}>{toBengaliDigits(Math.round(mRaisedAmount))}</td>
+                                </>
+                              )}
+                              <td className={tdMoney}>{toBengaliDigits(Math.round(p.category === 'ভ্যাট' ? p.recoveredAmount : 0))}</td><td className={tdMoney}>{toBengaliDigits(Math.round(p.category === 'ভ্যাট' ? p.adjustedAmount : 0))}</td>
+                              <td className={tdMoney}>{toBengaliDigits(Math.round(p.category === 'আয়কর' ? p.recoveredAmount : 0))}</td><td className={tdMoney}>{toBengaliDigits(Math.round(p.category === 'আয়কর' ? p.adjustedAmount : 0))}</td>
+                              <td className={tdMoney}>{toBengaliDigits(Math.round(p.category === 'অন্যান্য' ? p.recoveredAmount : 0))}</td><td className={tdMoney}>{toBengaliDigits(Math.round(p.category === 'অন্যান্য' ? p.adjustedAmount : 0))}</td>
+                              <td className={tdMoney}>{toBengaliDigits(Math.round(p.recoveredAmount))}</td>
+                              <td className={tdMoney + " relative"}>
+                                {toBengaliDigits(Math.round(p.adjustedAmount))}
+                                {!isAdminView && isAdmin && (
+                                  <div className="absolute right-0 bottom-0.5 hidden group-hover:flex gap-0.5 no-print p-0.5">
+                                     <button onClick={(e) => { e.stopPropagation(); onEdit(entry); }} className="p-1 text-blue-600 bg-white border rounded shadow-sm hover:bg-blue-50"><Pencil size={11}/></button>
+                                     <button onClick={(e) => { e.stopPropagation(); if (window.confirm("আপনি কি নিশ্চিতভাবে এই অনুচ্ছেদটি মুছে ফেলতে চান?")) onDelete(entry.id, p.id); }} className="p-1 text-red-600 bg-white border rounded shadow-sm ml-0.5 hover:bg-red-50"><Trash2 size={11}/></button>
+                                  </div>
+                                )}
+                                {isAdminView && (
+                                  <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover:flex flex-col gap-1.5 no-print z-[100] animate-in fade-in slide-in-from-right-2 duration-300">
+                                     <button 
+                                       onClick={(e) => { e.stopPropagation(); onApprove?.(entry.id); }} 
+                                       className="w-7 h-7 bg-emerald-500/10 text-emerald-500 rounded-lg flex items-center justify-center border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all shadow-lg backdrop-blur-sm"
+                                       title="অনুমোদন দিন"
+                                     >
+                                       <Check size={16} strokeWidth={3} />
+                                     </button>
+                                     <button 
+                                       onClick={(e) => { e.stopPropagation(); onReject?.(entry.id); }} 
+                                       className="w-7 h-7 bg-red-500/10 text-red-500 rounded-lg flex items-center justify-center border border-red-500/20 hover:bg-red-500 hover:text-white transition-all shadow-lg backdrop-blur-sm"
+                                       title="বাতিল করুন"
+                                     >
+                                       <XCircle size={16} />
+                                     </button>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          )) : (
+                            <tr className={`transition-colors group ${isAdminView ? 'bg-amber-50/30' : 'hover:bg-blue-50/30'}`}>
+                              <td className={tdBase + " font-black bg-white"}>{toBengaliDigits(idx + 1)}</td>
+                              <td onClick={() => toggleExpand(entry.id)} className={tdBase + " cursor-pointer bg-white group-hover:bg-blue-50/50 transition-all text-left p-3"}>
+                                <div className="flex items-start justify-between">
+                                  <div className="space-y-1 text-left flex-1">
+                                    <p className="text-[10px] leading-tight font-black text-red-600 underline underline-offset-2 tracking-tighter">উত্থাপিত এন্ট্রি (কোন অনুচ্ছেদ নেই)</p>
+                                    <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">সংস্থা:</span> <span className="font-bold text-slate-900">{entry.entityName}</span></p>
+                                    <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">জারিপত্র:</span> <span className="font-bold text-slate-900">{formatIssueInfoForDisplay(entry.issueLetterNoDate)}</span></p>
+                                  </div>
+                                  <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
+                                    {isExpanded ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className={tdBase}>-</td><td className={tdMoney}>০</td><td className={tdBase + " text-blue-700 bg-white font-black"}>{mRaisedCount}</td><td className={tdMoney + " text-blue-800 bg-white"}>{toBengaliDigits(Math.round(mRaisedAmount))}</td>
+                              <td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td>
+                              <td className={tdMoney + " relative"}>০
+                                {!isAdminView && isAdmin && (
+                                  <div className="absolute right-0 bottom-0.5 hidden group-hover:flex gap-0.5 no-print p-0.5">
+                                     <button onClick={(e) => { e.stopPropagation(); onEdit(entry); }} className="p-1 text-blue-600 bg-white border rounded shadow-sm hover:bg-blue-50"><Pencil size={11}/></button>
+                                     <button onClick={(e) => { e.stopPropagation(); if (window.confirm("আপনি কি নিশ্চিতভাবে সম্পূর্ণ এন্ট্রিটি মুছে ফেলতে চান?")) onDelete(entry.id); }} className="p-1 text-red-600 bg-white border rounded shadow-sm ml-0.5 hover:bg-red-50"><Trash2 size={11}/></button>
+                                  </div>
+                                )}
+                                {isAdminView && (
+                                  <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover:flex flex-col gap-1.5 no-print z-[100] animate-in fade-in slide-in-from-right-2 duration-300">
+                                     <button 
+                                       onClick={(e) => { e.stopPropagation(); onApprove?.(entry.id); }} 
+                                       className="w-7 h-7 bg-emerald-500/10 text-emerald-500 rounded-lg flex items-center justify-center border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all shadow-lg backdrop-blur-sm"
+                                       title="অনুমোদন দিন"
+                                     >
+                                       <Check size={16} strokeWidth={3} />
+                                     </button>
+                                     <button 
+                                       onClick={(e) => { e.stopPropagation(); onReject?.(entry.id); }} 
+                                       className="w-7 h-7 bg-red-500/10 text-red-500 rounded-lg flex items-center justify-center border border-red-500/20 hover:bg-red-500 hover:text-white transition-all shadow-lg backdrop-blur-sm"
+                                       title="বাতিল করুন"
+                                     >
+                                       <XCircle size={16} />
+                                     </button>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          )}
+                          <tr className={`${isAdminView ? 'bg-amber-100/40' : 'bg-blue-50/60'} font-black border-t border-slate-300 h-[38px]`}>
+                            <td colSpan={2} className="px-4 text-left italic text-[10px] text-blue-900 border border-slate-300">মোট মিমাংসিত অনুচ্ছেদ: <span className="text-emerald-700">{toBengaliDigits(entrySettledCount)} টি</span> | মোট জড়িত টাকা: <span className="text-blue-700">{toBengaliDigits(Math.round(entryInvolvedAmount))}</span></td>
+                            <td className="text-center text-[10px] text-emerald-800 border border-slate-300 bg-emerald-50/30">{toBengaliDigits(entrySettledCount)}</td><td className="text-center text-[10px] text-blue-800 border border-slate-300 bg-blue-50/30">{toBengaliDigits(Math.round(entryInvolvedAmount))}</td>
+                            <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{mRaisedCount}</td><td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(mRaisedAmount))}</td>
+                            <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(entry.vatRec || 0))}</td><td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(entry.vatAdj || 0))}</td>
+                            <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(entry.itRec || 0))}</td><td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(entry.itAdj || 0))}</td>
+                            <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(entry.othersRec || 0))}</td><td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(entry.othersAdj || 0))}</td>
+                            <td className="text-center text-[10px] text-blue-900 border border-slate-300 bg-emerald-100/30 font-black">{toBengaliDigits(Math.round(entry.totalRec))}</td><td className="text-center text-[10px] text-blue-900 border border-slate-300 bg-emerald-100/30 font-black">{toBengaliDigits(Math.round(entry.totalAdj))}</td>
+                          </tr>
+                          {isExpanded && (<tr className="no-print"><td colSpan={14} className="p-0 border-none">{renderMetadataGrid(entry)}</td></tr>)}
+                        </React.Fragment>
+                      );
+                    })}
+                  </React.Fragment>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={14} className="py-20 text-center bg-white">
+                   <div className="flex flex-col items-center gap-3 opacity-30">
+                      <Archive size={40} />
+                      <p className="text-sm font-black text-slate-900 tracking-widest">রেজিস্টার খালি</p>
+                   </div>
+                </td>
+              </tr>
+            )}
           </tbody>
           {!isAdminView && (
             <tfoot className="sticky bottom-0 z-[100]">
