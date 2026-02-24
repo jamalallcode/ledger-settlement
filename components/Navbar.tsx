@@ -4,7 +4,7 @@ import {
   ChevronDown, Sparkles, Lock, Unlock, CheckCircle2, Download, 
   Upload, ShieldCheck, LogOut, X, KeyRound, Settings, 
   Calendar, ShieldAlert, Filter, Printer, Menu, Fingerprint, 
-  Bell, Check, XCircle, UserCheck, BellRing, ArrowRight, Library
+  Bell, Check, XCircle, UserCheck, BellRing, ArrowRight, Library, Plus
 } from 'lucide-react';
 import { SettlementEntry } from '../types';
 import { toBengaliDigits } from '../utils/numberUtils';
@@ -79,7 +79,6 @@ const Navbar: React.FC<NavbarProps> = ({
   const navItems = [
     { id: 'landing', label: 'হোম', icon: Home },
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter },
-    { id: 'return', label: 'রিটার্ন', icon: PieChart },
     { id: 'archive', label: 'লাইব্রেরি', icon: Library },
     { id: 'voting', label: 'ভোট', icon: Fingerprint },
   ];
@@ -109,18 +108,22 @@ const Navbar: React.FC<NavbarProps> = ({
           <div className="hidden lg:flex items-center gap-2">
             {navItems.map((item) => (
               <React.Fragment key={item.id}>
-                <button onClick={() => setActiveTab(item.id)} className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-black text-sm transition-all relative ${activeTab === item.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-900/40 translate-y-[-1px]' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
-                  <item.icon size={18} /> {item.label}
+                <button 
+                  onClick={() => setActiveTab(item.id)} 
+                  title={item.label}
+                  className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all relative ${activeTab === item.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-900/40 translate-y-[-1px]' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                >
+                  <item.icon size={22} />
                 </button>
                 {item.id === 'landing' && (
                   <div className="relative group mx-2">
                     <button 
                       onClick={() => setActiveTab('entry')} 
-                      className={`hidden lg:flex items-center gap-2.5 px-6 h-12 bg-white text-slate-900 rounded-xl font-black text-sm shadow-xl hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all relative ${activeTab === 'entry' ? 'ring-2 ring-blue-500' : ''}`}
+                      title="নতুন তথ্য এন্ট্রি"
+                      className={`hidden lg:flex items-center justify-center w-12 h-12 bg-white text-slate-900 rounded-xl font-black shadow-xl hover:bg-blue-50 hover:scale-110 active:scale-95 transition-all relative ${activeTab === 'entry' ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
                     >
                       <IDBadge id="nav-quick-entry" /> 
-                      <FilePlus2 size={20} className="text-blue-600" /> 
-                      নতুন তথ্য এন্ট্রি
+                      <Plus size={24} className="text-blue-600" strokeWidth={3} /> 
                     </button>
                   </div>
                 )}
@@ -217,7 +220,7 @@ const Navbar: React.FC<NavbarProps> = ({
           )}
 
           <div className="flex items-center gap-3">
-            {activeTab === 'register' && <button onClick={() => setShowRegisterFilters(!showRegisterFilters)} className={`p-2.5 rounded-xl border transition-all ${showRegisterFilters ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}><Filter size={20} /></button>}
+            {(activeTab === 'register' || activeTab === 'return') && <button onClick={() => setShowRegisterFilters(!showRegisterFilters)} className={`p-2.5 rounded-xl border transition-all ${showRegisterFilters ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}><Filter size={20} /></button>}
             
             {isAdmin && (
               <div className="relative" ref={toolsRef}>
