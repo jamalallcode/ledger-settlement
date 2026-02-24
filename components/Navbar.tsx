@@ -79,8 +79,6 @@ const Navbar: React.FC<NavbarProps> = ({
   const navItems = [
     { id: 'landing', label: 'হোম', icon: Home },
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter },
-    { id: 'return', label: 'রিটার্ন', icon: PieChart },
-    { id: 'archive', label: 'লাইব্রেরি', icon: Library },
   ];
 
   const IDBadge = ({ id }: { id: string }) => {
@@ -118,7 +116,7 @@ const Navbar: React.FC<NavbarProps> = ({
                   <div className="relative group mx-2">
                     <button 
                       onClick={() => setActiveTab('entry')} 
-                      className={`hidden lg:flex items-center gap-2.5 px-6 h-12 bg-white text-slate-900 rounded-xl font-black text-sm shadow-xl hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all relative ${activeTab === 'entry' ? 'ring-2 ring-blue-500' : ''}`}
+                      className={`hidden lg:flex items-center gap-2.5 px-5 py-2.5 bg-white text-slate-900 rounded-xl font-black text-sm shadow-xl hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all relative ${activeTab === 'entry' ? 'ring-2 ring-blue-500' : ''}`}
                     >
                       <IDBadge id="nav-quick-entry" /> 
                       <FilePlus2 size={20} className="text-blue-600" /> 
