@@ -322,7 +322,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     sentParaCount: '',
     receiverName: '',
     receivedDate: '',
-    isOnline: 'না'
+    isOnline: 'না',
+    remarks: ''
   });
 
   // Date segments state for each date field
@@ -410,7 +411,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         sentParaCount: initialEntry.sentParaCount || '',
         receiverName: initialEntry.receiverName || '',
         receivedDate: initialEntry.receivedDate || '',
-        isOnline: initialEntry.isOnline || 'না'
+        isOnline: initialEntry.isOnline || 'না',
+        remarks: initialEntry.remarks || ''
       });
       
       setSegmentsFromDate(initialEntry.letterDate, setLd, setLm, setLy);
@@ -502,7 +504,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       sentParaCount: '',
       receiverName: '',
       receivedDate: '',
-      isOnline: 'না'
+      isOnline: 'না',
+      remarks: ''
     });
     setLd(''); setLm(''); setLy('');
     setDd(''); setDm(''); setDy('');
@@ -872,6 +875,18 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   className={`flex-1 h-full rounded-xl font-black text-sm transition-all border-2 ${formData.isOnline === 'না' ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-400 border-slate-200'}`}
                 >না</button>
               </div>
+            </div>
+
+            {/* Field 13 - Remarks */}
+            <div className={`${colWrapper} border-slate-200 col-span-full`}>
+              <IDBadge id="corr-field-13" />
+              <label className={labelCls}><span className={numBadge}>১৩</span> <FileText size={14} className="text-slate-600" /> মন্তব্য:</label>
+              <textarea 
+                className={`${inputCls} h-24 py-3 resize-none`}
+                value={formData.remarks}
+                onChange={e => setFormData({...formData, remarks: e.target.value})}
+                placeholder="কোন মন্তব্য থাকলে এখানে লিখুন (ঐচ্ছিক)"
+              />
             </div>
 
           </div>
