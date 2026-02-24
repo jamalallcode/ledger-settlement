@@ -203,7 +203,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   useEffect(() => {
     const handleScroll = () => {
       let activeLabel = "";
-      const stickyTop = 42; 
+      const stickyTop = 80; 
 
       for (const group of groupedEntries) {
         const el = cycleRefs.current[group.label];
@@ -500,9 +500,30 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         <IDBadge id="table-main-ledger" />
         <table id="table-main-ledger" ref={tableRef} className="w-full border-separate">
           <colgroup><col className="w-[30px]" /><col className="w-[170px]" /><col className="w-[45px]" /><col className="w-[65px]" /><col className="w-[40px]" /><col className="w-[65px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /></colgroup>
-          <thead>
-            <tr className="h-[42px]"><th rowSpan={2} className={thBase}>ক্র: নং</th><th rowSpan={2} className={thBase}>বিস্তারিত বিবরণ (২০ ফিল্ড দেখতে ক্লিক)</th><th rowSpan={2} className={thBase}>অনু: নং</th><th rowSpan={2} className={thBase}>জড়িত টাকা</th><th colSpan={2} className={thBase}>উত্থাপিত আপত্তি</th><th colSpan={2} className={thBase}>ভ্যাট</th><th colSpan={2} className={thBase}>আয়কর</th><th colSpan={2} className={thBase}>অন্যান্য</th><th colSpan={2} className={thBase}>মোট মীমাংসিত</th></tr>
-            <tr className="h-[38px]"><th className={thBase}>সংখ্যা</th><th className={thBase}>টাকা</th><th className={thBase}>আদায়</th><th className={thBase}>সমন্বয়</th><th className={thBase}>আদায়</th><th className={thBase}>সমন্বয়</th><th className={thBase}>আদায়</th><th className={thBase}>সমন্বয়</th><th className={thBase}>আদায়</th><th className={thBase}>সমন্বয়</th></tr>
+      <thead>
+            <tr className="h-[42px]">
+              <th rowSpan={2} className={thBase + " sticky top-0 z-[110]"}>ক্র: নং</th>
+              <th rowSpan={2} className={thBase + " sticky top-0 z-[110]"}>বিস্তারিত বিবরণ (২০ ফিল্ড দেখতে ক্লিক)</th>
+              <th rowSpan={2} className={thBase + " sticky top-0 z-[110]"}>অনু: নং</th>
+              <th rowSpan={2} className={thBase + " sticky top-0 z-[110]"}>জড়িত টাকা</th>
+              <th colSpan={2} className={thBase + " sticky top-0 z-[110]"}>উত্থাপিত আপত্তি</th>
+              <th colSpan={2} className={thBase + " sticky top-0 z-[110]"}>ভ্যাট</th>
+              <th colSpan={2} className={thBase + " sticky top-0 z-[110]"}>আয়কর</th>
+              <th colSpan={2} className={thBase + " sticky top-0 z-[110]"}>অন্যান্য</th>
+              <th colSpan={2} className={thBase + " sticky top-0 z-[110]"}>মোট মীমাংসিত</th>
+            </tr>
+            <tr className="h-[38px]">
+              <th className={thBase + " sticky top-[42px] z-[110]"}>সংখ্যা</th>
+              <th className={thBase + " sticky top-[42px] z-[110]"}>টাকা</th>
+              <th className={thBase + " sticky top-[42px] z-[110]"}>আদায়</th>
+              <th className={thBase + " sticky top-[42px] z-[110]"}>সমন্বয়</th>
+              <th className={thBase + " sticky top-[42px] z-[110]"}>আদায়</th>
+              <th className={thBase + " sticky top-[42px] z-[110]"}>সমন্বয়</th>
+              <th className={thBase + " sticky top-[42px] z-[110]"}>আদায়</th>
+              <th className={thBase + " sticky top-[42px] z-[110]"}>সমন্বয়</th>
+              <th className={thBase + " sticky top-[42px] z-[110]"}>আদায়</th>
+              <th className={thBase + " sticky top-[42px] z-[110]"}>সমন্বয়</th>
+            </tr>
           </thead>
           <tbody>
             {groupedEntries.length > 0 ? (
@@ -511,7 +532,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                 return (
                   <React.Fragment key={group.label}>
                     {/* Sticky Cycle Header */}
-                    <tr className="sticky top-[42px] z-[90] no-print">
+                    <tr className="sticky top-[80px] z-[90] no-print">
                       <td colSpan={14} className="p-0 border border-slate-300">
                         <div 
                           ref={el => { cycleRefs.current[group.label] = el; }}
@@ -547,7 +568,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                     </tr>
 
                     {showCycleStats[group.label] && (
-                      <tr className="sticky top-[82px] z-[85] no-print">
+                      <tr className="sticky top-[128px] z-[85] no-print">
                         <td colSpan={14} className="p-0 border border-slate-300">
                           <div className="bg-white p-4 border-b border-slate-200 animate-in fade-in slide-in-from-top-1 duration-200 shadow-md">
                             <div className="flex flex-col gap-3">
