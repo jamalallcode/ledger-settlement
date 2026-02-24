@@ -48,10 +48,24 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
   const allOptions = groups.flatMap(g => g.options);
   
-  const filteredOptions = allOptions.filter(opt => {
-    if (!searchTerm || searchTerm === value) return true;
-    return opt.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  const filteredOptions = allOptions
+    .filter(opt => {
+      if (!searchTerm || searchTerm === value) return true;
+      return opt.toLowerCase().includes(searchTerm.toLowerCase());
+    })
+    .sort((a, b) => {
+      if (!searchTerm || searchTerm === value) return 0;
+      const aLower = a.toLowerCase();
+      const bLower = b.toLowerCase();
+      const sLower = searchTerm.toLowerCase();
+      
+      const aStarts = aLower.startsWith(sLower);
+      const bStarts = bLower.startsWith(sLower);
+      
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+      return aLower.localeCompare(bLower);
+    });
 
   const exactMatch = allOptions.some(o => o.toLowerCase() === searchTerm.toLowerCase());
 
