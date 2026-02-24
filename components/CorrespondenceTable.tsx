@@ -361,8 +361,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
     };
   }, [filteredEntries]);
 
-  const cycleStats = useMemo(() => {
-    const groups: Record<string, CorrespondenceEntry[]> = {};
+  const { cycleStats, groupedEntries } = useMemo(() => {
+    const groupsMap: Record<string, CorrespondenceEntry[]> = {};
+    const groupsList: { label: string; entries: CorrespondenceEntry[] }[] = [];
+    
     filteredEntries.forEach(entry => {
       let label = "Unknown";
       if (entry.diaryDate) {
@@ -373,18 +375,22 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
           }
         } catch (e) {}
       }
-      if (!groups[label]) groups[label] = [];
-      groups[label].push(entry);
+      
+      if (!groupsMap[label]) {
+        groupsMap[label] = [];
+        groupsList.push({ label, entries: groupsMap[label] });
+      }
+      groupsMap[label].push(entry);
     });
 
     const statsMap: Record<string, any> = {};
-    Object.entries(groups).forEach(([label, groupEntries]) => {
-      const sfi = groupEntries.filter(e => e.paraType === 'এসএফআই');
-      const nonSfi = groupEntries.filter(e => e.paraType === 'নন এসএফআই');
+    groupsList.forEach(group => {
+      const sfi = group.entries.filter(e => e.paraType === 'এসএফআই');
+      const nonSfi = group.entries.filter(e => e.paraType === 'নন এসএফআই');
       const getCount = (list: CorrespondenceEntry[], type: string) => list.filter(e => e.letterType === type).length;
       
-      statsMap[label] = {
-        total: groupEntries.length,
+      statsMap[group.label] = {
+        total: group.entries.length,
         sfi: {
           total: sfi.length,
           bsr: getCount(sfi, 'বিএসআর'),
@@ -399,32 +405,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
         }
       };
     });
-    return statsMap;
-  }, [filteredEntries]);
 
-  const groupedEntries = useMemo(() => {
-    const groups: { label: string; entries: CorrespondenceEntry[] }[] = [];
-    let currentGroup: { label: string; entries: CorrespondenceEntry[] } | null = null;
-
-    filteredEntries.forEach(entry => {
-      let label = "Unknown";
-      if (entry.diaryDate) {
-        try {
-          const dateObj = new Date(entry.diaryDate);
-          if (!isNaN(dateObj.getTime())) {
-            label = getCycleForDate(dateObj).label;
-          }
-        } catch (e) {}
-      }
-
-      if (!currentGroup || currentGroup.label !== label) {
-        currentGroup = { label, entries: [] };
-        groups.push(currentGroup);
-      }
-      currentGroup.entries.push(entry);
-    });
-
-    return groups;
+    return { cycleStats: statsMap, groupedEntries: groupsList };
   }, [filteredEntries]);
 
   useEffect(() => {
