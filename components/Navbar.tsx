@@ -204,9 +204,7 @@ const Navbar: React.FC<NavbarProps> = ({
             </div>
           )}
 
-          <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-xl relative">
-            <IDBadge id="nav-cycle-badge" /> <Calendar size={16} className="text-blue-400" /> <span className="text-xs font-black text-slate-300 tracking-tight">{cycleLabel}</span>
-          </div>
+          {/* Cycle badge removed as per request */}
           
           {isAdmin && (
             <div className="hidden sm:flex items-center gap-2">
