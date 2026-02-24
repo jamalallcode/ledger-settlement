@@ -255,6 +255,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   const [pendingChanges, setPendingChanges] = useState<Record<string, Partial<CorrespondenceEntry>>>({});
   const [isUpdating, setIsUpdating] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const [expandedCycles, setExpandedCycles] = useState<Record<string, boolean>>({});
   
   // Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -358,6 +359,72 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
     };
   }, [filteredEntries]);
 
+  const cycleStats = useMemo(() => {
+    const groups: Record<string, CorrespondenceEntry[]> = {};
+    filteredEntries.forEach(entry => {
+      let label = "Unknown";
+      if (entry.diaryDate) {
+        try {
+          const dateObj = new Date(entry.diaryDate);
+          if (!isNaN(dateObj.getTime())) {
+            label = getCycleForDate(dateObj).label;
+          }
+        } catch (e) {}
+      }
+      if (!groups[label]) groups[label] = [];
+      groups[label].push(entry);
+    });
+
+    const statsMap: Record<string, any> = {};
+    Object.entries(groups).forEach(([label, groupEntries]) => {
+      const sfi = groupEntries.filter(e => e.paraType === 'এসএফআই');
+      const nonSfi = groupEntries.filter(e => e.paraType === 'নন এসএফআই');
+      const getCount = (list: CorrespondenceEntry[], type: string) => list.filter(e => e.letterType === type).length;
+      
+      statsMap[label] = {
+        total: groupEntries.length,
+        sfi: {
+          total: sfi.length,
+          bsr: getCount(sfi, 'বিএসআর'),
+          triWork: getCount(sfi, 'ত্রিপক্ষীয় সভা (কার্যপত্র)'),
+          triMin: getCount(sfi, 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)'),
+        },
+        nonSfi: {
+          total: nonSfi.length,
+          bsr: getCount(nonSfi, 'বিএসআর'),
+          biWork: getCount(nonSfi, 'দ্বিপক্ষীয় সভা (কার্যপত্র)'),
+          biMin: getCount(nonSfi, 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)'),
+        }
+      };
+    });
+    return statsMap;
+  }, [filteredEntries]);
+
+  const groupedEntries = useMemo(() => {
+    const groups: { label: string; entries: CorrespondenceEntry[] }[] = [];
+    let currentGroup: { label: string; entries: CorrespondenceEntry[] } | null = null;
+
+    filteredEntries.forEach(entry => {
+      let label = "Unknown";
+      if (entry.diaryDate) {
+        try {
+          const dateObj = new Date(entry.diaryDate);
+          if (!isNaN(dateObj.getTime())) {
+            label = getCycleForDate(dateObj).label;
+          }
+        } catch (e) {}
+      }
+
+      if (!currentGroup || currentGroup.label !== label) {
+        currentGroup = { label, entries: [] };
+        groups.push(currentGroup);
+      }
+      currentGroup.entries.push(entry);
+    });
+
+    return groups;
+  }, [filteredEntries]);
+
   // IDBadge definition inside component
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = useState(false);
@@ -413,9 +480,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[48px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
 
   const hasChanges = Object.keys(pendingChanges).length > 0;
-
-
-  let lastRenderedCycle = "";
 
   return (
     <div id="section-correspondence-register" className="w-full space-y-4 animate-premium-page relative">
@@ -643,9 +707,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
               <th className={thCls}>মন্তব্য</th>
             </tr>
           </thead>
-          <tbody>
-            {showSummary && (
-              <tr className="no-print">
+          {showSummary && (
+            <tbody className="no-print">
+              <tr>
                 <td colSpan={7} className="p-0 border border-slate-300">
                   <div className="bg-blue-50/80 p-4 animate-in fade-in slide-in-from-top-2 duration-500 border-b border-blue-200">
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -682,227 +746,309 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                   </div>
                 </td>
               </tr>
-            )}
-            {filteredEntries.length > 0 ? filteredEntries.map((entry, idx) => {
-              let currentCycleLabel = "";
-              if (entry.diaryDate) {
-                try {
-                  const dateObj = new Date(entry.diaryDate);
-                  if (!isNaN(dateObj.getTime())) {
-                    currentCycleLabel = getCycleForDate(dateObj).label;
-                  }
-                } catch (e) {}
-              }
-              
-              const showCycleHeader = currentCycleLabel && currentCycleLabel !== lastRenderedCycle;
-              if (showCycleHeader) lastRenderedCycle = currentCycleLabel;
-
-              const pending = pendingChanges[entry.id] || {};
-              const currentPresDate = pending.presentationDate !== undefined ? pending.presentationDate : (entry.presentationDate || '');
-              const currentPresName = pending.presentedToName !== undefined ? pending.presentedToName : (entry.presentedToName || '');
-              const currentIssueNo = pending.issueLetterNo !== undefined ? pending.issueLetterNo : (entry.issueLetterNo || '');
-              const currentIssueDate = pending.issueLetterDate !== undefined ? pending.issueLetterDate : (entry.issueLetterDate || '');
-              
-              const isPendingForApproval = entry.approvalStatus === 'pending';
-
-              return (
-                <React.Fragment key={entry.id}>
-                  {showCycleHeader && (
-                    <tr className="bg-slate-100/80 border-y border-slate-300 relative group/cycle-header">
-                      <td colSpan={7} className="px-4 py-2 border border-slate-300">
-                        <div className="flex items-center justify-start gap-3">
-                          <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-md">
+            </tbody>
+          )}
+          {groupedEntries.length > 0 ? (
+            (() => {
+              let globalIdx = 0;
+              return groupedEntries.map((group) => (
+                <tbody key={group.label}>
+                  {/* Sticky Cycle Header */}
+                  <tr className="sticky top-[32px] z-[90] no-print">
+                    <td colSpan={7} className="p-0 border border-slate-300">
+                      <div 
+                        onClick={() => setExpandedCycles(prev => ({ ...prev, [group.label]: !prev[group.label] }))}
+                        className="bg-slate-100/95 backdrop-blur-sm border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-md group-hover/cycle-header:scale-110 transition-transform">
                             <CalendarDays size={18} />
                           </div>
-                          <span className="font-black text-[13px] text-slate-800 tracking-tight uppercase">
-                            সময়কাল: <span className="text-blue-700 font-black">{toBengaliDigits(currentCycleLabel)}</span>
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                  <tr className="group transition-all">
-                    <td className={tdCls + " text-center font-black"}>{toBengaliDigits(idx + 1)}</td>
-                    <td className={tdCls}>{entry.description}</td>
-                    <td className={tdCls}>
-                       <div className="space-y-2">
                           <div className="flex flex-col">
-                            <span className={labelCls}>১. শাখার ধরণ:</span> 
-                            <span className={valCls + " pl-3"}>{entry.paraType}</span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className={labelCls}>২. পত্রের ধরণ:</span> 
-                            <span className={valCls + " pl-3"}>{entry.letterType}</span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className={labelCls}>৩. পত্র নং ও তারিখ:</span> 
-                            <span className={valCls + " pl-3"}>{entry.letterNo}, {formatDateBN(entry.letterDate)}</span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className={labelCls}>৪. প্রেরিত অনু: সংখ্যা:</span> 
-                            <span className={valCls + " pl-3"}>{toBengaliDigits(entry.totalParas)} টি</span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className={labelCls}>৫. মোট জড়িত টাকা:</span> 
-                            <span className={valCls + " pl-3"}>{toBengaliDigits(entry.totalAmount)}</span>
-                          </div>
-                       </div>
-                    </td>
-                    <td className={tdCls}>
-                       <div className="space-y-2">
-                          <div className="flex flex-col">
-                            <span className={labelCls}>১. ডায়েরি নং ও তারিখ:</span> 
-                            <span className={valCls + " pl-3"}>{entry.diaryNo}, {formatDateBN(entry.diaryDate)}</span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className={labelCls}>২. শাখায় প্রাপ্তির তারিখ:</span> 
-                            <span className={valCls + " pl-3"}>{formatDateBN(entry.receiptDate)}</span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className={labelCls}>৩. ডিজিটাল নথি নং-:</span> 
-                            <span className={valCls + " pl-3"}>{entry.digitalFileNo}</span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className={labelCls}>৪. গ্রহণের তারিখ:</span> 
-                            <span className={valCls + " pl-3"}>{formatDateBN(entry.receivedDate)}</span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className={labelCls}>৫. অনলাইনে প্রাপ্তি:</span> 
-                            <span className={valCls + " pl-3"}>{entry.isOnline}</span>
-                          </div>
-                       </div>
-                    </td>
-                    <td className={tdCls}>
-                       <div className="space-y-2">
-                          <div className="p-1.5 bg-slate-50 border border-slate-100 rounded-lg relative">
-                             <div className="text-[9px] font-bold text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1"><Inbox size={8} /> গ্রহণকারী</div>
-                             <div className="font-bold text-slate-900 text-[10px] leading-tight truncate">{entry.receiverName || '-'}</div>
-                             <div className="text-[9px] text-slate-500 font-bold">{formatDateBN(entry.receivedDate)}</div>
-                          </div>
-
-                          <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.presentationDate || pending.presentedToName ? 'bg-blue-600/10 border-blue-400 ring-2 ring-blue-50' : 'bg-blue-50/50 border-blue-100'}`}>
-                             <div className="flex items-center justify-between">
-                                <div className="text-[9px] font-bold text-blue-700 uppercase tracking-tighter flex items-center gap-1"><UserCheck size={8} /> উপস্থাপন</div>
-                                {(currentPresDate || currentPresName) && (
-                                  <button 
-                                    type="button"
-                                    onClick={() => {
-                                      handleInlineChange(entry.id, 'presentationDate', '');
-                                      handleInlineChange(entry.id, 'presentedToName', '');
-                                    }}
-                                    className="p-1 hover:bg-red-100 text-red-400 hover:text-red-600 rounded transition-all animate-in zoom-in duration-300 ml-1"
-                                    title="তথ্য মুছুন"
-                                  >
-                                    <XCircle size={10} />
-                                  </button>
-                                )}
-                                <div className="flex items-center gap-1.5 ml-auto">
-                                   {formatDateBN(currentPresDate) && <span className="text-[8px] font-black text-blue-600">{formatDateBN(currentPresDate)}</span>}
-                                   <div className="relative flex items-center h-3 w-3">
-                                      <Calendar 
-                                        size={11} 
-                                        className="text-blue-500 cursor-pointer hover:text-blue-700 transition-colors" 
-                                        onClick={(e) => {
-                                          const input = (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement);
-                                          if (input) input.showPicker();
-                                        }}
-                                      />
-                                      <input 
-                                        type="date" 
-                                        className="absolute inset-0 opacity-0 w-3 h-3 cursor-pointer"
-                                        value={currentPresDate}
-                                        onChange={e => handleInlineChange(entry.id, 'presentationDate', e.target.value)}
-                                      />
-                                   </div>
-                                </div>
-                             </div>
-                             <PremiumInlineSelect 
-                                value={currentPresName} 
-                                onSelect={val => handleInlineChange(entry.id, 'presentedToName', val)}
-                             />
-                          </div>
-                       </div>
-                    </td>
-                    <td className={tdCls}>
-                       <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.issueLetterNo || pending.issueLetterDate ? 'bg-amber-600/10 border-amber-400 ring-2 ring-amber-50' : 'bg-amber-50/50 border-amber-100'}`}>
-                          <div className="text-[9px] font-bold text-amber-700 uppercase tracking-tighter flex items-center gap-1"><Send size={8} /> জারিপত্র</div>
-                          <div className="space-y-1">
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-[8px] font-bold text-slate-400 uppercase">নং</span>
-                              <input 
-                                type="text" 
-                                placeholder="নং"
-                                className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none focus:border-amber-400 bg-white" 
-                                value={currentIssueNo} 
-                                onChange={e => handleInlineChange(entry.id, 'issueLetterNo', toBengaliDigits(e.target.value))}
-                              />
+                            <span className="font-black text-[13px] text-slate-800 tracking-tight uppercase">
+                              সময়কাল: <span className="text-blue-700 font-black">{toBengaliDigits(group.label)}</span>
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Cycle Statistics</span>
+                              <div className="h-1 w-1 bg-slate-300 rounded-full"></div>
+                              <span className="text-[9px] font-black text-blue-600">মোট {toBengaliDigits(cycleStats[group.label]?.total || 0)} টি চিঠি</span>
                             </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-[8px] font-bold text-slate-400 uppercase flex items-center gap-1">তারিখ</span>
-                              <div className="flex items-center gap-1.5">
-                                 {formatDateBN(currentIssueDate) && <span className="text-[8px] font-black text-amber-600">{formatDateBN(currentIssueDate)}</span>}
-                                 <div className="relative flex items-center h-3 w-3">
-                                    <Calendar 
-                                      size={11} 
-                                      className="text-amber-500 cursor-pointer hover:text-amber-700 transition-colors" 
-                                      onClick={(e) => {
-                                        const input = (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement);
-                                        if (input) input.showPicker();
-                                      }}
-                                    />
-                                    <input 
-                                      type="date" 
-                                      className="absolute inset-0 opacity-0 w-3 h-3 cursor-pointer"
-                                      value={currentIssueDate}
-                                      onChange={e => handleInlineChange(entry.id, 'issueLetterDate', e.target.value)}
-                                    />
-                                 </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className={`px-3 py-1 rounded-full text-[10px] font-black transition-all flex items-center gap-1.5 ${expandedCycles[group.label] ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white text-blue-600 border border-blue-200 hover:border-blue-400'}`}>
+                            {expandedCycles[group.label] ? 'সংক্ষিপ্ত করুন' : 'বিস্তারিত দেখুন'}
+                            <ChevronDown size={12} className={`transition-transform duration-300 ${expandedCycles[group.label] ? 'rotate-180' : ''}`} />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {expandedCycles[group.label] && (
+                        <div className="bg-white p-4 border-b border-slate-200 animate-in fade-in slide-in-from-top-2 duration-500">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* SFI Stats */}
+                            <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-3 space-y-2">
+                              <div className="flex items-center justify-between border-b border-emerald-100 pb-1.5">
+                                <span className="text-[11px] font-black text-emerald-900 flex items-center gap-2">
+                                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                                  এসএফআই (SFI)
+                                </span>
+                                <span className="bg-emerald-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-black">
+                                  {toBengaliDigits(cycleStats[group.label]?.sfi.total || 0)} টি
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2">
+                                <div className="flex flex-col">
+                                  <span className="text-[9px] font-bold text-emerald-600 uppercase">বিএসআর</span>
+                                  <span className="text-[12px] font-black text-slate-800">{toBengaliDigits(cycleStats[group.label]?.sfi.bsr || 0)} টি</span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[9px] font-bold text-emerald-600 uppercase">ত্রিপক্ষীয় (কার্যপত্র)</span>
+                                  <span className="text-[12px] font-black text-slate-800">{toBengaliDigits(cycleStats[group.label]?.sfi.triWork || 0)} টি</span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[9px] font-bold text-emerald-600 uppercase">ত্রিপক্ষীয় (বিবরণী)</span>
+                                  <span className="text-[12px] font-black text-slate-800">{toBengaliDigits(cycleStats[group.label]?.sfi.triMin || 0)} টি</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Non-SFI Stats */}
+                            <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3 space-y-2">
+                              <div className="flex items-center justify-between border-b border-amber-100 pb-1.5">
+                                <span className="text-[11px] font-black text-amber-900 flex items-center gap-2">
+                                  <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                                  নন এসএফআই (Non-SFI)
+                                </span>
+                                <span className="bg-amber-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-black">
+                                  {toBengaliDigits(cycleStats[group.label]?.nonSfi.total || 0)} টি
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2">
+                                <div className="flex flex-col">
+                                  <span className="text-[9px] font-bold text-amber-600 uppercase">বিএসআর</span>
+                                  <span className="text-[12px] font-black text-slate-800">{toBengaliDigits(cycleStats[group.label]?.nonSfi.bsr || 0)} টি</span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[9px] font-bold text-amber-600 uppercase">দ্বিপক্ষীয় (কার্যপত্র)</span>
+                                  <span className="text-[12px] font-black text-slate-800">{toBengaliDigits(cycleStats[group.label]?.nonSfi.biWork || 0)} টি</span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[9px] font-bold text-amber-600 uppercase">দ্বিপক্ষীয় (বিবরণী)</span>
+                                  <span className="text-[12px] font-black text-slate-800">{toBengaliDigits(cycleStats[group.label]?.nonSfi.biMin || 0)} টি</span>
+                                </div>
                               </div>
                             </div>
                           </div>
-                       </div>
-                    </td>
-                    <td className={tdCls + " relative group/action text-center"}>
-                       <span className="text-[9px] opacity-70 font-bold">{entry.remarks || '-'}</span>
-                       {isAdmin && (
-                         <div className="absolute right-0.5 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all no-print z-[500] bg-white/90 backdrop-blur-sm p-1 rounded-lg shadow-xl border border-slate-200">
-                           {isPendingForApproval && (
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); onApprove?.(entry.id); }} 
-                                className="p-1.5 bg-emerald-500 text-white rounded-md shadow-md hover:bg-emerald-600 transition-colors"
-                                title="অনুমোদন দিন"
-                              >
-                                <Check size={12} strokeWidth={3} />
-                              </button>
-                           )}
-                           {isPendingForApproval && (
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); onReject?.(entry.id); }} 
-                                className="p-1.5 bg-red-500 text-white rounded-md shadow-md hover:bg-red-600 transition-colors"
-                                title="বাতিল করুন"
-                              >
-                                <XCircle size={12} />
-                              </button>
-                           )}
-                           <button onClick={(e) => { e.stopPropagation(); onEdit?.(entry); }} className="p-1.5 bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-700 transition-colors" title="এডিট করুন"><Pencil size={12} /></button>
-                           <button 
-                            onClick={(e) => { 
-                              e.stopPropagation(); 
-                              if(window.confirm("আপনি কি নিশ্চিতভাবে এই এন্ট্রিটি মুছে ফেলতে চান?")) {
-                                onDelete?.(entry.id); 
-                              }
-                            }} 
-                            className="p-1.5 bg-rose-600 text-white rounded-md shadow-md hover:bg-rose-700 transition-colors" 
-                            title="মুছে ফেলুন"
-                           >
-                            <Trash2 size={12} />
-                           </button>
-                         </div>
-                       )}
+                        </div>
+                      )}
                     </td>
                   </tr>
-                </React.Fragment>
-            )}) : (
+                  {/* Print-only cycle header */}
+                  <tr className="hidden print:table-row bg-slate-100 border-y border-slate-300">
+                    <td colSpan={7} className="px-4 py-2 border border-slate-300">
+                      <span className="font-black text-[13px] text-slate-800 tracking-tight uppercase">
+                        সময়কাল: <span className="text-blue-700 font-black">{toBengaliDigits(group.label)}</span>
+                      </span>
+                    </td>
+                  </tr>
+                  {group.entries.map((entry) => {
+                    const idx = globalIdx++;
+                    const pending = pendingChanges[entry.id] || {};
+                    const currentPresDate = pending.presentationDate !== undefined ? pending.presentationDate : (entry.presentationDate || '');
+                    const currentPresName = pending.presentedToName !== undefined ? pending.presentedToName : (entry.presentedToName || '');
+                    const currentIssueNo = pending.issueLetterNo !== undefined ? pending.issueLetterNo : (entry.issueLetterNo || '');
+                    const currentIssueDate = pending.issueLetterDate !== undefined ? pending.issueLetterDate : (entry.issueLetterDate || '');
+                    const isPendingForApproval = entry.approvalStatus === 'pending';
+
+                    return (
+                      <tr key={entry.id} className="group transition-all">
+                        <td className={tdCls + " text-center font-black"}>{toBengaliDigits(idx + 1)}</td>
+                        <td className={tdCls}>{entry.description}</td>
+                        <td className={tdCls}>
+                           <div className="space-y-2">
+                              <div className="flex flex-col">
+                                <span className={labelCls}>১. শাখার ধরণ:</span> 
+                                <span className={valCls + " pl-3"}>{entry.paraType}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className={labelCls}>২. পত্রের ধরণ:</span> 
+                                <span className={valCls + " pl-3"}>{entry.letterType}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className={labelCls}>৩. পত্র নং ও তারিখ:</span> 
+                                <span className={valCls + " pl-3"}>{entry.letterNo}, {formatDateBN(entry.letterDate)}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className={labelCls}>৪. প্রেরিত অনু: সংখ্যা:</span> 
+                                <span className={valCls + " pl-3"}>{toBengaliDigits(entry.totalParas)} টি</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className={labelCls}>৫. মোট জড়িত টাকা:</span> 
+                                <span className={valCls + " pl-3"}>{toBengaliDigits(entry.totalAmount)}</span>
+                              </div>
+                           </div>
+                        </td>
+                        <td className={tdCls}>
+                           <div className="space-y-2">
+                              <div className="flex flex-col">
+                                <span className={labelCls}>১. ডায়েরি নং ও তারিখ:</span> 
+                                <span className={valCls + " pl-3"}>{entry.diaryNo}, {formatDateBN(entry.diaryDate)}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className={labelCls}>২. শাখায় প্রাপ্তির তারিখ:</span> 
+                                <span className={valCls + " pl-3"}>{formatDateBN(entry.receiptDate)}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className={labelCls}>৩. ডিজিটাল নথি নং-:</span> 
+                                <span className={valCls + " pl-3"}>{entry.digitalFileNo}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className={labelCls}>৪. গ্রহণের তারিখ:</span> 
+                                <span className={valCls + " pl-3"}>{formatDateBN(entry.receivedDate)}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className={labelCls}>৫. অনলাইনে প্রাপ্তি:</span> 
+                                <span className={valCls + " pl-3"}>{entry.isOnline}</span>
+                              </div>
+                           </div>
+                        </td>
+                        <td className={tdCls}>
+                           <div className="space-y-2">
+                              <div className="p-1.5 bg-slate-50 border border-slate-100 rounded-lg relative">
+                                 <div className="text-[9px] font-bold text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1"><Inbox size={8} /> গ্রহণকারী</div>
+                                 <div className="font-bold text-slate-900 text-[10px] leading-tight truncate">{entry.receiverName || '-'}</div>
+                                 <div className="text-[9px] text-slate-500 font-bold">{formatDateBN(entry.receivedDate)}</div>
+                              </div>
+
+                              <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.presentationDate || pending.presentedToName ? 'bg-blue-600/10 border-blue-400 ring-2 ring-blue-50' : 'bg-blue-50/50 border-blue-100'}`}>
+                                 <div className="flex items-center justify-between">
+                                    <div className="text-[9px] font-bold text-blue-700 uppercase tracking-tighter flex items-center gap-1"><UserCheck size={8} /> উপস্থাপন</div>
+                                    {(currentPresDate || currentPresName) && (
+                                      <button 
+                                        type="button"
+                                        onClick={() => {
+                                          handleInlineChange(entry.id, 'presentationDate', '');
+                                          handleInlineChange(entry.id, 'presentedToName', '');
+                                        }}
+                                        className="p-1 hover:bg-red-100 text-red-400 hover:text-red-600 rounded transition-all animate-in zoom-in duration-300 ml-1"
+                                        title="তথ্য মুছুন"
+                                      >
+                                        <XCircle size={10} />
+                                      </button>
+                                    )}
+                                    <div className="flex items-center gap-1.5 ml-auto">
+                                       {formatDateBN(currentPresDate) && <span className="text-[8px] font-black text-blue-600">{formatDateBN(currentPresDate)}</span>}
+                                       <div className="relative flex items-center h-3 w-3">
+                                          <Calendar 
+                                            size={11} 
+                                            className="text-blue-500 cursor-pointer hover:text-blue-700 transition-colors" 
+                                            onClick={(e) => {
+                                              const input = (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement);
+                                              if (input) input.showPicker();
+                                            }}
+                                          />
+                                          <input 
+                                            type="date" 
+                                            className="absolute inset-0 opacity-0 w-3 h-3 cursor-pointer"
+                                            value={currentPresDate}
+                                            onChange={e => handleInlineChange(entry.id, 'presentationDate', e.target.value)}
+                                          />
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <PremiumInlineSelect 
+                                    value={currentPresName} 
+                                    onSelect={val => handleInlineChange(entry.id, 'presentedToName', val)}
+                                 />
+                              </div>
+                           </div>
+                        </td>
+                        <td className={tdCls}>
+                           <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.issueLetterNo || pending.issueLetterDate ? 'bg-amber-600/10 border-amber-400 ring-2 ring-amber-50' : 'bg-amber-50/50 border-amber-100'}`}>
+                              <div className="text-[9px] font-bold text-amber-700 uppercase tracking-tighter flex items-center gap-1"><Send size={8} /> জারিপত্র</div>
+                              <div className="space-y-1">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-[8px] font-bold text-slate-400 uppercase">নং</span>
+                                  <input 
+                                    type="text" 
+                                    placeholder="নং"
+                                    className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none focus:border-amber-400 bg-white" 
+                                    value={currentIssueNo} 
+                                    onChange={e => handleInlineChange(entry.id, 'issueLetterNo', toBengaliDigits(e.target.value))}
+                                  />
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[8px] font-bold text-slate-400 uppercase flex items-center gap-1">তারিখ</span>
+                                  <div className="flex items-center gap-1.5">
+                                     {formatDateBN(currentIssueDate) && <span className="text-[8px] font-black text-amber-600">{formatDateBN(currentIssueDate)}</span>}
+                                     <div className="relative flex items-center h-3 w-3">
+                                        <Calendar 
+                                          size={11} 
+                                          className="text-amber-500 cursor-pointer hover:text-amber-700 transition-colors" 
+                                          onClick={(e) => {
+                                            const input = (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement);
+                                            if (input) input.showPicker();
+                                          }}
+                                        />
+                                        <input 
+                                          type="date" 
+                                          className="absolute inset-0 opacity-0 w-3 h-3 cursor-pointer"
+                                          value={currentIssueDate}
+                                          onChange={e => handleInlineChange(entry.id, 'issueLetterDate', e.target.value)}
+                                        />
+                                     </div>
+                                  </div>
+                                </div>
+                              </div>
+                           </div>
+                        </td>
+                        <td className={tdCls + " relative group/action text-center"}>
+                           <span className="text-[9px] opacity-70 font-bold">{entry.remarks || '-'}</span>
+                           {isAdmin && (
+                             <div className="absolute right-0.5 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all no-print z-[500] bg-white/90 backdrop-blur-sm p-1 rounded-lg shadow-xl border border-slate-200">
+                               {isPendingForApproval && (
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); onApprove?.(entry.id); }} 
+                                    className="p-1.5 bg-emerald-500 text-white rounded-md shadow-md hover:bg-emerald-600 transition-colors"
+                                    title="অনুমোদন দিন"
+                                  >
+                                    <Check size={12} strokeWidth={3} />
+                                  </button>
+                               )}
+                               {isPendingForApproval && (
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); onReject?.(entry.id); }} 
+                                    className="p-1.5 bg-red-500 text-white rounded-md shadow-md hover:bg-red-600 transition-colors"
+                                    title="বাতিল করুন"
+                                  >
+                                    <XCircle size={12} />
+                                  </button>
+                               )}
+                               <button onClick={(e) => { e.stopPropagation(); onEdit?.(entry); }} className="p-1.5 bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-700 transition-colors" title="এডিট করুন"><Pencil size={12} /></button>
+                               <button 
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  if(window.confirm("আপনি কি নিশ্চিতভাবে এই এন্ট্রিটি মুছে ফেলতে চান?")) {
+                                    onDelete?.(entry.id); 
+                                  }
+                                }} 
+                                className="p-1.5 bg-rose-600 text-white rounded-md shadow-md hover:bg-rose-700 transition-colors" 
+                                title="মুছে ফেলুন"
+                               >
+                                <Trash2 size={12} />
+                               </button>
+                             </div>
+                           )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              ));
+            })()
+          ) : (
+            <tbody>
               <tr>
                 <td colSpan={7} className="py-20 text-center bg-white">
                    <div className="flex flex-col items-center gap-3 opacity-30">
@@ -911,8 +1057,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                    </div>
                 </td>
               </tr>
-            )}
-          </tbody>
+            </tbody>
+          )}
           <tfoot className="sticky bottom-0 z-[110]">
             <tr className="bg-slate-900 text-white font-black text-[11px] h-9 shadow-[0_-5px_15px_rgba(0,0,0,0.2)]">
               <td colSpan={2} className="px-4 text-left border-t border-slate-700">সর্বমোট:</td>
