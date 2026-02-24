@@ -104,24 +104,28 @@ const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-4">
           <button onClick={onToggleSidebar} className={`p-2 hover:bg-slate-800 rounded-xl transition-all text-slate-400 hover:text-white ${isSidebarOpen ? 'hidden lg:hidden' : 'flex'}`}><Menu size={24} /></button>
           <div className="hidden lg:flex items-center gap-2">
-            {navItems.map((item) => (
+            {navItems.map((item, index) => (
               <React.Fragment key={item.id}>
                 <button 
                   onClick={() => setActiveTab(item.id)} 
                   title={item.label}
-                  className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all relative ${activeTab === item.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-900/40 translate-y-[-1px]' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                  className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300 relative shadow-lg hover:scale-110 active:scale-95 ${
+                    index === 0 
+                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  } ${activeTab === item.id ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900' : ''}`}
                 >
                   <item.icon size={22} />
                 </button>
                 {item.id === 'landing' && (
-                  <div className="relative group mx-2">
+                  <div className="relative group mx-1">
                     <button 
                       onClick={() => setActiveTab('entry')} 
                       title="নতুন তথ্য এন্ট্রি"
-                      className={`hidden lg:flex items-center justify-center w-12 h-12 bg-white text-slate-900 rounded-xl font-black shadow-xl hover:bg-blue-50 hover:scale-110 active:scale-95 transition-all relative ${activeTab === 'entry' ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
+                      className={`hidden lg:flex items-center justify-center w-12 h-12 bg-white text-blue-600 rounded-xl font-black shadow-xl hover:bg-slate-100 hover:scale-110 active:scale-95 transition-all duration-300 relative ${activeTab === 'entry' ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900' : ''}`}
                     >
                       <IDBadge id="nav-quick-entry" /> 
-                      <Plus size={24} className="text-blue-600" strokeWidth={3} /> 
+                      <Plus size={24} strokeWidth={3} /> 
                     </button>
                   </div>
                 )}
