@@ -172,17 +172,19 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     auditYear: '',
     letterNoDate: '',
     meetingWorkpaper: '', 
-    minutesNoDate: '', 
     workpaperNoDate: '', 
     issueLetterNoDate: '', 
     issueDateISO: '', 
     archiveNo: '',
     meetingSentParaCount: '',
+    meetingDiscussedParaCount: '',
+    meetingRecommendedParaCount: '',
     meetingSettledParaCount: '',
     meetingFullSettledParaCount: '',
     meetingPartialSettledParaCount: '',
     meetingUnsettledParas: '',
     meetingUnsettledAmount: 0,
+    totalInvolvedAmount: 0,
     isMeeting: false,
     remarks: '',
     meetingDate: '',
@@ -206,11 +208,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [wpMonth, setWpMonth] = useState('');
   const [wpYear, setWpYear] = useState('');
 
-  const [minNoPart, setMinNoPart] = useState('');
-  const [minDay, setMinDay] = useState('');
-  const [minMonth, setMinMonth] = useState('');
-  const [minYear, setMinYear] = useState('');
-
   const [diaryNoPart, setDiaryNoPart] = useState('');
   const [diaryDay, setDiaryDay] = useState('');
   const [diaryMonth, setDiaryMonth] = useState('');
@@ -224,7 +221,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [isIssueFocused, setIsIssueFocused] = useState(false);
   const [isLetterFocused, setIsLetterFocused] = useState(false);
   const [isWpFocused, setIsWpFocused] = useState(false);
-  const [isMinFocused, setIsMinFocused] = useState(false);
   const [isDiaryFocused, setIsDiaryFocused] = useState(false);
 
   const letterDayRef = useRef<HTMLInputElement>(null);
@@ -233,9 +229,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const wpDayRef = useRef<HTMLInputElement>(null);
   const wpMonthRef = useRef<HTMLInputElement>(null);
   const wpYearRef = useRef<HTMLInputElement>(null);
-  const minDayRef = useRef<HTMLInputElement>(null);
-  const minMonthRef = useRef<HTMLInputElement>(null);
-  const minYearRef = useRef<HTMLInputElement>(null);
   const diaryDayRef = useRef<HTMLInputElement>(null);
   const diaryMonthRef = useRef<HTMLInputElement>(null);
   const diaryYearRef = useRef<HTMLInputElement>(null);
@@ -275,17 +268,19 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         auditYear: initialEntry.auditYear || '',
         letterNoDate: initialEntry.letterNoDate || '',
         meetingWorkpaper: initialEntry.meetingWorkpaper || '',
-        minutesNoDate: initialEntry.minutesNoDate || '',
         workpaperNoDate: initialEntry.workpaperNoDate || '',
         issueLetterNoDate: initialEntry.issueLetterNoDate || '',
         issueDateISO: initialEntry.issueDateISO || '',
         archiveNo: initialEntry.archiveNo || '',
         meetingSentParaCount: initialEntry.meetingSentParaCount || '',
+        meetingDiscussedParaCount: initialEntry.meetingDiscussedParaCount || '',
+        meetingRecommendedParaCount: initialEntry.meetingRecommendedParaCount || '',
         meetingSettledParaCount: initialEntry.meetingSettledParaCount || '',
         meetingFullSettledParaCount: initialEntry.meetingFullSettledParaCount || '',
         meetingPartialSettledParaCount: initialEntry.meetingPartialSettledParaCount || '',
         meetingUnsettledParas: initialEntry.meetingUnsettledParas || '',
         meetingUnsettledAmount: initialEntry.meetingUnsettledAmount || 0,
+        totalInvolvedAmount: initialEntry.totalInvolvedAmount || 0,
         isMeeting: initialEntry.isMeeting || false,
         remarks: initialEntry.remarks || '',
         meetingDate: initialEntry.meetingDate || '',
@@ -298,9 +293,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
       const f8 = extractSegments(initialEntry.meetingWorkpaper, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-');
       setWpNoPart(f8.no); setWpDay(f8.d); setWpMonth(f8.m); setWpYear(f8.y);
-
-      const f9 = extractSegments(initialEntry.minutesNoDate, 'কার্যবিবরণী নং-', 'কার্যবিবরণীর তারিখ-');
-      setMinNoPart(f9.no); setMinDay(f9.d); setMinMonth(f9.m); setMinYear(f9.y);
 
       const f10 = extractSegments(initialEntry.workpaperNoDate, 'ডায়েরি নং-', 'ডায়েরির তারিখ-');
       setDiaryNoPart(f10.no); setDiaryDay(f10.d); setDiaryMonth(f10.m); setDiaryYear(f10.y);
@@ -356,10 +348,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     setFormData(prev => ({ ...prev, meetingWorkpaper: buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-') }));
   }, [wpNoPart, wpDay, wpMonth, wpYear]);
 
-  useEffect(() => {
-    setFormData(prev => ({ ...prev, minutesNoDate: buildCombinedString(minNoPart, minDay, minMonth, minYear, 'কার্যবিবরণী নং-', 'কার্যবিবরণীর তারিখ-') }));
-  }, [minNoPart, minDay, minMonth, minYear]);
-
   /* useMemo added to track values for validation */
   const currentDiaryISO = useMemo(() => getIsoFromSegments(diaryDay, diaryMonth, diaryYear), [diaryDay, diaryMonth, diaryYear]);
   const currentLetterISO = useMemo(() => getIsoFromSegments(letterDay, letterMonth, letterYear), [letterDay, letterMonth, letterYear]);
@@ -391,7 +379,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       });
     } else if (id === 'direct') {
        setRawInputs(prev => ({ ...prev, [`direct-${field}`]: bDigits }));
-       const isNumericField = ['meetingSentParaCount', 'meetingSettledParaCount', 'meetingUnsettledParas', 'meetingUnsettledAmount'].includes(field);
+       const isNumericField = ['meetingSentParaCount', 'meetingDiscussedParaCount', 'meetingRecommendedParaCount', 'meetingSettledParaCount', 'meetingUnsettledParas', 'meetingUnsettledAmount', 'totalInvolvedAmount'].includes(field);
        setFormData(prev => ({ ...prev, [field]: isNumericField ? engNum : (val.includes('.') ? engNum : bDigits) } as any));
     } else {
       setRawInputs(prev => ({ ...prev, [`${id}-${field}`]: bDigits }));
@@ -450,6 +438,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         return acc;
       }, { vR: 0, vA: 0, iR: 0, iA: 0, oR: 0, oA: 0 });
       const paraInvTotal = paragraphs.reduce((s, p) => s + p.involvedAmount, 0);
+      const totalSettledAmount = paragraphs.reduce((s, p) => s + p.recoveredAmount + p.adjustedAmount, 0);
+      const calculatedUnsettledAmount = (formData.totalInvolvedAmount || 0) - totalSettledAmount;
       
       const finalData = {
         ...formData, 
@@ -457,6 +447,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         meetingPartialSettledParaCount: Math.round(summaryData.partialInvolved).toString(),
         isMeeting: formData.meetingType !== 'বিএসআর', 
         paragraphs, cycleLabel, isLate, actualEntryDate: now.toISOString(), involvedAmount: paraInvTotal + (formData.meetingUnsettledAmount || 0),
+        meetingUnsettledAmount: calculatedUnsettledAmount,
+        totalUnsettledAmount: calculatedUnsettledAmount,
         vatRec: totals.vR, vatAdj: totals.vA, itRec: totals.iR, itAdj: totals.iA, othersRec: totals.oR, othersAdj: totals.oA, totalRec: totals.vR + totals.iR + totals.oR, totalAdj: totals.vA + totals.iA + totals.oA 
       };
 
@@ -619,7 +611,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             
             <SegmentedInput id="field-7" icon={FileText} label="পত্র নং ও তারিখ" color="amber" noValue={letterNoPart} dayValue={letterDay} monthValue={letterMonth} yearValue={letterYear} noSetter={setLetterNoPart} daySetter={setLetterDay} monthSetter={setLetterMonth} yearSetter={setLetterYear} dayRef={letterDayRef} monthRef={letterMonthRef} yearRef={letterYearRef} isFocused={isLetterFocused} focusSetter={setIsLetterFocused} isLayoutEditable={isLayoutEditable} />
             <SegmentedInput id="field-8" icon={FileEdit} label="কার্যপত্র নং ও তারিখ" color="purple" noValue={wpNoPart} dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} noSetter={setWpNoPart} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} isFocused={isWpFocused} focusSetter={setIsWpFocused} isLayoutEditable={isLayoutEditable} />
-            <SegmentedInput id="field-9" icon={Info} label="কার্যবিবরণী নং ও তারিখ" color="sky" noValue={minNoPart} dayValue={minDay} monthValue={minMonth} yearValue={minYear} noSetter={setMinNoPart} daySetter={setMinDay} monthSetter={setMinMonth} yearSetter={setMinYear} dayRef={minDayRef} monthRef={minMonthRef} yearRef={minYearRef} isFocused={isMinFocused} focusSetter={setIsMinFocused} isLayoutEditable={isLayoutEditable} />
+            <div id="field-9" className={col1Style}><IDBadge id="field-9" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>৯</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> আলোচিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={inputCls} value={rawInputs['direct-meetingDiscussedParaCount'] || (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount))} onChange={e => handleNumericInput('direct', 'meetingDiscussedParaCount', e.target.value)} placeholder="০" /></div>
             <SegmentedInput id="field-10" icon={BookOpen} label="ডায়েরি নং ও তারিখ" color="emerald" noValue={diaryNoPart} dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryYear} noSetter={setDiaryNoPart} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} isLayoutEditable={isLayoutEditable} error={diaryDateError} />
 
             <SegmentedInput 
@@ -638,18 +630,32 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
             <div id="field-12" className={col4Style}><IDBadge id="field-12" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১২</span> <Archive size={14} className="text-purple-600 shrink-0" /> আর্কাইভ নং</label><input type="text" className={inputCls} value={formData.archiveNo} onChange={e => { const val = e.target.value; const raw = val.startsWith('kg-') ? val.slice(3).trim() : val; const formatted = raw ? `kg- ${toBengaliDigits(raw)}` : ''; setFormData({...formData, archiveNo: formatted}); }} placeholder="আর্কাইভ নং" /></div>
             <div id="field-13" className={col1Style}><IDBadge id="field-13" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৩</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> প্রেরিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={inputCls} value={rawInputs['direct-meetingSentParaCount'] || (formData.meetingSentParaCount === '0' || formData.meetingSentParaCount === '' ? '' : toBengaliDigits(formData.meetingSentParaCount))} onChange={e => handleNumericInput('direct', 'meetingSentParaCount', e.target.value)} placeholder="০" /></div>
-            <div id="field-14" className={col2Style}><IDBadge id="field-14" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৪</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> মীমাংসিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={inputCls} value={rawInputs['direct-meetingSettledParaCount'] || (formData.meetingSettledParaCount === '0' || formData.meetingSettledParaCount === '' ? '' : toBengaliDigits(formData.meetingSettledParaCount))} onChange={e => handleNumericInput('direct', 'meetingSettledParaCount', e.target.value)} placeholder="০" /></div>
-            <div id="field-15" className={col3Style}><IDBadge id="field-15" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৫</span> <AlertCircle size={14} className="text-amber-600 shrink-0" /> অমীমাংসিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={inputCls} value={rawInputs['direct-meetingUnsettledParas'] || (formData.meetingUnsettledParas === '0' || formData.meetingUnsettledParas === '' ? '' : toBengaliDigits(formData.meetingUnsettledParas))} onChange={e => handleNumericInput('direct', 'meetingUnsettledParas', e.target.value)} placeholder="০" /></div>
-            <div id="field-16" className={col4Style}><IDBadge id="field-16" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৬</span> <Banknote size={14} className="text-purple-600 shrink-0" /> অমীমাংসিত জড়িত টাকা</label><input type="text" className={inputCls} value={rawInputs['direct-meetingUnsettledAmount'] || (formData.meetingUnsettledAmount === 0 ? '' : toBengaliDigits(formData.meetingUnsettledAmount))} onChange={e => handleNumericInput('direct', 'meetingUnsettledAmount', e.target.value)} placeholder="০" /></div>
+            <div id="field-14" className={col2Style}><IDBadge id="field-14" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৪</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা</label><input type="text" className={inputCls} value={rawInputs['direct-meetingRecommendedParaCount'] || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount))} onChange={e => handleNumericInput('direct', 'meetingRecommendedParaCount', e.target.value)} placeholder="০" /></div>
+            <div id="field-15" className={col3Style}><IDBadge id="field-15" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৫</span> <Banknote size={14} className="text-amber-600 shrink-0" /> মোট জড়িত টাকা</label><input type="text" className={inputCls} value={rawInputs['direct-totalInvolvedAmount'] || (formData.totalInvolvedAmount === 0 ? '' : toBengaliDigits(formData.totalInvolvedAmount))} onChange={e => handleNumericInput('direct', 'totalInvolvedAmount', e.target.value)} placeholder="০" /></div>
+            <div id="field-16" className={col4Style}><IDBadge id="field-16" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৬</span> <AlertCircle size={14} className="text-purple-600 shrink-0" /> অমীমাংসিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={inputCls} value={rawInputs['direct-meetingUnsettledParas'] || (formData.meetingUnsettledParas === '0' || formData.meetingUnsettledParas === '' ? '' : toBengaliDigits(formData.meetingUnsettledParas))} onChange={e => handleNumericInput('direct', 'meetingUnsettledParas', e.target.value)} placeholder="০" /></div>
             
             <div id="field-17" className={col1Style}>
               <IDBadge id="field-17" isLayoutEditable={isLayoutEditable} />
-              <label className={labelCls}><span className={numBadge}>১৭</span> <Calendar size={14} className="text-sky-600 shrink-0" /> সভার তারিখ</label>
-              <input type="date" className={inputCls} value={formData.meetingDate} onChange={e => setFormData({...formData, meetingDate: e.target.value})} />
+              <label className={labelCls}><span className={numBadge}>১৭</span> <Banknote size={14} className="text-sky-600 shrink-0" /> অমীমাংসিত জড়িত টাকা</label>
+              <div className="w-full h-[48px] px-4 border border-slate-200 rounded-xl font-black bg-slate-50 text-blue-700 flex items-center shadow-inner text-[16px]">
+                {toBengaliDigits(Math.round((formData.totalInvolvedAmount || 0) - paragraphs.reduce((s, p) => s + p.recoveredAmount + p.adjustedAmount, 0)))}
+              </div>
             </div>
             <div id="field-18" className={col2Style}>
               <IDBadge id="field-18" isLayoutEditable={isLayoutEditable} />
-              <label className={labelCls}><span className={numBadge}>১৮</span> <MessageSquare size={14} className="text-emerald-600" /> মন্তব্য</label>
+              <label className={labelCls}><span className={numBadge}>১৮</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> মীমাংসিত অনুচ্ছেদ সংখ্যা</label>
+              <div className="w-full h-[48px] px-4 border border-slate-200 rounded-xl font-black bg-slate-50 text-emerald-700 flex items-center shadow-inner text-[16px]">
+                {toBengaliDigits(paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ').length)} টি
+              </div>
+            </div>
+            <div id="field-19" className={col3Style}>
+              <IDBadge id="field-19" isLayoutEditable={isLayoutEditable} />
+              <label className={labelCls}><span className={numBadge}>১৯</span> <Calendar size={14} className="text-amber-600 shrink-0" /> সভার তারিখ</label>
+              <input type="date" className={inputCls} value={formData.meetingDate} onChange={e => setFormData({...formData, meetingDate: e.target.value})} />
+            </div>
+            <div id="field-20" className={col4Style}>
+              <IDBadge id="field-20" isLayoutEditable={isLayoutEditable} />
+              <label className={labelCls}><span className={numBadge}>২০</span> <MessageSquare size={14} className="text-purple-600" /> মন্তব্য</label>
               <input type="text" className={inputCls} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
             </div>
           </div>
