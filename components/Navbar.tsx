@@ -79,6 +79,9 @@ const Navbar: React.FC<NavbarProps> = ({
   const navItems = [
     { id: 'landing', label: 'হোম', icon: Home },
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter },
+    { id: 'return', label: 'রিটার্ণ/সারাংশ', icon: PieChart },
+    { id: 'archive', label: 'লাইব্রেরি', icon: Library },
+    { id: 'voting', label: 'ভোট', icon: Fingerprint },
   ];
 
   const IDBadge = ({ id }: { id: string }) => {
@@ -104,28 +107,23 @@ const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-4">
           <button onClick={onToggleSidebar} className={`p-2 hover:bg-slate-800 rounded-xl transition-all text-slate-400 hover:text-white ${isSidebarOpen ? 'hidden lg:hidden' : 'flex'}`}><Menu size={24} /></button>
           <div className="hidden lg:flex items-center gap-2">
-            {navItems.map((item, index) => (
+            {navItems.map((item) => (
               <React.Fragment key={item.id}>
                 <button 
                   onClick={() => setActiveTab(item.id)} 
-                  title={item.label}
-                  className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300 relative shadow-lg hover:scale-110 active:scale-95 ${
-                    index === 0 
-                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  } ${activeTab === item.id ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900' : ''}`}
+                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-black text-sm transition-all relative ${activeTab === item.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-900/40 translate-y-[-1px]' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                 >
-                  <item.icon size={22} />
+                  <item.icon size={18} /> {item.label}
                 </button>
                 {item.id === 'landing' && (
-                  <div className="relative group mx-1">
+                  <div className="relative group mx-2">
                     <button 
                       onClick={() => setActiveTab('entry')} 
-                      title="নতুন তথ্য এন্ট্রি"
-                      className={`hidden lg:flex items-center justify-center w-12 h-12 bg-white text-blue-600 rounded-xl font-black shadow-xl hover:bg-slate-100 hover:scale-110 active:scale-95 transition-all duration-300 relative ${activeTab === 'entry' ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900' : ''}`}
+                      className={`hidden lg:flex items-center gap-2.5 px-6 h-12 bg-white text-slate-900 rounded-xl font-black text-sm shadow-xl hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all relative ${activeTab === 'entry' ? 'ring-2 ring-blue-500' : ''}`}
                     >
                       <IDBadge id="nav-quick-entry" /> 
-                      <Plus size={24} strokeWidth={3} /> 
+                      <FilePlus2 size={20} className="text-blue-600" /> 
+                      নতুন তথ্য এন্ট্রি
                     </button>
                   </div>
                 )}
