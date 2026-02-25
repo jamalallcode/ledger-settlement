@@ -5,9 +5,23 @@
 .table-container {
   width: 100%;
   max-width: 100%;
+  max-height: 78vh !important;
+  overflow-y: auto !important;
   overflow-x: auto !important;
   position: relative;
   background-color: white;
+  scrollbar-gutter: stable;
+}
+
+/* Hide vertical scrollbar for Chrome, Safari and Opera */
+.table-container::-webkit-scrollbar:vertical {
+  display: none !important;
+  width: 0;
+}
+
+/* Hide vertical scrollbar for IE, Edge and Firefox */
+.table-container {
+  -ms-overflow-style: none;  /* IE and Edge */
 }
 
 .table-container thead th {
@@ -15,7 +29,7 @@
   position: sticky !important;
   top: 0 !important;
   background-color: #e2e8f0 !important;
-  z-index: 210 !important;
+  z-index: 240 !important;
   background-clip: padding-box !important;
   box-shadow: inset 0 -1px 0 #cbd5e1, inset -1px 0 0 #cbd5e1 !important;
   vertical-align: middle !important;
@@ -24,13 +38,13 @@
 /* Row 1: Main Titles (42px) */
 .table-container thead tr:nth-child(1) th {
   top: 0 !important;
-  z-index: 230 !important;
+  z-index: 250 !important;
 }
 
 /* Row 2: Sub-titles (38px) */
 .table-container thead tr:nth-child(2) th {
   top: 42px !important; /* Offset by Row 1 */
-  z-index: 220 !important;
+  z-index: 245 !important;
 }
 
 /* Sticky Footer (General) */
@@ -39,7 +53,7 @@
   position: -webkit-sticky !important;
   position: sticky !important;
   bottom: 0 !important;
-  z-index: 230 !important;
+  z-index: 240 !important;
   background-color: #0f172a !important;
   color: white !important;
   box-shadow: inset 0 1px 0 #334155, inset -1px 0 0 #334155 !important;
