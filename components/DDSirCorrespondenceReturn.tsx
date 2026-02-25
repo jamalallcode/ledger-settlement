@@ -354,7 +354,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         </div>
 
         {/* SECTION 1: সারসংক্ষেপ টেবিল (Non-Sticky by multi-table-view logic) */}
-        <div className="mb-10 flex justify-center overflow-visible">
+        <div className="mb-10 flex justify-center overflow-x-auto">
           <div className="table-container max-w-full w-full">
             <table className="w-full border-separate table-fixed border-collapse border border-slate-300">
               <colgroup>
@@ -466,7 +466,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
              </div>
           </div>
 
-          <div className="table-container relative overflow-visible w-full">
+          <div className="table-container relative overflow-x-auto w-full">
             <table className="w-full border-separate table-fixed border-spacing-0 border border-slate-300">
               <colgroup>
                 <col className="w-[30px]" />
