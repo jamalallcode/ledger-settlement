@@ -173,7 +173,7 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
   };
 
   return (
-    <div id="qr-4-container" className="max-w-[1200px] mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
+    <div id="qr-4-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
       <IDBadge id="qr-4-container" />
       
       {/* Header Section */}
