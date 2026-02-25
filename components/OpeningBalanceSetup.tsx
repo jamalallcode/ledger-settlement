@@ -67,7 +67,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-300 shadow-2xl relative w-full overflow-visible">
+      <div className="table-container bg-white rounded-3xl border border-slate-300 shadow-2xl relative w-full overflow-x-auto">
          <table className="w-full text-sm border-separate border-spacing-0">
            <thead>
               <tr>
