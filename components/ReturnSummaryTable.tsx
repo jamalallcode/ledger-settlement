@@ -270,27 +270,6 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
         </div>
       </div>
 
-      {isAdmin && (
-        <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 flex flex-col md:flex-row items-center gap-6 no-print animate-in slide-in-from-left duration-1000 shadow-sm mt-6">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0"><Database size={28} /></div>
-          <div className="text-center md:text-left flex-1">
-            <p className="text-[17px] font-black text-slate-900 mb-1.5">অ্যাকাউন্টিং চেইন লজিক (Chain Integrity) ভেরিফাইড</p>
-            <p className="text-[12px] font-black text-slate-500 leading-relaxed uppercase tracking-tight">
-              সিস্টেম বর্তমানে <span className="text-blue-600">{toBengaliDigits(activeCycle.label)}</span> পিরিয়ডের প্রারম্ভিক জের বিগত সকল মাসের লেনদেনের ভিত্তিতে স্বয়ংক্রিয়ভাবে সমন্বিত উপায়ে গণনা করছে।
-              হিসাব: কলাম ৭ = (কলাম ৩ - কলাম ৬)।
-            </p>
-          </div>
-          <div className="px-8 py-3 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner flex items-center gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Calculated Status</span>
-                <span className="text-[12px] font-black text-emerald-600">ACCURATE & SYNCED</span>
-              </div>
-              <CheckCircle2 size={24} className="text-emerald-500" />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
