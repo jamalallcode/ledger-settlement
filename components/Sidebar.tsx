@@ -49,6 +49,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isReturnExpanded, setIsReturnExpanded] = useState(false);
   const [isMonthlyExpanded, setIsMonthlyExpanded] = useState(false);
   const [isMonthlyCorrExpanded, setIsMonthlyCorrExpanded] = useState(false);
+  const [isQuarterlyExpanded, setIsQuarterlyExpanded] = useState(false);
   const [isSetupExpanded, setIsSetupExpanded] = useState(false);
 
   // Auto-expand menus based on active state
@@ -63,6 +64,9 @@ const Sidebar: React.FC<SidebarProps> = ({
           if (reportType.includes('চিঠিপত্র')) {
             setIsMonthlyCorrExpanded(true);
           }
+        }
+        if (reportType.includes('ত্রৈমাসিক')) {
+          setIsQuarterlyExpanded(true);
         }
         if (reportType.includes('জের সেটআপ')) {
           setIsSetupExpanded(true);
@@ -315,14 +319,44 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </div>
                   )}
 
-                  {/* ২. ত্রৈমাসিক */}
+                  {/* ২. ত্রৈমাসিক (Toggle) */}
                   <button 
-                    onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
-                    className={getSubItemCls(reportType === 'ত্রৈমাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                    onClick={() => setIsQuarterlyExpanded(!isQuarterlyExpanded)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[12px] font-black transition-all ${isQuarterlyExpanded ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
                   >
-                    <div className={`w-1.5 h-1.5 rounded-full ${reportType === 'ত্রৈমাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-white' : 'bg-amber-500'}`}></div>
-                    <span>২. ত্রৈমাসিক</span>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-1.5 h-1.5 rounded-full ${reportType?.includes('ত্রৈমাসিক') ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]' : 'bg-amber-500'}`}></div>
+                      <span>২. ত্রৈমাসিক</span>
+                    </div>
+                    <ChevronDown size={12} className={`transition-transform duration-300 ${isQuarterlyExpanded ? 'rotate-180' : ''}`} />
                   </button>
+
+                  {/* Quarterly Sub-items */}
+                  {isQuarterlyExpanded && (
+                    <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                      {[1, 2, 3, 4, 5, 6].map(num => (
+                        <button 
+                          key={num}
+                          onClick={() => setActiveTab('return', null, `ত্রৈমাসিক রিটার্ন - ${toBengaliDigits(num.toString())}`)}
+                          className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === `ত্রৈমাসিক রিটার্ন - ${toBengaliDigits(num.toString())}` ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                        >
+                          রিটার্ন - {toBengaliDigits(num.toString())}
+                        </button>
+                      ))}
+                      {/* Original Quarterly Item (Optional, keeping it for now but user said "আরো ৬ রকমের আইটেম বের হবে") */}
+                      {/* Actually, the user's screenshot shows "২. ত্রৈমাসিক" as a button. 
+                          I'll keep the original one as "অনুচ্ছেদ নিষ্পত্তি" if needed, but the user said "৬ রকমের আইটেম বের হবে".
+                          I'll add the original one as an option too if it was important, or just replace it.
+                          The original was: 'ত্রৈমাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।'
+                      */}
+                      <button 
+                        onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                        className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'ত্রৈমাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                      >
+                        অনুচ্ছেদ নিষ্পত্তি
+                      </button>
+                    </div>
+                  )}
 
                   {/* ৩. ষাণ্মাসিক */}
                   <button 
