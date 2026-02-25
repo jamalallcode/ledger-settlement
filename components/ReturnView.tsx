@@ -10,6 +10,12 @@ import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
 import CorrespondenceDhakaReturn from './CorrespondenceDhakaReturn';
 import OpeningBalanceSetup from './OpeningBalanceSetup';
 import ReturnSummaryTable from './ReturnSummaryTable';
+import QR_1 from './QR_1';
+import QR_2 from './QR_2';
+import QR_3 from './QR_3';
+import QR_4 from './QR_4';
+import QR_5 from './QR_5';
+import QR_6 from './QR_6';
 
 interface ReturnViewProps {
   entries: SettlementEntry[];
@@ -353,6 +359,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   if (isSetupMode) {
     return <OpeningBalanceSetup ministryGroups={ministryGroups} tempPrevStats={tempPrevStats} setTempPrevStats={setTempPrevStats} isEditingSetup={isEditingSetup} setIsEditingSetup={setIsEditingSetup} handleSaveSetup={handleSaveSetup} handleSetupPaste={handleSetupPaste} setIsSetupMode={setIsSetupMode} setSelectedReportType={setSelectedReportType} IDBadge={IDBadge} setupType={selectedReportType || ''} />;
   }
+
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') return <QR_1 activeCycle={activeCycle} IDBadge={IDBadge} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') return <QR_2 activeCycle={activeCycle} IDBadge={IDBadge} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') return <QR_3 activeCycle={activeCycle} IDBadge={IDBadge} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') return <QR_4 activeCycle={activeCycle} IDBadge={IDBadge} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') return <QR_5 activeCycle={activeCycle} IDBadge={IDBadge} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') return <QR_6 activeCycle={activeCycle} IDBadge={IDBadge} />;
 
   return <ReturnSummaryTable reportData={reportData} grandTotals={grandTotals} activeCycle={activeCycle} selectedReportType={selectedReportType} setSelectedReportType={setSelectedReportType} isAdmin={isAdmin || false} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} />;
 };
