@@ -50,11 +50,26 @@ const App: React.FC = () => {
   // New state for direct report selection from sidebar
   const [reportType, setReportType] = useState<string | null>(null);
   
-  const [prevStats, setPrevStats] = useState<CumulativeStats>({
-    inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0,
-    entitiesSFI: {},
-    entitiesNonSFI: {}
+  const [allPrevStats, setAllPrevStats] = useState<Record<string, CumulativeStats>>({
+    monthly: { inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, entitiesSFI: {}, entitiesNonSFI: {} },
+    quarterly: { inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, entitiesSFI: {}, entitiesNonSFI: {} },
+    halfYearly: { inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, entitiesSFI: {}, entitiesNonSFI: {} },
+    yearly: { inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, entitiesSFI: {}, entitiesNonSFI: {} }
   });
+
+  const currentPrevStats = useMemo(() => {
+    if (reportType?.includes('ত্রৈমাসিক')) return allPrevStats.quarterly;
+    if (reportType?.includes('ষাণ্মাসিক')) return allPrevStats.halfYearly;
+    if (reportType?.includes('বাৎসরিক')) return allPrevStats.yearly;
+    return allPrevStats.monthly;
+  }, [allPrevStats, reportType]);
+
+  const handleSetCurrentPrevStats = (stats: CumulativeStats) => {
+    const type = reportType?.includes('ত্রৈমাসিক') ? 'quarterly' :
+                 reportType?.includes('ষাণ্মাসিক') ? 'halfYearly' :
+                 reportType?.includes('বাৎসরিক') ? 'yearly' : 'monthly';
+    setAllPrevStats(prev => ({ ...prev, [type]: stats }));
+  };
 
   const mainScrollRef = useRef<HTMLElement>(null);
 
@@ -165,7 +180,21 @@ const App: React.FC = () => {
       setIsLoading(true);
       try {
         const savedPrev = localStorage.getItem(PREV_STATS_KEY);
-        if (savedPrev) setPrevStats(JSON.parse(savedPrev));
+        if (savedPrev) {
+          const parsed = JSON.parse(savedPrev);
+          if (parsed.monthly) {
+            setAllPrevStats(parsed);
+          } else {
+            // Migration: put old data into monthly and initialize others
+            const migrated = {
+              monthly: parsed,
+              quarterly: { inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, entitiesSFI: {}, entitiesNonSFI: {} },
+              halfYearly: { inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, entitiesSFI: {}, entitiesNonSFI: {} },
+              yearly: { inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, entitiesSFI: {}, entitiesNonSFI: {} }
+            };
+            setAllPrevStats(migrated);
+          }
+        }
         const savedLock = localStorage.getItem(LOCK_MODE_KEY);
         if (savedLock !== null) setIsLockedMode(JSON.parse(savedLock));
         
@@ -188,8 +217,20 @@ const App: React.FC = () => {
             if (!content) return;
 
             if (row.id === 'system_metadata_prev_stats') {
-              setPrevStats(content);
-              localStorage.setItem(PREV_STATS_KEY, JSON.stringify(content));
+              if (content.monthly) {
+                setAllPrevStats(content);
+                localStorage.setItem(PREV_STATS_KEY, JSON.stringify(content));
+              } else {
+                // Migration: put old data into monthly and initialize others
+                const migrated = {
+                  monthly: content,
+                  quarterly: { inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, entitiesSFI: {}, entitiesNonSFI: {} },
+                  halfYearly: { inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, entitiesSFI: {}, entitiesNonSFI: {} },
+                  yearly: { inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, entitiesSFI: {}, entitiesNonSFI: {} }
+                };
+                setAllPrevStats(migrated);
+                localStorage.setItem(PREV_STATS_KEY, JSON.stringify(migrated));
+              }
             } else if (row.id.startsWith('id-')) {
               // Distinguish between entry types - robust check
               const isCorrespondence = content.type === 'correspondence' || (content.description !== undefined && content.description !== null);
@@ -219,18 +260,21 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const syncPrevStats = async () => {
-      if (Object.keys(prevStats.entitiesSFI).length > 0) {
+      if (Object.keys(allPrevStats.monthly.entitiesSFI).length > 0 || 
+          Object.keys(allPrevStats.quarterly.entitiesSFI).length > 0 ||
+          Object.keys(allPrevStats.halfYearly.entitiesSFI).length > 0 ||
+          Object.keys(allPrevStats.yearly.entitiesSFI).length > 0) {
         if (navigator.onLine) {
           await supabase.from('settlement_entries').upsert({ 
             id: 'system_metadata_prev_stats', 
-            content: prevStats 
+            content: allPrevStats 
           });
         }
-        localStorage.setItem(PREV_STATS_KEY, JSON.stringify(prevStats));
+        localStorage.setItem(PREV_STATS_KEY, JSON.stringify(allPrevStats));
       }
     };
     syncPrevStats();
-  }, [prevStats]);
+  }, [allPrevStats]);
 
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
   const cycleLabelBengali = useMemo(() => toBengaliDigits(cycleInfo.label), [cycleInfo.label]);
@@ -663,7 +707,7 @@ const App: React.FC = () => {
                 </div>
               )}
               
-              {activeTab === 'return' && <ReturnView key={`return-reset-${resetKey}`} entries={approvedEntries} correspondenceEntries={approvedCorrespondence} cycleLabel={cycleLabelBengali} prevStats={prevStats} setPrevStats={setPrevStats} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} selectedReportType={reportType} setSelectedReportType={setReportType} />}
+              {activeTab === 'return' && <ReturnView key={`return-reset-${resetKey}`} entries={approvedEntries} correspondenceEntries={approvedCorrespondence} cycleLabel={cycleLabelBengali} prevStats={currentPrevStats} setPrevStats={handleSetCurrentPrevStats} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} selectedReportType={reportType} setSelectedReportType={setReportType} />}
               
               {activeTab === 'archive' && <DocumentArchive isAdmin={isAdmin} />}
 
