@@ -29,6 +29,36 @@
 
       /* Premium Highlight Animation for Date Picker */
       @keyframes premium-pulse-highlight {
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Ledger - Settlement Register</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="tableSticky.css">
+    <style>
+      body {
+        font-family: 'Hind Siliguri', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        scroll-behavior: smooth;
+        background-color: #ffffff;
+      }
+
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* Hide scrollbar for IE, Edge and Firefox */
+      .no-scrollbar {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+      }
+
+      /* Premium Highlight Animation for Date Picker */
+      @keyframes premium-pulse-highlight {
         0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
         50% { transform: scale(1.15); box-shadow: 0 0 15px 5px rgba(37, 99, 235, 0.2); }
         100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
@@ -128,7 +158,9 @@
       .table-container {
         position: relative;
         width: 100%;
-        overflow: visible !important; 
+        max-width: 100%;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
       }
 
       table {
