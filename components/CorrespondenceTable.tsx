@@ -724,7 +724,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
       )}
 
       {/* Table Container */}
-      <div className="table-container border border-slate-300 rounded-sm overflow-visible relative shadow-xl bg-white max-w-full">
+      <div className="table-container border border-slate-300 rounded-sm overflow-x-auto relative shadow-xl bg-white max-w-full">
         <IDBadge id="table-correspondence-ledger" />
         <table className="w-full border-separate border-spacing-0 table-fixed">
           <colgroup>
