@@ -91,9 +91,9 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
         <table className="w-full border-collapse border border-slate-400 shadow-sm">
           <thead>
             <tr>
-              <th rowSpan={2} className={thCls + " w-10"}>ক্রঃ নং</th>
-              <th rowSpan={2} className={thCls}>মন্ত্রণালয়ের নাম</th>
-              <th rowSpan={2} className={thCls}>প্রতিষ্ঠানের নাম</th>
+              <th className={thCls + " w-10"}>ক্রঃ নং</th>
+              <th className={thCls}>মন্ত্রণালয়ের নাম</th>
+              <th className={thCls}>প্রতিষ্ঠানের নাম</th>
               <th className={thCls}>১৯৭১-৭২ হতে {getMonthNameBN(prevMonthDate)}/{formatYearBN(prevMonthDate)} মাস পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
               <th className={thCls}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
               <th className={thCls}>{getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত মোট উত্থাপিত আপত্তির সংখ্যা</th>
@@ -103,13 +103,6 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
               <th className={thCls}>{getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
               <th className={thCls}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত নিষ্পত্তিকৃত আপত্তিতে জড়িত টাকা</th>
               <th className={thCls}>{getMonthNameBN(endDate)}/{formatYearBN(endDate)} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
-            </tr>
-            <tr className="bg-slate-50">
-              {[1, 2, 3, 4, 5, '৬ = ৪+৫', 7, 8, '৯ = ৭+৮', '১০ = ৬-৯', 11, 12].map((n, i) => (
-                <th key={i} className="border border-slate-400 p-1 text-[9px] font-bold text-slate-500 text-center">
-                  {typeof n === 'string' ? toBengaliDigits(n) : toBengaliDigits(n.toString())}
-                </th>
-              ))}
             </tr>
           </thead>
           <tbody>
