@@ -91,15 +91,15 @@ const QR_3: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
         <table className="w-full border-collapse border border-slate-400 shadow-sm">
           <thead>
             <tr>
-              <th rowSpan={3} className={thCls}>ক্রঃ নং</th>
-              <th rowSpan={3} className={thCls}>মন্ত্রণালয়ের নাম</th>
-              <th rowSpan={3} className={thCls}>সংস্থার নাম</th>
+              <th rowSpan={2} className={thCls}>ক্রঃ নং</th>
+              <th rowSpan={2} className={thCls}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={thCls}>সংস্থার নাম</th>
               <th colSpan={2} className={thCls}>{getMonthNameBN(prevMonthDate)}/{formatYearBN(prevMonthDate)} পর্যন্ত অমীমাংসিত অডিট আপত্তি</th>
               <th colSpan={2} className={thCls}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত উত্থাপিত অডিট আপত্তি</th>
-              <th rowSpan={3} className={thCls}>মোট অডিট আপত্তি</th>
+              <th rowSpan={2} className={thCls}>মোট অডিট আপত্তি</th>
               <th colSpan={2} className={thCls}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত মীমাংসিত অডিট আপত্তি</th>
               <th colSpan={2} className={thCls}>{getMonthNameBN(endDate)}/{formatYearBN(endDate)} পর্যন্ত অমীমাংসিত অডিট আপত্তি</th>
-              <th rowSpan={3} className={thCls}>মন্তব্য</th>
+              <th rowSpan={2} className={thCls}>মন্তব্য</th>
             </tr>
             <tr>
               <th className={thCls}>সংখ্যা</th>
