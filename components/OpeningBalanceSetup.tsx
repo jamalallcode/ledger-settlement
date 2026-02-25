@@ -16,6 +16,7 @@ interface OpeningBalanceSetupProps {
   setIsSetupMode: (val: boolean) => void;
   setSelectedReportType: (type: string | null) => void;
   IDBadge: React.FC<{ id: string }>;
+  setupType: string;
 }
 
 const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
@@ -28,7 +29,8 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
   handleSetupPaste,
   setIsSetupMode,
   setSelectedReportType,
-  IDBadge
+  IDBadge,
+  setupType
 }) => {
   const setupThCls = "p-4 text-center font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-20 align-middle sticky top-0 z-[210] shadow-[inset_0_-1px_0_#cbd5e1]";
   const setupFooterTdCls = "p-4 border border-slate-300 text-center text-[15px] bg-blue-50 font-black sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1]";
@@ -51,8 +53,8 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
         <div className="flex items-center gap-4">
           <button onClick={() => { setIsSetupMode(false); setSelectedReportType(null); }} className="p-3 bg-slate-100 border border-slate-200 rounded-2xl hover:bg-slate-200 text-slate-600 shadow-sm transition-all"><ChevronLeft size={22} /></button>
           <div className="flex flex-col">
-            <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3"><Settings2 size={28} className="text-blue-600" /> প্রারম্ভিক জের সেটআপ</h2>
-            <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">সমন্বিত (Unified) ব্যালেন্স ইনপুট উইন্ডো</span>
+            <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3"><Settings2 size={28} className="text-blue-600" /> {setupType || 'প্রারম্ভিক জের সেটআপ'}</h2>
+            <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">সমন্বিত (UNIFIED) ব্যালেন্স ইনপুট উইন্ডো</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
