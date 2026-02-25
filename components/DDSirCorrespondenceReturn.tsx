@@ -10,13 +10,15 @@ interface DDSirCorrespondenceReturnProps {
   activeCycle: { start: Date; end: Date; label: string };
   onBack: () => void;
   isLayoutEditable?: boolean;
+  IDBadge: React.FC<{ id: string }>;
 }
 
 const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({ 
   entries, 
   activeCycle, 
   onBack, 
-  isLayoutEditable 
+  isLayoutEditable,
+  IDBadge
 }) => {
   const [filterBranch, setFilterBranch] = useState('সকল');
   const [filterAuditor, setFilterAuditor] = useState('সকল');
@@ -195,7 +197,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const stickyTdStyle = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-center font-bold leading-tight bg-white align-middle transition-colors group-hover:bg-blue-50";
 
   return (
-    <div className="space-y-6 py-2 w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view">
+    <div id="dd-sir-report-container" className="space-y-6 py-2 w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view">
+      <IDBadge id="dd-sir-report-container" />
       {/* Control Bar (No Print) */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
         <div className="flex items-center gap-3">
