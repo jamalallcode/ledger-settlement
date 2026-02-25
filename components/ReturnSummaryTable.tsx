@@ -157,10 +157,10 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
       </div>
 
       <div id="card-report-table-container" className="bg-white border border-slate-300 shadow-2xl w-full overflow-x-auto p-1 relative animate-table-entrance">
-        <div className="text-center py-6 bg-white border-b-2 border-slate-100">
-          <h1 className="text-2xl font-black uppercase text-slate-900">{OFFICE_HEADER.main}</h1>
-          <h2 className="text-lg font-black text-slate-800">{OFFICE_HEADER.sub}</h2>
-          <div className="mt-3 inline-flex items-center gap-3 px-6 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
+        <div className="text-center py-3 bg-white border-b-2 border-slate-100">
+          <h1 className="text-xl font-black uppercase text-slate-900">{OFFICE_HEADER.main}</h1>
+          <h2 className="text-md font-black text-slate-800">{OFFICE_HEADER.sub}</h2>
+          <div className="mt-2 inline-flex items-center gap-3 px-6 py-1.5 bg-slate-900 text-white rounded-xl text-[10px] font-black border border-slate-700 shadow-md">
             <span className="text-blue-400">{selectedReportType}</span> | {toBengaliDigits(activeCycle.label)}
           </div>
         </div>
