@@ -105,9 +105,9 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
               <th className={thCls}>{getMonthNameBN(endDate)}/{formatYearBN(endDate)} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
             </tr>
             <tr className="bg-slate-50">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n, i) => (
+              {[1, 2, 3, 4, 5, '৬ = ৪+৫', 7, 8, '৯ = ৭+৮', '১০ = ৬-৯', 11, 12].map((n, i) => (
                 <th key={i} className="border border-slate-400 p-1 text-[9px] font-bold text-slate-500 text-center">
-                  {toBengaliDigits(n.toString())}
+                  {typeof n === 'string' ? toBengaliDigits(n) : toBengaliDigits(n.toString())}
                 </th>
               ))}
             </tr>
