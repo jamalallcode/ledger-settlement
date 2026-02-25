@@ -53,7 +53,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }, [resetKey, setSelectedReportType]);
 
   useEffect(() => {
-    if (selectedReportType === 'পূর্ব জের সেটআপ উইন্ডো') {
+    if (selectedReportType?.includes('প্রারম্ভিক জের সেটআপ')) {
       setIsSetupMode(true);
     } else if (selectedReportType !== null) {
       setIsSetupMode(false);
@@ -346,7 +346,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }
 
   if (isSetupMode) {
-    return <OpeningBalanceSetup ministryGroups={ministryGroups} tempPrevStats={tempPrevStats} setTempPrevStats={setTempPrevStats} isEditingSetup={isEditingSetup} setIsEditingSetup={setIsEditingSetup} handleSaveSetup={handleSaveSetup} handleSetupPaste={handleSetupPaste} setIsSetupMode={setIsSetupMode} setSelectedReportType={setSelectedReportType} IDBadge={IDBadge} />;
+    return <OpeningBalanceSetup ministryGroups={ministryGroups} tempPrevStats={tempPrevStats} setTempPrevStats={setTempPrevStats} isEditingSetup={isEditingSetup} setIsEditingSetup={setIsEditingSetup} handleSaveSetup={handleSaveSetup} handleSetupPaste={handleSetupPaste} setIsSetupMode={setIsSetupMode} setSelectedReportType={setSelectedReportType} IDBadge={IDBadge} setupType={selectedReportType || ''} />;
   }
 
   return <ReturnSummaryTable reportData={reportData} grandTotals={grandTotals} activeCycle={activeCycle} selectedReportType={selectedReportType} setSelectedReportType={setSelectedReportType} isAdmin={isAdmin || false} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} />;
