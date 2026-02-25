@@ -1,15 +1,13 @@
 import React from 'react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { format } from 'date-fns';
-import { Printer, ChevronLeft } from 'lucide-react';
 
 interface QRProps {
   activeCycle: any;
   IDBadge: React.FC<{ id: string }>;
-  onBack?: () => void;
 }
 
-const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge, onBack }) => {
+const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
   const startDate = activeCycle.start;
   const endDate = activeCycle.end;
 
@@ -45,26 +43,8 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge, onBack }) => {
   const numTdCls = "border border-slate-400 p-1 text-[10px] text-slate-700 text-center align-middle font-bold";
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
-        <div className="flex items-center gap-3">
-          {onBack && (
-            <button onClick={onBack} className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-all text-slate-600">
-              <ChevronLeft size={20} />
-            </button>
-          )}
-          <div className="flex flex-col">
-            <span className="text-xs font-black text-blue-600 uppercase tracking-tighter">রিপোর্ট টাইপ:</span>
-            <span className="text-lg font-black text-slate-900 leading-tight">ত্রৈমাসিক রিটার্ন - ৫</span>
-          </div>
-        </div>
-        <button onClick={() => window.print()} className="h-[44px] px-6 bg-slate-900 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95">
-          <Printer size={18} /> প্রিন্ট
-        </button>
-      </div>
-
-      <div id="qr-5-container" className="max-w-[1200px] mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
-        <IDBadge id="qr-5-container" />
+    <div id="qr-5-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
+      <IDBadge id="qr-5-container" />
       
       {/* Header Section */}
       <div className="text-center space-y-1 mb-6">
