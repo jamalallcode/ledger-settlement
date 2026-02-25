@@ -39,7 +39,7 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
   const numTdCls = "border border-slate-400 p-1 text-[10px] text-slate-700 text-center align-middle font-bold";
 
   return (
-    <div id="qr-6-container" className="max-w-[1200px] mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
+    <div id="qr-6-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
       <IDBadge id="qr-6-container" />
       
       {/* Header Section */}
