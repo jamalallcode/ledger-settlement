@@ -8,14 +8,10 @@ interface QRProps {
 }
 
 const QR_2: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
-  // তারিখ গণনা: ব্যবহারকারীর লজিক অনুযায়ী ৩ মাস
+  // Date calculation based on user's logic: 
+  // "তিন মাস বলতে পূর্ববর্তী মাসের ১৬ তারিখ হতে ৩য় মাসের ১৫ তারিখ পযন্ত"
   const startDate = setDate(subMonths(activeCycle.start, 1), 16);
   const endDate = setDate(addMonths(activeCycle.start, 2), 15);
-
-  const formatDateBangla = (date: Date) => {
-    const d = toBengaliDigits(format(date, 'dd/MM/yyyy'));
-    return d;
-  };
 
   const getMonthNameBN = (date: Date) => {
     const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
@@ -136,7 +132,7 @@ const QR_2: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
                 <td className={numTdCls}>{row.archive}</td>
               </tr>
             ))}
-            {/* Empty rows to match the visual density if needed */}
+            {/* Empty rows */}
             {Array.from({ length: 3 }).map((_, i) => (
               <tr key={`empty-${i}`} className="h-10">
                 {Array.from({ length: 14 }).map((_, j) => (
