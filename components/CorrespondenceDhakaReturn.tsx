@@ -191,7 +191,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           </div>
         </div>
 
-        <div className="table-container relative overflow-visible">
+        <div className="table-container relative overflow-x-auto">
           <table className="w-full border-separate table-fixed border-spacing-0">
             <colgroup>
               <col className="w-[40px]" />
