@@ -267,7 +267,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     ministryGroups.forEach(m => { (MINISTRY_ENTITY_MAP[m] || []).forEach(ent => allEntities.push(ent)); });
     const startIdx = allEntities.indexOf(startEntity);
     if (startIdx === -1) return;
-    const fields: (keyof MinistryPrevStats)[] = ['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount'];
+    
+    const isQuarterly = selectedReportType?.includes('ত্রৈমাসিক');
+    const fields: (keyof MinistryPrevStats)[] = isQuarterly 
+      ? ['unsettledCount', 'settledCount', 'unsettledAmount']
+      : ['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount'];
+      
     const fieldStartIdx = fields.indexOf(startField);
     const newStats = { ...tempPrevStats };
     rows.forEach((row, rowOffset) => {
