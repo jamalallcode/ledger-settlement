@@ -494,32 +494,36 @@ const App: React.FC = () => {
       )}
 
       {isSidebarOpen && (
-        <Sidebar 
-          activeTab={activeTab} setActiveTab={handleTabChange} 
-          onToggleVisibility={() => setIsSidebarOpen(false)}
-          isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
-          isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} setIsAdmin={setIsAdmin}
-          pendingCount={totalPendingCount}
-          entryModule={entryModule}
-          registerSubModule={registerSubModule}
-          reportType={reportType}
-        />
+        <div className="no-print h-full">
+          <Sidebar 
+            activeTab={activeTab} setActiveTab={handleTabChange} 
+            onToggleVisibility={() => setIsSidebarOpen(false)}
+            isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
+            isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} setIsAdmin={setIsAdmin}
+            pendingCount={totalPendingCount}
+            entryModule={entryModule}
+            registerSubModule={registerSubModule}
+            reportType={reportType}
+          />
+        </div>
       )}
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <Navbar 
-          activeTab={activeTab} setActiveTab={handleTabChange} onDemoLoad={() => {}}
-          isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
-          isLayoutEditable={isLayoutEditable} setIsLayoutEditable={setIsLayoutEditable}
-          onExportSystem={() => {}} onImportSystem={() => {}}
-          isAdmin={isAdmin} setIsAdmin={setIsAdmin} cycleLabel={cycleLabelBengali}
-          showRegisterFilters={showRegisterFilters} setShowRegisterFilters={setShowRegisterFilters}
-          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen}
-          pendingEntries={[...pendingEntries, ...pendingCorrespondence]}
-          onApprove={handleApproveEntry}
-          onReject={handleRejectEntry}
-          setShowPendingOnly={setShowPendingOnly}
-        />
+        <div className="no-print">
+          <Navbar 
+            activeTab={activeTab} setActiveTab={handleTabChange} onDemoLoad={() => {}}
+            isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
+            isLayoutEditable={isLayoutEditable} setIsLayoutEditable={setIsLayoutEditable}
+            onExportSystem={() => {}} onImportSystem={() => {}}
+            isAdmin={isAdmin} setIsAdmin={setIsAdmin} cycleLabel={cycleLabelBengali}
+            showRegisterFilters={showRegisterFilters} setShowRegisterFilters={setShowRegisterFilters}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen}
+            pendingEntries={[...pendingEntries, ...pendingCorrespondence]}
+            onApprove={handleApproveEntry}
+            onReject={handleRejectEntry}
+            setShowPendingOnly={setShowPendingOnly}
+          />
+        </div>
 
         <main ref={mainScrollRef} className="flex-1 overflow-auto bg-white relative scroll-smooth">
           <div className="p-4 md:p-8 max-w-full mx-auto w-full flex flex-col">
