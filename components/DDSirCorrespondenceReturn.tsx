@@ -10,13 +10,15 @@ interface DDSirCorrespondenceReturnProps {
   activeCycle: { start: Date; end: Date; label: string };
   onBack: () => void;
   isLayoutEditable?: boolean;
+  IDBadge: React.FC<{ id: string }>;
 }
 
 const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({ 
   entries, 
   activeCycle, 
   onBack, 
-  isLayoutEditable 
+  isLayoutEditable,
+  IDBadge
 }) => {
   const [filterBranch, setFilterBranch] = useState('সকল');
   const [filterAuditor, setFilterAuditor] = useState('সকল');
@@ -195,7 +197,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const stickyTdStyle = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-center font-bold leading-tight bg-white align-middle transition-colors group-hover:bg-blue-50";
 
   return (
-    <div className="space-y-6 py-2 w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view">
+    <div id="dd-sir-report-container" className="space-y-6 py-2 w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view">
+      <IDBadge id="dd-sir-report-container" />
       {/* Control Bar (No Print) */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
         <div className="flex items-center gap-3">
@@ -353,10 +356,10 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           <h4 className="text-[15px] font-bold text-black leading-tight">খুলনা-৯০০০</h4>
         </div>
 
-        {/* SECTION 1: সারসংক্ষেপ টেবিল (Non-Sticky by multi-table-view logic) */}
+        {/* SECTION 1: সারসংক্ষেপ টেবিল */}
         <div className="mb-10 flex justify-center overflow-visible">
-          <div className="table-container max-w-full w-full">
-            <table className="w-full border-separate table-fixed border-collapse border border-slate-300">
+          <div className="table-container max-w-full w-full border border-slate-300 rounded-lg overflow-auto">
+            <table className="w-full border-separate table-fixed border-spacing-0">
               <colgroup>
                 <col className="w-[30px]" />
                 <col className="w-[130px]" />
@@ -466,8 +469,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
              </div>
           </div>
 
-          <div className="table-container relative overflow-visible w-full">
-            <table className="w-full border-separate table-fixed border-spacing-0 border border-slate-300">
+          <div className="table-container relative overflow-auto w-full border border-slate-300 rounded-lg">
+            <table className="w-full border-separate table-fixed border-spacing-0">
               <colgroup>
                 <col className="w-[30px]" />
                 <col className="w-[80px]" />
@@ -544,7 +547,6 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   </tr>
                 )}
               </tbody>
-              {/* Footer text color white */}
               <tfoot>
                 <tr className="bg-slate-900 text-white font-bold text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] border-t border-slate-700">
                   <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-slate-900">সর্বমোট চিঠিপত্র (ফিল্টারকৃত):</td>

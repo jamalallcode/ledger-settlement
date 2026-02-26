@@ -85,7 +85,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
 
   const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight bg-white group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
-  const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[9.5px] bg-slate-100 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1,inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
+  const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[9.5px] bg-slate-100 z-[190] shadow-[inset_0_1px_0_#cbd5e1,inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-200 shadow-sm hover:border-slate-300'}`;
 
   return (
@@ -156,16 +156,16 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
         </div>
       </div>
 
-      <div id="card-report-table-container" className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-1 relative animate-table-entrance">
-        <div className="text-center py-6 bg-white border-b-2 border-slate-100">
-          <h1 className="text-2xl font-black uppercase text-slate-900">{OFFICE_HEADER.main}</h1>
-          <h2 className="text-lg font-black text-slate-800">{OFFICE_HEADER.sub}</h2>
-          <div className="mt-3 inline-flex items-center gap-3 px-6 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
+      <div id="card-report-table-container" className="bg-white border border-slate-300 shadow-2xl w-full overflow-x-auto p-1 relative animate-table-entrance">
+        <div className="text-center py-3 bg-white border-b-2 border-slate-100">
+          <h1 className="text-xl font-black uppercase text-slate-900">{OFFICE_HEADER.main}</h1>
+          <h2 className="text-md font-black text-slate-800">{OFFICE_HEADER.sub}</h2>
+          <div className="mt-2 inline-flex items-center gap-3 px-6 py-1.5 bg-slate-900 text-white rounded-xl text-[10px] font-black border border-slate-700 shadow-md">
             <span className="text-blue-400">{selectedReportType}</span> | {toBengaliDigits(activeCycle.label)}
           </div>
         </div>
 
-        <div className="table-container border border-slate-300 overflow-visible relative">
+        <div className="table-container border border-slate-300 overflow-auto relative rounded-lg">
           <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0">
             <colgroup>
               <col className="w-[50px]" />
@@ -185,7 +185,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
               <col className="w-[30px]" />
               <col className="w-[55px]" />
             </colgroup>
-            <thead>
+            <thead className="z-[240] bg-slate-200">
               <tr className="h-[42px]">
                 <th rowSpan={2} className={`${reportThStyle}`}>মন্ত্রণালয়</th>
                 <th rowSpan={2} className={`${reportThStyle}`}>সংস্থা</th>
@@ -254,7 +254,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                 );
               })}
             </tbody>
-            <tfoot className="sticky bottom-0 z-[230] shadow-2xl">
+            <tfoot className="z-[230] shadow-2xl">
               <tr>
                 <td colSpan={2} className={grandStyle + " !bg-slate-200 text-slate-900 uppercase tracking-widest text-[10px] shadow-[inset_0_1px_0_#cbd5e1] border-l border-slate-400 font-black"}>সর্বমোট (ফিল্টারকৃত):</td>
                 <td className={grandStyle}>{toBengaliDigits(filteredGrandTotals.pUC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(filteredGrandTotals.pUA))}</td>
@@ -270,27 +270,6 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
         </div>
       </div>
 
-      {isAdmin && (
-        <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 flex flex-col md:flex-row items-center gap-6 no-print animate-in slide-in-from-left duration-1000 shadow-sm mt-6">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0"><Database size={28} /></div>
-          <div className="text-center md:text-left flex-1">
-            <p className="text-[17px] font-black text-slate-900 mb-1.5">অ্যাকাউন্টিং চেইন লজিক (Chain Integrity) ভেরিফাইড</p>
-            <p className="text-[12px] font-black text-slate-500 leading-relaxed uppercase tracking-tight">
-              সিস্টেম বর্তমানে <span className="text-blue-600">{toBengaliDigits(activeCycle.label)}</span> পিরিয়ডের প্রারম্ভিক জের বিগত সকল মাসের লেনদেনের ভিত্তিতে স্বয়ংক্রিয়ভাবে সমন্বিত উপায়ে গণনা করছে।
-              হিসাব: কলাম ৭ = (কলাম ৩ - কলাম ৬)।
-            </p>
-          </div>
-          <div className="px-8 py-3 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner flex items-center gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Calculated Status</span>
-                <span className="text-[12px] font-black text-emerald-600">ACCURATE & SYNCED</span>
-              </div>
-              <CheckCircle2 size={24} className="text-emerald-500" />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

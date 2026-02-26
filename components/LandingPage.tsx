@@ -142,10 +142,13 @@ const LandingPage: React.FC<LandingPageProps> = ({
               <IDBadge id="btn-start-work" />
               কাজ শুরু করুন <ArrowRight size={20} />
             </button>
-            <div id="cycle-badge-hero" className="px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-3 shadow-sm relative">
+            <div id="cycle-badge-hero" className="px-6 py-4 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 shadow-sm hover:shadow-md transition-all duration-300 relative group">
                <IDBadge id="cycle-badge-hero" />
-               <CalendarRange size={20} className="text-slate-400" />
-               <span className="text-sm font-black text-slate-600">সাইকেল: {cycleLabel}</span>
+               <div className="relative flex h-2.5 w-2.5">
+                 <div className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></div>
+                 <div className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
+               </div>
+               <span className="text-sm font-black text-slate-700 tracking-tight">চলমান সাইকেল: {cycleLabel}</span>
             </div>
           </div>
         </div>

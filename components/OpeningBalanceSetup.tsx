@@ -16,6 +16,7 @@ interface OpeningBalanceSetupProps {
   setIsSetupMode: (val: boolean) => void;
   setSelectedReportType: (type: string | null) => void;
   IDBadge: React.FC<{ id: string }>;
+  setupType: string;
 }
 
 const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
@@ -28,10 +29,23 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
   handleSetupPaste,
   setIsSetupMode,
   setSelectedReportType,
-  IDBadge
+  IDBadge,
+  setupType
 }) => {
-  const setupThCls = "p-4 text-center font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-20 align-middle sticky top-0 z-[210] shadow-[inset_0_-1px_0_#cbd5e1]";
-  const setupFooterTdCls = "p-4 border border-slate-300 text-center text-[15px] bg-blue-50 font-black sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1]";
+  const isQuarterly = setupType.includes('ত্রৈমাসিক');
+  const displayFields: { key: keyof MinistryPrevStats, label: string, subLabel?: string }[] = isQuarterly ? [
+    { key: 'unsettledCount', label: 'উত্থাপিত অনুচ্ছেদ সংখ্যা' },
+    { key: 'settledCount', label: 'মোট নিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা' },
+    { key: 'unsettledAmount', label: 'অনিষ্পন্ন অনুচ্ছেদে জড়িত টাকা' }
+  ] : [
+    { key: 'unsettledCount', label: 'অমী: সংখ্যা', subLabel: '(প্রারম্ভিক)' },
+    { key: 'unsettledAmount', label: 'অমী: টাকা', subLabel: '(প্রারম্ভিক)' },
+    { key: 'settledCount', label: 'মী: সংখ্যা', subLabel: '(প্রারম্ভিক)' },
+    { key: 'settledAmount', label: 'মী: টাকা', subLabel: '(প্রারম্ভিক)' }
+  ];
+
+  const setupThCls = "p-4 text-center font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-20 align-middle z-[210] shadow-[inset_0_-1px_0_#cbd5e1]";
+  const setupFooterTdCls = "p-4 border border-slate-300 text-center text-[15px] bg-blue-50 font-black z-[190] shadow-[inset_0_1px_0_#cbd5e1]";
   
   const totalStats = ministryGroups.reduce((acc, m) => {
     const entities = MINISTRY_ENTITY_MAP[m] || [];
@@ -51,8 +65,8 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
         <div className="flex items-center gap-4">
           <button onClick={() => { setIsSetupMode(false); setSelectedReportType(null); }} className="p-3 bg-slate-100 border border-slate-200 rounded-2xl hover:bg-slate-200 text-slate-600 shadow-sm transition-all"><ChevronLeft size={22} /></button>
           <div className="flex flex-col">
-            <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3"><Settings2 size={28} className="text-blue-600" /> প্রারম্ভিক জের সেটআপ</h2>
-            <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">সমন্বিত (Unified) ব্যালেন্স ইনপুট উইন্ডো</span>
+            <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3"><Settings2 size={28} className="text-blue-600" /> {setupType || 'প্রারম্ভিক জের সেটআপ'}</h2>
+            <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">সমন্বিত (UNIFIED) ব্যালেন্স ইনপুট উইন্ডো</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -67,17 +81,18 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-300 shadow-2xl relative w-full overflow-visible">
+      <div className="table-container bg-white rounded-3xl border border-slate-300 shadow-2xl relative w-full overflow-auto">
          <table className="w-full text-sm border-separate border-spacing-0">
            <thead>
               <tr>
-                <th className="p-5 text-left font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] w-[35%] bg-slate-200 leading-tight h-20 align-middle sticky top-0 z-[210] shadow-[inset_0_-1px_0_#cbd5e1]">মন্ত্রণালয় ও সংস্থা</th>
-                <th className={setupThCls}>অমী: সংখ্যা <br/><span className="text-[10px] text-slate-500 font-black">(প্রারম্ভিক)</span></th>
-                <th className={setupThCls}>অমী: টাকা <br/><span className="text-[10px] text-slate-500 font-black">(প্রারম্ভিক)</span></th>
-                <th className={setupThCls}>মী: সংখ্যা <br/><span className="text-[10px] text-slate-500 font-black">(প্রারম্ভিক)</span></th>
-                <th className={setupThCls}>মী: টাকা <br/><span className="text-[10px] text-slate-500 font-black">(প্রারম্ভিক)</span></th>
+                <th className="p-5 text-left font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] w-[35%] bg-slate-200 leading-tight h-20 align-middle z-[210] shadow-[inset_0_-1px_0_#cbd5e1]">মন্ত্রণালয় ও সংস্থা</th>
+                {displayFields.map(f => (
+                  <th key={f.key} className={setupThCls}>
+                    {f.label} {f.subLabel && <><br/><span className="text-[10px] text-slate-500 font-black">{f.subLabel}</span></>}
+                  </th>
+                ))}
               </tr>
-           </thead>
+            </thead>
            <tbody>
              {ministryGroups.map(m => {
                const entities = MINISTRY_ENTITY_MAP[m] || [];
@@ -90,39 +105,54 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
 
                return (
                  <React.Fragment key={m}>
-                   <tr className="bg-[#1e293b]"><td colSpan={5} className="px-5 py-3 border border-slate-300 bg-[#1e293b]"><div className="flex items-center gap-2 font-black uppercase text-[12px] tracking-wide text-white"><LayoutGrid size={15} className="text-blue-400" /> {m}</div></td></tr>
+                   <tr className="bg-[#1e293b]"><td colSpan={isQuarterly ? 4 : 5} className="px-5 py-3 border border-slate-300 bg-[#1e293b]"><div className="flex items-center gap-2 font-black uppercase text-[12px] tracking-wide text-white"><LayoutGrid size={15} className="text-blue-400" /> {m}</div></td></tr>
                    {entities.map(ent => (
                      <tr key={ent} className="hover:bg-blue-50/40 transition-all group bg-white">
                        <td className="px-6 py-4 font-bold text-slate-800 border border-slate-300 text-[13px] bg-white group-hover:text-blue-700">{ent}</td>
-                       {(['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount'] as const).map(field => (
-                         <td key={field} className={`p-1.5 border border-slate-300 text-center align-middle h-14 transition-colors ${isEditingSetup ? 'bg-white group-hover:bg-blue-50' : 'bg-slate-50'}`}>
+                       {displayFields.map(f => (
+                         <td key={f.key} className={`p-1.5 border border-slate-300 text-center align-middle h-14 transition-colors ${isEditingSetup ? 'bg-white group-hover:bg-blue-50' : 'bg-slate-50'}`}>
                            <input 
                              type="text" 
                              readOnly={!isEditingSetup}
                              className={`w-full h-11 text-center font-bold text-[15px] outline-none border-0 transition-all ${isEditingSetup ? 'bg-white text-slate-900 cursor-text' : 'bg-slate-50 text-slate-400 cursor-not-allowed'}`} 
                              placeholder="০" 
-                             value={tempPrevStats[ent]?.[field] !== undefined && tempPrevStats[ent]![field] !== 0 ? toBengaliDigits(tempPrevStats[ent]![field]) : ''} 
-                             onPaste={(e) => handleSetupPaste(e, ent, field)} 
+                             value={tempPrevStats[ent]?.[f.key] !== undefined && tempPrevStats[ent]![f.key] !== 0 ? toBengaliDigits(tempPrevStats[ent]![f.key]) : ''} 
+                             onPaste={(e) => handleSetupPaste(e, ent, f.key)} 
                              onChange={e => { 
                                if (!isEditingSetup) return;
                                const num = parseBengaliNumber(e.target.value); 
-                               setTempPrevStats(prev => ({ ...prev, [ent]: { ...(prev[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 }), [field]: num } })); 
+                               setTempPrevStats(prev => ({ ...prev, [ent]: { ...(prev[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 }), [f.key]: num } })); 
                              }} 
                            />
                          </td>
                        ))}
                      </tr>
                    ))}
-                   <tr className="bg-sky-50/50 font-black italic text-slate-700"><td className="px-6 py-3 border border-slate-300 text-right text-[11px] uppercase">উপ-মোট: {m}</td><td className="p-3 border border-slate-300 text-center text-blue-600">{toBengaliDigits(mSubTotal.uC)}</td><td className="p-3 border border-slate-300 text-center text-blue-600">{toBengaliDigits(Math.round(mSubTotal.uA))}</td><td className="p-3 border border-slate-300 text-center text-emerald-600">{toBengaliDigits(mSubTotal.sC)}</td><td className="p-3 border border-slate-300 text-center text-emerald-600">{toBengaliDigits(Math.round(mSubTotal.sA))}</td></tr>
+                   <tr className="bg-sky-50/50 font-black italic text-slate-700">
+                      <td className="px-6 py-3 border border-slate-300 text-right text-[11px] uppercase">উপ-মোট: {m}</td>
+                      {displayFields.map(f => {
+                        const val = f.key === 'unsettledCount' ? mSubTotal.uC :
+                                    f.key === 'unsettledAmount' ? mSubTotal.uA :
+                                    f.key === 'settledCount' ? mSubTotal.sC : mSubTotal.sA;
+                        const colorCls = f.key.startsWith('settled') ? 'text-emerald-600' : 'text-blue-600';
+                        return <td key={f.key} className={`p-3 border border-slate-300 text-center ${colorCls}`}>{toBengaliDigits(Math.round(val))}</td>;
+                      })}
+                    </tr>
                  </React.Fragment>
                );
              })}
            </tbody>
            <tfoot>
              <tr className="bg-blue-50 font-black text-slate-900 border-t-2 border-slate-400">
-               <td className="px-6 py-4 border border-slate-300 text-right text-[13px] uppercase tracking-tighter sticky bottom-0 z-[190] bg-blue-50 shadow-[inset_0_1px_0_#cbd5e1]">সর্বমোট সেটআপ তথ্য:</td>
-               <td className={`${setupFooterTdCls} text-blue-700`}>{toBengaliDigits(totalStats.uC)}</td><td className={`${setupFooterTdCls} text-blue-700`}>{toBengaliDigits(Math.round(totalStats.uA))}</td>
-               <td className={`${setupFooterTdCls} text-emerald-700`}>{toBengaliDigits(totalStats.sC)}</td><td className={`${setupFooterTdCls} text-emerald-700`}>{toBengaliDigits(Math.round(totalStats.sA))}</td>
+               <td className="px-6 py-4 border border-slate-300 text-right text-[13px] uppercase tracking-tighter z-[190] bg-blue-50 shadow-[inset_0_1px_0_#cbd5e1]">সর্বমোট সেটআপ তথ্য:</td>
+               {displayFields.map(f => {
+                  const val = f.key === 'unsettledCount' ? totalStats.uC :
+                              f.key === 'unsettledAmount' ? totalStats.uA :
+                              f.key === 'settledCount' ? totalStats.sC : totalStats.sA;
+                  const colorCls = f.key.startsWith('settled') ? 'text-emerald-700' : 'text-blue-700';
+                  return <td key={f.key} className={`${setupFooterTdCls} ${colorCls}`}>{toBengaliDigits(Math.round(val))}</td>;
+                })}
+
              </tr>
            </tfoot>
          </table>

@@ -2,65 +2,60 @@
 /* TABLE STICKY HEADER & FOOTER LOGIC */
 
 /* General Sticky Header Base Style */
-.table-container thead th {
-  position: -webkit-sticky !important;
+.table-container {
+  width: 100%;
+  max-width: 100%;
+  max-height: 75vh !important; /* Reduced for better visibility of footer */
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  position: relative;
+  background-color: white;
+  scrollbar-gutter: stable;
+  border: 1px solid #cbd5e1;
+}
+
+/* Ensure table header is always on top */
+.table-container thead {
   position: sticky !important;
-  background-color: #e2e8f0 !important; /* Changed from #ffffff to Slate-200 */
-  z-index: 210 !important;
+  top: 0 !important;
+  z-index: 250 !important;
+  background-color: #e2e8f0 !important;
+}
+
+.table-container thead th {
+  position: sticky !important;
+  top: 0 !important;
+  background-color: #e2e8f0 !important;
+  z-index: 240 !important;
   background-clip: padding-box !important;
   box-shadow: inset 0 -1px 0 #cbd5e1, inset -1px 0 0 #cbd5e1 !important;
   vertical-align: middle !important;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  box-sizing: border-box !important;
 }
 
-/* Row 1: Main Titles (42px) */
-.table-container thead tr:nth-child(1) {
-  height: 42px !important;
-  min-height: 42px !important;
-  max-height: 42px !important;
-}
-.table-container thead tr:nth-child(1) th {
-  top: 0 !important;
-  z-index: 230 !important;
-  height: 42px !important;
-  min-height: 42px !important;
-  max-height: 42px !important;
-  line-height: 1.2 !important;
-}
-
-/* Row 2: Sub-titles (38px) */
-.table-container thead tr:nth-child(2) {
-  height: 38px !important;
-  min-height: 38px !important;
-  max-height: 38px !important;
-}
+/* Row-specific offsets for multi-row headers if needed */
+/* SettlementTable uses these specific heights */
 .table-container thead tr:nth-child(2) th {
-  top: 42px !important; /* Offset by Row 1 */
-  z-index: 220 !important;
-  height: 38px !important;
-  min-height: 38px !important;
-  max-height: 38px !important;
-  line-height: 1.2 !important;
+  top: 42px !important; 
 }
-
-/* Ensure cells with rowSpan stay on top of the stack */
-.table-container thead th[rowspan] {
-  z-index: 235 !important;
+.table-container thead tr:nth-child(3) th {
+  top: 80px !important; 
 }
 
 /* Sticky Footer (General) */
+.table-container tfoot {
+  position: sticky;
+  bottom: 0;
+  z-index: 250;
+}
+
 .table-container tfoot td, 
 .table-container tfoot th {
-  position: -webkit-sticky !important;
   position: sticky !important;
   bottom: 0 !important;
-  z-index: 230 !important;
+  z-index: 240 !important;
   background-color: #0f172a !important;
   color: white !important;
   box-shadow: inset 0 1px 0 #334155, inset -1px 0 0 #334155 !important;
-  height: inherit !important;
 }
 
 /* --- MULTI-TABLE VIEW SPECIFIC OVERRIDES --- */
@@ -84,4 +79,30 @@
   .table-container tfoot td { 
     position: static !important; 
   }
+}
+
+/* Premium Scrollbar Styling */
+.table-container::-webkit-scrollbar {
+  height: 10px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: rgba(203, 213, 225, 0.4);
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  transition: all 0.3s ease;
+}
+
+.table-container:hover::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.8);
+  border: 2px solid transparent;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 1) !important;
 }

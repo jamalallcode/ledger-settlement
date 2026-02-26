@@ -650,7 +650,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
            <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-slate-200 shadow-xl flex flex-col min-h-[620px]">
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-1.5 h-6 bg-emerald-500 rounded-full"></div>
-                <h3 className="text-lg md:text-xl font-black tracking-tight text-white bg-blue-600 px-3 py-1 rounded-lg shadow-sm">
+                <h3 className="text-lg md:text-xl font-black tracking-tight text-slate-900">
                   ব্যালট পেপার (নির্বাচন)
                 </h3>
               </div>
