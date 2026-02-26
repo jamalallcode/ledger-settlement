@@ -85,7 +85,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
 
   const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight bg-white group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
-  const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[9.5px] bg-slate-100 sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1,inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
+  const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[9.5px] bg-slate-100 z-[190] shadow-[inset_0_1px_0_#cbd5e1,inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-200 shadow-sm hover:border-slate-300'}`;
 
   return (
@@ -165,7 +165,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
           </div>
         </div>
 
-        <div className="table-container border border-slate-300 overflow-x-auto relative">
+        <div className="table-container border border-slate-300 overflow-auto relative rounded-lg">
           <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0">
             <colgroup>
               <col className="w-[50px]" />
@@ -185,7 +185,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
               <col className="w-[30px]" />
               <col className="w-[55px]" />
             </colgroup>
-            <thead>
+            <thead className="z-[240] bg-slate-200">
               <tr className="h-[42px]">
                 <th rowSpan={2} className={`${reportThStyle}`}>মন্ত্রণালয়</th>
                 <th rowSpan={2} className={`${reportThStyle}`}>সংস্থা</th>
@@ -254,7 +254,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                 );
               })}
             </tbody>
-            <tfoot className="sticky bottom-0 z-[230] shadow-2xl">
+            <tfoot className="z-[230] shadow-2xl">
               <tr>
                 <td colSpan={2} className={grandStyle + " !bg-slate-200 text-slate-900 uppercase tracking-widest text-[10px] shadow-[inset_0_1px_0_#cbd5e1] border-l border-slate-400 font-black"}>সর্বমোট (ফিল্টারকৃত):</td>
                 <td className={grandStyle}>{toBengaliDigits(filteredGrandTotals.pUC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(filteredGrandTotals.pUA))}</td>
