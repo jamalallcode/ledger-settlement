@@ -5,6 +5,7 @@ import { format, subMonths } from 'date-fns';
 interface QRProps {
   activeCycle: any;
   IDBadge: React.FC<{ id: string }>;
+  onBack?: () => void;
 }
 
 const QR_3: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
@@ -87,9 +88,9 @@ const QR_3: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
     const totals = { pC: 0, pA: 0, cC: 0, cA: 0, tC: 0, sC: 0, sA: 0, fC: 0, fA: 0 };
 
     return (
-      <div className="overflow-x-auto mb-10">
-        <table className="w-full border-collapse border border-slate-400 shadow-sm">
-          <thead>
+      <div className="table-container mb-10 border border-slate-400 shadow-sm rounded-lg overflow-auto">
+        <table className="w-full border-separate border-spacing-0">
+          <thead className="z-20 bg-slate-100">
             <tr>
               <th rowSpan={2} className={thCls}>ক্রঃ নং</th>
               <th rowSpan={2} className={thCls}>মন্ত্রণালয়ের নাম</th>
@@ -155,7 +156,7 @@ const QR_3: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
                 })}
               </React.Fragment>
             ))}
-            <tr className="bg-slate-100 font-black">
+            <tr className="bg-slate-100 font-black sticky bottom-0 z-10">
               <td colSpan={3} className={tdCls + " text-right"}>মোট</td>
               <td className={numTdCls}>{toBengaliDigits(totals.pC.toString())}</td>
               <td className={numTdCls}>{toBengaliDigits(totals.pA.toString())}</td>
