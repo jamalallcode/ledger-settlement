@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 interface QRProps {
   activeCycle: any;
   IDBadge: React.FC<{ id: string }>;
+  onBack?: () => void;
 }
 
 const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
@@ -53,9 +54,9 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
         <p>শাখার নামঃ নন এসএফআই শাখা</p>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse border border-slate-400 shadow-sm">
-          <thead>
+      <div className="table-container border border-slate-400 shadow-sm rounded-lg overflow-auto">
+        <table className="w-full border-separate border-spacing-0">
+          <thead className="z-20 bg-slate-100">
             <tr>
               <th rowSpan={2} className={thCls}>ক্রঃ নং</th>
               <th rowSpan={2} className={thCls}>মন্ত্রণালয়ের নাম</th>
@@ -98,7 +99,7 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
                 </tr>
               );
             })}
-            <tr className="bg-slate-100 font-black">
+            <tr className="bg-slate-100 font-black sticky bottom-0 z-10">
               <td colSpan={2} className={tdCls + " text-center font-black"}>মোট</td>
               <td className={numTdCls}>{toBengaliDigits(totals.involved.toString())}</td>
               <td className={numTdCls}>{toBengaliDigits(totals.taxRec.toString())}</td>
