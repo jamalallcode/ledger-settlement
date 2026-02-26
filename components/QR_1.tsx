@@ -5,6 +5,7 @@ import { format, subMonths, addMonths, setDate } from 'date-fns';
 interface QRProps {
   activeCycle: any;
   IDBadge: React.FC<{ id: string }>;
+  onBack?: () => void;
 }
 
 const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
@@ -61,9 +62,9 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
       </div>
 
       {/* Table Section */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse border border-slate-400 shadow-sm">
-          <thead>
+      <div className="table-container border border-slate-400 shadow-sm rounded-lg overflow-auto">
+        <table className="w-full border-separate border-spacing-0">
+          <thead className="z-20 bg-slate-100">
             <tr>
               <th rowSpan={2} className={thCls}>ক্রঃ নং</th>
               <th rowSpan={2} className={`${thCls} w-[25%]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
