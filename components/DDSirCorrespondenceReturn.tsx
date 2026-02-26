@@ -356,10 +356,10 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           <h4 className="text-[15px] font-bold text-black leading-tight">খুলনা-৯০০০</h4>
         </div>
 
-        {/* SECTION 1: সারসংক্ষেপ টেবিল (Non-Sticky by multi-table-view logic) */}
-        <div className="mb-10 flex justify-center overflow-x-auto">
-          <div className="table-container max-w-full w-full">
-            <table className="w-full border-separate table-fixed border-collapse border border-slate-300">
+        {/* SECTION 1: সারসংক্ষেপ টেবিল */}
+        <div className="mb-10 flex justify-center overflow-visible">
+          <div className="table-container max-w-full w-full border border-slate-300 rounded-lg overflow-auto">
+            <table className="w-full border-separate table-fixed border-spacing-0">
               <colgroup>
                 <col className="w-[30px]" />
                 <col className="w-[130px]" />
@@ -469,8 +469,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
              </div>
           </div>
 
-          <div className="table-container relative overflow-x-auto w-full">
-            <table className="w-full border-separate table-fixed border-spacing-0 border border-slate-300">
+          <div className="table-container relative overflow-auto w-full border border-slate-300 rounded-lg">
+            <table className="w-full border-separate table-fixed border-spacing-0">
               <colgroup>
                 <col className="w-[30px]" />
                 <col className="w-[80px]" />
@@ -547,7 +547,6 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   </tr>
                 )}
               </tbody>
-              {/* Footer text color white */}
               <tfoot>
                 <tr className="bg-slate-900 text-white font-bold text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] border-t border-slate-700">
                   <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-slate-900">সর্বমোট চিঠিপত্র (ফিল্টারকৃত):</td>
