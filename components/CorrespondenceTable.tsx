@@ -512,7 +512,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   };
 
   // Header font-black
-  const thCls = "border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[11px] bg-slate-200 sticky top-0 z-[100] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
+  const thCls = "border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[11px] bg-slate-200 z-[100] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
   // Data cells reverted to font-bold
   const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-slate-800 font-bold leading-tight align-top bg-white transition-colors group-hover:bg-blue-50/50 break-words";
   const labelCls = "text-[10px] font-bold text-emerald-700 shrink-0";
@@ -724,7 +724,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
       )}
 
       {/* Table Container */}
-      <div className="table-container border border-slate-300 rounded-sm overflow-x-auto relative shadow-xl bg-white max-w-full">
+      <div className="table-container border border-slate-300 rounded-sm overflow-auto relative shadow-xl bg-white max-w-full">
         <IDBadge id="table-correspondence-ledger" />
         <table className="w-full border-separate border-spacing-0 table-fixed">
           <colgroup>
@@ -1134,7 +1134,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
               </tr>
             </tbody>
           )}
-          <tfoot className="sticky bottom-0 z-[110]">
+          <tfoot className="z-[110]">
             <tr className="bg-slate-900 text-white font-black text-[11px] h-9 shadow-[0_-5px_15px_rgba(0,0,0,0.2)]">
               <td colSpan={2} className="px-4 text-left border-t border-slate-700">সর্বমোট:</td>
               <td colSpan={1} className="px-2 text-center border-t border-slate-700 text-emerald-400">{toBengaliDigits(filteredEntries.length)} টি</td>
