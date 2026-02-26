@@ -496,33 +496,33 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         </div>
       )}
 
-      <div className="table-container border border-slate-300 rounded-sm overflow-x-auto relative">
+      <div className="table-container border border-slate-300 rounded-sm overflow-auto relative">
         <IDBadge id="table-main-ledger" />
-        <table id="table-main-ledger" ref={tableRef} className="w-full border-separate">
+        <table id="table-main-ledger" ref={tableRef} className="w-full border-separate border-spacing-0">
           <colgroup><col className="w-[30px]" /><col className="w-[170px]" /><col className="w-[45px]" /><col className="w-[65px]" /><col className="w-[40px]" /><col className="w-[65px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /></colgroup>
       <thead>
             <tr className="h-[42px]">
-              <th rowSpan={2} className={thBase + " sticky top-0 z-[110]"}>ক্র: নং</th>
-              <th rowSpan={2} className={thBase + " sticky top-0 z-[110]"}>বিস্তারিত বিবরণ (২০ ফিল্ড দেখতে ক্লিক)</th>
-              <th rowSpan={2} className={thBase + " sticky top-0 z-[110]"}>অনু: নং</th>
-              <th rowSpan={2} className={thBase + " sticky top-0 z-[110]"}>জড়িত টাকা</th>
-              <th colSpan={2} className={thBase + " sticky top-0 z-[110]"}>উত্থাপিত আপত্তি</th>
-              <th colSpan={2} className={thBase + " sticky top-0 z-[110]"}>ভ্যাট</th>
-              <th colSpan={2} className={thBase + " sticky top-0 z-[110]"}>আয়কর</th>
-              <th colSpan={2} className={thBase + " sticky top-0 z-[110]"}>অন্যান্য</th>
-              <th colSpan={2} className={thBase + " sticky top-0 z-[110]"}>মোট মীমাংসিত</th>
+              <th rowSpan={2} className={thBase}>ক্র: নং</th>
+              <th rowSpan={2} className={thBase}>বিস্তারিত বিবরণ (২০ ফিল্ড দেখতে ক্লিক)</th>
+              <th rowSpan={2} className={thBase}>অনু: নং</th>
+              <th rowSpan={2} className={thBase}>জড়িত টাকা</th>
+              <th colSpan={2} className={thBase}>উত্থাপিত আপত্তি</th>
+              <th colSpan={2} className={thBase}>ভ্যাট</th>
+              <th colSpan={2} className={thBase}>আয়কর</th>
+              <th colSpan={2} className={thBase}>অন্যান্য</th>
+              <th colSpan={2} className={thBase}>মোট মীমাংসিত</th>
             </tr>
             <tr className="h-[38px]">
-              <th className={thBase + " sticky top-[42px] z-[110]"}>সংখ্যা</th>
-              <th className={thBase + " sticky top-[42px] z-[110]"}>টাকা</th>
-              <th className={thBase + " sticky top-[42px] z-[110]"}>আদায়</th>
-              <th className={thBase + " sticky top-[42px] z-[110]"}>সমন্বয়</th>
-              <th className={thBase + " sticky top-[42px] z-[110]"}>আদায়</th>
-              <th className={thBase + " sticky top-[42px] z-[110]"}>সমন্বয়</th>
-              <th className={thBase + " sticky top-[42px] z-[110]"}>আদায়</th>
-              <th className={thBase + " sticky top-[42px] z-[110]"}>সমন্বয়</th>
-              <th className={thBase + " sticky top-[42px] z-[110]"}>আদায়</th>
-              <th className={thBase + " sticky top-[42px] z-[110]"}>সমন্বয়</th>
+              <th className={thBase}>সংখ্যা</th>
+              <th className={thBase}>টাকা</th>
+              <th className={thBase}>আদায়</th>
+              <th className={thBase}>সমন্বয়</th>
+              <th className={thBase}>আদায়</th>
+              <th className={thBase}>সমন্বয়</th>
+              <th className={thBase}>আদায়</th>
+              <th className={thBase}>সমন্বয়</th>
+              <th className={thBase}>আদায়</th>
+              <th className={thBase}>সমন্বয়</th>
             </tr>
           </thead>
           <tbody>
@@ -769,7 +769,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             )}
           </tbody>
           {!isAdminView && (
-            <tfoot className="sticky bottom-0 z-[100]">
+            <tfoot className="z-[100]">
               <tr className="h-[45px] bg-slate-900 text-white shadow-[0_-10px_20px_rgba(0,0,0,0.1)]">
                 <td colSpan={2} className={footerTdCls + " text-white uppercase tracking-wider"}>সর্বমোট (ফিল্টার ডাটা):</td>
                 <td className={footerTdCls + " text-amber-400"}>{toBengaliDigits(grandTotals.paraCount)}</td><td className={footerTdCls + " text-amber-400"}>{toBengaliDigits(Math.round(grandTotals.inv))}</td>
