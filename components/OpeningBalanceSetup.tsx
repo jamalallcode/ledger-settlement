@@ -44,8 +44,8 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
     { key: 'settledAmount', label: 'মী: টাকা', subLabel: '(প্রারম্ভিক)' }
   ];
 
-  const setupThCls = "p-4 text-center font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-20 align-middle sticky top-0 z-[210] shadow-[inset_0_-1px_0_#cbd5e1]";
-  const setupFooterTdCls = "p-4 border border-slate-300 text-center text-[15px] bg-blue-50 font-black sticky bottom-0 z-[190] shadow-[inset_0_1px_0_#cbd5e1]";
+  const setupThCls = "p-4 text-center font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-20 align-middle z-[210] shadow-[inset_0_-1px_0_#cbd5e1]";
+  const setupFooterTdCls = "p-4 border border-slate-300 text-center text-[15px] bg-blue-50 font-black z-[190] shadow-[inset_0_1px_0_#cbd5e1]";
   
   const totalStats = ministryGroups.reduce((acc, m) => {
     const entities = MINISTRY_ENTITY_MAP[m] || [];
@@ -81,11 +81,11 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
         </div>
       </div>
 
-      <div className="table-container bg-white rounded-3xl border border-slate-300 shadow-2xl relative w-full overflow-x-auto">
+      <div className="table-container bg-white rounded-3xl border border-slate-300 shadow-2xl relative w-full overflow-auto">
          <table className="w-full text-sm border-separate border-spacing-0">
            <thead>
               <tr>
-                <th className="p-5 text-left font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] w-[35%] bg-slate-200 leading-tight h-20 align-middle sticky top-0 z-[210] shadow-[inset_0_-1px_0_#cbd5e1]">মন্ত্রণালয় ও সংস্থা</th>
+                <th className="p-5 text-left font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] w-[35%] bg-slate-200 leading-tight h-20 align-middle z-[210] shadow-[inset_0_-1px_0_#cbd5e1]">মন্ত্রণালয় ও সংস্থা</th>
                 {displayFields.map(f => (
                   <th key={f.key} className={setupThCls}>
                     {f.label} {f.subLabel && <><br/><span className="text-[10px] text-slate-500 font-black">{f.subLabel}</span></>}
@@ -144,7 +144,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
            </tbody>
            <tfoot>
              <tr className="bg-blue-50 font-black text-slate-900 border-t-2 border-slate-400">
-               <td className="px-6 py-4 border border-slate-300 text-right text-[13px] uppercase tracking-tighter sticky bottom-0 z-[190] bg-blue-50 shadow-[inset_0_1px_0_#cbd5e1]">সর্বমোট সেটআপ তথ্য:</td>
+               <td className="px-6 py-4 border border-slate-300 text-right text-[13px] uppercase tracking-tighter z-[190] bg-blue-50 shadow-[inset_0_1px_0_#cbd5e1]">সর্বমোট সেটআপ তথ্য:</td>
                {displayFields.map(f => {
                   const val = f.key === 'unsettledCount' ? totalStats.uC :
                               f.key === 'unsettledAmount' ? totalStats.uA :
