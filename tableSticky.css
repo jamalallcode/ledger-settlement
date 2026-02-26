@@ -5,27 +5,24 @@
 .table-container {
   width: 100%;
   max-width: 100%;
-  max-height: 84vh !important;
+  max-height: 75vh !important; /* Reduced for better visibility of footer */
   overflow-y: auto !important;
   overflow-x: auto !important;
   position: relative;
   background-color: white;
   scrollbar-gutter: stable;
+  border: 1px solid #cbd5e1;
 }
 
-/* Hide vertical scrollbar for Chrome, Safari and Opera */
-.table-container::-webkit-scrollbar:vertical {
-  display: none !important;
-  width: 0;
-}
-
-/* Hide vertical scrollbar for IE, Edge and Firefox */
-.table-container {
-  -ms-overflow-style: none;  /* IE and Edge */
+/* Ensure table header is always on top */
+.table-container thead {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 250 !important;
+  background-color: #e2e8f0 !important;
 }
 
 .table-container thead th {
-  position: -webkit-sticky !important;
   position: sticky !important;
   top: 0 !important;
   background-color: #e2e8f0 !important;
@@ -35,22 +32,24 @@
   vertical-align: middle !important;
 }
 
-/* Row 1: Main Titles (42px) */
-.table-container thead tr:nth-child(1) th {
-  top: 0 !important;
-  z-index: 250 !important;
-}
-
-/* Row 2: Sub-titles (38px) */
+/* Row-specific offsets for multi-row headers if needed */
+/* SettlementTable uses these specific heights */
 .table-container thead tr:nth-child(2) th {
-  top: 42px !important; /* Offset by Row 1 */
-  z-index: 245 !important;
+  top: 42px !important; 
+}
+.table-container thead tr:nth-child(3) th {
+  top: 80px !important; 
 }
 
 /* Sticky Footer (General) */
+.table-container tfoot {
+  position: sticky;
+  bottom: 0;
+  z-index: 250;
+}
+
 .table-container tfoot td, 
 .table-container tfoot th {
-  position: -webkit-sticky !important;
   position: sticky !important;
   bottom: 0 !important;
   z-index: 240 !important;
