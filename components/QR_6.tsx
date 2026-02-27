@@ -55,11 +55,11 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
       </div>
 
       <div className="overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
-        <table className="w-full border-separate border-spacing-0 min-w-[900px] !table-auto">
+        <table className="w-full border-separate border-spacing-0 min-w-[850px] !table-auto">
           <thead className="bg-slate-100">
             <tr>
               <th rowSpan={2} className={thCls}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thCls} w-[15%]`}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={`${thCls} w-[12%]`}>মন্ত্রণালয়ের নাম</th>
               <th rowSpan={2} className={thCls}>জড়িত টাকা</th>
               <th colSpan={2} className={thCls}>আয়কর ও ভ্যাট বাবদ</th>
               <th colSpan={2} className={thCls}>অন্যান্য বাবদ</th>
