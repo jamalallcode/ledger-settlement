@@ -127,17 +127,6 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
           <p>নং-১৭৯২/প্রশা/বাঅঅ/সে-৬/খুলনা/ত্রৈমাসিক রিটার্ণ/আদায়/সমন্বয়/২০১১-১২/</p>
           <p>তারিখঃ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /{formatYearBN(new Date())}খ্রিঃ</p>
         </div>
-        <div className="flex gap-16">
-          <div className="text-center w-32 border-t border-slate-900 pt-1">
-            <p className="font-black">স্বাক্ষর</p>
-          </div>
-          <div className="text-center w-32 border-t border-slate-900 pt-1">
-            <p className="font-black">স্বাক্ষর</p>
-          </div>
-          <div className="text-center w-32 border-t border-slate-900 pt-1">
-            <p className="font-black">স্বাক্ষর</p>
-          </div>
-        </div>
       </div>
     </div>
   );
