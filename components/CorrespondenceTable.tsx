@@ -512,7 +512,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   };
 
   // Header font-black
-  const thCls = "border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[11px] bg-slate-200 z-[100] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
+  const thCls = "sticky top-0 border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[11px] bg-slate-200 z-[110] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
   // Data cells reverted to font-bold
   const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-slate-800 font-bold leading-tight align-top bg-white transition-colors group-hover:bg-blue-50/50 break-words";
   const labelCls = "text-[10px] font-bold text-emerald-700 shrink-0";
@@ -729,15 +729,15 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
         <table className="w-full border-separate border-spacing-0 table-fixed">
           <colgroup>
             <col className="w-[30px]" />
+            <col className="w-[110px]" />
+            <col className="w-[140px]" />
+            <col className="w-[140px]" />
             <col className="w-[130px]" />
-            <col className="w-[160px]" />
-            <col className="w-[160px]" />
-            <col className="w-[145px]" />
-            <col className="w-[135px]" />
+            <col className="w-[120px]" />
             <col className="w-[50px]" />
           </colgroup>
           <thead>
-            <tr>
+            <tr className="h-[40px]">
               <th className={thCls}>ক্র: নং</th>
               <th className={thCls}>পত্রের বিবরণ</th>
               <th className={thCls}>পত্রের অন্যান্য তথ্য</th>
@@ -794,7 +794,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
               return groupedEntries.map((group) => (
                 <tbody key={group.label}>
                   {/* Sticky Cycle Header */}
-                  <tr className="sticky top-[42px] z-[90] no-print">
+                  <tr className="sticky top-[40px] z-[90] no-print">
                     <td colSpan={7} className="p-0 border border-slate-300">
                       <div 
                         ref={el => { cycleRefs.current[group.label] = el; }}
@@ -832,7 +832,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                   </tr>
                   
                   {expandedCycles[group.label] && (
-                    <tr className="sticky top-[82px] z-[85] no-print">
+                    <tr className="sticky top-[88px] z-[85] no-print">
                       <td colSpan={7} className="p-0 border border-slate-300">
                         <div className="bg-white p-4 border-b border-slate-200 animate-in fade-in slide-in-from-top-1 duration-200 shadow-md">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

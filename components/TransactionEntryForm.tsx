@@ -76,7 +76,7 @@ const TransactionEntryForm: React.FC<TransactionEntryFormProps> = ({ onSubmit, o
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${errors.date ? 'border-red-500' : 'border-gray-300'}`}
+              className={`w-full p-2.5 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${(!date || errors.date) ? 'border-red-500' : 'border-emerald-500'}`}
             />
             {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date}</p>}
           </div>
@@ -87,7 +87,7 @@ const TransactionEntryForm: React.FC<TransactionEntryFormProps> = ({ onSubmit, o
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white ${errors.category ? 'border-red-500' : 'border-gray-300'}`}
+              className={`w-full p-2.5 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white ${(!category || errors.category) ? 'border-red-500' : 'border-emerald-500'}`}
             >
               <option value="">ক্যাটাগরি নির্বাচন করুন</option>
               {categories.map((cat, idx) => (
@@ -106,7 +106,7 @@ const TransactionEntryForm: React.FC<TransactionEntryFormProps> = ({ onSubmit, o
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="লেনদেনের বিবরণ লিখুন"
-            className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
+            className={`w-full p-2.5 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${(!description.trim() || errors.description) ? 'border-red-500' : 'border-emerald-500'}`}
           />
           {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
         </div>
@@ -122,7 +122,7 @@ const TransactionEntryForm: React.FC<TransactionEntryFormProps> = ({ onSubmit, o
               value={debit}
               onChange={(e) => setDebit(e.target.value)}
               placeholder="0.00"
-              className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${errors.amount ? 'border-red-500' : 'border-gray-300'}`}
+              className={`w-full p-2.5 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${(!debit && !credit) ? 'border-red-500' : 'border-emerald-500'}`}
             />
           </div>
 
@@ -136,7 +136,7 @@ const TransactionEntryForm: React.FC<TransactionEntryFormProps> = ({ onSubmit, o
               value={credit}
               onChange={(e) => setCredit(e.target.value)}
               placeholder="0.00"
-              className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${errors.amount ? 'border-red-500' : 'border-gray-300'}`}
+              className={`w-full p-2.5 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${(!debit && !credit) ? 'border-red-500' : 'border-emerald-500'}`}
             />
           </div>
         </div>

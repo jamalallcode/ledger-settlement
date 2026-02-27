@@ -69,10 +69,12 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
   const exactMatch = allOptions.some(o => o.toLowerCase() === searchTerm.toLowerCase());
 
-  const triggerStyle = `w-full h-[48px] px-4 border rounded-xl outline-none transition-all duration-300 flex items-center justify-between cursor-pointer shadow-sm ${
+  const isFilled = value && value.toString().trim() !== '' && value !== '০' && value.toString() !== '0';
+
+  const triggerStyle = `w-full h-[48px] px-4 border-2 rounded-xl outline-none transition-all duration-300 flex items-center justify-between cursor-pointer shadow-sm ${
     isOpen 
       ? 'border-blue-500 ring-4 ring-blue-50 bg-white' 
-      : 'border-slate-300 bg-white hover:border-slate-400'
+      : (isFilled ? 'border-emerald-500 bg-white hover:border-emerald-600' : 'border-red-500 bg-white hover:border-red-600')
   }`;
 
   const IDBadge = ({ id }: { id: string }) => {

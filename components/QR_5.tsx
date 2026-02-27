@@ -39,9 +39,9 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
     totalAdj: acc.totalAdj + curr.totalAdj,
   }), { amount: 0, auditRec: 0, auditAdj: 0, currentRec: 0, currentAdj: 0, oldRec: 0, oldAdj: 0, totalRec: 0, totalAdj: 0 });
 
-  const thCls = "border border-slate-400 p-1 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center";
-  const tdCls = "border border-slate-400 p-1 text-[10px] text-slate-700 align-middle";
-  const numTdCls = "border border-slate-400 p-1 text-[10px] text-slate-700 text-center align-middle font-bold";
+  const thCls = "border-r border-b border-slate-400 p-2 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center";
+  const tdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-700 align-middle";
+  const numTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-700 text-center align-middle font-bold";
 
   return (
     <div id="qr-5-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
@@ -58,12 +58,12 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
         <p>শাখার নামঃ নন এসএফআই শাখা।</p>
       </div>
 
-      <div className="table-container border border-slate-400 shadow-sm rounded-lg overflow-auto">
-        <table className="w-full border-separate border-spacing-0">
-          <thead className="z-20 bg-slate-100">
+      <div className="overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
+        <table className="w-full border-separate border-spacing-0 min-w-[1000px] !table-auto">
+          <thead className="bg-slate-100">
             <tr>
               <th rowSpan={2} className={thCls}>ক্রঃ নং</th>
-              <th rowSpan={2} className={thCls}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={`${thCls} w-[15%]`}>মন্ত্রণালয়ের নাম</th>
               <th rowSpan={2} className={thCls}>প্রতিবেদনধীন সময়ে উত্থাপিত আপত্তিতে জড়িত টাকার পরিমাণ</th>
               <th colSpan={2} className={thCls}>অডিট কালীন আদায়/সমন্বয়</th>
               <th colSpan={2} className={thCls}>প্রতিবেদনধীন সময়ে উত্থাপিত অর্থের বিপরীতে আদায়/সমন্বয়</th>
@@ -81,9 +81,9 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
               <th className={thCls}>আদায়</th>
               <th className={thCls}>সমন্বয়</th>
             </tr>
-            <tr className="bg-slate-50">
+            <tr>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => (
-                <th key={n} className="border border-slate-400 p-1 text-[9px] font-bold text-slate-500 text-center">{toBengaliDigits(n.toString())}</th>
+                <th key={n} className={thCls + " text-[9px] font-bold text-slate-500"}>{toBengaliDigits(n.toString())}</th>
               ))}
             </tr>
           </thead>
@@ -122,13 +122,19 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
       </div>
 
       {/* Footer Section */}
-      <div className="mt-8 flex justify-between items-end text-[11px] font-bold text-slate-800">
-        <div className="space-y-1">
+      <div className="mt-20 flex justify-between items-start text-[11px] font-bold text-slate-800">
+        <div className="flex items-center gap-6">
           <p>নং-১৭৯২/প্রশা/বাঅঅ/সে-৬/খুলনা/ত্রৈমাসিক রিটার্ণ/আদায়/সমন্বয়/২০১১-১২/</p>
           <p>তারিখঃ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /{formatYearBN(new Date())}খ্রিঃ</p>
         </div>
-        <div className="text-center pb-4">
-          <div className="w-48 border-t border-slate-900 pt-1">
+        <div className="flex gap-16">
+          <div className="text-center w-32 border-t border-slate-900 pt-1">
+            <p className="font-black">স্বাক্ষর</p>
+          </div>
+          <div className="text-center w-32 border-t border-slate-900 pt-1">
+            <p className="font-black">স্বাক্ষর</p>
+          </div>
+          <div className="text-center w-32 border-t border-slate-900 pt-1">
             <p className="font-black">স্বাক্ষর</p>
           </div>
         </div>

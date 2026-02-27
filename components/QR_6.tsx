@@ -35,9 +35,9 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
     otherAdj: acc.otherAdj + curr.otherAdj,
   }), { involved: 0, taxRec: 0, taxAdj: 0, otherRec: 0, otherAdj: 0 });
 
-  const thCls = "border border-slate-400 p-1 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center";
-  const tdCls = "border border-slate-400 p-1 text-[10px] text-slate-700 align-middle";
-  const numTdCls = "border border-slate-400 p-1 text-[10px] text-slate-700 text-center align-middle font-bold";
+  const thCls = "border-r border-b border-slate-400 p-2 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center";
+  const tdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-700 align-middle";
+  const numTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-700 text-center align-middle font-bold";
 
   return (
     <div id="qr-6-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
@@ -54,12 +54,12 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
         <p>শাখার নামঃ নন এসএফআই শাখা</p>
       </div>
 
-      <div className="table-container border border-slate-400 shadow-sm rounded-lg overflow-auto">
-        <table className="w-full border-separate border-spacing-0">
-          <thead className="z-20 bg-slate-100">
+      <div className="overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
+        <table className="w-full border-separate border-spacing-0 min-w-[900px] !table-auto">
+          <thead className="bg-slate-100">
             <tr>
               <th rowSpan={2} className={thCls}>ক্রঃ নং</th>
-              <th rowSpan={2} className={thCls}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={`${thCls} w-[15%]`}>মন্ত্রণালয়ের নাম</th>
               <th rowSpan={2} className={thCls}>জড়িত টাকা</th>
               <th colSpan={2} className={thCls}>আয়কর ও ভ্যাট বাবদ</th>
               <th colSpan={2} className={thCls}>অন্যান্য বাবদ</th>
@@ -74,9 +74,11 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
               <th className={thCls}>আদায়</th>
               <th className={thCls}>সমন্বয়</th>
             </tr>
-            <tr className="bg-slate-50">
+            <tr>
               {[1, 2, 3, 4, 5, 6, 7, '৮=৪+৬', '৯=৫+৭', 10].map((n, i) => (
-                <th key={i} className="border border-slate-400 p-1 text-[9px] font-bold text-slate-500 text-center">{typeof n === 'string' ? toBengaliDigits(n) : toBengaliDigits(n.toString())}</th>
+                <th key={i} className={thCls + " text-[9px] font-bold text-slate-500"}>
+                  {typeof n === 'string' ? toBengaliDigits(n) : toBengaliDigits(n.toString())}
+                </th>
               ))}
             </tr>
           </thead>
@@ -115,12 +117,21 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
       </div>
 
       {/* Footer Section */}
-      <div className="mt-8 flex justify-between items-end text-[11px] font-bold text-slate-800">
-        <div className="space-y-1">
+      <div className="mt-20 flex justify-between items-start text-[11px] font-bold text-slate-800">
+        <div className="flex items-center gap-6">
           <p>নং- --------/বাঅঅ/সে-৬/খুলনা/রিটার্ণ/ত্রৈমাসিক/আয়কর ও অন্যান্য/আদায় ও সমন্বয়/২০০৮-০৯/</p>
-        </div>
-        <div className="text-right">
           <p>তাং- &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /{formatYearBN(new Date())}খ্রিঃ</p>
+        </div>
+        <div className="flex gap-16">
+          <div className="text-center w-32 border-t border-slate-900 pt-1">
+            <p className="font-black">স্বাক্ষর</p>
+          </div>
+          <div className="text-center w-32 border-t border-slate-900 pt-1">
+            <p className="font-black">স্বাক্ষর</p>
+          </div>
+          <div className="text-center w-32 border-t border-slate-900 pt-1">
+            <p className="font-black">স্বাক্ষর</p>
+          </div>
         </div>
       </div>
     </div>

@@ -542,7 +542,7 @@ const App: React.FC = () => {
                 />
               )}
               
-              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} />}
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} />}
               
               {activeTab === 'register' && (
                 <div className="space-y-6 relative">

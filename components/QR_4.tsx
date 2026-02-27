@@ -79,22 +79,22 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
     }
   ];
 
-  const thCls = "border border-slate-400 p-1 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center";
-  const tdCls = "border border-slate-400 p-1 text-[10px] text-slate-700 align-middle";
-  const numTdCls = "border border-slate-400 p-1 text-[10px] text-slate-700 text-center align-middle font-bold";
+  const thCls = "border-r border-b border-slate-400 p-1 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center";
+  const tdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-700 align-middle";
+  const numTdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-700 text-center align-middle font-bold";
 
   const renderTable = (data: any[], tableId: string) => {
     let globalIdx = 1;
     const totals = { pR: 0, cR: 0, tR: 0, pS: 0, cS: 0, tS: 0, pnd: 0, cSA: 0, pndA: 0 };
 
     return (
-      <div className="table-container mb-10 border border-slate-400 shadow-sm rounded-lg overflow-auto">
-        <table className="w-full border-separate border-spacing-0">
-          <thead className="z-20 bg-slate-100">
+      <div className="mb-10 overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
+        <table className="w-full border-separate border-spacing-0 min-w-[1100px] !table-auto">
+          <thead className="bg-slate-100">
             <tr>
               <th className={thCls + " w-10"}>ক্রঃ নং</th>
-              <th className={thCls}>মন্ত্রণালয়ের নাম</th>
-              <th className={thCls}>প্রতিষ্ঠানের নাম</th>
+              <th className={`${thCls} w-[15%]`}>মন্ত্রণালয়ের নাম</th>
+              <th className={`${thCls} w-[15%]`}>প্রতিষ্ঠানের নাম</th>
               <th className={thCls}>১৯৭১-৭২ হতে {getMonthNameBN(prevMonthDate)}/{formatYearBN(prevMonthDate)} মাস পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
               <th className={thCls}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
               <th className={thCls}>{getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত মোট উত্থাপিত আপত্তির সংখ্যা</th>
@@ -196,13 +196,19 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
       {renderTable(table2Data, 'table-2')}
 
       {/* Footer Section */}
-      <div className="mt-8 flex justify-between items-end text-[11px] font-bold text-slate-800">
-        <div className="space-y-1">
+      <div className="mt-20 flex justify-between items-start text-[11px] font-bold text-slate-800">
+        <div className="flex items-center gap-6">
           <p>নং- ১৭০৬/প্রশা/বাঅঅ/সমন্বয়/র:জ:প্র:নি:শু:/২০১১-১২/</p>
           <p>তারিখঃ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /২০২৩খ্রিঃ</p>
         </div>
-        <div className="text-center pb-4">
-          <div className="w-48 border-t border-slate-900 pt-1">
+        <div className="flex gap-16">
+          <div className="text-center w-32 border-t border-slate-900 pt-1">
+            <p className="font-black">স্বাক্ষর</p>
+          </div>
+          <div className="text-center w-32 border-t border-slate-900 pt-1">
+            <p className="font-black">স্বাক্ষর</p>
+          </div>
+          <div className="text-center w-32 border-t border-slate-900 pt-1">
             <p className="font-black">স্বাক্ষর</p>
           </div>
         </div>

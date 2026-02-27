@@ -52,9 +52,9 @@ const QR_2: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
     }
   ];
 
-  const thCls = "border border-slate-400 p-1 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center";
-  const tdCls = "border border-slate-400 p-2 text-[10px] text-slate-700 align-middle";
-  const numTdCls = "border border-slate-400 p-2 text-[10px] text-slate-700 text-center align-middle font-bold";
+  const thCls = "border-r border-b border-slate-400 p-1 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center";
+  const tdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-700 align-middle";
+  const numTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-700 text-center align-middle font-bold";
 
   return (
     <div id="qr-2-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
@@ -71,27 +71,21 @@ const QR_2: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
       </div>
 
       {/* Info Section */}
-      <div className="grid grid-cols-2 gap-4 mb-4 text-[11px] font-bold text-slate-800">
-        <div className="space-y-1">
-          <p>অডিট অধিদপ্তরের নামঃ বাণিজ্যিক অডিট অধিদপ্তর, আঞ্চলিক কার্যালয়, খুলনা।</p>
-          <p className="pt-2">বিষয়ঃ নিরীক্ষা পরিদর্শন প্রতিবেদনে (AIR) অন্তর্ভুক্ত আপত্তি নিষ্পত্তির অগ্রগতি সংক্রান্ত মাসিক প্রতিবেদন (মন্ত্রণালয়ভিত্তিক)</p>
-          <p>ক. ব্রডশিট জবাবের প্রেক্ষিতে নিষ্পত্তির সুপারিশ সংক্রান্ত ত্রৈমাসিক প্রতিবেদন</p>
-        </div>
-        <div className="text-right space-y-1">
-          <p>শাখার নামঃ নন এসএফআই</p>
-          <div className="pt-8">
-            <p>মাসের নামঃ {getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} খ্রি: তারিখ পর্যন্ত</p>
-          </div>
-        </div>
+      <div className="mb-4 text-[11px] font-bold text-slate-800 space-y-1">
+        <p>অডিট অধিদপ্তরের নামঃ বাণিজ্যিক অডিট অধিদপ্তর, আঞ্চলিক কার্যালয়, খুলনা।</p>
+        <p className="underline underline-offset-4 decoration-1">বিষয়ঃ নিরীক্ষা পরিদর্শন প্রতিবেদনে (AIR) অন্তর্ভুক্ত আপত্তি নিষ্পত্তির অগ্রগতি সংক্রান্ত মাসিক প্রতিবেদন (মন্ত্রণালয়ভিত্তিক)</p>
+        <p>ক. ব্রডশিট জবাবের প্রেক্ষিতে নিষ্পত্তির সুপারিশ সংক্রান্ত ত্রৈমাসিক প্রতিবেদন</p>
+        <p>শাখার নামঃ নন এসএফআই</p>
+        <p>মাসের নামঃ {getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} খ্রি: তারিখ পর্যন্ত</p>
       </div>
 
       {/* Table Section */}
-      <div className="table-container border border-slate-400 shadow-sm rounded-lg overflow-auto">
-        <table className="w-full border-separate border-spacing-0">
-          <thead className="z-20 bg-slate-100">
+      <div className="overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
+        <table className="w-full border-separate border-spacing-0 min-w-[1000px] !table-auto">
+          <thead className="bg-slate-100">
             <tr>
               <th rowSpan={2} className={thCls}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thCls} w-[20%]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
+              <th rowSpan={2} className={`${thCls} w-[12%]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
               <th rowSpan={2} className={thCls}>ব্রডশিট জবাবের সংখ্যা</th>
               <th rowSpan={2} className={thCls}>পত্রের স্মারক নং ও তারিখ</th>
               <th rowSpan={2} className={thCls}>প্রেরিত অনুচ্ছেদ সংখ্যা</th>
@@ -108,9 +102,9 @@ const QR_2: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
               <th className={thCls}>সমন্বয়</th>
               <th className={thCls}>অন্যান্য</th>
             </tr>
-            <tr className="bg-slate-50">
+            <tr>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(n => (
-                <th key={n} className="border border-slate-400 p-1 text-[9px] font-bold text-slate-500 text-center">{toBengaliDigits(n.toString())}</th>
+                <th key={n} className={thCls + " text-[9px] font-bold text-slate-500"}>{toBengaliDigits(n.toString())}</th>
               ))}
             </tr>
           </thead>
@@ -137,7 +131,7 @@ const QR_2: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
             {Array.from({ length: 3 }).map((_, i) => (
               <tr key={`empty-${i}`} className="h-10">
                 {Array.from({ length: 14 }).map((_, j) => (
-                  <td key={j} className="border border-slate-400"></td>
+                  <td key={j} className="border-r border-b border-slate-400"></td>
                 ))}
               </tr>
             ))}
@@ -146,13 +140,19 @@ const QR_2: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
       </div>
 
       {/* Footer Section */}
-      <div className="mt-8 flex justify-between items-end text-[11px] font-bold text-slate-800">
-        <div className="space-y-1">
+      <div className="mt-20 flex justify-between items-start text-[11px] font-bold text-slate-800">
+        <div className="flex items-center gap-6">
           <p>নং- ১৭০৬/প্রশা/বাঅঅ/সমন্বয়/র:জ:প্র:নি:শু:/২০১১-১২/</p>
           <p>তারিখঃ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /২০২৩খ্রিঃ</p>
         </div>
-        <div className="text-center pb-4">
-          <div className="w-48 border-t border-slate-900 pt-1">
+        <div className="flex gap-16">
+          <div className="text-center w-32 border-t border-slate-900 pt-1">
+            <p className="font-black">স্বাক্ষর</p>
+          </div>
+          <div className="text-center w-32 border-t border-slate-900 pt-1">
+            <p className="font-black">স্বাক্ষর</p>
+          </div>
+          <div className="text-center w-32 border-t border-slate-900 pt-1">
             <p className="font-black">স্বাক্ষর</p>
           </div>
         </div>
