@@ -166,7 +166,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
         </div>
 
         <div className="table-container border border-slate-300 overflow-auto relative rounded-lg">
-          <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0">
+          <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0 !table-auto">
             <colgroup>
               <col className="w-[50px]" />
               <col className="w-[110px]" />
