@@ -17,7 +17,11 @@ const generateSafeId = () => {
   return 'id-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 };
 
-const inputCls = "w-full h-[48px] px-4 border border-slate-300 rounded-xl font-bold bg-white text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 shadow-sm transition-all text-[14px]";
+const inputBaseCls = "w-full h-[48px] px-4 border rounded-xl font-bold bg-white text-slate-900 outline-none shadow-sm transition-all text-[14px] focus:ring-4";
+const getDynamicInputCls = (value: any) => {
+  const isFilled = value && value.toString().trim() !== '' && value !== '০' && value !== 0;
+  return `${inputBaseCls} ${isFilled ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-50' : 'border-red-500 focus:border-red-600 focus:ring-red-50'}`;
+};
 const labelCls = "block text-[13px] font-black text-slate-700 mb-2 flex items-center gap-1.5";
 const numBadge = "inline-flex items-center justify-center w-5 h-5 bg-white text-slate-600 rounded-md text-[10px] font-black mr-1 shadow-sm shrink-0";
 const colWrapperCls = "p-5 rounded-2xl border transition-all hover:shadow-lg relative min-w-0";
@@ -41,7 +45,7 @@ const IDBadge = ({ id, isLayoutEditable }: { id: string, isLayoutEditable?: bool
 const SegmentedInput = ({ 
   id, icon: Icon, label, color, noValue, dayValue, monthValue, yearValue, 
   noSetter, daySetter, monthSetter, yearSetter, dayRef, monthRef, yearRef, 
-  isFocused, focusSetter, isLayoutEditable, extra, error 
+  isFocused, focusSetter, isLayoutEditable, extra, error, warning 
 }: any) => {
   
   const handleSegmentChange = (val: string, type: 'day'|'month'|'year', setter: (v: string) => void, nextRef?: React.RefObject<HTMLInputElement>) => {
@@ -69,11 +73,13 @@ const SegmentedInput = ({
     else if (eng.length === 1 && eng !== '') setter(toBengaliDigits('0' + eng));
   };
 
+  const isFilled = noValue && dayValue && monthValue && yearValue;
+
   return (
-    <div id={id} className={colWrapperCls + ` ${error ? 'bg-red-50 border-red-200' : `bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`}`}>
+    <div id={id} className={colWrapperCls + ` ${error ? 'bg-red-50 border-red-200' : (warning ? 'bg-amber-50 border-amber-200' : `bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`)}`}>
       <IDBadge id={id} isLayoutEditable={isLayoutEditable} />
-      <label className={labelCls + " truncate"}><span className={numBadge}>{id.split('-')[1]}</span> <Icon size={14} className={`${error ? 'text-red-600' : `text-${color}-600`} shrink-0`} /> <span className="truncate">{label}</span></label>
-      <div className={`relative w-full h-[55px] flex items-center border rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : 'border-slate-200 hover:border-slate-300 focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-50'}`}>
+      <label className={labelCls + " truncate"}><span className={numBadge}>{id.split('-')[1]}</span> <Icon size={14} className={`${error ? 'text-red-600' : (warning ? 'text-amber-600' : `text-${color}-600`)} shrink-0`} /> <span className="truncate">{label}</span></label>
+      <div className={`relative w-full h-[55px] flex items-center border rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : (warning ? 'border-amber-400 ring-4 ring-amber-50' : (isFilled ? 'border-emerald-500 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50' : 'border-red-500 focus-within:border-red-400 focus-within:ring-4 focus-within:ring-red-50'))}`}>
         {extra}
         <div className="flex items-center w-full px-2 sm:px-4 h-full">
           <div className="relative flex-[2.5] h-full flex items-center min-w-0">
@@ -136,6 +142,11 @@ const SegmentedInput = ({
           <AlertCircle size={10} /> {error}
         </div>
       )}
+      {warning && (
+        <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center gap-1">
+          <AlertCircle size={10} /> {warning}
+        </div>
+      )}
     </div>
   );
 };
@@ -150,6 +161,7 @@ interface SettlementEntryModuleProps {
   onBackToMenu: () => void;
   isLayoutEditable?: boolean;
   isAdmin?: boolean;
+  existingEntries?: SettlementEntry[];
 }
 
 const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ 
@@ -161,7 +173,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   onCancel, 
   onBackToMenu, 
   isLayoutEditable, 
-  isAdmin = false 
+  isAdmin = false,
+  existingEntries = []
 }) => {
   const [formData, setFormData] = useState({
     paraType: 'এসএফআই' as ParaType, 
@@ -222,6 +235,27 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [isLetterFocused, setIsLetterFocused] = useState(false);
   const [isWpFocused, setIsWpFocused] = useState(false);
   const [isDiaryFocused, setIsDiaryFocused] = useState(false);
+
+  const [duplicates, setDuplicates] = useState({
+    letterNo: false,
+    diaryNo: false,
+    issueNo: false
+  });
+
+  useEffect(() => {
+    if (!existingEntries || existingEntries.length === 0) return;
+    
+    // Check for duplicates in letterNo, diaryNo, and issueNo
+    const letterMatch = existingEntries.some(e => e.letterNoDate && e.letterNoDate.includes(`পত্র নং- ${letterNoPart}`));
+    const diaryMatch = existingEntries.some(e => e.workpaperNoDate && e.workpaperNoDate.includes(`ডায়েরি নং- ${diaryNoPart}`));
+    const issueMatch = existingEntries.some(e => e.issueLetterNoDate && e.issueLetterNoDate.includes(`জারিপত্র নং- ${issueNoPart}`));
+    
+    setDuplicates({
+      letterNo: letterNoPart ? letterMatch : false,
+      diaryNo: diaryNoPart ? diaryMatch : false,
+      issueNo: issueNoPart ? issueMatch : false
+    });
+  }, [letterNoPart, diaryNoPart, issueNoPart, existingEntries]);
 
   const letterDayRef = useRef<HTMLInputElement>(null);
   const letterMonthRef = useRef<HTMLInputElement>(null);
@@ -609,10 +643,10 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             <div id="field-5" className={col1Style}><IDBadge id="field-5" isLayoutEditable={isLayoutEditable} /><SearchableSelect label="৫. শাখা (বিস্তারিত বিবরণ)" groups={branchOpts.length > 0 ? [{label: ' শাখা তালিকা', options: branchOpts}] : branchSuggestions} value={formData.branchName} onChange={v => setFormData(f=>({...f, branchName: v}))} required isLayoutEditable={isLayoutEditable} badgeId="select-branch" /></div>
             <div id="field-6" className={col2Style}><IDBadge id="field-6" isLayoutEditable={isLayoutEditable} /><SearchableSelect label="৬. নিরীক্ষা সাল" groups={AUDIT_YEARS_OPTIONS} value={formData.auditYear} onChange={v => setFormData(f=>({...f, auditYear: v}))} required isLayoutEditable={isLayoutEditable} badgeId="select-audit-year" /></div>
             
-            <SegmentedInput id="field-7" icon={FileText} label="পত্র নং ও তারিখ" color="amber" noValue={letterNoPart} dayValue={letterDay} monthValue={letterMonth} yearValue={letterYear} noSetter={setLetterNoPart} daySetter={setLetterDay} monthSetter={setLetterMonth} yearSetter={setLetterYear} dayRef={letterDayRef} monthRef={letterMonthRef} yearRef={letterYearRef} isFocused={isLetterFocused} focusSetter={setIsLetterFocused} isLayoutEditable={isLayoutEditable} />
+            <SegmentedInput id="field-7" icon={FileText} label="পত্র নং ও তারিখ" color="amber" noValue={letterNoPart} dayValue={letterDay} monthValue={letterMonth} yearValue={letterYear} noSetter={setLetterNoPart} daySetter={setLetterDay} monthSetter={setLetterMonth} yearSetter={setLetterYear} dayRef={letterDayRef} monthRef={letterMonthRef} yearRef={letterYearRef} isFocused={isLetterFocused} focusSetter={setIsLetterFocused} isLayoutEditable={isLayoutEditable} warning={duplicates.letterNo ? "এই পত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে" : null} />
             <SegmentedInput id="field-8" icon={FileEdit} label="কার্যপত্র নং ও তারিখ" color="purple" noValue={wpNoPart} dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} noSetter={setWpNoPart} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} isFocused={isWpFocused} focusSetter={setIsWpFocused} isLayoutEditable={isLayoutEditable} />
-            <div id="field-9" className={col1Style}><IDBadge id="field-9" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>৯</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> আলোচিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={inputCls} value={rawInputs['direct-meetingDiscussedParaCount'] || (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount))} onChange={e => handleNumericInput('direct', 'meetingDiscussedParaCount', e.target.value)} placeholder="০" /></div>
-            <SegmentedInput id="field-10" icon={BookOpen} label="ডায়েরি নং ও তারিখ" color="emerald" noValue={diaryNoPart} dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryYear} noSetter={setDiaryNoPart} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} isLayoutEditable={isLayoutEditable} error={diaryDateError} />
+            <div id="field-9" className={col1Style}><IDBadge id="field-9" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>৯</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> আলোচিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingDiscussedParaCount'] || formData.meetingDiscussedParaCount)} value={rawInputs['direct-meetingDiscussedParaCount'] || (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount))} onChange={e => handleNumericInput('direct', 'meetingDiscussedParaCount', e.target.value)} placeholder="০" /></div>
+            <SegmentedInput id="field-10" icon={BookOpen} label="ডায়েরি নং ও তারিখ" color="emerald" noValue={diaryNoPart} dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryYear} noSetter={setDiaryNoPart} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} isLayoutEditable={isLayoutEditable} error={diaryDateError} warning={duplicates.diaryNo ? "এই ডায়েরি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে" : null} />
 
             <SegmentedInput 
               id="field-11" icon={Send} label="জারিপত্র নং ও তারিখ" color="amber" 
@@ -621,6 +655,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               dayRef={issueDayRef} monthRef={issueMonthRef} yearRef={issueYearRef} 
               isFocused={isIssueFocused} focusSetter={setIsIssueFocused} isLayoutEditable={isLayoutEditable}
               error={issueDateError}
+              warning={duplicates.issueNo ? "এই জারিপত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে" : null}
               extra={formData.issueDateISO && (
                 <div className="absolute -right-2 -top-2 z-[310] flex items-center justify-center w-6 h-6 bg-emerald-500 text-white rounded-full shadow-lg border-2 border-white animate-in zoom-in duration-500">
                   <Check size={14} strokeWidth={4} />
@@ -628,11 +663,11 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               )}
             />
 
-            <div id="field-12" className={col4Style}><IDBadge id="field-12" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১২</span> <Archive size={14} className="text-purple-600 shrink-0" /> আর্কাইভ নং</label><input type="text" className={inputCls} value={formData.archiveNo} onChange={e => { const val = e.target.value; const raw = val.startsWith('kg-') ? val.slice(3).trim() : val; const formatted = raw ? `kg- ${toBengaliDigits(raw)}` : ''; setFormData({...formData, archiveNo: formatted}); }} placeholder="আর্কাইভ নং" /></div>
-            <div id="field-13" className={col1Style}><IDBadge id="field-13" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৩</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> প্রেরিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={inputCls} value={rawInputs['direct-meetingSentParaCount'] || (formData.meetingSentParaCount === '0' || formData.meetingSentParaCount === '' ? '' : toBengaliDigits(formData.meetingSentParaCount))} onChange={e => handleNumericInput('direct', 'meetingSentParaCount', e.target.value)} placeholder="০" /></div>
-            <div id="field-14" className={col2Style}><IDBadge id="field-14" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৪</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা</label><input type="text" className={inputCls} value={rawInputs['direct-meetingRecommendedParaCount'] || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount))} onChange={e => handleNumericInput('direct', 'meetingRecommendedParaCount', e.target.value)} placeholder="০" /></div>
-            <div id="field-15" className={col3Style}><IDBadge id="field-15" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৫</span> <Banknote size={14} className="text-amber-600 shrink-0" /> মোট জড়িত টাকা</label><input type="text" className={inputCls} value={rawInputs['direct-totalInvolvedAmount'] || (formData.totalInvolvedAmount === 0 ? '' : toBengaliDigits(formData.totalInvolvedAmount))} onChange={e => handleNumericInput('direct', 'totalInvolvedAmount', e.target.value)} placeholder="০" /></div>
-            <div id="field-16" className={col4Style}><IDBadge id="field-16" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৬</span> <AlertCircle size={14} className="text-purple-600 shrink-0" /> অমীমাংসিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={inputCls} value={rawInputs['direct-meetingUnsettledParas'] || (formData.meetingUnsettledParas === '0' || formData.meetingUnsettledParas === '' ? '' : toBengaliDigits(formData.meetingUnsettledParas))} onChange={e => handleNumericInput('direct', 'meetingUnsettledParas', e.target.value)} placeholder="০" /></div>
+            <div id="field-12" className={col4Style}><IDBadge id="field-12" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১২</span> <Archive size={14} className="text-purple-600 shrink-0" /> আর্কাইভ নং</label><input type="text" className={getDynamicInputCls(formData.archiveNo)} value={formData.archiveNo} onChange={e => { const val = e.target.value; const raw = val.startsWith('kg-') ? val.slice(3).trim() : val; const formatted = raw ? `kg- ${toBengaliDigits(raw)}` : ''; setFormData({...formData, archiveNo: formatted}); }} placeholder="আর্কাইভ নং" /></div>
+            <div id="field-13" className={col1Style}><IDBadge id="field-13" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৩</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> প্রেরিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingSentParaCount'] || formData.meetingSentParaCount)} value={rawInputs['direct-meetingSentParaCount'] || (formData.meetingSentParaCount === '0' || formData.meetingSentParaCount === '' ? '' : toBengaliDigits(formData.meetingSentParaCount))} onChange={e => handleNumericInput('direct', 'meetingSentParaCount', e.target.value)} placeholder="০" /></div>
+            <div id="field-14" className={col2Style}><IDBadge id="field-14" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৪</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingRecommendedParaCount'] || formData.meetingRecommendedParaCount)} value={rawInputs['direct-meetingRecommendedParaCount'] || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount))} onChange={e => handleNumericInput('direct', 'meetingRecommendedParaCount', e.target.value)} placeholder="০" /></div>
+            <div id="field-15" className={col3Style}><IDBadge id="field-15" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৫</span> <Banknote size={14} className="text-amber-600 shrink-0" /> মোট জড়িত টাকা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-totalInvolvedAmount'] || formData.totalInvolvedAmount)} value={rawInputs['direct-totalInvolvedAmount'] || (formData.totalInvolvedAmount === 0 ? '' : toBengaliDigits(formData.totalInvolvedAmount))} onChange={e => handleNumericInput('direct', 'totalInvolvedAmount', e.target.value)} placeholder="০" /></div>
+            <div id="field-16" className={col4Style}><IDBadge id="field-16" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৬</span> <AlertCircle size={14} className="text-purple-600 shrink-0" /> অমীমাংসিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingUnsettledParas'] || formData.meetingUnsettledParas)} value={rawInputs['direct-meetingUnsettledParas'] || (formData.meetingUnsettledParas === '0' || formData.meetingUnsettledParas === '' ? '' : toBengaliDigits(formData.meetingUnsettledParas))} onChange={e => handleNumericInput('direct', 'meetingUnsettledParas', e.target.value)} placeholder="০" /></div>
             
             <div id="field-17" className={col1Style}>
               <IDBadge id="field-17" isLayoutEditable={isLayoutEditable} />
@@ -651,16 +686,17 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             <div id="field-19" className={col3Style}>
               <IDBadge id="field-19" isLayoutEditable={isLayoutEditable} />
               <label className={labelCls}><span className={numBadge}>১৯</span> <Calendar size={14} className="text-amber-600 shrink-0" /> সভার তারিখ</label>
-              <input type="date" className={inputCls} value={formData.meetingDate} onChange={e => setFormData({...formData, meetingDate: e.target.value})} />
+              <input type="date" className={getDynamicInputCls(formData.meetingDate)} value={formData.meetingDate} onChange={e => setFormData({...formData, meetingDate: e.target.value})} />
             </div>
             <div id="field-20" className={col4Style}>
               <IDBadge id="field-20" isLayoutEditable={isLayoutEditable} />
               <label className={labelCls}><span className={numBadge}>২০</span> <MessageSquare size={14} className="text-purple-600" /> মন্তব্য</label>
-              <input type="text" className={inputCls} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
+              <input type="text" className={getDynamicInputCls(formData.remarks)} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
             </div>
           </div>
 
-          <div id="section-manual-raised-block" className="pt-8 relative"><IDBadge id="section-manual-raised-block" isLayoutEditable={isLayoutEditable} /><div className="bg-blue-50/40 border border-blue-100 rounded-[2.5rem] p-8 shadow-sm space-y-6"><div className="flex items-center gap-3"><Sparkles size={20} className="text-blue-600 animate-pulse" /><h4 className="text-[15px] font-black text-blue-900 tracking-tight">বর্তমান মাসে উত্থাপিত অডিট আপত্তি (ঐচ্ছিক)</h4></div><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="space-y-3"><label className="text-[13px] font-bold text-slate-700 ml-1">সংখ্যা (উত্থাপিত)</label><input type="text" className="w-full h-[58px] px-6 border-2 border-white rounded-2xl font-black text-slate-800 bg-white/60 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none shadow-sm transition-all text-center text-lg placeholder:text-slate-300 placeholder:font-black" value={rawInputs['entry-raised-count'] || (formData.manualRaisedCount === null || formData.manualRaisedCount === '0' || formData.manualRaisedCount === '' ? '' : toBengaliDigits(formData.manualRaisedCount || ''))} onChange={e => handleNumericInput('entry', 'raised-count', e.target.value)} placeholder="০" /></div><div className="space-y-3"><label className="text-[13px] font-bold text-slate-700 ml-1">টাকার পরিমাণ (উত্থাপিত)</label><input type="text" className="w-full h-[58px] px-6 border-2 border-white rounded-2xl font-black text-slate-800 bg-white/60 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none shadow-sm transition-all text-center text-lg placeholder:text-slate-300 placeholder:font-black" value={rawInputs['entry-raised-amount'] || (formData.manualRaisedAmount === null || formData.manualRaisedAmount === 0 ? '' : toBengaliDigits(formData.manualRaisedAmount || ''))} onChange={e => handleNumericInput('entry', 'raised-amount', e.target.value)} placeholder="০" /></div></div></div></div>
+          <div id="section-manual-raised-block" className="pt-8 relative"><IDBadge id="section-manual-raised-block" isLayoutEditable={isLayoutEditable} /><div className="bg-blue-50/40 border border-blue-100 rounded-[2.5rem] p-8 shadow-sm space-y-6"><div className="flex items-center gap-3"><Sparkles size={20} className="text-blue-600 animate-pulse" /><h4 className="text-[15px] font-black text-blue-900 tracking-tight">বর্তমান মাসে উত্থাপিত অডিট আপত্তি (ঐচ্ছিক)</h4></div><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="space-y-3"><label className="text-[13px] font-bold text-slate-700 ml-1">সংখ্যা (উত্থাপিত)</label><input type="text" className={`w-full h-[58px] px-6 border-2 rounded-2xl font-black text-slate-800 bg-white/60 focus:bg-white outline-none shadow-sm transition-all text-center text-lg placeholder:text-slate-300 placeholder:font-black ${formData.manualRaisedCount ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs['entry-raised-count'] || (formData.manualRaisedCount === null || formData.manualRaisedCount === '0' || formData.manualRaisedCount === '' ? '' : toBengaliDigits(formData.manualRaisedCount || ''))} onChange={e => handleNumericInput('entry', 'raised-count', e.target.value)} placeholder="০" /></div><div className="space-y-3"><label className="text-[13px] font-bold text-slate-700 ml-1">টাকার পরিমাণ (উত্থাপিত)</label><input type="text" className={`w-full h-[58px] px-6 border-2 rounded-2xl font-black text-slate-800 bg-white/60 focus:bg-white outline-none shadow-sm transition-all text-center text-lg placeholder:text-slate-300 placeholder:font-black ${formData.manualRaisedAmount ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs['entry-raised-amount'] || (formData.manualRaisedAmount === null || formData.manualRaisedAmount === 0 ? '' : toBengaliDigits(formData.manualRaisedAmount || ''))} onChange={e => handleNumericInput('entry', 'raised-amount', e.target.value)} placeholder="০" /></div></div>
+</div></div>
           
           <div id="section-para-entry-area" className="pt-10 border-t border-slate-100 relative">
             <IDBadge id="section-para-entry-area" isLayoutEditable={isLayoutEditable} />
@@ -669,7 +705,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               <div className="flex flex-col md:flex-row gap-4 items-end">
                 <div className="flex-1 w-full">
                   <label className="block text-sm font-black text-slate-500 mb-2 ml-1 uppercase">বিস্তারিত অনুচ্ছেদ যোগ করুন (মীমাংসিতদের জন্য)</label>
-                  <input type="text" className="w-full h-[55px] px-6 border border-slate-300 rounded-2xl font-black text-slate-900 bg-white focus:border-blue-500 outline-none shadow-sm text-lg transition-all" value={bulkParaInput} onChange={e => setBulkParaInput(toBengaliDigits(e.target.value))} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleBulkGenerate())} placeholder="অনুচ্ছেদ নং (যেমন: ৫, ১০, ১৫)" />
+                  <input type="text" className={`w-full h-[55px] px-6 border rounded-2xl font-black text-slate-900 bg-white outline-none shadow-sm text-lg transition-all ${bulkParaInput ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={bulkParaInput} onChange={e => setBulkParaInput(toBengaliDigits(e.target.value))} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleBulkGenerate())} placeholder="অনুচ্ছেদ নং (যেমন: ৫, ১০, ১৫)" />
                 </div>
                 <button id="btn-add-paras" type="button" onClick={handleBulkGenerate} className="w-full md:w-auto px-8 h-[55px] bg-slate-900 text-white font-black rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-3 shadow-lg relative">
                   <IDBadge id="btn-add-paras" isLayoutEditable={isLayoutEditable} />
@@ -709,7 +745,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-black text-slate-500 uppercase">অনু: নং</span>
-                      <input type="text" className="w-20 h-9 border border-slate-300 rounded-lg text-center font-black bg-white text-slate-950 outline-none focus:border-blue-500" value={rawInputs[`${p.id}-paraNo`] || toBengaliDigits(p.paraNo)} onChange={e => handleNumericInput(p.id, 'paraNo', e.target.value)} />
+                      <input type="text" className={`w-20 h-9 border rounded-lg text-center font-black bg-white text-slate-950 outline-none ${p.paraNo ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-paraNo`] || toBengaliDigits(p.paraNo)} onChange={e => handleNumericInput(p.id, 'paraNo', e.target.value)} />
                     </div>
                     <button type="button" onClick={() => setParagraphs(prev => prev.map(x => x.id === p.id ? {...x, status: x.status === 'পূর্ণাঙ্গ' ? 'আংশিক' : 'পূর্ণাঙ্গ'} : x))} className={`h-9 w-[85px] rounded-xl text-[10px] font-black text-white shadow-md transition-all active:scale-95 flex items-center justify-center ${p.status === 'পূর্ণাঙ্গ' ? 'bg-emerald-600' : 'bg-red-600'}`}>{p.status}</button>
                     <div className="flex bg-slate-100 rounded-lg p-1 h-9 border border-slate-200">
@@ -722,9 +758,9 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                   </div>
 
                   <div className="grid grid-cols-3 gap-4 relative z-10">
-                    <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 pl-1 uppercase tracking-wider text-center block">জড়িত টাকা</label><input type="text" className="w-full h-12 px-3 border border-slate-300 rounded-xl text-center font-black bg-white text-slate-950 outline-none focus:border-blue-500 shadow-inner placeholder:text-slate-300 placeholder:font-black" value={rawInputs[`${p.id}-involvedAmount`] || (p.involvedAmount === 0 ? '' : toBengaliDigits(p.involvedAmount))} onChange={e => handleNumericInput(p.id, 'involvedAmount', e.target.value)} placeholder="০" /></div>
-                    <div className="space-y-1"><label className="text-[10px] font-black text-emerald-600 pl-1 uppercase tracking-wider text-center block">আদায়কৃত</label><input type="text" className="w-full h-12 px-3 border border-slate-300 rounded-xl text-center font-black bg-white text-slate-950 outline-none focus:border-emerald-500 shadow-inner placeholder:text-slate-300 placeholder:font-black" value={rawInputs[`${p.id}-recoveredAmount`] || (p.recoveredAmount === 0 ? '' : toBengaliDigits(p.recoveredAmount))} onChange={e => handleNumericInput(p.id, 'recoveredAmount', e.target.value)} placeholder="০" /></div>
-                    <div className="space-y-1"><label className="text-[10px] font-black text-indigo-600 pl-1 uppercase tracking-wider text-center block">সমন্বয়কৃত</label><input type="text" className="w-full h-12 px-3 border border-slate-300 rounded-xl text-center font-black bg-white text-slate-950 outline-none focus:border-indigo-500 shadow-inner placeholder:text-slate-300 placeholder:font-black" value={rawInputs[`${p.id}-adjustedAmount`] || (p.adjustedAmount === 0 ? '' : toBengaliDigits(p.adjustedAmount))} onChange={e => handleNumericInput(p.id, 'adjustedAmount', e.target.value)} placeholder="০" /></div>
+                    <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 pl-1 uppercase tracking-wider text-center block">জড়িত টাকা</label><input type="text" className={`w-full h-12 px-3 border rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${p.involvedAmount > 0 ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-involvedAmount`] || (p.involvedAmount === 0 ? '' : toBengaliDigits(p.involvedAmount))} onChange={e => handleNumericInput(p.id, 'involvedAmount', e.target.value)} placeholder="০" /></div>
+                    <div className="space-y-1"><label className="text-[10px] font-black text-emerald-600 pl-1 uppercase tracking-wider text-center block">আদায়কৃত</label><input type="text" className={`w-full h-12 px-3 border rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${p.recoveredAmount > 0 ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-recoveredAmount`] || (p.recoveredAmount === 0 ? '' : toBengaliDigits(p.recoveredAmount))} onChange={e => handleNumericInput(p.id, 'recoveredAmount', e.target.value)} placeholder="০" /></div>
+                    <div className="space-y-1"><label className="text-[10px] font-black text-indigo-600 pl-1 uppercase tracking-wider text-center block">সমন্বয়কৃত</label><input type="text" className={`w-full h-12 px-3 border rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${p.adjustedAmount > 0 ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-adjustedAmount`] || (p.adjustedAmount === 0 ? '' : toBengaliDigits(p.adjustedAmount))} onChange={e => handleNumericInput(p.id, 'adjustedAmount', e.target.value)} placeholder="০" /></div>
                   </div>
                 </div>
               ))}
