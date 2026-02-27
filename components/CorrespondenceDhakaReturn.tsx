@@ -43,7 +43,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       'September': 'সেপ্টেম্বর', 'October': 'অক্টোবর', 'November': 'নভেম্বর', 'December': 'ডিসেম্বর'
     };
     const today = new Date();
-    for (let i = 0; i < 24; i++) {
+    for (let i = -1; i < 23; i++) {
       const refDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const monthNameEng = dateFnsFormat(refDate, 'MMMM');
       const yearEng = dateFnsFormat(refDate, 'yyyy');
@@ -83,12 +83,12 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     const selectedMonthStart = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 1);
     
     const reportingLimitDate = useMemo(() => {
-      if (selectedMonthStart.getTime() < currentMonthStart.getTime()) {
-        // Past month selected: show up to previous month's end
-        return new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 0, 23, 59, 59);
-      } else {
-        // Current or future month selected: show up to today
+      if (selectedMonthStart.getTime() > currentMonthStart.getTime()) {
+        // Next month selected: show up to today (Current Status)
         return today;
+      } else {
+        // Current or Past month selected: show up to the end of the month BEFORE the selected month
+        return new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 0, 23, 59, 59);
       }
     }, [selectedMonthStart, currentMonthStart, selectedMonthDate, today]);
     
@@ -150,10 +150,12 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
     const selectedMonthStart = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 1);
     
-    if (selectedMonthStart.getTime() < currentMonthStart.getTime()) {
-      return new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 0, 23, 59, 59);
-    } else {
+    if (selectedMonthStart.getTime() > currentMonthStart.getTime()) {
+      // Next month selected: show up to today (Current Status)
       return today;
+    } else {
+      // Current or Past month selected: show up to the end of the month BEFORE the selected month
+      return new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 0, 23, 59, 59);
     }
   }, [selectedMonthDate]);
 
