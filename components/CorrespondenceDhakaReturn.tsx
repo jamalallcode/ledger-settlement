@@ -1,12 +1,12 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Printer, ChevronLeft, Search, X, ChevronDown, Check, LayoutGrid, FileText, ChevronRight } from 'lucide-react';
-import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 import { format as dateFnsFormat } from 'date-fns';
 
 interface CorrespondenceDhakaReturnProps {
-  filteredCorrespondence: any[];
+  correspondenceEntries: any[];
   activeCycle: any;
   setSelectedReportType: (type: string | null) => void;
   HistoricalFilter: React.FC;
@@ -14,7 +14,7 @@ interface CorrespondenceDhakaReturnProps {
 }
 
 const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
-  filteredCorrespondence,
+  correspondenceEntries,
   activeCycle,
   setSelectedReportType,
   HistoricalFilter,
@@ -65,16 +65,42 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   }, [selectedMonthDate]);
 
   const filteredData = useMemo(() => {
-    let data = filteredCorrespondence;
+    let data = correspondenceEntries || [];
 
-    // Filter by selected month first
-    const targetMonth = selectedMonthDate.getMonth();
-    const targetYear = selectedMonthDate.getFullYear();
+    // 1. Basic exclusions for Dhaka Return
+    data = data.filter(e => {
+      const isExcludedType = e.letterType === 'মিলিকরণ' || (e.letterType || '').includes('কার্যপত্র');
+      return !isExcludedType;
+    });
+
+    // 2. Filter by selected month (Pending Logic)
+    // We want letters that were received on or before the end of the selected month
+    // AND were NOT issued on or before the end of the selected month
+    const reportingDateObj = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1, 0, 23, 59, 59);
     
     data = data.filter(e => {
       if (!e.diaryDate) return false;
-      const d = new Date(e.diaryDate);
-      return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
+      const dDateStr = toEnglishDigits(e.diaryDate);
+      const dDate = new Date(dDateStr);
+      if (isNaN(dDate.getTime())) return false;
+      
+      // Must be received on or before reporting date
+      if (dDate.getTime() > reportingDateObj.getTime()) return false;
+      
+      // Must NOT be issued on or before reporting date
+      const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
+      const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
+      const hasValidNo = rawNo !== '' && rawNo !== '০' && rawNo !== '0' && !rawNo.includes('নং-');
+      const hasValidDate = rawDate !== '' && rawDate !== '0000-00-00';
+      
+      if (hasValidNo && hasValidDate) {
+        const issueDate = new Date(toEnglishDigits(rawDate));
+        if (!isNaN(issueDate.getTime()) && issueDate.getTime() <= reportingDateObj.getTime()) {
+          return false; // Already issued on or before this month's end
+        }
+      }
+      
+      return true;
     });
     
     if (filterParaType !== 'সকল') {
@@ -99,7 +125,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       (entry.diaryNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (entry.letterNo || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [filteredCorrespondence, searchTerm, filterParaType, filterLetterType, selectedMonthDate]);
+  }, [correspondenceEntries, searchTerm, filterParaType, filterLetterType, selectedMonthDate]);
 
   const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-emerald-600 ring-4 ring-emerald-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-300'}`;
