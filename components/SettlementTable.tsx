@@ -500,7 +500,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       <div className="table-container border border-slate-300 rounded-sm overflow-auto relative">
         <IDBadge id="table-main-ledger" />
         <table id="table-main-ledger" ref={tableRef} className="w-full border-separate border-spacing-0">
-          <colgroup><col className="w-[30px]" /><col className="w-[170px]" /><col className="w-[45px]" /><col className="w-[65px]" /><col className="w-[40px]" /><col className="w-[65px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /></colgroup>
+          <colgroup><col className="w-[30px]" /><col className="w-[130px]" /><col className="w-[45px]" /><col className="w-[65px]" /><col className="w-[40px]" /><col className="w-[65px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /></colgroup>
       <thead>
             <tr className="h-[42px]">
               <th rowSpan={2} className={thBase}>ক্র: নং</th>
