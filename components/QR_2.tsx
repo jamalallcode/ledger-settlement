@@ -71,18 +71,12 @@ const QR_2: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
       </div>
 
       {/* Info Section */}
-      <div className="grid grid-cols-2 gap-4 mb-4 text-[11px] font-bold text-slate-800">
-        <div className="space-y-1">
-          <p>অডিট অধিদপ্তরের নামঃ বাণিজ্যিক অডিট অধিদপ্তর, আঞ্চলিক কার্যালয়, খুলনা।</p>
-          <p className="pt-2">বিষয়ঃ নিরীক্ষা পরিদর্শন প্রতিবেদনে (AIR) অন্তর্ভুক্ত আপত্তি নিষ্পত্তির অগ্রগতি সংক্রান্ত মাসিক প্রতিবেদন (মন্ত্রণালয়ভিত্তিক)</p>
-          <p>ক. ব্রডশিট জবাবের প্রেক্ষিতে নিষ্পত্তির সুপারিশ সংক্রান্ত ত্রৈমাসিক প্রতিবেদন</p>
-        </div>
-        <div className="text-right space-y-1">
-          <p>শাখার নামঃ নন এসএফআই</p>
-          <div className="pt-8">
-            <p>মাসের নামঃ {getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} খ্রি: তারিখ পর্যন্ত</p>
-          </div>
-        </div>
+      <div className="mb-4 text-[11px] font-bold text-slate-800 space-y-1">
+        <p>অডিট অধিদপ্তরের নামঃ বাণিজ্যিক অডিট অধিদপ্তর, আঞ্চলিক কার্যালয়, খুলনা।</p>
+        <p className="underline underline-offset-4 decoration-1">বিষয়ঃ নিরীক্ষা পরিদর্শন প্রতিবেদনে (AIR) অন্তর্ভুক্ত আপত্তি নিষ্পত্তির অগ্রগতি সংক্রান্ত মাসিক প্রতিবেদন (মন্ত্রণালয়ভিত্তিক)</p>
+        <p>ক. ব্রডশিট জবাবের প্রেক্ষিতে নিষ্পত্তির সুপারিশ সংক্রান্ত ত্রৈমাসিক প্রতিবেদন</p>
+        <p>শাখার নামঃ নন এসএফআই</p>
+        <p>মাসের নামঃ {getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} খ্রি: তারিখ পর্যন্ত</p>
       </div>
 
       {/* Table Section */}
