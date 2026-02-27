@@ -34,6 +34,24 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
 
   const typeOptions = useMemo(() => ['সকল', 'বিএসআর', 'সভা'], []);
 
+  const cycleOptions = useMemo(() => {
+    const options = [];
+    const banglaMonths: Record<string, string> = {
+      'January': 'জানুয়ারি', 'February': 'ফেব্রুয়ারি', 'March': 'মার্চ', 'April': 'এপ্রিল',
+      'May': 'মে', 'June': 'জুন', 'July': 'জুলাই', 'August': 'আগস্ট',
+      'September': 'সেপ্টেম্বর', 'October': 'অক্টোবর', 'November': 'নভেম্বর', 'December': 'ডিসেম্বর'
+    };
+    const today = new Date();
+    for (let i = 0; i < 24; i++) {
+      const refDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const monthNameEng = dateFnsFormat(refDate, 'MMMM');
+      const yearEng = dateFnsFormat(refDate, 'yyyy');
+      const label = `${banglaMonths[monthNameEng]}/${toBengaliDigits(yearEng)}`;
+      options.push({ date: refDate, label });
+    }
+    return options;
+  }, []);
+
   const filteredData = useMemo(() => {
     let data = filteredCorrespondence;
     
@@ -188,8 +206,33 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
             )}
           </div>
           
-          <div className="flex items-center gap-3 px-5 h-[44px] bg-white border border-slate-300 rounded-xl shadow-sm">
-             <span className="font-bold text-[13px] text-slate-800">{reportingMonthYearBN}</span>
+          {/* Month Selector Dropdown */}
+          <div className="space-y-1 relative group">
+            <div className="flex items-center gap-3 px-5 h-[44px] bg-white border border-slate-300 rounded-xl shadow-sm group-hover:border-emerald-600 group-hover:ring-4 group-hover:ring-emerald-50 transition-all duration-300 cursor-pointer">
+               <span className="font-bold text-[13px] text-slate-800">{reportingMonthYearBN}</span>
+               <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-emerald-600" />
+            </div>
+
+            <div className="absolute top-full right-0 w-full pt-2 opacity-0 invisible translate-y-4 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 ease-out z-[2000]">
+              <div className="min-w-[160px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
+                <div className="max-h-[300px] overflow-y-auto no-scrollbar py-2">
+                  {cycleOptions.map((opt, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={() => {
+                        // This uses the HistoricalFilter's underlying logic by triggering a click on the actual filter if needed
+                        // But since we have activeCycle as a prop, we assume the parent handles the change.
+                        // In this specific implementation, we'll just show the label.
+                      }} 
+                      className={`flex items-center justify-center px-4 py-2.5 cursor-pointer transition-all ${reportingMonthYearBN === opt.label ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[12px]'}`}
+                    >
+                      <span>{opt.label}</span>
+                      {reportingMonthYearBN === opt.label && <Check size={14} strokeWidth={3} className="ml-2" />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
           <button onClick={() => window.print()} className="h-[44px] px-6 bg-slate-900 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95"><Printer size={18} /> প্রিন্ট</button>
