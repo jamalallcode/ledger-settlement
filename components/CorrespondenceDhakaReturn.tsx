@@ -74,9 +74,10 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     });
 
     // 2. Filter by selected month (Pending Logic)
-    // We want letters that were received on or before the end of the selected month
-    // AND were NOT issued on or before the end of the selected month
-    const reportingDateObj = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1, 0, 23, 59, 59);
+    // User Requirement: Show letters received UP TO THE PREVIOUS MONTH
+    // AND still pending at the end of the selected month
+    const startOfSelectedMonth = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 1);
+    const endOfSelectedMonth = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1, 0, 23, 59, 59);
     
     data = data.filter(e => {
       if (!e.diaryDate) return false;
@@ -84,10 +85,10 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       const dDate = new Date(dDateStr);
       if (isNaN(dDate.getTime())) return false;
       
-      // Must be received on or before reporting date
-      if (dDate.getTime() > reportingDateObj.getTime()) return false;
+      // Must be received BEFORE the selected month (i.e., up to previous month)
+      if (dDate.getTime() >= startOfSelectedMonth.getTime()) return false;
       
-      // Must NOT be issued on or before reporting date
+      // Must NOT be issued on or before the end of the selected month
       const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
       const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
       const hasValidNo = rawNo !== '' && rawNo !== '০' && rawNo !== '0' && !rawNo.includes('নং-');
@@ -95,7 +96,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       
       if (hasValidNo && hasValidDate) {
         const issueDate = new Date(toEnglishDigits(rawDate));
-        if (!isNaN(issueDate.getTime()) && issueDate.getTime() <= reportingDateObj.getTime()) {
+        if (!isNaN(issueDate.getTime()) && issueDate.getTime() <= endOfSelectedMonth.getTime()) {
           return false; // Already issued on or before this month's end
         }
       }
