@@ -145,17 +145,6 @@ const QR_2: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
           <p>নং- ১৭০৬/প্রশা/বাঅঅ/সমন্বয়/র:জ:প্র:নি:শু:/২০১১-১২/</p>
           <p>তারিখঃ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /২০২৩খ্রিঃ</p>
         </div>
-        <div className="flex gap-16">
-          <div className="text-center w-32 border-t border-slate-900 pt-1">
-            <p className="font-black">স্বাক্ষর</p>
-          </div>
-          <div className="text-center w-32 border-t border-slate-900 pt-1">
-            <p className="font-black">স্বাক্ষর</p>
-          </div>
-          <div className="text-center w-32 border-t border-slate-900 pt-1">
-            <p className="font-black">স্বাক্ষর</p>
-          </div>
-        </div>
       </div>
     </div>
   );

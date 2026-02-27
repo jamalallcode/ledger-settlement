@@ -79,19 +79,19 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   const cycleOptions = useMemo(() => {
     const options = [];
     const banglaMonths: Record<string, string> = {
-      'January': 'জানুয়ারি', 'February': 'ফেব্রুয়ারি', 'March': 'মার্চ', 'April': 'এপ্রিল',
+      'January': 'জানুয়ারি', 'February': 'ফেব্রুয়ারি', 'March': 'মার্চ', 'April': 'এপ্রিল',
       'May': 'মে', 'June': 'জুন', 'July': 'জুলাই', 'August': 'আগস্ট',
       'September': 'সেপ্টেম্বর', 'October': 'অক্টোবর', 'November': 'নভেম্বর', 'December': 'ডিসেম্বর'
     };
 
     const today = new Date();
-    for (let i = 0; i < 24; i++) {
+    for (let i = -1; i < 23; i++) {
       const refDate = addMonths(today, -i);
       const firstOfTargetMonth = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
       const cycle = getCycleForDate(firstOfTargetMonth);
       const monthNameEng = dateFnsFormat(firstOfTargetMonth, 'MMMM');
       const yearEng = dateFnsFormat(firstOfTargetMonth, 'yyyy');
-      const label = `${banglaMonths[monthNameEng]} ${toBengaliDigits(yearEng)} সাইকেল`;
+      const label = `${banglaMonths[monthNameEng]}/${toBengaliDigits(yearEng)}`;
       options.push({ date: firstOfTargetMonth, label, cycleLabel: cycle.label });
     }
     return options;
@@ -224,13 +224,28 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
   const filteredCorrespondence = useMemo(() => {
     if (selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
-    const reportingDateObj = endOfDay(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0));
+    
+    const today = new Date();
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const selectedMonthStart = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth(), 1);
+    
+    let reportingLimitDate: Date;
+    if (selectedMonthStart.getTime() > currentMonthStart.getTime()) {
+      // Next month selected: show up to today (Current Status)
+      reportingLimitDate = today;
+    } else {
+      // Current or Past month selected: show up to the end of the month BEFORE the selected month
+      reportingLimitDate = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth(), 0, 23, 59, 59);
+    }
+
     return (correspondenceEntries || []).filter(e => {
       if (!e.diaryDate) return false;
       const diaryDateStr = toEnglishDigits(e.diaryDate);
       const diaryDateObj = startOfDay(new Date(diaryDateStr));
       if (isNaN(diaryDateObj.getTime())) return false;
-      const isBeforeOrOnReportingDate = diaryDateObj.getTime() <= reportingDateObj.getTime();
+      
+      // Must be received ON OR BEFORE reportingLimitDate
+      const isBeforeOrOnReportingDate = diaryDateObj.getTime() <= reportingLimitDate.getTime();
       
       // Exclude specific letter types as requested (Milikaran, Karjapatra)
       const isExcludedType = e.letterType === 'মিলিকরণ' || e.letterType.includes('কার্যপত্র');
@@ -240,7 +255,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
       const hasValidNo = rawNo !== '' && rawNo !== '০' && rawNo !== '0' && !rawNo.includes('নং-');
       const hasValidDate = rawDate !== '' && rawDate !== '0000-00-00';
-      const isIssued = hasValidNo && hasValidDate;
+      
+      let isIssued = false;
+      if (hasValidNo && hasValidDate) {
+        isIssued = true;
+      }
+      
       return isBeforeOrOnReportingDate && !isIssued;
     }).sort((a, b) => new Date(toEnglishDigits(b.diaryDate)).getTime() - new Date(toEnglishDigits(a.diaryDate)).getTime());
   }, [correspondenceEntries, selectedReportType, activeCycle]);
@@ -320,15 +340,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
            </span>
            <ChevronDown size={18} className={`text-slate-400 ml-2 transition-transform duration-300 ${isCycleDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
         </div>
-        
-        {selectedReportType && (
-          <button 
-            onClick={() => window.print()}
-            className="flex items-center gap-2 px-6 h-[48px] bg-slate-900 text-white rounded-xl font-black text-[13px] hover:bg-black transition-all shadow-lg active:scale-95"
-          >
-            <Printer size={18} /> প্রিন্ট করুন
-          </button>
-        )}
       </div>
       {isCycleDropdownOpen && (
         <div className="absolute top-[55px] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
@@ -360,23 +371,23 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }
 
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
-    return <DDSirCorrespondenceReturn entries={filteredCorrespondence} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} />;
+    return <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} />;
   }
 
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
-    return <CorrespondenceDhakaReturn filteredCorrespondence={filteredCorrespondence} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} />;
+    return <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} />;
   }
 
   if (isSetupMode) {
     return <OpeningBalanceSetup ministryGroups={ministryGroups} tempPrevStats={tempPrevStats} setTempPrevStats={setTempPrevStats} isEditingSetup={isEditingSetup} setIsEditingSetup={setIsEditingSetup} handleSaveSetup={handleSaveSetup} handleSetupPaste={handleSetupPaste} setIsSetupMode={setIsSetupMode} setSelectedReportType={setSelectedReportType} IDBadge={IDBadge} setupType={selectedReportType || ''} />;
   }
 
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') return <QR_1 activeCycle={activeCycle} IDBadge={IDBadge} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') return <QR_2 activeCycle={activeCycle} IDBadge={IDBadge} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') return <QR_3 activeCycle={activeCycle} IDBadge={IDBadge} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') return <QR_4 activeCycle={activeCycle} IDBadge={IDBadge} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') return <QR_5 activeCycle={activeCycle} IDBadge={IDBadge} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') return <QR_6 activeCycle={activeCycle} IDBadge={IDBadge} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') return <QR_1 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') return <QR_2 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') return <QR_3 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') return <QR_4 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') return <QR_5 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') return <QR_6 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} />;
 
   return <ReturnSummaryTable reportData={reportData} grandTotals={grandTotals} activeCycle={activeCycle} selectedReportType={selectedReportType} setSelectedReportType={setSelectedReportType} isAdmin={isAdmin || false} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} />;
 };

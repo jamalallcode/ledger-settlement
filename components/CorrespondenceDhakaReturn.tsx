@@ -1,12 +1,12 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Printer, ChevronLeft, Search, X, ChevronDown, Check, LayoutGrid, FileText, ChevronRight } from 'lucide-react';
-import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 import { format as dateFnsFormat } from 'date-fns';
 
 interface CorrespondenceDhakaReturnProps {
-  filteredCorrespondence: any[];
+  correspondenceEntries: any[];
   activeCycle: any;
   setSelectedReportType: (type: string | null) => void;
   HistoricalFilter: React.FC;
@@ -14,7 +14,7 @@ interface CorrespondenceDhakaReturnProps {
 }
 
 const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
-  filteredCorrespondence,
+  correspondenceEntries,
   activeCycle,
   setSelectedReportType,
   HistoricalFilter,
@@ -43,7 +43,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       'September': 'সেপ্টেম্বর', 'October': 'অক্টোবর', 'November': 'নভেম্বর', 'December': 'ডিসেম্বর'
     };
     const today = new Date();
-    for (let i = 0; i < 24; i++) {
+    for (let i = -1; i < 23; i++) {
       const refDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const monthNameEng = dateFnsFormat(refDate, 'MMMM');
       const yearEng = dateFnsFormat(refDate, 'yyyy');
@@ -65,16 +65,47 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   }, [selectedMonthDate]);
 
   const filteredData = useMemo(() => {
-    let data = filteredCorrespondence;
+    let data = correspondenceEntries || [];
 
-    // Filter by selected month first
-    const targetMonth = selectedMonthDate.getMonth();
-    const targetYear = selectedMonthDate.getFullYear();
+    // 1. Basic exclusions for Dhaka Return
+    data = data.filter(e => {
+      const isExcludedType = e.letterType === 'মিলিকরণ' || (e.letterType || '').includes('কার্যপত্র');
+      return !isExcludedType;
+    });
+
+    // 2. Filter by selected month (Pending Logic)
+    // User Requirement: 
+    // - If past month selected: Show letters received UP TO THE PREVIOUS MONTH end.
+    // - If current month selected: Show letters received UP TO TODAY.
+    // - Never exceed current date.
+    const today = new Date();
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const selectedMonthStart = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 1);
+    
+    const reportingLimitDate = selectedMonthStart.getTime() > currentMonthStart.getTime()
+      ? today
+      : new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 0, 23, 59, 59);
     
     data = data.filter(e => {
       if (!e.diaryDate) return false;
-      const d = new Date(e.diaryDate);
-      return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
+      const dDateStr = toEnglishDigits(e.diaryDate);
+      const dDate = new Date(dDateStr);
+      if (isNaN(dDate.getTime())) return false;
+      
+      // Must be received ON OR BEFORE reportingLimitDate
+      if (dDate.getTime() > reportingLimitDate.getTime()) return false;
+      
+      // Must NOT be issued (If it has a valid issue number and date, it's no longer pending)
+      const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
+      const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
+      const hasValidNo = rawNo !== '' && rawNo !== '০' && rawNo !== '0' && !rawNo.includes('নং-');
+      const hasValidDate = rawDate !== '' && rawDate !== '0000-00-00';
+      
+      if (hasValidNo && hasValidDate) {
+        return false; 
+      }
+      
+      return true;
     });
     
     if (filterParaType !== 'সকল') {
@@ -99,15 +130,29 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       (entry.diaryNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (entry.letterNo || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [filteredCorrespondence, searchTerm, filterParaType, filterLetterType, selectedMonthDate]);
+  }, [correspondenceEntries, searchTerm, filterParaType, filterLetterType, selectedMonthDate]);
 
   const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-emerald-600 ring-4 ring-emerald-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-300'}`;
   const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
   
+  const reportingLimitDate = useMemo(() => {
+    const today = new Date();
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const selectedMonthStart = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 1);
+    
+    if (selectedMonthStart.getTime() > currentMonthStart.getTime()) {
+      // Next month selected: show up to today (Current Status)
+      return today;
+    } else {
+      // Current or Past month selected: show up to the end of the month BEFORE the selected month
+      return new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 0, 23, 59, 59);
+    }
+  }, [selectedMonthDate]);
+
   const reportingDateBN = useMemo(() => 
-    toBengaliDigits(dateFnsFormat(new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1, 0), 'dd/MM/yyyy')),
-    [selectedMonthDate]
+    toBengaliDigits(dateFnsFormat(reportingLimitDate, 'dd/MM/yyyy')),
+    [reportingLimitDate]
   );
 
   const reportingMonthYearBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start), 'MMMM/yyyy'))
@@ -269,7 +314,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           <h2 className="text-xl font-black text-slate-800 leading-tight">{OFFICE_HEADER.sub}</h2>
           <h3 className="text-lg font-black text-slate-700 leading-tight">{OFFICE_HEADER.address}</h3>
           <div className="mt-4 inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
-            <span className="text-blue-400">শাখা ভিত্তিক {toBengaliDigits(dateFnsFormat(new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1, 0), 'dd/MM/yyyy'))} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।</span>
+            <span className="text-blue-400">শাখা ভিত্তিক {reportingDateBN} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।</span>
           </div>
         </div>
 
@@ -347,17 +392,6 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
         <div className="flex items-center gap-6">
           <p>নং- .....................................................................</p>
           <p>তারিখঃ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /২০২৩খ্রিঃ</p>
-        </div>
-        <div className="flex gap-16">
-          <div className="text-center w-32 border-t border-slate-900 pt-1">
-            <p className="font-black">স্বাক্ষর</p>
-          </div>
-          <div className="text-center w-32 border-t border-slate-900 pt-1">
-            <p className="font-black">স্বাক্ষর</p>
-          </div>
-          <div className="text-center w-32 border-t border-slate-900 pt-1">
-            <p className="font-black">স্বাক্ষর</p>
-          </div>
         </div>
       </div>
     </div>
