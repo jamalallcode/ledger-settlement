@@ -258,10 +258,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       
       let isIssued = false;
       if (hasValidNo && hasValidDate) {
-        const issueDate = new Date(toEnglishDigits(rawDate));
-        if (!isNaN(issueDate.getTime()) && issueDate.getTime() <= reportingLimitDate.getTime()) {
-          isIssued = true;
-        }
+        isIssued = true;
       }
       
       return isBeforeOrOnReportingDate && !isIssued;
