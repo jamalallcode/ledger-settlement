@@ -249,7 +249,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   };
 
   // Headers reverted to font-black
-  const thBase = "border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-200 relative";
+  const thBase = "sticky top-0 border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-200 z-[110] relative";
+  const thBase2 = "sticky top-[42px] border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-200 z-[110] relative";
   // Body cells reverted to font-bold
   const tdBase = "border border-slate-300 px-0.5 py-1.5 text-center align-middle text-[10px] leading-tight font-bold text-slate-900 relative";
   const tdMoney = "border border-slate-300 px-0.5 py-1 text-center align-middle text-[10px] font-black text-slate-950 relative";
@@ -513,16 +514,16 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
               <th colSpan={2} className={thBase}>মোট মীমাংসিত</th>
             </tr>
             <tr className="h-[38px]">
-              <th className={thBase}>সংখ্যা</th>
-              <th className={thBase}>টাকা</th>
-              <th className={thBase}>আদায়</th>
-              <th className={thBase}>সমন্বয়</th>
-              <th className={thBase}>আদায়</th>
-              <th className={thBase}>সমন্বয়</th>
-              <th className={thBase}>আদায়</th>
-              <th className={thBase}>সমন্বয়</th>
-              <th className={thBase}>আদায়</th>
-              <th className={thBase}>সমন্বয়</th>
+              <th className={thBase2}>সংখ্যা</th>
+              <th className={thBase2}>টাকা</th>
+              <th className={thBase2}>আদায়</th>
+              <th className={thBase2}>সমন্বয়</th>
+              <th className={thBase2}>আদায়</th>
+              <th className={thBase2}>সমন্বয়</th>
+              <th className={thBase2}>আদায়</th>
+              <th className={thBase2}>সমন্বয়</th>
+              <th className={thBase2}>আদায়</th>
+              <th className={thBase2}>সমন্বয়</th>
             </tr>
           </thead>
           <tbody>
