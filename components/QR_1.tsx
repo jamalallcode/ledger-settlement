@@ -112,13 +112,19 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
       </div>
 
       {/* Footer Section */}
-      <div className="mt-8 flex justify-between items-end text-[11px] font-bold text-slate-800">
-        <div className="space-y-1">
+      <div className="mt-20 flex justify-between items-start text-[11px] font-bold text-slate-800">
+        <div className="flex items-center gap-6">
           <p>নং- ১৭০৭/প্রশা/বাঅঅ/সমন্বয়/ডি:স:সু:মী:জারিপত্র/২০১১-১২/</p>
           <p>তারিখঃ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /২০২৩খ্রিঃ</p>
         </div>
-        <div className="text-center pb-4">
-          <div className="w-48 border-t border-slate-900 pt-1">
+        <div className="flex gap-16">
+          <div className="text-center w-32 border-t border-slate-900 pt-1">
+            <p className="font-black">স্বাক্ষর</p>
+          </div>
+          <div className="text-center w-32 border-t border-slate-900 pt-1">
+            <p className="font-black">স্বাক্ষর</p>
+          </div>
+          <div className="text-center w-32 border-t border-slate-900 pt-1">
             <p className="font-black">স্বাক্ষর</p>
           </div>
         </div>
