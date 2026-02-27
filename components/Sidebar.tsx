@@ -343,18 +343,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                           রিটার্ন - {toBengaliDigits(num.toString())}
                         </button>
                       ))}
-                      {/* Original Quarterly Item (Optional, keeping it for now but user said "আরো ৬ রকমের আইটেম বের হবে") */}
-                      {/* Actually, the user's screenshot shows "২. ত্রৈমাসিক" as a button. 
-                          I'll keep the original one as "অনুচ্ছেদ নিষ্পত্তি" if needed, but the user said "৬ রকমের আইটেম বের হবে".
-                          I'll add the original one as an option too if it was important, or just replace it.
-                          The original was: 'ত্রৈমাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।'
-                      */}
-                      <button 
-                        onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
-                        className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'ত্রৈমাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
-                      >
-                        অনুচ্ছেদ নিষ্পত্তি
-                      </button>
                     </div>
                   )}
 
