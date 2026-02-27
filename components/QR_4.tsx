@@ -196,7 +196,7 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
       {renderTable(table2Data, 'table-2')}
 
       {/* Footer Section */}
-      <div className="mt-20 flex justify-between items-start text-[11px] font-bold text-slate-800">
+      <div className="mt-10 flex justify-between items-start text-[11px] font-bold text-slate-800">
         <div className="flex items-center gap-6">
           <p>নং- ১৭০৬/প্রশা/বাঅঅ/সমন্বয়/র:জ:প্র:নি:শু:/২০১১-১২/</p>
           <p>তারিখঃ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /২০২৩খ্রিঃ</p>
