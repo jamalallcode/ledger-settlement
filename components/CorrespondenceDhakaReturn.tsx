@@ -84,6 +84,12 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
   const reportingDateBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0), 'dd/MM/yyyy'));
 
+  const reportingMonthYearBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start), 'MMMM/yyyy'))
+    .replace('January', 'জানুয়ারি').replace('February', 'ফেব্রুয়ারি').replace('March', 'মার্চ')
+    .replace('April', 'এপ্রিল').replace('May', 'মে').replace('June', 'জুন')
+    .replace('July', 'জুলাই').replace('August', 'আগস্ট').replace('September', 'সেপ্টেম্বর')
+    .replace('October', 'অক্টোবর').replace('November', 'নভেম্বর').replace('December', 'ডিসেম্বর');
+
   return (
     <div id="correspondence-dhaka-container" className="space-y-4 py-2 w-full animate-report-page relative">
       <IDBadge id="correspondence-dhaka-container" />
@@ -176,7 +182,11 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               </button>
             )}
           </div>
-          <HistoricalFilter />
+          
+          <div className="flex items-center gap-3 px-5 h-[44px] bg-white border border-slate-300 rounded-xl shadow-sm">
+             <span className="font-bold text-[13px] text-slate-800">{reportingMonthYearBN}</span>
+          </div>
+
           <button onClick={() => window.print()} className="h-[44px] px-6 bg-slate-900 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95"><Printer size={18} /> প্রিন্ট</button>
         </div>
       </div>
