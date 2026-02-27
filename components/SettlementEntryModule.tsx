@@ -250,7 +250,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       const parts = combinedStr.split(',');
       if (parts.length === 0) return false;
       const noPart = parts[0].replace(prefix, '').trim();
-      return noPart === searchNo.trim();
+      return toEnglishDigits(noPart).trim() === toEnglishDigits(searchNo).trim();
     };
 
     setDuplicates({
@@ -621,7 +621,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
           <div className="p-3 bg-slate-900 rounded-2xl text-white shrink-0">
             <Layout size={24} />
           </div>
-          <div><h3 className="text-2xl font-black text-slate-900 leading-tight">মীমাংসা রেজিস্টার ডাটা এন্ট্রি</h3><p className="text-slate-500 font-bold text-sm">অনুগ্রহ করে নিচের ১৮টি ফিল্ড সঠিকভাবে পূরণ করুন</p></div>
+          <div><h3 className="text-2xl font-black text-slate-900 leading-tight">মীমাংসা এন্ট্রি</h3><p className="text-slate-500 font-bold text-sm">অনুগ্রহ করে নিচের ১৮টি ফিল্ড সঠিকভাবে পূরণ করুন</p></div>
         </div>
         {onCancel && (
           <button 
@@ -635,6 +635,24 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
           </button>
         )}
       </div>
+
+      {/* Duplicate Warning Message */}
+      {(duplicates.letterNo || duplicates.diaryNo || duplicates.issueNo) && !isSuccess && (
+        <div className="mb-10 p-6 bg-amber-50 border-2 border-dashed border-amber-200 rounded-[2.5rem] flex items-center gap-6 animate-in slide-in-from-top-4 duration-500 shadow-lg shadow-amber-100">
+           <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-amber-200 animate-pulse">
+              <AlertCircle size={32} />
+           </div>
+           <div className="space-y-1">
+              <h4 className="text-xl font-black text-amber-900 tracking-tight">সতর্কবার্তা: তথ্যটি ইতোমধ্যেই বিদ্যমান</h4>
+              <p className="text-sm font-bold text-amber-700/80">
+                {duplicates.letterNo && <span>পত্র নং: <span className="underline underline-offset-4 font-black">{toBengaliDigits(letterNoPart)}</span> </span>}
+                {duplicates.diaryNo && <span>ডায়েরি নং: <span className="underline underline-offset-4 font-black">{toBengaliDigits(diaryNoPart)}</span> </span>}
+                {duplicates.issueNo && <span>জারিপত্র নং: <span className="underline underline-offset-4 font-black">{toBengaliDigits(issueNoPart)}</span> </span>}
+                ইতোমধ্যেই ডাটাবেজে বিদ্যমান। অনুগ্রহ করে তথ্য যাচাই করুন।
+              </p>
+           </div>
+        </div>
+      )}
 
       <form id="form-entry" onSubmit={handleSubmit} className="space-y-10">
         <fieldset disabled={isSuccess} className="space-y-10 border-none p-0 m-0">
