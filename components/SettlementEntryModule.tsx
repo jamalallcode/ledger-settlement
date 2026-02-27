@@ -245,15 +245,18 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   useEffect(() => {
     if (!existingEntries || existingEntries.length === 0) return;
     
-    // Check for duplicates in letterNo, diaryNo, and issueNo
-    const letterMatch = existingEntries.some(e => e.letterNoDate && e.letterNoDate.includes(`পত্র নং- ${letterNoPart}`));
-    const diaryMatch = existingEntries.some(e => e.workpaperNoDate && e.workpaperNoDate.includes(`ডায়েরি নং- ${diaryNoPart}`));
-    const issueMatch = existingEntries.some(e => e.issueLetterNoDate && e.issueLetterNoDate.includes(`জারিপত্র নং- ${issueNoPart}`));
-    
+    const checkDuplicate = (combinedStr: string | undefined, prefix: string, searchNo: string) => {
+      if (!combinedStr || !searchNo.trim()) return false;
+      const parts = combinedStr.split(',');
+      if (parts.length === 0) return false;
+      const noPart = parts[0].replace(prefix, '').trim();
+      return noPart === searchNo.trim();
+    };
+
     setDuplicates({
-      letterNo: letterNoPart ? letterMatch : false,
-      diaryNo: diaryNoPart ? diaryMatch : false,
-      issueNo: issueNoPart ? issueMatch : false
+      letterNo: letterNoPart ? existingEntries.some(e => checkDuplicate(e.letterNoDate, 'পত্র নং-', letterNoPart)) : false,
+      diaryNo: diaryNoPart ? existingEntries.some(e => checkDuplicate(e.workpaperNoDate, 'ডায়েরি নং-', diaryNoPart)) : false,
+      issueNo: issueNoPart ? existingEntries.some(e => checkDuplicate(e.issueLetterNoDate, 'জারিপত্র নং-', issueNoPart)) : false
     });
   }, [letterNoPart, diaryNoPart, issueNoPart, existingEntries]);
 
