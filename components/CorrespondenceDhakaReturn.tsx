@@ -74,10 +74,23 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     });
 
     // 2. Filter by selected month (Pending Logic)
-    // User Requirement: Show letters received UP TO THE PREVIOUS MONTH
-    // AND still pending at the end of the selected month
-    const startOfSelectedMonth = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 1);
-    const endOfSelectedMonth = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1, 0, 23, 59, 59);
+    // User Requirement: 
+    // - If past month selected: Show letters received UP TO THE PREVIOUS MONTH end.
+    // - If current month selected: Show letters received UP TO TODAY.
+    // - Never exceed current date.
+    const today = new Date();
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const selectedMonthStart = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 1);
+    
+    const reportingLimitDate = useMemo(() => {
+      if (selectedMonthStart.getTime() < currentMonthStart.getTime()) {
+        // Past month selected: show up to previous month's end
+        return new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 0, 23, 59, 59);
+      } else {
+        // Current or future month selected: show up to today
+        return today;
+      }
+    }, [selectedMonthStart, currentMonthStart, selectedMonthDate, today]);
     
     data = data.filter(e => {
       if (!e.diaryDate) return false;
@@ -85,10 +98,10 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       const dDate = new Date(dDateStr);
       if (isNaN(dDate.getTime())) return false;
       
-      // Must be received BEFORE the selected month (i.e., up to previous month)
-      if (dDate.getTime() >= startOfSelectedMonth.getTime()) return false;
+      // Must be received ON OR BEFORE reportingLimitDate
+      if (dDate.getTime() > reportingLimitDate.getTime()) return false;
       
-      // Must NOT be issued on or before the end of the selected month
+      // Must NOT be issued on or before reportingLimitDate
       const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
       const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
       const hasValidNo = rawNo !== '' && rawNo !== '০' && rawNo !== '0' && !rawNo.includes('নং-');
@@ -96,8 +109,8 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       
       if (hasValidNo && hasValidDate) {
         const issueDate = new Date(toEnglishDigits(rawDate));
-        if (!isNaN(issueDate.getTime()) && issueDate.getTime() <= endOfSelectedMonth.getTime()) {
-          return false; // Already issued on or before this month's end
+        if (!isNaN(issueDate.getTime()) && issueDate.getTime() <= reportingLimitDate.getTime()) {
+          return false; // Already issued on or before reportingLimitDate
         }
       }
       
@@ -132,9 +145,21 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-emerald-600 ring-4 ring-emerald-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-300'}`;
   const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
   
+  const reportingLimitDate = useMemo(() => {
+    const today = new Date();
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const selectedMonthStart = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 1);
+    
+    if (selectedMonthStart.getTime() < currentMonthStart.getTime()) {
+      return new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 0, 23, 59, 59);
+    } else {
+      return today;
+    }
+  }, [selectedMonthDate]);
+
   const reportingDateBN = useMemo(() => 
-    toBengaliDigits(dateFnsFormat(new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1, 0), 'dd/MM/yyyy')),
-    [selectedMonthDate]
+    toBengaliDigits(dateFnsFormat(reportingLimitDate, 'dd/MM/yyyy')),
+    [reportingLimitDate]
   );
 
   const reportingMonthYearBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start), 'MMMM/yyyy'))
@@ -296,7 +321,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           <h2 className="text-xl font-black text-slate-800 leading-tight">{OFFICE_HEADER.sub}</h2>
           <h3 className="text-lg font-black text-slate-700 leading-tight">{OFFICE_HEADER.address}</h3>
           <div className="mt-4 inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
-            <span className="text-blue-400">শাখা ভিত্তিক {toBengaliDigits(dateFnsFormat(new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1, 0), 'dd/MM/yyyy'))} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।</span>
+            <span className="text-blue-400">শাখা ভিত্তিক {reportingDateBN} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।</span>
           </div>
         </div>
 
