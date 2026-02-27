@@ -95,17 +95,14 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       // Must be received ON OR BEFORE reportingLimitDate
       if (dDate.getTime() > reportingLimitDate.getTime()) return false;
       
-      // Must NOT be issued on or before reportingLimitDate
+      // Must NOT be issued (If it has a valid issue number and date, it's no longer pending)
       const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
       const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
       const hasValidNo = rawNo !== '' && rawNo !== '০' && rawNo !== '0' && !rawNo.includes('নং-');
       const hasValidDate = rawDate !== '' && rawDate !== '0000-00-00';
       
       if (hasValidNo && hasValidDate) {
-        const issueDate = new Date(toEnglishDigits(rawDate));
-        if (!isNaN(issueDate.getTime()) && issueDate.getTime() <= reportingLimitDate.getTime()) {
-          return false; // Already issued on or before reportingLimitDate
-        }
+        return false; 
       }
       
       return true;
