@@ -638,3 +638,5 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     </div>
   );
 };
+
+export default DDSirCorrespondenceReturn;
