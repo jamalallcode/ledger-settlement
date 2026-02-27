@@ -224,13 +224,28 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
   const filteredCorrespondence = useMemo(() => {
     if (selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
-    const reportingDateObj = endOfDay(new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0));
+    
+    const today = new Date();
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const selectedMonthStart = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth(), 1);
+    
+    let reportingLimitDate: Date;
+    if (selectedMonthStart.getTime() < currentMonthStart.getTime()) {
+      // Past month selected: show up to previous month's end
+      reportingLimitDate = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth(), 0, 23, 59, 59);
+    } else {
+      // Current or future month selected: show up to today
+      reportingLimitDate = today;
+    }
+
     return (correspondenceEntries || []).filter(e => {
       if (!e.diaryDate) return false;
       const diaryDateStr = toEnglishDigits(e.diaryDate);
       const diaryDateObj = startOfDay(new Date(diaryDateStr));
       if (isNaN(diaryDateObj.getTime())) return false;
-      const isBeforeOrOnReportingDate = diaryDateObj.getTime() <= reportingDateObj.getTime();
+      
+      // Must be received ON OR BEFORE reportingLimitDate
+      const isBeforeOrOnReportingDate = diaryDateObj.getTime() <= reportingLimitDate.getTime();
       
       // Exclude specific letter types as requested (Milikaran, Karjapatra)
       const isExcludedType = e.letterType === 'মিলিকরণ' || e.letterType.includes('কার্যপত্র');
@@ -240,7 +255,15 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
       const hasValidNo = rawNo !== '' && rawNo !== '০' && rawNo !== '0' && !rawNo.includes('নং-');
       const hasValidDate = rawDate !== '' && rawDate !== '0000-00-00';
-      const isIssued = hasValidNo && hasValidDate;
+      
+      let isIssued = false;
+      if (hasValidNo && hasValidDate) {
+        const issueDate = new Date(toEnglishDigits(rawDate));
+        if (!isNaN(issueDate.getTime()) && issueDate.getTime() <= reportingLimitDate.getTime()) {
+          isIssued = true;
+        }
+      }
+      
       return isBeforeOrOnReportingDate && !isIssued;
     }).sort((a, b) => new Date(toEnglishDigits(b.diaryDate)).getTime() - new Date(toEnglishDigits(a.diaryDate)).getTime());
   }, [correspondenceEntries, selectedReportType, activeCycle]);
