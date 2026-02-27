@@ -23,6 +23,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [filterParaType, setFilterParaType] = useState('সকল');
   const [filterLetterType, setFilterLetterType] = useState('সকল');
+  const [selectedMonthDate, setSelectedMonthDate] = useState<Date>(new Date(activeCycle.start));
   
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
@@ -52,8 +53,29 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     return options;
   }, []);
 
+  const currentSelectedLabel = useMemo(() => {
+    const banglaMonths: Record<string, string> = {
+      'January': 'জানুয়ারি', 'February': 'ফেব্রুয়ারি', 'March': 'মার্চ', 'April': 'এপ্রিল',
+      'May': 'মে', 'June': 'জুন', 'July': 'জুলাই', 'August': 'আগস্ট',
+      'September': 'সেপ্টেম্বর', 'October': 'অক্টোবর', 'November': 'নভেম্বর', 'December': 'ডিসেম্বর'
+    };
+    const monthNameEng = dateFnsFormat(selectedMonthDate, 'MMMM');
+    const yearEng = dateFnsFormat(selectedMonthDate, 'yyyy');
+    return `${banglaMonths[monthNameEng]}/${toBengaliDigits(yearEng)}`;
+  }, [selectedMonthDate]);
+
   const filteredData = useMemo(() => {
     let data = filteredCorrespondence;
+
+    // Filter by selected month first
+    const targetMonth = selectedMonthDate.getMonth();
+    const targetYear = selectedMonthDate.getFullYear();
+    
+    data = data.filter(e => {
+      if (!e.diaryDate) return false;
+      const d = new Date(e.diaryDate);
+      return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
+    });
     
     if (filterParaType !== 'সকল') {
       data = data.filter(e => e.paraType === filterParaType);
@@ -209,7 +231,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           {/* Month Selector Dropdown */}
           <div className="space-y-1 relative group">
             <div className="flex items-center gap-3 px-5 h-[44px] bg-white border border-slate-300 rounded-xl shadow-sm group-hover:border-emerald-600 group-hover:ring-4 group-hover:ring-emerald-50 transition-all duration-300 cursor-pointer">
-               <span className="font-bold text-[13px] text-slate-800">{reportingMonthYearBN}</span>
+               <span className="font-bold text-[13px] text-slate-800">{currentSelectedLabel}</span>
                <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-emerald-600" />
             </div>
 
@@ -220,14 +242,12 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                     <div 
                       key={idx} 
                       onClick={() => {
-                        // This uses the HistoricalFilter's underlying logic by triggering a click on the actual filter if needed
-                        // But since we have activeCycle as a prop, we assume the parent handles the change.
-                        // In this specific implementation, we'll just show the label.
+                        setSelectedMonthDate(opt.date);
                       }} 
-                      className={`flex items-center justify-center px-4 py-2.5 cursor-pointer transition-all ${reportingMonthYearBN === opt.label ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[12px]'}`}
+                      className={`flex items-center justify-center px-4 py-2.5 cursor-pointer transition-all ${currentSelectedLabel === opt.label ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[12px]'}`}
                     >
                       <span>{opt.label}</span>
-                      {reportingMonthYearBN === opt.label && <Check size={14} strokeWidth={3} className="ml-2" />}
+                      {currentSelectedLabel === opt.label && <Check size={14} strokeWidth={3} className="ml-2" />}
                     </div>
                   ))}
                 </div>
@@ -245,7 +265,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           <h2 className="text-xl font-black text-slate-800 leading-tight">{OFFICE_HEADER.sub}</h2>
           <h3 className="text-lg font-black text-slate-700 leading-tight">{OFFICE_HEADER.address}</h3>
           <div className="mt-4 inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
-            <span className="text-blue-400">শাখা ভিত্তিক {reportingDateBN} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।</span>
+            <span className="text-blue-400">শাখা ভিত্তিক {toBengaliDigits(dateFnsFormat(new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1, 0), 'dd/MM/yyyy'))} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।</span>
           </div>
         </div>
 
