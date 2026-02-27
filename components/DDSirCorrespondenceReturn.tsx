@@ -66,11 +66,23 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     let data = entries || [];
     
     // Filter by selected reporting date (Pending Logic)
-    // User Requirement: Show letters received UP TO THE PREVIOUS MONTH
-    // AND still pending at the end of the selected month
-    const reportingDateObj = new Date(selectedReportingDate);
-    const startOfSelectedMonth = new Date(reportingDateObj.getFullYear(), reportingDateObj.getMonth(), 1);
-    const endOfSelectedMonth = new Date(reportingDateObj.getFullYear(), reportingDateObj.getMonth() + 1, 0, 23, 59, 59);
+    // User Requirement: 
+    // - If past month selected: Show letters received UP TO THE PREVIOUS MONTH end.
+    // - If current month selected: Show letters received UP TO TODAY.
+    // - Never exceed current date.
+    const today = new Date();
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const selectedMonthStart = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth(), 1);
+    
+    const reportingLimitDate = useMemo(() => {
+      if (selectedMonthStart.getTime() < currentMonthStart.getTime()) {
+        // Past month selected: show up to previous month's end
+        return new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth(), 0, 23, 59, 59);
+      } else {
+        // Current or future month selected: show up to today
+        return today;
+      }
+    }, [selectedMonthStart, currentMonthStart, activeCycle.start, today]);
 
     data = data.filter(e => {
       if (!e.diaryDate) return false;
@@ -78,10 +90,10 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       const dDate = new Date(dDateStr);
       if (isNaN(dDate.getTime())) return false;
       
-      // Must be received BEFORE the selected month (i.e., up to previous month)
-      if (dDate.getTime() >= startOfSelectedMonth.getTime()) return false;
+      // Must be received ON OR BEFORE reportingLimitDate
+      if (dDate.getTime() > reportingLimitDate.getTime()) return false;
       
-      // Must NOT be issued on or before the end of the selected month
+      // Must NOT be issued on or before reportingLimitDate
       const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
       const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
       const hasValidNo = rawNo !== '' && rawNo !== '০' && rawNo !== '0' && !rawNo.includes('নং-');
@@ -89,8 +101,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       
       if (hasValidNo && hasValidDate) {
         const issueDate = new Date(toEnglishDigits(rawDate));
-        if (!isNaN(issueDate.getTime()) && issueDate.getTime() <= endOfSelectedMonth.getTime()) {
-          return false; // Already issued on or before this month's end
+        if (!isNaN(issueDate.getTime()) && issueDate.getTime() <= reportingLimitDate.getTime()) {
+          return false; // Already issued on or before reportingLimitDate
         }
       }
       
@@ -108,7 +120,19 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     return data;
   }, [entries, filterAuditor, filterBranch, selectedReportingDate]);
 
-  const reportingDate = useMemo(() => new Date(selectedReportingDate), [selectedReportingDate]);
+  const reportingLimitDate = useMemo(() => {
+    const today = new Date();
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const selectedMonthStart = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth(), 1);
+    
+    if (selectedMonthStart.getTime() < currentMonthStart.getTime()) {
+      return new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth(), 0, 23, 59, 59);
+    } else {
+      return today;
+    }
+  }, [activeCycle.start]);
+
+  const reportingDate = reportingLimitDate;
 
   const reportingDateBN = toBengaliDigits(format(reportingDate, 'dd/MM/yyyy'));
   const reportingMonthBN = toBengaliDigits(format(reportingDate, 'MMMM/yy'))
