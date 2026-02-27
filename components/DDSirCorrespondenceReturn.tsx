@@ -586,13 +586,6 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           </div>
         </div>
         
-        {/* Footer Section */}
-        <div className="mt-10 flex justify-between items-start text-[11px] font-bold text-slate-800 px-6">
-          <div className="flex items-center gap-6">
-            <p>নং- .....................................................................</p>
-            <p>তারিখঃ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /২০২৩খ্রিঃ</p>
-          </div>
-        </div>
       </div>
     </div>
   );
