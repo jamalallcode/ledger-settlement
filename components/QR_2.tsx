@@ -87,11 +87,11 @@ const QR_2: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
 
       {/* Table Section */}
       <div className="overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
-        <table className="w-full border-separate border-spacing-0 min-w-[1300px] !table-auto">
+        <table className="w-full border-separate border-spacing-0 min-w-[1000px] !table-auto">
           <thead className="bg-slate-100">
             <tr>
               <th rowSpan={2} className={thCls}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thCls} w-[20%]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
+              <th rowSpan={2} className={`${thCls} w-[12%]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
               <th rowSpan={2} className={thCls}>ব্রডশিট জবাবের সংখ্যা</th>
               <th rowSpan={2} className={thCls}>পত্রের স্মারক নং ও তারিখ</th>
               <th rowSpan={2} className={thCls}>প্রেরিত অনুচ্ছেদ সংখ্যা</th>
