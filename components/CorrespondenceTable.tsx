@@ -729,11 +729,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
         <table className="w-full border-separate border-spacing-0 table-fixed">
           <colgroup>
             <col className="w-[30px]" />
+            <col className="w-[110px]" />
+            <col className="w-[140px]" />
+            <col className="w-[140px]" />
             <col className="w-[130px]" />
-            <col className="w-[160px]" />
-            <col className="w-[160px]" />
-            <col className="w-[145px]" />
-            <col className="w-[135px]" />
+            <col className="w-[120px]" />
             <col className="w-[50px]" />
           </colgroup>
           <thead>
