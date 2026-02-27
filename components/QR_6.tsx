@@ -116,13 +116,6 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
         </table>
       </div>
 
-      {/* Footer Section */}
-      <div className="mt-10 flex justify-between items-start text-[11px] font-bold text-slate-800">
-        <div className="flex items-center gap-6">
-          <p>নং- --------/বাঅঅ/সে-৬/খুলনা/রিটার্ণ/ত্রৈমাসিক/আয়কর ও অন্যান্য/আদায় ও সমন্বয়/২০০৮-০৯/</p>
-          <p>তাং- &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /{formatYearBN(new Date())}খ্রিঃ</p>
-        </div>
-      </div>
     </div>
   );
 };
