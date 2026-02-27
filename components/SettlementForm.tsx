@@ -15,9 +15,10 @@ interface SettlementFormProps {
   isAdmin?: boolean;
   preSelectedModule?: 'settlement' | 'correspondence' | null;
   correspondenceEntries?: any[];
+  entries?: SettlementEntry[];
 }
 
-const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, nextSl, branchSuggestions, initialEntry, onCancel, isLayoutEditable, isAdmin = false, preSelectedModule = null, correspondenceEntries }) => {
+const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, nextSl, branchSuggestions, initialEntry, onCancel, isLayoutEditable, isAdmin = false, preSelectedModule = null, correspondenceEntries, entries }) => {
   const [mainModule, setMainModule] = useState<'settlement' | 'correspondence' | null>(preSelectedModule);
 
   useEffect(() => {
@@ -120,6 +121,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, 
       onBackToMenu={() => setMainModule(null)}
       isLayoutEditable={isLayoutEditable}
       isAdmin={isAdmin}
+      existingEntries={entries}
     />
   );
 };
