@@ -18,9 +18,9 @@ import { getDateError } from '../utils/dateValidation';
 
 // UI Constants moved to top for global access within the file
 const colWrapper = "p-5 rounded-2xl border bg-white transition-all hover:shadow-lg relative min-w-0";
-const inputCls = "w-full h-[52px] px-4 border rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 shadow-sm transition-all text-[14px]";
+const inputCls = "w-full h-[52px] px-4 border-2 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 shadow-sm transition-all text-[14px]";
 const getDynamicBorder = (val: any) => {
-  if (val && val.toString().trim() !== '') return 'border-emerald-500 ring-emerald-50';
+  if (val && val.toString().trim() !== '' && val !== '০' && val.toString() !== '0') return 'border-emerald-500 ring-emerald-50';
   return 'border-red-500 ring-red-50';
 };
 const labelCls = "block text-[13px] font-black text-slate-700 mb-2 flex items-center gap-2";
@@ -64,7 +64,7 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
       <IDBadge id="corr-field-letter-type-custom" />
       <div 
         onClick={() => setIsOpen(!isOpen)}
-        className={`${inputCls} ${value ? 'border-emerald-500' : 'border-red-500'} flex items-center justify-between cursor-pointer group hover:border-emerald-400 hover:ring-4 hover:ring-emerald-50 transition-all duration-300 ${isOpen ? 'border-emerald-500 ring-4 ring-emerald-50 bg-white shadow-md' : 'shadow-sm'}`}
+        className={`${inputCls} ${value && value.toString().trim() !== '' ? 'border-emerald-500' : 'border-red-500'} flex items-center justify-between cursor-pointer group hover:border-emerald-400 hover:ring-4 hover:ring-emerald-50 transition-all duration-300 ${isOpen ? 'border-emerald-500 ring-4 ring-emerald-50 bg-white shadow-md' : 'shadow-sm'}`}
       >
         <div className="flex items-center gap-3">
           {value ? (
@@ -247,7 +247,7 @@ const SegmentedInput = ({
         {/* Adjusted Serial and Icon Position as per request */}
         <span className={numBadge}>{num}</span> <Icon size={14} className={`${error ? 'text-red-600' : `text-${color}-600`} shrink-0`} /> <span className="truncate">{label}</span>
       </label>
-      <div className={`relative w-full h-[55px] flex items-center border rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : (isFilled ? 'border-emerald-500 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50' : 'border-red-500 focus-within:border-red-400 focus-within:ring-4 focus-within:ring-red-50')}`}>
+      <div className={`relative w-full h-[55px] flex items-center border-2 rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : (isFilled ? 'border-emerald-500 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50' : 'border-red-500 focus-within:border-red-400 focus-within:ring-4 focus-within:ring-red-50')}`}>
         <div className="flex items-center w-full px-4 h-full gap-2">
           <div className="relative flex-1 h-full flex items-center justify-center gap-1 shrink-0">
             <input 
