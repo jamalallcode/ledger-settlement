@@ -257,7 +257,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                     <span className="text-blue-700">এসএফআই:</span>
                     <span className="text-slate-900">
                       {toBengaliDigits(summaryStats.sfi.total)} টি 
-                      <span className="text-slate-500 font-medium ml-1">
+                      <span className="text-slate-700 font-bold ml-1">
                         (বিএসআর: {toBengaliDigits(summaryStats.sfi.bsr)} টি, 
                         ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.sfi.kp)} টি, 
                         ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি।
@@ -268,7 +268,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                     <span className="text-blue-700">নন এসএফআই:</span>
                     <span className="text-slate-900">
                       {toBengaliDigits(summaryStats.nonSfi.total)} টি 
-                      <span className="text-slate-500 font-medium ml-1">
+                      <span className="text-slate-700 font-bold ml-1">
                         (বিএসআর: {toBengaliDigits(summaryStats.nonSfi.bsr)} টি, 
                         দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.nonSfi.kp)} টি, 
                         দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি।
