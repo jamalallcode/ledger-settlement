@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOption } from '../types.ts';
 import SearchableSelect from './SearchableSelect.tsx';
 import { MINISTRIES_LIST, MINISTRY_ENTITY_MAP, ENTITY_BRANCH_MAP, AUDIT_YEARS_OPTIONS } from '../constants.ts';
-import { Trash2, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight } from 'lucide-react';
+import { Trash2, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils.ts';
 import { getCycleForDate, isEntryLate } from '../utils/cycleHelper.ts';
 import { getDateError } from '../utils/dateValidation';
@@ -494,6 +494,45 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     }, 0);
   };
 
+  const handleNewEntry = () => {
+    setFormData({
+      paraType: 'এসএফআই' as ParaType, 
+      meetingType: 'বিএসআর',
+      ministryName: '',
+      entityName: '',
+      branchName: '',
+      auditYear: '',
+      letterNoDate: '',
+      meetingWorkpaper: '', 
+      workpaperNoDate: '', 
+      issueLetterNoDate: '', 
+      issueDateISO: '', 
+      archiveNo: '',
+      meetingSentParaCount: '',
+      meetingDiscussedParaCount: '',
+      meetingRecommendedParaCount: '',
+      meetingSettledParaCount: '',
+      meetingFullSettledParaCount: '',
+      meetingPartialSettledParaCount: '',
+      meetingUnsettledParas: '',
+      meetingUnsettledAmount: 0,
+      totalInvolvedAmount: 0,
+      isMeeting: false,
+      remarks: '',
+      meetingDate: '',
+      manualRaisedCount: null as string | null,
+      manualRaisedAmount: null as number | null
+    });
+    setLetterNoPart(''); setLetterDay(''); setLetterMonth(''); setLetterYear('');
+    setWpNoPart(''); setWpDay(''); setWpMonth(''); setWpYear('');
+    setDiaryNoPart(''); setDiaryDay(''); setDiaryMonth(''); setDiaryYear('');
+    setIssueNoPart(''); setDayPart(''); setMonthPart(''); setYearPart('');
+    setParagraphs([]);
+    setRawInputs({});
+    setIsSuccess(false);
+    setWizardStep('selection');
+  };
+
   const formatSummaryNum = (val: number) => {
     if (val === 0) return '০';
     return toBengaliDigits(Math.round(val).toLocaleString('en-IN'));
@@ -867,6 +906,12 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                {!isDeletingPara && (
                   <div className="flex flex-col md:flex-row items-center gap-4 mt-2">
                     <button 
+                      onClick={handleNewEntry}
+                      className="px-8 py-4 bg-white text-emerald-600 border-2 border-emerald-600 rounded-2xl font-black text-lg shadow-xl hover:bg-emerald-50 transition-all flex items-center gap-3 active:scale-95 group"
+                    >
+                      নতুন মীমাংসা এন্ট্রি দিন <Plus size={20} />
+                    </button>
+                    <button 
                       onClick={onViewRegister}
                       className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-3 active:scale-95 group"
                     >
@@ -904,14 +949,14 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
           100% { width: 100%; }
         }
         .animate-progress-loading-premium {
-          animation: progress-loading-premium 4s linear forwards;
+          animation: progress-loading-premium 1.5s linear forwards;
         }
         @keyframes fade-in-complete {
           0%, 95% { opacity: 0; transform: translateY(10px); }
           100% { opacity: 1; transform: translateY(0); }
         }
         .animate-complete-text {
-          animation: fade-in-complete 4.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          animation: fade-in-complete 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}} />
     </div>
