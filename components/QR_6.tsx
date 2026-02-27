@@ -59,7 +59,7 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
           <thead className="bg-slate-100">
             <tr>
               <th rowSpan={2} className={thCls}>ক্রঃ নং</th>
-              <th rowSpan={2} className={thCls}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={`${thCls} w-[15%]`}>মন্ত্রণালয়ের নাম</th>
               <th rowSpan={2} className={thCls}>জড়িত টাকা</th>
               <th colSpan={2} className={thCls}>আয়কর ও ভ্যাট বাবদ</th>
               <th colSpan={2} className={thCls}>অন্যান্য বাবদ</th>
