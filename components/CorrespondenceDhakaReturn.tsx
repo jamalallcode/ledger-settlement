@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Printer, ChevronLeft, Search, X, ChevronDown, Check, LayoutGrid, FileText } from 'lucide-react';
+import { Printer, ChevronLeft, Search, X, ChevronDown, Check, LayoutGrid, FileText, ChevronRight } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 import { format as dateFnsFormat } from 'date-fns';
@@ -39,21 +39,9 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const branchOptions = useMemo(() => {
-    const unique = Array.from(new Set(filteredCorrespondence.map(e => e.paraType).filter(Boolean)));
-    return ['সকল', ...unique];
-  }, [filteredCorrespondence]);
+  const branchOptions = useMemo(() => ['সকল', 'এসএফআই', 'নন এসএফআই'], []);
 
-  const typeOptions = useMemo(() => {
-    const unique = Array.from(new Set(filteredCorrespondence.map(e => e.letterType).filter(Boolean)));
-    const mapped = unique.map(type => {
-      if (filterParaType === 'এসএফআই' && type === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)') {
-        return 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)';
-      }
-      return type;
-    });
-    return ['সকল', ...Array.from(new Set(mapped))];
-  }, [filteredCorrespondence, filterParaType]);
+  const typeOptions = useMemo(() => ['সকল', 'বিএসআর', 'সভা'], []);
 
   const filteredData = useMemo(() => {
     let data = filteredCorrespondence;
@@ -63,12 +51,15 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     }
     
     if (filterLetterType !== 'সকল') {
-      data = data.filter(e => {
-        const mappedType = (filterParaType === 'এসএফআই' && e.letterType === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)') 
-          ? 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)' 
-          : e.letterType;
-        return mappedType === filterLetterType;
-      });
+      if (filterLetterType === 'বিএসআর') {
+        data = data.filter(e => e.letterType === 'বিএসআর');
+      } else if (filterLetterType === 'কার্যবিবরণী (এসএফআই)') {
+        data = data.filter(e => (e.letterType || '').includes('কার্যবিবরণী') && e.paraType === 'এসএফআই');
+      } else if (filterLetterType === 'কার্যবিবরণী (নন এসএফআই)') {
+        data = data.filter(e => (e.letterType || '').includes('কার্যবিবরণী') && e.paraType === 'নন এসএফআই');
+      } else {
+        data = data.filter(e => e.letterType === filterLetterType);
+      }
     }
 
     if (!searchTerm.trim()) return data;
@@ -141,21 +132,50 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
             >
               <FileText size={16} className="text-emerald-600" />
               <span className="font-bold text-[12px] text-slate-900 truncate">
-                {filterLetterType === 'সকল' ? 'সকল ধরণ' : filterLetterType}
+                {filterLetterType === 'সকল' ? 'চিঠির ধরন' : filterLetterType}
               </span>
               <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isTypeDropdownOpen ? 'rotate-180 text-emerald-600' : ''}`} />
               
               {isTypeDropdownOpen && (
-                <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[180px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200">
-                  <div className="max-h-[250px] overflow-y-auto no-scrollbar py-2">
+                <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[180px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl z-[2000] overflow-visible animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200">
+                  <div className="py-2">
                     {typeOptions.map((opt, idx) => (
-                      <div 
-                        key={idx} 
-                        onClick={(e) => { e.stopPropagation(); setFilterLetterType(opt); setIsTypeDropdownOpen(false); }} 
-                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterLetterType === opt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[12px]'}`}
-                      >
-                        <span>{opt === 'সকল' ? 'সকল ধরণ' : opt}</span>
-                        {filterLetterType === opt && <Check size={14} strokeWidth={3} />}
+                      <div key={idx} className="relative group/item">
+                        <div 
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            if (opt !== 'সভা') {
+                              setFilterLetterType(opt); 
+                              setIsTypeDropdownOpen(false); 
+                            }
+                          }} 
+                          className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterLetterType === opt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[12px]'}`}
+                        >
+                          <span>{opt === 'সকল' ? 'চিঠির ধরন' : opt}</span>
+                          {opt === 'সভা' && <ChevronRight size={14} className="ml-auto" />}
+                          {filterLetterType === opt && opt !== 'সভা' && <Check size={14} strokeWidth={3} />}
+                        </div>
+                        
+                        {opt === 'সভা' && (
+                          <div className="absolute left-full top-0 ml-1 w-56 bg-white border-2 border-slate-200 rounded-2xl shadow-2xl hidden group-hover/item:block animate-in fade-in slide-in-from-left-2 duration-200">
+                            <div className="py-2">
+                              {['কার্যবিবরণী (এসএফআই)', 'কার্যবিবরণী (নন এসএফআই)'].map((subOpt, subIdx) => (
+                                <div 
+                                  key={subIdx}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFilterLetterType(subOpt);
+                                    setIsTypeDropdownOpen(false);
+                                  }}
+                                  className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterLetterType === subOpt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[12px]'}`}
+                                >
+                                  <span>{subOpt}</span>
+                                  {filterLetterType === subOpt && <Check size={14} strokeWidth={3} />}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
