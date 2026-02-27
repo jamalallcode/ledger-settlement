@@ -30,15 +30,6 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) setIsBranchDropdownOpen(false);
-      if (typeDropdownRef.current && !typeDropdownRef.current.contains(e.target as Node)) setIsTypeDropdownOpen(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const branchOptions = useMemo(() => ['সকল', 'এসএফআই', 'নন এসএফআই'], []);
 
   const typeOptions = useMemo(() => ['সকল', 'বিএসআর', 'সভা'], []);
@@ -94,79 +85,73 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
         </div>
         <div className="flex items-center gap-4">
           {/* Branch Filter */}
-          <div className="space-y-1" ref={branchDropdownRef}>
+          <div className="space-y-1 relative group" ref={branchDropdownRef}>
             <div 
-              onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)} 
-              className={customDropdownCls(isBranchDropdownOpen) + " min-w-[160px]"}
+              className={customDropdownCls(false) + " min-w-[160px] group-hover:border-emerald-600 group-hover:ring-4 group-hover:ring-emerald-50 shadow-sm transition-all duration-300"}
             >
               <LayoutGrid size={16} className="text-emerald-600" />
               <span className="font-bold text-[12px] text-slate-900 truncate">
                 {filterParaType === 'সকল' ? 'সকল শাখা' : filterParaType}
               </span>
-              <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isBranchDropdownOpen ? 'rotate-180 text-emerald-600' : ''}`} />
-              
-              {isBranchDropdownOpen && (
-                <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[180px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200">
-                  <div className="max-h-[250px] overflow-y-auto no-scrollbar py-2">
-                    {branchOptions.map((opt, idx) => (
-                      <div 
-                        key={idx} 
-                        onClick={(e) => { e.stopPropagation(); setFilterParaType(opt); setIsBranchDropdownOpen(false); }} 
-                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterParaType === opt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[12px]'}`}
-                      >
-                        <span>{opt === 'সকল' ? 'সকল শাখা' : opt}</span>
-                        {filterParaType === opt && <Check size={14} strokeWidth={3} />}
-                      </div>
-                    ))}
-                  </div>
+              <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-emerald-600" />
+            </div>
+            
+            <div className="absolute top-full left-0 w-full pt-2 opacity-0 invisible translate-y-4 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 ease-out z-[2000]">
+              <div className="min-w-[180px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
+                <div className="max-h-[250px] overflow-y-auto no-scrollbar py-2">
+                  {branchOptions.map((opt, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={() => setFilterParaType(opt)} 
+                      className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterParaType === opt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[12px]'}`}
+                    >
+                      <span>{opt === 'সকল' ? 'সকল শাখা' : opt}</span>
+                      {filterParaType === opt && <Check size={14} strokeWidth={3} />}
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
           {/* Type Filter */}
-          <div className="space-y-1" ref={typeDropdownRef}>
+          <div className="space-y-1 relative group" ref={typeDropdownRef}>
             <div 
-              onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)} 
-              className={customDropdownCls(isTypeDropdownOpen) + " min-w-[160px]"}
+              className={customDropdownCls(false) + " min-w-[160px] group-hover:border-emerald-600 group-hover:ring-4 group-hover:ring-emerald-50 shadow-sm transition-all duration-300"}
             >
               <FileText size={16} className="text-emerald-600" />
               <span className="font-bold text-[12px] text-slate-900 truncate">
                 {filterLetterType === 'সকল' ? 'চিঠির ধরন' : filterLetterType}
               </span>
-              <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isTypeDropdownOpen ? 'rotate-180 text-emerald-600' : ''}`} />
-              
-              {isTypeDropdownOpen && (
-                <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[180px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl z-[2000] overflow-visible animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200">
-                  <div className="py-2">
-                    {typeOptions.map((opt, idx) => (
-                      <div key={idx} className="relative group/item">
-                        <div 
-                          onClick={(e) => { 
-                            e.stopPropagation(); 
-                            if (opt !== 'সভা') {
-                              setFilterLetterType(opt); 
-                              setIsTypeDropdownOpen(false); 
-                            }
-                          }} 
-                          className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterLetterType === opt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[12px]'}`}
-                        >
-                          <span>{opt === 'সকল' ? 'চিঠির ধরন' : opt}</span>
-                          {opt === 'সভা' && <ChevronRight size={14} className="ml-auto" />}
-                          {filterLetterType === opt && opt !== 'সভা' && <Check size={14} strokeWidth={3} />}
-                        </div>
-                        
-                        {opt === 'সভা' && (
-                          <div className="absolute left-full top-0 w-56 bg-white border-2 border-slate-200 rounded-2xl shadow-2xl hidden group-hover/item:block animate-in fade-in slide-in-from-left-2 duration-200 z-[2100]">
+              <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-emerald-600" />
+            </div>
+            
+            <div className="absolute top-full left-0 w-full pt-2 opacity-0 invisible translate-y-4 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 ease-out z-[2000]">
+              <div className="min-w-[180px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-visible">
+                <div className="py-2">
+                  {typeOptions.map((opt, idx) => (
+                    <div key={idx} className="relative group/item">
+                      <div 
+                        onClick={() => { 
+                          if (opt !== 'সভা') {
+                            setFilterLetterType(opt); 
+                          }
+                        }} 
+                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterLetterType === opt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[12px]'}`}
+                      >
+                        <span>{opt === 'সকল' ? 'চিঠির ধরন' : opt}</span>
+                        {opt === 'সভা' && <ChevronRight size={14} className="ml-auto" />}
+                        {filterLetterType === opt && opt !== 'সভা' && <Check size={14} strokeWidth={3} />}
+                      </div>
+                      
+                      {opt === 'সভা' && (
+                        <div className="absolute left-full top-0 w-56 pt-0 opacity-0 invisible translate-x-4 group-hover/item:opacity-100 group-hover/item:visible group-hover/item:translate-x-0 transition-all duration-300 ease-out z-[2100]">
+                          <div className="ml-1 bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
                             <div className="py-2">
                               {['কার্যবিবরণী (এসএফআই)', 'কার্যবিবরণী (নন এসএফআই)'].map((subOpt, subIdx) => (
                                 <div 
                                   key={subIdx}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setFilterLetterType(subOpt);
-                                    setIsTypeDropdownOpen(false);
-                                  }}
+                                  onClick={() => setFilterLetterType(subOpt)}
                                   className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterLetterType === subOpt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[12px]'}`}
                                 >
                                   <span>{subOpt}</span>
@@ -175,12 +160,12 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                               ))}
                             </div>
                           </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
