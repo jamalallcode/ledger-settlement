@@ -82,15 +82,9 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
     const selectedMonthStart = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 1);
     
-    const reportingLimitDate = useMemo(() => {
-      if (selectedMonthStart.getTime() > currentMonthStart.getTime()) {
-        // Next month selected: show up to today (Current Status)
-        return today;
-      } else {
-        // Current or Past month selected: show up to the end of the month BEFORE the selected month
-        return new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 0, 23, 59, 59);
-      }
-    }, [selectedMonthStart, currentMonthStart, selectedMonthDate, today]);
+    const reportingLimitDate = selectedMonthStart.getTime() > currentMonthStart.getTime()
+      ? today
+      : new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 0, 23, 59, 59);
     
     data = data.filter(e => {
       if (!e.diaryDate) return false;
