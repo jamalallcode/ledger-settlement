@@ -157,7 +157,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                         </div>
                         
                         {opt === 'সভা' && (
-                          <div className="absolute left-full top-0 ml-1 w-56 bg-white border-2 border-slate-200 rounded-2xl shadow-2xl hidden group-hover/item:block animate-in fade-in slide-in-from-left-2 duration-200">
+                          <div className="absolute left-full top-0 w-56 bg-white border-2 border-slate-200 rounded-2xl shadow-2xl hidden group-hover/item:block animate-in fade-in slide-in-from-left-2 duration-200 z-[2100]">
                             <div className="py-2">
                               {['কার্যবিবরণী (এসএফআই)', 'কার্যবিবরণী (নন এসএফআই)'].map((subOpt, subIdx) => (
                                 <div 
@@ -203,9 +203,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
             )}
           </div>
           
-          <div className="flex items-center gap-3 px-5 h-[44px] bg-white border border-slate-300 rounded-xl shadow-sm">
-             <span className="font-bold text-[13px] text-slate-800">{reportingMonthYearBN}</span>
-          </div>
+          <HistoricalFilter />
 
           <button onClick={() => window.print()} className="h-[44px] px-6 bg-slate-900 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95"><Printer size={18} /> প্রিন্ট</button>
         </div>
