@@ -235,7 +235,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     className={getSubItemCls(activeTab === 'entry' && entryModule === 'settlement')}
                   >
                     <ClipboardList size={14} className={getSubIconCls(activeTab === 'entry' && entryModule === 'settlement', 'blue')} />
-                    <span>২. অনুচ্ছেদ এন্ট্রি</span>
+                    <span>২. মীমাংসা এন্ট্রি</span>
                   </button>
                 </div>
               )}
