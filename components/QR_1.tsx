@@ -28,9 +28,9 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
     "আর্থিক প্রতিষ্ঠান বিভাগ, জনতা ব্যাংক পিএলসি, বিভাগীয় কার্যালয়, খুলনা ও এর আওতাধীন শাখাসমূহ (২০০৫-০৬ ও ২-১৬-১৭)"
   ];
 
-  const thCls = "border border-slate-400 p-2 text-[11px] font-black text-slate-800 bg-slate-100 align-middle text-center";
-  const tdCls = "border border-slate-400 p-2 text-[11px] text-slate-700 align-middle";
-  const numTdCls = "border border-slate-400 p-2 text-[11px] text-slate-700 text-center align-middle font-bold";
+  const thCls = "border-r border-b border-slate-400 p-2 text-[11px] font-black text-slate-800 bg-slate-100 align-middle text-center";
+  const tdCls = "border-r border-b border-slate-400 p-2 text-[11px] text-slate-700 align-middle";
+  const numTdCls = "border-r border-b border-slate-400 p-2 text-[11px] text-slate-700 text-center align-middle font-bold";
 
   return (
     <div id="qr-1-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
@@ -62,9 +62,9 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
       </div>
 
       {/* Table Section */}
-      <div className="table-container border border-slate-400 shadow-sm rounded-lg overflow-auto">
-        <table className="w-full border-separate border-spacing-0">
-          <thead className="z-20 bg-slate-100">
+      <div className="overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
+        <table className="w-full border-separate border-spacing-0 min-w-[1200px] !table-auto">
+          <thead className="bg-slate-100">
             <tr>
               <th rowSpan={2} className={thCls}>ক্রঃ নং</th>
               <th rowSpan={2} className={`${thCls} w-[25%]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
@@ -83,9 +83,9 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
               <th className={thCls}>সমন্বয়</th>
               <th className={thCls}>অন্যান্য</th>
             </tr>
-            <tr className="bg-slate-50">
+            <tr>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(n => (
-                <th key={n} className="border border-slate-400 p-1 text-[10px] font-bold text-slate-500 text-center">{toBengaliDigits(n.toString())}</th>
+                <th key={n} className={thCls + " text-[10px] font-bold text-slate-500"}>{toBengaliDigits(n.toString())}</th>
               ))}
             </tr>
           </thead>
