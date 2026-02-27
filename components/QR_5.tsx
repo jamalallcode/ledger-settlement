@@ -59,11 +59,11 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
       </div>
 
       <div className="overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
-        <table className="w-full border-separate border-spacing-0 min-w-[1000px] !table-auto">
+        <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
           <thead className="bg-slate-100">
             <tr>
               <th rowSpan={2} className={thCls}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thCls} w-[15%]`}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={`${thCls} w-[12%]`}>মন্ত্রণালয়ের নাম</th>
               <th rowSpan={2} className={thCls}>প্রতিবেদনধীন সময়ে উত্থাপিত আপত্তিতে জড়িত টাকার পরিমাণ</th>
               <th colSpan={2} className={thCls}>অডিট কালীন আদায়/সমন্বয়</th>
               <th colSpan={2} className={thCls}>প্রতিবেদনধীন সময়ে উত্থাপিত অর্থের বিপরীতে আদায়/সমন্বয়</th>
