@@ -18,7 +18,11 @@ import { getDateError } from '../utils/dateValidation';
 
 // UI Constants moved to top for global access within the file
 const colWrapper = "p-5 rounded-2xl border bg-white transition-all hover:shadow-lg relative min-w-0";
-const inputCls = "w-full h-[52px] px-4 border border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 shadow-sm transition-all text-[14px]";
+const inputCls = "w-full h-[52px] px-4 border rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 shadow-sm transition-all text-[14px]";
+const getDynamicBorder = (val: any) => {
+  if (val && val.toString().trim() !== '') return 'border-emerald-500 ring-emerald-50';
+  return 'border-red-500 ring-red-50';
+};
 const labelCls = "block text-[13px] font-black text-slate-700 mb-2 flex items-center gap-2";
 const numBadge = "inline-flex items-center justify-center w-5 h-5 bg-slate-900 text-white rounded-md text-[10px] font-black shadow-sm shrink-0";
 const sectionHeaderCls = "col-span-full mt-6 mb-2 py-2 border-b border-slate-100 flex items-center gap-3";
@@ -60,7 +64,7 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
       <IDBadge id="corr-field-letter-type-custom" />
       <div 
         onClick={() => setIsOpen(!isOpen)}
-        className={`${inputCls} flex items-center justify-between cursor-pointer group hover:border-emerald-400 hover:ring-4 hover:ring-emerald-50 transition-all duration-300 ${isOpen ? 'border-emerald-500 ring-4 ring-emerald-50 bg-white shadow-md' : 'border-slate-200 shadow-sm'}`}
+        className={`${inputCls} ${value ? 'border-emerald-500' : 'border-red-500'} flex items-center justify-between cursor-pointer group hover:border-emerald-400 hover:ring-4 hover:ring-emerald-50 transition-all duration-300 ${isOpen ? 'border-emerald-500 ring-4 ring-emerald-50 bg-white shadow-md' : 'shadow-sm'}`}
       >
         <div className="flex items-center gap-3">
           {value ? (
@@ -234,6 +238,8 @@ const SegmentedInput = ({
     );
   };
 
+  const isFilled = dayValue && monthValue && yearValue;
+
   return (
     <div className={`p-5 rounded-2xl border transition-all hover:shadow-lg relative min-w-0 ${error ? 'bg-red-50 border-red-200' : `bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`}`}>
       <IDBadge id={id} />
@@ -241,7 +247,7 @@ const SegmentedInput = ({
         {/* Adjusted Serial and Icon Position as per request */}
         <span className={numBadge}>{num}</span> <Icon size={14} className={`${error ? 'text-red-600' : `text-${color}-600`} shrink-0`} /> <span className="truncate">{label}</span>
       </label>
-      <div className={`relative w-full h-[55px] flex items-center border rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : 'border-slate-200 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50'}`}>
+      <div className={`relative w-full h-[55px] flex items-center border rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : (isFilled ? 'border-emerald-500 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50' : 'border-red-500 focus-within:border-red-400 focus-within:ring-4 focus-within:ring-red-50')}`}>
         <div className="flex items-center w-full px-4 h-full gap-2">
           <div className="relative flex-1 h-full flex items-center justify-center gap-1 shrink-0">
             <input 
@@ -612,7 +618,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 <input 
                   type="text" 
                   required 
-                  className={inputCls} 
+                  className={`${inputCls} ${formData.description ? 'border-emerald-500' : 'border-red-500'}`} 
                   value={formData.description} 
                   onFocus={() => {
                     setShowDescriptionDropdown(true);
@@ -681,7 +687,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               <IDBadge id="corr-field-2" />
               <label className={labelCls}><span className={numBadge}>২</span> <ShieldCheck size={14} className="text-blue-600" /> শাখার ধরণ:</label>
               <select 
-                className={inputCls} value={formData.paraType}
+                className={`${inputCls} ${formData.paraType ? 'border-emerald-500' : 'border-red-500'}`} value={formData.paraType}
                 onChange={e => setFormData({...formData, paraType: e.target.value})}
               >
                 <option value="এসএফআই">এসএফআই (SFI)</option>
@@ -705,7 +711,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               <IDBadge id="corr-field-4a" />
               <label className={labelCls}><span className={numBadge}>৪.ক</span> <Hash size={14} className="text-amber-600" /> পত্র নং:</label>
               <input 
-                type="text" className={inputCls} 
+                type="text" className={`${inputCls} ${formData.letterNo ? 'border-emerald-500' : 'border-red-500'}`} 
                 value={formData.letterNo} onChange={e => setFormData({...formData, letterNo: toBengaliDigits(e.target.value)})} 
                 placeholder="নং লিখুন"
               />
@@ -726,7 +732,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               <IDBadge id="corr-field-paras-count" />
               <label className={labelCls}><span className={numBadge}>৫</span> <ListOrdered size={14} className="text-purple-600" /> প্রেরিত অনু: সংখ্যা:</label>
               <input 
-                type="text" className={inputCls} 
+                type="text" className={`${inputCls} ${rawInputs.totalParas ? 'border-emerald-500' : 'border-red-500'}`} 
                 value={rawInputs.totalParas || ''} onChange={e => handleNumericInput('totalParas', e.target.value)}
                 placeholder="০"
               />
@@ -737,7 +743,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               <IDBadge id="corr-field-amount" />
               <label className={labelCls}><span className={numBadge}>৬</span> <Banknote size={14} className="text-rose-600" /> মোট জড়িত টাকা:</label>
               <input 
-                type="text" className={inputCls} 
+                type="text" className={`${inputCls} ${rawInputs.totalAmount ? 'border-emerald-500' : 'border-red-500'}`} 
                 value={rawInputs.totalAmount || ''} onChange={e => handleNumericInput('totalAmount', e.target.value)}
                 placeholder="০"
               />
@@ -754,7 +760,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               <IDBadge id="corr-field-7a" />
               <label className={labelCls}><span className={numBadge}>৭.ক</span> <BookOpen size={14} className="text-emerald-600" /> ডায়েরি নং:</label>
               <input 
-                type="text" className={inputCls} 
+                type="text" className={`${inputCls} ${formData.diaryNo ? 'border-emerald-500' : 'border-red-500'}`} 
                 value={formData.diaryNo} onChange={e => setFormData({...formData, diaryNo: toBengaliDigits(e.target.value)})} 
                 placeholder="নং লিখুন"
               />
@@ -795,7 +801,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               <IDBadge id="corr-field-9" />
               <label className={labelCls}><span className={numBadge}>৯</span> <Computer size={14} className="text-indigo-600" /> ডিজিটাল নথি নং-:</label>
               <input 
-                type="text" className={inputCls} 
+                type="text" className={`${inputCls} ${formData.digitalFileNo ? 'border-emerald-500' : 'border-red-500'}`} 
                 value={formData.digitalFileNo} onChange={e => setFormData({...formData, digitalFileNo: toBengaliDigits(e.target.value)})}
                 placeholder="নথি নং লিখুন"
               />
@@ -808,7 +814,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               <div className="relative group">
                 <input 
                   type="text" 
-                  className={inputCls} 
+                  className={`${inputCls} ${formData.receiverName ? 'border-emerald-500' : 'border-red-500'}`} 
                   value={formData.receiverName} 
                   onFocus={() => setShowReceiverDropdown(true)}
                   onChange={e => setFormData({...formData, receiverName: e.target.value})}
@@ -882,7 +888,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               <IDBadge id="corr-field-13" />
               <label className={labelCls}><span className={numBadge}>১৩</span> <FileText size={14} className="text-slate-600" /> মন্তব্য:</label>
               <textarea 
-                className={`${inputCls} h-24 py-3 resize-none`}
+                className={`${inputCls} ${formData.remarks ? 'border-emerald-500' : 'border-red-500'} h-24 py-3 resize-none`}
                 value={formData.remarks}
                 onChange={e => setFormData({...formData, remarks: e.target.value})}
                 placeholder="কোন মন্তব্য থাকলে এখানে লিখুন (ঐচ্ছিক)"
