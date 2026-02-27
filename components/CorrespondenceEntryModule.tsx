@@ -380,23 +380,28 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   /**
    * Duplicate Check Logic
    */
-  const isDuplicate = useMemo(() => {
-    if (!formData.diaryNo || !formData.letterNo) return false;
-    
-    // Normalize for robust comparison (convert Bengali to English digits)
+  const duplicates = useMemo(() => {
     const normalizedDiary = toEnglishDigits(formData.diaryNo).trim();
     const normalizedLetter = toEnglishDigits(formData.letterNo).trim();
-    
-    return existingEntries.some(entry => {
-      // If editing, skip the current entry itself
+
+    const diaryExists = normalizedDiary ? existingEntries.some(entry => {
       if (initialEntry && entry.id === initialEntry.id) return false;
-      
-      const eDiary = toEnglishDigits(entry.diaryNo || '').trim();
-      const eLetter = toEnglishDigits(entry.letterNo || '').trim();
-      
-      return eDiary === normalizedDiary && eLetter === normalizedLetter;
-    });
+      return toEnglishDigits(entry.diaryNo || '').trim() === normalizedDiary;
+    }) : false;
+
+    const letterExists = normalizedLetter ? existingEntries.some(entry => {
+      if (initialEntry && entry.id === initialEntry.id) return false;
+      return toEnglishDigits(entry.letterNo || '').trim() === normalizedLetter;
+    }) : false;
+
+    return {
+      diaryNo: diaryExists,
+      letterNo: letterExists,
+      any: diaryExists || letterExists
+    };
   }, [formData.diaryNo, formData.letterNo, existingEntries, initialEntry]);
+
+  const isDuplicate = duplicates.any;
 
   useEffect(() => {
     if (initialEntry) {
@@ -523,8 +528,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isDuplicate) return;
-
+    
     // Defer heavy work to next tick to avoid blocking UI (INP fix)
     setTimeout(() => {
       if (formData.receiverName.trim()) {
@@ -595,13 +599,22 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
       {/* Duplicate Warning Message */}
       {isDuplicate && !isSuccess && (
-        <div className="mb-8 p-6 bg-red-50 border-2 border-dashed border-red-200 rounded-[2rem] flex items-center gap-6 animate-in slide-in-from-top-4 duration-500 shadow-lg shadow-red-100">
-           <div className="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-red-200 animate-pulse">
+        <div className="mb-8 p-6 bg-amber-50 border-2 border-dashed border-amber-200 rounded-[2rem] flex items-center gap-6 animate-in slide-in-from-top-4 duration-500 shadow-lg shadow-amber-100">
+           <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-amber-200 animate-pulse">
               <AlertCircle size={32} />
            </div>
            <div className="space-y-1">
-              <h4 className="text-xl font-black text-red-900 tracking-tight">চিঠিচি ইতোমধ্যেই এন্ট্রি করা হয়েছে</h4>
-              <p className="text-sm font-bold text-red-700/80">ডায়েরি নং: <span className="underline underline-offset-4">{toBengaliDigits(formData.diaryNo)}</span> এবং স্মারক নং: <span className="underline underline-offset-4">{toBengaliDigits(formData.letterNo)}</span> সম্বলিত একটি চিঠি আগে থেকেই ডাটাবেজে বিদ্যমান। অনুগ্রহ করে তথ্য যাচাই করুন।</p>
+              <h4 className="text-xl font-black text-amber-900 tracking-tight">সতর্কবার্তা: তথ্যটি ইতোমধ্যেই বিদ্যমান</h4>
+              <p className="text-sm font-bold text-amber-700/80">
+                {duplicates.diaryNo && (
+                  <span>ডায়েরি নং: <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.diaryNo)}</span> </span>
+                )}
+                {duplicates.diaryNo && duplicates.letterNo && <span>এবং </span>}
+                {duplicates.letterNo && (
+                  <span>পত্র নং: <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.letterNo)}</span> </span>
+                )}
+                ইতোমধ্যেই ডাটাবেজে বিদ্যমান। অনুগ্রহ করে তথ্য যাচাই করুন।
+              </p>
            </div>
         </div>
       )}
@@ -707,14 +720,19 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             </div>
 
             {/* Field 4.ক */}
-            <div className={`${colWrapper} border-amber-100`}>
+            <div className={`${colWrapper} ${duplicates.letterNo ? 'bg-amber-50 border-amber-200' : 'border-amber-100'}`}>
               <IDBadge id="corr-field-4a" />
               <label className={labelCls}><span className={numBadge}>৪.ক</span> <Hash size={14} className="text-amber-600" /> পত্র নং:</label>
               <input 
-                type="text" className={`${inputCls} ${formData.letterNo ? 'border-emerald-500' : 'border-red-500'}`} 
+                type="text" className={`${inputCls} ${duplicates.letterNo ? 'border-amber-500 ring-4 ring-amber-50' : (formData.letterNo ? 'border-emerald-500' : 'border-red-500')}`} 
                 value={formData.letterNo} onChange={e => setFormData({...formData, letterNo: toBengaliDigits(e.target.value)})} 
                 placeholder="নং লিখুন"
               />
+              {duplicates.letterNo && (
+                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center gap-1">
+                  <AlertCircle size={10} /> এই পত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                </div>
+              )}
             </div>
 
             {/* Field 4.খ - Smart Segmented Date */}
@@ -756,14 +774,19 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             </div>
 
             {/* Field 7.ক */}
-            <div className={`${colWrapper} border-emerald-100`}>
+            <div className={`${colWrapper} ${duplicates.diaryNo ? 'bg-amber-50 border-amber-200' : 'border-emerald-100'}`}>
               <IDBadge id="corr-field-7a" />
               <label className={labelCls}><span className={numBadge}>৭.ক</span> <BookOpen size={14} className="text-emerald-600" /> ডায়েরি নং:</label>
               <input 
-                type="text" className={`${inputCls} ${formData.diaryNo ? 'border-emerald-500' : 'border-red-500'}`} 
+                type="text" className={`${inputCls} ${duplicates.diaryNo ? 'border-amber-500 ring-4 ring-amber-50' : (formData.diaryNo ? 'border-emerald-500' : 'border-red-500')}`} 
                 value={formData.diaryNo} onChange={e => setFormData({...formData, diaryNo: toBengaliDigits(e.target.value)})} 
                 placeholder="নং লিখুন"
               />
+              {duplicates.diaryNo && (
+                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center gap-1">
+                  <AlertCircle size={10} /> এই ডায়েরি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                </div>
+              )}
             </div>
 
             {/* Field 7.খ - Smart Segmented Date */}

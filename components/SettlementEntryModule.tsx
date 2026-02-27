@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOption } from '../types.ts';
 import SearchableSelect from './SearchableSelect.tsx';
 import { MINISTRIES_LIST, MINISTRY_ENTITY_MAP, ENTITY_BRANCH_MAP, AUDIT_YEARS_OPTIONS } from '../constants.ts';
-import { Trash2, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight } from 'lucide-react';
+import { Trash2, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils.ts';
 import { getCycleForDate, isEntryLate } from '../utils/cycleHelper.ts';
 import { getDateError } from '../utils/dateValidation';
@@ -245,15 +245,18 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   useEffect(() => {
     if (!existingEntries || existingEntries.length === 0) return;
     
-    // Check for duplicates in letterNo, diaryNo, and issueNo
-    const letterMatch = existingEntries.some(e => e.letterNoDate && e.letterNoDate.includes(`পত্র নং- ${letterNoPart}`));
-    const diaryMatch = existingEntries.some(e => e.workpaperNoDate && e.workpaperNoDate.includes(`ডায়েরি নং- ${diaryNoPart}`));
-    const issueMatch = existingEntries.some(e => e.issueLetterNoDate && e.issueLetterNoDate.includes(`জারিপত্র নং- ${issueNoPart}`));
-    
+    const checkDuplicate = (combinedStr: string | undefined, prefix: string, searchNo: string) => {
+      if (!combinedStr || !searchNo.trim()) return false;
+      const parts = combinedStr.split(',');
+      if (parts.length === 0) return false;
+      const noPart = parts[0].replace(prefix, '').trim();
+      return toEnglishDigits(noPart).trim() === toEnglishDigits(searchNo).trim();
+    };
+
     setDuplicates({
-      letterNo: letterNoPart ? letterMatch : false,
-      diaryNo: diaryNoPart ? diaryMatch : false,
-      issueNo: issueNoPart ? issueMatch : false
+      letterNo: letterNoPart ? existingEntries.some(e => checkDuplicate(e.letterNoDate, 'পত্র নং-', letterNoPart)) : false,
+      diaryNo: diaryNoPart ? existingEntries.some(e => checkDuplicate(e.workpaperNoDate, 'ডায়েরি নং-', diaryNoPart)) : false,
+      issueNo: issueNoPart ? existingEntries.some(e => checkDuplicate(e.issueLetterNoDate, 'জারিপত্র নং-', issueNoPart)) : false
     });
   }, [letterNoPart, diaryNoPart, issueNoPart, existingEntries]);
 
@@ -491,6 +494,45 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     }, 0);
   };
 
+  const handleNewEntry = () => {
+    setFormData({
+      paraType: 'এসএফআই' as ParaType, 
+      meetingType: 'বিএসআর',
+      ministryName: '',
+      entityName: '',
+      branchName: '',
+      auditYear: '',
+      letterNoDate: '',
+      meetingWorkpaper: '', 
+      workpaperNoDate: '', 
+      issueLetterNoDate: '', 
+      issueDateISO: '', 
+      archiveNo: '',
+      meetingSentParaCount: '',
+      meetingDiscussedParaCount: '',
+      meetingRecommendedParaCount: '',
+      meetingSettledParaCount: '',
+      meetingFullSettledParaCount: '',
+      meetingPartialSettledParaCount: '',
+      meetingUnsettledParas: '',
+      meetingUnsettledAmount: 0,
+      totalInvolvedAmount: 0,
+      isMeeting: false,
+      remarks: '',
+      meetingDate: '',
+      manualRaisedCount: null as string | null,
+      manualRaisedAmount: null as number | null
+    });
+    setLetterNoPart(''); setLetterDay(''); setLetterMonth(''); setLetterYear('');
+    setWpNoPart(''); setWpDay(''); setWpMonth(''); setWpYear('');
+    setDiaryNoPart(''); setDiaryDay(''); setDiaryMonth(''); setDiaryYear('');
+    setIssueNoPart(''); setDayPart(''); setMonthPart(''); setYearPart('');
+    setParagraphs([]);
+    setRawInputs({});
+    setIsSuccess(false);
+    setWizardStep('selection');
+  };
+
   const formatSummaryNum = (val: number) => {
     if (val === 0) return '০';
     return toBengaliDigits(Math.round(val).toLocaleString('en-IN'));
@@ -618,7 +660,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
           <div className="p-3 bg-slate-900 rounded-2xl text-white shrink-0">
             <Layout size={24} />
           </div>
-          <div><h3 className="text-2xl font-black text-slate-900 leading-tight">মীমাংসা রেজিস্টার ডাটা এন্ট্রি</h3><p className="text-slate-500 font-bold text-sm">অনুগ্রহ করে নিচের ১৮টি ফিল্ড সঠিকভাবে পূরণ করুন</p></div>
+          <div><h3 className="text-2xl font-black text-slate-900 leading-tight">মীমাংসা এন্ট্রি</h3><p className="text-slate-500 font-bold text-sm">অনুগ্রহ করে নিচের ১৮টি ফিল্ড সঠিকভাবে পূরণ করুন</p></div>
         </div>
         {onCancel && (
           <button 
@@ -632,6 +674,24 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
           </button>
         )}
       </div>
+
+      {/* Duplicate Warning Message */}
+      {(duplicates.letterNo || duplicates.diaryNo || duplicates.issueNo) && !isSuccess && (
+        <div className="mb-10 p-6 bg-amber-50 border-2 border-dashed border-amber-200 rounded-[2.5rem] flex items-center gap-6 animate-in slide-in-from-top-4 duration-500 shadow-lg shadow-amber-100">
+           <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-amber-200 animate-pulse">
+              <AlertCircle size={32} />
+           </div>
+           <div className="space-y-1">
+              <h4 className="text-xl font-black text-amber-900 tracking-tight">সতর্কবার্তা: তথ্যটি ইতোমধ্যেই বিদ্যমান</h4>
+              <p className="text-sm font-bold text-amber-700/80">
+                {duplicates.letterNo && <span>পত্র নং: <span className="underline underline-offset-4 font-black">{toBengaliDigits(letterNoPart)}</span> </span>}
+                {duplicates.diaryNo && <span>ডায়েরি নং: <span className="underline underline-offset-4 font-black">{toBengaliDigits(diaryNoPart)}</span> </span>}
+                {duplicates.issueNo && <span>জারিপত্র নং: <span className="underline underline-offset-4 font-black">{toBengaliDigits(issueNoPart)}</span> </span>}
+                ইতোমধ্যেই ডাটাবেজে বিদ্যমান। অনুগ্রহ করে তথ্য যাচাই করুন।
+              </p>
+           </div>
+        </div>
+      )}
 
       <form id="form-entry" onSubmit={handleSubmit} className="space-y-10">
         <fieldset disabled={isSuccess} className="space-y-10 border-none p-0 m-0">
@@ -846,6 +906,12 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                {!isDeletingPara && (
                   <div className="flex flex-col md:flex-row items-center gap-4 mt-2">
                     <button 
+                      onClick={handleNewEntry}
+                      className="px-8 py-4 bg-white text-emerald-600 border-2 border-emerald-600 rounded-2xl font-black text-lg shadow-xl hover:bg-emerald-50 transition-all flex items-center gap-3 active:scale-95 group"
+                    >
+                      নতুন মীমাংসা এন্ট্রি দিন <Plus size={20} />
+                    </button>
+                    <button 
                       onClick={onViewRegister}
                       className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-3 active:scale-95 group"
                     >
@@ -883,14 +949,14 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
           100% { width: 100%; }
         }
         .animate-progress-loading-premium {
-          animation: progress-loading-premium 4s linear forwards;
+          animation: progress-loading-premium 1.5s linear forwards;
         }
         @keyframes fade-in-complete {
           0%, 95% { opacity: 0; transform: translateY(10px); }
           100% { opacity: 1; transform: translateY(0); }
         }
         .animate-complete-text {
-          animation: fade-in-complete 4.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          animation: fade-in-complete 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}} />
     </div>
