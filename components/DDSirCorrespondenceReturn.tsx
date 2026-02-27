@@ -46,20 +46,6 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     return ['সকল', ...unique];
   }, [entries]);
 
-  const filteredEntries = useMemo(() => {
-    let data = entries;
-    
-    if (filterAuditor !== 'সকল') {
-      data = data.filter(e => (e.receiverName || e.presentedToName) === filterAuditor);
-    }
-
-    if (filterBranch !== 'সকল') {
-      data = data.filter(e => e.paraType === filterBranch);
-    }
-
-    return data;
-  }, [entries, filterAuditor, filterBranch]);
-
   // --- Logic for 2nd Sunday Calculation (Default) ---
   const defaultReportingDate = useMemo(() => {
     const end = activeCycle.end;
@@ -75,6 +61,49 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   useEffect(() => {
     setSelectedReportingDate(defaultReportingDate);
   }, [defaultReportingDate]);
+
+  const filteredEntries = useMemo(() => {
+    let data = entries || [];
+    
+    // Filter by selected reporting date (Pending Logic)
+    const reportingDateObj = new Date(selectedReportingDate);
+    reportingDateObj.setHours(23, 59, 59, 999);
+
+    data = data.filter(e => {
+      if (!e.diaryDate) return false;
+      const dDateStr = toEnglishDigits(e.diaryDate);
+      const dDate = new Date(dDateStr);
+      if (isNaN(dDate.getTime())) return false;
+      
+      // Must be received on or before reporting date
+      if (dDate.getTime() > reportingDateObj.getTime()) return false;
+      
+      // Must NOT be issued on or before reporting date
+      const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
+      const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
+      const hasValidNo = rawNo !== '' && rawNo !== '০' && rawNo !== '0' && !rawNo.includes('নং-');
+      const hasValidDate = rawDate !== '' && rawDate !== '0000-00-00';
+      
+      if (hasValidNo && hasValidDate) {
+        const issueDate = new Date(toEnglishDigits(rawDate));
+        if (!isNaN(issueDate.getTime()) && issueDate.getTime() <= reportingDateObj.getTime()) {
+          return false; // Already issued on or before this date
+        }
+      }
+      
+      return true;
+    });
+
+    if (filterAuditor !== 'সকল') {
+      data = data.filter(e => (e.receiverName || e.presentedToName) === filterAuditor);
+    }
+
+    if (filterBranch !== 'সকল') {
+      data = data.filter(e => e.paraType === filterBranch);
+    }
+
+    return data;
+  }, [entries, filterAuditor, filterBranch, selectedReportingDate]);
 
   const reportingDate = useMemo(() => new Date(selectedReportingDate), [selectedReportingDate]);
 
