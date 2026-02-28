@@ -196,8 +196,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const summaryStats = useMemo(() => {
     const stats = {
       total: entries.length,
-      sfi: { total: 0, bsr: 0, kp: 0, kb: 0 },
-      nonSfi: { total: 0, bsr: 0, kp: 0, kb: 0 }
+      sfi: { total: 0, bsr: 0, kp: 0, kb: 0, reconciliation: 0 },
+      nonSfi: { total: 0, bsr: 0, kp: 0, kb: 0, reconciliation: 0 }
     };
     entries.forEach(e => {
       if (e.paraType === 'এসএফআই') {
@@ -205,11 +205,13 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         if (e.letterType === 'বিএসআর') stats.sfi.bsr++;
         if (e.letterType?.includes('কার্যপত্র')) stats.sfi.kp++;
         if (e.letterType?.includes('কার্যবিবরণী')) stats.sfi.kb++;
+        if (e.letterType === 'মিলিকরণ') stats.sfi.reconciliation++;
       } else if (e.paraType === 'নন এসএফআই') {
         stats.nonSfi.total++;
         if (e.letterType === 'বিএসআর') stats.nonSfi.bsr++;
         if (e.letterType?.includes('কার্যপত্র')) stats.nonSfi.kp++;
         if (e.letterType?.includes('কার্যবিবরণী')) stats.nonSfi.kb++;
+        if (e.letterType === 'মিলিকরণ') stats.nonSfi.reconciliation++;
       }
     });
     return stats;
@@ -260,7 +262,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                       <span className="text-slate-700 font-black ml-1">
                         (বিএসআর: {toBengaliDigits(summaryStats.sfi.bsr)} টি, 
                         ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.sfi.kp)} টি, 
-                        ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি।
+                        ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি,
+                        মিলিকরণ: {toBengaliDigits(summaryStats.sfi.reconciliation)} টি।
                       </span>
                     </span>
                   </div>
@@ -271,7 +274,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                       <span className="text-slate-700 font-black ml-1">
                         (বিএসআর: {toBengaliDigits(summaryStats.nonSfi.bsr)} টি, 
                         দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.nonSfi.kp)} টি, 
-                        দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি।
+                        দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি,
+                        মিলিকরণ: {toBengaliDigits(summaryStats.nonSfi.reconciliation)} টি।
                       </span>
                     </span>
                   </div>
