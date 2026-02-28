@@ -49,14 +49,14 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const reportingLimitDate = useMemo(() => {
     const today = new Date();
     const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    const selectedMonthStart = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth(), 1);
+    const selectedMonthStart = new Date(activeCycle.end.getFullYear(), activeCycle.end.getMonth(), 1);
     
     if (selectedMonthStart.getTime() > currentMonthStart.getTime()) {
       // Next month selected: show up to today (Current Status)
       return today;
     } else {
       // Current or Past month selected: show up to the end of the month BEFORE the selected month
-      return new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth(), 0, 23, 59, 59);
+      return new Date(activeCycle.end.getFullYear(), activeCycle.end.getMonth(), 0, 23, 59, 59);
     }
   }, [activeCycle.start]);
 
