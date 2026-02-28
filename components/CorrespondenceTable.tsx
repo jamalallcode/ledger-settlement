@@ -351,12 +351,14 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
         bsr: getLetterTypeCount(sfi, 'বিএসআর'),
         triWork: getLetterTypeCount(sfi, 'ত্রিপক্ষীয় সভা (কার্যপত্র)'),
         triMin: getLetterTypeCount(sfi, 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)'),
+        reconciliation: getLetterTypeCount(sfi, 'মিলিকরণ'),
       },
       nonSfi: {
         total: nonSfi.length,
         bsr: getLetterTypeCount(nonSfi, 'বিএসআর'),
         biWork: getLetterTypeCount(nonSfi, 'দ্বিপক্ষীয় সভা (কার্যপত্র)'),
         biMin: getLetterTypeCount(nonSfi, 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)'),
+        reconciliation: getLetterTypeCount(nonSfi, 'মিলিকরণ'),
       }
     };
   }, [filteredEntries]);
@@ -396,12 +398,14 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
           bsr: getCount(sfi, 'বিএসআর'),
           triWork: getCount(sfi, 'ত্রিপক্ষীয় সভা (কার্যপত্র)'),
           triMin: getCount(sfi, 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)'),
+          reconciliation: getCount(sfi, 'মিলিকরণ'),
         },
         nonSfi: {
           total: nonSfi.length,
           bsr: getCount(nonSfi, 'বিএসআর'),
           biWork: getCount(nonSfi, 'দ্বিপক্ষীয় সভা (কার্যপত্র)'),
           biMin: getCount(nonSfi, 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)'),
+          reconciliation: getCount(nonSfi, 'মিলিকরণ'),
         }
       };
     });
@@ -771,14 +775,14 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                         <div className="flex flex-col">
                           <span className="text-[10px] font-bold text-emerald-600 uppercase">এসএফআই: {toBengaliDigits(stats.sfi.total)} টি</span>
                           <span className="text-[11px] font-black text-slate-700">
-                            (বিএসআর: {toBengaliDigits(stats.sfi.bsr)} টি, ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(stats.sfi.triWork)} টি, ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(stats.sfi.triMin)} টি)
+                            (বিএসআর: {toBengaliDigits(stats.sfi.bsr)} টি, ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(stats.sfi.triWork)} টি, ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(stats.sfi.triMin)} টি, মিলিকরণ: {toBengaliDigits(stats.sfi.reconciliation)} টি)
                           </span>
                         </div>
                         <div className="h-8 w-[1px] bg-blue-200 hidden md:block"></div>
                         <div className="flex flex-col">
                           <span className="text-[10px] font-bold text-amber-600 uppercase">নন এসএফআই: {toBengaliDigits(stats.nonSfi.total)} টি</span>
                           <span className="text-[11px] font-black text-slate-700">
-                            (বিএসআর: {toBengaliDigits(stats.nonSfi.bsr)} টি, দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(stats.nonSfi.biWork)} টি, দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(stats.nonSfi.biMin)} টি)
+                            (বিএসআর: {toBengaliDigits(stats.nonSfi.bsr)} টি, দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(stats.nonSfi.biWork)} টি, দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(stats.nonSfi.biMin)} টি, মিলিকরণ: {toBengaliDigits(stats.nonSfi.reconciliation)} টি)
                           </span>
                         </div>
                       </div>
