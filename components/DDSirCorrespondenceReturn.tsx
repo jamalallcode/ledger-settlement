@@ -248,16 +248,16 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             </button>
             <div className="absolute top-full left-0 pt-2 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
               <div className="min-w-[300px] p-5 bg-white border-2 border-slate-200 rounded-2xl shadow-2xl">
-                <div className="flex flex-col gap-3 font-bold text-slate-700">
+                <div className="flex flex-col gap-3 font-black text-slate-700">
                   <div className="flex items-center gap-2 text-[14px]">
-                    <span className="text-blue-700">মোট চিঠি:</span>
-                    <span className="text-slate-900">{toBengaliDigits(summaryStats.total)} টি</span>
+                    <span className="text-blue-700 font-black">মোট চিঠি:</span>
+                    <span className="text-slate-900 font-black">{toBengaliDigits(summaryStats.total)} টি</span>
                   </div>
                   <div className="flex items-center gap-2 text-[13px]">
-                    <span className="text-blue-700">এসএফআই:</span>
-                    <span className="text-slate-900">
+                    <span className="text-blue-700 font-black">এসএফআই:</span>
+                    <span className="text-slate-900 font-black">
                       {toBengaliDigits(summaryStats.sfi.total)} টি 
-                      <span className="text-slate-700 font-bold ml-1">
+                      <span className="text-slate-700 font-black ml-1">
                         (বিএসআর: {toBengaliDigits(summaryStats.sfi.bsr)} টি, 
                         ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.sfi.kp)} টি, 
                         ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি।
@@ -265,10 +265,10 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-[13px]">
-                    <span className="text-blue-700">নন এসএফআই:</span>
-                    <span className="text-slate-900">
+                    <span className="text-blue-700 font-black">নন এসএফআই:</span>
+                    <span className="text-slate-900 font-black">
                       {toBengaliDigits(summaryStats.nonSfi.total)} টি 
-                      <span className="text-slate-700 font-bold ml-1">
+                      <span className="text-slate-700 font-black ml-1">
                         (বিএসআর: {toBengaliDigits(summaryStats.nonSfi.bsr)} টি, 
                         দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.nonSfi.kp)} টি, 
                         দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি।
