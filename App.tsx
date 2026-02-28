@@ -485,9 +485,9 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="h-screen bg-white flex overflow-hidden font-['Hind_Siliguri']">
+    <div className="h-screen bg-white flex overflow-hidden font-['Hind_Siliguri'] animate-in fade-in duration-1000">
       {isLoading && (
-        <div className="fixed inset-0 bg-white/60 backdrop-blur-md z-[1000] flex flex-col items-center justify-center gap-4">
+        <div className="fixed inset-0 bg-white/60 backdrop-blur-md z-[9999] flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
           <p className="font-black text-slate-700 text-sm animate-pulse tracking-widest">সিস্টেম লোড হচ্ছে...</p>
         </div>
