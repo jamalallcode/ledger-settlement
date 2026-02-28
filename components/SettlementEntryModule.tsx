@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOption } from '../types.ts';
 import SearchableSelect from './SearchableSelect.tsx';
 import { MINISTRIES_LIST, MINISTRY_ENTITY_MAP, ENTITY_BRANCH_MAP, AUDIT_YEARS_OPTIONS } from '../constants.ts';
-import { Trash2, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus } from 'lucide-react';
+import { Trash2, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus, Hash } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils.ts';
 import { getCycleForDate, isEntryLate } from '../utils/cycleHelper.ts';
 import { getDateError } from '../utils/dateValidation';
@@ -78,32 +78,32 @@ const SegmentedInput = ({
   return (
     <div id={id} className={colWrapperCls + ` ${error ? 'bg-red-50 border-red-200' : (warning ? 'bg-amber-50 border-amber-200' : `bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`)}`}>
       <IDBadge id={id} isLayoutEditable={isLayoutEditable} />
-      <label className={labelCls + " truncate"}><span className={numBadge}>{toBengaliDigits(id.split('-')[1])}</span> <Icon size={14} className={`${error ? 'text-red-600' : (warning ? 'text-amber-600' : `text-${color}-600`)} shrink-0`} /> <span className="truncate">{label}</span></label>
-      <div className={`relative w-full h-[55px] flex items-center border-2 rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : (warning ? 'border-amber-400 ring-4 ring-amber-50' : (isFilled ? 'border-emerald-500 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50' : 'border-red-500 focus-within:border-red-400 focus-within:ring-4 focus-within:ring-red-50'))}`}>
+      <label className={labelCls + " truncate"}><span className={numBadge}>{toBengaliDigits(id.split('-')[1].replace(/[ab]/g, ''))}</span> <Icon size={14} className={`${error ? 'text-red-600' : (warning ? 'text-amber-600' : `text-${color}-600`)} shrink-0`} /> <span className="truncate">{label}</span></label>
+      <div className={`relative w-full h-[55px] flex items-center border-2 rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : (warning ? 'border-amber-400 ring-4 ring-amber-50' : (isFilled || noValue === 'DATE_ONLY' ? 'border-emerald-500 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50' : 'border-red-500 focus-within:border-red-400 focus-within:ring-4 focus-within:ring-red-50'))}`}>
         {extra}
         <div className="flex items-center w-full px-2 sm:px-4 h-full">
-          <div className="relative flex-[2.5] h-full flex items-center min-w-0">
-            {(!isFocused && !noValue) && <span className="text-[9px] sm:text-[11px] font-black text-slate-400 select-none absolute left-0 pointer-events-none">নং-</span>}
-            <input 
-              type="text" 
-              className={`w-full bg-transparent border-none outline-none font-black text-slate-800 text-[10px] sm:text-[12px] p-0 transition-all ${(!isFocused && !noValue) ? 'pl-5 sm:pl-6' : 'pl-0'}`}
-              value={noValue}
-              onFocus={() => focusSetter(true)}
-              onBlur={() => focusSetter(false)}
-              onChange={e => {
-                const raw = e.target.value;
-                if (raw.includes('/') || raw.includes('-')) {
-                   dayRef.current?.focus();
-                } else {
-                   noSetter(toBengaliDigits(raw.replace(/[\/\-]/g, '')));
-                }
-              }}
-              onKeyDown={e => {
-                if (e.key === 'Enter') dayRef.current?.focus();
-              }}
-            />
-          </div>
-          <div className="h-6 w-[1px] sm:w-[1.5px] bg-slate-200 mx-1 sm:mx-2 shrink-0"></div>
+          {noValue !== 'DATE_ONLY' && (
+            <>
+              <div className="relative flex-[2.5] h-full flex items-center min-w-0">
+                {(!isFocused && !noValue) && <span className="text-[9px] sm:text-[11px] font-black text-slate-400 select-none absolute left-0 pointer-events-none">নং-</span>}
+                <input 
+                  type="text" 
+                  className={`w-full bg-transparent border-none outline-none font-black text-slate-800 text-[10px] sm:text-[12px] p-0 transition-all ${(!isFocused && !noValue) ? 'pl-5 sm:pl-6' : 'pl-0'}`}
+                  value={noValue}
+                  onFocus={() => focusSetter(true)}
+                  onBlur={() => focusSetter(false)}
+                  onChange={e => {
+                    const raw = e.target.value;
+                    noSetter(toBengaliDigits(raw));
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') dayRef.current?.focus();
+                  }}
+                />
+              </div>
+              <div className="h-6 w-[1px] sm:w-[1.5px] bg-slate-200 mx-1 sm:mx-2 shrink-0"></div>
+            </>
+          )}
           <div className="relative flex-1 h-full flex items-center justify-center gap-0.5 sm:gap-1 shrink-0">
             <input 
               ref={dayRef}
@@ -236,14 +236,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [isWpFocused, setIsWpFocused] = useState(false);
   const [isDiaryFocused, setIsDiaryFocused] = useState(false);
 
-  const [duplicates, setDuplicates] = useState({
-    letterNo: false,
-    diaryNo: false,
-    issueNo: false
-  });
-
-  useEffect(() => {
-    if (!existingEntries || existingEntries.length === 0) return;
+  const duplicates = useMemo(() => {
+    if (!existingEntries || existingEntries.length === 0) return { letterNo: false, diaryNo: false, issueNo: false };
     
     const checkDuplicate = (combinedStr: string | undefined, prefix: string, searchNo: string) => {
       if (!combinedStr || !searchNo.trim()) return false;
@@ -253,12 +247,29 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       return toEnglishDigits(noPart).trim() === toEnglishDigits(searchNo).trim();
     };
 
-    setDuplicates({
-      letterNo: letterNoPart ? existingEntries.some(e => checkDuplicate(e.letterNoDate, 'পত্র নং-', letterNoPart)) : false,
-      diaryNo: diaryNoPart ? existingEntries.some(e => checkDuplicate(e.workpaperNoDate, 'ডায়েরি নং-', diaryNoPart)) : false,
-      issueNo: issueNoPart ? existingEntries.some(e => checkDuplicate(e.issueLetterNoDate, 'জারিপত্র নং-', issueNoPart)) : false
-    });
-  }, [letterNoPart, diaryNoPart, issueNoPart, existingEntries]);
+    const letterNoExists = letterNoPart ? existingEntries.some(e => {
+      if (initialEntry && e.id === initialEntry.id) return false;
+      return checkDuplicate(e.letterNoDate, 'পত্র নং-', letterNoPart);
+    }) : false;
+
+    const diaryNoExists = diaryNoPart ? existingEntries.some(e => {
+      if (initialEntry && e.id === initialEntry.id) return false;
+      return checkDuplicate(e.workpaperNoDate, 'ডায়েরি নং-', diaryNoPart);
+    }) : false;
+
+    const issueNoExists = issueNoPart ? existingEntries.some(e => {
+      if (initialEntry && e.id === initialEntry.id) return false;
+      return checkDuplicate(e.issueLetterNoDate, 'জারিপত্র নং-', issueNoPart);
+    }) : false;
+
+    return {
+      letterNo: letterNoExists,
+      diaryNo: diaryNoExists,
+      issueNo: issueNoExists
+    };
+  }, [letterNoPart, diaryNoPart, issueNoPart, existingEntries, initialEntry]);
+
+  const isDuplicate = duplicates.letterNo || duplicates.diaryNo || duplicates.issueNo;
 
   const letterDayRef = useRef<HTMLInputElement>(null);
   const letterMonthRef = useRef<HTMLInputElement>(null);
@@ -676,7 +687,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       </div>
 
       {/* Duplicate Warning Message */}
-      {(duplicates.letterNo || duplicates.diaryNo || duplicates.issueNo) && !isSuccess && (
+      {isDuplicate && !isSuccess && (
         <div className="mb-10 p-6 bg-amber-50 border-2 border-dashed border-amber-200 rounded-[2.5rem] flex items-center gap-6 animate-in slide-in-from-top-4 duration-500 shadow-lg shadow-amber-100">
            <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-amber-200 animate-pulse">
               <AlertCircle size={32} />
@@ -703,17 +714,65 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             <div id="field-5" className={col1Style}><IDBadge id="field-5" isLayoutEditable={isLayoutEditable} /><SearchableSelect label={<><span className={numBadge}>৫</span> <Building size={14} className="text-sky-600 shrink-0" /> শাখা (বিস্তারিত বিবরণ)</>} groups={branchOpts.length > 0 ? [{label: ' শাখা তালিকা', options: branchOpts}] : branchSuggestions} value={formData.branchName} onChange={v => setFormData(f=>({...f, branchName: v}))} required isLayoutEditable={isLayoutEditable} badgeId="select-branch" /></div>
             <div id="field-6" className={col2Style}><IDBadge id="field-6" isLayoutEditable={isLayoutEditable} /><SearchableSelect label={<><span className={numBadge}>৬</span> <Calendar size={14} className="text-emerald-600 shrink-0" /> নিরীক্ষা সাল</>} groups={AUDIT_YEARS_OPTIONS} value={formData.auditYear} onChange={v => setFormData(f=>({...f, auditYear: v}))} required isLayoutEditable={isLayoutEditable} badgeId="select-audit-year" /></div>
             
-            <SegmentedInput id="field-7" icon={FileText} label="পত্র নং ও তারিখ" color="amber" noValue={letterNoPart} dayValue={letterDay} monthValue={letterMonth} yearValue={letterYear} noSetter={setLetterNoPart} daySetter={setLetterDay} monthSetter={setLetterMonth} yearSetter={setLetterYear} dayRef={letterDayRef} monthRef={letterMonthRef} yearRef={letterYearRef} isFocused={isLetterFocused} focusSetter={setIsLetterFocused} isLayoutEditable={isLayoutEditable} warning={duplicates.letterNo ? "এই পত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে" : null} />
-            <SegmentedInput id="field-8" icon={BookOpen} label="ডায়েরি নং ও তারিখ" color="emerald" noValue={diaryNoPart} dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryYear} noSetter={setDiaryNoPart} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} isLayoutEditable={isLayoutEditable} error={diaryDateError} warning={duplicates.diaryNo ? "এই ডায়েরি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে" : null} />
+            <div id="field-7a" className={`${colWrapperCls} ${duplicates.letterNo ? 'bg-amber-50 border-amber-200' : 'bg-amber-50/70 border-amber-100'}`}>
+              <IDBadge id="field-7a" isLayoutEditable={isLayoutEditable} />
+              <label className={labelCls}><span className={numBadge}>{toBengaliDigits('৭.ক')}</span> <Hash size={14} className="text-amber-600 shrink-0" /> পত্র নং:</label>
+              <input 
+                type="text" 
+                className={`${inputBaseCls} ${duplicates.letterNo ? 'border-amber-500 ring-4 ring-amber-50' : (letterNoPart ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-50' : 'border-red-500 focus:border-red-600 focus:ring-red-50')}`} 
+                value={letterNoPart} 
+                onChange={e => setLetterNoPart(toBengaliDigits(e.target.value))} 
+                placeholder="নং লিখুন"
+              />
+              {duplicates.letterNo && (
+                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center gap-1">
+                  <AlertCircle size={10} /> এই পত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                </div>
+              )}
+            </div>
+            <SegmentedInput id="field-7b" icon={Calendar} label="পত্রের তারিখ" color="amber" noValue="DATE_ONLY" dayValue={letterDay} monthValue={letterMonth} yearValue={letterYear} noSetter={()=>{}} daySetter={setLetterDay} monthSetter={setLetterMonth} yearSetter={setLetterYear} dayRef={letterDayRef} monthRef={letterMonthRef} yearRef={letterYearRef} isFocused={isLetterFocused} focusSetter={setIsLetterFocused} isLayoutEditable={isLayoutEditable} />
 
+            <div id="field-8a" className={`${colWrapperCls} ${duplicates.diaryNo ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50/70 border-emerald-100'}`}>
+              <IDBadge id="field-8a" isLayoutEditable={isLayoutEditable} />
+              <label className={labelCls}><span className={numBadge}>{toBengaliDigits('৮.ক')}</span> <Hash size={14} className="text-emerald-600 shrink-0" /> ডায়েরি নং:</label>
+              <input 
+                type="text" 
+                className={`${inputBaseCls} ${duplicates.diaryNo ? 'border-amber-500 ring-4 ring-amber-50' : (diaryNoPart ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-50' : 'border-red-500 focus:border-red-600 focus:ring-red-50')}`} 
+                value={diaryNoPart} 
+                onChange={e => setDiaryNoPart(toBengaliDigits(e.target.value))} 
+                placeholder="নং লিখুন"
+              />
+              {duplicates.diaryNo && (
+                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center gap-1">
+                  <AlertCircle size={10} /> এই ডায়েরি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                </div>
+              )}
+            </div>
+            <SegmentedInput id="field-8b" icon={Calendar} label="ডায়েরি তারিখ" color="emerald" noValue="DATE_ONLY" dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryYear} noSetter={()=>{}} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} isLayoutEditable={isLayoutEditable} error={diaryDateError} />
+
+            <div id="field-9a" className={`${colWrapperCls} ${duplicates.issueNo ? 'bg-amber-50 border-amber-200' : 'bg-amber-50/70 border-amber-100'}`}>
+              <IDBadge id="field-9a" isLayoutEditable={isLayoutEditable} />
+              <label className={labelCls}><span className={numBadge}>{toBengaliDigits('৯.ক')}</span> <Hash size={14} className="text-amber-600 shrink-0" /> জারিপত্র নং:</label>
+              <input 
+                type="text" 
+                className={`${inputBaseCls} ${duplicates.issueNo ? 'border-amber-500 ring-4 ring-amber-50' : (issueNoPart ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-50' : 'border-red-500 focus:border-red-600 focus:ring-red-50')}`} 
+                value={issueNoPart} 
+                onChange={e => setIssueNoPart(toBengaliDigits(e.target.value))} 
+                placeholder="নং লিখুন"
+              />
+              {duplicates.issueNo && (
+                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center gap-1">
+                  <AlertCircle size={10} /> এই জারিপত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                </div>
+              )}
+            </div>
             <SegmentedInput 
-              id="field-9" icon={Send} label="জারিপত্র নং ও তারিখ" color="amber" 
-              noValue={issueNoPart} dayValue={dayPart} monthValue={monthPart} yearValue={yearPart} 
-              noSetter={setIssueNoPart} daySetter={setDayPart} monthSetter={setMonthPart} yearSetter={setYearPart} 
+              id="field-9b" icon={Calendar} label="জারিপত্র তারিখ" color="amber" 
+              noValue="DATE_ONLY" dayValue={dayPart} monthValue={monthPart} yearValue={yearPart} 
+              noSetter={()=>{}} daySetter={setDayPart} monthSetter={setMonthPart} yearSetter={setYearPart} 
               dayRef={issueDayRef} monthRef={issueMonthRef} yearRef={issueYearRef} 
               isFocused={isIssueFocused} focusSetter={setIsIssueFocused} isLayoutEditable={isLayoutEditable}
               error={issueDateError}
-              warning={duplicates.issueNo ? "এই জারিপত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে" : null}
               extra={formData.issueDateISO && (
                 <div className="absolute -right-2 -top-2 z-[310] flex items-center justify-center w-6 h-6 bg-emerald-500 text-white rounded-full shadow-lg border-2 border-white animate-in zoom-in duration-500">
                   <Check size={14} strokeWidth={4} />
@@ -755,7 +814,18 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                 </div>
                 <div id="field-18" className={col2Style}><IDBadge id="field-18" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৮</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> আলোচিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingDiscussedParaCount'] || formData.meetingDiscussedParaCount)} value={rawInputs['direct-meetingDiscussedParaCount'] || (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount))} onChange={e => handleNumericInput('direct', 'meetingDiscussedParaCount', e.target.value)} placeholder="০" /></div>
                 <div id="field-19" className={col3Style}><IDBadge id="field-19" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৯</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingRecommendedParaCount'] || formData.meetingRecommendedParaCount)} value={rawInputs['direct-meetingRecommendedParaCount'] || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount))} onChange={e => handleNumericInput('direct', 'meetingRecommendedParaCount', e.target.value)} placeholder="০" /></div>
-                <SegmentedInput id="field-20" icon={FileEdit} label="কার্যপত্র নং ও তারিখ" color="purple" noValue={wpNoPart} dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} noSetter={setWpNoPart} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} isFocused={isWpFocused} focusSetter={setIsWpFocused} isLayoutEditable={isLayoutEditable} />
+                <div id="field-20a" className={`${colWrapperCls} bg-purple-50/70 border-purple-100 hover:border-purple-300`}>
+                  <IDBadge id="field-20a" isLayoutEditable={isLayoutEditable} />
+                  <label className={labelCls}><span className={numBadge}>{toBengaliDigits('২০.ক')}</span> <Hash size={14} className="text-purple-600 shrink-0" /> কার্যপত্র নং:</label>
+                  <input 
+                    type="text" 
+                    className={getDynamicInputCls(wpNoPart)} 
+                    value={wpNoPart} 
+                    onChange={e => setWpNoPart(toBengaliDigits(e.target.value))} 
+                    placeholder="নং লিখুন"
+                  />
+                </div>
+                <SegmentedInput id="field-20b" icon={FileEdit} label="কার্যপত্র তারিখ" color="purple" noValue="DATE_ONLY" dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} noSetter={()=>{}} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} isFocused={isWpFocused} focusSetter={setIsWpFocused} isLayoutEditable={isLayoutEditable} />
               </>
             )}
           </div>
