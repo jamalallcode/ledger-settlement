@@ -62,24 +62,24 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
         <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
           <thead className="bg-slate-100">
             <tr>
-              <th rowSpan={2} className={thCls}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thCls} w-[10%]`}>মন্ত্রণালয়ের নাম</th>
-              <th rowSpan={2} className={`${thCls} w-[8%]`}>প্রতিবেদনধীন সময়ে উত্থাপিত আপত্তিতে জড়িত টাকার পরিমাণ</th>
+              <th rowSpan={2} className={`${thCls} w-[5%]`}>ক্রঃ নং</th>
+              <th rowSpan={2} className={`${thCls} w-[15%]`}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={`${thCls} w-[12%]`}>প্রতিবেদনধীন সময়ে উত্থাপিত আপত্তিতে জড়িত টাকার পরিমাণ</th>
               <th colSpan={2} className={thCls}>অডিট কালীন আদায়/সমন্বয়</th>
               <th colSpan={2} className={thCls}>প্রতিবেদনধীন সময়ে উত্থাপিত অর্থের বিপরীতে আদায়/সমন্বয়</th>
               <th colSpan={2} className={thCls}>পুরাতন আপত্তিতে জড়িত অর্থ</th>
               <th colSpan={2} className={thCls}>মোট</th>
-              <th rowSpan={2} className={thCls}>মন্তব্য</th>
+              <th rowSpan={2} className={`${thCls} w-[12%]`}>মন্তব্য</th>
             </tr>
             <tr>
-              <th className={thCls}>আদায়</th>
-              <th className={thCls}>সমন্বয়</th>
-              <th className={thCls}>আদায়</th>
-              <th className={thCls}>সমন্বয়</th>
-              <th className={thCls}>আদায়</th>
-              <th className={thCls}>সমন্বয়</th>
-              <th className={thCls}>আদায়</th>
-              <th className={thCls}>সমন্বয়</th>
+              <th className={`${thCls} w-[7%]`}>আদায়</th>
+              <th className={`${thCls} w-[7%]`}>সমন্বয়</th>
+              <th className={`${thCls} w-[7%]`}>আদায়</th>
+              <th className={`${thCls} w-[7%]`}>সমন্বয়</th>
+              <th className={`${thCls} w-[7%]`}>আদায়</th>
+              <th className={`${thCls} w-[7%]`}>সমন্বয়</th>
+              <th className={`${thCls} w-[7%]`}>আদায়</th>
+              <th className={`${thCls} w-[7%]`}>সমন্বয়</th>
             </tr>
             <tr>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => (
