@@ -81,11 +81,11 @@ const QR_2: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
 
       {/* Table Section */}
       <div className="overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
-        <table className="w-full border-separate border-spacing-0 min-w-[1000px] !table-auto">
+        <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
           <thead className="bg-slate-100">
             <tr>
               <th rowSpan={2} className={thCls}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thCls} w-[12%]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
+              <th rowSpan={2} className={`${thCls} w-[10%]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
               <th rowSpan={2} className={thCls}>ব্রডশিট জবাবের সংখ্যা</th>
               <th rowSpan={2} className={thCls}>পত্রের স্মারক নং ও তারিখ</th>
               <th rowSpan={2} className={thCls}>প্রেরিত অনুচ্ছেদ সংখ্যা</th>
@@ -139,13 +139,6 @@ const QR_2: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
         </table>
       </div>
 
-      {/* Footer Section */}
-      <div className="mt-20 flex justify-between items-start text-[11px] font-bold text-slate-800">
-        <div className="flex items-center gap-6">
-          <p>নং- ১৭০৬/প্রশা/বাঅঅ/সমন্বয়/র:জ:প্র:নি:শু:/২০১১-১২/</p>
-          <p>তারিখঃ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /২০২৩খ্রিঃ</p>
-        </div>
-      </div>
     </div>
   );
 };

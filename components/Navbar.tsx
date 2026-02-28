@@ -98,7 +98,7 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <nav className="sticky top-0 z-[200] bg-slate-900 border-b border-slate-800 h-20 shadow-2xl no-print relative">
+    <nav className="sticky top-0 z-[5000] bg-slate-900 border-b border-slate-800 h-20 shadow-2xl no-print relative">
       <IDBadge id="premium-navbar-main" />
       <div className="max-w-[1600px] mx-auto h-full px-4 md:px-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -145,7 +145,7 @@ const Navbar: React.FC<NavbarProps> = ({
               </button>
 
               {showNotifDropdown && (
-                <div className="absolute top-[calc(100%+12px)] right-0 w-80 bg-slate-900 border-2 border-amber-500/50 rounded-[2rem] shadow-2xl overflow-hidden z-[400] animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="absolute top-[calc(100%+12px)] right-0 w-80 bg-slate-900 border-2 border-amber-500/50 rounded-[2rem] shadow-2xl overflow-hidden z-[5010] animate-in fade-in slide-in-from-top-4 duration-300">
                   <div className="p-5 bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700 flex items-center justify-between">
                     <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
                       <ShieldAlert size={14} className="text-amber-500" /> মডোরেশন পেন্ডিং
@@ -221,7 +221,7 @@ const Navbar: React.FC<NavbarProps> = ({
               <div className="relative" ref={toolsRef}>
                 <button onClick={() => setShowToolsDropdown(!showToolsDropdown)} className={`p-2.5 rounded-xl border transition-all ${showToolsDropdown ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}><Settings size={22} /></button>
                 {showToolsDropdown && (
-                  <div className="absolute top-[calc(100%+12px)] right-0 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 z-[300]">
+                  <div className="absolute top-[calc(100%+12px)] right-0 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 z-[5010]">
                     <div className="space-y-3 animate-in fade-in duration-500">
                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">লেআউট টুলস</span>
                       <button onClick={() => setIsLayoutEditable(!isLayoutEditable)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-black text-[11px] transition-all border relative ${isLayoutEditable ? 'bg-amber-500/10 border-amber-400/50 text-amber-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'}`}>

@@ -59,11 +59,11 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
       </div>
 
       <div className="overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
-        <table className="w-full border-separate border-spacing-0 min-w-[1000px] !table-auto">
+        <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
           <thead className="bg-slate-100">
             <tr>
               <th rowSpan={2} className={thCls}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thCls} w-[15%]`}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={`${thCls} w-[12%]`}>মন্ত্রণালয়ের নাম</th>
               <th rowSpan={2} className={thCls}>প্রতিবেদনধীন সময়ে উত্থাপিত আপত্তিতে জড়িত টাকার পরিমাণ</th>
               <th colSpan={2} className={thCls}>অডিট কালীন আদায়/সমন্বয়</th>
               <th colSpan={2} className={thCls}>প্রতিবেদনধীন সময়ে উত্থাপিত অর্থের বিপরীতে আদায়/সমন্বয়</th>
@@ -121,13 +121,6 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
         </table>
       </div>
 
-      {/* Footer Section */}
-      <div className="mt-20 flex justify-between items-start text-[11px] font-bold text-slate-800">
-        <div className="flex items-center gap-6">
-          <p>নং-১৭৯২/প্রশা/বাঅঅ/সে-৬/খুলনা/ত্রৈমাসিক রিটার্ণ/আদায়/সমন্বয়/২০১১-১২/</p>
-          <p>তারিখঃ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /{formatYearBN(new Date())}খ্রিঃ</p>
-        </div>
-      </div>
     </div>
   );
 };

@@ -196,8 +196,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const summaryStats = useMemo(() => {
     const stats = {
       total: entries.length,
-      sfi: { total: 0, bsr: 0, kp: 0, kb: 0 },
-      nonSfi: { total: 0, bsr: 0, kp: 0, kb: 0 }
+      sfi: { total: 0, bsr: 0, kp: 0, kb: 0, reconciliation: 0 },
+      nonSfi: { total: 0, bsr: 0, kp: 0, kb: 0, reconciliation: 0 }
     };
     entries.forEach(e => {
       if (e.paraType === 'এসএফআই') {
@@ -205,11 +205,13 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         if (e.letterType === 'বিএসআর') stats.sfi.bsr++;
         if (e.letterType?.includes('কার্যপত্র')) stats.sfi.kp++;
         if (e.letterType?.includes('কার্যবিবরণী')) stats.sfi.kb++;
+        if (e.letterType === 'মিলিকরণ') stats.sfi.reconciliation++;
       } else if (e.paraType === 'নন এসএফআই') {
         stats.nonSfi.total++;
         if (e.letterType === 'বিএসআর') stats.nonSfi.bsr++;
         if (e.letterType?.includes('কার্যপত্র')) stats.nonSfi.kp++;
         if (e.letterType?.includes('কার্যবিবরণী')) stats.nonSfi.kb++;
+        if (e.letterType === 'মিলিকরণ') stats.nonSfi.reconciliation++;
       }
     });
     return stats;
@@ -248,30 +250,32 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             </button>
             <div className="absolute top-full left-0 pt-2 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
               <div className="min-w-[300px] p-5 bg-white border-2 border-slate-200 rounded-2xl shadow-2xl">
-                <div className="flex flex-col gap-3 font-bold text-slate-700">
+                <div className="flex flex-col gap-3 font-black text-slate-700">
                   <div className="flex items-center gap-2 text-[14px]">
-                    <span className="text-blue-700">মোট চিঠি:</span>
-                    <span className="text-slate-900">{toBengaliDigits(summaryStats.total)} টি</span>
+                    <span className="text-blue-700 font-black">মোট চিঠি:</span>
+                    <span className="text-slate-900 font-black">{toBengaliDigits(summaryStats.total)} টি</span>
                   </div>
                   <div className="flex items-center gap-2 text-[13px]">
-                    <span className="text-blue-700">এসএফআই:</span>
-                    <span className="text-slate-900">
+                    <span className="text-blue-700 font-black">এসএফআই:</span>
+                    <span className="text-slate-900 font-black">
                       {toBengaliDigits(summaryStats.sfi.total)} টি 
-                      <span className="text-slate-500 font-medium ml-1">
+                      <span className="text-slate-700 font-black ml-1">
                         (বিএসআর: {toBengaliDigits(summaryStats.sfi.bsr)} টি, 
                         ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.sfi.kp)} টি, 
-                        ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি।
+                        ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি,
+                        মিলিকরণ: {toBengaliDigits(summaryStats.sfi.reconciliation)} টি।
                       </span>
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-[13px]">
-                    <span className="text-blue-700">নন এসএফআই:</span>
-                    <span className="text-slate-900">
+                    <span className="text-blue-700 font-black">নন এসএফআই:</span>
+                    <span className="text-slate-900 font-black">
                       {toBengaliDigits(summaryStats.nonSfi.total)} টি 
-                      <span className="text-slate-500 font-medium ml-1">
+                      <span className="text-slate-700 font-black ml-1">
                         (বিএসআর: {toBengaliDigits(summaryStats.nonSfi.bsr)} টি, 
                         দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.nonSfi.kp)} টি, 
-                        দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি।
+                        দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি,
+                        মিলিকরণ: {toBengaliDigits(summaryStats.nonSfi.reconciliation)} টি।
                       </span>
                     </span>
                   </div>
@@ -585,14 +589,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             </table>
           </div>
         </div>
-      </div>
-
-      {/* Footer Section */}
-      <div className="mt-20 flex justify-between items-start text-[11px] font-bold text-slate-800 px-6">
-        <div className="flex items-center gap-6">
-          <p>নং- .....................................................................</p>
-          <p>তারিখঃ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /২০২৩খ্রিঃ</p>
-        </div>
+        
       </div>
     </div>
   );
