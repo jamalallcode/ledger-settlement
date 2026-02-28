@@ -73,13 +73,13 @@ const SegmentedInput = ({
     else if (eng.length === 1 && eng !== '') setter(toBengaliDigits('0' + eng));
   };
 
-  const isFilled = noValue && dayValue && monthValue && yearValue;
+  const isFilled = [noValue, dayValue, monthValue, yearValue].every(v => v && v.toString().trim() !== '' && v !== '০' && v !== '0');
 
   return (
     <div id={id} className={colWrapperCls + ` ${error ? 'bg-red-50 border-red-200' : (warning ? 'bg-amber-50 border-amber-200' : `bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`)}`}>
       <IDBadge id={id} isLayoutEditable={isLayoutEditable} />
       <label className={labelCls + " truncate"}><span className={numBadge}>{toBengaliDigits(id.split('-')[1].replace(/[ab]/g, ''))}</span> <Icon size={14} className={`${error ? 'text-red-600' : (warning ? 'text-amber-600' : `text-${color}-600`)} shrink-0`} /> <span className="truncate">{label}</span></label>
-      <div className={`relative w-full h-[55px] flex items-center border-2 rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : (warning ? 'border-amber-400 ring-4 ring-amber-50' : (isFilled || noValue === 'DATE_ONLY' ? 'border-emerald-500 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50' : 'border-red-500 focus-within:border-red-400 focus-within:ring-4 focus-within:ring-red-50'))}`}>
+      <div className={`relative w-full h-[55px] flex items-center border-2 rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : (warning ? 'border-amber-400 ring-4 ring-amber-50' : (isFilled ? 'border-emerald-500 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50' : 'border-red-500 focus-within:border-red-400 focus-within:ring-4 focus-within:ring-red-50'))}`}>
         {extra}
         <div className="flex items-center w-full px-2 sm:px-4 h-full">
           {noValue !== 'DATE_ONLY' && (
@@ -719,7 +719,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               <label className={labelCls}><span className={numBadge}>{toBengaliDigits('৭.ক')}</span> <Hash size={14} className="text-amber-600 shrink-0" /> পত্র নং:</label>
               <input 
                 type="text" 
-                className={`${inputBaseCls} ${duplicates.letterNo ? 'border-amber-500 ring-4 ring-amber-50' : (letterNoPart ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-50' : 'border-red-500 focus:border-red-600 focus:ring-red-50')}`} 
+                className={duplicates.letterNo ? `${inputBaseCls} border-amber-500 ring-4 ring-amber-50` : getDynamicInputCls(letterNoPart)} 
                 value={letterNoPart} 
                 onChange={e => setLetterNoPart(toBengaliDigits(e.target.value))} 
                 placeholder="নং লিখুন"
@@ -737,7 +737,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               <label className={labelCls}><span className={numBadge}>{toBengaliDigits('৮.ক')}</span> <Hash size={14} className="text-emerald-600 shrink-0" /> ডায়েরি নং:</label>
               <input 
                 type="text" 
-                className={`${inputBaseCls} ${duplicates.diaryNo ? 'border-amber-500 ring-4 ring-amber-50' : (diaryNoPart ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-50' : 'border-red-500 focus:border-red-600 focus:ring-red-50')}`} 
+                className={duplicates.diaryNo ? `${inputBaseCls} border-amber-500 ring-4 ring-amber-50` : getDynamicInputCls(diaryNoPart)} 
                 value={diaryNoPart} 
                 onChange={e => setDiaryNoPart(toBengaliDigits(e.target.value))} 
                 placeholder="নং লিখুন"
@@ -755,7 +755,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               <label className={labelCls}><span className={numBadge}>{toBengaliDigits('৯.ক')}</span> <Hash size={14} className="text-amber-600 shrink-0" /> জারিপত্র নং:</label>
               <input 
                 type="text" 
-                className={`${inputBaseCls} ${duplicates.issueNo ? 'border-amber-500 ring-4 ring-amber-50' : (issueNoPart ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-50' : 'border-red-500 focus:border-red-600 focus:ring-red-50')}`} 
+                className={duplicates.issueNo ? `${inputBaseCls} border-amber-500 ring-4 ring-amber-50` : getDynamicInputCls(issueNoPart)} 
                 value={issueNoPart} 
                 onChange={e => setIssueNoPart(toBengaliDigits(e.target.value))} 
                 placeholder="নং লিখুন"
