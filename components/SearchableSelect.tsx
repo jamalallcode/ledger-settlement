@@ -4,7 +4,7 @@ import { GroupOption } from '../types.ts';
 import { ChevronDown, X, PlusCircle, Check } from 'lucide-react';
 
 interface SearchableSelectProps {
-  label: string;
+  label: React.ReactNode;
   value: string;
   onChange: (value: string) => void;
   groups: GroupOption[];
@@ -102,7 +102,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
   return (
     <div className="relative w-full" ref={containerRef}>
       {badgeId && <IDBadge id={badgeId} />}
-      <label className="block text-[13px] font-black text-slate-700 mb-2">{label}</label>
+      <label className="block text-[13px] font-black text-slate-700 mb-2 flex items-center gap-1.5">{label}</label>
       
       <div 
         className={triggerStyle}
