@@ -23,7 +23,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [filterParaType, setFilterParaType] = useState('সকল');
   const [filterLetterType, setFilterLetterType] = useState('সকল');
-  const [selectedMonthDate, setSelectedMonthDate] = useState<Date>(new Date(activeCycle.start));
+  const [selectedMonthDate, setSelectedMonthDate] = useState<Date>(new Date(activeCycle.end));
   
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
@@ -155,7 +155,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     [reportingLimitDate]
   );
 
-  const reportingMonthYearBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start), 'MMMM/yyyy'))
+  const reportingMonthYearBN = toBengaliDigits(dateFnsFormat(new Date(activeCycle.end), 'MMMM/yyyy'))
     .replace('January', 'জানুয়ারি').replace('February', 'ফেব্রুয়ারি').replace('March', 'মার্চ')
     .replace('April', 'এপ্রিল').replace('May', 'মে').replace('June', 'জুন')
     .replace('July', 'জুলাই').replace('August', 'আগস্ট').replace('September', 'সেপ্টেম্বর')
