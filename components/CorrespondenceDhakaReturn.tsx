@@ -39,10 +39,12 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
 
   const typeOptions = useMemo(() => {
     if (filterParaType === 'এসএফআই') {
-      return ['বিএসআর', 'কার্যবিবরণী (ত্রি-সভা)'];
+      
+      return ['সকল', 'বিএসআর', 'কার্যবিবরণী (ত্রি-সভা)'];
     }
     if (filterParaType === 'নন এসএফআই') {
-      return ['বিএসআর', 'কার্যবিবরণী (দ্বি-সভা)'];
+      return ['সকল', 'বিএসআর', 'কার্যবিবরণী (দ্বি-সভা)'];
+
     }
     return ['সকল', 'বিএসআর', 'কার্যবিবরণী (ত্রি-সভা)', 'কার্যবিবরণী (দ্বি-সভা)'];
   }, [filterParaType]);
