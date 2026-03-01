@@ -31,10 +31,10 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const normalizeName = (name: string | null | undefined) => {
     if (!name) return 'অনির্ধারিত';
     return name
+      .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '') // Remove all possible invisible characters and non-breaking spaces
       .trim()
-      .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width characters
-      .replace(/\s+/g, ' ')                  // Normalize whitespace
-      .normalize('NFC');                     // Normalize Unicode
+      .replace(/\s+/g, ' ')                  // Normalize internal whitespace to a single space
+      .normalize('NFC');                     // Normalize Unicode to canonical form
   };
 
   useEffect(() => {
