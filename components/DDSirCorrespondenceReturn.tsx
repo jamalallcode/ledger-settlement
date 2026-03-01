@@ -28,6 +28,15 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const auditorDropdownRef = useRef<HTMLDivElement>(null);
   const branchDropdownRef = useRef<HTMLDivElement>(null);
 
+  const normalizeName = (name: string | null | undefined) => {
+    if (!name) return 'অনির্ধারিত';
+    return name
+      .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '') // Remove all possible invisible characters and non-breaking spaces
+      .trim()
+      .replace(/\s+/g, ' ')                  // Normalize internal whitespace to a single space
+      .normalize('NFC');                     // Normalize Unicode to canonical form
+  };
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (auditorDropdownRef.current && !auditorDropdownRef.current.contains(e.target as Node)) {
@@ -42,7 +51,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   }, []);
 
   const auditorOptions = useMemo(() => {
-    const unique = Array.from(new Set(entries.map(e => e.receiverName || e.presentedToName).filter(Boolean)));
+    const unique = Array.from(new Set(entries.map(e => normalizeName(e.receiverName || e.presentedToName)).filter(name => name !== 'অনির্ধারিত')));
     return ['সকল', ...unique];
   }, [entries]);
 
@@ -95,7 +104,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     });
 
     if (filterAuditor !== 'সকল') {
-      data = data.filter(e => (e.receiverName || e.presentedToName) === filterAuditor);
+      data = data.filter(e => normalizeName(e.receiverName || e.presentedToName) === filterAuditor);
     }
 
     if (filterBranch !== 'সকল') {
@@ -122,7 +131,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     const thresholdDate = subMonths(reportingDate, 1);
 
     filteredEntries.forEach(entry => {
-      const auditor = entry.receiverName || entry.presentedToName || 'অনির্ধারিত';
+      const auditor = normalizeName(entry.receiverName || entry.presentedToName);
       if (!grouped[auditor]) {
         grouped[auditor] = {
           name: auditor,
@@ -161,14 +170,14 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   // --- Grouping & Logic for Table 2 (Detailed List) ---
   const detailedListData = useMemo(() => {
     const sorted = [...filteredEntries].sort((a, b) => {
-      const audA = a.receiverName || a.presentedToName || 'অনির্ধারিত';
-      const audB = b.receiverName || b.presentedToName || 'অনির্ধারিত';
+      const audA = normalizeName(a.receiverName || a.presentedToName);
+      const audB = normalizeName(b.receiverName || b.presentedToName);
       return audA.localeCompare(audB);
     });
 
     const groups: { auditor: string; rows: any[] }[] = [];
     sorted.forEach(row => {
-      const aud = row.receiverName || row.presentedToName || 'অনির্ধারিত';
+      const aud = normalizeName(row.receiverName || row.presentedToName);
       const lastGroup = groups[groups.length - 1];
       if (lastGroup && lastGroup.auditor === aud) {
         lastGroup.rows.push(row);

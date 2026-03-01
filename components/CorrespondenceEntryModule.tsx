@@ -350,6 +350,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const [showReceiverDropdown, setShowReceiverDropdown] = useState(false);
   const [showDescriptionDropdown, setShowDescriptionDropdown] = useState(false);
   const [showAuditYearWarning, setShowAuditYearWarning] = useState(false);
+  
+  // New states for recipient management
+  const [isManagingReceivers, setIsManagingReceivers] = useState(false);
+  const [editingReceiverIdx, setEditingReceiverIdx] = useState<number | null>(null);
+  const [tempReceiverName, setTempReceiverName] = useState('');
+  
   const bottomRef = useRef<HTMLDivElement>(null);
   const receiverRef = useRef<HTMLDivElement>(null);
   const descriptionRef = useRef<HTMLDivElement>(null);
@@ -479,6 +485,37 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     const bDigits = toBengaliDigits(val);
     setRawInputs(prev => ({ ...prev, [field]: bDigits }));
     setFormData(prev => ({ ...prev, [field]: val }));
+  };
+
+  const handleAddReceiver = () => {
+    if (tempReceiverName.trim()) {
+      const updated = [...receiverSuggestions, tempReceiverName.trim()];
+      setReceiverSuggestions(updated);
+      localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updated));
+      setTempReceiverName('');
+      setIsManagingReceivers(false);
+    }
+  };
+
+  const handleEditReceiver = (idx: number) => {
+    if (tempReceiverName.trim()) {
+      const updated = [...receiverSuggestions];
+      updated[idx] = tempReceiverName.trim();
+      setReceiverSuggestions(updated);
+      localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updated));
+      setEditingReceiverIdx(null);
+      setTempReceiverName('');
+    }
+  };
+
+  const handleDeleteReceiver = (idx: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = receiverSuggestions.filter((_, i) => i !== idx);
+    setReceiverSuggestions(updated);
+    localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updated));
+    if (formData.receiverName === receiverSuggestions[idx]) {
+      setFormData(prev => ({ ...prev, receiverName: '' }));
+    }
   };
 
   const checkAuditYear = (value: string) => {
@@ -834,49 +871,145 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             <div className={`${colWrapper} border-slate-200`} ref={receiverRef}>
               <IDBadge id="corr-field-10" />
               <label className={labelCls}><span className={numBadge}>১০</span> <User size={14} className="text-slate-600" /> গৃহীতার নাম:</label>
-              <div className="relative group">
-                <input 
-                  type="text" 
-                  className={`${inputCls} ${formData.receiverName ? 'border-emerald-500' : 'border-red-500'}`} 
-                  value={formData.receiverName} 
-                  onFocus={() => setShowReceiverDropdown(true)}
-                  onChange={e => setFormData({...formData, receiverName: e.target.value})}
-                  placeholder="নাম লিখুন বা তালিকা থেকে বাছুন"
-                  autoComplete="off"
-                />
+              <div className="relative group flex gap-2">
+                <div className="relative flex-1">
+                  <input 
+                    type="text" 
+                    readOnly
+                    className={`${inputCls} ${formData.receiverName ? 'border-emerald-500' : 'border-red-500'} cursor-pointer`} 
+                    value={formData.receiverName} 
+                    onClick={() => setShowReceiverDropdown(!showReceiverDropdown)}
+                    placeholder="তালিকা থেকে নাম বাছুন"
+                    autoComplete="off"
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowReceiverDropdown(!showReceiverDropdown)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors"
+                  >
+                    <ChevronDown size={18} className={`transition-transform duration-300 ${showReceiverDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+                </div>
+                
                 <button 
-                  type="button" 
-                  onClick={() => setShowReceiverDropdown(!showReceiverDropdown)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors"
+                  type="button"
+                  onClick={() => {
+                    setEditingReceiverIdx(null);
+                    setTempReceiverName('');
+                    setIsManagingReceivers(true);
+                  }}
+                  className="w-[52px] h-[52px] bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 shrink-0"
+                  title="নতুন গ্রহীতা যোগ করুন"
                 >
-                  <ChevronDown size={18} className={`transition-transform duration-300 ${showReceiverDropdown ? 'rotate-180' : ''}`} />
+                  <Plus size={24} />
                 </button>
 
-                {showReceiverDropdown && receiverSuggestions.length > 0 && (
+                {showReceiverDropdown && (
                   <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600">
                     <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                       <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2"><Sparkles size={12} /> পূর্ববর্তী নামসমূহ</span>
+                       <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2"><Sparkles size={12} /> গ্রহীতার তালিকা</span>
                     </div>
                     <div className="max-h-52 overflow-y-auto no-scrollbar py-2">
-                      {receiverSuggestions
-                        .filter(name => name.toLowerCase().includes(formData.receiverName.toLowerCase()))
-                        .map((name, idx) => (
-                        <div 
-                          key={idx}
-                          onClick={() => {
-                            setFormData({...formData, receiverName: name});
-                            setShowReceiverDropdown(false);
-                          }}
-                          className={`px-5 py-3 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.receiverName === name ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-blue-50 text-slate-700 font-bold'}`}
-                        >
-                          <span className="text-[13px]">{name}</span>
-                          {formData.receiverName === name && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                      {receiverSuggestions.length === 0 ? (
+                        <div className="px-5 py-4 text-center text-slate-400 font-bold text-sm">
+                          কোন নাম পাওয়া যায়নি। প্লাস (+) বাটনে ক্লিক করে যোগ করুন।
                         </div>
-                      ))}
+                      ) : (
+                        receiverSuggestions.map((name, idx) => (
+                          <div 
+                            key={idx}
+                            onClick={() => {
+                              setFormData({...formData, receiverName: name});
+                              setShowReceiverDropdown(false);
+                            }}
+                            className={`px-5 py-3 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.receiverName === name ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-blue-50 text-slate-700 font-bold'}`}
+                          >
+                            <span className="text-[13px]">{name}</span>
+                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button 
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingReceiverIdx(idx);
+                                  setTempReceiverName(name);
+                                  setIsManagingReceivers(true);
+                                  setShowReceiverDropdown(false);
+                                }}
+                                className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === name ? 'hover:bg-blue-500 text-white' : 'hover:bg-blue-100 text-blue-600'}`}
+                              >
+                                <FileEdit size={14} />
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={(e) => handleDeleteReceiver(idx, e)}
+                                className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === name ? 'hover:bg-red-500 text-white' : 'hover:bg-red-100 text-red-600'}`}
+                              >
+                                <Trash size={14} />
+                              </button>
+                              {formData.receiverName === name && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 )}
               </div>
+
+              {/* Recipient Management Modal */}
+              {isManagingReceivers && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[2000] flex items-center justify-center p-4 animate-in fade-in duration-300">
+                  <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-300">
+                    <div className="p-8">
+                      <div className="flex justify-between items-center mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-100">
+                            {editingReceiverIdx !== null ? <FileEdit size={24} /> : <Plus size={24} />}
+                          </div>
+                          <div>
+                            <h4 className="text-xl font-black text-slate-900">{editingReceiverIdx !== null ? 'নাম পরিবর্তন করুন' : 'নতুন গ্রহীতা যোগ করুন'}</h4>
+                            <p className="text-sm font-bold text-slate-500">গ্রহীতার নাম নির্ভুলভাবে লিখুন</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setIsManagingReceivers(false)}
+                          className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors"
+                        >
+                          <X size={20} />
+                        </button>
+                      </div>
+
+                      <div className="space-y-6">
+                        <div>
+                          <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">গ্রহীতার নাম</label>
+                          <input 
+                            type="text"
+                            autoFocus
+                            className={inputCls}
+                            value={tempReceiverName}
+                            onChange={(e) => setTempReceiverName(e.target.value)}
+                            placeholder="এখানে নাম লিখুন..."
+                          />
+                        </div>
+
+                        <div className="flex gap-3 pt-2">
+                          <button 
+                            onClick={() => setIsManagingReceivers(false)}
+                            className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all"
+                          >বাতিল</button>
+                          <button 
+                            onClick={editingReceiverIdx !== null ? () => handleEditReceiver(editingReceiverIdx) : handleAddReceiver}
+                            disabled={!tempReceiverName.trim()}
+                            className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {editingReceiverIdx !== null ? 'আপডেট করুন' : 'সংরক্ষণ করুন'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Field 11 - Smart Segmented Date */}
