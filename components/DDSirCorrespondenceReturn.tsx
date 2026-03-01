@@ -42,7 +42,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   }, []);
 
   const auditorOptions = useMemo(() => {
-    const unique = Array.from(new Set(entries.map(e => e.receiverName || e.presentedToName).filter(Boolean)));
+    const unique = Array.from(new Set(entries.map(e => (e.receiverName || e.presentedToName || '').trim()).filter(Boolean)));
     return ['সকল', ...unique];
   }, [entries]);
 
@@ -95,7 +95,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     });
 
     if (filterAuditor !== 'সকল') {
-      data = data.filter(e => (e.receiverName || e.presentedToName) === filterAuditor);
+      data = data.filter(e => (e.receiverName || e.presentedToName || '').trim() === filterAuditor);
     }
 
     if (filterBranch !== 'সকল') {
@@ -122,7 +122,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     const thresholdDate = subMonths(reportingDate, 1);
 
     filteredEntries.forEach(entry => {
-      const auditor = entry.receiverName || entry.presentedToName || 'অনির্ধারিত';
+      const auditor = (entry.receiverName || entry.presentedToName || 'অনির্ধারিত').trim();
       if (!grouped[auditor]) {
         grouped[auditor] = {
           name: auditor,
@@ -161,14 +161,14 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   // --- Grouping & Logic for Table 2 (Detailed List) ---
   const detailedListData = useMemo(() => {
     const sorted = [...filteredEntries].sort((a, b) => {
-      const audA = a.receiverName || a.presentedToName || 'অনির্ধারিত';
-      const audB = b.receiverName || b.presentedToName || 'অনির্ধারিত';
+      const audA = (a.receiverName || a.presentedToName || 'অনির্ধারিত').trim();
+      const audB = (b.receiverName || b.presentedToName || 'অনির্ধারিত').trim();
       return audA.localeCompare(audB);
     });
 
     const groups: { auditor: string; rows: any[] }[] = [];
     sorted.forEach(row => {
-      const aud = row.receiverName || row.presentedToName || 'অনির্ধারিত';
+      const aud = (row.receiverName || row.presentedToName || 'অনির্ধারিত').trim();
       const lastGroup = groups[groups.length - 1];
       if (lastGroup && lastGroup.auditor === aud) {
         lastGroup.rows.push(row);
