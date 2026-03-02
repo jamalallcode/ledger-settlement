@@ -897,6 +897,15 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                     <div className="space-y-1"><label className="text-[10px] font-black text-emerald-600 pl-1 uppercase tracking-wider text-center block">আদায়কৃত</label><input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${p.recoveredAmount > 0 ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-recoveredAmount`] || (p.recoveredAmount === 0 ? '' : toBengaliDigits(p.recoveredAmount))} onChange={e => handleNumericInput(p.id, 'recoveredAmount', e.target.value)} placeholder="০" /></div>
                     <div className="space-y-1"><label className="text-[10px] font-black text-indigo-600 pl-1 uppercase tracking-wider text-center block">সমন্বয়কৃত</label><input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${p.adjustedAmount > 0 ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-adjustedAmount`] || (p.adjustedAmount === 0 ? '' : toBengaliDigits(p.adjustedAmount))} onChange={e => handleNumericInput(p.id, 'adjustedAmount', e.target.value)} placeholder="০" /></div>
                   </div>
+
+                  {p.involvedAmount > 0 && p.involvedAmount !== (p.recoveredAmount + p.adjustedAmount) && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600 animate-in slide-in-from-top-2 duration-300 relative z-10">
+                      <AlertCircle size={14} className="shrink-0" />
+                      <span className="text-[10px] font-black uppercase tracking-tight leading-tight">
+                        সতর্কতা: জড়িত টাকা ({toBengaliDigits(p.involvedAmount)}) এবং আদায় ও সমন্বয়ের যোগফল ({toBengaliDigits(p.recoveredAmount + p.adjustedAmount)}) সমান নয়।
+                      </span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
