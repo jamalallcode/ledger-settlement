@@ -49,6 +49,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isReturnExpanded, setIsReturnExpanded] = useState(false);
   const [isMonthlyExpanded, setIsMonthlyExpanded] = useState(false);
   const [isMonthlyCorrExpanded, setIsMonthlyCorrExpanded] = useState(false);
+  const [isSettlementExpanded, setIsSettlementExpanded] = useState(false);
+  const [isOnlineExpanded, setIsOnlineExpanded] = useState(false);
   const [isQuarterlyExpanded, setIsQuarterlyExpanded] = useState(false);
   const [isSetupExpanded, setIsSetupExpanded] = useState(false);
 
@@ -63,6 +65,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           setIsMonthlyExpanded(true);
           if (reportType.includes('চিঠিপত্র')) {
             setIsMonthlyCorrExpanded(true);
+            if (reportType.includes('নিষ্পত্তি')) setIsSettlementExpanded(true);
+            if (reportType.includes('অনলাইন')) setIsOnlineExpanded(true);
           }
         }
         if (reportType.includes('ত্রৈমাসিক')) {
@@ -293,25 +297,84 @@ const Sidebar: React.FC<SidebarProps> = ({
                       {/* Corr Sub-items */}
                       {isMonthlyCorrExpanded && (
                         <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                          {/* ১. ঢাকা */}
                           <button 
                             onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')}
                             className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                           >
                             ১. ঢাকা
                           </button>
+
+                          {/* ২. নিষ্পত্তি (Toggle) */}
+                          <button 
+                            onClick={() => setIsSettlementExpanded(!isSettlementExpanded)}
+                            className={`w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${isSettlementExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span>২. নিষ্পত্তি</span>
+                            </div>
+                            <ChevronDown size={10} className={`transition-transform duration-300 ${isSettlementExpanded ? 'rotate-180' : ''}`} />
+                          </button>
+
+                          {isSettlementExpanded && (
+                            <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর')}
+                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                ১. বিএসআর
+                              </button>
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়')}
+                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                ২. দ্বিপক্ষীয়
+                              </button>
+                            </div>
+                          )}
+
+                          {/* ৩. অনলাইন প্রাপ্তি (Toggle) */}
+                          <button 
+                            onClick={() => setIsOnlineExpanded(!isOnlineExpanded)}
+                            className={`w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${isOnlineExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span>৩. অনলাইন প্রাপ্তি</span>
+                            </div>
+                            <ChevronDown size={10} className={`transition-transform duration-300 ${isOnlineExpanded ? 'rotate-180' : ''}`} />
+                          </button>
+
+                          {isOnlineExpanded && (
+                            <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর')}
+                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                ১. বিএসআর
+                              </button>
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়')}
+                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                ২. দ্বিপক্ষীয়
+                              </button>
+                            </div>
+                          )}
+
+                          {/* ৪. ডিডি স্যার */}
                           <button 
                             onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।')}
                             className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                           >
-                            ২. ডিডি স্যার
+                            ৪. ডিডি স্যার
                           </button>
                         </div>
                       )}
 
                       {/* ২. অনুচ্ছেদ */}
                       <button 
-                        onClick={() => setActiveTab('return', null, 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
-                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-[11px] font-black transition-all ${reportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-blue-400'}`}
+                        onClick={() => setActiveTab('return', null, 'মাসিক রিটারন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-[11px] font-black transition-all ${reportType === 'মাসিক রিটারন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-blue-400'}`}
                       >
                         <BarChart3 size={12} />
                         <span>২. অনুচ্ছেদ</span>
