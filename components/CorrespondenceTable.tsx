@@ -342,15 +342,18 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   const filteredEntries = useMemo(() => {
     return entries.filter(entry => {
       let matchSearch = true;
-      if (searchTerm) {
+      if (searchTerm && typeof searchTerm === 'string') {
         const s = searchTerm.toLowerCase().trim();
         const isExact = s.startsWith('"') && s.endsWith('"');
         const cleanSearch = isExact ? s.slice(1, -1) : s;
 
         if (isExact) {
+          const normalize = (str: string) => toEnglishDigits(str || '').replace(/[\s\-\/]/g, '').trim();
+          const normSearch = normalize(cleanSearch);
+          
           matchSearch = 
-            toEnglishDigits(entry.letterNo || '').trim() === toEnglishDigits(cleanSearch || '').trim() || 
-            toEnglishDigits(entry.diaryNo || '').trim() === toEnglishDigits(cleanSearch || '').trim();
+            normalize(entry.letterNo) === normSearch || 
+            normalize(entry.diaryNo) === normSearch;
         } else {
           const engS = toEnglishDigits(s || '');
           const engDesc = toEnglishDigits(entry.description || '').toLowerCase();
