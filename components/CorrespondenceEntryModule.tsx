@@ -296,6 +296,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   allEntries = []
 }) => {
   const [isSuccess, setIsSuccess] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [calculatedCycle, setCalculatedCycle] = useState<string>('');
   
   const [formData, setFormData] = useState({
@@ -371,11 +372,18 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   };
 
   /**
-   * Duplicate Check Logic
+   * Duplicate Check Logic - Aggressive Normalization
    */
   const duplicates = useMemo(() => {
-    const normalizedDiary = toEnglishDigits(formData.diaryNo).trim();
-    const normalizedLetter = toEnglishDigits(formData.letterNo).trim();
+    // Aggressive normalization: keep only alphanumeric characters
+    const normalize = (val: string) => {
+      if (!val) return '';
+      // Convert Bengali digits to English first, then remove everything except alphanumeric
+      return toEnglishDigits(val).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    };
+
+    const normalizedDiary = normalize(formData.diaryNo);
+    const normalizedLetter = normalize(formData.letterNo);
 
     const results = {
       diaryNo: null as { module: 'settlement' | 'correspondence' } | null,
@@ -384,58 +392,44 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     };
 
     if (normalizedDiary) {
+      // Check in Correspondence (both fields)
       const cMatch = existingEntries.find(entry => {
         if (initialEntry && entry.id === initialEntry.id) return false;
-        if (entry.paraType !== formData.paraType) return false;
-        if (formData.letterType && entry.letterType !== formData.letterType) return false;
-        return toEnglishDigits(entry.diaryNo || '').trim() === normalizedDiary;
+        return normalize(entry.diaryNo || '') === normalizedDiary || 
+               normalize(entry.letterNo || '') === normalizedDiary;
       });
+      
       if (cMatch) {
         results.diaryNo = { module: 'correspondence' };
       } else {
+        // Check in Settlement
         const sMatch = allEntries.find(entry => {
-          if (entry.paraType !== formData.paraType) return false;
-          // In Settlement, diaryNo is in workpaperNoDate
-          const combined = entry.workpaperNoDate || '';
-          const parts = combined.split(',');
-          for (const part of parts) {
-            const normalizedPart = part.trim().replace(/[-:\s]/g, '');
-            const normalizedPrefix = 'ডায়েরি নং'.replace(/[-:\s]/g, '');
-            if (normalizedPart.startsWith(normalizedPrefix)) {
-              const foundNo = toEnglishDigits(normalizedPart.substring(normalizedPrefix.length).trim());
-              if (foundNo === normalizedDiary) return true;
-            }
-          }
-          return false;
+          const wpParts = (entry.workpaperNoDate || '').split(/[,/]/);
+          const lParts = (entry.letterNoDate || '').split(/[,/]/);
+          const allParts = [...wpParts, ...lParts];
+          return allParts.some(part => normalize(part) === normalizedDiary);
         });
         if (sMatch) results.diaryNo = { module: 'settlement' };
       }
     }
 
     if (normalizedLetter) {
+      // Check in Correspondence (both fields)
       const cMatch = existingEntries.find(entry => {
         if (initialEntry && entry.id === initialEntry.id) return false;
-        if (entry.paraType !== formData.paraType) return false;
-        if (formData.letterType && entry.letterType !== formData.letterType) return false;
-        return toEnglishDigits(entry.letterNo || '').trim() === normalizedLetter;
+        return normalize(entry.letterNo || '') === normalizedLetter || 
+               normalize(entry.diaryNo || '') === normalizedLetter;
       });
+      
       if (cMatch) {
         results.letterNo = { module: 'correspondence' };
       } else {
+        // Check in Settlement
         const sMatch = allEntries.find(entry => {
-          if (entry.paraType !== formData.paraType) return false;
-          // In Settlement, letterNo is in letterNoDate
-          const combined = entry.letterNoDate || '';
-          const parts = combined.split(',');
-          for (const part of parts) {
-            const normalizedPart = part.trim().replace(/[-:\s]/g, '');
-            const normalizedPrefix = 'পত্র নং'.replace(/[-:\s]/g, '');
-            if (normalizedPart.startsWith(normalizedPrefix)) {
-              const foundNo = toEnglishDigits(normalizedPart.substring(normalizedPrefix.length).trim());
-              if (foundNo === normalizedLetter) return true;
-            }
-          }
-          return false;
+          const wpParts = (entry.workpaperNoDate || '').split(/[,/]/);
+          const lParts = (entry.letterNoDate || '').split(/[,/]/);
+          const allParts = [...wpParts, ...lParts];
+          return allParts.some(part => normalize(part) === normalizedLetter);
         });
         if (sMatch) results.letterNo = { module: 'settlement' };
       }
@@ -443,7 +437,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
     results.any = !!(results.diaryNo || results.letterNo);
     return results;
-  }, [formData.diaryNo, formData.letterNo, formData.paraType, formData.letterType, existingEntries, allEntries, initialEntry]);
+  }, [formData.diaryNo, formData.letterNo, existingEntries, allEntries, initialEntry]);
 
   const isDuplicate = duplicates.any;
 
@@ -604,6 +598,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Final duplicate check before submission
+    if (isDuplicate) {
+      setShowDuplicateModal(true);
+      return;
+    }
+    
     // Defer heavy work to next tick to avoid blocking UI (INP fix)
     setTimeout(() => {
       if (formData.receiverName.trim()) {
@@ -697,6 +697,80 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Duplicate Prevention Modal */}
+        {showDuplicateModal && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[5000] flex items-center justify-center p-4 animate-in fade-in duration-300">
+            <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl border-4 border-amber-500 overflow-hidden animate-in zoom-in-95 duration-300">
+              <div className="p-10 text-center">
+                <div className="w-24 h-24 bg-amber-100 text-amber-600 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-lg border-2 border-amber-200 animate-bounce">
+                  <AlertCircle size={56} />
+                </div>
+                <h3 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">ডুপ্লিকেট এন্ট্রি পাওয়া গেছে!</h3>
+                <p className="text-slate-600 font-bold mb-8 leading-relaxed">
+                  আপনার প্রদানকৃত ডায়েরি বা পত্র নম্বরটি ইতোমধ্যেই ডাটাবেজে বিদ্যমান। ডুপ্লিকেট এন্ট্রি রোধে এই তথ্যটি সংরক্ষণ করা সম্ভব নয়।
+                </p>
+                
+                <div className="bg-amber-50 rounded-2xl p-6 mb-8 border border-amber-100 text-left space-y-3">
+                  <p className="text-xs font-black text-amber-600 uppercase tracking-widest mb-2">বিদ্যমান তথ্যের বিবরণ:</p>
+                  {duplicates.diaryNo && (
+                    <div className="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-amber-200">
+                      <span className="font-bold text-slate-700">ডায়েরি নং: {toBengaliDigits(formData.diaryNo)}</span>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setShowDuplicateModal(false);
+                          onViewRegister(`"${formData.diaryNo}"`, duplicates.diaryNo?.module);
+                        }}
+                        className="text-xs font-black text-blue-600 hover:underline flex items-center gap-1"
+                      >
+                        বিস্তারিত দেখুন <ArrowRight size={12} />
+                      </button>
+                    </div>
+                  )}
+                  {duplicates.letterNo && (
+                    <div className="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-amber-200">
+                      <span className="font-bold text-slate-700">পত্র নং: {toBengaliDigits(formData.letterNo)}</span>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setShowDuplicateModal(false);
+                          onViewRegister(`"${formData.letterNo}"`, duplicates.letterNo?.module);
+                        }}
+                        className="text-xs font-black text-blue-600 hover:underline flex items-center gap-1"
+                      >
+                        বিস্তারিত দেখুন <ArrowRight size={12} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-4">
+                  <button 
+                    type="button"
+                    onClick={() => setShowDuplicateModal(false)}
+                    className="flex-1 py-5 bg-slate-100 text-slate-600 rounded-2xl font-black text-lg hover:bg-slate-200 transition-all"
+                  >
+                    ঠিক আছে
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        diaryNo: '',
+                        letterNo: ''
+                      });
+                      setShowDuplicateModal(false);
+                    }}
+                    className="flex-1 py-5 bg-amber-600 text-white rounded-2xl font-black text-lg shadow-lg shadow-amber-100 hover:bg-amber-700 transition-all"
+                  >
+                    তথ্য মুছুন
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <fieldset disabled={isSuccess} className="space-y-8 border-none p-0 m-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             
@@ -1147,11 +1221,11 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                >বাতিল করুন</button>
                <button 
                   type="submit"
-                  disabled={isDuplicate || !!diaryDateError || !!receiptDateError || !!receivedDateError}
-                  className={`flex-[2] py-5 rounded-[2rem] font-black text-xl shadow-[0_20px_40px_rgba(5,150,105,0.3)] transition-all active:scale-95 flex items-center justify-center gap-4 group relative overflow-hidden ${isDuplicate || diaryDateError || receiptDateError || receivedDateError ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                  className={`flex-[2] py-5 rounded-[2rem] font-black text-xl shadow-[0_20px_40px_rgba(5,150,105,0.3)] transition-all active:scale-95 flex items-center justify-center gap-4 group relative overflow-hidden ${isDuplicate ? 'bg-amber-600 text-white hover:bg-amber-700' : (diaryDateError || receiptDateError || receivedDateError ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700')}`}
+                  disabled={!!diaryDateError || !!receiptDateError || !!receivedDateError || (isDuplicate && !showDuplicateModal)}
                >
-                 {(!isDuplicate && !diaryDateError && !receiptDateError && !receivedDateError) && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>}
-                 <CheckCircle2 size={24} /> {initialEntry ? 'তথ্য আপডেট করুন' : 'তথ্য সংরক্ষণ করুন'}
+                 {(!diaryDateError && !receiptDateError && !receivedDateError) && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>}
+                 {isDuplicate ? <AlertCircle size={24} /> : <CheckCircle2 size={24} />} {initialEntry ? 'তথ্য আপডেট করুন' : 'তথ্য সংরক্ষণ করুন'}
                </button>
             </div>
           )}

@@ -6,7 +6,7 @@ import CorrespondenceEntryModule from './CorrespondenceEntryModule';
 import IDBadge from './common/IDBadge';
 
 interface SettlementFormProps {
-  onAdd: (entry: Omit<SettlementEntry, 'id' | 'sl' | 'createdAt'> | SettlementEntry) => void;
+  onAdd: (entry: Omit<SettlementEntry, 'id' | 'sl' | 'createdAt'> | SettlementEntry | any) => void;
   onViewRegister: (searchTerm: string, module?: 'settlement' | 'correspondence') => void;
   nextSl: number;
   branchSuggestions: GroupOption[];
