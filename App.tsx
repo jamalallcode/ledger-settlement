@@ -160,9 +160,13 @@ const App: React.FC = () => {
     }
   };
 
-  const handleNavigateToLetter = (letterNo: string, module: 'settlement' | 'correspondence' = 'correspondence') => {
+  const handleNavigateToLetter = (letterNo: any, module: 'settlement' | 'correspondence' = 'correspondence') => {
+    if (!letterNo) return;
+    const safeLetterNo = String(letterNo).trim();
+    if (!safeLetterNo) return;
+    
     // Use quotes to indicate exact match search
-    setLetterSearchTerm(`"${letterNo}"`);
+    setLetterSearchTerm(`"${safeLetterNo}"`);
     setActiveTab('register');
     setRegisterSubModule(module);
     setShowRegisterFilters(true);
