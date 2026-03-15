@@ -23,6 +23,11 @@ const endOfDay = (date: Date): Date => {
  * Logic: 16th of Month A to 15th of Month B.
  */
 export const getCurrentCycle = (date: Date = new Date()): { start: Date; end: Date; label: string } => {
+  // Robustness check for invalid dates
+  if (!date || isNaN(date.getTime())) {
+    date = new Date();
+  }
+  
   const day = date.getDate();
   let start: Date;
   let end: Date;
@@ -42,10 +47,14 @@ export const getCurrentCycle = (date: Date = new Date()): { start: Date; end: Da
   const s = startOfDay(start);
   const e = endOfDay(end);
 
+  // Final safety check before formatting
+  const safeS = isNaN(s.getTime()) ? new Date() : s;
+  const safeE = isNaN(e.getTime()) ? new Date() : e;
+
   return {
-    start: s,
-    end: e,
-    label: `${format(s, 'dd/MM/yyyy')} হতে ${format(e, 'dd/MM/yyyy')}`
+    start: safeS,
+    end: safeE,
+    label: `${format(safeS, 'dd/MM/yyyy')} হতে ${format(safeE, 'dd/MM/yyyy')}`
   };
 };
 
@@ -54,6 +63,11 @@ export const getCurrentCycle = (date: Date = new Date()): { start: Date; end: Da
  * Logic: 16th of Month A to 15th of Month B.
  */
 export const getCycleForDate = (date: Date): { start: Date; end: Date; label: string } => {
+  // Robustness check for invalid dates
+  if (!date || isNaN(date.getTime())) {
+    return getCurrentCycle(new Date());
+  }
+
   const day = date.getDate();
   let start: Date;
   let end: Date;
@@ -73,10 +87,14 @@ export const getCycleForDate = (date: Date): { start: Date; end: Date; label: st
   const s = startOfDay(start);
   const e = endOfDay(end);
 
+  // Final safety check before formatting
+  const safeS = isNaN(s.getTime()) ? new Date() : s;
+  const safeE = isNaN(e.getTime()) ? new Date() : e;
+
   return {
-    start: s,
-    end: e,
-    label: `${format(s, 'dd/MM/yyyy')} হতে ${format(e, 'dd/MM/yyyy')}`
+    start: safeS,
+    end: safeE,
+    label: `${format(safeS, 'dd/MM/yyyy')} হতে ${format(safeE, 'dd/MM/yyyy')}`
   };
 };
 
