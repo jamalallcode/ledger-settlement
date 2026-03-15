@@ -282,6 +282,7 @@ interface CorrespondenceEntryModuleProps {
   initialEntry?: any;
   isAdmin?: boolean;
   existingEntries?: any[];
+  allEntries?: any[];
 }
 
 const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ 
@@ -291,7 +292,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   isLayoutEditable, 
   initialEntry, 
   isAdmin = false,
-  existingEntries = []
+  existingEntries = [],
+  allEntries = []
 }) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [calculatedCycle, setCalculatedCycle] = useState<string>('');
@@ -375,26 +377,71 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     const normalizedDiary = toEnglishDigits(formData.diaryNo).trim();
     const normalizedLetter = toEnglishDigits(formData.letterNo).trim();
 
-    const diaryExists = normalizedDiary ? existingEntries.some(entry => {
-      if (initialEntry && entry.id === initialEntry.id) return false;
-      // Context-aware check: match only within same Para Type and Letter Type
-      if (entry.paraType !== formData.paraType || entry.letterType !== formData.letterType) return false;
-      return toEnglishDigits(entry.diaryNo || '').trim() === normalizedDiary;
-    }) : false;
-
-    const letterExists = normalizedLetter ? existingEntries.some(entry => {
-      if (initialEntry && entry.id === initialEntry.id) return false;
-      // Context-aware check: match only within same Para Type and Letter Type
-      if (entry.paraType !== formData.paraType || entry.letterType !== formData.letterType) return false;
-      return toEnglishDigits(entry.letterNo || '').trim() === normalizedLetter;
-    }) : false;
-
-    return {
-      diaryNo: diaryExists,
-      letterNo: letterExists,
-      any: diaryExists || letterExists
+    const results = {
+      diaryNo: null as { module: 'settlement' | 'correspondence' } | null,
+      letterNo: null as { module: 'settlement' | 'correspondence' } | null,
+      any: false
     };
-  }, [formData.diaryNo, formData.letterNo, formData.paraType, formData.letterType, existingEntries, initialEntry]);
+
+    if (normalizedDiary) {
+      const cMatch = existingEntries.find(entry => {
+        if (initialEntry && entry.id === initialEntry.id) return false;
+        if (entry.paraType !== formData.paraType || entry.letterType !== formData.letterType) return false;
+        return toEnglishDigits(entry.diaryNo || '').trim() === normalizedDiary;
+      });
+      if (cMatch) {
+        results.diaryNo = { module: 'correspondence' };
+      } else {
+        const sMatch = allEntries.find(entry => {
+          if (entry.paraType !== formData.paraType) return false;
+          // In Settlement, diaryNo is in workpaperNoDate
+          const combined = entry.workpaperNoDate || '';
+          const parts = combined.split(',');
+          for (const part of parts) {
+            const normalizedPart = part.trim().replace(/[-:\s]/g, '');
+            const normalizedPrefix = 'ডায়েরি নং'.replace(/[-:\s]/g, '');
+            if (normalizedPart.startsWith(normalizedPrefix)) {
+              const foundNo = toEnglishDigits(normalizedPart.substring(normalizedPrefix.length).trim());
+              if (foundNo === normalizedDiary) return true;
+            }
+          }
+          return false;
+        });
+        if (sMatch) results.diaryNo = { module: 'settlement' };
+      }
+    }
+
+    if (normalizedLetter) {
+      const cMatch = existingEntries.find(entry => {
+        if (initialEntry && entry.id === initialEntry.id) return false;
+        if (entry.paraType !== formData.paraType || entry.letterType !== formData.letterType) return false;
+        return toEnglishDigits(entry.letterNo || '').trim() === normalizedLetter;
+      });
+      if (cMatch) {
+        results.letterNo = { module: 'correspondence' };
+      } else {
+        const sMatch = allEntries.find(entry => {
+          if (entry.paraType !== formData.paraType) return false;
+          // In Settlement, letterNo is in letterNoDate
+          const combined = entry.letterNoDate || '';
+          const parts = combined.split(',');
+          for (const part of parts) {
+            const normalizedPart = part.trim().replace(/[-:\s]/g, '');
+            const normalizedPrefix = 'পত্র নং'.replace(/[-:\s]/g, '');
+            if (normalizedPart.startsWith(normalizedPrefix)) {
+              const foundNo = toEnglishDigits(normalizedPart.substring(normalizedPrefix.length).trim());
+              if (foundNo === normalizedLetter) return true;
+            }
+          }
+          return false;
+        });
+        if (sMatch) results.letterNo = { module: 'settlement' };
+      }
+    }
+
+    results.any = !!(results.diaryNo || results.letterNo);
+    return results;
+  }, [formData.diaryNo, formData.letterNo, formData.paraType, formData.letterType, existingEntries, allEntries, initialEntry]);
 
   const isDuplicate = duplicates.any;
 
@@ -620,23 +667,25 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   <span>ডায়েরি নং: 
                     <button 
                       type="button"
-                      onClick={() => onViewRegister(`"${formData.diaryNo}"`, 'correspondence')}
+                      onClick={() => onViewRegister(`"${formData.diaryNo}"`, duplicates.diaryNo?.module)}
                       className="underline underline-offset-4 font-black hover:text-amber-900 transition-colors"
                     >
                       {toBengaliDigits(formData.diaryNo)}
                     </button> 
+                    {duplicates.diaryNo.module === 'settlement' && <span className="text-[10px] ml-1">(মীমাংসা রেজিস্টার)</span>}
                   </span>
                 )}
-                {duplicates.diaryNo && duplicates.letterNo && <span>এবং </span>}
+                {duplicates.diaryNo && duplicates.letterNo && <span> এবং </span>}
                 {duplicates.letterNo && (
                   <span>পত্র নং: 
                     <button 
                       type="button"
-                      onClick={() => onViewRegister(`"${formData.letterNo}"`, 'correspondence')}
+                      onClick={() => onViewRegister(`"${formData.letterNo}"`, duplicates.letterNo?.module)}
                       className="underline underline-offset-4 font-black hover:text-amber-900 transition-colors"
                     >
                       {toBengaliDigits(formData.letterNo)}
                     </button> 
+                    {duplicates.letterNo.module === 'settlement' && <span className="text-[10px] ml-1">(মীমাংসা রেজিস্টার)</span>}
                   </span>
                 )}
                 ইতোমধ্যেই ডাটাবেজে বিদ্যমান। অনুগ্রহ করে তথ্য যাচাই করুন।
