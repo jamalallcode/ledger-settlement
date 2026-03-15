@@ -147,6 +147,7 @@ interface SettlementEntryModuleProps {
   isLayoutEditable?: boolean;
   isAdmin?: boolean;
   existingEntries?: SettlementEntry[];
+  allCorrespondenceEntries?: any[];
 }
 
 const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ 
@@ -159,7 +160,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   onBackToMenu, 
   isLayoutEditable, 
   isAdmin = false,
-  existingEntries = []
+  existingEntries = [],
+  allCorrespondenceEntries = []
 }) => {
   const [formData, setFormData] = useState({
     paraType: 'এসএফআই' as ParaType, 
@@ -222,59 +224,87 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [isDiaryFocused, setIsDiaryFocused] = useState(false);
 
   const duplicates = useMemo(() => {
-    if (!existingEntries || existingEntries.length === 0) return { letterNo: null, diaryNo: null, issueNo: null };
+    const results = { 
+      letterNo: null as { status: string; module: 'settlement' | 'correspondence' } | null, 
+      diaryNo: null as { status: string; module: 'settlement' | 'correspondence' } | null, 
+      issueNo: null as { status: string; module: 'settlement' | 'correspondence' } | null 
+    };
+
+    if ((!existingEntries || existingEntries.length === 0) && (!allCorrespondenceEntries || allCorrespondenceEntries.length === 0)) return results;
     
-    const findDuplicate = (combinedStr: string | undefined, prefix: string, searchNo: string, entry: SettlementEntry) => {
+    const findInSettlement = (combinedStr: string | undefined, prefix: string, searchNo: string, entry: SettlementEntry) => {
       if (!combinedStr || !searchNo.trim()) return null;
-      
       const cleanSearchNo = toEnglishDigits(searchNo).trim();
       if (!cleanSearchNo) return null;
 
-      // Ensure we only match duplicates within the same context (Para Type and Audit Year)
       const cleanAuditYear = toEnglishDigits(formData.auditYear || '').trim();
       const entryAuditYear = toEnglishDigits(entry.auditYear || '').trim();
-      
       if (entry.paraType !== formData.paraType || entryAuditYear !== cleanAuditYear) return null;
 
-      // Extract the number part from the combined string
-      // Example: "পত্র নং- ১২৩, তারিখ- ০১/০১/২০২৪" -> prefix is "পত্র নং-"
       const parts = combinedStr.split(',');
       for (const part of parts) {
         const trimmedPart = part.trim();
-        // Normalize prefix and part for comparison (remove spaces and separators)
         const normalizedPrefix = prefix.replace(/[-:\s]/g, ''); 
         const normalizedPart = trimmedPart.replace(/[-:\s]/g, ''); 
-        
         if (normalizedPart.startsWith(normalizedPrefix)) {
           const foundNo = toEnglishDigits(normalizedPart.substring(normalizedPrefix.length).trim());
           if (foundNo === cleanSearchNo) return true;
         }
       }
-      
       return null;
     };
 
-    const letterEntry = letterNoPart ? existingEntries.find(e => {
-      if (initialEntry && e.id === initialEntry.id) return false;
-      return findDuplicate(e.letterNoDate, 'পত্র নং-', letterNoPart, e);
-    }) : null;
+    const findInCorrespondence = (searchNo: string, field: 'letterNo' | 'diaryNo', entry: any) => {
+      if (!searchNo.trim()) return null;
+      const cleanSearchNo = toEnglishDigits(searchNo).trim();
+      if (!cleanSearchNo) return null;
 
-    const diaryEntry = diaryNoPart ? existingEntries.find(e => {
-      if (initialEntry && e.id === initialEntry.id) return false;
-      return findDuplicate(e.workpaperNoDate, 'ডায়েরি নং-', diaryNoPart, e);
-    }) : null;
+      // Correspondence doesn't have auditYear in a direct field, but we check paraType
+      if (entry.paraType !== formData.paraType) return null;
 
-    const issueEntry = issueNoPart ? existingEntries.find(e => {
-      if (initialEntry && e.id === initialEntry.id) return false;
-      return findDuplicate(e.issueLetterNoDate, 'জারিপত্র নং-', issueNoPart, e);
-    }) : null;
-
-    return {
-      letterNo: letterEntry ? { status: letterEntry.approvalStatus || 'approved' } : null,
-      diaryNo: diaryEntry ? { status: diaryEntry.approvalStatus || 'approved' } : null,
-      issueNo: issueEntry ? { status: issueEntry.approvalStatus || 'approved' } : null
+      const entryNo = toEnglishDigits(entry[field] || '').trim();
+      return entryNo === cleanSearchNo;
     };
-  }, [letterNoPart, diaryNoPart, issueNoPart, existingEntries, initialEntry, formData.paraType, formData.auditYear]);
+
+    // Check Letter No
+    if (letterNoPart) {
+      const sMatch = existingEntries.find(e => {
+        if (initialEntry && e.id === initialEntry.id) return false;
+        return findInSettlement(e.letterNoDate, 'পত্র নং-', letterNoPart, e);
+      });
+      if (sMatch) {
+        results.letterNo = { status: sMatch.approvalStatus || 'approved', module: 'settlement' };
+      } else {
+        const cMatch = allCorrespondenceEntries.find(e => findInCorrespondence(letterNoPart, 'letterNo', e));
+        if (cMatch) results.letterNo = { status: cMatch.approvalStatus || 'approved', module: 'correspondence' };
+      }
+    }
+
+    // Check Diary No
+    if (diaryNoPart) {
+      const sMatch = existingEntries.find(e => {
+        if (initialEntry && e.id === initialEntry.id) return false;
+        return findInSettlement(e.workpaperNoDate, 'ডায়েরি নং-', diaryNoPart, e);
+      });
+      if (sMatch) {
+        results.diaryNo = { status: sMatch.approvalStatus || 'approved', module: 'settlement' };
+      } else {
+        const cMatch = allCorrespondenceEntries.find(e => findInCorrespondence(diaryNoPart, 'diaryNo', e));
+        if (cMatch) results.diaryNo = { status: cMatch.approvalStatus || 'approved', module: 'correspondence' };
+      }
+    }
+
+    // Check Issue No (Only in Settlement)
+    if (issueNoPart) {
+      const sMatch = existingEntries.find(e => {
+        if (initialEntry && e.id === initialEntry.id) return false;
+        return findInSettlement(e.issueLetterNoDate, 'জারিপত্র নং-', issueNoPart, e);
+      });
+      if (sMatch) results.issueNo = { status: sMatch.approvalStatus || 'approved', module: 'settlement' };
+    }
+
+    return results;
+  }, [letterNoPart, diaryNoPart, issueNoPart, existingEntries, allCorrespondenceEntries, initialEntry, formData.paraType, formData.auditYear]);
 
   const isDuplicate = !!(duplicates.letterNo || duplicates.diaryNo || duplicates.issueNo);
 
@@ -740,26 +770,28 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                    <span>পত্র নং: 
                      <button 
                        type="button"
-                       onClick={() => { if (letterNoPart) onViewRegister?.(`"${letterNoPart}"`, 'settlement'); }}
+                       onClick={() => { if (letterNoPart) onViewRegister?.(`"${letterNoPart}"`, duplicates.letterNo?.module); }}
                        className="underline underline-offset-4 font-black hover:text-amber-900 transition-colors"
                      >
                        {toBengaliDigits(letterNoPart)}
                      </button> 
+                     {duplicates.letterNo.module === 'correspondence' && <span className="text-[10px] ml-1">(চিঠিপত্র রেজিস্টার)</span>}
                    </span>
                  )}
                  {duplicates.diaryNo && (
-                   <span>ডায়েরি নং: 
+                   <span className={duplicates.letterNo ? 'ml-3' : ''}>ডায়েরি নং: 
                      <button 
                        type="button"
-                       onClick={() => { if (diaryNoPart) onViewRegister?.(`"${diaryNoPart}"`, 'settlement'); }}
+                       onClick={() => { if (diaryNoPart) onViewRegister?.(`"${diaryNoPart}"`, duplicates.diaryNo?.module); }}
                        className="underline underline-offset-4 font-black hover:text-amber-900 transition-colors"
                      >
                        {toBengaliDigits(diaryNoPart)}
                      </button> 
+                     {duplicates.diaryNo.module === 'correspondence' && <span className="text-[10px] ml-1">(চিঠিপত্র রেজিস্টার)</span>}
                    </span>
                  )}
                  {duplicates.issueNo && (
-                   <span>জারিপত্র নং: 
+                   <span className={(duplicates.letterNo || duplicates.diaryNo) ? 'ml-3' : ''}>জারিপত্র নং: 
                      <button 
                        type="button"
                        onClick={() => { if (issueNoPart) onViewRegister?.(`"${issueNoPart}"`, 'settlement'); }}
