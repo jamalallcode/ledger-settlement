@@ -386,7 +386,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     if (normalizedDiary) {
       const cMatch = existingEntries.find(entry => {
         if (initialEntry && entry.id === initialEntry.id) return false;
-        if (entry.paraType !== formData.paraType || entry.letterType !== formData.letterType) return false;
+        if (entry.paraType !== formData.paraType) return false;
+        if (formData.letterType && entry.letterType !== formData.letterType) return false;
         return toEnglishDigits(entry.diaryNo || '').trim() === normalizedDiary;
       });
       if (cMatch) {
@@ -414,7 +415,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     if (normalizedLetter) {
       const cMatch = existingEntries.find(entry => {
         if (initialEntry && entry.id === initialEntry.id) return false;
-        if (entry.paraType !== formData.paraType || entry.letterType !== formData.letterType) return false;
+        if (entry.paraType !== formData.paraType) return false;
+        if (formData.letterType && entry.letterType !== formData.letterType) return false;
         return toEnglishDigits(entry.letterNo || '').trim() === normalizedLetter;
       });
       if (cMatch) {
