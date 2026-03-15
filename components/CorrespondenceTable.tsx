@@ -349,10 +349,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
 
         if (isExact) {
           matchSearch = 
-            toEnglishDigits(entry.letterNo).trim() === toEnglishDigits(cleanSearch).trim() || 
-            toEnglishDigits(entry.diaryNo).trim() === toEnglishDigits(cleanSearch).trim();
+            toEnglishDigits(entry.letterNo || '').trim() === toEnglishDigits(cleanSearch || '').trim() || 
+            toEnglishDigits(entry.diaryNo || '').trim() === toEnglishDigits(cleanSearch || '').trim();
         } else {
-          const engS = toEnglishDigits(s);
+          const engS = toEnglishDigits(s || '');
           const engDesc = toEnglishDigits(entry.description || '').toLowerCase();
           const engLetterNo = toEnglishDigits(entry.letterNo || '').toLowerCase();
           const engDiaryNo = toEnglishDigits(entry.diaryNo || '').toLowerCase();
