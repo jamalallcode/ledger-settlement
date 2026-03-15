@@ -92,7 +92,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, 
   }
 
   if (mainModule === 'correspondence') {
-    return <CorrespondenceEntryModule onBackToMenu={() => setMainModule(null)} onViewRegister={(searchTerm, module) => onViewRegister(searchTerm, module || 'correspondence')} onAdd={onAdd} isLayoutEditable={isLayoutEditable} initialEntry={initialEntry} isAdmin={isAdmin} existingEntries={correspondenceEntries} />;
+    return <CorrespondenceEntryModule onBackToMenu={() => setMainModule(null)} onViewRegister={(searchTerm, module) => onViewRegister(searchTerm, module || 'correspondence')} onAdd={onAdd} isLayoutEditable={isLayoutEditable} initialEntry={initialEntry} isAdmin={isAdmin} existingEntries={correspondenceEntries} allEntries={entries} />;
   }
 
   return (
@@ -107,6 +107,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, 
       isLayoutEditable={isLayoutEditable}
       isAdmin={isAdmin}
       existingEntries={entries}
+      allCorrespondenceEntries={correspondenceEntries}
     />
   );
 };
