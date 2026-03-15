@@ -572,20 +572,9 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         <td className={stickyTdStyle}>{formatDateBN(row.presentationDate) || '-'}</td>
                         <td className={stickyTdStyle}>
                           {/* Position Badge Weight set to 700 (font-bold) */}
-                          {(() => {
-                            const name = row.presentedToName || 'অডিটর';
-                            let badgeCls = 'bg-blue-50 text-blue-700 border-blue-100';
-                            if (name === 'অডিটর') badgeCls = 'bg-red-500 text-white border-red-600';
-                            else if (name === 'সুপার') badgeCls = 'bg-yellow-500 text-black border-yellow-600';
-                            else if (name === 'এএন্ডএও') badgeCls = 'bg-blue-500 text-white border-blue-600';
-                            else if (name === 'ডিডি') badgeCls = 'bg-green-500 text-white border-green-600';
-
-                            return (
-                              <span className={`px-2 py-0.5 border rounded-full text-[9px] font-bold uppercase ${badgeCls}`}>
-                                {name}
-                              </span>
-                            );
-                          })()}
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-[9px] font-bold uppercase group-hover:bg-white">
+                            {row.presentedToName || 'অডিটর'}
+                          </span>
                         </td>
                         <td className={stickyTdStyle + " italic text-slate-400 text-[9px]"}>{row.remarks || '-'}</td>
                       </tr>

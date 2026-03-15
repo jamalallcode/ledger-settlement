@@ -7,7 +7,7 @@ import IDBadge from './common/IDBadge';
 
 interface SettlementFormProps {
   onAdd: (entry: Omit<SettlementEntry, 'id' | 'sl' | 'createdAt'> | SettlementEntry) => void;
-  onViewRegister: (searchTerm: string, module?: 'settlement' | 'correspondence') => void;
+  onViewRegister: (module: 'settlement' | 'correspondence', searchTerm?: string) => void;
   nextSl: number;
   branchSuggestions: GroupOption[];
   initialEntry?: SettlementEntry | any | null;
@@ -92,13 +92,13 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, 
   }
 
   if (mainModule === 'correspondence') {
-    return <CorrespondenceEntryModule onBackToMenu={() => setMainModule(null)} onViewRegister={(searchTerm, module) => onViewRegister(searchTerm, module || 'correspondence')} onAdd={onAdd} isLayoutEditable={isLayoutEditable} initialEntry={initialEntry} isAdmin={isAdmin} existingEntries={correspondenceEntries} allEntries={entries} />;
+    return <CorrespondenceEntryModule onBackToMenu={() => setMainModule(null)} onViewRegister={(module, searchTerm) => onViewRegister(module || 'correspondence', searchTerm)} onAdd={onAdd} isLayoutEditable={isLayoutEditable} initialEntry={initialEntry} isAdmin={isAdmin} existingEntries={correspondenceEntries} />;
   }
 
   return (
     <SettlementEntryModule 
       onAdd={onAdd}
-      onViewRegister={(searchTerm, module) => onViewRegister(searchTerm, module || 'settlement')}
+      onViewRegister={(module, searchTerm) => onViewRegister(module || 'settlement', searchTerm)}
       nextSl={nextSl}
       branchSuggestions={branchSuggestions}
       initialEntry={initialEntry}
@@ -107,7 +107,6 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, 
       isLayoutEditable={isLayoutEditable}
       isAdmin={isAdmin}
       existingEntries={entries}
-      allCorrespondenceEntries={correspondenceEntries}
     />
   );
 };

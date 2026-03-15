@@ -10,7 +10,7 @@ import VotingSystem from './components/VotingSystem';
 import DocumentArchive from './components/DocumentArchive';
 import AdminDashboard from './components/AdminDashboard';
 import Navbar from './components/Navbar';
-import AdminLoginModal from './components/AdminLoginModal';
+import AdminModal from './components/AdminModal';
 import { SettlementEntry, GroupOption, CumulativeStats, DeletedEntry } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
@@ -127,10 +127,16 @@ const App: React.FC = () => {
   const mainScrollRef = useRef<HTMLElement>(null);
 
   const handleTabChange = (tab: string, subModule?: 'settlement' | 'correspondence', rType?: string) => {
-    if (tab === activeTab && !subModule && !rType) setResetKey(prev => prev + 1);
-    else { 
+    if (tab === activeTab && !subModule && !rType) {
+      setResetKey(prev => prev + 1);
+    } else { 
       setActiveTab(tab); 
-      setResetKey(0); 
+      setResetKey(prev => prev + 1); 
+    }
+    
+    // Clear editing state when navigating to entry/register via direct module selection
+    if (subModule) {
+      setEditingEntry(null);
     }
     
     // Handle Direct Entry Modules
@@ -160,13 +166,9 @@ const App: React.FC = () => {
     }
   };
 
-  const handleNavigateToLetter = (letterNo: any, module: 'settlement' | 'correspondence' = 'correspondence') => {
-    if (!letterNo) return;
-    const safeLetterNo = String(letterNo).trim();
-    if (!safeLetterNo) return;
-    
+  const handleNavigateToLetter = (letterNo: string, module: 'settlement' | 'correspondence' = 'correspondence') => {
     // Use quotes to indicate exact match search
-    setLetterSearchTerm(`"${safeLetterNo}"`);
+    setLetterSearchTerm(`"${letterNo}"`);
     setActiveTab('register');
     setRegisterSubModule(module);
     setShowRegisterFilters(true);
@@ -433,6 +435,7 @@ const App: React.FC = () => {
     setTimeout(() => {
       setRegisterSubModule(module);
       setActiveTab('register');
+      setResetKey(prev => prev + 1);
     }, 10);
   };
 
@@ -603,8 +606,7 @@ const App: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <>
-        <div className={`h-screen bg-white flex overflow-hidden font-['Hind_Siliguri'] animate-in fade-in duration-1000 ${showPrintPreview ? 'no-print' : ''}`}>
+      <div className={`h-screen bg-white flex overflow-hidden font-['Hind_Siliguri'] animate-in fade-in duration-1000 ${showPrintPreview ? 'no-print' : ''}`}>
       {isLoading && (
         <div className="fixed inset-0 bg-white/60 backdrop-blur-md z-[9999] flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -628,6 +630,11 @@ const App: React.FC = () => {
             registerSubModule={registerSubModule}
             reportType={reportType}
             isLayoutEditable={isLayoutEditable}
+            setIsLayoutEditable={setIsLayoutEditable}
+            showRegisterFilters={showRegisterFilters}
+            setShowRegisterFilters={setShowRegisterFilters}
+            onPrint={() => window.print()}
+            setShowPendingOnly={setShowPendingOnly}
             setShowAdminModal={setShowAdminModal}
           />
         </div>
@@ -659,220 +666,219 @@ const App: React.FC = () => {
           onReject={handleRejectEntry}
           setShowPendingOnly={setShowPendingOnly}
           onPrint={() => setShowPrintPreview(true)}
-          showAdminModal={showAdminModal}
           setShowAdminModal={setShowAdminModal}
         />
         <main ref={mainScrollRef} className="flex-1 overflow-auto bg-white relative scroll-smooth">
           <div className="p-4 md:p-8 max-w-full mx-auto w-full flex flex-col">
             <div className="animate-in fade-in duration-500 flex-1">
-                
-                {activeTab === 'landing' && (
-                  <LandingPage 
-                    entries={approvedEntries} 
-                    setActiveTab={handleTabChange} 
-                    cycleLabel={cycleLabelBengali} 
-                    isLockedMode={isLockedMode} 
-                    isLayoutEditable={isLayoutEditable} 
-                    isAdmin={isAdmin}
-                    pendingCount={totalPendingCount}
-                    onShowPending={() => { setActiveTab('register'); setShowPendingOnly(true); }}
-                    deletedEntries={deletedEntries}
-                    onRestore={handleRestore}
-                  />
-                )}
-                
-                {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} />}
-                
-                {activeTab === 'register' && (
-                  <div className="space-y-6 relative">
-                    {showPendingOnly ? (
-                      <div className="space-y-8 animate-in fade-in duration-700">
-                        <div className="flex items-center justify-between no-print mb-4">
-                          <button 
-                            onClick={() => setShowPendingOnly(false)}
-                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all flex items-center gap-2 font-black text-[11px] border border-slate-200"
-                          >
-                            <ChevronLeft size={16} /> মূল রেজিস্টারে ফিরুন
-                          </button>
+              
+              {activeTab === 'landing' && (
+                <LandingPage 
+                  entries={approvedEntries} 
+                  setActiveTab={handleTabChange} 
+                  cycleLabel={cycleLabelBengali} 
+                  isLockedMode={isLockedMode} 
+                  isLayoutEditable={isLayoutEditable} 
+                  isAdmin={isAdmin}
+                  pendingCount={totalPendingCount}
+                  onShowPending={() => { setActiveTab('register'); setShowPendingOnly(true); }}
+                  deletedEntries={deletedEntries}
+                  onRestore={handleRestore}
+                />
+              )}
+              
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} />}
+              
+              {activeTab === 'register' && (
+                <div className="space-y-6 relative">
+                  {showPendingOnly ? (
+                    <div className="space-y-8 animate-in fade-in duration-700">
+                      <div className="flex items-center justify-between no-print mb-4">
+                        <button 
+                          onClick={() => setShowPendingOnly(false)}
+                          className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all flex items-center gap-2 font-black text-[11px] border border-slate-200"
+                        >
+                          <ChevronLeft size={16} /> মূল রেজিস্টারে ফিরুন
+                        </button>
+                      </div>
+
+                      {(pendingEntries.length > 0 || pendingCorrespondence.length > 0) ? (
+                        <div className="bg-amber-50/50 border-2 border-dashed border-amber-200 p-8 rounded-[2.5rem] text-center space-y-3">
+                           <h3 className="text-xl font-black text-amber-900">অপেক্ষমাণ এন্ট্রি মডোরেশন</h3>
+                           <p className="text-sm font-bold text-amber-700">নিচের এন্ট্রিগুলো যাচাই করে অনুমোদন দিন। অনুমোদন না পাওয়া পর্যন্ত এগুলো রিপোর্ট বা রেজিস্টারে আসবে না।</p>
+                        </div>
+                      ) : (
+                        <div className="bg-emerald-50/50 border-2 border-dashed border-emerald-200 p-10 rounded-[3rem] text-center space-y-4 shadow-sm animate-in zoom-in-95 duration-1000">
+                           <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-200 animate-in spin-in-1 duration-1000">
+                              <CheckCircle2 size={36} strokeWidth={2.5} />
+                           </div>
+                           <div className="space-y-1">
+                              <h3 className="text-2xl font-black text-emerald-900 flex items-center justify-center gap-3">
+                                <Sparkles size={20} className="text-amber-400" /> সকল তথ্য সফলভাবে মডোরেশন করা হয়েছে!
+                              </h3>
+                              <p className="text-sm font-bold text-emerald-700">বর্তমানে আপনার ইনবক্সে কোনো এন্ট্রি অনুমোদনের অপেক্ষায় নেই।</p>
+                           </div>
+                           <button 
+                             onClick={() => setShowPendingOnly(false)}
+                             className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all shadow-xl active:scale-95 border-b-4 border-emerald-800"
+                           >
+                             মূল রেজিস্টারে ফিরে যান
+                           </button>
+                        </div>
+                      )}
+                      
+                      {pendingCorrespondence.length > 0 && (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl w-fit font-black text-sm border border-emerald-100">
+                            <Mail size={16} /> প্রাপ্ত চিঠিপত্র অপেক্ষমাণ
+                          </div>
+                          <CorrespondenceTable 
+                            entries={pendingCorrespondence} 
+                            onBack={() => {}}
+                            isAdmin={isAdmin}
+                            isLayoutEditable={isLayoutEditable}
+                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
+                            onInlineUpdate={handleInlineUpdateEntry}
+                            onDelete={handleDelete}
+                            onApprove={handleApproveEntry}
+                            onReject={handleRejectEntry}
+                            showFilters={false}
+                            setShowFilters={() => {}}
+                            onNavigateToLetter={handleNavigateToLetter}
+                          />
+                        </div>
+                      )}
+
+                      {pendingEntries.length > 0 && (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl w-fit font-black text-sm border border-blue-100">
+                            <ClipboardList size={16} /> মীমাংসা রেজিস্টার অপেক্ষমাণ
+                          </div>
+                          <SettlementTable 
+                            key={`pending-list`} 
+                            entries={pendingEntries} 
+                            onDelete={handleDelete} 
+                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
+                            isLayoutEditable={isLayoutEditable} 
+                            showFilters={false} 
+                            setShowFilters={setShowRegisterFilters}
+                            isAdminView={true}
+                            onApprove={handleApproveEntry}
+                            onReject={handleRejectEntry}
+                            isAdmin={isAdmin}
+                            onNavigateToLetter={handleNavigateToLetter}
+                            initialSearchTerm={letterSearchTerm || undefined}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : !registerSubModule ? (
+                    <div id="section-register-choice" className="w-full py-2 animate-in slide-in-from-left-10 duration-700 relative">
+                      <IDBadge id="section-register-choice" isLayoutEditable={isLayoutEditable} />
+                      <div className="space-y-5 max-w-4xl text-left">
+                        {/* Option 1: Incoming Correspondence Register */}
+                        <div 
+                          onClick={() => setRegisterSubModule('correspondence')}
+                          className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards"
+                        >
+                          <IDBadge id="reg-opt-correspondence" isLayoutEditable={isLayoutEditable} />
+                          <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.4)]"></div>
+                          <div className="flex items-center justify-center pl-7">
+                            <div className="w-12 h-12 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-600 transition-all duration-500">
+                              <Mail size={24} className="text-emerald-500 group-hover:text-white" />
+                            </div>
+                          </div>
+                          <div className="flex flex-col justify-center pl-8 flex-1">
+                            <h3 className="text-[20px] font-black text-white tracking-tight leading-tight group-hover:text-emerald-400 transition-colors">১. প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টার</h3>
+                            <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider mt-0.5 group-hover:text-slate-300 transition-colors">প্রাপ্ত সকল চিঠিপত্র এবং ডায়েরি এন্ট্রির পরিসংখ্যান দেখুন।</p>
+                          </div>
+                          <div className="pr-10 opacity-30 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
+                            <ArrowRightCircle size={22} className="text-white" />
+                          </div>
                         </div>
 
-                        {(pendingEntries.length > 0 || pendingCorrespondence.length > 0) ? (
-                          <div className="bg-amber-50/50 border-2 border-dashed border-amber-200 p-8 rounded-[2.5rem] text-center space-y-3">
-                             <h3 className="text-xl font-black text-amber-900">অপেক্ষমাণ এন্ট্রি মডোরেশন</h3>
-                             <p className="text-sm font-bold text-amber-700">নিচের এন্ট্রিগুলো যাচাই করে অনুমোদন দিন। অনুমোদন না পাওয়া পর্যন্ত এগুলো রিপোর্ট বা রেজিস্টারে আসবে না।</p>
-                          </div>
-                        ) : (
-                          <div className="bg-emerald-50/50 border-2 border-dashed border-emerald-200 p-10 rounded-[3rem] text-center space-y-4 shadow-sm animate-in zoom-in-95 duration-1000">
-                             <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-200 animate-in spin-in-1 duration-1000">
-                                <CheckCircle2 size={36} strokeWidth={2.5} />
-                             </div>
-                             <div className="space-y-1">
-                                <h3 className="text-2xl font-black text-emerald-900 flex items-center justify-center gap-3">
-                                  <Sparkles size={20} className="text-amber-400" /> সকল তথ্য সফলভাবে মডোরেশন করা হয়েছে!
-                                </h3>
-                                <p className="text-sm font-bold text-emerald-700">বর্তমানে আপনার ইনবক্সে কোনো এন্ট্রি অনুমোদনের অপেক্ষায় নেই।</p>
-                             </div>
-                             <button 
-                               onClick={() => setShowPendingOnly(false)}
-                               className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all shadow-xl active:scale-95 border-b-4 border-emerald-800"
-                             >
-                               মূল রেজিস্টারে ফিরে যান
-                             </button>
-                          </div>
-                        )}
-                        
-                        {pendingCorrespondence.length > 0 && (
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl w-fit font-black text-sm border border-emerald-100">
-                              <Mail size={16} /> প্রাপ্ত চিঠিপত্র অপেক্ষমাণ
-                            </div>
-                            <CorrespondenceTable 
-                              entries={pendingCorrespondence} 
-                              onBack={() => {}}
-                              isAdmin={isAdmin}
-                              isLayoutEditable={isLayoutEditable}
-                              onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
-                              onInlineUpdate={handleInlineUpdateEntry}
-                              onDelete={handleDelete}
-                              onApprove={handleApproveEntry}
-                              onReject={handleRejectEntry}
-                              showFilters={false}
-                              setShowFilters={() => {}}
-                              onNavigateToLetter={handleNavigateToLetter}
-                            />
-                          </div>
-                        )}
-
-                        {pendingEntries.length > 0 && (
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl w-fit font-black text-sm border border-blue-100">
-                              <ClipboardList size={16} /> মীমাংসা রেজিস্টার অপেক্ষমাণ
-                            </div>
-                            <SettlementTable 
-                              key={`pending-list`} 
-                              entries={pendingEntries} 
-                              onDelete={handleDelete} 
-                              onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
-                              isLayoutEditable={isLayoutEditable} 
-                              showFilters={false} 
-                              setShowFilters={setShowRegisterFilters}
-                              isAdminView={true}
-                              onApprove={handleApproveEntry}
-                              onReject={handleRejectEntry}
-                              isAdmin={isAdmin}
-                              onNavigateToLetter={handleNavigateToLetter}
-                              initialSearchTerm={letterSearchTerm || undefined}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    ) : !registerSubModule ? (
-                      <div id="section-register-choice" className="w-full py-2 animate-in slide-in-from-left-10 duration-700 relative">
-                        <IDBadge id="section-register-choice" isLayoutEditable={isLayoutEditable} />
-                        <div className="space-y-5 max-w-4xl text-left">
-                          {/* Option 1: Incoming Correspondence Register */}
-                          <div 
-                            onClick={() => setRegisterSubModule('correspondence')}
-                            className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards"
-                          >
-                            <IDBadge id="reg-opt-correspondence" isLayoutEditable={isLayoutEditable} />
-                            <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.4)]"></div>
-                            <div className="flex items-center justify-center pl-7">
-                              <div className="w-12 h-12 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-600 transition-all duration-500">
-                                <Mail size={24} className="text-emerald-500 group-hover:text-white" />
-                              </div>
-                            </div>
-                            <div className="flex flex-col justify-center pl-8 flex-1">
-                              <h3 className="text-[20px] font-black text-white tracking-tight leading-tight group-hover:text-emerald-400 transition-colors">১. প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টার</h3>
-                              <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider mt-0.5 group-hover:text-slate-300 transition-colors">প্রাপ্ত সকল চিঠিপত্র এবং ডায়েরি এন্ট্রির পরিসংখ্যান দেখুন।</p>
-                            </div>
-                            <div className="pr-10 opacity-30 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-                              <ArrowRightCircle size={22} className="text-white" />
+                        {/* Option 2: Settlement Register */}
+                        <div 
+                          onClick={() => setRegisterSubModule('settlement')}
+                          className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards delay-100"
+                        >
+                          <IDBadge id="reg-opt-settlement" isLayoutEditable={isLayoutEditable} />
+                          <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]"></div>
+                          <div className="flex items-center justify-center pl-7">
+                            <div className="w-12 h-12 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-600 transition-all duration-500">
+                              <ClipboardList size={24} className="text-blue-500 group-hover:text-white" />
                             </div>
                           </div>
-
-                          {/* Option 2: Settlement Register */}
-                          <div 
-                            onClick={() => setRegisterSubModule('settlement')}
-                            className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards delay-100"
-                          >
-                            <IDBadge id="reg-opt-settlement" isLayoutEditable={isLayoutEditable} />
-                            <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]"></div>
-                            <div className="flex items-center justify-center pl-7">
-                              <div className="w-12 h-12 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-600 transition-all duration-500">
-                                <ClipboardList size={24} className="text-blue-500 group-hover:text-white" />
-                              </div>
-                            </div>
-                            <div className="flex flex-col justify-center pl-8 flex-1">
-                              <h3 className="text-[20px] font-black text-white tracking-tight leading-tight group-hover:text-blue-400 transition-colors">২. মীমাংসা রেজিস্টার</h3>
-                              <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider mt-0.5 group-hover:text-slate-300 transition-colors">অডিট আপত্তি নিষ্পত্তি সংক্রান্ত বিস্তারিত রিপোর্ট এবং তথ্য।</p>
-                            </div>
-                            <div className="pr-10 opacity-30 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-                              <ArrowRightCircle size={22} className="text-white" />
-                            </div>
+                          <div className="flex flex-col justify-center pl-8 flex-1">
+                            <h3 className="text-[20px] font-black text-white tracking-tight leading-tight group-hover:text-blue-400 transition-colors">২. মীমাংসা রেজিস্টার</h3>
+                            <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider mt-0.5 group-hover:text-slate-300 transition-colors">অডিট আপত্তি নিষ্পত্তি সংক্রান্ত বিস্তারিত রিপোর্ট এবং তথ্য।</p>
+                          </div>
+                          <div className="pr-10 opacity-30 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
+                            <ArrowRightCircle size={22} className="text-white" />
                           </div>
                         </div>
                       </div>
-                    ) : registerSubModule === 'settlement' ? (
-                      <div className="space-y-6">
-                        <div className="flex items-center gap-4 no-print mb-2">
-                          <button 
-                            onClick={() => setRegisterSubModule(null)}
-                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all flex items-center gap-2 font-black text-[11px] border border-slate-200"
-                          >
-                            <ChevronLeft size={16} /> মেনুতে ফিরুন
-                          </button>
-                        </div>
-
-                        <SettlementTable 
-                          key={`register-reset-${resetKey}`} 
-                          entries={approvedEntries} 
-                          onDelete={handleDelete} 
-                          onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
-                          isLayoutEditable={isLayoutEditable} 
-                          showFilters={showRegisterFilters} 
-                          setShowFilters={setShowRegisterFilters} 
-                          isAdmin={isAdmin}
-                          onNavigateToLetter={handleNavigateToLetter}
-                          initialSearchTerm={letterSearchTerm || undefined}
-                        />
+                    </div>
+                  ) : registerSubModule === 'settlement' ? (
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-4 no-print mb-2">
+                        <button 
+                          onClick={() => setRegisterSubModule(null)}
+                          className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all flex items-center gap-2 font-black text-[11px] border border-slate-200"
+                        >
+                          <ChevronLeft size={16} /> মেনুতে ফিরুন
+                        </button>
                       </div>
-                    ) : (
-                      <div className="animate-in fade-in duration-700">
-                        <CorrespondenceTable 
-                          entries={approvedCorrespondence} 
-                          onBack={() => {
-                            setRegisterSubModule(null);
-                            setLetterSearchTerm(null);
-                          }} 
-                          isLayoutEditable={isLayoutEditable}
-                          isAdmin={isAdmin}
-                          onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
-                          onInlineUpdate={handleInlineUpdateEntry}
-                          onDelete={handleDelete}
-                          showFilters={showRegisterFilters}
-                          setShowFilters={setShowRegisterFilters}
-                          initialSearchTerm={letterSearchTerm || undefined}
-                          onNavigateToLetter={handleNavigateToLetter}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                {activeTab === 'return' && <ReturnView key={`return-reset-${resetKey}`} entries={approvedEntries} correspondenceEntries={approvedCorrespondence} cycleLabel={cycleLabelBengali} prevStats={currentPrevStats} setPrevStats={handleSetCurrentPrevStats} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} selectedReportType={reportType} setSelectedReportType={setReportType} />}
-                
-                {activeTab === 'archive' && <DocumentArchive isAdmin={isAdmin} />}
 
-                {activeTab === 'voting' && <VotingSystem isAdmin={isAdmin} />}
+                      <SettlementTable 
+                        key={`register-reset-${resetKey}`} 
+                        entries={approvedEntries} 
+                        onDelete={handleDelete} 
+                        onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
+                        isLayoutEditable={isLayoutEditable} 
+                        showFilters={showRegisterFilters} 
+                        setShowFilters={setShowRegisterFilters} 
+                        isAdmin={isAdmin}
+                        onNavigateToLetter={handleNavigateToLetter}
+                        initialSearchTerm={letterSearchTerm || undefined}
+                      />
+                    </div>
+                  ) : (
+                    <div className="animate-in fade-in duration-700">
+                      <CorrespondenceTable 
+                        entries={approvedCorrespondence} 
+                        onBack={() => {
+                          setRegisterSubModule(null);
+                          setLetterSearchTerm(null);
+                        }} 
+                        isLayoutEditable={isLayoutEditable}
+                        isAdmin={isAdmin}
+                        onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
+                        onInlineUpdate={handleInlineUpdateEntry}
+                        onDelete={handleDelete}
+                        showFilters={showRegisterFilters}
+                        setShowFilters={setShowRegisterFilters}
+                        initialSearchTerm={letterSearchTerm || undefined}
+                        onNavigateToLetter={handleNavigateToLetter}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {activeTab === 'return' && <ReturnView key={`return-reset-${resetKey}`} entries={approvedEntries} correspondenceEntries={approvedCorrespondence} cycleLabel={cycleLabelBengali} prevStats={currentPrevStats} setPrevStats={handleSetCurrentPrevStats} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} selectedReportType={reportType} setSelectedReportType={setReportType} />}
+              
+              {activeTab === 'archive' && <DocumentArchive isAdmin={isAdmin} />}
 
-                {activeTab === 'admin-dashboard' && isAdmin && (
-                  <AdminDashboard setActiveTab={handleTabChange} pendingCount={totalPendingCount} />
-                )}
-              </div>
+              {activeTab === 'voting' && <VotingSystem isAdmin={isAdmin} />}
+
+              {activeTab === 'admin-dashboard' && isAdmin && (
+                <AdminDashboard setActiveTab={handleTabChange} pendingCount={totalPendingCount} />
+              )}
             </div>
-          </main>
-        </div>
+          </div>
+        </main>
+      </div>
       {showPrintPreview && (
         <div className="fixed inset-0 z-[10000] flex flex-col animate-in fade-in duration-300 bg-slate-900/95 backdrop-blur-md print:bg-white print:static print:block print-preview-modal">
           <div className="h-20 bg-slate-900 border-b border-white/10 flex items-center justify-between px-8 shrink-0 shadow-2xl no-print">
@@ -950,16 +956,23 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
-      <AdminLoginModal 
-        showAdminModal={showAdminModal}
-        setShowAdminModal={setShowAdminModal}
-        setIsAdmin={setIsAdmin}
+
+      <AdminModal 
+        isOpen={showAdminModal}
+        onClose={() => setShowAdminModal(false)}
+        onSuccess={() => {
+          setIsAdmin(true);
+          setShowAdminModal(false);
+          localStorage.setItem(ADMIN_MODE_KEY, 'true');
+        }}
+        showAdminModal={showAdminModal} 
+        setShowAdminModal={setShowAdminModal} 
+        setIsAdmin={setIsAdmin} 
         setActiveTab={setActiveTab}
       />
-    </>
-  </ErrorBoundary>
-);
+    </div>
+    </ErrorBoundary>
+  );
 };
 
 export default App;

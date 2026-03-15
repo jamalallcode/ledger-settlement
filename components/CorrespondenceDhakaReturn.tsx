@@ -356,22 +356,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                   <td className={tdS}>-</td>
                   <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
                   <td className={tdS}>{formatDateBN(entry.presentationDate)}</td>
-                  <td className={tdS}>
-                    {(() => {
-                      const name = entry.presentedToName || 'অডিটর';
-                      let badgeCls = 'bg-blue-50 text-blue-700 border-blue-100';
-                      if (name === 'অডিটর') badgeCls = 'bg-red-500 text-white border-red-600';
-                      else if (name === 'সুপার') badgeCls = 'bg-yellow-500 text-black border-yellow-600';
-                      else if (name === 'এএন্ডএও') badgeCls = 'bg-blue-500 text-white border-blue-600';
-                      else if (name === 'ডিডি') badgeCls = 'bg-green-500 text-white border-green-600';
-
-                      return (
-                        <span className={`px-2 py-0.5 border rounded-full text-[9px] font-bold uppercase ${badgeCls}`}>
-                          {name}
-                        </span>
-                      );
-                    })()}
-                  </td>
+                  <td className={tdS}>{entry.presentedToName || 'অডিটর'}</td>
                   <td className={tdS}>{entry.remarks || 'চলমান'}</td>
                 </tr>
               )) : (

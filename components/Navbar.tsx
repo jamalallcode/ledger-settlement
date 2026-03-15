@@ -28,8 +28,7 @@ interface NavbarProps {
   onReject?: (id: string) => void;
   setShowPendingOnly?: (val: boolean) => void;
   onPrint?: () => void;
-  showAdminModal: boolean;
-  setShowAdminModal: (val: boolean) => void;
+  setShowAdminModal?: (val: boolean) => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
@@ -49,8 +48,7 @@ const Navbar: React.FC<NavbarProps> = ({
   onReject = () => {},
   setShowPendingOnly = () => {},
   onPrint = () => window.print(),
-  showAdminModal,
-  setShowAdminModal
+  setShowAdminModal = () => {}
 }) => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [activeSubDropdown, setActiveSubDropdown] = useState<string | null>(null);
@@ -79,12 +77,14 @@ const Navbar: React.FC<NavbarProps> = ({
 
   const handleLogoClick = () => {
     const now = Date.now();
-    if (now - lastLogoClickTime.current > 2000) logoClickCount.current = 0;
+    if (now - lastLogoClickTime.current > 1000) {
+      logoClickCount.current = 0;
+    }
     logoClickCount.current += 1;
     lastLogoClickTime.current = now;
-    if (logoClickCount.current === 3) {
-      logoClickCount.current = 0;
+    if (logoClickCount.current >= 3) {
       setShowAdminModal(true);
+      logoClickCount.current = 0;
     }
   };
 
@@ -165,300 +165,277 @@ const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <>
-      <nav className="sticky top-0 z-[5000] bg-[#005a9c] h-14 shadow-xl no-print select-none" ref={navRef}>
-          <IDBadge id="premium-navbar-main" />
-          <div className="max-w-[1600px] mx-auto h-full px-4 flex items-center justify-between">
-            <div className="flex items-center h-full">
-              {/* Home Icon */}
-              <button 
-                onClick={() => setActiveTab('landing')}
-                className={`h-full px-4 flex items-center justify-center transition-colors ${activeTab === 'landing' ? 'bg-[#003366]' : 'hover:bg-[#004a80]'}`}
+      <nav className="sticky top-0 z-[5000] no-print select-none h-14 bg-[#005a9c] shadow-xl" ref={navRef}>
+      <IDBadge id="premium-navbar-main" />
+      <div className="max-w-[1600px] mx-auto h-full px-4 flex items-center justify-between">
+          <div className="flex items-center h-full">
+          {/* Home Icon */}
+          <button 
+            onClick={() => setActiveTab('landing')}
+            className={`h-full px-4 flex items-center justify-center transition-colors ${activeTab === 'landing' ? 'bg-[#003366]' : 'hover:bg-[#004a80]'}`}
+          >
+            <Home size={20} className="text-white" />
+          </button>
+
+          {/* Main Menu Items */}
+          <div className="flex items-center h-full">
+            {menuItems.map((item) => (
+              <div 
+                key={item.id} 
+                className="relative h-full group"
+                onMouseEnter={() => setActiveDropdown(item.id)}
+                onMouseLeave={() => {
+                  setActiveDropdown(null);
+                  setActiveSubDropdown(null);
+                  setActiveSubSubDropdown(null);
+                }}
               >
-                <Home size={20} className="text-white" />
-              </button>
+                <button 
+                  onClick={() => {
+                    if (!item.subItems) setActiveTab(item.id);
+                  }}
+                  className={`h-full px-4 flex items-center gap-1.5 text-white font-bold text-[13px] uppercase tracking-wide transition-colors ${activeTab === item.id || activeDropdown === item.id ? 'bg-[#003366]' : 'hover:bg-[#004a80]'}`}
+                >
+                  {item.label}
+                  {item.subItems && <ChevronDown size={14} className={`transition-transform duration-200 ${activeDropdown === item.id ? 'rotate-180' : ''}`} />}
+                </button>
 
-              {/* Main Menu Items */}
-              <div className="flex items-center h-full">
-                {menuItems.map((item) => (
-                  <div 
-                    key={item.id} 
-                    className="relative h-full group"
-                    onMouseEnter={() => setActiveDropdown(item.id)}
-                    onMouseLeave={() => {
-                      setActiveDropdown(null);
-                      setActiveSubDropdown(null);
-                      setActiveSubSubDropdown(null);
-                    }}
-                  >
-                    <button 
-                      onClick={() => {
-                        if (!item.subItems) setActiveTab(item.id);
-                      }}
-                      className={`h-full px-4 flex items-center gap-1.5 text-white font-bold text-[13px] uppercase tracking-wide transition-colors ${activeTab === item.id || activeDropdown === item.id ? 'bg-[#003366]' : 'hover:bg-[#004a80]'}`}
-                    >
-                      {item.label}
-                      {item.subItems && <ChevronDown size={14} className={`transition-transform duration-200 ${activeDropdown === item.id ? 'rotate-180' : ''}`} />}
-                    </button>
-
-                    {/* Dropdown Menu */}
-                    {(item.subItems || item.id === 'links') && activeDropdown === item.id && (
-                      <div className="absolute top-full left-0 w-56 bg-white shadow-2xl border-t-2 border-[#005a9c] animate-in fade-in slide-in-from-top-1 duration-200">
-                        {item.id === 'links' ? (
-                          <div className="p-1">
-                            {importantLinks.map((link, idx) => (
-                              <div key={idx} className="group/link flex items-center justify-between px-4 py-2 hover:bg-slate-50 transition-colors">
-                                <a 
-                                  href={link.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="flex-1 text-[12px] font-bold text-slate-700 hover:text-[#005a9c] truncate"
-                                >
-                                  {link.name}
-                                </a>
-                                {isAdmin && (
-                                  <button 
-                                    onClick={(e) => handleRemoveLink(e, idx)}
-                                    className="opacity-0 group-hover/link:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-all"
-                                  >
-                                    <X size={12} />
-                                  </button>
-                                )}
-                              </div>
-                            ))}
+                {/* Dropdown Menu */}
+                {(item.subItems || item.id === 'links') && activeDropdown === item.id && (
+                  <div className="absolute top-full left-0 w-56 bg-white shadow-2xl border-t-2 border-[#005a9c] animate-in fade-in slide-in-from-top-1 duration-200">
+                    {item.id === 'links' ? (
+                      <div className="p-1">
+                        {importantLinks.map((link, idx) => (
+                          <div key={idx} className="group/link flex items-center justify-between px-4 py-2 hover:bg-slate-50 transition-colors">
+                            <a 
+                              href={link.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex-1 text-[12px] font-bold text-slate-700 hover:text-[#005a9c] truncate"
+                            >
+                              {link.name}
+                            </a>
                             {isAdmin && (
                               <button 
-                                onClick={handleAddLink}
-                                className="w-full flex items-center gap-2 px-4 py-2 text-[11px] font-black text-blue-600 hover:bg-blue-50 transition-all border-t border-slate-100 mt-1"
+                                onClick={(e) => handleRemoveLink(e, idx)}
+                                className="opacity-0 group-hover/link:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-all"
                               >
-                                <Plus size={14} /> লিঙ্ক যুক্ত করুন
+                                <X size={12} />
                               </button>
                             )}
                           </div>
-                        ) : (
-                          item.subItems?.map((sub: any) => {
-                            if (sub.adminOnly && !isAdmin) return null;
-                            return (
-                              <div 
-                                key={sub.id} 
-                                className="relative group/sub"
-                                onMouseEnter={() => sub.hasSub && setActiveSubDropdown(sub.id)}
-                              >
-                                <button 
-                                  onClick={() => {
-                                    if (!sub.hasSub) {
-                                      if (sub.type === 'entry') setActiveTab('entry', sub.id);
-                                      else if (sub.type === 'register') setActiveTab('register', sub.id);
-                                      else if (sub.reportType) setActiveTab('return', null, sub.reportType);
-                                      setActiveDropdown(null);
-                                    }
-                                  }}
-                                  className={`w-full px-4 py-3 text-left text-[13px] font-bold flex items-center justify-between transition-colors ${activeSubDropdown === sub.id ? 'bg-slate-100 text-[#005a9c]' : 'text-slate-700 hover:bg-slate-50 hover:text-[#005a9c]'}`}
-                                >
-                                  <span className="flex items-center gap-2">
-                                    {sub.icon && <sub.icon size={14} />}
-                                    {sub.label}
-                                  </span>
-                                  {sub.hasSub && <ChevronRight size={14} />}
-                                </button>
+                        ))}
+                        {isAdmin && (
+                          <button 
+                            onClick={handleAddLink}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-[11px] font-black text-blue-600 hover:bg-blue-50 transition-all border-t border-slate-100 mt-1"
+                          >
+                            <Plus size={14} /> লিঙ্ক যুক্ত করুন
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      item.subItems?.map((sub: any) => {
+                        if (sub.adminOnly && !isAdmin) return null;
+                        return (
+                          <div 
+                            key={sub.id} 
+                            className="relative group/sub"
+                            onMouseEnter={() => sub.hasSub && setActiveSubDropdown(sub.id)}
+                          >
+                            <button 
+                              onClick={() => {
+                                if (!sub.hasSub) {
+                                  if (sub.type === 'entry') setActiveTab('entry', sub.id);
+                                  else if (sub.type === 'register') setActiveTab('register', sub.id);
+                                  else if (sub.reportType) setActiveTab('return', null, sub.reportType);
+                                  setActiveDropdown(null);
+                                }
+                              }}
+                              className={`w-full px-4 py-3 text-left text-[13px] font-bold flex items-center justify-between transition-colors ${activeSubDropdown === sub.id ? 'bg-slate-100 text-[#005a9c]' : 'text-slate-700 hover:bg-slate-50 hover:text-[#005a9c]'}`}
+                            >
+                              <span className="flex items-center gap-2">
+                                {sub.icon && <sub.icon size={14} />}
+                                {sub.label}
+                              </span>
+                              {sub.hasSub && <ChevronRight size={14} />}
+                            </button>
 
-                                {/* Sub-Dropdown Menu */}
-                                {sub.hasSub && activeSubDropdown === sub.id && (
-                                  <div className="absolute top-0 left-full w-56 bg-white shadow-2xl border-l-2 border-[#005a9c] animate-in fade-in slide-in-from-left-1 duration-200">
-                                    {sub.subSubItems?.map((ss: any) => (
-                                      <div 
-                                        key={ss.id} 
-                                        className="relative group/ss"
-                                        onMouseEnter={() => ss.hasSub && setActiveSubSubDropdown(ss.id)}
-                                      >
-                                        <button 
-                                          onClick={() => {
-                                            if (!ss.hasSub) {
-                                              if (ss.reportType) setActiveTab('return', null, ss.reportType);
+                            {/* Sub-Dropdown Menu */}
+                            {sub.hasSub && activeSubDropdown === sub.id && (
+                              <div className="absolute top-0 left-full w-56 bg-white shadow-2xl border-l-2 border-[#005a9c] animate-in fade-in slide-in-from-left-1 duration-200">
+                                {sub.subSubItems?.map((ss: any) => (
+                                  <div 
+                                    key={ss.id} 
+                                    className="relative group/ss"
+                                    onMouseEnter={() => ss.hasSub && setActiveSubSubDropdown(ss.id)}
+                                  >
+                                    <button 
+                                      onClick={() => {
+                                        if (!ss.hasSub) {
+                                          if (ss.reportType) setActiveTab('return', null, ss.reportType);
+                                          setActiveDropdown(null);
+                                          setActiveSubDropdown(null);
+                                          setActiveSubSubDropdown(null);
+                                        }
+                                      }}
+                                      className="w-full px-4 py-3 text-left text-[13px] font-bold text-slate-700 hover:bg-slate-50 hover:text-[#005a9c] flex items-center justify-between transition-colors"
+                                    >
+                                      {ss.label}
+                                      {ss.hasSub && <ChevronRight size={14} />}
+                                    </button>
+
+                                    {/* Sub-Sub-Dropdown Menu */}
+                                    {ss.hasSub && activeSubSubDropdown === ss.id && (
+                                      <div className="absolute top-0 left-full w-56 bg-white shadow-2xl border-l-2 border-[#005a9c] animate-in fade-in slide-in-from-left-1 duration-200">
+                                        {ss.subSubSubItems?.map((sss: any) => (
+                                          <button 
+                                            key={sss.id} 
+                                            onClick={() => {
+                                              if (sss.reportType) setActiveTab('return', null, sss.reportType);
                                               setActiveDropdown(null);
                                               setActiveSubDropdown(null);
                                               setActiveSubSubDropdown(null);
-                                            }
-                                          }}
-                                          className="w-full px-4 py-3 text-left text-[13px] font-bold text-slate-700 hover:bg-slate-50 hover:text-[#005a9c] flex items-center justify-between transition-colors"
-                                        >
-                                          {ss.label}
-                                          {ss.hasSub && <ChevronRight size={14} />}
-                                        </button>
-
-                                        {/* Sub-Sub-Dropdown Menu */}
-                                        {ss.hasSub && activeSubSubDropdown === ss.id && (
-                                          <div className="absolute top-0 left-full w-56 bg-white shadow-2xl border-l-2 border-[#005a9c] animate-in fade-in slide-in-from-left-1 duration-200">
-                                            {ss.subSubSubItems?.map((sss: any) => (
-                                              <button 
-                                                key={sss.id} 
-                                                onClick={() => {
-                                                  if (sss.reportType) setActiveTab('return', null, sss.reportType);
-                                                  setActiveDropdown(null);
-                                                  setActiveSubDropdown(null);
-                                                  setActiveSubSubDropdown(null);
-                                                }}
-                                                className="w-full px-4 py-3 text-left text-[13px] font-bold text-slate-700 hover:bg-slate-50 hover:text-[#005a9c] transition-colors"
-                                              >
-                                                {sss.label}
-                                              </button>
-                                            ))}
-                                          </div>
-                                        )}
+                                            }}
+                                            className="w-full px-4 py-3 text-left text-[13px] font-bold text-slate-700 hover:bg-slate-50 hover:text-[#005a9c] transition-colors"
+                                          >
+                                            {sss.label}
+                                          </button>
+                                        ))}
                                       </div>
-                                    ))}
+                                    )}
                                   </div>
-                                )}
+                                ))}
                               </div>
-                            );
-                          })
-                        )}
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          {/* Filter Toggle Button */}
+          {(activeTab === 'register' || activeTab === 'return') && (
+            <button 
+              onClick={() => setShowRegisterFilters(!showRegisterFilters)}
+              className={`p-2 rounded-lg transition-all flex items-center justify-center ${showRegisterFilters ? 'bg-amber-500 text-white shadow-lg' : 'text-white/80 hover:text-white hover:bg-white/10 border border-white/20'}`}
+              title="ফিল্টার অপশন"
+            >
+              <Filter size={20} />
+            </button>
+          )}
+
+          {/* Print Button */}
+          {(activeTab === 'register' || activeTab === 'return') && (
+            <button 
+              onClick={onPrint}
+              className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all border border-white/20"
+              title="প্রিন্ট করুন"
+            >
+              <Printer size={20} />
+            </button>
+          )}
+
+          {/* Admin Notifications */}
+          {isAdmin && (
+            <div className="relative" ref={notifRef}>
+              <button 
+                onClick={() => setShowNotifDropdown(!showNotifDropdown)}
+                className={`p-2 rounded-lg transition-all relative flex items-center justify-center ${showNotifDropdown || pendingEntries.length > 0 ? 'bg-amber-500 text-white shadow-lg' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
+              >
+                {pendingEntries.length > 0 ? <BellRing size={20} className="animate-pulse" /> : <Bell size={20} />}
+                {pendingEntries.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-[#005a9c]">
+                    {toBengaliDigits(pendingEntries.length)}
+                  </span>
+                )}
+              </button>
+
+              {showNotifDropdown && (
+                <div className="absolute top-[calc(100%+8px)] right-0 w-80 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden z-[5010] animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                    <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                      <ShieldAlert size={14} className="text-amber-500" /> মডোরেশন পেন্ডিং
+                    </h4>
+                    <span className="bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
+                      {toBengaliDigits(pendingEntries.length)} টি
+                    </span>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto no-scrollbar py-1">
+                    {pendingEntries.length > 0 ? pendingEntries.map((entry) => (
+                      <div key={entry.id} className="px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 group transition-all">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[12px] font-black text-slate-900 truncate">{entry.entityName}</p>
+                            <p className="text-[10px] font-bold text-slate-500 truncate">{entry.branchName}</p>
+                          </div>
+                          <div className="flex gap-1">
+                            <button onClick={() => onApprove?.(entry.id)} className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all"><Check size={14} strokeWidth={3} /></button>
+                            <button onClick={() => onReject?.(entry.id)} className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all"><XCircle size={14} /></button>
+                          </div>
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="p-8 text-center opacity-40">
+                        <UserCheck size={32} className="mx-auto text-slate-400 mb-2" />
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">কোনো অপেক্ষমান এন্ট্রি নেই</p>
                       </div>
                     )}
                   </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              {/* Filter Toggle Button */}
-              {(activeTab === 'register' || activeTab === 'return') && (
-                <button 
-                  onClick={() => setShowRegisterFilters(!showRegisterFilters)}
-                  className={`p-2 rounded-lg transition-all flex items-center justify-center ${showRegisterFilters ? 'bg-amber-500 text-white shadow-lg' : 'text-white/80 hover:text-white hover:bg-white/10 border border-white/20'}`}
-                  title="ফিল্টার অপশন"
-                >
-                  <Filter size={20} />
-                </button>
-              )}
-
-              {/* Print Button */}
-              {(activeTab === 'register' || activeTab === 'return') && (
-                <button 
-                  onClick={onPrint}
-                  className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all border border-white/20"
-                  title="প্রিন্ট করুন"
-                >
-                  <Printer size={20} />
-                </button>
-              )}
-
-              {/* Admin Notifications */}
-              {isAdmin && (
-                <div className="relative" ref={notifRef}>
-                  <button 
-                    onClick={() => setShowNotifDropdown(!showNotifDropdown)}
-                    className={`p-2 rounded-lg transition-all relative flex items-center justify-center ${showNotifDropdown || pendingEntries.length > 0 ? 'bg-amber-500 text-white shadow-lg' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
-                  >
-                    {pendingEntries.length > 0 ? <BellRing size={20} className="animate-pulse" /> : <Bell size={20} />}
-                    {pendingEntries.length > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-[#005a9c]">
-                        {toBengaliDigits(pendingEntries.length)}
-                      </span>
-                    )}
-                  </button>
-
-                  {showNotifDropdown && (
-                    <div className="absolute top-[calc(100%+8px)] right-0 w-80 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden z-[5010] animate-in fade-in slide-in-from-top-2 duration-300">
-                      <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                        <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                          <ShieldAlert size={14} className="text-amber-500" /> মডোরেশন পেন্ডিং
-                        </h4>
-                        <span className="bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
-                          {toBengaliDigits(pendingEntries.length)} টি
-                        </span>
-                      </div>
-                      <div className="max-h-80 overflow-y-auto no-scrollbar py-1">
-                        {pendingEntries.length > 0 ? pendingEntries.map((entry) => (
-                          <div key={entry.id} className="px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 group transition-all">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[12px] font-black text-slate-900 truncate">{entry.entityName}</p>
-                                <p className="text-[10px] font-bold text-slate-500 truncate">{entry.branchName}</p>
-                              </div>
-                              <div className="flex gap-1">
-                                <button onClick={() => onApprove?.(entry.id)} className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all"><Check size={14} strokeWidth={3} /></button>
-                                <button onClick={() => onReject?.(entry.id)} className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all"><XCircle size={14} /></button>
-                              </div>
-                            </div>
-                          </div>
-                        )) : (
-                          <div className="p-8 text-center opacity-40">
-                            <UserCheck size={32} className="mx-auto text-slate-400 mb-2" />
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">কোনো অপেক্ষমান এন্ট্রি নেই</p>
-                          </div>
-                        )}
-                      </div>
-                      {pendingEntries.length > 0 && (
-                        <button 
-                          onClick={() => { setActiveTab('register'); setShowPendingOnly?.(true); setShowNotifDropdown(false); }}
-                          className="w-full py-3 bg-slate-50 hover:bg-slate-100 text-[#005a9c] text-[10px] font-black uppercase tracking-widest transition-all border-t border-slate-100 flex items-center justify-center gap-2"
-                        >
-                          বিস্তারিত দেখুন <ArrowRight size={14} />
-                        </button>
-                      )}
-                    </div>
+                  {pendingEntries.length > 0 && (
+                    <button 
+                      onClick={() => { setActiveTab('register'); setShowPendingOnly?.(true); setShowNotifDropdown(false); }}
+                      className="w-full py-3 bg-slate-50 hover:bg-slate-100 text-[#005a9c] text-[10px] font-black uppercase tracking-widest transition-all border-t border-slate-100 flex items-center justify-center gap-2"
+                    >
+                      বিস্তারিত দেখুন <ArrowRight size={14} />
+                    </button>
                   )}
                 </div>
               )}
+            </div>
+          )}
 
-              {/* Settings Dropdown */}
-              <div className="relative group">
-                <button className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all">
-                  <Settings size={20} />
-                </button>
-                <div className="absolute top-full right-0 w-56 bg-white shadow-2xl border-t-2 border-[#005a9c] hidden group-hover:block animate-in fade-in slide-in-from-top-1 duration-200 z-[5020]">
-                  <div className="p-2 space-y-1">
-                    {!isAdmin ? (
-                      <button 
-                        onClick={() => setShowAdminModal(true)}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg font-bold text-[12px] text-slate-600 hover:bg-slate-50 transition-all"
-                      >
-                        <KeyRound size={14} className="text-blue-600" /> অ্যাডমিন লগইন
-                      </button>
-                    ) : (
-                      <>
-                        <button 
-                          onClick={() => setActiveTab('admin-dashboard')}
-                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-bold text-[12px] transition-all ${activeTab === 'admin-dashboard' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'}`}
-                        >
-                          <LayoutDashboard size={14} /> অ্যাডমিন ড্যাশবোর্ড
-                        </button>
-                        <button onClick={() => setIsLayoutEditable(!isLayoutEditable)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-bold text-[12px] transition-all ${isLayoutEditable ? 'bg-amber-50 text-amber-600' : 'text-slate-600 hover:bg-slate-50'}`}>
-                          {isLayoutEditable ? <Unlock size={14} /> : <Lock size={14} />} লেআউট এডিট
-                        </button>
-                        <button onClick={() => setIsLockedMode(!isLockedMode)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-bold text-[12px] transition-all ${!isLockedMode ? 'bg-emerald-50 text-emerald-600' : 'text-slate-600 hover:bg-slate-50'}`}>
-                          {isLockedMode ? <Lock size={14} /> : <Unlock size={14} />} এডিট মোড: {isLockedMode ? 'বন্ধ' : 'চালু'}
-                        </button>
-                        <div className="h-px bg-slate-100 my-1"></div>
-                        <button 
-                          onClick={() => {
-                            setIsAdmin(false);
-                            localStorage.removeItem('ledger_admin_access_v1');
-                            setActiveTab('landing');
-                          }}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg font-bold text-[12px] text-red-600 hover:bg-red-50 transition-all"
-                        >
-                          <LogOut size={14} /> লগআউট
-                        </button>
-                      </>
-                    )}
-                  </div>
+          {/* Admin Tools */}
+          {isAdmin && (
+            <div className="relative group">
+              <button className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all">
+                <Settings size={20} />
+              </button>
+              <div className="absolute top-full right-0 w-56 bg-white shadow-2xl border-t-2 border-[#005a9c] hidden group-hover:block animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="p-2 space-y-1">
+                  <button onClick={() => setActiveTab('admin-dashboard')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-bold text-[12px] transition-all ${activeTab === 'admin-dashboard' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'}`}>
+                    <LayoutDashboard size={14} /> অ্যাডমিন ড্যাশবোর্ড
+                  </button>
+                  <button onClick={() => setIsLayoutEditable(!isLayoutEditable)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-bold text-[12px] transition-all ${isLayoutEditable ? 'bg-amber-50 text-amber-600' : 'text-slate-600 hover:bg-slate-50'}`}>
+                    {isLayoutEditable ? <Unlock size={14} /> : <Lock size={14} />} লেআউট এডিট
+                  </button>
+                  <button onClick={() => setIsLockedMode(!isLockedMode)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-bold text-[12px] transition-all ${!isLockedMode ? 'bg-emerald-50 text-emerald-600' : 'text-slate-600 hover:bg-slate-50'}`}>
+                    {isLockedMode ? <Lock size={14} /> : <Unlock size={14} />} এডিট মোড: {isLockedMode ? 'বন্ধ' : 'চালু'}
+                  </button>
                 </div>
               </div>
-
-              {/* Audit Register Logo */}
-              <button 
-                onClick={handleLogoClick}
-                className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all border border-white/20 group"
-              >
-                <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <Library size={18} className="text-white" />
-                </div>
-                <span className="font-black text-[14px] tracking-tight">অডিট রেজিস্টার</span>
-              </button>
             </div>
-          </div>
-        </nav>
+          )}
+
+          {/* Audit Register Logo/Login Button */}
+          <button 
+            onClick={handleLogoClick}
+            className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all border border-white/20 group"
+          >
+            <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+              <Library size={18} className="text-white" />
+            </div>
+            <span className="font-black text-[14px] tracking-tight">অডিট রেজিস্টার</span>
+          </button>
+        </div>
+      </div>
+      </nav>
     </>
   );
 };

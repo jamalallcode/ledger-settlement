@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import React from 'react';
 import { SettlementEntry } from '../types';
-import { Trash2, Pencil, Calendar, Printer, CheckCircle2, ChevronDown, ChevronUp, FileText, Fingerprint, Banknote, ListOrdered, Archive, MapPin, CalendarDays, Sparkles, ClipboardList, Filter, X, Search, LayoutGrid, CalendarSearch, Check, ShieldCheck, XCircle, AlertCircle, MessageSquare } from 'lucide-react';
+import { Trash2, Pencil, Calendar, Printer, CheckCircle2, ChevronDown, ChevronUp, FileText, Fingerprint, Banknote, ListOrdered, Archive, MapPin, CalendarDays, Sparkles, ClipboardList, Filter, X, Search, LayoutGrid, CalendarSearch, Check, ShieldCheck, XCircle, AlertCircle, MessageSquare, Inbox, User, Computer, CalendarRange, UserCheck, FileEdit } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper';
@@ -18,7 +18,7 @@ interface SettlementTableProps {
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
   isAdmin?: boolean;
-  onNavigateToLetter?: (letterNo: string, module?: 'settlement' | 'correspondence') => void;
+  onNavigateToLetter?: (letterNo: string) => void;
   initialSearchTerm?: string;
 }
 
@@ -124,19 +124,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       const hasMeaningfulContent = (entry.paragraphs && entry.paragraphs.length > 0) || (entry.isMeeting && (entry.meetingUnsettledAmount || 0) > 0) || hasRaisedCount || hasRaisedAmount;
       if (!hasMeaningfulContent) return false;
 
-      let entryDate = entry.issueDateISO;
-      if (!entryDate) {
-        try {
-          const d = entry.createdAt ? new Date(entry.createdAt) : new Date();
-          if (!isNaN(d.getTime())) {
-            entryDate = d.toISOString().split('T')[0];
-          } else {
-            entryDate = new Date().toISOString().split('T')[0];
-          }
-        } catch (e) {
-          entryDate = new Date().toISOString().split('T')[0];
-        }
-      }
+      const entryDate = entry.issueDateISO || new Date(entry.createdAt).toISOString().split('T')[0];
       const matchDate = !activeCycle || (entryDate >= format(activeCycle.start, 'yyyy-MM-dd') && entryDate <= format(activeCycle.end, 'yyyy-MM-dd'));
       
       let matchSearch = true;
@@ -146,17 +134,14 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         const cleanSearch = isExact ? s.slice(1, -1) : s;
 
         if (isExact) {
-          const normalize = (str: string) => toEnglishDigits(str || '').replace(/[\s\-\/]/g, '').trim();
-          const normSearch = normalize(cleanSearch);
-          
           const lNo = extractNoFromCombined(entry.letterNoDate || '', 'পত্র নং-');
           const dNo = extractNoFromCombined(entry.workpaperNoDate || '', 'ডায়েরি নং-');
           const iNo = extractNoFromCombined(entry.issueLetterNoDate || '', 'জারিপত্র নং-');
           
           matchSearch = 
-            normalize(lNo) === normSearch || 
-            normalize(dNo) === normSearch || 
-            normalize(iNo) === normSearch;
+            toEnglishDigits(lNo || '').trim() === toEnglishDigits(cleanSearch).trim() || 
+            toEnglishDigits(dNo || '').trim() === toEnglishDigits(cleanSearch).trim() || 
+            toEnglishDigits(iNo || '').trim() === toEnglishDigits(cleanSearch).trim();
         } else {
           const engS = toEnglishDigits(s).trim();
           const lNo = toEnglishDigits(extractNoFromCombined(entry.letterNoDate || '', 'পত্র নং-')).toLowerCase();
@@ -181,18 +166,10 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       
       return matchDate && matchSearch && matchType && matchParaType;
     }).sort((a, b) => {
-      const getTime = (entry: SettlementEntry) => {
-        try {
-          const dateStr = entry.issueDateISO || entry.createdAt;
-          if (!dateStr) return 0;
-          const d = new Date(dateStr);
-          const t = d.getTime();
-          return isNaN(t) ? 0 : t;
-        } catch (e) {
-          return 0;
-        }
-      };
-      return getTime(b) - getTime(a);
+      const timeB = b.issueDateISO ? new Date(b.issueDateISO).getTime() : 0;
+      const timeA = a.issueDateISO ? new Date(a.issueDateISO).getTime() : 0;
+      if (timeB !== timeA) return timeB - timeA;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }, [entries, searchTerm, filterParaType, filterType, activeCycle]);
 
@@ -202,16 +179,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
     
     filteredEntries.forEach(entry => {
       let label = "Unknown";
-      let entryDate = entry.issueDateISO;
-      if (!entryDate) {
-        try {
-          const d = entry.createdAt ? new Date(entry.createdAt) : null;
-          if (d && !isNaN(d.getTime())) {
-            entryDate = d.toISOString().split('T')[0];
-          }
-        } catch (e) {}
-      }
-      
+      const entryDate = entry.issueDateISO || new Date(entry.createdAt).toISOString().split('T')[0];
       if (entryDate) {
         try {
           const dateObj = new Date(entryDate);
@@ -313,20 +281,21 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
     }, { paraCount: 0, inv: 0, raisedCount: 0, raisedAmount: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, tRec: 0, tAdj: 0 });
   }, [filteredEntries]);
 
-  const extractNoFromCombined = (info: any, prefix: string) => {
-    if (!info || typeof info !== 'string' || !prefix) return "";
+  const extractNoFromCombined = (info: string, prefix: string) => {
+    if (!info || !prefix) return "";
     
     try {
-      const parts = info.split(',');
-      for (const part of parts) {
-        const trimmedPart = part.trim();
-        // Normalize prefix and part for comparison (remove spaces and separators)
-        const normalizedPrefix = prefix.replace(/[-:\s]/g, ''); 
-        const normalizedPart = trimmedPart.replace(/[-:\s]/g, ''); 
-        
-        if (normalizedPart.startsWith(normalizedPrefix)) {
-          return normalizedPart.substring(normalizedPrefix.length).trim();
-        }
+      // Escape prefix for regex and handle both - and :
+      const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const prefixAlt = escapedPrefix.replace('-', '[:\\-]');
+      
+      // Use a more robust regex that handles potential Bengali characters and spaces
+      // We want to match the prefix and then everything until the next comma or end of string
+      const regex = new RegExp(`(?:^|,\\s*)${prefixAlt}\\s*([^,]+)`, 'i');
+      const match = info.match(regex);
+      
+      if (match && match[1]) {
+        return match[1].trim();
       }
       return "";
     } catch (e) {
@@ -335,8 +304,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
     }
   };
 
-  const formatIssueInfoForDisplay = (info: any) => {
-    if (!info || typeof info !== 'string') return { full: "", letterNo: "" };
+  const formatIssueInfoForDisplay = (info: string) => {
+    if (!info) return { full: "", letterNo: "" };
     // Extract letter number: everything after "জারিপত্র নং-" and before the first comma
     const letterNo = extractNoFromCombined(info, 'জারিপত্র নং-');
     
@@ -390,19 +359,26 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             { label: '৫. বিস্তারিত শাখা', value: entry.branchName, icon: MapPin, col: 'sky' },
             { label: '৬. নিরীক্ষা সাল', value: toBengaliDigits(entry.auditYear), icon: Calendar, col: 'emerald' },
             { label: '৭. পত্র নং ও তারিখ', value: entry.letterNoDate, letterNo: extractNoFromCombined(entry.letterNoDate, 'পত্র নং-'), icon: FileText, col: 'amber' },
-            { label: '৮. কার্যপত্র নং', value: entry.meetingWorkpaper || 'N/A', icon: FileText, col: 'purple' },
-            { label: '৯. আলোচিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingDiscussedParaCount || '০'), icon: ListOrdered, col: 'sky' },
-            { label: '১০. ডায়েরি নং ও তারিখ', value: entry.workpaperNoDate, letterNo: extractNoFromCombined(entry.workpaperNoDate, 'ডায়েরি নং-'), icon: FileText, col: 'emerald' },
-            { label: '১১. জারিপত্র নং', value: formatIssueInfoForDisplay(entry.issueLetterNoDate).full, letterNo: formatIssueInfoForDisplay(entry.issueLetterNoDate).letterNo, icon: FileText, col: 'amber' },
-            { label: '১২. আর্কাইভ নং', value: entry.archiveNo || 'N/A', icon: Archive, col: 'purple' },
-            { label: '১৩. প্রেরিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSentParaCount || '০'), icon: ListOrdered, col: 'sky' },
-            { label: '১৪. সুপারিশকৃত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingRecommendedParaCount || '০'), icon: CheckCircle2, col: 'emerald' },
-            { label: '১৫. মোট জড়িত টাকা', value: toBengaliDigits(entry.totalInvolvedAmount ?? 0), icon: Banknote, col: 'amber' },
-            { label: '১৬. অমীমাংসিত সংখ্যা', value: toBengaliDigits(entry.meetingUnsettledParas || '০'), icon: ListOrdered, col: 'purple' },
-            { label: '১৭. অমীমাংসিত টাকা', value: toBengaliDigits(entry.meetingUnsettledAmount ?? 0), icon: Banknote, col: 'sky' },
-            { label: '১৮. মীমাংসিত সংখ্যা', value: toBengaliDigits(entry.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').length || 0), icon: CheckCircle2, col: 'emerald' },
-            { label: '১৯. সভার তারিখ', value: formatDateBN(entry.meetingDate) || 'N/A', icon: Calendar, col: 'amber' },
-            { label: '২০. মন্তব্য', value: entry.remarks || 'N/A', icon: MessageSquare, col: 'purple' }
+            { label: '৮. ডায়েরি নং ও তারিখ', value: entry.workpaperNoDate, letterNo: extractNoFromCombined(entry.workpaperNoDate, 'ডায়েরি নং-'), icon: FileText, col: 'emerald' },
+            { label: '৯. জারিপত্র নং', value: formatIssueInfoForDisplay(entry.issueLetterNoDate).full, letterNo: formatIssueInfoForDisplay(entry.issueLetterNoDate).letterNo, icon: FileText, col: 'amber' },
+            { label: '১০. আর্কাইভ নং', value: entry.archiveNo || 'N/A', icon: Archive, col: 'purple' },
+            { label: '১১. শাখা রিসিভ তারিখ', value: formatDateBN(entry.branchReceiptDate) || 'N/A', icon: Inbox, col: 'sky' },
+            { label: '১২. গ্রহণকারীর নাম', value: entry.receiverName || 'N/A', icon: User, col: 'emerald' },
+            { label: '১৩. অনলাইনে প্রেরিত', value: entry.isSentOnline || 'না', icon: Computer, col: 'amber' },
+            { label: '১৪. উপস্থাপন তারিখ', value: formatDateBN(entry.presentationDate) || 'N/A', icon: CalendarRange, col: 'purple' },
+            { label: '১৫. কার নিকট উপস্থাপিত', value: entry.presentedToName || 'N/A', icon: UserCheck, col: 'sky' },
+            { label: '১৬. সভার জবাব রিসিভ', value: formatDateBN(entry.meetingResponseDate) || 'N/A', icon: CalendarSearch, col: 'emerald' },
+            { label: '১৭. কার্যবিবরণী', value: entry.meetingMinutes || 'N/A', icon: FileEdit, col: 'amber' },
+            { label: '১৮. সভার তারিখ', value: formatDateBN(entry.meetingDate) || 'N/A', icon: CalendarDays, col: 'purple' },
+            { label: '১৯. আলোচিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingDiscussedParaCount || '০'), icon: ListOrdered, col: 'sky' },
+            { label: '২০. সুপারিশকৃত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingRecommendedParaCount || '০'), icon: CheckCircle2, col: 'emerald' },
+            { label: '২১. প্রেরিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSentParaCount || '০'), icon: ListOrdered, col: 'amber' },
+            { label: '২২. অমীমাংসিত সংখ্যা', value: toBengaliDigits(entry.meetingUnsettledParas || '০'), icon: ListOrdered, col: 'purple' },
+            { label: '২৩. অমীমাংসিত টাকা', value: toBengaliDigits(entry.meetingUnsettledAmount ?? 0), icon: Banknote, col: 'sky' },
+            { label: '২৪. মীমাংসিত সংখ্যা', value: toBengaliDigits(entry.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').length || 0), icon: CheckCircle2, col: 'emerald' },
+            { label: '২৫. মোট জড়িত টাকা', value: toBengaliDigits(entry.totalInvolvedAmount ?? 0), icon: Banknote, col: 'amber' },
+            { label: '২৬. কার্যপত্র নং', value: entry.meetingWorkpaper || 'N/A', icon: FileText, col: 'purple' },
+            { label: '২৭. মন্তব্য', value: entry.remarks || 'N/A', icon: MessageSquare, col: 'sky' }
           ].map((item, i) => (
             <div key={i} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
               <div className={`p-2 rounded-lg bg-${item.col}-50 text-${item.col}-600`}><item.icon size={14} /></div>
@@ -410,7 +386,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">{item.label}</p>
                 {(item.label === '১১. জারিপত্র নং' || item.label === '১০. ডায়েরি নং ও তারিখ' || item.label === '৭. পত্র নং ও তারিখ') && (item as any).letterNo ? (
                   <button 
-                    onClick={() => onNavigateToLetter?.((item as any).letterNo, 'settlement')}
+                    onClick={() => onNavigateToLetter?.((item as any).letterNo)}
                     className="text-[11px] font-black text-blue-600 hover:text-blue-800 hover:underline transition-all text-left leading-tight"
                   >
                     {item.value}
@@ -860,7 +836,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           const info = formatIssueInfoForDisplay(entry.issueLetterNoDate);
-                                          if (info.letterNo) onNavigateToLetter?.(info.letterNo, 'settlement');
+                                          if (info.letterNo) onNavigateToLetter?.(info.letterNo);
                                         }}
                                         className="font-black text-blue-600 hover:text-blue-800 hover:underline transition-all"
                                       >

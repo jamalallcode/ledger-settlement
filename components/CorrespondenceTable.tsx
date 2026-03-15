@@ -45,7 +45,7 @@ interface CorrespondenceTableProps {
   showFilters: boolean;
   setShowFilters: (val: boolean) => void;
   initialSearchTerm?: string;
-  onNavigateToLetter?: (letterNo: string, module?: 'settlement' | 'correspondence') => void;
+  onNavigateToLetter?: (letterNo: string) => void;
 }
 
 /**
@@ -187,33 +187,13 @@ const PremiumInlineSelect: React.FC<{
 
   const filtered = suggestions.filter(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  // Determine background class based on value
-  let bgColorClass = '';
-  switch (value) {
-    case 'অডিটর':
-      bgColorClass = 'bg-red-500 text-white border-red-600';
-      break;
-    case 'সুপার':
-      bgColorClass = 'bg-yellow-500 text-black border-yellow-600';
-      break;
-    case 'এএন্ডএও':
-      bgColorClass = 'bg-blue-500 text-white border-blue-600';
-      break;
-    case 'ডিডি':
-      bgColorClass = 'bg-green-500 text-white border-green-600';
-      break;
-    default:
-      bgColorClass = value ? 'bg-slate-900 text-white border-slate-950' : 'bg-slate-50 text-slate-400 border-slate-200';
-      break;
-  }
-
   return (
     <div className="relative w-full" ref={dropdownRef}>
       <div 
         onClick={handleToggle}
         className={`w-full h-7 px-1.5 bg-slate-50 border rounded-lg flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-blue-500 ring-2 ring-blue-50 bg-white shadow-sm' : 'border-slate-200 hover:border-slate-300'}`}
       >
-        <span className={`text-[10px] font-black truncate px-2 py-0.5 rounded-full border ${bgColorClass}`}>
+        <span className={`text-[10px] font-black truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>
           {value || 'বাছুন...'}
         </span>
         <ChevronDown size={10} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -342,20 +322,17 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   const filteredEntries = useMemo(() => {
     return entries.filter(entry => {
       let matchSearch = true;
-      if (searchTerm && typeof searchTerm === 'string') {
+      if (searchTerm) {
         const s = searchTerm.toLowerCase().trim();
         const isExact = s.startsWith('"') && s.endsWith('"');
         const cleanSearch = isExact ? s.slice(1, -1) : s;
 
         if (isExact) {
-          const normalize = (str: string) => toEnglishDigits(str || '').replace(/[\s\-\/]/g, '').trim();
-          const normSearch = normalize(cleanSearch);
-          
           matchSearch = 
-            normalize(entry.letterNo) === normSearch || 
-            normalize(entry.diaryNo) === normSearch;
+            toEnglishDigits(entry.letterNo).trim() === toEnglishDigits(cleanSearch).trim() || 
+            toEnglishDigits(entry.diaryNo).trim() === toEnglishDigits(cleanSearch).trim();
         } else {
-          const engS = toEnglishDigits(s || '');
+          const engS = toEnglishDigits(s);
           const engDesc = toEnglishDigits(entry.description || '').toLowerCase();
           const engLetterNo = toEnglishDigits(entry.letterNo || '').toLowerCase();
           const engDiaryNo = toEnglishDigits(entry.diaryNo || '').toLowerCase();
@@ -380,16 +357,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
       const dateA = a.diaryDate || '';
       const dateB = b.diaryDate || '';
       if (dateA === dateB) {
-        const getTime = (entry: CorrespondenceEntry) => {
-          if (!entry.createdAt) return 0;
-          try {
-            const t = new Date(entry.createdAt).getTime();
-            return isNaN(t) ? 0 : t;
-          } catch (e) {
-            return 0;
-          }
-        };
-        return getTime(b) - getTime(a);
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
       return dateB.localeCompare(dateA);
     });
