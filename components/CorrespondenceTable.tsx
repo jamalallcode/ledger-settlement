@@ -45,7 +45,7 @@ interface CorrespondenceTableProps {
   showFilters: boolean;
   setShowFilters: (val: boolean) => void;
   initialSearchTerm?: string;
-  onNavigateToLetter?: (letterNo: string) => void;
+  onNavigateToLetter?: (letterNo: string, module?: 'settlement' | 'correspondence') => void;
 }
 
 /**
@@ -357,7 +357,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
       const dateA = a.diaryDate || '';
       const dateB = b.diaryDate || '';
       if (dateA === dateB) {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
       }
       return dateB.localeCompare(dateA);
     });

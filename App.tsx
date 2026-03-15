@@ -10,7 +10,6 @@ import VotingSystem from './components/VotingSystem';
 import DocumentArchive from './components/DocumentArchive';
 import AdminDashboard from './components/AdminDashboard';
 import Navbar from './components/Navbar';
-import AdminModal from './components/AdminModal';
 import { SettlementEntry, GroupOption, CumulativeStats, DeletedEntry } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
@@ -88,7 +87,6 @@ const App: React.FC = () => {
   const [showRegisterFilters, setShowRegisterFilters] = useState(false);
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [showAdminModal, setShowAdminModal] = useState(false);
   
   // State for direct module entry from sidebar
   const [entryModule, setEntryModule] = useState<'settlement' | 'correspondence' | null>(null);
@@ -127,16 +125,10 @@ const App: React.FC = () => {
   const mainScrollRef = useRef<HTMLElement>(null);
 
   const handleTabChange = (tab: string, subModule?: 'settlement' | 'correspondence', rType?: string) => {
-    if (tab === activeTab && !subModule && !rType) {
-      setResetKey(prev => prev + 1);
-    } else { 
+    if (tab === activeTab && !subModule && !rType) setResetKey(prev => prev + 1);
+    else { 
       setActiveTab(tab); 
-      setResetKey(prev => prev + 1); 
-    }
-    
-    // Clear editing state when navigating to entry/register via direct module selection
-    if (subModule) {
-      setEditingEntry(null);
+      setResetKey(0); 
     }
     
     // Handle Direct Entry Modules
@@ -421,7 +413,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleViewRegister = (searchTerm?: string, module: 'settlement' | 'correspondence' = 'settlement') => {
+  const handleViewRegister = (module: 'settlement' | 'correspondence', searchTerm?: string) => {
     // Set search term first if provided
     if (searchTerm && searchTerm.trim() !== '') {
       setLetterSearchTerm(searchTerm.trim());
@@ -435,7 +427,6 @@ const App: React.FC = () => {
     setTimeout(() => {
       setRegisterSubModule(module);
       setActiveTab('register');
-      setResetKey(prev => prev + 1);
     }, 10);
   };
 
@@ -630,12 +621,6 @@ const App: React.FC = () => {
             registerSubModule={registerSubModule}
             reportType={reportType}
             isLayoutEditable={isLayoutEditable}
-            setIsLayoutEditable={setIsLayoutEditable}
-            showRegisterFilters={showRegisterFilters}
-            setShowRegisterFilters={setShowRegisterFilters}
-            onPrint={() => window.print()}
-            setShowPendingOnly={setShowPendingOnly}
-            setShowAdminModal={setShowAdminModal}
           />
         </div>
       )}
@@ -666,7 +651,6 @@ const App: React.FC = () => {
           onReject={handleRejectEntry}
           setShowPendingOnly={setShowPendingOnly}
           onPrint={() => setShowPrintPreview(true)}
-          setShowAdminModal={setShowAdminModal}
         />
         <main ref={mainScrollRef} className="flex-1 overflow-auto bg-white relative scroll-smooth">
           <div className="p-4 md:p-8 max-w-full mx-auto w-full flex flex-col">
@@ -956,20 +940,6 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
-
-      <AdminModal 
-        isOpen={showAdminModal}
-        onClose={() => setShowAdminModal(false)}
-        onSuccess={() => {
-          setIsAdmin(true);
-          setShowAdminModal(false);
-          localStorage.setItem(ADMIN_MODE_KEY, 'true');
-        }}
-        showAdminModal={showAdminModal} 
-        setShowAdminModal={setShowAdminModal} 
-        setIsAdmin={setIsAdmin} 
-        setActiveTab={setActiveTab}
-      />
     </div>
     </ErrorBoundary>
   );

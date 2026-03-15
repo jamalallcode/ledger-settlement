@@ -5,9 +5,8 @@ import {
   Upload, ShieldCheck, LogOut, X, KeyRound, Settings, 
   Calendar, ShieldAlert, Filter, Printer, Menu, Fingerprint, 
   Bell, Check, XCircle, UserCheck, BellRing, ArrowRight, Library, Plus,
-  Mail, ClipboardList, BarChart3, Globe, ChevronRight, Smartphone, Send
+  Mail, ClipboardList, BarChart3, Globe, ChevronRight
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
 import { SettlementEntry } from '../types';
 import { toBengaliDigits } from '../utils/numberUtils';
 
@@ -28,7 +27,6 @@ interface NavbarProps {
   onReject?: (id: string) => void;
   setShowPendingOnly?: (val: boolean) => void;
   onPrint?: () => void;
-  setShowAdminModal?: (val: boolean) => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
@@ -47,12 +45,13 @@ const Navbar: React.FC<NavbarProps> = ({
   onApprove = () => {},
   onReject = () => {},
   setShowPendingOnly = () => {},
-  onPrint = () => window.print(),
-  setShowAdminModal = () => {}
+  onPrint = () => window.print()
 }) => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [activeSubDropdown, setActiveSubDropdown] = useState<string | null>(null);
   const [activeSubSubDropdown, setActiveSubSubDropdown] = useState<string | null>(null);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   
   const navRef = useRef<HTMLDivElement>(null);
@@ -77,14 +76,25 @@ const Navbar: React.FC<NavbarProps> = ({
 
   const handleLogoClick = () => {
     const now = Date.now();
-    if (now - lastLogoClickTime.current > 1000) {
-      logoClickCount.current = 0;
-    }
+    if (now - lastLogoClickTime.current > 2000) logoClickCount.current = 0;
     logoClickCount.current += 1;
     lastLogoClickTime.current = now;
-    if (logoClickCount.current >= 3) {
-      setShowAdminModal(true);
+    if (logoClickCount.current === 3) {
       logoClickCount.current = 0;
+      setShowAdminModal(true);
+    }
+  };
+
+  const handleAdminSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (adminPassword === '8009JAma@') {
+      setIsAdmin(true);
+      localStorage.setItem('ledger_admin_access_v1', 'true');
+      setShowAdminModal(false);
+      setAdminPassword('');
+      setActiveTab('admin-dashboard');
+    } else {
+      alert("ভুল পাসওয়ার্ড!");
     }
   };
 
@@ -164,11 +174,10 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <>
-      <nav className="sticky top-0 z-[5000] no-print select-none h-14 bg-[#005a9c] shadow-xl" ref={navRef}>
+    <nav className="sticky top-0 z-[5000] bg-[#005a9c] h-14 shadow-xl no-print select-none" ref={navRef}>
       <IDBadge id="premium-navbar-main" />
       <div className="max-w-[1600px] mx-auto h-full px-4 flex items-center justify-between">
-          <div className="flex items-center h-full">
+        <div className="flex items-center h-full">
           {/* Home Icon */}
           <button 
             onClick={() => setActiveTab('landing')}
@@ -409,9 +418,6 @@ const Navbar: React.FC<NavbarProps> = ({
               </button>
               <div className="absolute top-full right-0 w-56 bg-white shadow-2xl border-t-2 border-[#005a9c] hidden group-hover:block animate-in fade-in slide-in-from-top-1 duration-200">
                 <div className="p-2 space-y-1">
-                  <button onClick={() => setActiveTab('admin-dashboard')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-bold text-[12px] transition-all ${activeTab === 'admin-dashboard' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'}`}>
-                    <LayoutDashboard size={14} /> অ্যাডমিন ড্যাশবোর্ড
-                  </button>
                   <button onClick={() => setIsLayoutEditable(!isLayoutEditable)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-bold text-[12px] transition-all ${isLayoutEditable ? 'bg-amber-50 text-amber-600' : 'text-slate-600 hover:bg-slate-50'}`}>
                     {isLayoutEditable ? <Unlock size={14} /> : <Lock size={14} />} লেআউট এডিট
                   </button>
@@ -435,8 +441,26 @@ const Navbar: React.FC<NavbarProps> = ({
           </button>
         </div>
       </div>
-      </nav>
-    </>
+
+      {/* Admin Password Modal */}
+      {showAdminModal && (
+        <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-slate-900 font-black text-lg flex items-center gap-2"><KeyRound size={20} className="text-blue-600" /> সিকিউরিটি এক্সেস</h3>
+              <button onClick={() => setShowAdminModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+            </div>
+            <form onSubmit={handleAdminSubmit} className="space-y-4">
+              <input autoFocus type="password" placeholder="পাসওয়ার্ড দিন" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-black text-center text-lg outline-none focus:border-blue-500 transition-all" />
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setShowAdminModal(false)} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-black text-sm hover:bg-slate-200">বাতিল</button>
+                <button type="submit" className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-black text-sm hover:bg-blue-700 shadow-lg shadow-blue-600/20">প্রবেশ</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </nav>
   );
 };
 

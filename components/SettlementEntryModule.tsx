@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOption } from '../types';
 import SearchableSelect from './SearchableSelect';
 import { MINISTRIES_LIST, MINISTRY_ENTITY_MAP, ENTITY_BRANCH_MAP, AUDIT_YEARS_OPTIONS } from '../constants';
-import { Trash2, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus, Hash, User, Inbox, Computer, CalendarRange, UserCheck, CalendarSearch, ChevronDown, Search } from 'lucide-react';
+import { Trash2, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus, Hash, ChevronLeft } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { getCycleForDate, isEntryLate } from '../utils/cycleHelper';
 import { getDateError } from '../utils/dateValidation';
@@ -136,116 +136,6 @@ const SegmentedInput = ({
   );
 };
 
-/**
- * Premium Dropdown Component for Presented To Name
- */
-const PremiumInlineSelect: React.FC<{
-  id: string;
-  label: React.ReactNode;
-  value: string;
-  onSelect: (val: string) => void;
-  isLayoutEditable?: boolean;
-}> = ({ id, label, value, onSelect, isLayoutEditable }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [openUp, setOpenUp] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('ledger_settlement_presented_to');
-    const defaultList = ['সুপার', 'এএন্ডএও', 'উপপরিচালক', 'পরিচালক', 'মহাপরিচালক']; 
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      const merged = Array.from(new Set([...defaultList, ...parsed]));
-      setSuggestions(merged);
-    } else {
-      setSuggestions(defaultList);
-    }
-  }, []);
-
-  const handleToggle = () => {
-    if (!isOpen && dropdownRef.current) {
-      const rect = dropdownRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      setOpenUp(spaceBelow < 250);
-    }
-    setIsOpen(!isOpen);
-    setSearchTerm('');
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setIsOpen(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleAddNew = () => {
-    const trimmed = searchTerm.trim();
-    if (!trimmed) return;
-    const next = Array.from(new Set([trimmed, ...suggestions]));
-    setSuggestions(next);
-    localStorage.setItem('ledger_settlement_presented_to', JSON.stringify(next));
-    onSelect(trimmed);
-    setIsOpen(false);
-  };
-
-  const filtered = suggestions.filter(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
-
-  return (
-    <div id={id} className={colWrapperCls + " bg-indigo-50/70 border-indigo-100 hover:border-indigo-300"} ref={dropdownRef}>
-      <IDBadge id={id} isLayoutEditable={isLayoutEditable} />
-      <label className={labelCls}>{label}</label>
-      <div 
-        onClick={handleToggle}
-        className={`w-full h-[48px] px-4 border-2 rounded-xl font-bold flex items-center justify-between cursor-pointer transition-all bg-white shadow-sm ${isOpen ? 'border-indigo-500 ring-4 ring-indigo-50' : (value ? 'border-emerald-500' : 'border-red-500')}`}
-      >
-        <span className={`text-[14px] font-black truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>
-          {value || 'বাছুন...'}
-        </span>
-        <ChevronDown size={16} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </div>
-
-      {isOpen && (
-        <div className={`absolute ${openUp ? 'bottom-[calc(100%-40px)]' : 'top-[calc(100%-40px)]'} left-5 right-5 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[1000] overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 border-t-4 border-t-indigo-600`}>
-          <div className="p-3 bg-slate-50 border-b border-slate-100">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-              <input 
-                autoFocus type="text" placeholder="খুঁজুন বা নতুন নাম লিখুন..." 
-                className="w-full h-10 pl-10 pr-4 bg-white border-2 border-slate-200 rounded-xl text-sm font-black outline-none focus:border-indigo-400"
-                value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="max-h-60 overflow-y-auto py-2">
-            {filtered.map((opt, i) => (
-              <div 
-                key={i} 
-                onClick={() => { onSelect(opt); setIsOpen(false); }}
-                className={`px-4 py-3 cursor-pointer flex items-center justify-between transition-all ${value === opt ? 'bg-indigo-600 text-white' : 'hover:bg-indigo-50 text-slate-700 font-black text-sm'}`}
-              >
-                <span>{opt}</span>
-                {value === opt && <Check size={16} strokeWidth={3} />}
-              </div>
-            ))}
-            {searchTerm && !suggestions.includes(searchTerm) && (
-              <div 
-                onClick={handleAddNew}
-                className="px-4 py-3 cursor-pointer bg-emerald-50 text-emerald-600 font-black text-sm flex items-center gap-2 hover:bg-emerald-100"
-              >
-                <Plus size={16} /> নতুন নাম যোগ করুন: "{searchTerm}"
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
 interface SettlementEntryModuleProps {
   onAdd: (entry: Omit<SettlementEntry, 'id' | 'sl' | 'createdAt'> | SettlementEntry) => void;
   onViewRegister: (module: 'settlement' | 'correspondence', searchTerm?: string) => void;
@@ -297,12 +187,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     remarks: '',
     meetingDate: '',
     manualRaisedCount: null as string | null,
-    manualRaisedAmount: null as number | null,
-    branchReceiptDate: '',
-    receiverName: '',
-    isSentOnline: 'না' as 'হ্যাঁ' | 'না',
-    presentationDate: '',
-    presentedToName: ''
+    manualRaisedAmount: null as number | null
   });
 
   const [wizardStep, setWizardStep] = useState('details'); 
@@ -330,33 +215,11 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [dayPart, setDayPart] = useState('');
   const [monthPart, setMonthPart] = useState('');
   const [yearPart, setYearPart] = useState('');
-
-  const [brDay, setBrDay] = useState('');
-  const [brMonth, setBrMonth] = useState('');
-  const [brYear, setBrYear] = useState('');
-
-  const [prDay, setPrDay] = useState('');
-  const [prMonth, setPrMonth] = useState('');
-  const [prYear, setPrYear] = useState('');
-
-  const [mrDay, setMrDay] = useState('');
-  const [mrMonth, setMrMonth] = useState('');
-  const [mrYear, setMrYear] = useState('');
-  
-  const [meetingResponseDate, setMeetingResponseDate] = useState('');
-  const [meetingMinutes, setMeetingMinutes] = useState('');
   
   const [isIssueFocused, setIsIssueFocused] = useState(false);
   const [isLetterFocused, setIsLetterFocused] = useState(false);
   const [isWpFocused, setIsWpFocused] = useState(false);
   const [isDiaryFocused, setIsDiaryFocused] = useState(false);
-  const [isBrFocused, setIsBrFocused] = useState(false);
-  const [isPrFocused, setIsPrFocused] = useState(false);
-  const [isMrFocused, setIsMrFocused] = useState(false);
-
-  useEffect(() => {
-    setMeetingResponseDate(getIsoFromSegments(mrDay, mrMonth, mrYear));
-  }, [mrDay, mrMonth, mrYear]);
 
   const duplicates = useMemo(() => {
     if (!existingEntries || existingEntries.length === 0) return { letterNo: null, diaryNo: null, issueNo: null };
@@ -422,18 +285,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const issueMonthRef = useRef<HTMLInputElement>(null);
   const issueYearRef = useRef<HTMLInputElement>(null);
 
-  const brDayRef = useRef<HTMLInputElement>(null);
-  const brMonthRef = useRef<HTMLInputElement>(null);
-  const brYearRef = useRef<HTMLInputElement>(null);
-
-  const prDayRef = useRef<HTMLInputElement>(null);
-  const prMonthRef = useRef<HTMLInputElement>(null);
-  const prYearRef = useRef<HTMLInputElement>(null);
-
-  const mrDayRef = useRef<HTMLInputElement>(null);
-  const mrMonthRef = useRef<HTMLInputElement>(null);
-  const mrYearRef = useRef<HTMLInputElement>(null);
-
   const extractSegments = (combined: string, noPrefix: string, datePrefix: string) => {
     if (!combined) return { no: '', d: '', m: '', y: '' };
     const parts = combined.split(',');
@@ -486,12 +337,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         remarks: initialEntry.remarks || '',
         meetingDate: initialEntry.meetingDate || '',
         manualRaisedCount: initialEntry.manualRaisedCount || null,
-        manualRaisedAmount: initialEntry.manualRaisedAmount || null,
-        branchReceiptDate: initialEntry.branchReceiptDate || '',
-        receiverName: initialEntry.receiverName || '',
-        isSentOnline: initialEntry.isSentOnline || 'না',
-        presentationDate: initialEntry.presentationDate || '',
-        presentedToName: initialEntry.presentedToName || ''
+        manualRaisedAmount: initialEntry.manualRaisedAmount || null
       });
 
       const f7 = extractSegments(initialEntry.letterNoDate, 'পত্র নং-', 'পত্রের তারিখ-');
@@ -505,17 +351,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
       const f11 = extractSegments(initialEntry.issueLetterNoDate, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
       setIssueNoPart(f11.no); setDayPart(f11.d); setMonthPart(f11.m); setYearPart(f11.y);
-
-      const f14 = extractSegments(initialEntry.branchReceiptDate || '', 'রিসিভ তারিখ-', 'রিসিভ তারিখ-');
-      setBrDay(f14.d); setBrMonth(f14.m); setBrYear(f14.y);
-
-      const f15 = extractSegments(initialEntry.presentationDate || '', 'উপস্থাপন তারিখ-', 'উপস্থাপন তারিখ-');
-      setPrDay(f15.d); setPrMonth(f15.m); setPrYear(f15.y);
-
-      const f16 = extractSegments(initialEntry.meetingResponseDate || '', 'রিসিভ তারিখ-', 'রিসিভ তারিখ-');
-      setMrDay(f16.d); setMrMonth(f16.m); setMrYear(f16.y);
-      setMeetingResponseDate(initialEntry.meetingResponseDate || '');
-      setMeetingMinutes(initialEntry.meetingMinutes || '');
       
       const entryParas = initialEntry.paragraphs || [];
       setParagraphs([...entryParas]);
@@ -579,14 +414,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     setFormData(prev => ({ ...prev, issueLetterNoDate: combined, issueDateISO: currentIssueISO }));
   }, [issueNoPart, dayPart, monthPart, yearPart, currentIssueISO]);
 
-  useEffect(() => {
-    setFormData(prev => ({ ...prev, branchReceiptDate: buildCombinedString('', brDay, brMonth, brYear, 'রিসিভ তারিখ-', 'রিসিভ তারিখ-').replace('রিসিভ তারিখ- , ', '') }));
-  }, [brDay, brMonth, brYear]);
-
-  useEffect(() => {
-    setFormData(prev => ({ ...prev, presentationDate: buildCombinedString('', prDay, prMonth, prYear, 'উপস্থাপন তারিখ-', 'উপস্থাপন তারিখ-').replace('উপস্থাপন তারিখ- , ', '') }));
-  }, [prDay, prMonth, prYear]);
-
   const [paragraphs, setParagraphs] = useState<ParagraphDetail[]>([]);
   const [bulkParaInput, setBulkParaInput] = useState('');
   const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
@@ -637,6 +464,27 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting.current || isSuccess) return;
+
+    // Validation
+    const requiredFields = [
+      { key: 'ministryName', label: 'মন্ত্রণালয়' },
+      { key: 'entityName', label: 'এনটিটি' },
+      { key: 'branchName', label: 'শাখা' },
+      { key: 'auditYear', label: 'নিরীক্ষা সাল' }
+    ];
+
+    for (const field of requiredFields) {
+      if (!formData[field.key as keyof typeof formData]) {
+        alert(`${field.label} নির্বাচন করা আবশ্যক।`);
+        return;
+      }
+    }
+
+    if (paragraphs.length === 0) {
+      alert('অন্তত একটি অনুচ্ছেদ যোগ করা আবশ্যক।');
+      return;
+    }
+
     isSubmitting.current = true;
     
     // Defer heavy work to next tick to avoid blocking UI (INP fix)
@@ -668,13 +516,11 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       
       const finalData = {
         ...formData, 
-        meetingFullSettledParaCount: Math.round(summaryData.fullInvolved).toString(),
-        meetingPartialSettledParaCount: Math.round(summaryData.partialInvolved).toString(),
+        meetingFullSettledParaCount: summaryData.fullCount.toString(),
+        meetingPartialSettledParaCount: summaryData.partialCount.toString(),
+        meetingSettledParaCount: (summaryData.fullCount + summaryData.partialCount).toString(),
         isMeeting: formData.meetingType !== 'বিএসআর', 
-        meetingResponseDate,
-        meetingMinutes,
-        paragraphs, cycleLabel, isLate, actualEntryDate: now.toISOString(), 
-        involvedAmount: formData.totalInvolvedAmount || paraInvTotal,
+        paragraphs, cycleLabel, isLate, actualEntryDate: now.toISOString(), involvedAmount: paraInvTotal + (formData.meetingUnsettledAmount || 0),
         meetingUnsettledAmount: calculatedUnsettledAmount,
         totalUnsettledAmount: calculatedUnsettledAmount,
         vatRec: totals.vR, vatAdj: totals.vA, itRec: totals.iR, itAdj: totals.iA, othersRec: totals.oR, othersAdj: totals.oA, totalRec: totals.vR + totals.iR + totals.oR, totalAdj: totals.vA + totals.iA + totals.oA 
@@ -712,22 +558,12 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       remarks: '',
       meetingDate: '',
       manualRaisedCount: null as string | null,
-      manualRaisedAmount: null as number | null,
-      branchReceiptDate: '',
-      receiverName: '',
-      isSentOnline: 'না' as 'হ্যাঁ' | 'না',
-      presentationDate: '',
-      presentedToName: ''
+      manualRaisedAmount: null as number | null
     });
     setLetterNoPart(''); setLetterDay(''); setLetterMonth(''); setLetterYear('');
     setWpNoPart(''); setWpDay(''); setWpMonth(''); setWpYear('');
     setDiaryNoPart(''); setDiaryDay(''); setDiaryMonth(''); setDiaryYear('');
     setIssueNoPart(''); setDayPart(''); setMonthPart(''); setYearPart('');
-    setBrDay(''); setBrMonth(''); setBrYear('');
-    setPrDay(''); setPrMonth(''); setPrYear('');
-    setMrDay(''); setMrMonth(''); setMrYear('');
-    setMeetingResponseDate('');
-    setMeetingMinutes('');
     setParagraphs([]);
     setRawInputs({});
     setIsSuccess(false);
@@ -853,8 +689,17 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         <div className="flex items-center gap-4">
           <button 
             type="button" 
+            onClick={() => setWizardStep('selection')}
+            className="p-3 bg-slate-100 hover:bg-slate-200 rounded-2xl text-slate-600 transition-all shadow-sm group"
+            title="ধরণ নির্বাচনে ফিরে যান"
+          >
+            <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform duration-300" />
+          </button>
+          <button 
+            type="button" 
             onClick={onBackToMenu}
             className="p-3 bg-slate-100 hover:bg-slate-200 rounded-2xl text-slate-600 transition-all shadow-sm group"
+            title="মডিউল পরিবর্তন"
           >
             <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
           </button>
@@ -1005,32 +850,23 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             <div id="field-12" className={col3Style}><IDBadge id="field-12" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১২</span> <Banknote size={14} className="text-amber-600 shrink-0" /> মোট জড়িত টাকা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-totalInvolvedAmount'] ?? formData.totalInvolvedAmount)} value={rawInputs['direct-totalInvolvedAmount'] ?? (!formData.totalInvolvedAmount ? '' : toBengaliDigits(formData.totalInvolvedAmount))} onChange={e => handleNumericInput('direct', 'totalInvolvedAmount', e.target.value)} placeholder="০" /></div>
             <div id="field-13" className={col4Style}><IDBadge id="field-13" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৩</span> <AlertCircle size={14} className="text-purple-600 shrink-0" /> অমীমাংসিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingUnsettledParas'] ?? formData.meetingUnsettledParas)} value={rawInputs['direct-meetingUnsettledParas'] ?? (!formData.meetingUnsettledParas ? '' : toBengaliDigits(formData.meetingUnsettledParas))} onChange={e => handleNumericInput('direct', 'meetingUnsettledParas', e.target.value)} placeholder="০" /></div>
             
-            <SegmentedInput id="field-14" icon={Inbox} label="শাখা রিসিভ তারিখ" color="sky" noValue="DATE_ONLY" dayValue={brDay} monthValue={brMonth} yearValue={brYear} noSetter={()=>{}} daySetter={setBrDay} monthSetter={setBrMonth} yearSetter={setBrYear} dayRef={brDayRef} monthRef={brMonthRef} yearRef={brYearRef} isFocused={isBrFocused} focusSetter={setIsBrFocused} isLayoutEditable={isLayoutEditable} />
-            <div id="field-15" className={col2Style}><IDBadge id="field-15" isLayoutEditable={isLayoutEditable} /><label className={labelCls}><span className={numBadge}>১৫</span> <User size={14} className="text-emerald-600 shrink-0" /> গ্রহণকারীর নাম</label><input type="text" className={getDynamicInputCls(formData.receiverName)} value={formData.receiverName} onChange={e => setFormData({...formData, receiverName: e.target.value})} placeholder="নাম লিখুন" /></div>
-            
-            <div id="field-online" className={col3Style}>
-              <IDBadge id="field-online" isLayoutEditable={isLayoutEditable} />
-              <label className={labelCls}><span className={numBadge}>*</span> <Computer size={14} className="text-amber-600 shrink-0" /> অনলাইনে প্রেরিত?</label>
-              <div className="flex bg-slate-100 rounded-xl p-1 h-[48px] border-2 border-slate-200">
-                {['হ্যাঁ', 'না'].map(opt => (
-                  <button key={opt} type="button" onClick={() => setFormData({...formData, isSentOnline: opt as any})} className={`flex-1 flex items-center justify-center text-sm font-black rounded-lg transition-all ${formData.isSentOnline === opt ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>
-                    {opt}
-                  </button>
-                ))}
+            <div id="field-14" className={col1Style}>
+              <IDBadge id="field-14" isLayoutEditable={isLayoutEditable} />
+              <label className={labelCls}><span className={numBadge}>১৪</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> মীমাংসিত অনুচ্ছেদ সংখ্যা</label>
+              <div className="w-full h-[48px] px-4 border-2 border-emerald-500 rounded-xl font-black bg-emerald-50/30 text-emerald-700 flex items-center justify-center text-[16px] shadow-inner">
+                {toBengaliDigits(summaryData.fullCount + summaryData.partialCount)} টি
               </div>
             </div>
 
-            <SegmentedInput id="field-presentation-date" icon={CalendarRange} label="উপস্থাপন তারিখ" color="purple" noValue="DATE_ONLY" dayValue={prDay} monthValue={prMonth} yearValue={prYear} noSetter={()=>{}} daySetter={setPrDay} monthSetter={setPrMonth} yearSetter={setPrYear} dayRef={prDayRef} monthRef={prMonthRef} yearRef={prYearRef} isFocused={isPrFocused} focusSetter={setIsPrFocused} isLayoutEditable={isLayoutEditable} />
-            <PremiumInlineSelect id="field-presented-to" label={<><span className={numBadge}>*</span> <UserCheck size={14} className="text-indigo-600 shrink-0" /> কার নিকট উপস্থাপিত</>} value={formData.presentedToName} onSelect={v => setFormData({...formData, presentedToName: v})} isLayoutEditable={isLayoutEditable} />
-
-            <SegmentedInput id="field-meeting-response-date" icon={CalendarSearch} label="সভার জবাব রিসিভ তারিখ" color="emerald" noValue="DATE_ONLY" dayValue={mrDay} monthValue={mrMonth} yearValue={mrYear} noSetter={()=>{}} daySetter={setMrDay} monthSetter={setMrMonth} yearSetter={setMrYear} dayRef={mrDayRef} monthRef={mrMonthRef} yearRef={mrYearRef} isFocused={isMrFocused} focusSetter={setIsMrFocused} isLayoutEditable={isLayoutEditable} />
-            <div id="field-meeting-minutes" className={colWrapperCls + " bg-slate-50/70 border-slate-100 hover:border-slate-300"}>
-              <IDBadge id="field-meeting-minutes" isLayoutEditable={isLayoutEditable} />
-              <label className={labelCls}><span className={numBadge}>*</span> <FileEdit size={14} className="text-slate-600 shrink-0" /> কার্যবিবরণী (Minutes)</label>
-              <input type="text" className={getDynamicInputCls(meetingMinutes)} value={meetingMinutes} onChange={e => setMeetingMinutes(e.target.value)} placeholder="কার্যবিবরণী নং বা বিবরণ..." />
+            <div id="field-15" className={col2Style}>
+              <IDBadge id="field-15" isLayoutEditable={isLayoutEditable} />
+              <label className={labelCls}><span className={numBadge}>১৫</span> <Banknote size={14} className="text-emerald-600 shrink-0" /> মীমাংসিত টাকা</label>
+              <div className="w-full h-[48px] px-4 border-2 border-emerald-500 rounded-xl font-black bg-emerald-50/30 text-emerald-700 flex items-center justify-center text-[16px] shadow-inner">
+                {formatSummaryNum(summaryData.totalRec + summaryData.totalAdj)}
+              </div>
             </div>
 
-            <div id="field-16" className={`${col4Style} md:col-span-2 lg:col-span-4`}>
+            <div id="field-16" className={`${col4Style} md:col-span-2 lg:col-span-2`}>
               <IDBadge id="field-16" isLayoutEditable={isLayoutEditable} />
               <label className={labelCls}><span className={numBadge}>১৬</span> <MessageSquare size={14} className="text-purple-600" /> মন্তব্য</label>
               <input type="text" className={getDynamicInputCls(formData.remarks)} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
