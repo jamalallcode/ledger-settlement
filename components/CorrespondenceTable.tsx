@@ -380,9 +380,16 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
       const dateA = a.diaryDate || '';
       const dateB = b.diaryDate || '';
       if (dateA === dateB) {
-        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return timeB - timeA;
+        const getTime = (entry: CorrespondenceEntry) => {
+          if (!entry.createdAt) return 0;
+          try {
+            const t = new Date(entry.createdAt).getTime();
+            return isNaN(t) ? 0 : t;
+          } catch (e) {
+            return 0;
+          }
+        };
+        return getTime(b) - getTime(a);
       }
       return dateB.localeCompare(dateA);
     });
