@@ -124,7 +124,19 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       const hasMeaningfulContent = (entry.paragraphs && entry.paragraphs.length > 0) || (entry.isMeeting && (entry.meetingUnsettledAmount || 0) > 0) || hasRaisedCount || hasRaisedAmount;
       if (!hasMeaningfulContent) return false;
 
-      const entryDate = entry.issueDateISO || (entry.createdAt ? new Date(entry.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+      let entryDate = entry.issueDateISO;
+      if (!entryDate) {
+        try {
+          const d = entry.createdAt ? new Date(entry.createdAt) : new Date();
+          if (!isNaN(d.getTime())) {
+            entryDate = d.toISOString().split('T')[0];
+          } else {
+            entryDate = new Date().toISOString().split('T')[0];
+          }
+        } catch (e) {
+          entryDate = new Date().toISOString().split('T')[0];
+        }
+      }
       const matchDate = !activeCycle || (entryDate >= format(activeCycle.start, 'yyyy-MM-dd') && entryDate <= format(activeCycle.end, 'yyyy-MM-dd'));
       
       let matchSearch = true;
@@ -134,14 +146,17 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         const cleanSearch = isExact ? s.slice(1, -1) : s;
 
         if (isExact) {
+          const normalize = (str: string) => toEnglishDigits(str || '').replace(/[\s\-\/]/g, '').trim();
+          const normSearch = normalize(cleanSearch);
+          
           const lNo = extractNoFromCombined(entry.letterNoDate || '', 'পত্র নং-');
           const dNo = extractNoFromCombined(entry.workpaperNoDate || '', 'ডায়েরি নং-');
           const iNo = extractNoFromCombined(entry.issueLetterNoDate || '', 'জারিপত্র নং-');
           
           matchSearch = 
-            toEnglishDigits(lNo || '').trim() === toEnglishDigits(cleanSearch).trim() || 
-            toEnglishDigits(dNo || '').trim() === toEnglishDigits(cleanSearch).trim() || 
-            toEnglishDigits(iNo || '').trim() === toEnglishDigits(cleanSearch).trim();
+            normalize(lNo) === normSearch || 
+            normalize(dNo) === normSearch || 
+            normalize(iNo) === normSearch;
         } else {
           const engS = toEnglishDigits(s).trim();
           const lNo = toEnglishDigits(extractNoFromCombined(entry.letterNoDate || '', 'পত্র নং-')).toLowerCase();
@@ -280,8 +295,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
     }, { paraCount: 0, inv: 0, raisedCount: 0, raisedAmount: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, tRec: 0, tAdj: 0 });
   }, [filteredEntries]);
 
-  const extractNoFromCombined = (info: string, prefix: string) => {
-    if (!info || !prefix) return "";
+  const extractNoFromCombined = (info: any, prefix: string) => {
+    if (!info || typeof info !== 'string' || !prefix) return "";
     
     try {
       const parts = info.split(',');
@@ -302,8 +317,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
     }
   };
 
-  const formatIssueInfoForDisplay = (info: string) => {
-    if (!info) return { full: "", letterNo: "" };
+  const formatIssueInfoForDisplay = (info: any) => {
+    if (!info || typeof info !== 'string') return { full: "", letterNo: "" };
     // Extract letter number: everything after "জারিপত্র নং-" and before the first comma
     const letterNo = extractNoFromCombined(info, 'জারিপত্র নং-');
     
