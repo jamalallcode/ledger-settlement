@@ -239,7 +239,13 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
       const cleanAuditYear = toEnglishDigits(formData.auditYear || '').trim();
       const entryAuditYear = toEnglishDigits(entry.auditYear || '').trim();
-      if (entry.paraType !== formData.paraType || entryAuditYear !== cleanAuditYear) return null;
+      
+      // Basic check: Para Type must match
+      if (entry.paraType !== formData.paraType) return null;
+      
+      // If audit year is selected in form, it must match the entry's audit year
+      // If not selected, we show duplicates from any year for that Para Type
+      if (cleanAuditYear && entryAuditYear !== cleanAuditYear) return null;
 
       const parts = combinedStr.split(',');
       for (const part of parts) {
