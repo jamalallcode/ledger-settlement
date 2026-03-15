@@ -14,12 +14,13 @@ export const toBengaliDigits = (input: string | number | undefined | null): stri
 /**
  * Converts Bengali digits in a string back to English digits.
  */
-export const toEnglishDigits = (input: string): string => {
+export const toEnglishDigits = (input: string | undefined | null): string => {
+  if (!input) return '';
   const englishDigits: { [key: string]: string } = {
     '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4',
     '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9'
   };
-  return input.replace(/[০-৯]/g, (digit) => englishDigits[digit]);
+  return input.toString().replace(/[০-৯]/g, (digit) => englishDigits[digit]);
 };
 
 /**
