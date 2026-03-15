@@ -39,10 +39,12 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
 
   const typeOptions = useMemo(() => {
     if (filterParaType === 'এসএফআই') {
-      return ['বিএসআর', 'কার্যবিবরণী (ত্রি-সভা)'];
+      
+      return ['সকল', 'বিএসআর', 'কার্যবিবরণী (ত্রি-সভা)'];
     }
     if (filterParaType === 'নন এসএফআই') {
-      return ['বিএসআর', 'কার্যবিবরণী (দ্বি-সভা)'];
+      return ['সকল', 'বিএসআর', 'কার্যবিবরণী (দ্বি-সভা)'];
+
     }
     return ['সকল', 'বিএসআর', 'কার্যবিবরণী (ত্রি-সভা)', 'কার্যবিবরণী (দ্বি-সভা)'];
   }, [filterParaType]);
@@ -144,9 +146,9 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     );
   }, [correspondenceEntries, searchTerm, filterParaType, filterLetterType, selectedMonthDate]);
 
-  const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-200 text-slate-900 leading-tight align-middle h-full !shadow-none";
+  const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-emerald-600 ring-4 ring-emerald-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-300'}`;
-  const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words !shadow-none";
+  const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
   
   const reportingLimitDate = useMemo(() => {
     const today = new Date();
@@ -305,8 +307,8 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           </div>
         </div>
 
-        <div className="table-responsive-container relative border border-slate-300 rounded-lg">
-          <table className="w-full border-separate table-fixed border-spacing-0">
+        <div className="table-container relative overflow-auto border border-slate-300 rounded-lg">
+          <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
             <colgroup>
               <col className="w-[40px]" />
               <col className="w-[150px]" />

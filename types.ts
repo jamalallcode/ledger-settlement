@@ -56,6 +56,7 @@ export interface SettlementEntry {
   auditYear: string;
   letterNoDate: string;
   workpaperNoDate: string;
+  minutesNoDate: string;
   paraType: ParaType;
   paragraphs: ParagraphDetail[];
   involvedAmount: number;
@@ -80,15 +81,12 @@ export interface SettlementEntry {
   meetingResponseDate?: string;
   meetingDate?: string;
   meetingSentParaCount?: string;
-  meetingDiscussedParaCount?: string;
   meetingRecommendedParaCount?: string; 
   meetingSettledParaCount?: string;
   meetingFullSettledParaCount?: string;
   meetingPartialSettledParaCount?: string;
   meetingUnsettledParas?: string;
   meetingUnsettledAmount?: number;
-  totalInvolvedAmount?: number;
-  totalUnsettledAmount?: number;
   archiveNo?: string;
   meetingWorkpaper?: string;
   meetingMinutes?: string;
@@ -131,17 +129,4 @@ export interface VoterToken {
   token: string;
   is_used: boolean;
   created_at: string;
-}
-
-export interface DeletedEntry {
-  id: string;
-  originalId: string;
-  content: any;
-  deletedBy: {
-    id: string;
-    email: string;
-    name?: string;
-    mobile?: string;
-  };
-  deletedAt: string;
 }

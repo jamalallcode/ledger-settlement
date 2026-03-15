@@ -1,10 +1,10 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import React from 'react';
-import { SettlementEntry } from '../types';
+import { SettlementEntry } from '../types.ts';
 import { Trash2, Pencil, Calendar, Printer, CheckCircle2, ChevronDown, ChevronUp, FileText, Fingerprint, Banknote, ListOrdered, Archive, MapPin, CalendarDays, Sparkles, ClipboardList, Filter, X, Search, LayoutGrid, CalendarSearch, Check, ShieldCheck, XCircle, AlertCircle, MessageSquare } from 'lucide-react';
-import { toBengaliDigits, parseBengaliNumber, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
-import { OFFICE_HEADER } from '../constants';
-import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper';
+import { toBengaliDigits, parseBengaliNumber, formatDateBN } from '../utils/numberUtils.ts';
+import { OFFICE_HEADER } from '../constants.ts';
+import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper.ts';
 import { format, addMonths } from 'date-fns';
 
 interface SettlementTableProps {
@@ -18,14 +18,11 @@ interface SettlementTableProps {
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
   isAdmin?: boolean;
-  onNavigateToLetter?: (letterNo: string, module?: 'settlement' | 'correspondence') => void;
-  initialSearchTerm?: string;
 }
 
 const SettlementTable: React.FC<SettlementTableProps> = ({ 
   entries, onDelete, onEdit, isLayoutEditable, showFilters, setShowFilters,
-  isAdminView = false, onApprove, onReject, isAdmin = false, onNavigateToLetter,
-  initialSearchTerm
+  isAdminView = false, onApprove, onReject, isAdmin = false 
 }) => {
   const [showCycleStats, setShowCycleStats] = useState<Record<string, boolean>>({});
   const lastActiveLabel = useRef<string>("");
@@ -37,14 +34,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
 
-  const [searchTerm, setSearchTerm] = useState(initialSearchTerm || '');
-
-  useEffect(() => {
-    if (initialSearchTerm) {
-      setSearchTerm(initialSearchTerm);
-    }
-  }, [initialSearchTerm]);
-
+  const [searchTerm, setSearchTerm] = useState('');
   const [filterParaType, setFilterParaType] = useState(''); 
   const [filterType, setFilterType] = useState('');
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date | null>(null);
@@ -124,41 +114,13 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       const hasMeaningfulContent = (entry.paragraphs && entry.paragraphs.length > 0) || (entry.isMeeting && (entry.meetingUnsettledAmount || 0) > 0) || hasRaisedCount || hasRaisedAmount;
       if (!hasMeaningfulContent) return false;
 
-      const entryDate = entry.issueDateISO || (entry.createdAt ? new Date(entry.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+      const entryDate = entry.issueDateISO || new Date(entry.createdAt).toISOString().split('T')[0];
       const matchDate = !activeCycle || (entryDate >= format(activeCycle.start, 'yyyy-MM-dd') && entryDate <= format(activeCycle.end, 'yyyy-MM-dd'));
       
-      let matchSearch = true;
-      if (searchTerm && searchTerm.trim() !== '') {
-        const s = searchTerm.toLowerCase().trim();
-        const isExact = s.startsWith('"') && s.endsWith('"');
-        const cleanSearch = isExact ? s.slice(1, -1) : s;
-
-        if (isExact) {
-          const lNo = extractNoFromCombined(entry.letterNoDate || '', 'পত্র নং-');
-          const dNo = extractNoFromCombined(entry.workpaperNoDate || '', 'ডায়েরি নং-');
-          const iNo = extractNoFromCombined(entry.issueLetterNoDate || '', 'জারিপত্র নং-');
-          
-          matchSearch = 
-            toEnglishDigits(lNo || '').trim() === toEnglishDigits(cleanSearch).trim() || 
-            toEnglishDigits(dNo || '').trim() === toEnglishDigits(cleanSearch).trim() || 
-            toEnglishDigits(iNo || '').trim() === toEnglishDigits(cleanSearch).trim();
-        } else {
-          const engS = toEnglishDigits(s).trim();
-          const lNo = toEnglishDigits(extractNoFromCombined(entry.letterNoDate || '', 'পত্র নং-')).toLowerCase();
-          const dNo = toEnglishDigits(extractNoFromCombined(entry.workpaperNoDate || '', 'ডায়েরি নং-')).toLowerCase();
-          const iNo = toEnglishDigits(extractNoFromCombined(entry.issueLetterNoDate || '', 'জারিপত্র নং-')).toLowerCase();
-          
-          const engEntity = toEnglishDigits(entry.entityName || '').toLowerCase();
-          const engBranch = toEnglishDigits(entry.branchName || '').toLowerCase();
-
-          matchSearch = 
-            engEntity.includes(engS) || 
-            engBranch.includes(engS) || 
-            iNo.includes(engS) ||
-            lNo.includes(engS) ||
-            dNo.includes(engS);
-        }
-      }
+      const matchSearch = searchTerm === '' || 
+        (entry.entityName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (entry.branchName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (entry.issueLetterNoDate || '').toLowerCase().includes(searchTerm.toLowerCase());
       
       const entryType = entry.isMeeting ? entry.meetingType : 'বিএসআর';
       const matchType = filterType === '' || entryType === filterType;
@@ -166,9 +128,10 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       
       return matchDate && matchSearch && matchType && matchParaType;
     }).sort((a, b) => {
-      const timeB = b.issueDateISO ? new Date(b.issueDateISO).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
-      const timeA = a.issueDateISO ? new Date(a.issueDateISO).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
-      return timeB - timeA;
+      const timeB = b.issueDateISO ? new Date(b.issueDateISO).getTime() : 0;
+      const timeA = a.issueDateISO ? new Date(a.issueDateISO).getTime() : 0;
+      if (timeB !== timeA) return timeB - timeA;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }, [entries, searchTerm, filterParaType, filterType, activeCycle]);
 
@@ -178,7 +141,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
     
     filteredEntries.forEach(entry => {
       let label = "Unknown";
-      const entryDate = entry.issueDateISO || (entry.createdAt ? new Date(entry.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+      const entryDate = entry.issueDateISO || new Date(entry.createdAt).toISOString().split('T')[0];
       if (entryDate) {
         try {
           const dateObj = new Date(entryDate);
@@ -280,49 +243,14 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
     }, { paraCount: 0, inv: 0, raisedCount: 0, raisedAmount: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, tRec: 0, tAdj: 0 });
   }, [filteredEntries]);
 
-  const extractNoFromCombined = (info: string, prefix: string) => {
-    if (!info || !prefix) return "";
-    
-    try {
-      // Escape prefix for regex and handle both - and :
-      const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const prefixAlt = escapedPrefix.replace('-', '[-:]');
-      
-      // Use a more robust regex that handles potential Bengali characters and spaces
-      // We want to match the prefix and then everything until the next comma or end of string
-      const regex = new RegExp(`(?:^|,\\s*)${prefixAlt}\\s*([^,]+)`, 'i');
-      const match = info.match(regex);
-      
-      if (match && match[1]) {
-        return match[1].trim();
-      }
-      return "";
-    } catch (e) {
-      console.error("Error extracting number:", e);
-      return "";
-    }
-  };
-
   const formatIssueInfoForDisplay = (info: string) => {
-    if (!info) return { full: "", letterNo: "" };
-    // Extract letter number: everything after "জারিপত্র নং-" and before the first comma
-    const letterNo = extractNoFromCombined(info, 'জারিপত্র নং-');
-    
-    // Clean up the display string
-    let full = info;
-    try {
-      full = info.replace(/জারিপত্র নং-/g, '').replace(/জারিপত্রের তারিখ-/g, '').trim();
-      if (full && !full.endsWith('খ্রি:')) {
-        full += " খ্রি:";
-      }
-    } catch (e) {}
-    
-    return { full, letterNo };
+    if (!info) return "";
+    return info.replace(/জারিপত্র নং-/g, '').replace(/জারিপত্রের তারিখ-/g, '').trim() + " খ্রি:";
   };
 
   // Headers reverted to font-black
-  const thBase = "sticky top-0 border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-200 z-[110] relative !shadow-none";
-  const thBase2 = "sticky top-[42px] border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-200 z-[110] relative !shadow-none";
+  const thBase = "sticky top-0 border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-200 z-[110] relative";
+  const thBase2 = "sticky top-[42px] border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-200 z-[110] relative";
   // Body cells reverted to font-bold
   const tdBase = "border border-slate-300 px-0.5 py-1.5 text-center align-middle text-[10px] leading-tight font-bold text-slate-900 relative";
   const tdMoney = "border border-slate-300 px-0.5 py-1 text-center align-middle text-[10px] font-black text-slate-950 relative";
@@ -357,11 +285,11 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             { label: '৪. সংস্থা', value: entry.entityName, icon: FileText, col: 'purple' },
             { label: '৫. বিস্তারিত শাখা', value: entry.branchName, icon: MapPin, col: 'sky' },
             { label: '৬. নিরীক্ষা সাল', value: toBengaliDigits(entry.auditYear), icon: Calendar, col: 'emerald' },
-            { label: '৭. পত্র নং ও তারিখ', value: entry.letterNoDate, letterNo: extractNoFromCombined(entry.letterNoDate, 'পত্র নং-'), icon: FileText, col: 'amber' },
+            { label: '৭. পত্র নং ও তারিখ', value: entry.letterNoDate, icon: FileText, col: 'amber' },
             { label: '৮. কার্যপত্র নং', value: entry.meetingWorkpaper || 'N/A', icon: FileText, col: 'purple' },
             { label: '৯. আলোচিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingDiscussedParaCount || '০'), icon: ListOrdered, col: 'sky' },
-            { label: '১০. ডায়েরি নং ও তারিখ', value: entry.workpaperNoDate, letterNo: extractNoFromCombined(entry.workpaperNoDate, 'ডায়েরি নং-'), icon: FileText, col: 'emerald' },
-            { label: '১১. জারিপত্র নং', value: formatIssueInfoForDisplay(entry.issueLetterNoDate).full, letterNo: formatIssueInfoForDisplay(entry.issueLetterNoDate).letterNo, icon: FileText, col: 'amber' },
+            { label: '১০. ডায়েরি নং ও তারিখ', value: entry.workpaperNoDate, icon: FileText, col: 'emerald' },
+            { label: '১১. জারিপত্র নং', value: formatIssueInfoForDisplay(entry.issueLetterNoDate), icon: FileText, col: 'amber' },
             { label: '১২. আর্কাইভ নং', value: entry.archiveNo || 'N/A', icon: Archive, col: 'purple' },
             { label: '১৩. প্রেরিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSentParaCount || '০'), icon: ListOrdered, col: 'sky' },
             { label: '১৪. সুপারিশকৃত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingRecommendedParaCount || '০'), icon: CheckCircle2, col: 'emerald' },
@@ -376,16 +304,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
               <div className={`p-2 rounded-lg bg-${item.col}-50 text-${item.col}-600`}><item.icon size={14} /></div>
               <div>
                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">{item.label}</p>
-                {(item.label === '১১. জারিপত্র নং' || item.label === '১০. ডায়েরি নং ও তারিখ' || item.label === '৭. পত্র নং ও তারিখ') && (item as any).letterNo ? (
-                  <button 
-                    onClick={() => onNavigateToLetter?.((item as any).letterNo, 'settlement')}
-                    className="text-[11px] font-black text-blue-600 hover:text-blue-800 hover:underline transition-all text-left leading-tight"
-                  >
-                    {item.value}
-                  </button>
-                ) : (
-                  <p className="text-[11px] font-bold text-slate-900 leading-tight">{item.value}</p>
-                )}
+                <p className="text-[11px] font-bold text-slate-900 leading-tight">{item.value}</p>
               </div>
             </div>
           ))}
@@ -401,197 +320,186 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[48px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
 
   return (
-    <div id="table-register-container" className="w-full bg-white animate-premium-page scroll-smooth relative z-[10]">
-      <div className="p-0">
-        <IDBadge id="view-register-table" />
-        {!isAdminView && (
-          <div id="section-register-top-header" className="relative mb-4 no-print">
-            <IDBadge id="section-register-top-header" />
-            <div id="section-register-hero-banner" className="pt-0 text-center space-y-3 relative overflow-hidden group transition-all duration-500">
-              <IDBadge id="section-register-hero-banner" />
-              <div className="relative z-10 flex flex-row items-center justify-center gap-4">
-                <div className="w-14 h-14 bg-emerald-50 rounded-[1.2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100"><ClipboardList size={30} strokeWidth={2.5} /></div>
-                <div className="space-y-0.5 text-left"><h2 className="text-4xl font-black text-slate-900 tracking-tighter drop-shadow-sm">মীমাংসা রেজিস্টার</h2></div>
-              </div>
-              <div className="relative z-10 flex flex-col items-center gap-4 mt-4">
-                <div className="inline-flex items-center gap-4 px-8 py-2.5 bg-emerald-600 text-white rounded-2xl font-bold text-[14px] shadow-[0_10px_30px_-5px_rgba(16,185,129,0.4)] border-2 border-emerald-400">
-                  <div className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-100 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-white shadow-md"></span></div>
-                  <span>চলমান মাস:</span><span className="text-emerald-50 tracking-tight">{toBengaliDigits(cycleInfo.label)}</span>
-                </div>
+    <div id="table-register-container" className="w-full relative animate-premium-page">
+      <IDBadge id="view-register-table" />
+      {!isAdminView && (
+        <div id="section-register-top-header" className="relative mb-4 no-print">
+          <IDBadge id="section-register-top-header" />
+          <div id="section-register-hero-banner" className="pt-0 text-center space-y-3 relative overflow-hidden group transition-all duration-500">
+            <IDBadge id="section-register-hero-banner" />
+            <div className="relative z-10 flex flex-col items-center gap-4">
+              <div className="w-14 h-14 bg-emerald-50 rounded-[1.2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100"><ClipboardList size={30} strokeWidth={2.5} /></div>
+              <div className="space-y-0.5"><h2 className="text-4xl font-black text-slate-900 tracking-tighter drop-shadow-sm">মীমাংসা রেজিস্টার</h2></div>
+              <div className="inline-flex items-center gap-4 px-8 py-2.5 bg-emerald-600 text-white rounded-2xl font-bold text-[14px] shadow-[0_10px_30px_-5px_rgba(16,185,129,0.4)] border-2 border-emerald-400">
+                <div className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-100 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-white shadow-md"></span></div>
+                <span>চলমান মাস:</span><span className="text-emerald-50 tracking-tight">{toBengaliDigits(cycleInfo.label)}</span>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {showFilters && !isAdminView && (
-          <div id="register-filters" className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate">
-            <IDBadge id="register-filters" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              
-              {/* Cycle Selection */}
-              <div className="space-y-1.5" ref={cycleDropdownRef}>
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">সময়কাল নির্বাচন (সাইকেল)</label>
-                <div 
-                  onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
-                  className={customDropdownCls(isCycleDropdownOpen)}
-                >
-                  <CalendarDays size={18} className="text-blue-600" />
-                  <span className="font-bold text-[13px] text-slate-900 truncate">
-                    {!selectedCycleDate ? 'সকল সাইকেল' : (cycleOptions.find(o => o.cycleLabel === activeCycle?.label)?.label || toBengaliDigits(activeCycle?.label || ''))}
-                  </span>
-                  <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isCycleDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
-                  
-                  {isCycleDropdownOpen && (
-                    <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
-                      <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
-                        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
-                          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
-                            <CalendarSearch size={12} /> সাইকেল নির্বাচন
-                          </span>
+      {showFilters && !isAdminView && (
+        <div id="register-filters" className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate">
+          <IDBadge id="register-filters" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            {/* Cycle Selection */}
+            <div className="space-y-1.5" ref={cycleDropdownRef}>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">সময়কাল নির্বাচন (সাইকেল)</label>
+              <div 
+                onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
+                className={customDropdownCls(isCycleDropdownOpen)}
+              >
+                <CalendarDays size={18} className="text-blue-600" />
+                <span className="font-bold text-[13px] text-slate-900 truncate">
+                  {!selectedCycleDate ? 'সকল সাইকেল' : (cycleOptions.find(o => o.cycleLabel === activeCycle?.label)?.label || toBengaliDigits(activeCycle?.label || ''))}
+                </span>
+                <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isCycleDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                
+                {isCycleDropdownOpen && (
+                  <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                    <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
+                      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                          <CalendarSearch size={12} /> সাইকেল নির্বাচন
+                        </span>
+                      </div>
+                      <div className="p-2 space-y-1">
+                        <div 
+                          key="all" 
+                          onClick={(e) => { e.stopPropagation(); setSelectedCycleDate(null); setIsCycleDropdownOpen(false); }} 
+                          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${!selectedCycleDate ? '!bg-blue-600 !text-white shadow-lg' : 'hover:bg-slate-100 text-slate-700 font-bold bg-white'}`}
+                        >
+                          <span className="text-[13px]">সকল সাইকেল</span>
+                          {!selectedCycleDate && <Check size={16} strokeWidth={3} />}
                         </div>
-                        <div className="p-2 space-y-1">
+                        {cycleOptions.map((opt, idx) => (
                           <div 
-                            key="all" 
-                            onClick={(e) => { e.stopPropagation(); setSelectedCycleDate(null); setIsCycleDropdownOpen(false); }} 
-                            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${!selectedCycleDate ? '!bg-blue-600 !text-white shadow-lg' : 'hover:bg-slate-100 text-slate-700 font-bold bg-white'}`}
+                            key={idx} 
+                            onClick={(e) => { e.stopPropagation(); setSelectedCycleDate(opt.date); setIsCycleDropdownOpen(false); }} 
+                            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${opt.cycleLabel === activeCycle?.label ? '!bg-blue-600 !text-white shadow-lg' : 'hover:bg-slate-100 text-slate-700 font-bold bg-white'}`}
                           >
-                            <span className="text-[13px]">সকল সাইকেল</span>
-                            {!selectedCycleDate && <Check size={16} strokeWidth={3} />}
+                            <span className="text-[13px]">{opt.label}</span>
+                            {opt.cycleLabel === activeCycle?.label && <Check size={16} strokeWidth={3} />}
                           </div>
-                          {cycleOptions.map((opt, idx) => (
-                            <div 
-                              key={idx} 
-                              onClick={(e) => { e.stopPropagation(); setSelectedCycleDate(opt.date); setIsCycleDropdownOpen(false); }} 
-                              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${opt.cycleLabel === activeCycle?.label ? '!bg-blue-600 !text-white shadow-lg' : 'hover:bg-slate-100 text-slate-700 font-bold bg-white'}`}
-                            >
-                              <span className="text-[13px]">{opt.label}</span>
-                              {opt.cycleLabel === activeCycle?.label && <Check size={16} strokeWidth={3} />}
-                            </div>
-                          ))}
-                        </div>
+                        ))}
                       </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
-              
-              {/* Branch Selection */}
-              <div className="space-y-1.5" ref={branchDropdownRef}>
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">শাখা</label>
-                <div 
-                  onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)} 
-                  className={customDropdownCls(isBranchDropdownOpen)}
-                >
-                  <LayoutGrid className="text-blue-600" size={16} />
-                  <span className="font-bold text-[13px] text-slate-900 truncate">
-                    {filterParaType === '' ? 'সকল শাখা' : filterParaType}
-                  </span>
-                  <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isBranchDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
-                  
-                  {isBranchDropdownOpen && (
-                    <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
-                      <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
-                        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
-                          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
-                            <LayoutGrid size={12} /> শাখা নির্বাচন
-                          </span>
-                        </div>
-                        <div className="p-2 space-y-1">
-                          {[
-                            { val: '', label: 'সকল শাখা' },
-                            { val: 'এসএফআই', label: 'এসএফআই' },
-                            { val: 'নন এসএফআই', label: 'নন এসএফআই' }
-                          ].map((opt, idx) => (
-                            <div 
-                              key={idx} 
-                              onClick={(e) => { e.stopPropagation(); setFilterParaType(opt.val); setFilterType(''); setIsBranchDropdownOpen(false); }} 
-                              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterParaType === opt.val ? '!bg-blue-600 !text-white shadow-lg' : 'hover:bg-slate-100 text-slate-700 font-bold bg-white'}`}
-                            >
-                              <span className="text-[13px]">{opt.label}</span>
-                              {filterParaType === opt.val && <Check size={16} strokeWidth={3} />}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Letter Type Selection */}
-              <div className="space-y-1.5" ref={typeDropdownRef}>
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">চিঠির ধরণ</label>
-                <div 
-                  onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)} 
-                  className={customDropdownCls(isTypeDropdownOpen)}
-                >
-                  <FileText className="text-blue-600" size={16} />
-                  <span className="font-bold text-[13px] text-slate-900 truncate">
-                    {filterType === '' ? 'সকল ধরণ' : (filterType === 'বিএসআর' ? 'বিএসআর (BSR)' : filterType)}
-                  </span>
-                  <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isTypeDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
-                  
-                  {isTypeDropdownOpen && (
-                    <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
-                      <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
-                        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
-                          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
-                            <FileText size={12} /> ধরণ নির্বাচন
-                          </span>
-                        </div>
-                        <div className="p-2 space-y-1">
-                          {[
-                            { val: '', label: 'সকল ধরণ', show: true },
-                            { val: 'বিএসআর', label: 'বিএসআর (BSR)', show: true },
-                            { val: 'ত্রিপক্ষীয় সভা', label: 'ত্রিপক্ষীয় সভা', show: filterParaType === 'এসএফআই' || filterParaType === '' },
-                            { val: 'দ্বিপক্ষীয় সভা', label: 'দ্বিপক্ষীয় সভা', show: filterParaType === 'নন এসএফআই' || filterParaType === '' }
-                          ].filter(o => o.show).map((opt, idx) => (
-                            <div 
-                              key={idx} 
-                              onClick={(e) => { e.stopPropagation(); setFilterType(opt.val); setIsTypeDropdownOpen(false); }} 
-                              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterType === opt.val ? '!bg-blue-600 !text-white shadow-lg' : 'hover:bg-slate-100 text-slate-700 font-bold bg-white'}`}
-                            >
-                              <span className="text-[13px]">{opt.label}</span>
-                              {filterType === opt.val && <Check size={16} strokeWidth={3} />}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Search Input */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">অনুসন্ধান</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600" size={16} />
-                  <input 
-                    type="text" 
-                    value={searchTerm} 
-                    onChange={e => setSearchTerm(e.target.value)} 
-                    placeholder="নাম বা নম্বর দিয়ে খুঁজুন..." 
-                    className={filterInputCls} 
-                  />
-                </div>
-              </div>
-
             </div>
-          </div>
-        )}
-
-        <div className="table-responsive-container border border-slate-300 rounded-sm relative bg-white">
-          <div className="hidden print:block text-center py-6 border-b-2 border-slate-100 mb-6">
-            <h1 className="text-2xl font-black uppercase text-slate-900 leading-tight">{OFFICE_HEADER.main}</h1>
-            <h2 className="text-xl font-black text-slate-800 leading-tight">{OFFICE_HEADER.sub}</h2>
-            <h3 className="text-lg font-black text-slate-700 leading-tight">{OFFICE_HEADER.address}</h3>
-            <div className="mt-4 inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
-              <span>মীমাংসা রেজিস্টার (Settlement Register)</span>
+            
+            {/* Branch Selection */}
+            <div className="space-y-1.5" ref={branchDropdownRef}>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">শাখা</label>
+              <div 
+                onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)} 
+                className={customDropdownCls(isBranchDropdownOpen)}
+              >
+                <LayoutGrid className="text-blue-600" size={16} />
+                <span className="font-bold text-[13px] text-slate-900 truncate">
+                  {filterParaType === '' ? 'সকল শাখা' : filterParaType}
+                </span>
+                <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isBranchDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                
+                {isBranchDropdownOpen && (
+                  <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                    <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
+                      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                          <LayoutGrid size={12} /> শাখা নির্বাচন
+                        </span>
+                      </div>
+                      <div className="p-2 space-y-1">
+                        {[
+                          { val: '', label: 'সকল শাখা' },
+                          { val: 'এসএফআই', label: 'এসএফআই' },
+                          { val: 'নন এসএফআই', label: 'নন এসএফআই' }
+                        ].map((opt, idx) => (
+                          <div 
+                            key={idx} 
+                            onClick={(e) => { e.stopPropagation(); setFilterParaType(opt.val); setFilterType(''); setIsBranchDropdownOpen(false); }} 
+                            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterParaType === opt.val ? '!bg-blue-600 !text-white shadow-lg' : 'hover:bg-slate-100 text-slate-700 font-bold bg-white'}`}
+                          >
+                            <span className="text-[13px]">{opt.label}</span>
+                            {filterParaType === opt.val && <Check size={16} strokeWidth={3} />}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+            
+            {/* Letter Type Selection */}
+            <div className="space-y-1.5" ref={typeDropdownRef}>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">চিঠির ধরণ</label>
+              <div 
+                onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)} 
+                className={customDropdownCls(isTypeDropdownOpen)}
+              >
+                <FileText className="text-blue-600" size={16} />
+                <span className="font-bold text-[13px] text-slate-900 truncate">
+                  {filterType === '' ? 'সকল ধরণ' : (filterType === 'বিএসআর' ? 'বিএসআর (BSR)' : filterType)}
+                </span>
+                <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isTypeDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                
+                {isTypeDropdownOpen && (
+                  <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                    <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
+                      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                          <FileText size={12} /> ধরণ নির্বাচন
+                        </span>
+                      </div>
+                      <div className="p-2 space-y-1">
+                        {[
+                          { val: '', label: 'সকল ধরণ', show: true },
+                          { val: 'বিএসআর', label: 'বিএসআর (BSR)', show: true },
+                          { val: 'ত্রিপক্ষীয় সভা', label: 'ত্রিপক্ষীয় সভা', show: filterParaType === 'এসএফআই' || filterParaType === '' },
+                          { val: 'দ্বিপক্ষীয় সভা', label: 'দ্বিপক্ষীয় সভা', show: filterParaType === 'নন এসএফআই' || filterParaType === '' }
+                        ].filter(o => o.show).map((opt, idx) => (
+                          <div 
+                            key={idx} 
+                            onClick={(e) => { e.stopPropagation(); setFilterType(opt.val); setIsTypeDropdownOpen(false); }} 
+                            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterType === opt.val ? '!bg-blue-600 !text-white shadow-lg' : 'hover:bg-slate-100 text-slate-700 font-bold bg-white'}`}
+                          >
+                            <span className="text-[13px]">{opt.label}</span>
+                            {filterType === opt.val && <Check size={16} strokeWidth={3} />}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Search Input */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">অনুসন্ধান</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600" size={16} />
+                <input 
+                  type="text" 
+                  value={searchTerm} 
+                  onChange={e => setSearchTerm(e.target.value)} 
+                  placeholder="নাম বা নম্বর দিয়ে খুঁজুন..." 
+                  className={filterInputCls} 
+                />
+              </div>
+            </div>
+
           </div>
-          <IDBadge id="table-main-ledger" />
-          <table id="table-main-ledger" ref={tableRef} className="w-full border-separate border-spacing-0">
+        </div>
+      )}
+
+      <div className="table-container border border-slate-300 rounded-sm overflow-auto relative">
+        <IDBadge id="table-main-ledger" />
+        <table id="table-main-ledger" ref={tableRef} className="w-full border-separate border-spacing-0">
           <colgroup><col className="w-[30px]" /><col className="w-[130px]" /><col className="w-[45px]" /><col className="w-[65px]" /><col className="w-[40px]" /><col className="w-[65px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /></colgroup>
       <thead>
             <tr className="h-[42px]">
@@ -625,7 +533,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                 return (
                   <React.Fragment key={group.label}>
                     {/* Sticky Cycle Header */}
-                    <tr className="sticky-cycle-header no-print">
+                    <tr className="sticky top-[80px] z-[90] no-print">
                       <td colSpan={14} className="p-0 border border-slate-300">
                         <div 
                           ref={el => { cycleRefs.current[group.label] = el; }}
@@ -633,7 +541,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                             const nextState = !showCycleStats[group.label];
                             setShowCycleStats({ ...showCycleStats, [group.label]: nextState });
                           }}
-                          className="bg-slate-100 border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
+                          className="bg-slate-100/95 backdrop-blur-sm border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-md group-hover/cycle-header:scale-110 transition-transform">
@@ -661,7 +569,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                     </tr>
 
                     {showCycleStats[group.label] && (
-                      <tr className="sticky-stats-header no-print">
+                      <tr className="sticky top-[128px] z-[85] no-print">
                         <td colSpan={14} className="p-0 border border-slate-300">
                           <div className="bg-white p-4 border-b border-slate-200 animate-in fade-in slide-in-from-top-1 duration-200 shadow-md">
                             <div className="flex flex-col gap-3">
@@ -740,32 +648,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                                         <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">এনটিটি:</span> <span className="font-bold text-slate-900">{entry.entityName}</span></p>
                                         <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">শাখা:</span> <span className="font-bold text-slate-900">{entry.branchName}</span></p>
                                         <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">নিরীক্ষা সাল:</span> <span className="font-bold text-slate-900">{toBengaliDigits(entry.auditYear)}</span></p>
-                                        <p className="text-[10px] leading-tight">
-                                          <span className="font-black text-emerald-700">পত্র নং ও তারিখ:</span>{' '}
-                                          <button 
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              const lNo = extractNoFromCombined(entry.letterNoDate, 'পত্র নং-');
-                                              if (lNo) onNavigateToLetter?.(lNo);
-                                            }}
-                                            className="font-black text-blue-600 hover:text-blue-800 hover:underline transition-all"
-                                          >
-                                            {entry.letterNoDate}
-                                          </button>
-                                        </p>
-                                        <p className="text-[10px] leading-tight">
-                                          <span className="font-black text-emerald-700">ডায়েরি নং ও তারিখ:</span>{' '}
-                                          <button 
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              const dNo = extractNoFromCombined(entry.workpaperNoDate, 'ডায়েরি নং-');
-                                              if (dNo) onNavigateToLetter?.(dNo);
-                                            }}
-                                            className="font-black text-blue-600 hover:text-blue-800 hover:underline transition-all"
-                                          >
-                                            {entry.workpaperNoDate}
-                                          </button>
-                                        </p>
+                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">জারিপত্র নং ও তারিখ:</span> <span className="font-bold text-slate-900">{formatIssueInfoForDisplay(entry.issueLetterNoDate)}</span></p>
                                       </div>
                                       <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
                                         {isExpanded ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}
@@ -822,19 +705,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                                   <div className="space-y-1 text-left flex-1">
                                     <p className="text-[10px] leading-tight font-black text-red-600 underline underline-offset-2 tracking-tighter">উত্থাপিত এন্ট্রি (কোন অনুচ্ছেদ নেই)</p>
                                     <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">সংস্থা:</span> <span className="font-bold text-slate-900">{entry.entityName}</span></p>
-                                    <p className="text-[10px] leading-tight">
-                                      <span className="font-black text-emerald-700">জারিপত্র:</span>{' '}
-                                      <button 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          const info = formatIssueInfoForDisplay(entry.issueLetterNoDate);
-                                          if (info.letterNo) onNavigateToLetter?.(info.letterNo, 'settlement');
-                                        }}
-                                        className="font-black text-blue-600 hover:text-blue-800 hover:underline transition-all"
-                                      >
-                                        {formatIssueInfoForDisplay(entry.issueLetterNoDate).full}
-                                      </button>
-                                    </p>
+                                    <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">জারিপত্র:</span> <span className="font-bold text-slate-900">{formatIssueInfoForDisplay(entry.issueLetterNoDate)}</span></p>
                                   </div>
                                   <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
                                     {isExpanded ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}
@@ -899,7 +770,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             )}
           </tbody>
           {!isAdminView && (
-            <tfoot className="sticky bottom-0 z-[120] no-print">
+            <tfoot className="z-[100]">
               <tr className="h-[45px] bg-slate-900 text-white shadow-[0_-10px_20px_rgba(0,0,0,0.1)]">
                 <td colSpan={2} className={footerTdCls + " text-white uppercase tracking-wider"}>সর্বমোট (ফিল্টার ডাটা):</td>
                 <td className={footerTdCls + " text-amber-400"}>{toBengaliDigits(grandTotals.paraCount)}</td><td className={footerTdCls + " text-amber-400"}>{toBengaliDigits(Math.round(grandTotals.inv))}</td>
@@ -914,7 +785,6 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         </table>
       </div>
     </div>
-  </div>
   );
 };
 

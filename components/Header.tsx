@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { OFFICE_HEADER } from '../constants';
+import { OFFICE_HEADER } from '../constants.ts';
 
 const Header: React.FC = () => {
   return (

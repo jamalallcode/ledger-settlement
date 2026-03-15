@@ -7,7 +7,6 @@ import {
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { getCycleForDate } from '../utils/cycleHelper';
 import { getDateError } from '../utils/dateValidation';
-import IDBadge from './common/IDBadge';
 
 /**
  * @security-protocol LOCKED_MODE
@@ -62,7 +61,7 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
 
   return (
     <div className="relative w-full" ref={dropdownRef}>
-      <IDBadge id="corr-field-letter-type-custom" isLayoutEditable={isLayoutEditable} />
+      <IDBadge id="corr-field-letter-type-custom" />
       <div 
         onClick={() => setIsOpen(!isOpen)}
         className={`${inputCls} ${value && value.toString().trim() !== '' ? 'border-emerald-500' : 'border-red-500'} flex items-center justify-between cursor-pointer group hover:border-emerald-400 hover:ring-4 hover:ring-emerald-50 transition-all duration-300 ${isOpen ? 'border-emerald-500 ring-4 ring-emerald-50 bg-white shadow-md' : 'shadow-sm'}`}
@@ -223,11 +222,27 @@ const SegmentedInput = ({
 
   const hiddenInputRef = useRef<HTMLInputElement>(null);
 
+  const IDBadge = ({ id }: { id: string }) => {
+    const [copied, setCopied] = useState(false);
+    if (!isLayoutEditable) return null;
+    const handleCopy = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
+    return (
+      <span onClick={handleCopy} className={`absolute -top-3 left-2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 z-[300] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'ring-2 ring-emerald-500 bg-emerald-600' : ''}`}>
+        {copied ? 'COPIED!' : `#${id}`}
+      </span>
+    );
+  };
+
   const isFilled = dayValue && monthValue && yearValue;
 
   return (
     <div className={`p-5 rounded-2xl border transition-all hover:shadow-lg relative min-w-0 ${error ? 'bg-red-50 border-red-200' : `bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`}`}>
-      <IDBadge id={id} isLayoutEditable={isLayoutEditable} />
+      <IDBadge id={id} />
       <label className="block text-[13px] font-black text-slate-700 mb-2 flex items-center gap-2 truncate">
         {/* Adjusted Serial and Icon Position as per request */}
         <span className={numBadge}>{num}</span> <Icon size={14} className={`${error ? 'text-red-600' : `text-${color}-600`} shrink-0`} /> <span className="truncate">{label}</span>
@@ -276,7 +291,7 @@ const SegmentedInput = ({
 
 interface CorrespondenceEntryModuleProps {
   onAdd: (data: any) => void;
-  onViewRegister: (module: 'settlement' | 'correspondence', searchTerm?: string) => void;
+  onViewRegister: () => void;
   onBackToMenu: () => void;
   isLayoutEditable?: boolean;
   initialEntry?: any;
@@ -577,9 +592,25 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const receiptDateError = getDateError(formData.receiptDate, formData.diaryDate, 'শাখায় প্রাপ্তির তারিখ', 'ডায়েরি তারিখ');
   const receivedDateError = getDateError(formData.receivedDate, formData.receiptDate, 'গ্রহণের তারিখ', 'শাখায় প্রাপ্তির তারিখ');
 
+  const IDBadge = ({ id }: { id: string }) => {
+    const [copied, setCopied] = useState(false);
+    if (!isLayoutEditable) return null;
+    const handleCopy = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
+    return (
+      <span onClick={handleCopy} title="Click to copy ID" className={`absolute -top-3 left-2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 z-[300] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'ring-2 ring-emerald-500 bg-emerald-600' : ''}`}>
+        {copied ? 'COPIED!' : `#${id}`}
+      </span>
+    );
+  };
+
   return (
     <div id="form-container-correspondence" className="bg-white p-4 md:p-10 rounded-[2.5rem] border border-slate-200 shadow-2xl animate-landing-premium max-w-7xl mx-auto overflow-x-hidden relative">
-      <IDBadge id="view-correspondence-form" isLayoutEditable={isLayoutEditable} />
+      <IDBadge id="view-correspondence-form" />
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-10 pb-6 border-b border-slate-100 gap-4 relative">
@@ -613,27 +644,11 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               <h4 className="text-xl font-black text-amber-900 tracking-tight">সতর্কবার্তা: তথ্যটি ইতোমধ্যেই বিদ্যমান</h4>
               <p className="text-sm font-bold text-amber-700/80">
                 {duplicates.diaryNo && (
-                  <span>ডায়েরি নং: 
-                    <button 
-                      type="button"
-                      onClick={() => onViewRegister('correspondence', formData.diaryNo)}
-                      className="underline underline-offset-4 font-black hover:text-amber-900 transition-colors"
-                    >
-                      {toBengaliDigits(formData.diaryNo)}
-                    </button> 
-                  </span>
+                  <span>ডায়েরি নং: <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.diaryNo)}</span> </span>
                 )}
                 {duplicates.diaryNo && duplicates.letterNo && <span>এবং </span>}
                 {duplicates.letterNo && (
-                  <span>পত্র নং: 
-                    <button 
-                      type="button"
-                      onClick={() => onViewRegister('correspondence', formData.letterNo)}
-                      className="underline underline-offset-4 font-black hover:text-amber-900 transition-colors"
-                    >
-                      {toBengaliDigits(formData.letterNo)}
-                    </button> 
-                  </span>
+                  <span>পত্র নং: <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.letterNo)}</span> </span>
                 )}
                 ইতোমধ্যেই ডাটাবেজে বিদ্যমান। অনুগ্রহ করে তথ্য যাচাই করুন।
               </p>
@@ -647,7 +662,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             
             {/* Field 1 - Full Width Description with Suggestions */}
             <div className={`${colWrapper} border-emerald-100 lg:col-span-4`} ref={descriptionRef}>
-              <IDBadge id="corr-field-1" isLayoutEditable={isLayoutEditable} />
+              <IDBadge id="corr-field-1" />
               <label className={labelCls}><span className={numBadge}>১</span> <FileText size={14} className="text-emerald-600" /> পত্রের বিবরণ নিরীক্ষা সালসহ:</label>
               <div className="relative group">
                 <input 
@@ -719,7 +734,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 2 */}
             <div className={`${colWrapper} border-blue-100`}>
-              <IDBadge id="corr-field-2" isLayoutEditable={isLayoutEditable} />
+              <IDBadge id="corr-field-2" />
               <label className={labelCls}><span className={numBadge}>২</span> <ShieldCheck size={14} className="text-blue-600" /> শাখার ধরণ:</label>
               <select 
                 className={`${inputCls} ${formData.paraType ? 'border-emerald-500' : 'border-red-500'}`} value={formData.paraType}
@@ -743,7 +758,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 4.ক */}
             <div className={`${colWrapper} ${duplicates.letterNo ? 'bg-amber-50 border-amber-200' : 'border-amber-100'}`}>
-              <IDBadge id="corr-field-4a" isLayoutEditable={isLayoutEditable} />
+              <IDBadge id="corr-field-4a" />
               <label className={labelCls}><span className={numBadge}>৪.ক</span> <Hash size={14} className="text-amber-600" /> পত্র নং:</label>
               <input 
                 type="text" className={`${inputCls} ${duplicates.letterNo ? 'border-amber-500 ring-4 ring-amber-50' : (formData.letterNo ? 'border-emerald-500' : 'border-red-500')}`} 
@@ -769,7 +784,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 5 */}
             <div className={`${colWrapper} border-purple-100`}>
-              <IDBadge id="corr-field-paras-count" isLayoutEditable={isLayoutEditable} />
+              <IDBadge id="corr-field-paras-count" />
               <label className={labelCls}><span className={numBadge}>৫</span> <ListOrdered size={14} className="text-purple-600" /> প্রেরিত অনু: সংখ্যা:</label>
               <input 
                 type="text" className={`${inputCls} ${rawInputs.totalParas ? 'border-emerald-500' : 'border-red-500'}`} 
@@ -780,7 +795,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 6 */}
             <div className={`${colWrapper} border-rose-100`}>
-              <IDBadge id="corr-field-amount" isLayoutEditable={isLayoutEditable} />
+              <IDBadge id="corr-field-amount" />
               <label className={labelCls}><span className={numBadge}>৬</span> <Banknote size={14} className="text-rose-600" /> মোট জড়িত টাকা:</label>
               <input 
                 type="text" className={`${inputCls} ${rawInputs.totalAmount ? 'border-emerald-500' : 'border-red-500'}`} 
@@ -797,7 +812,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 7.ক */}
             <div className={`${colWrapper} ${duplicates.diaryNo ? 'bg-amber-50 border-amber-200' : 'border-emerald-100'}`}>
-              <IDBadge id="corr-field-7a" isLayoutEditable={isLayoutEditable} />
+              <IDBadge id="corr-field-7a" />
               <label className={labelCls}><span className={numBadge}>৭.ক</span> <BookOpen size={14} className="text-emerald-600" /> ডায়েরি নং:</label>
               <input 
                 type="text" className={`${inputCls} ${duplicates.diaryNo ? 'border-amber-500 ring-4 ring-amber-50' : (formData.diaryNo ? 'border-emerald-500' : 'border-red-500')}`} 
@@ -843,7 +858,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 9 */}
             <div className={`${colWrapper} border-indigo-100`}>
-              <IDBadge id="corr-field-9" isLayoutEditable={isLayoutEditable} />
+              <IDBadge id="corr-field-9" />
               <label className={labelCls}><span className={numBadge}>৯</span> <Computer size={14} className="text-indigo-600" /> ডিজিটাল নথি নং-:</label>
               <input 
                 type="text" className={`${inputCls} ${formData.digitalFileNo ? 'border-emerald-500' : 'border-red-500'}`} 
@@ -854,7 +869,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 10 */}
             <div className={`${colWrapper} border-slate-200`} ref={receiverRef}>
-              <IDBadge id="corr-field-10" isLayoutEditable={isLayoutEditable} />
+              <IDBadge id="corr-field-10" />
               <label className={labelCls}><span className={numBadge}>১০</span> <User size={14} className="text-slate-600" /> গৃহীতার নাম:</label>
               <div className="relative group flex gap-2">
                 <div className="relative flex-1">
@@ -1010,7 +1025,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 12 */}
             <div className={`${colWrapper} border-emerald-100`}>
-              <IDBadge id="corr-field-12" isLayoutEditable={isLayoutEditable} />
+              <IDBadge id="corr-field-12" />
               <label className={labelCls}><span className={numBadge}>১২</span> <Computer size={14} className="text-emerald-600" /> অনলাইনে প্রাপ্তি:</label>
               <div className="flex gap-4 h-[52px] items-center px-2">
                 <button 
@@ -1026,7 +1041,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 13 - Remarks */}
             <div className={`${colWrapper} border-slate-200 col-span-full`}>
-              <IDBadge id="corr-field-13" isLayoutEditable={isLayoutEditable} />
+              <IDBadge id="corr-field-13" />
               <label className={labelCls}><span className={numBadge}>১৩</span> <FileText size={14} className="text-slate-600" /> মন্তব্য:</label>
               <textarea 
                 className={`${inputCls} ${formData.remarks ? 'border-emerald-500' : 'border-red-500'} h-24 py-3 resize-none`}
@@ -1068,7 +1083,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                     নতুন চিঠি এন্ট্রি দিন <Plus size={20} />
                   </button>
                   <button 
-                    onClick={() => onViewRegister('correspondence')}
+                    onClick={onViewRegister}
                     className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-3 active:scale-95 group"
                   >
                     চিঠিপত্র প্রাপ্তি রেজিস্টার দেখুন <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />

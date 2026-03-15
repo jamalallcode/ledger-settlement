@@ -227,12 +227,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   }, [entries]);
 
   // Header font is font-bold
-  const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[11px] leading-tight align-middle bg-slate-200 !shadow-none";
+  const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[11px] leading-tight align-middle bg-slate-200";
   // Data cells reverted to font-bold (700 weight as per instruction)
   const tdStyle = "border border-slate-300 px-1.5 py-1.5 text-[12px] text-center font-bold leading-tight bg-white align-middle transition-colors group-hover:bg-blue-50";
   
   // Reverted sticky header from bold to black
-  const stickyThStyle = "border border-slate-300 px-1 py-3 font-black text-center text-[10px] bg-slate-200 !shadow-none";
+  const stickyThStyle = "border border-slate-300 px-1 py-3 font-black text-center text-[10px] bg-slate-200";
   // Reverted sticky data from medium to bold
   const stickyTdStyle = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-center font-bold leading-tight bg-white align-middle transition-colors group-hover:bg-blue-50";
 
@@ -399,8 +399,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
         {/* SECTION 1: সারসংক্ষেপ টেবিল */}
         <div className="mb-10 flex justify-center overflow-visible">
-          <div className="table-responsive-container dd-sir-summary-table-container max-w-full w-full border border-slate-300 rounded-lg">
-            <table className="w-full border-separate table-fixed border-spacing-0">
+          <div className="table-container max-w-full w-full border border-slate-300 rounded-lg overflow-auto">
+            <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
               <colgroup>
                 <col className="w-[30px]" />
                 <col className="w-[130px]" />
@@ -416,13 +416,13 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <col className="w-[70px]" />
               </colgroup>
               <thead>
-                <tr className="h-[40px]">
-                  <th colSpan={2} className={thStyle + " !bg-white text-[13px] !py-0"}>অনিষ্পন্ন কাজের তালিকা (ফিল্টারকৃত)</th>
-                  <th colSpan={4} className={thStyle + " !bg-white text-[13px] !py-0"}>শাখা: {filterBranch === 'সকল' ? 'সকল' : filterBranch}</th>
-                  <th colSpan={3} className={thStyle + " !bg-white text-[13px] !py-0"}>মাস: {reportingMonthBN}</th>
-                  <th colSpan={3} className={thStyle + " !bg-white text-[13px] !py-0"}>তারিখ: {reportingDateBN} খ্রি:</th>
+                <tr className="bg-white">
+                  <th colSpan={2} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">অনিষ্পন্ন কাজের তালিকা (ফিল্টারকৃত)</th>
+                  <th colSpan={4} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">শাখা: {filterBranch === 'সকল' ? 'সকল' : filterBranch}</th>
+                  <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">মাস: {reportingMonthBN}</th>
+                  <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">তারিখ: {reportingDateBN} খ্রি:</th>
                 </tr>
-                <tr className="h-[44px]">
+                <tr>
                   <th rowSpan={2} className={thStyle}>ক্রমিক নং</th>
                   <th rowSpan={2} className={thStyle}>দায়িত্বপ্রাপ্ত অডিটর</th>
                   <th colSpan={2} className={thStyle}>
@@ -439,7 +439,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   <th colSpan={2} className={thStyle}>মিলিকরণ</th>
                   <th colSpan={2} className={thStyle}>অন্যান্য</th>
                 </tr>
-                <tr className="h-[40px]">
+                <tr>
                   <th className={thStyle}>১ মাস-</th>
                   <th className={thStyle}>১ মাস+</th>
                   <th className={thStyle}>১ মাস-</th>
@@ -510,8 +510,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
              </div>
           </div>
 
-          <div className="table-responsive-container dd-sir-detailed-table-container relative w-full border border-slate-300 rounded-lg">
-            <table className="w-full border-separate table-fixed border-spacing-0">
+          <div className="table-container relative overflow-auto w-full border border-slate-300 rounded-lg">
+            <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
               <colgroup>
                 <col className="w-[30px]" />
                 <col className="w-[80px]" />

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import React from 'react';
+import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import SettlementForm from './components/SettlementForm';
 import SettlementTable from './components/SettlementTable';
@@ -8,18 +9,11 @@ import ReturnView from './components/ReturnView';
 import LandingPage from './components/LandingPage';
 import VotingSystem from './components/VotingSystem';
 import DocumentArchive from './components/DocumentArchive';
-import AdminDashboard from './components/AdminDashboard';
-import Navbar from './components/Navbar';
-import { SettlementEntry, GroupOption, CumulativeStats, DeletedEntry } from './types';
+import { SettlementEntry, GroupOption, CumulativeStats } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
 import { supabase } from './lib/supabase';
-import IDBadge from './components/common/IDBadge';
-import { 
-  ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ArrowRight, 
-  BellRing, Sparkles, Mail, ClipboardList, ArrowRightCircle, 
-  ChevronLeft, Printer, X, FileText 
-} from 'lucide-react';
+import { ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ArrowRight, BellRing, Sparkles, Mail, ClipboardList, ArrowRightCircle, ChevronLeft } from 'lucide-react';
 
 const STORAGE_KEY = 'ledger_settlement_v10_stable';
 const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
@@ -32,48 +26,6 @@ const generateId = () => {
   return 'id-' + Math.random().toString(36).substring(2, 11) + '-' + Date.now().toString(36);
 };
 
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: any) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: any, errorInfo: any) {
-    console.error("ErrorBoundary caught an error", error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
-          <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 border border-red-100 text-center space-y-6">
-            <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto">
-              <AlertTriangle size={40} />
-            </div>
-            <h2 className="text-2xl font-black text-slate-900">দুঃখিত, একটি ত্রুটি ঘটেছে!</h2>
-            <p className="text-slate-600 font-bold">অ্যাপ্লিকেশনটি লোড করতে সমস্যা হচ্ছে। অনুগ্রহ করে পেজটি রিফ্রেশ করুন।</p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
-            >
-              পেজ রিফ্রেশ করুন
-            </button>
-            <details className="text-left text-[10px] text-slate-400 opacity-50 cursor-pointer">
-              <summary>Technical Details</summary>
-              <pre className="mt-2 whitespace-pre-wrap">{this.state.error?.toString()}</pre>
-            </details>
-          </div>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
 const App: React.FC = () => {
   const [entries, setEntries] = useState<SettlementEntry[]>([]);
   const [correspondenceEntries, setCorrespondenceEntries] = useState<any[]>([]);
@@ -85,6 +37,7 @@ const App: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showRegisterFilters, setShowRegisterFilters] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
@@ -93,13 +46,9 @@ const App: React.FC = () => {
   
   // Register Selection State
   const [registerSubModule, setRegisterSubModule] = useState<'settlement' | 'correspondence' | null>(null);
-  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
-  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   // New state for direct report selection from sidebar
   const [reportType, setReportType] = useState<string | null>(null);
-  const [deletedEntries, setDeletedEntries] = useState<DeletedEntry[]>([]);
-  const [letterSearchTerm, setLetterSearchTerm] = useState<string | null>(null);
   
   const [allPrevStats, setAllPrevStats] = useState<Record<string, CumulativeStats>>({
     monthly: { inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, entitiesSFI: {}, entitiesNonSFI: {} },
@@ -153,17 +102,6 @@ const App: React.FC = () => {
     }
 
     setShowPendingOnly(false);
-    if (tab !== 'register' || subModule !== 'correspondence') {
-      setLetterSearchTerm(null);
-    }
-  };
-
-  const handleNavigateToLetter = (letterNo: string, module: 'settlement' | 'correspondence' = 'correspondence') => {
-    // Use quotes to indicate exact match search
-    setLetterSearchTerm(`"${letterNo}"`);
-    setActiveTab('register');
-    setRegisterSubModule(module);
-    setShowRegisterFilters(true);
   };
 
   // --- AUTO SYNC LOGIC ---
@@ -215,8 +153,22 @@ const App: React.FC = () => {
 
   // STRICT AUTO-ADMIN DETECTION
   useEffect(() => {
-    const savedAdmin = localStorage.getItem(ADMIN_MODE_KEY);
-    if (savedAdmin === 'true') setIsAdmin(true);
+    const handleAdminSync = (email?: string) => {
+      if (email === 'websitetogather@gmail.com') {
+        setIsAdmin(true);
+        localStorage.setItem(ADMIN_MODE_KEY, 'true');
+      }
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      handleAdminSync(session?.user?.email);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleAdminSync(session?.user?.email);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -253,7 +205,6 @@ const App: React.FC = () => {
         if (!error && data) {
           const processedEntries: SettlementEntry[] = [];
           const corrEntries: any[] = [];
-          const deleted: DeletedEntry[] = [];
           
           data.forEach((row: any) => {
             if (!row || !row.id) return;
@@ -280,8 +231,6 @@ const App: React.FC = () => {
                 setAllPrevStats(migrated);
                 localStorage.setItem(PREV_STATS_KEY, JSON.stringify(migrated));
               }
-            } else if (row.id.startsWith('deleted-')) {
-              deleted.push(content);
             } else if (row.id.startsWith('id-')) {
               // Distinguish between entry types - robust check
               const isCorrespondence = content.type === 'correspondence' || (content.description !== undefined && content.description !== null);
@@ -302,7 +251,6 @@ const App: React.FC = () => {
           
           setEntries(processedEntries);
           setCorrespondenceEntries(corrEntries);
-          setDeletedEntries(deleted);
         }
       } catch (e) { console.error('Data error:', e); } 
       finally { setIsLoading(false); }
@@ -413,21 +361,9 @@ const App: React.FC = () => {
     }
   };
 
-  const handleViewRegister = (module: 'settlement' | 'correspondence', searchTerm?: string) => {
-    // Set search term first if provided
-    if (searchTerm && searchTerm.trim() !== '') {
-      setLetterSearchTerm(searchTerm.trim());
-      setShowRegisterFilters(true);
-    } else {
-      setLetterSearchTerm('');
-    }
-    
-    // Switch tab and submodule in the next tick to ensure stability
-    // This prevents potential race conditions during tab switching
-    setTimeout(() => {
-      setRegisterSubModule(module);
-      setActiveTab('register');
-    }, 10);
+  const handleViewRegister = (module: 'settlement' | 'correspondence') => {
+    setActiveTab('register');
+    setRegisterSubModule(module);
   };
 
   const handleApproveEntry = async (id: string) => {
@@ -471,13 +407,6 @@ const App: React.FC = () => {
       return;
     }
 
-    const deletedBy = {
-      id: 'admin',
-      email: 'admin@system',
-      name: 'এডমিন',
-      mobile: ''
-    };
-
     if (paraId) {
       const entry = entries.find(e => e.id === id);
       if (!entry) return;
@@ -488,24 +417,12 @@ const App: React.FC = () => {
                             (entry.manualRaisedAmount !== null && entry.manualRaisedAmount !== 0);
       
       if (remainingParas.length === 0 && !hasRaisedData) {
-        // Full entry deletion via paragraph deletion
-        const deletedEntry: DeletedEntry = {
-          id: `deleted-${id}`,
-          originalId: id,
-          content: entry,
-          deletedBy,
-          deletedAt: new Date().toISOString()
-        };
-        
         setEntries(prev => prev.filter(e => e.id !== id));
-        setDeletedEntries(prev => [deletedEntry, ...prev]);
-
         if (navigator.onLine) {
           await supabase.from('settlement_entries').delete().eq('id', id);
-          await supabase.from('settlement_entries').upsert({ id: deletedEntry.id, content: deletedEntry });
         } else {
           const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
-          localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify([...queue.filter((e: any) => e.id !== id), deletedEntry]));
+          localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue.filter((e: any) => e.id !== id)));
         }
       } else {
         const updatedEntry = { ...entry, paragraphs: remainingParas };
@@ -518,53 +435,14 @@ const App: React.FC = () => {
         }
       }
     } else {
-      const entry = [...entries, ...correspondenceEntries].find(e => e.id === id);
-      if (!entry) return;
-
-      const deletedEntry: DeletedEntry = {
-        id: `deleted-${id}`,
-        originalId: id,
-        content: entry,
-        deletedBy,
-        deletedAt: new Date().toISOString()
-      };
-
       setEntries(prev => prev.filter(e => e.id !== id));
       setCorrespondenceEntries(prev => prev.filter(e => e.id !== id));
-      setDeletedEntries(prev => [deletedEntry, ...prev]);
-
       if (navigator.onLine) {
         await supabase.from('settlement_entries').delete().eq('id', id);
-        await supabase.from('settlement_entries').upsert({ id: deletedEntry.id, content: deletedEntry });
       } else {
         const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
-        localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify([...queue.filter((e: any) => e.id !== id), deletedEntry]));
+        localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue.filter((e: any) => e.id !== id)));
       }
-    }
-  };
-
-  const handleRestore = async (deletedEntry: DeletedEntry) => {
-    if (!isAdmin) return;
-    
-    const { originalId, content } = deletedEntry;
-    
-    // Restore to appropriate list
-    if (content.type === 'correspondence') {
-      setCorrespondenceEntries(prev => [content, ...prev]);
-    } else {
-      setEntries(prev => [content, ...prev]);
-    }
-    
-    // Remove from deleted list
-    setDeletedEntries(prev => prev.filter(e => e.id !== deletedEntry.id));
-    
-    if (navigator.onLine) {
-      // Remove the deleted record and re-insert the original
-      await supabase.from('settlement_entries').delete().eq('id', deletedEntry.id);
-      await supabase.from('settlement_entries').upsert({ id: originalId, content: content });
-    } else {
-      const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
-      localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify([...queue.filter((e: any) => e.id !== deletedEntry.id), content]));
     }
   };
 
@@ -586,18 +464,28 @@ const App: React.FC = () => {
   const pendingEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'pending'), [entries]);
   const pendingCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'pending'), [correspondenceEntries]);
   
-  const allPendingEntries = useMemo(() => [...pendingEntries, ...pendingCorrespondence], [pendingEntries, pendingCorrespondence]);
-  const totalPendingCount = allPendingEntries.length;
+  const totalPendingCount = pendingEntries.length + pendingCorrespondence.length;
 
-  const handleLogout = () => {
-    setIsAdmin(false);
-    localStorage.removeItem(ADMIN_MODE_KEY);
-    setActiveTab('landing');
+  const IDBadge = ({ id }: { id: string }) => {
+    const [copied, setCopied] = useState(false);
+    if (!isLayoutEditable) return null;
+    const handleCopy = (e: React.MouseEvent) => {
+      e.preventDefault(); e.stopPropagation();
+      navigator.clipboard.writeText(id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
+    return (
+      <div onClick={handleCopy} className="absolute top-0 left-0 -translate-y-full z-[9995] pointer-events-auto no-print">
+        <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md font-black text-[9px] bg-black text-white border border-white/30 shadow-2xl transition-all duration-300 hover:scale-150 hover:bg-blue-600 hover:z-[99999] active:scale-95 cursor-copy origin-bottom-left ${copied ? 'bg-emerald-600 border-emerald-400 ring-4 ring-emerald-500/30 !scale-125' : ''}`}>
+          {copied ? <><CheckCircle2 size={10} /> COPIED</> : `#${id}`}
+        </span>
+      </div>
+    );
   };
 
   return (
-    <ErrorBoundary>
-      <div className={`h-screen bg-white flex overflow-hidden font-['Hind_Siliguri'] animate-in fade-in duration-1000 ${showPrintPreview ? 'no-print' : ''}`}>
+    <div className="h-screen bg-white flex overflow-hidden font-['Hind_Siliguri'] animate-in fade-in duration-1000">
       {isLoading && (
         <div className="fixed inset-0 bg-white/60 backdrop-blur-md z-[9999] flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -605,53 +493,38 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {isSidebarVisible && (
-        <div className="no-print h-full shrink-0">
+      {isSidebarOpen && (
+        <div className="no-print h-full">
           <Sidebar 
-            activeTab={activeTab}
-            setActiveTab={handleTabChange}
-            onToggleVisibility={() => setIsSidebarVisible(false)}
-            isLockedMode={isLockedMode}
-            setIsLockedMode={setIsLockedMode}
-            isAdmin={isAdmin}
-            setIsAdmin={setIsAdmin}
-            onLogout={handleLogout}
+            activeTab={activeTab} setActiveTab={handleTabChange} 
+            onToggleVisibility={() => setIsSidebarOpen(false)}
+            isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
+            isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} setIsAdmin={setIsAdmin}
             pendingCount={totalPendingCount}
             entryModule={entryModule}
             registerSubModule={registerSubModule}
             reportType={reportType}
-            isLayoutEditable={isLayoutEditable}
           />
         </div>
       )}
 
-      {!isSidebarVisible && (
-        <button 
-          onClick={() => setIsSidebarVisible(true)}
-          className="fixed bottom-6 left-6 z-[9999] w-12 h-12 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-blue-700 transition-all active:scale-95 no-print"
-        >
-          <ArrowRightCircle size={24} />
-        </button>
-      )}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <div className="no-print">
+          <Navbar 
+            activeTab={activeTab} setActiveTab={handleTabChange} onDemoLoad={() => {}}
+            isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
+            isLayoutEditable={isLayoutEditable} setIsLayoutEditable={setIsLayoutEditable}
+            onExportSystem={() => {}} onImportSystem={() => {}}
+            isAdmin={isAdmin} setIsAdmin={setIsAdmin} cycleLabel={cycleLabelBengali}
+            showRegisterFilters={showRegisterFilters} setShowRegisterFilters={setShowRegisterFilters}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen}
+            pendingEntries={[...pendingEntries, ...pendingCorrespondence]}
+            onApprove={handleApproveEntry}
+            onReject={handleRejectEntry}
+            setShowPendingOnly={setShowPendingOnly}
+          />
+        </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
-        <Navbar 
-          activeTab={activeTab}
-          setActiveTab={handleTabChange}
-          isAdmin={isAdmin}
-          setIsAdmin={setIsAdmin}
-          pendingEntries={allPendingEntries}
-          showRegisterFilters={showRegisterFilters}
-          setShowRegisterFilters={setShowRegisterFilters}
-          isLockedMode={isLockedMode}
-          setIsLockedMode={setIsLockedMode}
-          isLayoutEditable={isLayoutEditable}
-          setIsLayoutEditable={setIsLayoutEditable}
-          onApprove={handleApproveEntry}
-          onReject={handleRejectEntry}
-          setShowPendingOnly={setShowPendingOnly}
-          onPrint={() => setShowPrintPreview(true)}
-        />
         <main ref={mainScrollRef} className="flex-1 overflow-auto bg-white relative scroll-smooth">
           <div className="p-4 md:p-8 max-w-full mx-auto w-full flex flex-col">
             <div className="animate-in fade-in duration-500 flex-1">
@@ -666,8 +539,6 @@ const App: React.FC = () => {
                   isAdmin={isAdmin}
                   pendingCount={totalPendingCount}
                   onShowPending={() => { setActiveTab('register'); setShowPendingOnly(true); }}
-                  deletedEntries={deletedEntries}
-                  onRestore={handleRestore}
                 />
               )}
               
@@ -728,7 +599,6 @@ const App: React.FC = () => {
                             onReject={handleRejectEntry}
                             showFilters={false}
                             setShowFilters={() => {}}
-                            onNavigateToLetter={handleNavigateToLetter}
                           />
                         </div>
                       )}
@@ -750,22 +620,20 @@ const App: React.FC = () => {
                             onApprove={handleApproveEntry}
                             onReject={handleRejectEntry}
                             isAdmin={isAdmin}
-                            onNavigateToLetter={handleNavigateToLetter}
-                            initialSearchTerm={letterSearchTerm || undefined}
                           />
                         </div>
                       )}
                     </div>
                   ) : !registerSubModule ? (
                     <div id="section-register-choice" className="w-full py-2 animate-in slide-in-from-left-10 duration-700 relative">
-                      <IDBadge id="section-register-choice" isLayoutEditable={isLayoutEditable} />
+                      <IDBadge id="section-register-choice" />
                       <div className="space-y-5 max-w-4xl text-left">
                         {/* Option 1: Incoming Correspondence Register */}
                         <div 
                           onClick={() => setRegisterSubModule('correspondence')}
                           className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards"
                         >
-                          <IDBadge id="reg-opt-correspondence" isLayoutEditable={isLayoutEditable} />
+                          <IDBadge id="reg-opt-correspondence" />
                           <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.4)]"></div>
                           <div className="flex items-center justify-center pl-7">
                             <div className="w-12 h-12 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-600 transition-all duration-500">
@@ -786,7 +654,7 @@ const App: React.FC = () => {
                           onClick={() => setRegisterSubModule('settlement')}
                           className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards delay-100"
                         >
-                          <IDBadge id="reg-opt-settlement" isLayoutEditable={isLayoutEditable} />
+                          <IDBadge id="reg-opt-settlement" />
                           <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]"></div>
                           <div className="flex items-center justify-center pl-7">
                             <div className="w-12 h-12 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-600 transition-all duration-500">
@@ -823,18 +691,13 @@ const App: React.FC = () => {
                         showFilters={showRegisterFilters} 
                         setShowFilters={setShowRegisterFilters} 
                         isAdmin={isAdmin}
-                        onNavigateToLetter={handleNavigateToLetter}
-                        initialSearchTerm={letterSearchTerm || undefined}
                       />
                     </div>
                   ) : (
                     <div className="animate-in fade-in duration-700">
                       <CorrespondenceTable 
                         entries={approvedCorrespondence} 
-                        onBack={() => {
-                          setRegisterSubModule(null);
-                          setLetterSearchTerm(null);
-                        }} 
+                        onBack={() => setRegisterSubModule(null)} 
                         isLayoutEditable={isLayoutEditable}
                         isAdmin={isAdmin}
                         onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
@@ -842,8 +705,6 @@ const App: React.FC = () => {
                         onDelete={handleDelete}
                         showFilters={showRegisterFilters}
                         setShowFilters={setShowRegisterFilters}
-                        initialSearchTerm={letterSearchTerm || undefined}
-                        onNavigateToLetter={handleNavigateToLetter}
                       />
                     </div>
                   )}
@@ -855,93 +716,11 @@ const App: React.FC = () => {
               {activeTab === 'archive' && <DocumentArchive isAdmin={isAdmin} />}
 
               {activeTab === 'voting' && <VotingSystem isAdmin={isAdmin} />}
-
-              {activeTab === 'admin-dashboard' && isAdmin && (
-                <AdminDashboard setActiveTab={handleTabChange} pendingCount={totalPendingCount} />
-              )}
             </div>
           </div>
         </main>
       </div>
-      {showPrintPreview && (
-        <div className="fixed inset-0 z-[10000] flex flex-col animate-in fade-in duration-300 bg-slate-900/95 backdrop-blur-md print:bg-white print:static print:block print-preview-modal">
-          <div className="h-20 bg-slate-900 border-b border-white/10 flex items-center justify-between px-8 shrink-0 shadow-2xl no-print">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/20 ring-2 ring-red-400/20">
-                <FileText size={28} className="text-white" />
-              </div>
-              <div className="flex flex-col">
-                <h3 className="font-black text-lg text-white tracking-tight">প্রিন্ট প্রিভিউ (PDF View)</h3>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                  <p className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em]">Ready for Printing</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={() => {
-                  window.print();
-                }}
-                className="flex items-center gap-3 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-sm transition-all shadow-xl shadow-blue-600/20 active:scale-95 border border-blue-400/30 group"
-              >
-                <Printer size={20} className="group-hover:rotate-12 transition-transform" /> 
-                প্রিন্ট করুন
-              </button>
-              <button 
-                onClick={() => setShowPrintPreview(false)}
-                className="p-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white rounded-2xl transition-all border border-white/10"
-              >
-                <X size={24} />
-              </button>
-            </div>
-          </div>
-          <div className="flex-1 overflow-auto p-6 md:p-16 bg-slate-950/50 flex justify-center scroll-smooth print:p-0 print:bg-white print:block">
-            <div className="bg-white w-full max-w-[297mm] min-h-[210mm] shadow-[0_0_100px_rgba(0,0,0,0.5)] p-12 origin-top transform transition-transform duration-500 hover:scale-[1.01] print:shadow-none print:p-0 print:m-0 print:w-full print:max-w-none print:min-h-0 print:transform-none">
-              <div className="print-content print-preview-active">
-                {activeTab === 'register' && registerSubModule === 'settlement' && (
-                  <SettlementTable 
-                    entries={approvedEntries} 
-                    onDelete={() => {}} 
-                    onEdit={() => {}} 
-                    isLayoutEditable={false} 
-                    showFilters={false} 
-                    setShowFilters={() => {}} 
-                    isAdmin={false}
-                    onNavigateToLetter={handleNavigateToLetter}
-                    initialSearchTerm={letterSearchTerm || undefined}
-                  />
-                )}
-                {activeTab === 'register' && registerSubModule === 'correspondence' && (
-                  <CorrespondenceTable 
-                    entries={approvedCorrespondence} 
-                    onBack={() => {}} 
-                    isLayoutEditable={false}
-                    isAdmin={false}
-                    showFilters={false}
-                    setShowFilters={() => {}}
-                  />
-                )}
-                {activeTab === 'return' && (
-                  <ReturnView 
-                    entries={approvedEntries} 
-                    correspondenceEntries={approvedCorrespondence} 
-                    cycleLabel={cycleLabelBengali} 
-                    prevStats={currentPrevStats} 
-                    setPrevStats={() => {}} 
-                    isLayoutEditable={false} 
-                    isAdmin={false} 
-                    selectedReportType={reportType} 
-                    setSelectedReportType={() => {}} 
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
-    </ErrorBoundary>
   );
 };
 

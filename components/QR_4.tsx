@@ -79,16 +79,16 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
     }
   ];
 
-  const thCls = "border-r border-b border-slate-300 p-1 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center !shadow-none";
-  const tdCls = "border-r border-b border-slate-300 p-1 text-[10px] text-slate-700 align-middle";
-  const numTdCls = "border-r border-b border-slate-300 p-1 text-[10px] text-slate-700 text-center align-middle font-bold";
+  const thCls = "border-r border-b border-slate-400 p-1 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center";
+  const tdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-700 align-middle";
+  const numTdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-700 text-center align-middle font-bold";
 
   const renderTable = (data: any[], tableId: string) => {
     let globalIdx = 1;
     const totals = { pR: 0, cR: 0, tR: 0, pS: 0, cS: 0, tS: 0, pnd: 0, cSA: 0, pndA: 0 };
 
     return (
-      <div className="mb-10 table-responsive-container border-t border-l border-slate-300 shadow-sm rounded-lg">
+      <div className="mb-10 overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
         <table className="w-full border-separate border-spacing-0 min-w-[1000px] !table-auto">
           <thead className="bg-slate-100">
             <tr>

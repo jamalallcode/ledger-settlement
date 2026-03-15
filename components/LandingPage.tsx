@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { 
-  LayoutDashboard, ArrowRight, ShieldCheck, CheckCircle2, CalendarRange, Bell, ShieldAlert, Sparkles, UserCheck, AlertTriangle, ArrowRightCircle, Trash2
+  LayoutDashboard, ArrowRight, ShieldCheck, CheckCircle2, CalendarRange, Bell, ShieldAlert, Sparkles, UserCheck, AlertTriangle, ArrowRightCircle
 } from 'lucide-react';
-import { SettlementEntry, DeletedEntry } from '../types';
-import { toBengaliDigits } from '../utils/numberUtils';
-import IDBadge from './common/IDBadge';
+import { SettlementEntry } from '../types.ts';
+import { toBengaliDigits } from '../utils/numberUtils.ts';
 
 interface LandingPageProps {
   entries: SettlementEntry[];
@@ -15,8 +14,6 @@ interface LandingPageProps {
   isAdmin?: boolean;
   pendingCount?: number;
   onShowPending?: () => void;
-  deletedEntries?: DeletedEntry[];
-  onRestore?: (entry: DeletedEntry) => void;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ 
@@ -27,9 +24,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
   isLayoutEditable = false,
   isAdmin = false,
   pendingCount = 0,
-  onShowPending,
-  deletedEntries = [],
-  onRestore
+  onShowPending
 }) => {
   // Added isLayoutEditable as an optional prop to match usage on line 117
   const IDBadge = ({ id, isLayoutEditable: manualEditable }: { id: string, isLayoutEditable?: boolean }) => {
@@ -158,66 +153,6 @@ const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
       </div>
-
-      {/* RECYCLE BIN FOR ADMIN */}
-      {isAdmin && deletedEntries.length > 0 && (
-        <div id="admin-recycle-bin" className="space-y-6 animate-in slide-in-from-bottom-8 duration-1000">
-          <IDBadge id="admin-recycle-bin" isLayoutEditable={isLayoutEditable} />
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center shadow-sm">
-              <Trash2 size={20} />
-            </div>
-            <div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">রিসাইকেল বিন (Recycle Bin)</h3>
-              <p className="text-xs font-bold text-slate-500">ভুলবশত মুছে ফেলা তথ্যগুলো এখান থেকে রিস্টোর করা সম্ভব।</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {deletedEntries.map((entry) => (
-              <div 
-                key={entry.id} 
-                className="group relative bg-white border border-slate-200 p-5 rounded-3xl shadow-sm hover:shadow-xl hover:border-red-200 transition-all duration-500 overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <Trash2 size={80} />
-                </div>
-                
-                <div className="relative z-10 flex flex-col h-full justify-between gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="px-3 py-1 bg-red-50 text-red-600 rounded-full text-[10px] font-black border border-red-100">
-                        মুছে ফেলা হয়েছে
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-400">
-                        {new Date(entry.deletedAt).toLocaleString('bn-BD')}
-                      </span>
-                    </div>
-                    <h4 className="text-lg font-black text-slate-900 leading-tight">
-                      {entry.content.ministryName || entry.content.branchName || 'অজানা মডিউল'}
-                    </h4>
-                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
-                      <p className="text-[11px] font-black text-slate-700 flex items-center gap-2">
-                        <UserCheck size={14} className="text-blue-500" /> ডিলিট করেছেন: {entry.deletedBy.name || entry.deletedBy.email}
-                      </p>
-                      <p className="text-[10px] font-bold text-slate-500 ml-5">
-                        আইডি: {entry.deletedBy.id.substring(0, 8)}... | মোবাইল: {entry.deletedBy.mobile || 'প্রদান করা হয়নি'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <button 
-                    onClick={() => onRestore?.(entry)}
-                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs transition-all shadow-lg shadow-emerald-600/20 active:scale-95 flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle2 size={16} /> তথ্যটি রিস্টোর করুন
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

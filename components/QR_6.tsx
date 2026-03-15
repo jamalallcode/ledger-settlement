@@ -35,9 +35,9 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
     otherAdj: acc.otherAdj + curr.otherAdj,
   }), { involved: 0, taxRec: 0, taxAdj: 0, otherRec: 0, otherAdj: 0 });
 
-  const thCls = "border-r border-b border-slate-300 p-2 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center !shadow-none";
-  const tdCls = "border-r border-b border-slate-300 p-2 text-[10px] text-slate-700 align-middle";
-  const numTdCls = "border-r border-b border-slate-300 p-2 text-[10px] text-slate-700 text-center align-middle font-bold";
+  const thCls = "border-r border-b border-slate-400 p-2 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center";
+  const tdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-700 align-middle";
+  const numTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-700 text-center align-middle font-bold";
 
   return (
     <div id="qr-6-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
@@ -54,7 +54,7 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
         <p>শাখার নামঃ নন এসএফআই শাখা</p>
       </div>
 
-      <div className="table-responsive-container border-t border-l border-slate-300 shadow-sm rounded-lg">
+      <div className="overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
         <table className="w-full border-separate border-spacing-0 min-w-[850px] !table-auto">
           <thead className="bg-slate-100">
             <tr>

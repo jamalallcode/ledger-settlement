@@ -3,7 +3,7 @@ import {
   ShieldCheck, LayoutDashboard, MapPin, ExternalLink, 
   Github, Mail, Globe, CheckCircle2, ShieldHalf, Cpu
 } from 'lucide-react';
-import { OFFICE_HEADER } from '../constants';
+import { OFFICE_HEADER } from '../constants.ts';
 
 interface FooterProps {
   setActiveTab: (tab: string) => void;
@@ -37,7 +37,7 @@ const Footer: React.FC<FooterProps> = ({ setActiveTab, activeTab, isLayoutEditab
   ];
 
   return (
-    <footer id="site-premium-footer" className="border-t border-slate-800 bg-slate-950 text-slate-400 no-print relative">
+    <footer id="site-premium-footer" className="mt-20 border-t border-slate-800 bg-slate-950 text-slate-400 no-print relative">
       <IDBadge id="site-premium-footer" />
       
       {/* Upper Footer: Branding & Navigation */}

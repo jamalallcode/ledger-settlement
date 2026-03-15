@@ -1,147 +1,96 @@
 
 /* TABLE STICKY HEADER & FOOTER LOGIC */
 
-:root {
-  /* Navigation Bar Height (h-14 = 56px) */
-  --navbar-height: 56px;
-}
-
-/* Global Wrapper for Sticky Tables */
-.table-responsive-container {
+/* General Sticky Header Base Style */
+.table-container {
   width: 100%;
+  max-width: 100%;
+  max-height: 75vh !important; /* Reduced for better visibility of footer */
+  overflow-y: auto !important;
+  overflow-x: auto !important;
   position: relative;
-  overflow: visible !important; /* Required for sticky headers to work with page/parent scroll */
   background-color: white;
+  scrollbar-gutter: stable;
+  border: 1px solid #cbd5e1;
 }
 
-/* Global Sticky Header Logic */
-.table-responsive-container thead {
-  position: sticky !important;
-  top: 0 !important; /* Sticky to the top of the scroll container (main) */
-  z-index: 1000 !important;
-  background-color: #f1f5f9 !important; /* Safety background to close gaps */
-}
-
-.table-responsive-container thead th {
+/* Ensure table header is always on top */
+.table-container thead {
   position: sticky !important;
   top: 0 !important;
-  background-color: #f1f5f9 !important; /* Solid Slate 100 background */
-  z-index: 1000 !important;
-  /* Ensure borders are visible and content doesn't bleed through */
-  box-shadow: inset 0 -1px 0 #cbd5e1, inset 0 1px 0 #cbd5e1, 0 1px 0 #f1f5f9;
+  z-index: 250 !important;
+  background-color: #e2e8f0 !important;
+}
+
+.table-container thead th {
+  position: sticky !important;
+  top: 0 !important;
+  background-color: #e2e8f0 !important;
+  z-index: 240 !important;
+  background-clip: padding-box !important;
+  box-shadow: inset 0 -1px 0 #cbd5e1, inset -1px 0 0 #cbd5e1 !important;
   vertical-align: middle !important;
 }
 
-/* Multi-row header support - Row 2 sticks below Row 1 */
-.table-responsive-container thead tr:nth-child(2) th {
-  top: 41px !important; /* 1px overlap to close gaps (Row 1 is 42px) */
+/* Row-specific offsets for multi-row headers if needed */
+/* SettlementTable uses these specific heights */
+.table-container thead tr:nth-child(2) th {
+  top: 42px !important; 
+}
+.table-container thead tr:nth-child(3) th {
+  top: 80px !important; 
 }
 
-/* DD Sir Summary Table Specific Sticky Offsets (3 rows) */
-.dd-sir-summary-table-container thead {
-  position: static !important;
-}
-.dd-sir-summary-table-container thead tr:nth-child(1) th {
-  top: 0 !important;
-  z-index: 1010 !important;
-  background-color: white !important;
-  height: 40px !important;
-}
-.dd-sir-summary-table-container thead tr:nth-child(2) th {
-  top: 40px !important; 
-  z-index: 1009 !important;
-  height: 44px !important;
-}
-.dd-sir-summary-table-container thead tr:nth-child(3) th {
-  top: 84px !important; 
-  z-index: 1008 !important;
-  height: 40px !important;
+/* Sticky Footer (General) */
+.table-container tfoot {
+  position: sticky;
+  bottom: 0;
+  z-index: 250;
 }
 
-/* Disable sticky footer for Summary Table to prevent overlap with next table */
-.dd-sir-summary-table-container tfoot,
-.dd-sir-summary-table-container tfoot td {
+.table-container tfoot td, 
+.table-container tfoot th {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 240 !important;
+  background-color: #0f172a !important;
+  color: white !important;
+  box-shadow: inset 0 1px 0 #334155, inset -1px 0 0 #334155 !important;
+}
+
+/* --- MULTI-TABLE VIEW SPECIFIC OVERRIDES --- */
+
+.multi-table-view .table-container:first-of-type,
+.multi-table-view .table-container:first-of-type thead,
+.multi-table-view .table-container:first-of-type thead tr,
+.multi-table-view .table-container:first-of-type thead tr th {
   position: static !important;
-  bottom: auto !important;
+  top: auto !important;
   box-shadow: none !important;
 }
 
-/* DD Sir Detailed Table Specific Sticky Offsets */
-.dd-sir-detailed-table-container thead th {
-  z-index: 1100 !important; /* Higher than summary table to "push" it away */
-}
-
-/* Global Sticky Footer Logic */
-.table-responsive-container tfoot {
+.multi-table-view .table-container:last-of-type thead th {
+  position: -webkit-sticky !important;
   position: sticky !important;
-  bottom: 0 !important;
-  z-index: 999 !important;
 }
 
-.table-responsive-container tfoot td,
-.table-responsive-container tfoot th {
-  position: sticky !important;
-  bottom: 0 !important;
-  background-color: #0f172a !important; /* Solid Slate 900 background */
-  color: white !important;
-  z-index: 999 !important;
-  box-shadow: inset 0 1px 0 #334155 !important;
-}
-
-/* Visual Integrity: Ensure body rows have solid background to prevent transparency issues */
-.table-responsive-container tbody tr td {
-  background-color: white;
-  position: relative;
-}
-
-/* Specialized Sticky Classes for Table Cycle Headers */
-.sticky-cycle-header {
-  position: sticky !important;
-  top: 79px !important; /* 1px overlap (42px + 38px = 80px) */
-  z-index: 900 !important;
-}
-
-.sticky-cycle-header-single {
-  position: sticky !important;
-  top: 41px !important; /* 1px overlap (approx 42px) */
-  z-index: 900 !important;
-}
-
-.sticky-stats-header {
-  position: sticky !important;
-  top: 127px !important; /* 1px overlap (80px + 48px = 128px) */
-  z-index: 850 !important;
-}
-
-.sticky-stats-header-single {
-  position: sticky !important;
-  top: 89px !important; /* 1px overlap (42px + 48px = 90px) */
-  z-index: 850 !important;
-}
-
-/* Print support: Disable sticky for printing */
 @media print {
-  .table-responsive-container thead,
-  .table-responsive-container thead th,
-  .table-responsive-container tfoot,
-  .table-responsive-container tfoot td,
-  .sticky-cycle-header,
-  .sticky-stats-header {
-    position: static !important;
-    box-shadow: none !important;
+  .table-container thead th, 
+  .table-container tfoot td { 
+    position: static !important; 
   }
 }
 
 /* Premium Scrollbar Styling */
-.table-responsive-container::-webkit-scrollbar {
+.table-container::-webkit-scrollbar {
   height: 10px;
 }
 
-.table-responsive-container::-webkit-scrollbar-track {
+.table-container::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.table-responsive-container::-webkit-scrollbar-thumb {
+.table-container::-webkit-scrollbar-thumb {
   background: rgba(203, 213, 225, 0.4);
   border-radius: 10px;
   border: 3px solid transparent;
@@ -149,12 +98,11 @@
   transition: all 0.3s ease;
 }
 
-.table-responsive-container:hover::-webkit-scrollbar-thumb {
+.table-container:hover::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.8);
   border: 2px solid transparent;
 }
 
-.table-responsive-container::-webkit-scrollbar-thumb:hover {
+.table-container::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 1) !important;
 }
-
