@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3, Smartphone, Send, ShieldAlert } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toBengaliDigits } from '../utils/numberUtils';
+import IDBadge from './common/IDBadge';
 
 interface SidebarProps {
   activeTab: string;
@@ -14,10 +16,12 @@ interface SidebarProps {
   onImportSystem?: (file: File) => void;
   isAdmin: boolean;
   setIsAdmin: (status: boolean) => void;
+  onLogout?: () => void;
   pendingCount?: number;
   entryModule?: 'settlement' | 'correspondence' | null;
   registerSubModule?: 'settlement' | 'correspondence' | null;
   reportType?: string | null;
+  setShowAdminModal: (show: boolean) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -32,14 +36,14 @@ const Sidebar: React.FC<SidebarProps> = ({
   onImportSystem,
   isAdmin,
   setIsAdmin,
+  onLogout,
   pendingCount = 0,
   entryModule,
   registerSubModule,
-  reportType
+  reportType,
+  setShowAdminModal
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showAdminModal, setShowAdminModal] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
   const clickCount = useRef(0);
   const lastClickTime = useRef(0);
 
@@ -51,6 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isMonthlyCorrExpanded, setIsMonthlyCorrExpanded] = useState(false);
   const [isSettlementExpanded, setIsSettlementExpanded] = useState(false);
   const [isOnlineExpanded, setIsOnlineExpanded] = useState(false);
+  const [isArrearsExpanded, setIsArrearsExpanded] = useState(false);
   const [isQuarterlyExpanded, setIsQuarterlyExpanded] = useState(false);
   const [isSetupExpanded, setIsSetupExpanded] = useState(false);
 
@@ -66,7 +71,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           if (reportType.includes('চিঠিপত্র')) {
             setIsMonthlyCorrExpanded(true);
             if (reportType.includes('নিষ্পত্তি')) setIsSettlementExpanded(true);
-            if (reportType.includes('অনলাইন')) setIsOnlineExpanded(true);
+            if (reportType.includes('অনলাইন প্রাপ্তি')) setIsOnlineExpanded(true);
+            if (reportType.includes('ঢাকায় প্রেরণ') || reportType.includes('ডিডি স্যারের জন্য')) setIsArrearsExpanded(true);
           }
         }
         if (reportType.includes('ত্রৈমাসিক')) {
@@ -131,44 +137,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const handleAdminSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (adminPassword === '123') {
-      setIsAdmin(true);
-      localStorage.setItem('ledger_admin_access_v1', 'true');
-      setShowAdminModal(false);
-      setAdminPassword('');
-    } else {
-      alert("ভুল পাসওয়ার্ড!");
-    }
-  };
-
   const menuItems = [
     { id: 'landing', label: 'হোম', icon: Home, badgeId: 'side-nav-home' },
     { id: 'entry', label: 'নতুন এন্ট্রি', icon: FilePlus2, badgeId: 'side-nav-entry', isDropdown: true },
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter, badgeId: 'side-nav-register', isDropdown: true },
     { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return', isDropdown: true },
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, badgeId: 'side-nav-archive' },
-    { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, badgeId: 'side-nav-voting' },
+    ...(isAdmin ? [{ id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, badgeId: 'side-nav-voting' }] : []),
   ];
-
-  const IDBadge = ({ id }: { id: string }) => {
-    const [copied, setCopied] = useState(false);
-    if (!isLayoutEditable) return null;
-    const handleCopy = (e: React.MouseEvent) => {
-      e.preventDefault(); e.stopPropagation();
-      navigator.clipboard.writeText(id);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    };
-    return (
-      <div onClick={handleCopy} className="absolute top-0 left-0 -translate-y-full z-[9995] pointer-events-auto no-print">
-        <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md font-black text-[9px] bg-black text-white border border-white/30 shadow-2xl transition-all duration-300 hover:scale-150 hover:bg-blue-600 hover:z-[99999] active:scale-95 cursor-copy origin-bottom-left ${copied ? 'bg-emerald-600 border-emerald-400 ring-4 ring-emerald-500/30 !scale-125' : ''}`}>
-          {copied ? <><CheckCircle2 size={10} /> COPIED</> : `#${id}`}
-        </span>
-      </div>
-    );
-  };
 
   // Helper for active styling
   const getSubItemCls = (isActive: boolean) => 
@@ -214,7 +190,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 }} 
                 className={`w-full flex items-center justify-between px-3 py-3 rounded-xl font-bold transition-all relative group ${activeTab === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
               >
-                <IDBadge id={item.badgeId} />
+                <IDBadge id={item.badgeId} isLayoutEditable={isLayoutEditable} />
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <item.icon size={18} />
@@ -297,36 +273,52 @@ const Sidebar: React.FC<SidebarProps> = ({
                       {/* Corr Sub-items */}
                       {isMonthlyCorrExpanded && (
                         <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                          {/* ১. ঢাকা */}
+                          {/* ১. বকেয়া (Toggle) */}
                           <button 
-                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')}
-                            className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                            onClick={() => setIsArrearsExpanded(!isArrearsExpanded)}
+                            className={`w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${isArrearsExpanded ? 'text-emerald-400 border-emerald-500' : 'text-slate-500 hover:text-emerald-300 border-slate-700'}`}
                           >
-                            ১. ঢাকা
+                            <span>১. বকেয়া</span>
+                            <ChevronDown size={10} className={`transition-transform duration-300 ${isArrearsExpanded ? 'rotate-180' : ''}`} />
                           </button>
+
+                          {isArrearsExpanded && (
+                            <div className="pl-3 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')}
+                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-600 hover:text-white border-slate-800'}`}
+                              >
+                                ১. ঢাকা
+                              </button>
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।')}
+                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-600 hover:text-white border-slate-800'}`}
+                              >
+                                ২. ডিডি স্যার
+                              </button>
+                            </div>
+                          )}
 
                           {/* ২. নিষ্পত্তি (Toggle) */}
                           <button 
                             onClick={() => setIsSettlementExpanded(!isSettlementExpanded)}
-                            className={`w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${isSettlementExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                            className={`w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${isSettlementExpanded ? 'text-emerald-400 border-emerald-500' : 'text-slate-500 hover:text-emerald-300 border-slate-700'}`}
                           >
-                            <div className="flex items-center gap-2">
-                              <span>২. নিষ্পত্তি</span>
-                            </div>
+                            <span>২. নিষ্পত্তি</span>
                             <ChevronDown size={10} className={`transition-transform duration-300 ${isSettlementExpanded ? 'rotate-180' : ''}`} />
                           </button>
 
                           {isSettlementExpanded && (
-                            <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                            <div className="pl-3 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
                               <button 
-                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর')}
-                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি (বিএসআর)।')}
+                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি (বিএসআর)।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-600 hover:text-white border-slate-800'}`}
                               >
                                 ১. বিএসআর
                               </button>
                               <button 
-                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়')}
-                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি (দ্বিপক্ষীয়)।')}
+                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি (দ্বিপক্ষীয়)।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-600 hover:text-white border-slate-800'}`}
                               >
                                 ২. দ্বিপক্ষীয়
                               </button>
@@ -336,38 +328,28 @@ const Sidebar: React.FC<SidebarProps> = ({
                           {/* ৩. অনলাইন প্রাপ্তি (Toggle) */}
                           <button 
                             onClick={() => setIsOnlineExpanded(!isOnlineExpanded)}
-                            className={`w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${isOnlineExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                            className={`w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${isOnlineExpanded ? 'text-emerald-400 border-emerald-500' : 'text-slate-500 hover:text-emerald-300 border-slate-700'}`}
                           >
-                            <div className="flex items-center gap-2">
-                              <span>৩. অনলাইন প্রাপ্তি</span>
-                            </div>
+                            <span>৩. অনলাইন প্রাপ্তি</span>
                             <ChevronDown size={10} className={`transition-transform duration-300 ${isOnlineExpanded ? 'rotate-180' : ''}`} />
                           </button>
 
                           {isOnlineExpanded && (
-                            <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                            <div className="pl-3 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
                               <button 
-                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর')}
-                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি (বিএসআর)।')}
+                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি (বিএসআর)।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-600 hover:text-white border-slate-800'}`}
                               >
                                 ১. বিএসআর
                               </button>
                               <button 
-                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়')}
-                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি (দ্বিপক্ষীয়)।')}
+                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি (দ্বিপক্ষীয়)।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-600 hover:text-white border-slate-800'}`}
                               >
                                 ২. দ্বিপক্ষীয়
                               </button>
                             </div>
                           )}
-
-                          {/* ৪. ডিডি স্যার */}
-                          <button 
-                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।')}
-                            className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
-                          >
-                            ৪. ডিডি স্যার
-                          </button>
                         </div>
                       )}
 
@@ -435,7 +417,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     >
                       <div className="flex items-center gap-3">
                         <Lock size={12} className={reportType?.includes('জের সেটআপ') ? 'text-blue-400' : 'text-slate-600'} />
-                        <span>প্রারম্ভিক জের সেটআপ</span>
+                        <span>পূর্ব জের সেটআপ</span>
                       </div>
                       <ChevronDown size={12} className={`transition-transform duration-300 ${isSetupExpanded ? 'rotate-180' : ''}`} />
                     </button>
@@ -444,26 +426,26 @@ const Sidebar: React.FC<SidebarProps> = ({
                   {isAdmin && isSetupExpanded && (
                     <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
                       <button 
-                        onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক')}
-                        className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: মাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                        onClick={() => setActiveTab('return', null, 'পূর্ব জের সেটআপ: মাসিক')}
+                        className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'পূর্ব জের সেটআপ: মাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                       >
                         ১. মাসিক
                       </button>
                       <button 
-                        onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: ত্রৈমাসিক')}
-                        className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: ত্রৈমাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                        onClick={() => setActiveTab('return', null, 'পূর্ব জের সেটআপ: ত্রৈমাসিক')}
+                        className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'পূর্ব জের সেটআপ: ত্রৈমাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                       >
                         ২. ত্রৈমাসিক
                       </button>
                       <button 
-                        onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: ষাণ্মাসিক')}
-                        className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: ষাণ্মাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                        onClick={() => setActiveTab('return', null, 'পূর্ব জের সেটআপ: ষাণ্মাসিক')}
+                        className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'পূর্ব জের সেটআপ: ষাণ্মাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                       >
                         ৩. ষাণ্মাসিক
                       </button>
                       <button 
-                        onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: বাৎসরিক')}
-                        className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: বাৎসরিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                        onClick={() => setActiveTab('return', null, 'পূর্ব জের সেটআপ: বাৎসরিক')}
+                        className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'পূর্ব জের সেটআপ: বাৎসরিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                       >
                         ৪. বাৎসরিক
                       </button>
@@ -528,6 +510,17 @@ const Sidebar: React.FC<SidebarProps> = ({
         </nav>
         <div id="sidebar-footer" className="p-4 border-t border-slate-800 space-y-4 relative">
           <IDBadge id="sidebar-footer" />
+          
+          {isAdmin && (
+            <button 
+              onClick={onLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white rounded-xl font-black text-xs transition-all group shadow-lg shadow-red-900/10 active:scale-95"
+            >
+              <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
+              <span>লগআউট</span>
+            </button>
+          )}
+
           {!isAdmin && (
             <div className="px-2 py-4 text-center">
               <div className="flex flex-col items-center gap-2 opacity-20 group hover:opacity-40 transition-opacity cursor-default">
@@ -538,29 +531,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
       </div>
-      {showAdminModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="w-full max-sm bg-slate-900 border border-slate-800 rounded-[2rem] shadow-2xl p-8 space-y-6 animate-in zoom-in-95 duration-300">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-600/20 text-blue-500 rounded-xl flex items-center justify-center">
-                  <KeyRound size={20} />
-                </div>
-                <h3 className="text-white font-black text-lg">সিকিউরিটি এক্সেস</h3>
-              </div>
-              <button onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} className="text-slate-500 hover:text-white transition-colors"><X size={20} /></button>
-            </div>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed">মালিকের সিক্রেট পাসওয়ার্ড দিন:</p>
-            <form onSubmit={handleAdminSubmit} className="space-y-6">
-              <input autoFocus type="password" placeholder="••••••••" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} className="w-full bg-slate-800 border-slate-700 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder:text-slate-600" />
-              <div className="flex gap-3">
-                <button type="button" onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} className="flex-1 py-3 bg-slate-800 text-slate-300 rounded-xl font-black text-sm hover:bg-slate-700 transition-all active:scale-95">বাতিল</button>
-                <button type="submit" className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-black text-sm hover:bg-blue-500 transition-all active:scale-95 shadow-lg shadow-blue-600/20">প্রবেশ</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </>
   );
 };

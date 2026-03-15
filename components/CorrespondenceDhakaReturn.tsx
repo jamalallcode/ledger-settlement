@@ -39,12 +39,10 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
 
   const typeOptions = useMemo(() => {
     if (filterParaType === 'এসএফআই') {
-      
-      return ['সকল', 'বিএসআর', 'কার্যবিবরণী (ত্রি-সভা)'];
+      return ['বিএসআর', 'কার্যবিবরণী (ত্রি-সভা)'];
     }
     if (filterParaType === 'নন এসএফআই') {
-      return ['সকল', 'বিএসআর', 'কার্যবিবরণী (দ্বি-সভা)'];
-
+      return ['বিএসআর', 'কার্যবিবরণী (দ্বি-সভা)'];
     }
     return ['সকল', 'বিএসআর', 'কার্যবিবরণী (ত্রি-সভা)', 'কার্যবিবরণী (দ্বি-সভা)'];
   }, [filterParaType]);
@@ -146,9 +144,9 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     );
   }, [correspondenceEntries, searchTerm, filterParaType, filterLetterType, selectedMonthDate]);
 
-  const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
+  const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-200 text-slate-900 leading-tight align-middle h-full !shadow-none";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-emerald-600 ring-4 ring-emerald-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-300'}`;
-  const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
+  const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words !shadow-none";
   
   const reportingLimitDate = useMemo(() => {
     const today = new Date();
@@ -307,8 +305,8 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           </div>
         </div>
 
-        <div className="table-container relative overflow-auto border border-slate-300 rounded-lg">
-          <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
+        <div className="table-responsive-container relative border border-slate-300 rounded-lg">
+          <table className="w-full border-separate table-fixed border-spacing-0">
             <colgroup>
               <col className="w-[40px]" />
               <col className="w-[150px]" />
@@ -358,7 +356,22 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                   <td className={tdS}>-</td>
                   <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
                   <td className={tdS}>{formatDateBN(entry.presentationDate)}</td>
-                  <td className={tdS}>{entry.presentedToName || 'অডিটর'}</td>
+                  <td className={tdS}>
+                    {(() => {
+                      const name = entry.presentedToName || 'অডিটর';
+                      let badgeCls = 'bg-blue-50 text-blue-700 border-blue-100';
+                      if (name === 'অডিটর') badgeCls = 'bg-red-500 text-white border-red-600';
+                      else if (name === 'সুপার') badgeCls = 'bg-yellow-500 text-black border-yellow-600';
+                      else if (name === 'এএন্ডএও') badgeCls = 'bg-blue-500 text-white border-blue-600';
+                      else if (name === 'ডিডি') badgeCls = 'bg-green-500 text-white border-green-600';
+
+                      return (
+                        <span className={`px-2 py-0.5 border rounded-full text-[9px] font-bold uppercase ${badgeCls}`}>
+                          {name}
+                        </span>
+                      );
+                    })()}
+                  </td>
                   <td className={tdS}>{entry.remarks || 'চলমান'}</td>
                 </tr>
               )) : (

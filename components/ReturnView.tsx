@@ -10,6 +10,7 @@ import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
 import CorrespondenceDhakaReturn from './CorrespondenceDhakaReturn';
 import OpeningBalanceSetup from './OpeningBalanceSetup';
 import ReturnSummaryTable from './ReturnSummaryTable';
+import BSRSettlementReturn from './BSRSettlementReturn';
 import QR_1 from './QR_1';
 import QR_2 from './QR_2';
 import QR_3 from './QR_3';
@@ -59,7 +60,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }, [resetKey, setSelectedReportType]);
 
   useEffect(() => {
-    if (selectedReportType?.includes('প্রারম্ভিক জের সেটআপ')) {
+    if (selectedReportType?.includes('পূর্ব জের সেটআপ')) {
       setIsSetupMode(true);
     } else if (selectedReportType !== null) {
       setIsSetupMode(false);
@@ -223,7 +224,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }, [entries, selectedReportType, calculateRecursiveOpening, activeCycle, ministryGroups]);
 
   const filteredCorrespondence = useMemo(() => {
-    if (selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
+    const validTypes = [
+      'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।',
+      'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।',
+      'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: বিএসআর',
+      'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: দ্বি সভা',
+      'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি'
+    ];
+    if (!selectedReportType || !validTypes.includes(selectedReportType)) return [];
     
     const today = new Date();
     const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -374,7 +382,16 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     return <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} />;
   }
 
-  if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
+  if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি (বিএসআর)।') {
+    return <BSRSettlementReturn entries={entries} correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} />;
+  }
+
+  if (
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: বিএসআর' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: দ্বি সভা' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি'
+  ) {
     return <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} />;
   }
 

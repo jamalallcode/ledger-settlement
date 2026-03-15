@@ -28,9 +28,9 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
     "আর্থিক প্রতিষ্ঠান বিভাগ, জনতা ব্যাংক পিএলসি, বিভাগীয় কার্যালয়, খুলনা ও এর আওতাধীন শাখাসমূহ (২০০৫-০৬ ও ২-১৬-১৭)"
   ];
 
-  const thCls = "border-r border-b border-slate-400 p-2 text-[11px] font-black text-slate-800 bg-slate-100 align-middle text-center";
-  const tdCls = "border-r border-b border-slate-400 p-2 text-[11px] text-slate-700 align-middle";
-  const numTdCls = "border-r border-b border-slate-400 p-2 text-[11px] text-slate-700 text-center align-middle font-bold";
+  const thCls = "border-r border-b border-slate-300 p-2 text-[11px] font-black text-slate-800 bg-slate-100 align-middle text-center !shadow-none";
+  const tdCls = "border-r border-b border-slate-300 p-2 text-[11px] text-slate-700 align-middle";
+  const numTdCls = "border-r border-b border-slate-300 p-2 text-[11px] text-slate-700 text-center align-middle font-bold";
 
   return (
     <div id="qr-1-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
@@ -55,7 +55,7 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
       </div>
 
       {/* Table Section */}
-      <div className="overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
+      <div className="table-responsive-container border-t border-l border-slate-300 shadow-sm rounded-lg">
         <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
           <thead className="bg-slate-100">
             <tr>

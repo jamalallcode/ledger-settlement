@@ -65,7 +65,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
         <div className="flex items-center gap-4">
           <button onClick={() => { setIsSetupMode(false); setSelectedReportType(null); }} className="p-3 bg-slate-100 border border-slate-200 rounded-2xl hover:bg-slate-200 text-slate-600 shadow-sm transition-all"><ChevronLeft size={22} /></button>
           <div className="flex flex-col">
-            <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3"><Settings2 size={28} className="text-blue-600" /> {setupType || 'প্রারম্ভিক জের সেটআপ'}</h2>
+            <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3"><Settings2 size={28} className="text-blue-600" /> {setupType || 'পূর্ব জের সেটআপ'}</h2>
             <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">সমন্বিত (UNIFIED) ব্যালেন্স ইনপুট উইন্ডো</span>
           </div>
         </div>
@@ -81,7 +81,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
         </div>
       </div>
 
-      <div className="table-container bg-white rounded-3xl border border-slate-300 shadow-2xl relative w-full overflow-auto">
+      <div className="table-responsive-container bg-white rounded-3xl border border-slate-300 shadow-2xl relative w-full">
          <table className="w-full text-sm border-separate border-spacing-0">
            <thead>
               <tr>

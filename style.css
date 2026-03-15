@@ -62,26 +62,121 @@ tbody tr:hover td {
   background-color: #f1f5f9 !important;
 }
 
+/* Custom Scrollbar for the main register container */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Prevent double scrollbars when the register is active */
+main:has(#table-register-container) {
+  overflow: hidden !important;
+}
+
 @media print {
-  .no-print { display: none !important; }
-  .table-container { overflow: visible !important; }
-  
-  /* Ensure report containers take full width and look clean on paper */
-  [id$="-container"] {
-    max-width: 100% !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
+  @page {
+    margin: 1cm;
+    size: landscape;
   }
 
   body {
     background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .no-print, 
+  .no-print *,
+  nav, 
+  aside, 
+  header, 
+  footer,
+  button,
+  .control-bar,
+  #summary-header-controls,
+  #register-filters,
+  #correspondence-filters,
+  .fixed,
+  .absolute.no-print {
+    display: none !important;
   }
 
   main {
     padding: 0 !important;
     margin: 0 !important;
+    overflow: visible !important;
   }
+
+  [id$="-container"],
+  #section-report-summary,
+  #correspondence-dhaka-container,
+  #dd-sir-report-container,
+  #table-register-container,
+  #table-correspondence-container,
+  .multi-table-view {
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    animation: none !important;
+    visibility: visible !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  th, td {
+    border: 1px solid #000 !important;
+  }
+
+  .overflow-x-auto, .overflow-y-auto, .table-container {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+}
+
+/* Show print-only elements in the print preview modal */
+.print-preview-active .hidden.print\:block {
+  display: block !important;
+}
+
+.print-preview-active .no-print,
+.print-preview-active .no-print *,
+.print-preview-active .control-bar,
+.print-preview-active .control-bar *,
+.print-preview-active #summary-header-controls,
+.print-preview-active #summary-header-controls *,
+.print-preview-active #register-filters,
+.print-preview-active #register-filters *,
+.print-preview-active #correspondence-filters,
+.print-preview-active #correspondence-filters *,
+.print-preview-active button,
+.print-preview-active input,
+.print-preview-active select {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }

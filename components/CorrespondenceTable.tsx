@@ -2,6 +2,7 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles, Save, CalendarSearch, LayoutGrid, CalendarDays } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper';
+import { OFFICE_HEADER } from '../constants';
 import { format, addMonths } from 'date-fns';
 
 interface CorrespondenceEntry {
@@ -43,6 +44,8 @@ interface CorrespondenceTableProps {
   onReject?: (id: string) => void;
   showFilters: boolean;
   setShowFilters: (val: boolean) => void;
+  initialSearchTerm?: string;
+  onNavigateToLetter?: (letterNo: string, module?: 'settlement' | 'correspondence') => void;
 }
 
 /**
@@ -184,13 +187,33 @@ const PremiumInlineSelect: React.FC<{
 
   const filtered = suggestions.filter(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
 
+  // Determine background class based on value
+  let bgColorClass = '';
+  switch (value) {
+    case 'অডিটর':
+      bgColorClass = 'bg-red-500 text-white border-red-600';
+      break;
+    case 'সুপার':
+      bgColorClass = 'bg-yellow-500 text-black border-yellow-600';
+      break;
+    case 'এএন্ডএও':
+      bgColorClass = 'bg-blue-500 text-white border-blue-600';
+      break;
+    case 'ডিডি':
+      bgColorClass = 'bg-green-500 text-white border-green-600';
+      break;
+    default:
+      bgColorClass = value ? 'bg-slate-900 text-white border-slate-950' : 'bg-slate-50 text-slate-400 border-slate-200';
+      break;
+  }
+
   return (
     <div className="relative w-full" ref={dropdownRef}>
       <div 
         onClick={handleToggle}
         className={`w-full h-7 px-1.5 bg-slate-50 border rounded-lg flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-blue-500 ring-2 ring-blue-50 bg-white shadow-sm' : 'border-slate-200 hover:border-slate-300'}`}
       >
-        <span className={`text-[10px] font-black truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>
+        <span className={`text-[10px] font-black truncate px-2 py-0.5 rounded-full border ${bgColorClass}`}>
           {value || 'বাছুন...'}
         </span>
         <ChevronDown size={10} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -251,7 +274,7 @@ const PremiumInlineSelect: React.FC<{
   );
 };
 
-const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBack, isLayoutEditable, isAdmin, onEdit, onInlineUpdate, onDelete, onApprove, onReject, showFilters, setShowFilters }) => {
+const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBack, isLayoutEditable, isAdmin, onEdit, onInlineUpdate, onDelete, onApprove, onReject, showFilters, setShowFilters, initialSearchTerm, onNavigateToLetter }) => {
   const [pendingChanges, setPendingChanges] = useState<Record<string, Partial<CorrespondenceEntry>>>({});
   const [isUpdating, setIsUpdating] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -260,7 +283,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   const cycleRefs = useRef<Record<string, HTMLDivElement | null>>({});
   
   // Filter States
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm || '');
   const [filterParaType, setFilterParaType] = useState('');
   const [filterType, setFilterType] = useState('');
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date | null>(null);
@@ -272,6 +295,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   const cycleDropdownRef = useRef<HTMLDivElement>(null);
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (initialSearchTerm) {
+      setSearchTerm(initialSearchTerm);
+    }
+  }, [initialSearchTerm]);
 
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
 
@@ -312,10 +341,28 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
 
   const filteredEntries = useMemo(() => {
     return entries.filter(entry => {
-      const matchSearch = !searchTerm || 
-        entry.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        entry.letterNo.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        entry.diaryNo.toLowerCase().includes(searchTerm.toLowerCase());
+      let matchSearch = true;
+      if (searchTerm) {
+        const s = searchTerm.toLowerCase().trim();
+        const isExact = s.startsWith('"') && s.endsWith('"');
+        const cleanSearch = isExact ? s.slice(1, -1) : s;
+
+        if (isExact) {
+          matchSearch = 
+            toEnglishDigits(entry.letterNo).trim() === toEnglishDigits(cleanSearch).trim() || 
+            toEnglishDigits(entry.diaryNo).trim() === toEnglishDigits(cleanSearch).trim();
+        } else {
+          const engS = toEnglishDigits(s);
+          const engDesc = toEnglishDigits(entry.description || '').toLowerCase();
+          const engLetterNo = toEnglishDigits(entry.letterNo || '').toLowerCase();
+          const engDiaryNo = toEnglishDigits(entry.diaryNo || '').toLowerCase();
+          
+          matchSearch = 
+            engDesc.includes(engS) || 
+            engLetterNo.includes(engS) || 
+            engDiaryNo.includes(engS);
+        }
+      }
       
       const matchBranch = !filterParaType || entry.paraType === filterParaType;
       const matchType = !filterType || entry.letterType === filterType;
@@ -330,7 +377,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
       const dateA = a.diaryDate || '';
       const dateB = b.diaryDate || '';
       if (dateA === dateB) {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
       }
       return dateB.localeCompare(dateA);
     });
@@ -516,7 +565,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   };
 
   // Header font-black
-  const thCls = "sticky top-0 border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[11px] bg-slate-200 z-[110] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
+  const thCls = "sticky top-0 border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[11px] bg-slate-200 z-[110] !shadow-none leading-tight";
   // Data cells reverted to font-bold
   const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-slate-800 font-bold leading-tight align-top bg-white transition-colors group-hover:bg-blue-50/50 break-words";
   const labelCls = "text-[10px] font-bold text-emerald-700 shrink-0";
@@ -728,7 +777,15 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
       )}
 
       {/* Table Container */}
-      <div className="table-container border border-slate-300 rounded-sm overflow-auto relative shadow-xl bg-white max-w-full">
+      <div className="table-responsive-container border border-slate-300 rounded-sm relative shadow-xl bg-white max-w-full">
+        <div className="hidden print:block text-center py-6 border-b-2 border-slate-100 mb-6">
+          <h1 className="text-2xl font-black uppercase text-slate-900 leading-tight">{OFFICE_HEADER.main}</h1>
+          <h2 className="text-xl font-black text-slate-800 leading-tight">{OFFICE_HEADER.sub}</h2>
+          <h3 className="text-lg font-black text-slate-700 leading-tight">{OFFICE_HEADER.address}</h3>
+          <div className="mt-4 inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
+            <span>প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টার (Incoming Correspondence Register)</span>
+          </div>
+        </div>
         <IDBadge id="table-correspondence-ledger" />
         <table className="w-full border-separate border-spacing-0 table-fixed">
           <colgroup>
@@ -798,7 +855,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
               return groupedEntries.map((group) => (
                 <tbody key={group.label}>
                   {/* Sticky Cycle Header */}
-                  <tr className="sticky top-[40px] z-[90] no-print">
+                  <tr className="sticky-cycle-header-single no-print">
                     <td colSpan={7} className="p-0 border border-slate-300">
                       <div 
                         ref={el => { cycleRefs.current[group.label] = el; }}
@@ -836,7 +893,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                   </tr>
                   
                   {expandedCycles[group.label] && (
-                    <tr className="sticky top-[88px] z-[85] no-print">
+                    <tr className="sticky-stats-header-single no-print">
                       <td colSpan={7} className="p-0 border border-slate-300">
                         <div className="bg-white p-4 border-b border-slate-200 animate-in fade-in slide-in-from-top-1 duration-200 shadow-md">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -931,7 +988,15 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                               </div>
                               <div className="flex flex-col">
                                 <span className={labelCls}>৩. পত্র নং ও তারিখ:</span> 
-                                <span className={valCls + " pl-3"}>{entry.letterNo}, {formatDateBN(entry.letterDate)}</span>
+                                <span className={valCls + " pl-3"}>
+                                  <button 
+                                    onClick={() => onNavigateToLetter?.(entry.letterNo)}
+                                    className="font-black text-blue-600 hover:text-blue-800 hover:underline transition-all"
+                                  >
+                                    {entry.letterNo}
+                                  </button>
+                                  , {formatDateBN(entry.letterDate)}
+                                </span>
                               </div>
                               <div className="flex flex-col">
                                 <span className={labelCls}>৪. প্রেরিত অনু: সংখ্যা:</span> 
@@ -947,7 +1012,15 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                            <div className="space-y-2">
                               <div className="flex flex-col">
                                 <span className={labelCls}>১. ডায়েরি নং ও তারিখ:</span> 
-                                <span className={valCls + " pl-3"}>{entry.diaryNo}, {formatDateBN(entry.diaryDate)}</span>
+                                <span className={valCls + " pl-3"}>
+                                  <button 
+                                    onClick={() => onNavigateToLetter?.(entry.diaryNo)}
+                                    className="font-black text-blue-600 hover:text-blue-800 hover:underline transition-all"
+                                  >
+                                    {entry.diaryNo}
+                                  </button>
+                                  , {formatDateBN(entry.diaryDate)}
+                                </span>
                               </div>
                               <div className="flex flex-col">
                                 <span className={labelCls}>২. শাখায় প্রাপ্তির তারিখ:</span> 

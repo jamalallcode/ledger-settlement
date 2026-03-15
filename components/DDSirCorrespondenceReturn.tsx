@@ -227,12 +227,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   }, [entries]);
 
   // Header font is font-bold
-  const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[11px] leading-tight align-middle bg-slate-200";
+  const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[11px] leading-tight align-middle bg-slate-200 !shadow-none";
   // Data cells reverted to font-bold (700 weight as per instruction)
   const tdStyle = "border border-slate-300 px-1.5 py-1.5 text-[12px] text-center font-bold leading-tight bg-white align-middle transition-colors group-hover:bg-blue-50";
   
   // Reverted sticky header from bold to black
-  const stickyThStyle = "border border-slate-300 px-1 py-3 font-black text-center text-[10px] bg-slate-200";
+  const stickyThStyle = "border border-slate-300 px-1 py-3 font-black text-center text-[10px] bg-slate-200 !shadow-none";
   // Reverted sticky data from medium to bold
   const stickyTdStyle = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-center font-bold leading-tight bg-white align-middle transition-colors group-hover:bg-blue-50";
 
@@ -399,8 +399,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
         {/* SECTION 1: সারসংক্ষেপ টেবিল */}
         <div className="mb-10 flex justify-center overflow-visible">
-          <div className="table-container max-w-full w-full border border-slate-300 rounded-lg overflow-auto">
-            <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
+          <div className="table-responsive-container dd-sir-summary-table-container max-w-full w-full border border-slate-300 rounded-lg">
+            <table className="w-full border-separate table-fixed border-spacing-0">
               <colgroup>
                 <col className="w-[30px]" />
                 <col className="w-[130px]" />
@@ -416,13 +416,13 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <col className="w-[70px]" />
               </colgroup>
               <thead>
-                <tr className="bg-white">
-                  <th colSpan={2} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">অনিষ্পন্ন কাজের তালিকা (ফিল্টারকৃত)</th>
-                  <th colSpan={4} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">শাখা: {filterBranch === 'সকল' ? 'সকল' : filterBranch}</th>
-                  <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">মাস: {reportingMonthBN}</th>
-                  <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">তারিখ: {reportingDateBN} খ্রি:</th>
+                <tr className="h-[40px]">
+                  <th colSpan={2} className={thStyle + " !bg-white text-[13px] !py-0"}>অনিষ্পন্ন কাজের তালিকা (ফিল্টারকৃত)</th>
+                  <th colSpan={4} className={thStyle + " !bg-white text-[13px] !py-0"}>শাখা: {filterBranch === 'সকল' ? 'সকল' : filterBranch}</th>
+                  <th colSpan={3} className={thStyle + " !bg-white text-[13px] !py-0"}>মাস: {reportingMonthBN}</th>
+                  <th colSpan={3} className={thStyle + " !bg-white text-[13px] !py-0"}>তারিখ: {reportingDateBN} খ্রি:</th>
                 </tr>
-                <tr>
+                <tr className="h-[44px]">
                   <th rowSpan={2} className={thStyle}>ক্রমিক নং</th>
                   <th rowSpan={2} className={thStyle}>দায়িত্বপ্রাপ্ত অডিটর</th>
                   <th colSpan={2} className={thStyle}>
@@ -439,7 +439,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   <th colSpan={2} className={thStyle}>মিলিকরণ</th>
                   <th colSpan={2} className={thStyle}>অন্যান্য</th>
                 </tr>
-                <tr>
+                <tr className="h-[40px]">
                   <th className={thStyle}>১ মাস-</th>
                   <th className={thStyle}>১ মাস+</th>
                   <th className={thStyle}>১ মাস-</th>
@@ -510,8 +510,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
              </div>
           </div>
 
-          <div className="table-container relative overflow-auto w-full border border-slate-300 rounded-lg">
-            <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
+          <div className="table-responsive-container dd-sir-detailed-table-container relative w-full border border-slate-300 rounded-lg">
+            <table className="w-full border-separate table-fixed border-spacing-0">
               <colgroup>
                 <col className="w-[30px]" />
                 <col className="w-[80px]" />
@@ -572,9 +572,20 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         <td className={stickyTdStyle}>{formatDateBN(row.presentationDate) || '-'}</td>
                         <td className={stickyTdStyle}>
                           {/* Position Badge Weight set to 700 (font-bold) */}
-                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-[9px] font-bold uppercase group-hover:bg-white">
-                            {row.presentedToName || 'অডিটর'}
-                          </span>
+                          {(() => {
+                            const name = row.presentedToName || 'অডিটর';
+                            let badgeCls = 'bg-blue-50 text-blue-700 border-blue-100';
+                            if (name === 'অডিটর') badgeCls = 'bg-red-500 text-white border-red-600';
+                            else if (name === 'সুপার') badgeCls = 'bg-yellow-500 text-black border-yellow-600';
+                            else if (name === 'এএন্ডএও') badgeCls = 'bg-blue-500 text-white border-blue-600';
+                            else if (name === 'ডিডি') badgeCls = 'bg-green-500 text-white border-green-600';
+
+                            return (
+                              <span className={`px-2 py-0.5 border rounded-full text-[9px] font-bold uppercase ${badgeCls}`}>
+                                {name}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className={stickyTdStyle + " italic text-slate-400 text-[9px]"}>{row.remarks || '-'}</td>
                       </tr>

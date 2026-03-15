@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { SettlementEntry, GroupOption } from '../types.ts';
+import { SettlementEntry, GroupOption } from '../types';
 import { Layout, ClipboardList, Mail, ArrowRightCircle, CheckCircle2, ChevronRight, LayoutGrid, FileText, ArrowRight } from 'lucide-react';
 import SettlementEntryModule from './SettlementEntryModule';
 import CorrespondenceEntryModule from './CorrespondenceEntryModule';
+import IDBadge from './common/IDBadge';
 
 interface SettlementFormProps {
   onAdd: (entry: Omit<SettlementEntry, 'id' | 'sl' | 'createdAt'> | SettlementEntry) => void;
-  onViewRegister: (module: 'settlement' | 'correspondence') => void;
+  onViewRegister: (searchTerm: string, module?: 'settlement' | 'correspondence') => void;
   nextSl: number;
   branchSuggestions: GroupOption[];
   initialEntry?: SettlementEntry | any | null;
@@ -30,22 +31,6 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, 
       setMainModule(preSelectedModule);
     }
   }, [initialEntry, preSelectedModule]);
-
-  const IDBadge = ({ id, isLayoutEditable }: { id: string, isLayoutEditable?: boolean }) => {
-    const [copied, setCopied] = useState(false);
-    if (!isLayoutEditable) return null;
-    const handleCopy = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      navigator.clipboard.writeText(id);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    };
-    return (
-      <span onClick={handleCopy} title="Click to copy ID" className={`absolute -top-3 left-2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 z-[300] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'ring-2 ring-emerald-500 bg-emerald-600' : ''}`}>
-        {copied ? 'COPIED!' : `#${id}`}
-      </span>
-    );
-  };
 
   // INITIAL SELECTION MENU
   if (!mainModule) {
@@ -107,13 +92,13 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, 
   }
 
   if (mainModule === 'correspondence') {
-    return <CorrespondenceEntryModule onBackToMenu={() => setMainModule(null)} onViewRegister={() => onViewRegister('correspondence')} onAdd={onAdd} isLayoutEditable={isLayoutEditable} initialEntry={initialEntry} isAdmin={isAdmin} existingEntries={correspondenceEntries} />;
+    return <CorrespondenceEntryModule onBackToMenu={() => setMainModule(null)} onViewRegister={(searchTerm, module) => onViewRegister(searchTerm, module || 'correspondence')} onAdd={onAdd} isLayoutEditable={isLayoutEditable} initialEntry={initialEntry} isAdmin={isAdmin} existingEntries={correspondenceEntries} />;
   }
 
   return (
     <SettlementEntryModule 
       onAdd={onAdd}
-      onViewRegister={() => onViewRegister('settlement')}
+      onViewRegister={(searchTerm, module) => onViewRegister(searchTerm, module || 'settlement')}
       nextSl={nextSl}
       branchSuggestions={branchSuggestions}
       initialEntry={initialEntry}
