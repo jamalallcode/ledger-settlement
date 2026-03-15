@@ -7,7 +7,7 @@ import {
   Bell, Check, XCircle, UserCheck, BellRing, ArrowRight, Library, Plus,
   Mail, ClipboardList, BarChart3, Globe, ChevronRight, Smartphone, Send
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { SettlementEntry } from '../types';
 import { toBengaliDigits } from '../utils/numberUtils';
 
