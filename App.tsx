@@ -19,7 +19,7 @@ import IDBadge from './components/common/IDBadge';
 import { 
   ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ArrowRight, 
   BellRing, Sparkles, Mail, ClipboardList, ArrowRightCircle, 
-  ChevronLeft, Printer, X, FileText, LayoutGrid 
+  ChevronLeft, Printer, X, FileText 
 } from 'lucide-react';
 
 const STORAGE_KEY = 'ledger_settlement_v10_stable';
@@ -290,7 +290,7 @@ const App: React.FC = () => {
               deleted.push(content);
             } else if (row.id.startsWith('id-')) {
               // Distinguish between entry types - robust check
-              const isCorrespondence = (content.type === 'correspondence' || (content.description !== undefined && content.description !== null));
+              const isCorrespondence = content.type === 'correspondence' || (content.description !== undefined && content.description !== null);
               
               // Ensure type is set correctly in the content object for consistent handling
               const normalizedContent = {
@@ -339,7 +339,7 @@ const App: React.FC = () => {
 
   const handleAddOrUpdateEntry = async (data: any) => {
     // If data comes from Correspondence Module, it will have a specific structure
-    const isCorrespondence = (data.description !== undefined && data.description !== null);
+    const isCorrespondence = data.description !== undefined && data.description !== null;
 
     if (editingEntry && !isAdmin) {
       alert("দুঃখিত, শুধুমাত্র এডমিন তথ্য এডিট করতে পারেন।");
@@ -360,7 +360,7 @@ const App: React.FC = () => {
         type: isCorrespondence ? 'correspondence' : 'settlement'
       };
       
-      // Remove from all lists first to handle potential type changes or misidentifications
+      // Remove from both lists first to handle potential type changes or misidentifications
       setEntries(prev => prev.filter(e => e.id !== editingEntry.id));
       setCorrespondenceEntries(prev => prev.filter(e => e.id !== editingEntry.id));
       
@@ -378,7 +378,7 @@ const App: React.FC = () => {
         ...data, 
         id: newId, 
         type: isCorrespondence ? 'correspondence' : 'settlement',
-        sl: (isCorrespondence ? correspondenceEntries.length + 1 : entries.length + 1), 
+        sl: isCorrespondence ? correspondenceEntries.length + 1 : entries.length + 1, 
         createdAt: new Date().toISOString(),
         approvalStatus: status
       };
@@ -402,7 +402,7 @@ const App: React.FC = () => {
 
   // Specialized update handler for inline fields (date/person) to avoid jumping tabs
   const handleInlineUpdateEntry = async (updatedEntry: any) => {
-    const isCorrespondence = (updatedEntry.type === 'correspondence' || (updatedEntry.description !== undefined && updatedEntry.description !== null));
+    const isCorrespondence = updatedEntry.type === 'correspondence' || (updatedEntry.description !== undefined && updatedEntry.description !== null);
     
     if (isCorrespondence) {
       setCorrespondenceEntries(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));
@@ -713,10 +713,10 @@ const App: React.FC = () => {
                                 <p className="text-sm font-bold text-emerald-700">বর্তমানে আপনার ইনবক্সে কোনো এন্ট্রি অনুমোদনের অপেক্ষায় নেই।</p>
                              </div>
                              <button 
-                                onClick={() => setShowPendingOnly(false)}
-                                className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all shadow-xl active:scale-95 border-b-4 border-emerald-800"
+                               onClick={() => setShowPendingOnly(false)}
+                               className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all shadow-xl active:scale-95 border-b-4 border-emerald-800"
                              >
-                                মূল রেজিস্টারে ফিরে যান
+                               মূল রেজিস্টারে ফিরে যান
                              </button>
                           </div>
                         )}
