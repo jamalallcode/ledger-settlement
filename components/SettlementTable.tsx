@@ -181,9 +181,18 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       
       return matchDate && matchSearch && matchType && matchParaType;
     }).sort((a, b) => {
-      const timeB = b.issueDateISO ? new Date(b.issueDateISO).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
-      const timeA = a.issueDateISO ? new Date(a.issueDateISO).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
-      return timeB - timeA;
+      const getTime = (entry: SettlementEntry) => {
+        try {
+          const dateStr = entry.issueDateISO || entry.createdAt;
+          if (!dateStr) return 0;
+          const d = new Date(dateStr);
+          const t = d.getTime();
+          return isNaN(t) ? 0 : t;
+        } catch (e) {
+          return 0;
+        }
+      };
+      return getTime(b) - getTime(a);
     });
   }, [entries, searchTerm, filterParaType, filterType, activeCycle]);
 
@@ -193,7 +202,16 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
     
     filteredEntries.forEach(entry => {
       let label = "Unknown";
-      const entryDate = entry.issueDateISO || (entry.createdAt ? new Date(entry.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+      let entryDate = entry.issueDateISO;
+      if (!entryDate) {
+        try {
+          const d = entry.createdAt ? new Date(entry.createdAt) : null;
+          if (d && !isNaN(d.getTime())) {
+            entryDate = d.toISOString().split('T')[0];
+          }
+        } catch (e) {}
+      }
+      
       if (entryDate) {
         try {
           const dateObj = new Date(entryDate);
