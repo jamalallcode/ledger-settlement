@@ -142,6 +142,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       const matchDate = !activeCycle || (entryDate >= format(activeCycle.start, 'yyyy-MM-dd') && entryDate <= format(activeCycle.end, 'yyyy-MM-dd'));
       
       const normalizedSearch = toEnglishDigits(searchTerm.trim().toLowerCase());
+      const isNumericSearch = /^\d+$/.test(normalizedSearch);
+
       const matchSearch = searchTerm === '' || (() => {
         // Check all three number fields for an exact match
         const issueNo = (entry.issueLetterNoDate || '').split(',')[0].replace(/জারিপত্র নং-?\s*/g, '').trim();
@@ -152,15 +154,21 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         const engLetter = toEnglishDigits(letterNo.toLowerCase()).trim();
         const engDiary = toEnglishDigits(diaryNo.toLowerCase()).trim();
         
+        const isExactNumberMatch = engIssue === normalizedSearch || 
+                                   engLetter === normalizedSearch || 
+                                   engDiary === normalizedSearch;
+
+        // If it's a numeric search (like "1"), we only want exact matches in the number fields
+        // This prevents "1" from matching "Branch 1" or "Year 2021" in text fields
+        if (isNumericSearch) return isExactNumberMatch;
+
         // Also allow partial match on other fields for general search
         const descMatch = toEnglishDigits((entry.remarks || '').toLowerCase()).includes(normalizedSearch);
         const branchMatch = toEnglishDigits((entry.branchName || '').toLowerCase()).includes(normalizedSearch);
         const ministryMatch = toEnglishDigits((entry.ministryName || '').toLowerCase()).includes(normalizedSearch);
         const entityMatch = toEnglishDigits((entry.entityName || '').toLowerCase()).includes(normalizedSearch);
 
-        return engIssue === normalizedSearch || 
-               engLetter === normalizedSearch || 
-               engDiary === normalizedSearch ||
+        return isExactNumberMatch || 
                descMatch ||
                branchMatch ||
                ministryMatch ||
