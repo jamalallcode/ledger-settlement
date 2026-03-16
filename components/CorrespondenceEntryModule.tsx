@@ -370,18 +370,16 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     const initialList = formData.paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
     
     const savedNames = localStorage.getItem(key);
-    const namesToRemove = ['শামীমা শান্ত্রিন', 'শামীমা শাহরিন', 'শামীমা শাহ্রিন'];
-    
     if (savedNames) {
       const parsed = JSON.parse(savedNames);
-      const filtered = parsed.filter((n: string) => !namesToRemove.includes(n));
+      const filtered = parsed.filter((n: string) => n !== 'শামীমা শান্ত্রিন');
       setReceiverSuggestions(filtered);
-      // Permanently update localStorage if the names were found
+      // Permanently update localStorage if the name was found
       if (filtered.length !== parsed.length) {
         localStorage.setItem(key, JSON.stringify(filtered));
       }
     } else {
-      const filteredInitial = initialList.filter(n => !namesToRemove.includes(n));
+      const filteredInitial = initialList.filter(n => n !== 'শামীমা শান্ত্রিন');
       setReceiverSuggestions(filteredInitial);
       localStorage.setItem(key, JSON.stringify(filteredInitial));
     }
