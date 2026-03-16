@@ -595,6 +595,27 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check if form is empty
+    const isEmpty = !formData.description && 
+                    !formData.letterNo && 
+                    !formData.diaryNo && 
+                    !formData.digitalFileNo && 
+                    !formData.archiveNo && 
+                    !ld && !lm && !ly && 
+                    !dd && !dm && !dy && 
+                    !rd && !rm && !ry && 
+                    !rcd && !rcm && !rcy;
+
+    if (isEmpty) {
+      const container = document.getElementById('form-container-correspondence');
+      if (container) {
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      return;
+    }
     
     // Defer heavy work to next tick to avoid blocking UI (INP fix)
     setTimeout(() => {
