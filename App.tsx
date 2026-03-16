@@ -35,6 +35,7 @@ const App: React.FC = () => {
   const [isLayoutEditable, setIsLayoutEditable] = useState(false);
   const [isLockedMode, setIsLockedMode] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showRegisterFilters, setShowRegisterFilters] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -109,6 +110,13 @@ const App: React.FC = () => {
   const navigateToEntry = (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => {
     setActiveTab('register');
     setRegisterSubModule(type);
+    
+    // Determine if the entry is pending or approved to set the correct view
+    const isPending = entries.some(e => e.id === id && e.approvalStatus === 'pending') || 
+                      correspondenceEntries.some(e => e.id === id && e.approvalStatus === 'pending');
+    
+    setShowPendingOnly(isPending);
+
     if (searchNo) {
       setHighlightSearch(searchNo);
       setShowRegisterFilters(true);
@@ -169,6 +177,7 @@ const App: React.FC = () => {
   // STRICT AUTO-ADMIN DETECTION
   useEffect(() => {
     const handleAdminSync = (email?: string) => {
+      setUserEmail(email || null);
       if (email === 'websitetogather@gmail.com') {
         setIsAdmin(true);
         localStorage.setItem(ADMIN_MODE_KEY, 'true');
@@ -565,7 +574,7 @@ const App: React.FC = () => {
                 />
               )}
               
-              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} />}
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} />}
               
               {activeTab === 'register' && (
                 <div className="space-y-6 relative">
