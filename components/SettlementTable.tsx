@@ -129,14 +129,12 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       const entryDate = entry.issueDateISO || new Date(entry.createdAt).toISOString().split('T')[0];
       const matchDate = !activeCycle || (entryDate >= format(activeCycle.start, 'yyyy-MM-dd') && entryDate <= format(activeCycle.end, 'yyyy-MM-dd'));
       
-      const normalizedSearch = toEnglishDigits(searchTerm.toLowerCase());
-      const matchSearch = searchTerm === '' || 
-        toEnglishDigits((entry.entityName || '').toLowerCase()).includes(normalizedSearch) || 
-        toEnglishDigits((entry.branchName || '').toLowerCase()).includes(normalizedSearch) || 
-        toEnglishDigits((entry.issueLetterNoDate || '').toLowerCase()).includes(normalizedSearch) ||
-        toEnglishDigits((entry.letterNoDate || '').toLowerCase()).includes(normalizedSearch) ||
-        toEnglishDigits((entry.workpaperNoDate || '').toLowerCase()).includes(normalizedSearch) ||
-        toEnglishDigits((entry.archiveNo || '').toLowerCase()).includes(normalizedSearch);
+      const normalizedSearch = toEnglishDigits(searchTerm.trim().toLowerCase());
+      const matchSearch = searchTerm === '' || (() => {
+        // Extract the issue number part for exact matching
+        const issueNoPart = (entry.issueLetterNoDate || '').split(',')[0].replace(/জারিপত্র নং-/g, '').trim();
+        return toEnglishDigits(issueNoPart.toLowerCase()) === normalizedSearch;
+      })();
       
       const entryType = entry.isMeeting ? entry.meetingType : 'বিএসআর';
       const matchType = filterType === '' || entryType === filterType;
@@ -338,8 +336,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   let lastRenderedCycle = "";
   // Footer text font-black
   const footerTdCls = "p-1 text-center font-black text-[10px] bg-slate-900 border border-slate-700";
-  const filterInputCls = "w-full pl-9 pr-4 h-[48px] bg-white border border-slate-300 rounded-xl font-bold text-slate-900 text-[13px] outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold";
-  const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[48px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
+  const filterInputCls = "w-full pl-7 pr-1.5 h-[38px] bg-white border border-slate-300 rounded-lg font-bold text-slate-900 text-[11px] outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold";
+  const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-1.5 px-2 h-[38px] bg-white border rounded-lg cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
 
   return (
     <div id="table-register-container" className="w-full relative animate-premium-page">
@@ -362,22 +360,22 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       )}
 
       {showFilters && !isAdminView && (
-        <div id="register-filters" className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate">
+        <div id="register-filters" className="!bg-white p-2.5 md:p-3 rounded-xl border border-slate-200 shadow-lg space-y-3 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate">
           <IDBadge id="register-filters" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             
             {/* Cycle Selection */}
-            <div className="space-y-1.5" ref={cycleDropdownRef}>
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">সময়কাল নির্বাচন (সাইকেল)</label>
+            <div className="space-y-1" ref={cycleDropdownRef}>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">সাইকেল</label>
               <div 
                 onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
                 className={customDropdownCls(isCycleDropdownOpen)}
               >
-                <CalendarDays size={18} className="text-blue-600" />
-                <span className="font-bold text-[13px] text-slate-900 truncate">
+                <CalendarDays size={14} className="text-blue-600 shrink-0" />
+                <span className="font-bold text-[11px] text-slate-900 truncate">
                   {!selectedCycleDate ? 'সকল সাইকেল' : (cycleOptions.find(o => o.cycleLabel === activeCycle?.label)?.label || toBengaliDigits(activeCycle?.label || ''))}
                 </span>
-                <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isCycleDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                <ChevronDown size={12} className={`text-slate-400 ml-auto transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
                 
                 {isCycleDropdownOpen && (
                   <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
@@ -414,17 +412,17 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             </div>
             
             {/* Branch Selection */}
-            <div className="space-y-1.5" ref={branchDropdownRef}>
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">শাখা ধরণ</label>
+            <div className="space-y-1" ref={branchDropdownRef}>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">শাখা ধরণ</label>
               <div 
                 onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)} 
                 className={customDropdownCls(isBranchDropdownOpen)}
               >
-                <LayoutGrid className="text-blue-600" size={16} />
-                <span className="font-bold text-[13px] text-slate-900 truncate">
+                <LayoutGrid className="text-blue-600 shrink-0" size={14} />
+                <span className="font-bold text-[11px] text-slate-900 truncate">
                   {filterParaType === '' ? 'সকল শাখা' : filterParaType}
                 </span>
-                <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isBranchDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                <ChevronDown size={12} className={`text-slate-400 ml-auto transition-transform duration-300 shrink-0 ${isBranchDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
                 
                 {isBranchDropdownOpen && (
                   <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
@@ -457,17 +455,17 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             </div>
             
             {/* Letter Type Selection */}
-            <div className="space-y-1.5" ref={typeDropdownRef}>
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">চিঠির ধরণ</label>
+            <div className="space-y-1" ref={typeDropdownRef}>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">চিঠির ধরণ</label>
               <div 
                 onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)} 
                 className={customDropdownCls(isTypeDropdownOpen)}
               >
-                <FileText className="text-blue-600" size={16} />
-                <span className="font-bold text-[13px] text-slate-900 truncate">
+                <FileText className="text-blue-600 shrink-0" size={14} />
+                <span className="font-bold text-[11px] text-slate-900 truncate">
                   {filterType === '' ? 'সকল ধরণ' : (filterType === 'বিএসআর' ? 'বিএসআর (BSR)' : filterType)}
                 </span>
-                <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isTypeDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                <ChevronDown size={12} className={`text-slate-400 ml-auto transition-transform duration-300 shrink-0 ${isTypeDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
                 
                 {isTypeDropdownOpen && (
                   <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
@@ -501,32 +499,32 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             </div>
             
             {/* Search Input */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">অনুসন্ধান</label>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">অনুসন্ধান</label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600" size={16} />
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-blue-600" size={12} />
                 <input 
                   type="text" 
                   value={searchTerm} 
                   onChange={e => setSearchTerm(e.target.value)} 
-                  placeholder="নাম, জারিপত্র বা নম্বর দিয়ে খুঁজুন..." 
+                  placeholder="জারিপত্র নং..." 
                   className={filterInputCls} 
                 />
               </div>
             </div>
 
             {/* Status Selection */}
-            <div className="space-y-1.5" ref={statusDropdownRef}>
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">নিষ্পত্তি অবস্থা</label>
+            <div className="space-y-1" ref={statusDropdownRef}>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">অবস্থা</label>
               <div 
                 onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)} 
                 className={customDropdownCls(isStatusDropdownOpen)}
               >
-                <CheckCircle2 className="text-blue-600" size={16} />
-                <span className="font-bold text-[13px] text-slate-900 truncate">
-                  {filterStatus === '' ? 'সকল অবস্থা' : (filterStatus === 'settled' ? 'পূর্ণাঙ্গ নিষ্পত্তি' : 'আংশিক/অনিষ্পত্তি')}
+                <CheckCircle2 className="text-blue-600 shrink-0" size={14} />
+                <span className="font-bold text-[11px] text-slate-900 truncate">
+                  {filterStatus === '' ? 'সকল অবস্থা' : (filterStatus === 'settled' ? 'পূর্ণাঙ্গ' : 'আংশিক')}
                 </span>
-                <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isStatusDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                <ChevronDown size={12} className={`text-slate-400 ml-auto transition-transform duration-300 shrink-0 ${isStatusDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
                 
                 {isStatusDropdownOpen && (
                   <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
@@ -562,10 +560,10 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             <div className="flex items-end">
               <button 
                 onClick={resetFilters}
-                className="w-full h-[48px] bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-xl font-black text-[13px] transition-all flex items-center justify-center gap-2 border border-slate-200 hover:border-red-200 group"
+                className="w-full h-[38px] bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-lg font-black text-[11px] transition-all flex items-center justify-center gap-1.5 border border-slate-200 hover:border-red-200 group"
               >
-                <X size={18} className="group-hover:rotate-90 transition-transform duration-300" />
-                ফিল্টার মুছুন
+                <X size={14} className="group-hover:rotate-90 transition-transform duration-300" />
+                মুছুন
               </button>
             </div>
 
