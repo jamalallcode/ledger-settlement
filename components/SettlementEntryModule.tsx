@@ -162,6 +162,7 @@ interface SettlementEntryModuleProps {
   isLayoutEditable?: boolean;
   isAdmin?: boolean;
   existingEntries?: SettlementEntry[];
+  navigateToEntry?: (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => void;
 }
 
 const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ 
@@ -710,7 +711,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
              {duplicates.letterNo && (
                <button
                  type="button"
-                 onClick={() => navigateToEntry?.(duplicates.letterEntryId!)}
+                 onClick={() => navigateToEntry?.(duplicates.letterEntryId!, 'settlement', letterNoPart)}
                  className="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-black shadow-md shadow-amber-200 hover:bg-amber-700 transition-all flex items-center gap-2"
                >
                  <ArrowRightCircle size={14} /> পত্র দেখুন
@@ -719,7 +720,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
              {duplicates.diaryNo && (
                <button
                  type="button"
-                 onClick={() => navigateToEntry?.(duplicates.diaryEntryId!)}
+                 onClick={() => navigateToEntry?.(duplicates.diaryEntryId!, 'settlement', diaryNoPart)}
                  className="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-black shadow-md shadow-amber-200 hover:bg-amber-700 transition-all flex items-center gap-2"
                >
                  <ArrowRightCircle size={14} /> ডায়েরি দেখুন
@@ -728,7 +729,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
              {duplicates.issueNo && (
                <button
                  type="button"
-                 onClick={() => navigateToEntry?.(duplicates.issueEntryId!)}
+                 onClick={() => navigateToEntry?.(duplicates.issueEntryId!, 'settlement', issueNoPart)}
                  className="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-black shadow-md shadow-amber-200 hover:bg-amber-700 transition-all flex items-center gap-2"
                >
                  <ArrowRightCircle size={14} /> জারিপত্র দেখুন
@@ -765,7 +766,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() => navigateToEntry?.(duplicates.letterEntryId!)}
+                    onClick={() => navigateToEntry?.(duplicates.letterEntryId!, 'settlement', letterNoPart)}
                     className="text-amber-700 hover:text-amber-900 underline underline-offset-2 flex items-center gap-1"
                   >
                     দেখুন <ArrowRightCircle size={10} />
@@ -792,7 +793,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() => navigateToEntry?.(duplicates.diaryEntryId!)}
+                    onClick={() => navigateToEntry?.(duplicates.diaryEntryId!, 'settlement', diaryNoPart)}
                     className="text-amber-700 hover:text-amber-900 underline underline-offset-2 flex items-center gap-1"
                   >
                     দেখুন <ArrowRightCircle size={10} />
@@ -819,7 +820,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() => navigateToEntry?.(duplicates.issueEntryId!)}
+                    onClick={() => navigateToEntry?.(duplicates.issueEntryId!, 'settlement', issueNoPart)}
                     className="text-amber-700 hover:text-amber-900 underline underline-offset-2 flex items-center gap-1"
                   >
                     দেখুন <ArrowRightCircle size={10} />
