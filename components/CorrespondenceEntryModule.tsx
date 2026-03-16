@@ -315,7 +315,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   navigateToEntry
 }) => {
   // Admin check for receiver management
-  const isReceiverAdmin = userEmail === 'websitetogather@gmail.com';
+  const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com'];
+  const isReceiverAdmin = isAdmin || (userEmail && adminEmails.includes(userEmail));
 
   const [isSuccess, setIsSuccess] = useState(false);
   const [calculatedCycle, setCalculatedCycle] = useState<string>('');
@@ -371,26 +372,34 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const descriptionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
-    const initialList = formData.paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
-    
-    const savedNames = localStorage.getItem(key);
-    if (savedNames) {
-      const parsed = JSON.parse(savedNames);
-      const filtered = parsed.filter((n: string) => n !== 'শামীমা শান্ত্রিন');
-      setReceiverSuggestions(filtered);
-      // Permanently update localStorage if the name was found
-      if (filtered.length !== parsed.length) {
-        localStorage.setItem(key, JSON.stringify(filtered));
+    const loadReceivers = () => {
+      const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+      const initialList = formData.paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
+      
+      const savedNames = localStorage.getItem(key);
+      if (savedNames) {
+        const parsed = JSON.parse(savedNames);
+        const filtered = parsed.filter((n: string) => n !== 'শামীমা শান্ত্রিন');
+        setReceiverSuggestions(filtered);
+      } else {
+        const filteredInitial = initialList.filter(n => n !== 'শামীমা শান্ত্রিন');
+        setReceiverSuggestions(filteredInitial);
+        localStorage.setItem(key, JSON.stringify(filteredInitial));
       }
-    } else {
-      const filteredInitial = initialList.filter(n => n !== 'শামীমা শান্ত্রিন');
-      setReceiverSuggestions(filteredInitial);
-      localStorage.setItem(key, JSON.stringify(filteredInitial));
-    }
+    };
+
+    loadReceivers();
+
+    const handleStorageChange = () => {
+      loadReceivers();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
 
     const savedDescriptions = localStorage.getItem('ledger_correspondence_descriptions');
     if (savedDescriptions) setDescriptionSuggestions(JSON.parse(savedDescriptions));
+
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [formData.paraType]);
 
   const formatDateSegments = (d: string, m: string, y: string) => {
