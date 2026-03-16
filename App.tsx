@@ -9,6 +9,7 @@ import ReturnView from './components/ReturnView';
 import LandingPage from './components/LandingPage';
 import VotingSystem from './components/VotingSystem';
 import DocumentArchive from './components/DocumentArchive';
+import ReceiverManagement from './components/ReceiverManagement';
 import { SettlementEntry, GroupOption, CumulativeStats } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
@@ -178,9 +179,13 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleAdminSync = (email?: string) => {
       setUserEmail(email || null);
-      if (email === 'websitetogather@gmail.com') {
+      const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com'];
+      if (email && adminEmails.includes(email)) {
         setIsAdmin(true);
         localStorage.setItem(ADMIN_MODE_KEY, 'true');
+      } else {
+        // Optional: Reset isAdmin if not in list, but be careful with existing localStorage
+        // For now, let's just allow the new one
       }
     };
 
@@ -561,7 +566,11 @@ const App: React.FC = () => {
           <div className="p-4 md:p-8 max-w-full mx-auto w-full flex flex-col">
             <div className="animate-in fade-in duration-500 flex-1">
               
-              {activeTab === 'landing' && (
+              {activeTab === 'setup_receivers' && (
+            <ReceiverManagement isAdmin={isAdmin} />
+          )}
+
+          {activeTab === 'landing' && (
                 <LandingPage 
                   entries={approvedEntries} 
                   setActiveTab={handleTabChange} 
