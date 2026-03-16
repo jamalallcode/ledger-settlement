@@ -471,6 +471,27 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check if form is empty
+    const isEmpty = !formData.ministryName && 
+                    !formData.entityName && 
+                    !formData.branchName && 
+                    !formData.auditYear && 
+                    !letterNoPart && 
+                    !diaryNoPart && 
+                    !issueNoPart && 
+                    paragraphs.length === 0;
+
+    if (isEmpty) {
+      const container = document.getElementById('form-container-settlement');
+      if (container) {
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      return;
+    }
+
     if (isSubmitting.current || isSuccess) return;
     isSubmitting.current = true;
     
