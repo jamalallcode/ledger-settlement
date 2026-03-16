@@ -243,10 +243,16 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     
     const findDuplicate = (combinedStr: string | undefined, prefix: string, searchNo: string) => {
       if (!combinedStr || !searchNo.trim()) return null;
-      const parts = combinedStr.split(',');
-      if (parts.length === 0) return null;
-      const noPart = parts[0].replace(prefix, '').trim();
-      return toEnglishDigits(noPart).trim() === toEnglishDigits(searchNo).trim();
+      // Extract the number part more reliably
+      // The format is "Prefix Number, DatePrefix Date"
+      const firstPart = combinedStr.split(',')[0];
+      // Remove the prefix and any leading/trailing whitespace
+      const extractedNo = firstPart.replace(prefix, '').trim();
+      
+      const engExtracted = toEnglishDigits(extractedNo).trim();
+      const engSearch = toEnglishDigits(searchNo).trim();
+      
+      return engExtracted === engSearch;
     };
 
     const letterDuplicate = letterNoPart ? existingEntries.find(e => {
