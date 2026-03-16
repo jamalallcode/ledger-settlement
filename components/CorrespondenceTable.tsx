@@ -332,6 +332,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const filteredEntries = useMemo(() => {
     return entries.filter(entry => {
       const normalizedSearch = toEnglishDigits(searchTerm.toLowerCase().trim());
+      const isNumericSearch = /^\d+$/.test(normalizedSearch);
       const matchSearch = !searchTerm || (() => {
         const engLetter = toEnglishDigits(entry.letterNo.toLowerCase()).trim();
         const engDiary = toEnglishDigits(entry.diaryNo.toLowerCase()).trim();
@@ -345,6 +346,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         const isReceiverMatch = toEnglishDigits((entry.receiverName || '').toLowerCase()).includes(normalizedSearch);
         const isRemarksMatch = toEnglishDigits((entry.remarks || '').toLowerCase()).includes(normalizedSearch);
         
+        if (isNumericSearch) return isExactNumberMatch;
         return isExactNumberMatch || isDescriptionMatch || isReceiverMatch || isRemarksMatch;
       })();
       
