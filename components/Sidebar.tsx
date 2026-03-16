@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3, User } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 
 interface SidebarProps {
@@ -150,6 +150,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return', isDropdown: true },
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, badgeId: 'side-nav-archive' },
     { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, badgeId: 'side-nav-voting' },
+    ...(isAdmin ? [{ id: 'setup', label: 'সেটআপ', icon: ShieldCheck, badgeId: 'side-nav-setup', isDropdown: true }] : []),
   ];
 
   const IDBadge = ({ id }: { id: string }) => {
@@ -208,6 +209,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                     setIsRegisterExpanded(!isRegisterExpanded);
                   } else if (item.id === 'return') {
                     setIsReturnExpanded(!isReturnExpanded);
+                  } else if (item.id === 'setup') {
+                    setIsSetupExpanded(!isSetupExpanded);
                   } else {
                     setActiveTab(item.id);
                   }
@@ -221,7 +224,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                   <span className="text-sm">{item.label}</span>
                 </div>
-                {item.isDropdown && <ChevronDown size={14} className={`transition-transform duration-300 ${(item.id === 'entry' && isEntryExpanded) || (item.id === 'register' && isRegisterExpanded) || (item.id === 'return' && isReturnExpanded) ? 'rotate-180' : ''}`} />}
+                {item.isDropdown && <ChevronDown size={14} className={`transition-transform duration-300 ${(item.id === 'entry' && isEntryExpanded) || (item.id === 'register' && isRegisterExpanded) || (item.id === 'return' && isReturnExpanded) || (item.id === 'setup' && isSetupExpanded) ? 'rotate-180' : ''}`} />}
               </button>
 
               {/* Nested Sub-menu for Entry */}
@@ -469,6 +472,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                       </button>
                     </div>
                   )}
+                </div>
+              )}
+              {/* Nested Sub-menu for Setup */}
+              {item.id === 'setup' && isSetupExpanded && (
+                <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
+                  <button 
+                    onClick={() => setActiveTab('setup_receivers')}
+                    className={getSubItemCls(activeTab === 'setup_receivers')}
+                  >
+                    <User size={14} className={getSubIconCls(activeTab === 'setup_receivers', 'blue')} />
+                    <span>১. প্রাপক ব্যবস্থাপনা</span>
+                  </button>
                 </div>
               )}
             </React.Fragment>
