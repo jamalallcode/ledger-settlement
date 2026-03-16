@@ -278,6 +278,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   useEffect(() => {
     if (highlightSearch) {
       setSearchTerm(highlightSearch);
+      // Reset other filters to ensure the highlighted entry is visible
+      setFilterParaType('');
+      setFilterType('');
+      setSelectedCycleDate(null);
     }
     return () => {
       if (highlightSearch) onClearHighlight?.();
