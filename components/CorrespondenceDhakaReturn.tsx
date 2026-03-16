@@ -175,6 +175,15 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     .replace('July', 'জুলাই').replace('August', 'আগস্ট').replace('September', 'সেপ্টেম্বর')
     .replace('October', 'অক্টোবর').replace('November', 'নভেম্বর').replace('December', 'ডিসেম্বর');
 
+  const getPositionColor = (name: string) => {
+    const pos = name || 'অডিটর';
+    if (pos.includes('অডিটর')) return 'bg-red-500 text-white';
+    if (pos.includes('সুপার')) return 'bg-yellow-400 text-black';
+    if (pos.includes('এএন্ডএও')) return 'bg-blue-600 text-white';
+    if (pos.includes('উপপরিচালক')) return 'bg-green-600 text-white';
+    return 'bg-slate-100 text-slate-700';
+  };
+
   return (
     <div id="correspondence-dhaka-container" className="space-y-4 py-2 w-full animate-report-page relative">
       <IDBadge id="correspondence-dhaka-container" />
@@ -346,9 +355,9 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
             </thead>
             <tbody>
               {filteredData.length > 0 ? filteredData.map((entry, idx) => (
-                <tr key={entry.id} className="group hover:bg-blue-50/50 transition-colors">
+                <tr key={entry.id} className="group hover:bg-blue-100/70 transition-all duration-200 cursor-default">
                   <td className={tdS}>{toBengaliDigits(idx + 1)}</td>
-                  <td className={`${tdS} text-left px-2`}>{entry.description}</td>
+                  <td className={`${tdS} text-left px-2 group-hover:bg-blue-50/30 transition-colors`}>{entry.description}</td>
                   <td className={tdS}>{entry.diaryNo}<br/>{formatDateBN(entry.diaryDate)}</td>
                   <td className={tdS}>{entry.letterNo}<br/>{formatDateBN(entry.letterDate)}</td>
                   <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'এসএফআই' ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
@@ -358,7 +367,11 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                   <td className={tdS}>-</td>
                   <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
                   <td className={tdS}>{formatDateBN(entry.presentationDate)}</td>
-                  <td className={tdS}>{entry.presentedToName || 'অডিটর'}</td>
+                  <td className={`${tdS} p-1`}>
+                    <div className={`w-full h-[26px] flex items-center justify-center font-black rounded-md shadow-sm ${getPositionColor(entry.presentedToName)}`}>
+                      {entry.presentedToName || 'অডিটর'}
+                    </div>
+                  </td>
                   <td className={tdS}>{entry.remarks || 'চলমান'}</td>
                 </tr>
               )) : (
