@@ -297,6 +297,7 @@ interface CorrespondenceEntryModuleProps {
   initialEntry?: any;
   isAdmin?: boolean;
   existingEntries?: any[];
+  navigateToEntry?: (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => void;
 }
 
 const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ 
@@ -657,7 +658,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 {(duplicates.diaryEntryId || duplicates.letterEntryId) && navigateToEntry && (
                   <button
                     type="button"
-                    onClick={() => navigateToEntry(duplicates.diaryEntryId || duplicates.letterEntryId || '')}
+                    onClick={() => navigateToEntry(duplicates.diaryEntryId || duplicates.letterEntryId || '', 'correspondence', formData.diaryNo || formData.letterNo)}
                     className="ml-3 px-3 py-1 bg-amber-200 text-amber-900 rounded-lg hover:bg-amber-300 transition-colors font-black text-xs flex inline-flex items-center gap-1.5 shadow-sm border border-amber-300"
                   >
                     <Search size={12} /> দেখুন
@@ -785,7 +786,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   {duplicates.letterEntryId && navigateToEntry && (
                     <button
                       type="button"
-                      onClick={() => navigateToEntry(duplicates.letterEntryId || '')}
+                      onClick={() => navigateToEntry(duplicates.letterEntryId || '', 'correspondence', formData.letterNo)}
                       className="px-2 py-0.5 bg-amber-600 text-white text-[9px] font-black rounded shadow-sm hover:bg-amber-700 transition-all flex items-center gap-1"
                     >
                       <Search size={10} /> দেখুন
@@ -850,7 +851,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   {duplicates.diaryEntryId && navigateToEntry && (
                     <button
                       type="button"
-                      onClick={() => navigateToEntry(duplicates.diaryEntryId || '')}
+                      onClick={() => navigateToEntry(duplicates.diaryEntryId || '', 'correspondence', formData.diaryNo)}
                       className="px-2 py-0.5 bg-amber-600 text-white text-[9px] font-black rounded shadow-sm hover:bg-amber-700 transition-all flex items-center gap-1"
                     >
                       <Search size={10} /> দেখুন
