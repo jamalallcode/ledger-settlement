@@ -55,7 +55,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     if (filterBranch !== 'সকল') {
       filteredForOptions = entries.filter(e => e.paraType === filterBranch);
     }
-    const unique = Array.from(new Set(filteredForOptions.map(e => normalizeName(e.receiverName || e.presentedToName)).filter(name => name !== 'অনির্ধারিত')));
+    const unique = Array.from(new Set(filteredForOptions.map(e => normalizeName(e.receiverName || e.presentedToName)).filter(name => name !== 'অনির্ধারিত' && name !== 'শামীমা শান্ত্রিন')));
     return ['সকল', ...unique];
   }, [entries, filterBranch]);
 
@@ -92,6 +92,9 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     if (isNaN(reportingDateObj.getTime())) return data;
 
     data = data.filter(e => {
+      const auditorName = normalizeName(e.receiverName || e.presentedToName);
+      if (auditorName === 'শামীমা শান্ত্রিন') return false;
+      
       if (!e.diaryDate) return false;
       const dDateStr = toEnglishDigits(e.diaryDate);
       const dDate = new Date(dDateStr);
