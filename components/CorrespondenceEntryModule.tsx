@@ -371,10 +371,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     
     const savedNames = localStorage.getItem(key);
     if (savedNames) {
-      setReceiverSuggestions(JSON.parse(savedNames));
+      const parsed = JSON.parse(savedNames);
+      setReceiverSuggestions(parsed.filter((n: string) => n !== 'শামীমা শান্ত্রিন'));
     } else {
-      setReceiverSuggestions(initialList);
-      localStorage.setItem(key, JSON.stringify(initialList));
+      const filteredInitial = initialList.filter(n => n !== 'শামীমা শান্ত্রিন');
+      setReceiverSuggestions(filteredInitial);
+      localStorage.setItem(key, JSON.stringify(filteredInitial));
     }
 
     const savedDescriptions = localStorage.getItem('ledger_correspondence_descriptions');
