@@ -7,6 +7,8 @@ import {
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { getCycleForDate } from '../utils/cycleHelper';
 import { getDateError } from '../utils/dateValidation';
+import { SFI_RECEIVERS } from '../utils/sfi';
+import { NONSFI_RECEIVERS } from '../utils/nonsfi';
 
 /**
  * @security-protocol LOCKED_MODE
@@ -364,12 +366,20 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const descriptionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const savedNames = localStorage.getItem('ledger_correspondence_receivers');
-    if (savedNames) setReceiverSuggestions(JSON.parse(savedNames));
+    const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+    const initialList = formData.paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
+    
+    const savedNames = localStorage.getItem(key);
+    if (savedNames) {
+      setReceiverSuggestions(JSON.parse(savedNames));
+    } else {
+      setReceiverSuggestions(initialList);
+      localStorage.setItem(key, JSON.stringify(initialList));
+    }
 
     const savedDescriptions = localStorage.getItem('ledger_correspondence_descriptions');
     if (savedDescriptions) setDescriptionSuggestions(JSON.parse(savedDescriptions));
-  }, []);
+  }, [formData.paraType]);
 
   const formatDateSegments = (d: string, m: string, y: string) => {
     if (!d || !m || !y || y.length < 4) return '';
@@ -518,9 +528,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
   const handleAddReceiver = () => {
     if (tempReceiverName.trim()) {
+      const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
       const updated = [...receiverSuggestions, tempReceiverName.trim()];
       setReceiverSuggestions(updated);
-      localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updated));
+      localStorage.setItem(key, JSON.stringify(updated));
       setTempReceiverName('');
       setIsManagingReceivers(false);
     }
@@ -528,10 +539,11 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
   const handleEditReceiver = (idx: number) => {
     if (tempReceiverName.trim()) {
+      const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
       const updated = [...receiverSuggestions];
       updated[idx] = tempReceiverName.trim();
       setReceiverSuggestions(updated);
-      localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updated));
+      localStorage.setItem(key, JSON.stringify(updated));
       setEditingReceiverIdx(null);
       setTempReceiverName('');
     }
@@ -539,9 +551,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
   const handleDeleteReceiver = (idx: number, e: React.MouseEvent) => {
     e.stopPropagation();
+    const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
     const updated = receiverSuggestions.filter((_, i) => i !== idx);
     setReceiverSuggestions(updated);
-    localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updated));
+    localStorage.setItem(key, JSON.stringify(updated));
     if (formData.receiverName === receiverSuggestions[idx]) {
       setFormData(prev => ({ ...prev, receiverName: '' }));
     }
@@ -620,9 +633,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     // Defer heavy work to next tick to avoid blocking UI (INP fix)
     setTimeout(() => {
       if (formData.receiverName.trim()) {
+        const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
         const updatedNames = Array.from(new Set([formData.receiverName.trim(), ...receiverSuggestions]));
         setReceiverSuggestions(updatedNames);
-        localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updatedNames));
+        localStorage.setItem(key, JSON.stringify(updatedNames));
       }
       
       if (formData.description.trim()) {
@@ -952,7 +966,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             {/* Field 10 */}
             <div className={`${colWrapper} border-slate-200`} ref={receiverRef}>
               <IDBadge id="corr-field-10" />
-              <label className={labelCls}><span className={numBadge}>১০</span> <User size={14} className="text-slate-600" /> গৃহীতার নাম:</label>
+              <label className={labelCls}><span className={numBadge}>১০</span> <User size={14} className="text-slate-600" /> গ্রহীতার নাম:</label>
               <div className="relative group flex gap-2">
                 <div className="relative flex-1">
                   <input 
