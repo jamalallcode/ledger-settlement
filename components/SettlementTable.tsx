@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import React from 'react';
 import { SettlementEntry } from '../types.ts';
 import { Trash2, Pencil, Calendar, Printer, CheckCircle2, ChevronDown, ChevronUp, FileText, Fingerprint, Banknote, ListOrdered, Archive, MapPin, CalendarDays, Sparkles, ClipboardList, Filter, X, Search, LayoutGrid, CalendarSearch, Check, ShieldCheck, XCircle, AlertCircle, MessageSquare } from 'lucide-react';
-import { toBengaliDigits, parseBengaliNumber, formatDateBN } from '../utils/numberUtils.ts';
+import { toBengaliDigits, parseBengaliNumber, formatDateBN, toEnglishDigits } from '../utils/numberUtils.ts';
 import { OFFICE_HEADER } from '../constants.ts';
 import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper.ts';
 import { format, addMonths } from 'date-fns';
@@ -117,10 +117,14 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       const entryDate = entry.issueDateISO || new Date(entry.createdAt).toISOString().split('T')[0];
       const matchDate = !activeCycle || (entryDate >= format(activeCycle.start, 'yyyy-MM-dd') && entryDate <= format(activeCycle.end, 'yyyy-MM-dd'));
       
+      const normalizedSearch = toEnglishDigits(searchTerm.toLowerCase());
       const matchSearch = searchTerm === '' || 
-        (entry.entityName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-        (entry.branchName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-        (entry.issueLetterNoDate || '').toLowerCase().includes(searchTerm.toLowerCase());
+        toEnglishDigits((entry.entityName || '').toLowerCase()).includes(normalizedSearch) || 
+        toEnglishDigits((entry.branchName || '').toLowerCase()).includes(normalizedSearch) || 
+        toEnglishDigits((entry.issueLetterNoDate || '').toLowerCase()).includes(normalizedSearch) ||
+        toEnglishDigits((entry.letterNoDate || '').toLowerCase()).includes(normalizedSearch) ||
+        toEnglishDigits((entry.workpaperNoDate || '').toLowerCase()).includes(normalizedSearch) ||
+        toEnglishDigits((entry.archiveNo || '').toLowerCase()).includes(normalizedSearch);
       
       const entryType = entry.isMeeting ? entry.meetingType : 'বিএসআর';
       const matchType = filterType === '' || entryType === filterType;
@@ -287,13 +291,13 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             { label: '৬. নিরীক্ষা সাল', value: toBengaliDigits(entry.auditYear), icon: Calendar, col: 'emerald' },
             { label: '৭. পত্র নং ও তারিখ', value: entry.letterNoDate, icon: FileText, col: 'amber' },
             { label: '৮. কার্যপত্র নং', value: entry.meetingWorkpaper || 'N/A', icon: FileText, col: 'purple' },
-            { label: '৯. আলোচিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingDiscussedParaCount || '০'), icon: ListOrdered, col: 'sky' },
+            { label: '৯. আলোচিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSentParaCount || '০'), icon: ListOrdered, col: 'sky' },
             { label: '১০. ডায়েরি নং ও তারিখ', value: entry.workpaperNoDate, icon: FileText, col: 'emerald' },
             { label: '১১. জারিপত্র নং', value: formatIssueInfoForDisplay(entry.issueLetterNoDate), icon: FileText, col: 'amber' },
             { label: '১২. আর্কাইভ নং', value: entry.archiveNo || 'N/A', icon: Archive, col: 'purple' },
             { label: '১৩. প্রেরিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSentParaCount || '০'), icon: ListOrdered, col: 'sky' },
             { label: '১৪. সুপারিশকৃত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingRecommendedParaCount || '০'), icon: CheckCircle2, col: 'emerald' },
-            { label: '১৫. মোট জড়িত টাকা', value: toBengaliDigits(entry.totalInvolvedAmount ?? 0), icon: Banknote, col: 'amber' },
+            { label: '১৫. মোট জড়িত টাকা', value: toBengaliDigits(entry.involvedAmount ?? 0), icon: Banknote, col: 'amber' },
             { label: '১৬. অমীমাংসিত সংখ্যা', value: toBengaliDigits(entry.meetingUnsettledParas || '০'), icon: ListOrdered, col: 'purple' },
             { label: '১৭. অমীমাংসিত টাকা', value: toBengaliDigits(entry.meetingUnsettledAmount ?? 0), icon: Banknote, col: 'sky' },
             { label: '১৮. মীমাংসিত সংখ্যা', value: toBengaliDigits(entry.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').length || 0), icon: CheckCircle2, col: 'emerald' },
@@ -487,7 +491,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                   type="text" 
                   value={searchTerm} 
                   onChange={e => setSearchTerm(e.target.value)} 
-                  placeholder="নাম বা নম্বর দিয়ে খুঁজুন..." 
+                  placeholder="নাম, জারিপত্র বা নম্বর দিয়ে খুঁজুন..." 
                   className={filterInputCls} 
                 />
               </div>
