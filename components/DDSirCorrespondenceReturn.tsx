@@ -579,8 +579,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                           </div>
                         </td>
                         <td className={stickyTdStyle}>{formatDateBN(row.presentationDate) || '-'}</td>
-                        <td className={`${stickyTdStyle} p-0`}>
-                          <div className={`w-full h-full flex items-center justify-center font-bold text-[10px] py-1.5 ${getPositionColor(row.presentedToName)}`}>
+                        <td className={`${stickyTdStyle} p-1`}>
+                          <div className={`w-full h-[26px] flex items-center justify-center font-bold text-[10px] rounded-md shadow-sm ${getPositionColor(row.presentedToName)}`}>
                             {row.presentedToName || 'অডিটর'}
                           </div>
                         </td>
