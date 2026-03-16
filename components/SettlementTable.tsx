@@ -308,6 +308,16 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
     return info.replace(/জারিপত্র নং-/g, '').replace(/জারিপত্রের তারিখ-/g, '').trim() + " খ্রি:";
   };
 
+  const formatDiaryInfoForDisplay = (info: string) => {
+    if (!info) return "";
+    return info.replace(/ডায়েরি নং-/g, '').replace(/ডায়েরির তারিখ-/g, '').trim() + " খ্রি:";
+  };
+
+  const formatLetterInfoForDisplay = (info: string) => {
+    if (!info) return "";
+    return info.replace(/পত্র নং-/g, '').replace(/পত্রের তারিখ-/g, '').trim() + " খ্রি:";
+  };
+
   // Headers reverted to font-black
   const thBase = "sticky top-0 border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-200 z-[110] relative";
   const thBase2 = "sticky top-[42px] border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-200 z-[110] relative";
@@ -762,6 +772,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                                         <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">এনটিটি:</span> <span className="font-bold text-slate-900">{entry.entityName}</span></p>
                                         <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">শাখা:</span> <span className="font-bold text-slate-900">{entry.branchName}</span></p>
                                         <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">নিরীক্ষা সাল:</span> <span className="font-bold text-slate-900">{toBengaliDigits(entry.auditYear)}</span></p>
+                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">পত্র নং ও তারিখ:</span> <span className="font-bold text-slate-900">{formatLetterInfoForDisplay(entry.letterNoDate)}</span></p>
+                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">ডায়েরি নং ও তারিখ:</span> <span className="font-bold text-slate-900">{formatDiaryInfoForDisplay(entry.workpaperNoDate)}</span></p>
                                         <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">জারিপত্র নং ও তারিখ:</span> <span className="font-bold text-slate-900">{formatIssueInfoForDisplay(entry.issueLetterNoDate)}</span></p>
                                       </div>
                                       <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
