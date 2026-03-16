@@ -241,13 +241,13 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const duplicates = useMemo(() => {
     if (!existingEntries || existingEntries.length === 0) return { letterNo: false, diaryNo: false, issueNo: false, any: false };
     
-    const findDuplicate = (combinedStr: string | undefined, prefix: string, searchNo: string) => {
+    const findDuplicate = (combinedStr: string | undefined, prefixRegex: RegExp, searchNo: string) => {
       if (!combinedStr || !searchNo.trim()) return null;
       // Extract the number part more reliably
       // The format is "Prefix Number, DatePrefix Date"
       const firstPart = combinedStr.split(',')[0];
-      // Remove the prefix and any leading/trailing whitespace
-      const extractedNo = firstPart.replace(prefix, '').trim();
+      // Remove the prefix and any leading/trailing whitespace using regex
+      const extractedNo = firstPart.replace(prefixRegex, '').trim();
       
       const engExtracted = toEnglishDigits(extractedNo).trim();
       const engSearch = toEnglishDigits(searchNo).trim();
@@ -257,17 +257,17 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
     const letterDuplicate = letterNoPart ? existingEntries.find(e => {
       if (initialEntry && e.id === initialEntry.id) return false;
-      return findDuplicate(e.letterNoDate, 'পত্র নং-', letterNoPart);
+      return findDuplicate(e.letterNoDate, /পত্র নং-?\s*/g, letterNoPart);
     }) : null;
 
     const diaryDuplicate = diaryNoPart ? existingEntries.find(e => {
       if (initialEntry && e.id === initialEntry.id) return false;
-      return findDuplicate(e.workpaperNoDate, 'ডায়েরি নং-', diaryNoPart);
+      return findDuplicate(e.workpaperNoDate, /ডায়েরি নং-?\s*/g, diaryNoPart);
     }) : null;
 
     const issueDuplicate = issueNoPart ? existingEntries.find(e => {
       if (initialEntry && e.id === initialEntry.id) return false;
-      return findDuplicate(e.issueLetterNoDate, 'জারিপত্র নং-', issueNoPart);
+      return findDuplicate(e.issueLetterNoDate, /জারিপত্র নং-?\s*/g, issueNoPart);
     }) : null;
 
     return {
