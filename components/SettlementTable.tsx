@@ -143,9 +143,28 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       
       const normalizedSearch = toEnglishDigits(searchTerm.trim().toLowerCase());
       const matchSearch = searchTerm === '' || (() => {
-        // Extract the issue number part for exact matching
-        const issueNoPart = (entry.issueLetterNoDate || '').split(',')[0].replace(/জারিপত্র নং-/g, '').trim();
-        return toEnglishDigits(issueNoPart.toLowerCase()) === normalizedSearch;
+        // Check all three number fields for an exact match
+        const issueNo = (entry.issueLetterNoDate || '').split(',')[0].replace(/জারিপত্র নং-/g, '').trim();
+        const letterNo = (entry.letterNoDate || '').split(',')[0].replace(/পত্র নং-/g, '').trim();
+        const diaryNo = (entry.workpaperNoDate || '').split(',')[0].replace(/ডায়েরি নং-/g, '').trim();
+        
+        const engIssue = toEnglishDigits(issueNo.toLowerCase()).trim();
+        const engLetter = toEnglishDigits(letterNo.toLowerCase()).trim();
+        const engDiary = toEnglishDigits(diaryNo.toLowerCase()).trim();
+        
+        // Also allow partial match on other fields for general search
+        const descMatch = toEnglishDigits((entry.remarks || '').toLowerCase()).includes(normalizedSearch);
+        const branchMatch = toEnglishDigits((entry.branchName || '').toLowerCase()).includes(normalizedSearch);
+        const ministryMatch = toEnglishDigits((entry.ministryName || '').toLowerCase()).includes(normalizedSearch);
+        const entityMatch = toEnglishDigits((entry.entityName || '').toLowerCase()).includes(normalizedSearch);
+
+        return engIssue === normalizedSearch || 
+               engLetter === normalizedSearch || 
+               engDiary === normalizedSearch ||
+               descMatch ||
+               branchMatch ||
+               ministryMatch ||
+               entityMatch;
       })();
       
       const entryType = entry.isMeeting ? entry.meetingType : 'বিএসআর';
