@@ -769,11 +769,11 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                       return (
                         <React.Fragment key={entry.id}>
                           {paras.length > 0 ? paras.map((p, pIdx) => (
-                            <tr key={p.id} className={`transition-colors group ${isAdminView ? 'bg-amber-50/30 hover:bg-amber-100/50' : 'hover:bg-blue-50/30'}`}>
+                            <tr key={p.id} className={`transition-colors group bg-white ${isAdminView ? 'hover:bg-amber-100/50' : 'hover:bg-blue-50/30'}`}>
                               {pIdx === 0 && (
                                 <>
-                                  <td rowSpan={paras.length} className={tdBase + " font-black bg-white"}>{toBengaliDigits(idx + 1)}</td>
-                                  <td rowSpan={paras.length} onClick={() => toggleExpand(entry.id)} className={tdBase + " cursor-pointer bg-white group-hover:bg-blue-50/50 transition-all text-left p-3"}>
+                                  <td rowSpan={paras.length} className={tdBase + " font-black"}>{toBengaliDigits(idx + 1)}</td>
+                                  <td rowSpan={paras.length} onClick={() => toggleExpand(entry.id)} className={tdBase + " cursor-pointer group-hover:bg-blue-50/50 transition-all text-left p-3"}>
                                     <div className="flex items-start justify-between">
                                       <div className="space-y-1 text-left flex-1">
                                         <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">মন্ত্রণালয়:</span> <span className="font-bold text-slate-900">{entry.ministryName}</span></p>
@@ -795,8 +795,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                               <td className={tdMoney}>{toBengaliDigits(Math.round(p.involvedAmount))}</td>
                               {pIdx === 0 && (
                                 <>
-                                  <td rowSpan={paras.length} className={tdBase + " text-blue-700 bg-white"}>{mRaisedCount}</td>
-                                  <td rowSpan={paras.length} className={tdMoney + " text-blue-800 bg-white"}>{toBengaliDigits(Math.round(mRaisedAmount))}</td>
+                                  <td rowSpan={paras.length} className={tdBase + " text-blue-700"}>{mRaisedCount}</td>
+                                  <td rowSpan={paras.length} className={tdMoney + " text-blue-800"}>{toBengaliDigits(Math.round(mRaisedAmount))}</td>
                                 </>
                               )}
                               <td className={tdMoney}>{toBengaliDigits(Math.round(p.category === 'ভ্যাট' ? p.recoveredAmount : 0))}</td><td className={tdMoney}>{toBengaliDigits(Math.round(p.category === 'ভ্যাট' ? p.adjustedAmount : 0))}</td>
@@ -832,9 +832,9 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                               </td>
                             </tr>
                           )) : (
-                            <tr className={`transition-colors group ${isAdminView ? 'bg-amber-50/30' : 'hover:bg-blue-50/30'}`}>
-                              <td className={tdBase + " font-black bg-white"}>{toBengaliDigits(idx + 1)}</td>
-                              <td onClick={() => toggleExpand(entry.id)} className={tdBase + " cursor-pointer bg-white group-hover:bg-blue-50/50 transition-all text-left p-3"}>
+                            <tr className={`transition-colors group bg-white ${isAdminView ? 'hover:bg-amber-100/50' : 'hover:bg-blue-50/30'}`}>
+                              <td className={tdBase + " font-black"}>{toBengaliDigits(idx + 1)}</td>
+                              <td onClick={() => toggleExpand(entry.id)} className={tdBase + " cursor-pointer group-hover:bg-blue-50/50 transition-all text-left p-3"}>
                                 <div className="flex items-start justify-between">
                                   <div className="space-y-1 text-left flex-1">
                                     <p className="text-[10px] leading-tight font-black text-red-600 underline underline-offset-2 tracking-tighter">উত্থাপিত এন্ট্রি (কোন অনুচ্ছেদ নেই)</p>
@@ -846,7 +846,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                                   </div>
                                 </div>
                               </td>
-                              <td className={tdBase}>-</td><td className={tdMoney}>০</td><td className={tdBase + " text-blue-700 bg-white font-black"}>{mRaisedCount}</td><td className={tdMoney + " text-blue-800 bg-white"}>{toBengaliDigits(Math.round(mRaisedAmount))}</td>
+                              <td className={tdBase}>-</td><td className={tdMoney}>০</td><td className={tdBase + " text-blue-700 font-black"}>{mRaisedCount}</td><td className={tdMoney + " text-blue-800"}>{toBengaliDigits(Math.round(mRaisedAmount))}</td>
                               <td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td><td className={tdMoney}>০</td>
                               <td className={tdMoney + " relative"}>০
                                 {!isAdminView && isAdmin && (
