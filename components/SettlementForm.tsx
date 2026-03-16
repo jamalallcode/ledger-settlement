@@ -16,7 +16,7 @@ interface SettlementFormProps {
   preSelectedModule?: 'settlement' | 'correspondence' | null;
   correspondenceEntries?: any[];
   entries?: SettlementEntry[];
-  navigateToEntry?: (id: string) => void;
+  navigateToEntry?: (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => void;
 }
 
 const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, nextSl, branchSuggestions, initialEntry, onCancel, isLayoutEditable, isAdmin = false, preSelectedModule = null, correspondenceEntries, entries, navigateToEntry }) => {
