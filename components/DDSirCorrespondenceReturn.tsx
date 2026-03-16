@@ -51,9 +51,19 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   }, []);
 
   const auditorOptions = useMemo(() => {
-    const unique = Array.from(new Set(entries.map(e => normalizeName(e.receiverName || e.presentedToName)).filter(name => name !== 'অনির্ধারিত')));
+    let filteredForOptions = entries || [];
+    if (filterBranch !== 'সকল') {
+      filteredForOptions = entries.filter(e => e.paraType === filterBranch);
+    }
+    const unique = Array.from(new Set(filteredForOptions.map(e => normalizeName(e.receiverName || e.presentedToName)).filter(name => name !== 'অনির্ধারিত')));
     return ['সকল', ...unique];
-  }, [entries]);
+  }, [entries, filterBranch]);
+
+  useEffect(() => {
+    if (filterAuditor !== 'সকল' && !auditorOptions.includes(filterAuditor)) {
+      setFilterAuditor('সকল');
+    }
+  }, [filterBranch, auditorOptions, filterAuditor]);
 
   const reportingLimitDate = useMemo(() => {
     const today = new Date();
