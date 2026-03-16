@@ -43,6 +43,8 @@ interface CorrespondenceTableProps {
   onReject?: (id: string) => void;
   showFilters: boolean;
   setShowFilters: (val: boolean) => void;
+  highlightSearch?: string | null;
+  onClearHighlight?: () => void;
 }
 
 /**
@@ -251,7 +253,11 @@ const PremiumInlineSelect: React.FC<{
   );
 };
 
-const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBack, isLayoutEditable, isAdmin, onEdit, onInlineUpdate, onDelete, onApprove, onReject, showFilters, setShowFilters }) => {
+const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ 
+  entries, onBack, isLayoutEditable, isAdmin, onEdit, onInlineUpdate, 
+  onDelete, onApprove, onReject, showFilters, setShowFilters,
+  highlightSearch = null, onClearHighlight
+}) => {
   const [pendingChanges, setPendingChanges] = useState<Record<string, Partial<CorrespondenceEntry>>>({});
   const [isUpdating, setIsUpdating] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -268,6 +274,15 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (highlightSearch) {
+      setSearchTerm(highlightSearch);
+    }
+    return () => {
+      if (highlightSearch) onClearHighlight?.();
+    };
+  }, [highlightSearch, onClearHighlight]);
 
   const cycleDropdownRef = useRef<HTMLDivElement>(null);
   const branchDropdownRef = useRef<HTMLDivElement>(null);
@@ -312,12 +327,22 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
 
   const filteredEntries = useMemo(() => {
     return entries.filter(entry => {
-      const normalizedSearch = toEnglishDigits(searchTerm.toLowerCase());
-      const matchSearch = !searchTerm || 
-        toEnglishDigits(entry.description.toLowerCase()).includes(normalizedSearch) || 
-        toEnglishDigits(entry.letterNo.toLowerCase()).includes(normalizedSearch) || 
-        toEnglishDigits(entry.diaryNo.toLowerCase()).includes(normalizedSearch) ||
-        toEnglishDigits((entry.issueLetterNo || '').toLowerCase()).includes(normalizedSearch);
+      const normalizedSearch = toEnglishDigits(searchTerm.toLowerCase().trim());
+      const matchSearch = !searchTerm || (() => {
+        const engLetter = toEnglishDigits(entry.letterNo.toLowerCase()).trim();
+        const engDiary = toEnglishDigits(entry.diaryNo.toLowerCase()).trim();
+        const engIssue = toEnglishDigits((entry.issueLetterNo || '').toLowerCase()).trim();
+        
+        const isExactNumberMatch = engLetter === normalizedSearch || 
+                                  engDiary === normalizedSearch || 
+                                  engIssue === normalizedSearch;
+        
+        const isDescriptionMatch = toEnglishDigits(entry.description.toLowerCase()).includes(normalizedSearch);
+        const isReceiverMatch = toEnglishDigits((entry.receiverName || '').toLowerCase()).includes(normalizedSearch);
+        const isRemarksMatch = toEnglishDigits((entry.remarks || '').toLowerCase()).includes(normalizedSearch);
+        
+        return isExactNumberMatch || isDescriptionMatch || isReceiverMatch || isRemarksMatch;
+      })();
       
       const matchBranch = !filterParaType || entry.paraType === filterParaType;
       const matchType = !filterType || entry.letterType === filterType;
