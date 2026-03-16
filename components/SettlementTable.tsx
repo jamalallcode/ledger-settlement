@@ -54,6 +54,11 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   useEffect(() => {
     if (highlightSearch) {
       setSearchTerm(highlightSearch);
+      // Reset other filters to ensure the highlighted entry is visible
+      setFilterParaType('');
+      setFilterType('');
+      setFilterStatus('');
+      setSelectedCycleDate(null);
     }
     return () => {
       if (highlightSearch) onClearHighlight?.();
@@ -133,20 +138,15 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
 
   const filteredEntries = useMemo(() => {
     return entries.filter(entry => {
-      const hasRaisedCount = entry.manualRaisedCount !== null && entry.manualRaisedCount !== "" && entry.manualRaisedCount !== "0" && entry.manualRaisedCount !== "০";
-      const hasRaisedAmount = entry.manualRaisedAmount !== null && entry.manualRaisedAmount !== 0;
-      const hasMeaningfulContent = (entry.paragraphs && entry.paragraphs.length > 0) || (entry.isMeeting && (entry.meetingUnsettledAmount || 0) > 0) || hasRaisedCount || hasRaisedAmount;
-      if (!hasMeaningfulContent) return false;
-
       const entryDate = entry.issueDateISO || new Date(entry.createdAt).toISOString().split('T')[0];
       const matchDate = !activeCycle || (entryDate >= format(activeCycle.start, 'yyyy-MM-dd') && entryDate <= format(activeCycle.end, 'yyyy-MM-dd'));
       
       const normalizedSearch = toEnglishDigits(searchTerm.trim().toLowerCase());
       const matchSearch = searchTerm === '' || (() => {
         // Check all three number fields for an exact match
-        const issueNo = (entry.issueLetterNoDate || '').split(',')[0].replace(/জারিপত্র নং-/g, '').trim();
-        const letterNo = (entry.letterNoDate || '').split(',')[0].replace(/পত্র নং-/g, '').trim();
-        const diaryNo = (entry.workpaperNoDate || '').split(',')[0].replace(/ডায়েরি নং-/g, '').trim();
+        const issueNo = (entry.issueLetterNoDate || '').split(',')[0].replace(/জারিপত্র নং-?\s*/g, '').trim();
+        const letterNo = (entry.letterNoDate || '').split(',')[0].replace(/পত্র নং-?\s*/g, '').trim();
+        const diaryNo = (entry.workpaperNoDate || '').split(',')[0].replace(/ডায়েরি নং-?\s*/g, '').trim();
         
         const engIssue = toEnglishDigits(issueNo.toLowerCase()).trim();
         const engLetter = toEnglishDigits(letterNo.toLowerCase()).trim();
@@ -166,7 +166,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                ministryMatch ||
                entityMatch;
       })();
-      
+
       const entryType = entry.isMeeting ? entry.meetingType : 'বিএসআর';
       const matchType = filterType === '' || entryType === filterType;
       const matchParaType = filterParaType === '' || entry.paraType === filterParaType;
@@ -176,6 +176,15 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       const matchStatus = filterStatus === '' || 
         (filterStatus === 'settled' && hasSettled) || 
         (filterStatus === 'unsettled' && hasUnsettled);
+
+      const hasRaisedCount = entry.manualRaisedCount !== null && entry.manualRaisedCount !== "" && entry.manualRaisedCount !== "0" && entry.manualRaisedCount !== "০";
+      const hasRaisedAmount = entry.manualRaisedAmount !== null && entry.manualRaisedAmount !== 0;
+      const hasMeaningfulContent = (entry.paragraphs && entry.paragraphs.length > 0) || (entry.isMeeting && (entry.meetingUnsettledAmount || 0) > 0) || hasRaisedCount || hasRaisedAmount;
+      
+      // If we have a search term and it matches, we should show it regardless of "meaningful content"
+      if (searchTerm !== '' && matchSearch) return matchDate && matchType && matchParaType && matchStatus;
+      
+      if (!hasMeaningfulContent) return false;
       
       return matchDate && matchSearch && matchType && matchParaType && matchStatus;
     }).sort((a, b) => {
