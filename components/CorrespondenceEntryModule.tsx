@@ -539,6 +539,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   };
 
   const handleAddReceiver = () => {
+    if (!isReceiverAdmin) return;
     if (tempReceiverName.trim()) {
       const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
       const updated = [...receiverSuggestions, tempReceiverName.trim()];
@@ -550,6 +551,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   };
 
   const handleEditReceiver = (idx: number) => {
+    if (!isReceiverAdmin) return;
     if (tempReceiverName.trim()) {
       const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
       const updated = [...receiverSuggestions];
@@ -563,6 +565,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
   const handleDeleteReceiver = (idx: number, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isReceiverAdmin) return;
     const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
     const updated = receiverSuggestions.filter((_, i) => i !== idx);
     setReceiverSuggestions(updated);
