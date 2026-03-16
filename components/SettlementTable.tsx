@@ -18,11 +18,14 @@ interface SettlementTableProps {
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
   isAdmin?: boolean;
+  highlightSearch?: string | null;
+  onClearHighlight?: () => void;
 }
 
 const SettlementTable: React.FC<SettlementTableProps> = ({ 
   entries, onDelete, onEdit, isLayoutEditable, showFilters, setShowFilters,
-  isAdminView = false, onApprove, onReject, isAdmin = false 
+  isAdminView = false, onApprove, onReject, isAdmin = false,
+  highlightSearch = null, onClearHighlight
 }) => {
   const [showCycleStats, setShowCycleStats] = useState<Record<string, boolean>>({});
   const lastActiveLabel = useRef<string>("");
@@ -47,6 +50,15 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
 
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (highlightSearch) {
+      setSearchTerm(highlightSearch);
+    }
+    return () => {
+      if (highlightSearch) onClearHighlight?.();
+    };
+  }, [highlightSearch, onClearHighlight]);
 
   // Click outside listener to close custom dropdowns
   useEffect(() => {
