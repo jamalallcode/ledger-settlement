@@ -331,6 +331,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     receiverName: '',
     receivedDate: '',
     isOnline: 'না',
+    archiveNo: '',
     remarks: ''
   });
 
@@ -433,6 +434,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         receiverName: initialEntry.receiverName || '',
         receivedDate: initialEntry.receivedDate || '',
         isOnline: initialEntry.isOnline || 'না',
+        archiveNo: initialEntry.archiveNo || '',
         remarks: initialEntry.remarks || ''
       });
       
@@ -464,6 +466,14 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   useEffect(() => { setFormData(prev => ({ ...prev, receiptDate: formatDateSegments(rd, rm, ry) })); }, [rd, rm, ry]);
   useEffect(() => { setFormData(prev => ({ ...prev, receivedDate: formatDateSegments(rcd, rcm, rcy) })); }, [rcd, rcm, rcy]);
 
+  useEffect(() => {
+    if (formData.archiveNo) {
+      const prefix = formData.paraType === 'এসএফআই' ? 'ka- ' : 'kg- ';
+      const rawValue = formData.archiveNo.replace(/^ka-\s*/, '').replace(/^kg-\s*/, '');
+      setFormData(prev => ({ ...prev, archiveNo: prefix + rawValue }));
+    }
+  }, [formData.paraType]);
+
   const handleManualDateSelect = (iso: string, type: string) => {
     if (!iso) return;
     if (type === 'letter') setSegmentsFromDate(iso, setLd, setLm, setLy);
@@ -489,6 +499,21 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     const bDigits = toBengaliDigits(val);
     setRawInputs(prev => ({ ...prev, [field]: bDigits }));
     setFormData(prev => ({ ...prev, [field]: val }));
+  };
+
+  const handleArchiveNoChange = (val: string) => {
+    const prefix = formData.paraType === 'এসএফআই' ? 'ka- ' : 'kg- ';
+    let rawValue = val.replace(/^ka-\s*/, '').replace(/^kg-\s*/, '');
+    
+    if (val === '') {
+      setFormData(prev => ({ ...prev, archiveNo: '' }));
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      archiveNo: prefix + toBengaliDigits(rawValue)
+    }));
   };
 
   const handleAddReceiver = () => {
@@ -557,6 +582,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       receiverName: '',
       receivedDate: '',
       isOnline: 'না',
+      archiveNo: '',
       remarks: ''
     });
     setLd(''); setLm(''); setLy('');
@@ -1074,10 +1100,23 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               </div>
             </div>
 
-            {/* Field 13 - Remarks */}
+            {/* Field 13 - আর্কাইভ নং */}
+            <div className={`${colWrapper} border-amber-100`}>
+              <IDBadge id="corr-field-archive-no" />
+              <label className={labelCls}><span className={numBadge}>১৩</span> <Hash size={14} className="text-amber-600" /> আর্কাইভ নং:</label>
+              <input 
+                type="text" 
+                className={`${inputCls} ${formData.archiveNo ? 'border-emerald-500' : 'border-red-500'}`} 
+                value={formData.archiveNo} 
+                onChange={e => handleArchiveNoChange(e.target.value)}
+                placeholder="নং লিখুন"
+              />
+            </div>
+
+            {/* Field 14 - Remarks */}
             <div className={`${colWrapper} border-slate-200 col-span-full`}>
-              <IDBadge id="corr-field-13" />
-              <label className={labelCls}><span className={numBadge}>১৩</span> <FileText size={14} className="text-slate-600" /> মন্তব্য:</label>
+              <IDBadge id="corr-field-14" />
+              <label className={labelCls}><span className={numBadge}>১৪</span> <FileText size={14} className="text-slate-600" /> মন্তব্য:</label>
               <textarea 
                 className={`${inputCls} ${formData.remarks ? 'border-emerald-500' : 'border-red-500'} h-24 py-3 resize-none`}
                 value={formData.remarks}
