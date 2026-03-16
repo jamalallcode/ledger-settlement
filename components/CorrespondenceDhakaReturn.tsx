@@ -367,8 +367,8 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                   <td className={tdS}>-</td>
                   <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
                   <td className={tdS}>{formatDateBN(entry.presentationDate)}</td>
-                  <td className={`${tdS} p-0`}>
-                    <div className={`w-full h-full flex items-center justify-center font-black ${getPositionColor(entry.presentedToName)}`}>
+                  <td className={`${tdS} p-1`}>
+                    <div className={`w-full h-[26px] flex items-center justify-center font-black rounded-md shadow-sm ${getPositionColor(entry.presentedToName)}`}>
                       {entry.presentedToName || 'অডিটর'}
                     </div>
                   </td>
