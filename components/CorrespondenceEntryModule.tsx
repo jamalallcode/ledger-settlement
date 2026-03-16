@@ -297,6 +297,7 @@ interface CorrespondenceEntryModuleProps {
   initialEntry?: any;
   isAdmin?: boolean;
   existingEntries?: any[];
+  navigateToEntry?: (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => void;
 }
 
 const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ 
@@ -306,7 +307,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   isLayoutEditable, 
   initialEntry, 
   isAdmin = false,
-  existingEntries = []
+  existingEntries = [],
+  navigateToEntry
 }) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [calculatedCycle, setCalculatedCycle] = useState<string>('');
@@ -390,20 +392,22 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     const normalizedDiary = toEnglishDigits(formData.diaryNo).trim();
     const normalizedLetter = toEnglishDigits(formData.letterNo).trim();
 
-    const diaryExists = normalizedDiary ? existingEntries.some(entry => {
+    const diaryDuplicate = normalizedDiary ? existingEntries.find(entry => {
       if (initialEntry && entry.id === initialEntry.id) return false;
       return toEnglishDigits(entry.diaryNo || '').trim() === normalizedDiary;
-    }) : false;
+    }) : null;
 
-    const letterExists = normalizedLetter ? existingEntries.some(entry => {
+    const letterDuplicate = normalizedLetter ? existingEntries.find(entry => {
       if (initialEntry && entry.id === initialEntry.id) return false;
       return toEnglishDigits(entry.letterNo || '').trim() === normalizedLetter;
-    }) : false;
+    }) : null;
 
     return {
-      diaryNo: diaryExists,
-      letterNo: letterExists,
-      any: diaryExists || letterExists
+      diaryNo: !!diaryDuplicate,
+      letterNo: !!letterDuplicate,
+      diaryEntryId: diaryDuplicate?.id,
+      letterEntryId: letterDuplicate?.id,
+      any: !!diaryDuplicate || !!letterDuplicate
     };
   }, [formData.diaryNo, formData.letterNo, existingEntries, initialEntry]);
 
@@ -651,6 +655,15 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   <span>পত্র নং: <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.letterNo)}</span> </span>
                 )}
                 ইতোমধ্যেই ডাটাবেজে বিদ্যমান। অনুগ্রহ করে তথ্য যাচাই করুন।
+                {(duplicates.diaryEntryId || duplicates.letterEntryId) && navigateToEntry && (
+                  <button
+                    type="button"
+                    onClick={() => navigateToEntry(duplicates.diaryEntryId || duplicates.letterEntryId || '', 'correspondence', formData.diaryNo || formData.letterNo)}
+                    className="ml-3 px-3 py-1 bg-amber-200 text-amber-900 rounded-lg hover:bg-amber-300 transition-colors font-black text-xs flex inline-flex items-center gap-1.5 shadow-sm border border-amber-300"
+                  >
+                    <Search size={12} /> দেখুন
+                  </button>
+                )}
               </p>
            </div>
         </div>
@@ -766,8 +779,19 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 placeholder="নং লিখুন"
               />
               {duplicates.letterNo && (
-                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center gap-1">
-                  <AlertCircle size={10} /> এই পত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                <div className="mt-2 flex items-center gap-2 animate-in slide-in-from-top-1">
+                  <div className="text-[10px] font-black text-amber-600 flex items-center gap-1">
+                    <AlertCircle size={10} /> এই পত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                  </div>
+                  {duplicates.letterEntryId && navigateToEntry && (
+                    <button
+                      type="button"
+                      onClick={() => navigateToEntry(duplicates.letterEntryId || '', 'correspondence', formData.letterNo)}
+                      className="px-2 py-0.5 bg-amber-600 text-white text-[9px] font-black rounded shadow-sm hover:bg-amber-700 transition-all flex items-center gap-1"
+                    >
+                      <Search size={10} /> দেখুন
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -820,8 +844,19 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 placeholder="নং লিখুন"
               />
               {duplicates.diaryNo && (
-                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center gap-1">
-                  <AlertCircle size={10} /> এই ডায়েরি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                <div className="mt-2 flex items-center gap-2 animate-in slide-in-from-top-1">
+                  <div className="text-[10px] font-black text-amber-600 flex items-center gap-1">
+                    <AlertCircle size={10} /> এই ডায়েরি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                  </div>
+                  {duplicates.diaryEntryId && navigateToEntry && (
+                    <button
+                      type="button"
+                      onClick={() => navigateToEntry(duplicates.diaryEntryId || '', 'correspondence', formData.diaryNo)}
+                      className="px-2 py-0.5 bg-amber-600 text-white text-[9px] font-black rounded shadow-sm hover:bg-amber-700 transition-all flex items-center gap-1"
+                    >
+                      <Search size={10} /> দেখুন
+                    </button>
+                  )}
                 </div>
               )}
             </div>

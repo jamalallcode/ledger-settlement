@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import React from 'react';
 import { SettlementEntry } from '../types.ts';
 import { Trash2, Pencil, Calendar, Printer, CheckCircle2, ChevronDown, ChevronUp, FileText, Fingerprint, Banknote, ListOrdered, Archive, MapPin, CalendarDays, Sparkles, ClipboardList, Filter, X, Search, LayoutGrid, CalendarSearch, Check, ShieldCheck, XCircle, AlertCircle, MessageSquare } from 'lucide-react';
-import { toBengaliDigits, parseBengaliNumber, formatDateBN } from '../utils/numberUtils.ts';
+import { toBengaliDigits, parseBengaliNumber, formatDateBN, toEnglishDigits } from '../utils/numberUtils.ts';
 import { OFFICE_HEADER } from '../constants.ts';
 import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper.ts';
 import { format, addMonths } from 'date-fns';
@@ -18,11 +18,14 @@ interface SettlementTableProps {
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
   isAdmin?: boolean;
+  highlightSearch?: string | null;
+  onClearHighlight?: () => void;
 }
 
 const SettlementTable: React.FC<SettlementTableProps> = ({ 
   entries, onDelete, onEdit, isLayoutEditable, showFilters, setShowFilters,
-  isAdminView = false, onApprove, onReject, isAdmin = false 
+  isAdminView = false, onApprove, onReject, isAdmin = false,
+  highlightSearch = null, onClearHighlight
 }) => {
   const [showCycleStats, setShowCycleStats] = useState<Record<string, boolean>>({});
   const lastActiveLabel = useRef<string>("");
@@ -33,17 +36,34 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   const cycleDropdownRef = useRef<HTMLDivElement>(null);
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterParaType, setFilterParaType] = useState(''); 
   const [filterType, setFilterType] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date | null>(null);
   
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
 
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (highlightSearch) {
+      setSearchTerm(highlightSearch);
+      // Reset other filters to ensure the highlighted entry is visible
+      setFilterParaType('');
+      setFilterType('');
+      setFilterStatus('');
+      setSelectedCycleDate(null);
+    }
+    return () => {
+      if (highlightSearch) onClearHighlight?.();
+    };
+  }, [highlightSearch, onClearHighlight]);
 
   // Click outside listener to close custom dropdowns
   useEffect(() => {
@@ -53,10 +73,19 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         if (cycleDropdownRef.current && !cycleDropdownRef.current.contains(e.target as Node)) setIsCycleDropdownOpen(false);
         if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) setIsBranchDropdownOpen(false);
         if (typeDropdownRef.current && !typeDropdownRef.current.contains(e.target as Node)) setIsTypeDropdownOpen(false);
+        if (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target as Node)) setIsStatusDropdownOpen(false);
     };
     document.addEventListener('mousedown', handleGlobalClick);
     return () => document.removeEventListener('mousedown', handleGlobalClick);
   }, []);
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setFilterParaType('');
+    setFilterType('');
+    setFilterStatus('');
+    setSelectedCycleDate(null);
+  };
 
   const cycleOptions = useMemo(() => {
     const options = [];
@@ -109,24 +138,63 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
 
   const filteredEntries = useMemo(() => {
     return entries.filter(entry => {
-      const hasRaisedCount = entry.manualRaisedCount !== null && entry.manualRaisedCount !== "" && entry.manualRaisedCount !== "0" && entry.manualRaisedCount !== "০";
-      const hasRaisedAmount = entry.manualRaisedAmount !== null && entry.manualRaisedAmount !== 0;
-      const hasMeaningfulContent = (entry.paragraphs && entry.paragraphs.length > 0) || (entry.isMeeting && (entry.meetingUnsettledAmount || 0) > 0) || hasRaisedCount || hasRaisedAmount;
-      if (!hasMeaningfulContent) return false;
-
       const entryDate = entry.issueDateISO || new Date(entry.createdAt).toISOString().split('T')[0];
       const matchDate = !activeCycle || (entryDate >= format(activeCycle.start, 'yyyy-MM-dd') && entryDate <= format(activeCycle.end, 'yyyy-MM-dd'));
       
-      const matchSearch = searchTerm === '' || 
-        (entry.entityName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-        (entry.branchName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-        (entry.issueLetterNoDate || '').toLowerCase().includes(searchTerm.toLowerCase());
-      
+      const normalizedSearch = toEnglishDigits(searchTerm.trim().toLowerCase());
+      const isNumericSearch = /^\d+$/.test(normalizedSearch);
+
+      const matchSearch = searchTerm === '' || (() => {
+        // Check all three number fields for an exact match
+        const issueNo = (entry.issueLetterNoDate || '').split(',')[0].replace(/জারিপত্র নং-?\s*/g, '').trim();
+        const letterNo = (entry.letterNoDate || '').split(',')[0].replace(/পত্র নং-?\s*/g, '').trim();
+        const diaryNo = (entry.workpaperNoDate || '').split(',')[0].replace(/ডায়েরি নং-?\s*/g, '').trim();
+        
+        const engIssue = toEnglishDigits(issueNo.toLowerCase()).trim();
+        const engLetter = toEnglishDigits(letterNo.toLowerCase()).trim();
+        const engDiary = toEnglishDigits(diaryNo.toLowerCase()).trim();
+        
+        const isExactNumberMatch = engIssue === normalizedSearch || 
+                                   engLetter === normalizedSearch || 
+                                   engDiary === normalizedSearch;
+
+        // If it's a numeric search (like "1"), we only want exact matches in the number fields
+        // This prevents "1" from matching "Branch 1" or "Year 2021" in text fields
+        if (isNumericSearch) return isExactNumberMatch;
+
+        // Also allow partial match on other fields for general search
+        const descMatch = toEnglishDigits((entry.remarks || '').toLowerCase()).includes(normalizedSearch);
+        const branchMatch = toEnglishDigits((entry.branchName || '').toLowerCase()).includes(normalizedSearch);
+        const ministryMatch = toEnglishDigits((entry.ministryName || '').toLowerCase()).includes(normalizedSearch);
+        const entityMatch = toEnglishDigits((entry.entityName || '').toLowerCase()).includes(normalizedSearch);
+
+        return isExactNumberMatch || 
+               descMatch ||
+               branchMatch ||
+               ministryMatch ||
+               entityMatch;
+      })();
+
       const entryType = entry.isMeeting ? entry.meetingType : 'বিএসআর';
       const matchType = filterType === '' || entryType === filterType;
       const matchParaType = filterParaType === '' || entry.paraType === filterParaType;
       
-      return matchDate && matchSearch && matchType && matchParaType;
+      const hasSettled = entry.paragraphs?.some(p => p.status === 'পূর্ণাঙ্গ');
+      const hasUnsettled = entry.paragraphs?.some(p => p.status === 'আংশিক');
+      const matchStatus = filterStatus === '' || 
+        (filterStatus === 'settled' && hasSettled) || 
+        (filterStatus === 'unsettled' && hasUnsettled);
+
+      const hasRaisedCount = entry.manualRaisedCount !== null && entry.manualRaisedCount !== "" && entry.manualRaisedCount !== "0" && entry.manualRaisedCount !== "০";
+      const hasRaisedAmount = entry.manualRaisedAmount !== null && entry.manualRaisedAmount !== 0;
+      const hasMeaningfulContent = (entry.paragraphs && entry.paragraphs.length > 0) || (entry.isMeeting && (entry.meetingUnsettledAmount || 0) > 0) || hasRaisedCount || hasRaisedAmount;
+      
+      // If we have a search term and it matches, we should show it regardless of "meaningful content"
+      if (searchTerm !== '' && matchSearch) return matchDate && matchType && matchParaType && matchStatus;
+      
+      if (!hasMeaningfulContent) return false;
+      
+      return matchDate && matchSearch && matchType && matchParaType && matchStatus;
     }).sort((a, b) => {
       const timeB = b.issueDateISO ? new Date(b.issueDateISO).getTime() : 0;
       const timeA = a.issueDateISO ? new Date(a.issueDateISO).getTime() : 0;
@@ -248,6 +316,16 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
     return info.replace(/জারিপত্র নং-/g, '').replace(/জারিপত্রের তারিখ-/g, '').trim() + " খ্রি:";
   };
 
+  const formatDiaryInfoForDisplay = (info: string) => {
+    if (!info) return "";
+    return info.replace(/ডায়েরি নং-/g, '').replace(/ডায়েরির তারিখ-/g, '').trim() + " খ্রি:";
+  };
+
+  const formatLetterInfoForDisplay = (info: string) => {
+    if (!info) return "";
+    return info.replace(/পত্র নং-/g, '').replace(/পত্রের তারিখ-/g, '').trim() + " খ্রি:";
+  };
+
   // Headers reverted to font-black
   const thBase = "sticky top-0 border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-200 z-[110] relative";
   const thBase2 = "sticky top-[42px] border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-200 z-[110] relative";
@@ -287,13 +365,13 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             { label: '৬. নিরীক্ষা সাল', value: toBengaliDigits(entry.auditYear), icon: Calendar, col: 'emerald' },
             { label: '৭. পত্র নং ও তারিখ', value: entry.letterNoDate, icon: FileText, col: 'amber' },
             { label: '৮. কার্যপত্র নং', value: entry.meetingWorkpaper || 'N/A', icon: FileText, col: 'purple' },
-            { label: '৯. আলোচিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingDiscussedParaCount || '০'), icon: ListOrdered, col: 'sky' },
+            { label: '৯. আলোচিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSentParaCount || '০'), icon: ListOrdered, col: 'sky' },
             { label: '১০. ডায়েরি নং ও তারিখ', value: entry.workpaperNoDate, icon: FileText, col: 'emerald' },
             { label: '১১. জারিপত্র নং', value: formatIssueInfoForDisplay(entry.issueLetterNoDate), icon: FileText, col: 'amber' },
             { label: '১২. আর্কাইভ নং', value: entry.archiveNo || 'N/A', icon: Archive, col: 'purple' },
             { label: '১৩. প্রেরিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSentParaCount || '০'), icon: ListOrdered, col: 'sky' },
             { label: '১৪. সুপারিশকৃত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingRecommendedParaCount || '০'), icon: CheckCircle2, col: 'emerald' },
-            { label: '১৫. মোট জড়িত টাকা', value: toBengaliDigits(entry.totalInvolvedAmount ?? 0), icon: Banknote, col: 'amber' },
+            { label: '১৫. মোট জড়িত টাকা', value: toBengaliDigits(entry.involvedAmount ?? 0), icon: Banknote, col: 'amber' },
             { label: '১৬. অমীমাংসিত সংখ্যা', value: toBengaliDigits(entry.meetingUnsettledParas || '০'), icon: ListOrdered, col: 'purple' },
             { label: '১৭. অমীমাংসিত টাকা', value: toBengaliDigits(entry.meetingUnsettledAmount ?? 0), icon: Banknote, col: 'sky' },
             { label: '১৮. মীমাংসিত সংখ্যা', value: toBengaliDigits(entry.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').length || 0), icon: CheckCircle2, col: 'emerald' },
@@ -316,8 +394,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   let lastRenderedCycle = "";
   // Footer text font-black
   const footerTdCls = "p-1 text-center font-black text-[10px] bg-slate-900 border border-slate-700";
-  const filterInputCls = "w-full pl-9 pr-4 h-[48px] bg-white border border-slate-300 rounded-xl font-bold text-slate-900 text-[13px] outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold";
-  const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[48px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
+  const filterInputCls = "w-full pl-7 pr-1.5 h-[38px] bg-white border border-slate-300 rounded-lg font-bold text-slate-900 text-[11px] outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold";
+  const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-1.5 px-2 h-[38px] bg-white border rounded-lg cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
 
   return (
     <div id="table-register-container" className="w-full relative animate-premium-page">
@@ -340,22 +418,22 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       )}
 
       {showFilters && !isAdminView && (
-        <div id="register-filters" className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate">
+        <div id="register-filters" className="!bg-white p-2.5 md:p-3 rounded-xl border border-slate-200 shadow-lg space-y-3 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate">
           <IDBadge id="register-filters" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             
             {/* Cycle Selection */}
-            <div className="space-y-1.5" ref={cycleDropdownRef}>
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">সময়কাল নির্বাচন (সাইকেল)</label>
+            <div className="space-y-1" ref={cycleDropdownRef}>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">সাইকেল</label>
               <div 
                 onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
                 className={customDropdownCls(isCycleDropdownOpen)}
               >
-                <CalendarDays size={18} className="text-blue-600" />
-                <span className="font-bold text-[13px] text-slate-900 truncate">
+                <CalendarDays size={14} className="text-blue-600 shrink-0" />
+                <span className="font-bold text-[11px] text-slate-900 truncate">
                   {!selectedCycleDate ? 'সকল সাইকেল' : (cycleOptions.find(o => o.cycleLabel === activeCycle?.label)?.label || toBengaliDigits(activeCycle?.label || ''))}
                 </span>
-                <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isCycleDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                <ChevronDown size={12} className={`text-slate-400 ml-auto transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
                 
                 {isCycleDropdownOpen && (
                   <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
@@ -392,24 +470,24 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             </div>
             
             {/* Branch Selection */}
-            <div className="space-y-1.5" ref={branchDropdownRef}>
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">শাখা</label>
+            <div className="space-y-1" ref={branchDropdownRef}>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">শাখা ধরণ</label>
               <div 
                 onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)} 
                 className={customDropdownCls(isBranchDropdownOpen)}
               >
-                <LayoutGrid className="text-blue-600" size={16} />
-                <span className="font-bold text-[13px] text-slate-900 truncate">
+                <LayoutGrid className="text-blue-600 shrink-0" size={14} />
+                <span className="font-bold text-[11px] text-slate-900 truncate">
                   {filterParaType === '' ? 'সকল শাখা' : filterParaType}
                 </span>
-                <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isBranchDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                <ChevronDown size={12} className={`text-slate-400 ml-auto transition-transform duration-300 shrink-0 ${isBranchDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
                 
                 {isBranchDropdownOpen && (
                   <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
                     <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
                       <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
                         <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
-                          <LayoutGrid size={12} /> শাখা নির্বাচন
+                          <LayoutGrid size={12} /> শাখা ধরণ নির্বাচন
                         </span>
                       </div>
                       <div className="p-2 space-y-1">
@@ -435,17 +513,17 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             </div>
             
             {/* Letter Type Selection */}
-            <div className="space-y-1.5" ref={typeDropdownRef}>
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">চিঠির ধরণ</label>
+            <div className="space-y-1" ref={typeDropdownRef}>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">চিঠির ধরণ</label>
               <div 
                 onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)} 
                 className={customDropdownCls(isTypeDropdownOpen)}
               >
-                <FileText className="text-blue-600" size={16} />
-                <span className="font-bold text-[13px] text-slate-900 truncate">
+                <FileText className="text-blue-600 shrink-0" size={14} />
+                <span className="font-bold text-[11px] text-slate-900 truncate">
                   {filterType === '' ? 'সকল ধরণ' : (filterType === 'বিএসআর' ? 'বিএসআর (BSR)' : filterType)}
                 </span>
-                <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isTypeDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                <ChevronDown size={12} className={`text-slate-400 ml-auto transition-transform duration-300 shrink-0 ${isTypeDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
                 
                 {isTypeDropdownOpen && (
                   <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
@@ -479,18 +557,72 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             </div>
             
             {/* Search Input */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">অনুসন্ধান</label>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">অনুসন্ধান</label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600" size={16} />
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-blue-600" size={12} />
                 <input 
                   type="text" 
                   value={searchTerm} 
                   onChange={e => setSearchTerm(e.target.value)} 
-                  placeholder="নাম বা নম্বর দিয়ে খুঁজুন..." 
+                  placeholder="জারিপত্র নং..." 
                   className={filterInputCls} 
                 />
               </div>
+            </div>
+
+            {/* Status Selection */}
+            <div className="space-y-1" ref={statusDropdownRef}>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">অবস্থা</label>
+              <div 
+                onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)} 
+                className={customDropdownCls(isStatusDropdownOpen)}
+              >
+                <CheckCircle2 className="text-blue-600 shrink-0" size={14} />
+                <span className="font-bold text-[11px] text-slate-900 truncate">
+                  {filterStatus === '' ? 'সকল অবস্থা' : (filterStatus === 'settled' ? 'পূর্ণাঙ্গ' : 'আংশিক')}
+                </span>
+                <ChevronDown size={12} className={`text-slate-400 ml-auto transition-transform duration-300 shrink-0 ${isStatusDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                
+                {isStatusDropdownOpen && (
+                  <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                    <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
+                      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                          <CheckCircle2 size={12} /> অবস্থা নির্বাচন
+                        </span>
+                      </div>
+                      <div className="p-2 space-y-1">
+                        {[
+                          { val: '', label: 'সকল অবস্থা' },
+                          { val: 'settled', label: 'পূর্ণাঙ্গ নিষ্পত্তি' },
+                          { val: 'unsettled', label: 'আংশিক/অনিষ্পত্তি' }
+                        ].map((opt, idx) => (
+                          <div 
+                            key={idx} 
+                            onClick={(e) => { e.stopPropagation(); setFilterStatus(opt.val); setIsStatusDropdownOpen(false); }} 
+                            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterStatus === opt.val ? '!bg-blue-600 !text-white shadow-lg' : 'hover:bg-slate-100 text-slate-700 font-bold bg-white'}`}
+                          >
+                            <span className="text-[13px]">{opt.label}</span>
+                            {filterStatus === opt.val && <Check size={16} strokeWidth={3} />}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Clear Filters Button */}
+            <div className="flex items-end">
+              <button 
+                onClick={resetFilters}
+                className="w-full h-[38px] bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-lg font-black text-[11px] transition-all flex items-center justify-center gap-1.5 border border-slate-200 hover:border-red-200 group"
+              >
+                <X size={14} className="group-hover:rotate-90 transition-transform duration-300" />
+                মুছুন
+              </button>
             </div>
 
           </div>
@@ -648,6 +780,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                                         <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">এনটিটি:</span> <span className="font-bold text-slate-900">{entry.entityName}</span></p>
                                         <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">শাখা:</span> <span className="font-bold text-slate-900">{entry.branchName}</span></p>
                                         <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">নিরীক্ষা সাল:</span> <span className="font-bold text-slate-900">{toBengaliDigits(entry.auditYear)}</span></p>
+                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">পত্র নং ও তারিখ:</span> <span className="font-bold text-slate-900">{formatLetterInfoForDisplay(entry.letterNoDate)}</span></p>
+                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">ডায়েরি নং ও তারিখ:</span> <span className="font-bold text-slate-900">{formatDiaryInfoForDisplay(entry.workpaperNoDate)}</span></p>
                                         <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">জারিপত্র নং ও তারিখ:</span> <span className="font-bold text-slate-900">{formatIssueInfoForDisplay(entry.issueLetterNoDate)}</span></p>
                                       </div>
                                       <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">

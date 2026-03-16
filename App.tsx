@@ -104,6 +104,21 @@ const App: React.FC = () => {
     setShowPendingOnly(false);
   };
 
+  const [highlightSearch, setHighlightSearch] = useState<string | null>(null);
+
+  const navigateToEntry = (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => {
+    setActiveTab('register');
+    setRegisterSubModule(type);
+    if (searchNo) {
+      setHighlightSearch(searchNo);
+      setShowRegisterFilters(true);
+    }
+    // Scroll to top first to ensure the table is visible
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   // --- AUTO SYNC LOGIC ---
   const syncOfflineData = async () => {
     const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
@@ -478,21 +493,29 @@ const App: React.FC = () => {
     return (
       <div onClick={handleCopy} className="absolute top-0 left-0 -translate-y-full z-[9995] pointer-events-auto no-print">
         <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md font-black text-[9px] bg-black text-white border border-white/30 shadow-2xl transition-all duration-300 hover:scale-150 hover:bg-blue-600 hover:z-[99999] active:scale-95 cursor-copy origin-bottom-left ${copied ? 'bg-emerald-600 border-emerald-400 ring-4 ring-emerald-500/30 !scale-125' : ''}`}>
-          {copied ? <><CheckCircle2 size={10} /> COPIED</> : `#${id}`}
+          {copied ? <><CheckCircle2 size={10} /> Copied</> : <><ClipboardList size={10} /> {id}</>}
         </span>
       </div>
     );
   };
 
-  return (
-    <div className="h-screen bg-white flex overflow-hidden font-['Hind_Siliguri'] animate-in fade-in duration-1000">
-      {isLoading && (
-        <div className="fixed inset-0 bg-white/60 backdrop-blur-md z-[9999] flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="font-black text-slate-700 text-sm animate-pulse tracking-widest">সিস্টেম লোড হচ্ছে...</p>
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <div className="relative">
+          <div className="w-20 h-20 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Sparkles className="text-blue-600 animate-pulse" size={32} />
+          </div>
         </div>
-      )}
+        <h2 className="mt-6 text-2xl font-bold text-slate-800 animate-pulse">সিস্টেম লোড হচ্ছে...</h2>
+        <p className="mt-2 text-slate-500">অনুগ্রহ করে অপেক্ষা করুন</p>
+      </div>
+    );
+  }
 
+  return (
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-bengali">
       {isSidebarOpen && (
         <div className="no-print h-full">
           <Sidebar 
@@ -513,7 +536,7 @@ const App: React.FC = () => {
           <Navbar 
             activeTab={activeTab} setActiveTab={handleTabChange} onDemoLoad={() => {}}
             isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
-            isLayoutEditable={isLayoutEditable} setIsLayoutEditable={setIsLayoutEditable}
+            isLayoutEditable={isLayoutEditable} setIsLayoutEditable={setIsLockedMode}
             onExportSystem={() => {}} onImportSystem={() => {}}
             isAdmin={isAdmin} setIsAdmin={setIsAdmin} cycleLabel={cycleLabelBengali}
             showRegisterFilters={showRegisterFilters} setShowRegisterFilters={setShowRegisterFilters}
@@ -542,7 +565,7 @@ const App: React.FC = () => {
                 />
               )}
               
-              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} />}
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} />}
               
               {activeTab === 'register' && (
                 <div className="space-y-6 relative">
@@ -691,6 +714,8 @@ const App: React.FC = () => {
                         showFilters={showRegisterFilters} 
                         setShowFilters={setShowRegisterFilters} 
                         isAdmin={isAdmin}
+                        highlightSearch={highlightSearch}
+                        onClearHighlight={() => setHighlightSearch(null)}
                       />
                     </div>
                   ) : (
@@ -705,6 +730,8 @@ const App: React.FC = () => {
                         onDelete={handleDelete}
                         showFilters={showRegisterFilters}
                         setShowFilters={setShowRegisterFilters}
+                        highlightSearch={highlightSearch}
+                        onClearHighlight={() => setHighlightSearch(null)}
                       />
                     </div>
                   )}

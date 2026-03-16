@@ -162,6 +162,7 @@ interface SettlementEntryModuleProps {
   isLayoutEditable?: boolean;
   isAdmin?: boolean;
   existingEntries?: SettlementEntry[];
+  navigateToEntry?: (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => void;
 }
 
 const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ 
@@ -174,7 +175,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   onBackToMenu, 
   isLayoutEditable, 
   isAdmin = false,
-  existingEntries = []
+  existingEntries = [],
+  navigateToEntry
 }) => {
   const [formData, setFormData] = useState({
     paraType: 'এসএফআই' as ParaType, 
@@ -237,39 +239,49 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [isDiaryFocused, setIsDiaryFocused] = useState(false);
 
   const duplicates = useMemo(() => {
-    if (!existingEntries || existingEntries.length === 0) return { letterNo: false, diaryNo: false, issueNo: false };
+    if (!existingEntries || existingEntries.length === 0) return { letterNo: false, diaryNo: false, issueNo: false, any: false };
     
-    const checkDuplicate = (combinedStr: string | undefined, prefix: string, searchNo: string) => {
-      if (!combinedStr || !searchNo.trim()) return false;
-      const parts = combinedStr.split(',');
-      if (parts.length === 0) return false;
-      const noPart = parts[0].replace(prefix, '').trim();
-      return toEnglishDigits(noPart).trim() === toEnglishDigits(searchNo).trim();
+    const findDuplicate = (combinedStr: string | undefined, prefixRegex: RegExp, searchNo: string) => {
+      if (!combinedStr || !searchNo.trim()) return null;
+      // Extract the number part more reliably
+      // The format is "Prefix Number, DatePrefix Date"
+      const firstPart = combinedStr.split(',')[0];
+      // Remove the prefix and any leading/trailing whitespace using regex
+      const extractedNo = firstPart.replace(prefixRegex, '').trim();
+      
+      const engExtracted = toEnglishDigits(extractedNo).trim();
+      const engSearch = toEnglishDigits(searchNo).trim();
+      
+      return engExtracted === engSearch;
     };
 
-    const letterNoExists = letterNoPart ? existingEntries.some(e => {
+    const letterDuplicate = letterNoPart ? existingEntries.find(e => {
       if (initialEntry && e.id === initialEntry.id) return false;
-      return checkDuplicate(e.letterNoDate, 'পত্র নং-', letterNoPart);
-    }) : false;
+      return findDuplicate(e.letterNoDate, /পত্র নং-?\s*/g, letterNoPart);
+    }) : null;
 
-    const diaryNoExists = diaryNoPart ? existingEntries.some(e => {
+    const diaryDuplicate = diaryNoPart ? existingEntries.find(e => {
       if (initialEntry && e.id === initialEntry.id) return false;
-      return checkDuplicate(e.workpaperNoDate, 'ডায়েরি নং-', diaryNoPart);
-    }) : false;
+      return findDuplicate(e.workpaperNoDate, /ডায়েরি নং-?\s*/g, diaryNoPart);
+    }) : null;
 
-    const issueNoExists = issueNoPart ? existingEntries.some(e => {
+    const issueDuplicate = issueNoPart ? existingEntries.find(e => {
       if (initialEntry && e.id === initialEntry.id) return false;
-      return checkDuplicate(e.issueLetterNoDate, 'জারিপত্র নং-', issueNoPart);
-    }) : false;
+      return findDuplicate(e.issueLetterNoDate, /জারিপত্র নং-?\s*/g, issueNoPart);
+    }) : null;
 
     return {
-      letterNo: letterNoExists,
-      diaryNo: diaryNoExists,
-      issueNo: issueNoExists
+      letterNo: !!letterDuplicate,
+      diaryNo: !!diaryDuplicate,
+      issueNo: !!issueDuplicate,
+      letterEntryId: letterDuplicate?.id,
+      diaryEntryId: diaryDuplicate?.id,
+      issueEntryId: issueDuplicate?.id,
+      any: !!letterDuplicate || !!diaryDuplicate || !!issueDuplicate
     };
   }, [letterNoPart, diaryNoPart, issueNoPart, existingEntries, initialEntry]);
 
-  const isDuplicate = duplicates.letterNo || duplicates.diaryNo || duplicates.issueNo;
+  const isDuplicate = duplicates.any;
 
   const letterDayRef = useRef<HTMLInputElement>(null);
   const letterMonthRef = useRef<HTMLInputElement>(null);
@@ -701,6 +713,35 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                 ইতোমধ্যেই ডাটাবেজে বিদ্যমান। অনুগ্রহ করে তথ্য যাচাই করুন।
               </p>
            </div>
+           <div className="ml-auto flex gap-2">
+             {duplicates.letterNo && (
+               <button
+                 type="button"
+                 onClick={() => navigateToEntry?.(duplicates.letterEntryId!, 'settlement', letterNoPart)}
+                 className="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-black shadow-md shadow-amber-200 hover:bg-amber-700 transition-all flex items-center gap-2"
+               >
+                 <ArrowRightCircle size={14} /> পত্র দেখুন
+               </button>
+             )}
+             {duplicates.diaryNo && (
+               <button
+                 type="button"
+                 onClick={() => navigateToEntry?.(duplicates.diaryEntryId!, 'settlement', diaryNoPart)}
+                 className="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-black shadow-md shadow-amber-200 hover:bg-amber-700 transition-all flex items-center gap-2"
+               >
+                 <ArrowRightCircle size={14} /> ডায়েরি দেখুন
+               </button>
+             )}
+             {duplicates.issueNo && (
+               <button
+                 type="button"
+                 onClick={() => navigateToEntry?.(duplicates.issueEntryId!, 'settlement', issueNoPart)}
+                 className="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-black shadow-md shadow-amber-200 hover:bg-amber-700 transition-all flex items-center gap-2"
+               >
+                 <ArrowRightCircle size={14} /> জারিপত্র দেখুন
+               </button>
+             )}
+           </div>
         </div>
       )}
 
@@ -725,8 +766,17 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                 placeholder="নং লিখুন"
               />
               {duplicates.letterNo && (
-                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center gap-1">
-                  <AlertCircle size={10} /> এই পত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-1">
+                    <AlertCircle size={10} /> এই পত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigateToEntry?.(duplicates.letterEntryId!, 'settlement', letterNoPart)}
+                    className="text-amber-700 hover:text-amber-900 underline underline-offset-2 flex items-center gap-1"
+                  >
+                    দেখুন <ArrowRightCircle size={10} />
+                  </button>
                 </div>
               )}
             </div>
@@ -743,8 +793,17 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                 placeholder="নং লিখুন"
               />
               {duplicates.diaryNo && (
-                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center gap-1">
-                  <AlertCircle size={10} /> এই ডায়েরি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-1">
+                    <AlertCircle size={10} /> এই ডায়েরি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigateToEntry?.(duplicates.diaryEntryId!, 'settlement', diaryNoPart)}
+                    className="text-amber-700 hover:text-amber-900 underline underline-offset-2 flex items-center gap-1"
+                  >
+                    দেখুন <ArrowRightCircle size={10} />
+                  </button>
                 </div>
               )}
             </div>
@@ -761,8 +820,17 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                 placeholder="নং লিখুন"
               />
               {duplicates.issueNo && (
-                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center gap-1">
-                  <AlertCircle size={10} /> এই জারিপত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-1">
+                    <AlertCircle size={10} /> এই জারিপত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigateToEntry?.(duplicates.issueEntryId!, 'settlement', issueNoPart)}
+                    className="text-amber-700 hover:text-amber-900 underline underline-offset-2 flex items-center gap-1"
+                  >
+                    দেখুন <ArrowRightCircle size={10} />
+                  </button>
                 </div>
               )}
             </div>
