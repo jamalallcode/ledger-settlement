@@ -298,6 +298,7 @@ interface CorrespondenceEntryModuleProps {
   isLayoutEditable?: boolean;
   initialEntry?: any;
   isAdmin?: boolean;
+  userEmail?: string | null;
   existingEntries?: any[];
   navigateToEntry?: (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => void;
 }
@@ -309,9 +310,13 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   isLayoutEditable, 
   initialEntry, 
   isAdmin = false,
+  userEmail,
   existingEntries = [],
   navigateToEntry
 }) => {
+  // Admin check for receiver management
+  const isReceiverAdmin = userEmail === 'websitetogather@gmail.com';
+
   const [isSuccess, setIsSuccess] = useState(false);
   const [calculatedCycle, setCalculatedCycle] = useState<string>('');
   
@@ -639,7 +644,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     
     // Defer heavy work to next tick to avoid blocking UI (INP fix)
     setTimeout(() => {
-      if (formData.receiverName.trim()) {
+      if (isReceiverAdmin && formData.receiverName.trim()) {
         const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
         const updatedNames = Array.from(new Set([formData.receiverName.trim(), ...receiverSuggestions]));
         setReceiverSuggestions(updatedNames);
@@ -994,18 +999,20 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   </button>
                 </div>
                 
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setEditingReceiverIdx(null);
-                    setTempReceiverName('');
-                    setIsManagingReceivers(true);
-                  }}
-                  className="w-[52px] h-[52px] bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 shrink-0"
-                  title="নতুন গ্রহীতা যোগ করুন"
-                >
-                  <Plus size={24} />
-                </button>
+                {isReceiverAdmin && (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setEditingReceiverIdx(null);
+                      setTempReceiverName('');
+                      setIsManagingReceivers(true);
+                    }}
+                    className="w-[52px] h-[52px] bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 shrink-0"
+                    title="নতুন গ্রহীতা যোগ করুন"
+                  >
+                    <Plus size={24} />
+                  </button>
+                )}
 
                 {showReceiverDropdown && (
                   <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600">
@@ -1029,26 +1036,30 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                           >
                             <span className="text-[13px]">{name}</span>
                             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button 
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingReceiverIdx(idx);
-                                  setTempReceiverName(name);
-                                  setIsManagingReceivers(true);
-                                  setShowReceiverDropdown(false);
-                                }}
-                                className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === name ? 'hover:bg-blue-500 text-white' : 'hover:bg-blue-100 text-blue-600'}`}
-                              >
-                                <FileEdit size={14} />
-                              </button>
-                              <button 
-                                type="button"
-                                onClick={(e) => handleDeleteReceiver(idx, e)}
-                                className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === name ? 'hover:bg-red-500 text-white' : 'hover:bg-red-100 text-red-600'}`}
-                              >
-                                <Trash size={14} />
-                              </button>
+                              {isReceiverAdmin && (
+                                <>
+                                  <button 
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingReceiverIdx(idx);
+                                      setTempReceiverName(name);
+                                      setIsManagingReceivers(true);
+                                      setShowReceiverDropdown(false);
+                                    }}
+                                    className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === name ? 'hover:bg-blue-500 text-white' : 'hover:bg-blue-100 text-blue-600'}`}
+                                  >
+                                    <FileEdit size={14} />
+                                  </button>
+                                  <button 
+                                    type="button"
+                                    onClick={(e) => handleDeleteReceiver(idx, e)}
+                                    className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === name ? 'hover:bg-red-500 text-white' : 'hover:bg-red-100 text-red-600'}`}
+                                  >
+                                    <Trash size={14} />
+                                  </button>
+                                </>
+                              )}
                               {formData.receiverName === name && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
                             </div>
                           </div>
