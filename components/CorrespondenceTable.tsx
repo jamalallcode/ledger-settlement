@@ -312,10 +312,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
 
   const filteredEntries = useMemo(() => {
     return entries.filter(entry => {
+      const normalizedSearch = toEnglishDigits(searchTerm.toLowerCase());
       const matchSearch = !searchTerm || 
-        entry.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        entry.letterNo.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        entry.diaryNo.toLowerCase().includes(searchTerm.toLowerCase());
+        toEnglishDigits(entry.description.toLowerCase()).includes(normalizedSearch) || 
+        toEnglishDigits(entry.letterNo.toLowerCase()).includes(normalizedSearch) || 
+        toEnglishDigits(entry.diaryNo.toLowerCase()).includes(normalizedSearch) ||
+        toEnglishDigits((entry.issueLetterNo || '').toLowerCase()).includes(normalizedSearch);
       
       const matchBranch = !filterParaType || entry.paraType === filterParaType;
       const matchType = !filterType || entry.letterType === filterType;
@@ -718,7 +720,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({ entries, onBa
                   type="text" 
                   value={searchTerm} 
                   onChange={e => setSearchTerm(e.target.value)} 
-                  placeholder="বিবরণ বা নং দিয়ে খুঁজুন..." 
+                  placeholder="বিবরণ, জারিপত্র বা নং দিয়ে খুঁজুন..." 
                   className="w-full pl-9 pr-4 h-[48px] bg-white border border-slate-300 rounded-xl font-bold text-slate-900 text-[13px] outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold" 
                 />
               </div>
