@@ -33,15 +33,18 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   const cycleDropdownRef = useRef<HTMLDivElement>(null);
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterParaType, setFilterParaType] = useState(''); 
   const [filterType, setFilterType] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date | null>(null);
   
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
 
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
 
@@ -53,10 +56,19 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         if (cycleDropdownRef.current && !cycleDropdownRef.current.contains(e.target as Node)) setIsCycleDropdownOpen(false);
         if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) setIsBranchDropdownOpen(false);
         if (typeDropdownRef.current && !typeDropdownRef.current.contains(e.target as Node)) setIsTypeDropdownOpen(false);
+        if (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target as Node)) setIsStatusDropdownOpen(false);
     };
     document.addEventListener('mousedown', handleGlobalClick);
     return () => document.removeEventListener('mousedown', handleGlobalClick);
   }, []);
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setFilterParaType('');
+    setFilterType('');
+    setFilterStatus('');
+    setSelectedCycleDate(null);
+  };
 
   const cycleOptions = useMemo(() => {
     const options = [];
@@ -130,7 +142,13 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       const matchType = filterType === '' || entryType === filterType;
       const matchParaType = filterParaType === '' || entry.paraType === filterParaType;
       
-      return matchDate && matchSearch && matchType && matchParaType;
+      const hasSettled = entry.paragraphs?.some(p => p.status === 'পূর্ণাঙ্গ');
+      const hasUnsettled = entry.paragraphs?.some(p => p.status === 'আংশিক');
+      const matchStatus = filterStatus === '' || 
+        (filterStatus === 'settled' && hasSettled) || 
+        (filterStatus === 'unsettled' && hasUnsettled);
+      
+      return matchDate && matchSearch && matchType && matchParaType && matchStatus;
     }).sort((a, b) => {
       const timeB = b.issueDateISO ? new Date(b.issueDateISO).getTime() : 0;
       const timeA = a.issueDateISO ? new Date(a.issueDateISO).getTime() : 0;
@@ -397,7 +415,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             
             {/* Branch Selection */}
             <div className="space-y-1.5" ref={branchDropdownRef}>
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">শাখা</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">শাখা ধরণ</label>
               <div 
                 onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)} 
                 className={customDropdownCls(isBranchDropdownOpen)}
@@ -413,7 +431,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                     <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
                       <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
                         <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
-                          <LayoutGrid size={12} /> শাখা নির্বাচন
+                          <LayoutGrid size={12} /> শাখা ধরণ নির্বাচন
                         </span>
                       </div>
                       <div className="p-2 space-y-1">
@@ -495,6 +513,60 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                   className={filterInputCls} 
                 />
               </div>
+            </div>
+
+            {/* Status Selection */}
+            <div className="space-y-1.5" ref={statusDropdownRef}>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">নিষ্পত্তি অবস্থা</label>
+              <div 
+                onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)} 
+                className={customDropdownCls(isStatusDropdownOpen)}
+              >
+                <CheckCircle2 className="text-blue-600" size={16} />
+                <span className="font-bold text-[13px] text-slate-900 truncate">
+                  {filterStatus === '' ? 'সকল অবস্থা' : (filterStatus === 'settled' ? 'পূর্ণাঙ্গ নিষ্পত্তি' : 'আংশিক/অনিষ্পত্তি')}
+                </span>
+                <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform duration-300 ${isStatusDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                
+                {isStatusDropdownOpen && (
+                  <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                    <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
+                      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                          <CheckCircle2 size={12} /> অবস্থা নির্বাচন
+                        </span>
+                      </div>
+                      <div className="p-2 space-y-1">
+                        {[
+                          { val: '', label: 'সকল অবস্থা' },
+                          { val: 'settled', label: 'পূর্ণাঙ্গ নিষ্পত্তি' },
+                          { val: 'unsettled', label: 'আংশিক/অনিষ্পত্তি' }
+                        ].map((opt, idx) => (
+                          <div 
+                            key={idx} 
+                            onClick={(e) => { e.stopPropagation(); setFilterStatus(opt.val); setIsStatusDropdownOpen(false); }} 
+                            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterStatus === opt.val ? '!bg-blue-600 !text-white shadow-lg' : 'hover:bg-slate-100 text-slate-700 font-bold bg-white'}`}
+                          >
+                            <span className="text-[13px]">{opt.label}</span>
+                            {filterStatus === opt.val && <Check size={16} strokeWidth={3} />}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Clear Filters Button */}
+            <div className="flex items-end">
+              <button 
+                onClick={resetFilters}
+                className="w-full h-[48px] bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-xl font-black text-[13px] transition-all flex items-center justify-center gap-2 border border-slate-200 hover:border-red-200 group"
+              >
+                <X size={18} className="group-hover:rotate-90 transition-transform duration-300" />
+                ফিল্টার মুছুন
+              </button>
             </div>
 
           </div>
