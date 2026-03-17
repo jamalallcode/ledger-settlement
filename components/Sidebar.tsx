@@ -665,33 +665,33 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
       {showAdminModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-500">
-          <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-10 space-y-8 animate-in zoom-in-95 duration-500 relative overflow-hidden group">
+          <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 space-y-6 animate-in zoom-in-95 duration-500 relative overflow-hidden group">
             {/* Decorative Glows */}
             <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/20 blur-[80px] rounded-full group-hover:bg-blue-600/30 transition-colors duration-700"></div>
             <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-600/10 blur-[80px] rounded-full group-hover:bg-emerald-600/20 transition-colors duration-700"></div>
             
-            <div className="relative z-10 space-y-8">
+            <div className="relative z-10 space-y-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 ring-4 ring-blue-500/10">
-                    <Fingerprint size={24} />
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 ring-4 ring-blue-500/10">
+                    <Fingerprint size={20} />
                   </div>
                   <div>
-                    <h3 className="text-white font-black text-xl tracking-tight">সিকিউরিটি এক্সেস</h3>
-                    <p className="text-blue-400/60 text-[10px] font-black uppercase tracking-[0.2em]">Administrator Portal</p>
+                    <h3 className="text-white font-black text-lg tracking-tight">সিকিউরিটি এক্সেস</h3>
+                    <p className="text-blue-400/60 text-[9px] font-black uppercase tracking-[0.2em]">Administrator Portal</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} 
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all border border-white/5"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all border border-white/5"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
 
               <div className="space-y-2">
                 <p className="text-slate-300 text-sm font-bold ml-1">মালিকের সিক্রেট পাসওয়ার্ড দিন:</p>
-                <form onSubmit={handleAdminSubmit} className="space-y-6">
+                <form onSubmit={handleAdminSubmit} className="space-y-4">
                   <div className="relative group/input">
                     <input 
                       autoFocus 
@@ -699,7 +699,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       placeholder="••••••••" 
                       value={adminPassword} 
                       onChange={(e) => setAdminPassword(e.target.value)} 
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-white font-black text-center text-2xl outline-none focus:border-blue-500/50 focus:ring-8 focus:ring-blue-500/5 transition-all placeholder:text-slate-700 tracking-[0.5em]" 
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-black text-center text-2xl outline-none focus:border-blue-500/50 focus:ring-8 focus:ring-blue-500/5 transition-all placeholder:text-slate-700 tracking-[0.5em]" 
                     />
                     <div className="absolute inset-0 rounded-2xl bg-blue-500/5 opacity-0 group-focus-within/input:opacity-100 pointer-events-none transition-opacity"></div>
                   </div>
@@ -708,7 +708,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <button 
                       type="button"
                       onClick={() => { setShowAdminModal(false); setShowRecoveryModal(true); }}
-                      className="text-[10px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-widest transition-colors"
+                      className="text-[9px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-widest transition-colors"
                     >
                       পাসওয়ার্ড ভুলে গেছেন? উদ্ধার করুন
                     </button>
@@ -718,22 +718,22 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <button 
                       type="button" 
                       onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} 
-                      className="flex-1 py-4 bg-white/5 text-slate-300 rounded-2xl font-black text-sm hover:bg-white/10 transition-all active:scale-95 border border-white/5"
+                      className="flex-1 py-3.5 bg-white/5 text-slate-300 rounded-2xl font-black text-xs hover:bg-white/10 transition-all active:scale-95 border border-white/5"
                     >
                       বাতিল
                     </button>
                     <button 
                       type="submit" 
-                      className="flex-1 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-sm hover:from-blue-500 hover:to-indigo-500 transition-all active:scale-95 shadow-xl shadow-blue-600/20 ring-4 ring-blue-500/10"
+                      className="flex-1 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-xs hover:from-blue-500 hover:to-indigo-500 transition-all active:scale-95 shadow-xl shadow-blue-600/20 ring-4 ring-blue-500/10"
                     >
                       প্রবেশ করুন
                     </button>
                   </div>
-                  <div className="text-center pt-2">
+                  <div className="text-center pt-1">
                     <button 
                       type="button"
                       onClick={() => { setShowAdminModal(false); setShowChangePasswordModal(true); }}
-                      className="text-[9px] font-black text-slate-500 hover:text-blue-400 uppercase tracking-[0.2em] transition-colors"
+                      className="text-[8px] font-black text-slate-500 hover:text-blue-400 uppercase tracking-[0.2em] transition-colors"
                     >
                       পাসওয়ার্ড পরিবর্তন করতে চান?
                     </button>
@@ -748,14 +748,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Recovery Modal */}
       {showRecoveryModal && (
         <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
-          <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[2.5rem] p-10 space-y-8 shadow-2xl">
+          <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[2rem] p-8 space-y-6 shadow-2xl">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-500/20 text-amber-500 rounded-2xl flex items-center justify-center">
-                <AlertCircle size={24} />
+              <div className="w-10 h-10 bg-amber-500/20 text-amber-500 rounded-xl flex items-center justify-center">
+                <AlertCircle size={20} />
               </div>
               <div>
-                <h3 className="text-white font-black text-xl">পাসওয়ার্ড উদ্ধার</h3>
-                <p className="text-amber-400/60 text-[10px] font-black uppercase tracking-widest">Security Recovery</p>
+                <h3 className="text-white font-black text-lg">পাসওয়ার্ড উদ্ধার</h3>
+                <p className="text-amber-400/60 text-[9px] font-black uppercase tracking-widest">Security Recovery</p>
               </div>
             </div>
 
@@ -837,77 +837,77 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Change Password Modal */}
       {showChangePasswordModal && (
         <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
-          <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[2.5rem] p-10 space-y-8 shadow-2xl">
+          <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[2rem] p-6 space-y-4 shadow-2xl">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-500/20 text-blue-500 rounded-2xl flex items-center justify-center">
-                <KeyRound size={24} />
+              <div className="w-10 h-10 bg-blue-500/20 text-blue-500 rounded-xl flex items-center justify-center">
+                <KeyRound size={20} />
               </div>
               <div>
-                <h3 className="text-white font-black text-xl">পাসওয়ার্ড পরিবর্তন</h3>
-                <p className="text-blue-400/60 text-[10px] font-black uppercase tracking-widest">Update Security</p>
+                <h3 className="text-white font-black text-lg">পাসওয়ার্ড পরিবর্তন</h3>
+                <p className="text-blue-400/60 text-[9px] font-black uppercase tracking-widest">Update Security</p>
               </div>
             </div>
 
-            <form onSubmit={handleChangePassword} className="space-y-6">
-              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 no-scrollbar">
-                <div className="space-y-2">
-                  <p className="text-slate-300 text-sm font-bold ml-1">নতুন পাসওয়ার্ড:</p>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <p className="text-slate-300 text-xs font-bold ml-1">নতুন পাসওয়ার্ড:</p>
                   <input 
                     type="password" 
                     value={newPassword} 
                     onChange={(e) => setNewPassword(e.target.value)} 
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all" 
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-sm" 
                     placeholder="কমপক্ষে ৩ অক্ষর"
                   />
                 </div>
-                <div className="space-y-2">
-                  <p className="text-slate-300 text-sm font-bold ml-1">পাসওয়ার্ড নিশ্চিত করুন:</p>
+                <div className="space-y-1.5">
+                  <p className="text-slate-300 text-xs font-bold ml-1">পাসওয়ার্ড নিশ্চিত করুন:</p>
                   <input 
                     type="password" 
                     value={confirmPassword} 
                     onChange={(e) => setConfirmPassword(e.target.value)} 
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all" 
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-sm" 
                     placeholder="আবার লিখুন"
                   />
                 </div>
                 
-                <div className="pt-4 border-t border-white/10">
-                  <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-4">পাসওয়ার্ড উদ্ধারের জন্য সেটিংস</p>
+                <div className="pt-3 border-t border-white/10">
+                  <p className="text-blue-400 text-[9px] font-black uppercase tracking-widest mb-3">পাসওয়ার্ড উদ্ধারের জন্য সেটিংস</p>
                   
-                  <div className="space-y-2">
-                    <p className="text-slate-300 text-sm font-bold ml-1">নিরাপত্তা প্রশ্ন:</p>
+                  <div className="space-y-1.5">
+                    <p className="text-slate-300 text-xs font-bold ml-1">নিরাপত্তা প্রশ্ন:</p>
                     <input 
                       type="text" 
                       value={newQuestion} 
                       onChange={(e) => setNewQuestion(e.target.value)} 
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all" 
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-sm" 
                       placeholder="যেমন: আপনার প্রিয় রং কি?"
                     />
                   </div>
-                  <div className="space-y-2 mt-4">
-                    <p className="text-slate-300 text-sm font-bold ml-1">প্রশ্নের উত্তর:</p>
+                  <div className="space-y-1.5 mt-3">
+                    <p className="text-slate-300 text-xs font-bold ml-1">প্রশ্নের উত্তর:</p>
                     <input 
                       type="text" 
                       value={newAnswer} 
                       onChange={(e) => setNewAnswer(e.target.value)} 
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all" 
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-sm" 
                       placeholder="উত্তরটি এখানে লিখুন"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex gap-3 pt-2">
                 <button 
                   type="button" 
                   onClick={() => setShowChangePasswordModal(false)} 
-                  className="flex-1 py-4 bg-white/5 text-slate-300 rounded-2xl font-black text-sm hover:bg-white/10 transition-all"
+                  className="flex-1 py-3 bg-white/5 text-slate-300 rounded-xl font-black text-xs hover:bg-white/10 transition-all"
                 >
                   বাতিল
                 </button>
                 <button 
                   type="submit" 
-                  className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20"
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-black text-xs hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20"
                 >
                   সংরক্ষণ করুন
                 </button>
