@@ -10,6 +10,7 @@ interface LandingPageProps {
   setActiveTab: (tab: string) => void;
   cycleLabel: string;
   isLockedMode?: boolean;
+  isLayoutEditable?: boolean;
   isAdmin?: boolean;
   pendingCount?: number;
   onShowPending?: () => void;
@@ -20,15 +21,54 @@ const LandingPage: React.FC<LandingPageProps> = ({
   setActiveTab, 
   cycleLabel, 
   isLockedMode = true,
+  isLayoutEditable = false,
   isAdmin = false,
   pendingCount = 0,
   onShowPending
 }) => {
+  // Added isLayoutEditable as an optional prop to match usage on line 117
+  const IDBadge = ({ id, isLayoutEditable: manualEditable }: { id: string, isLayoutEditable?: boolean }) => {
+    const [copied, setCopied] = useState(false);
+    // Use manual prop if provided, otherwise fallback to parent scope value
+    const showBadge = manualEditable !== undefined ? manualEditable : isLayoutEditable;
+    if (!showBadge) return null;
+    
+    const handleCopy = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      navigator.clipboard.writeText(id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+      <div 
+        onClick={handleCopy}
+        className="absolute top-0 left-0 -translate-y-full z-[9995] pointer-events-auto no-print"
+      >
+        <span 
+          className={`
+            flex items-center gap-1.5 px-2 py-1 rounded-md font-black text-[9px]
+            bg-black text-white border border-white/30 shadow-2xl transition-all duration-300
+            hover:scale-150 hover:bg-blue-600 hover:z-[99999] active:scale-95 cursor-copy origin-bottom-left
+            ${copied ? 'bg-emerald-600 border-emerald-400 ring-4 ring-emerald-500/30 !scale-125' : ''}
+          `}
+        >
+          {copied ? <><CheckCircle2 size={10} /> COPIED</> : `#${id}`}
+        </span>
+      </div>
+    );
+  };
+
   return (
     <div className="animate-landing-premium relative space-y-8 pb-20">
+      <IDBadge id="view-landing-home" />
+
       {/* MODERATION ALERT FOR ADMIN - MOVED TO TOP AS PER INSTRUCTION */}
       {isAdmin && pendingCount > 0 && (
         <div id="admin-moderation-alert" className="group relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-amber-50 to-orange-50 p-8 border-2 border-amber-200/60 shadow-xl shadow-amber-900/5 animate-in slide-in-from-bottom-6 duration-700">
+          <IDBadge id="admin-moderation-alert" isLayoutEditable={isLayoutEditable} />
+          
           <div className="absolute -right-10 -bottom-10 opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all duration-1000">
              <ShieldAlert size={260} />
           </div>
@@ -64,6 +104,8 @@ const LandingPage: React.FC<LandingPageProps> = ({
       
       {/* Hero Section */}
       <div id="hero-section" className="relative overflow-hidden rounded-[2.5rem] bg-white p-10 text-slate-900 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-slate-200">
+        <IDBadge id="hero-section" />
+        
         {/* Subtle background decoration */}
         <div className="absolute top-0 right-0 p-8 text-slate-100 opacity-40">
           <ShieldCheck size={200} />
@@ -97,9 +139,11 @@ const LandingPage: React.FC<LandingPageProps> = ({
               onClick={() => setActiveTab('entry')}
               className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-base flex items-center gap-3 transition-all shadow-xl shadow-blue-600/30 active:scale-95 relative"
             >
+              <IDBadge id="btn-start-work" />
               কাজ শুরু করুন <ArrowRight size={20} />
             </button>
             <div id="cycle-badge-hero" className="px-6 py-4 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 shadow-sm hover:shadow-md transition-all duration-300 relative group">
+               <IDBadge id="cycle-badge-hero" />
                <div className="relative flex h-2.5 w-2.5">
                  <div className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></div>
                  <div className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
