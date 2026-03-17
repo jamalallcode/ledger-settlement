@@ -664,7 +664,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
       {showAdminModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[1000] flex items-start justify-center p-4 pt-48 bg-black/40 backdrop-blur-md animate-in fade-in duration-500">
           <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 space-y-6 animate-in zoom-in-95 duration-500 relative overflow-y-auto max-h-[90vh] group no-scrollbar">
             {/* Decorative Glows */}
             <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/20 blur-[80px] rounded-full group-hover:bg-blue-600/30 transition-colors duration-700"></div>
@@ -747,7 +747,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Recovery Modal */}
       {showRecoveryModal && (
-        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[1001] flex items-start justify-center p-4 pt-48 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
           <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[2rem] p-8 space-y-6 shadow-2xl overflow-y-auto max-h-[90vh] no-scrollbar">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-amber-500/20 text-amber-500 rounded-xl flex items-center justify-center">
@@ -836,7 +836,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Change Password Modal */}
       {showChangePasswordModal && (
-        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[1001] flex items-start justify-center p-4 pt-48 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
           <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[2rem] p-6 space-y-4 shadow-2xl overflow-y-auto max-h-[90vh] no-scrollbar">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-blue-500/20 text-blue-500 rounded-xl flex items-center justify-center">
