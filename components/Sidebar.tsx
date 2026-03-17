@@ -239,7 +239,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, badgeId: 'side-nav-archive' },
     ...(isAdmin ? [
       { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, badgeId: 'side-nav-voting' },
-      { id: 'change_pass', label: 'পাসওয়ার্ড পরিবর্তন', icon: KeyRound, badgeId: 'side-nav-pass' },
       { id: 'setup', label: 'সেটআপ', icon: ShieldCheck, badgeId: 'side-nav-setup', isDropdown: true }
     ] : []),
   ];
@@ -578,6 +577,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                       </button>
                     </div>
                   )}
+
+                  <button 
+                    onClick={() => setShowChangePasswordModal(true)}
+                    className={getSubItemCls(false)}
+                  >
+                    <KeyRound size={14} className={getSubIconCls(false, 'amber')} />
+                    <span>৩. পাসওয়ার্ড পরিবর্তন</span>
+                  </button>
                 </div>
               )}
             </div>
