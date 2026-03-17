@@ -188,10 +188,8 @@ const App: React.FC = () => {
       const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com'];
       if (email && adminEmails.includes(email)) {
         setIsAdmin(true);
+        setIsLockedMode(false); // Auto-unlock for admin
         localStorage.setItem(ADMIN_MODE_KEY, 'true');
-      } else {
-        // Optional: Reset isAdmin if not in list, but be careful with existing localStorage
-        // For now, let's just allow the new one
       }
     };
 
