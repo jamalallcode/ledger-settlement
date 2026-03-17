@@ -916,15 +916,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 2 */}
             <div className={`${colWrapper} border-blue-100`}>
-              <IDBadge id="corr-field-2" />
               <label className={labelCls}><span className={numBadge}>২</span> <ShieldCheck size={14} className="text-blue-600" /> শাখার ধরণ:</label>
-              <select 
-                className={`${inputCls} ${formData.paraType ? 'border-emerald-500' : 'border-red-500'}`} value={formData.paraType}
-                onChange={e => setFormData({...formData, paraType: e.target.value})}
-              >
-                <option value="এসএফআই">এসএফআই (SFI)</option>
-                <option value="নন এসএফআই">নন এসএফআই (NON-SFI)</option>
-              </select>
+              <PremiumParaTypeSelect 
+                value={formData.paraType}
+                onChange={(val: string) => setFormData({...formData, paraType: val})}
+                IDBadge={IDBadge}
+              />
             </div>
 
             {/* Field 3 */}
