@@ -55,11 +55,13 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     if (filterBranch !== 'সকল') {
       filteredForOptions = entries.filter(e => e.paraType === filterBranch);
     }
-    const targetToRemove = normalizeName('শামীমা শান্ত্রিন');
+    const targetsToRemove = [normalizeName('শামীমা শান্ত্রিন'), normalizeName('শামীমা শাহরিন'), normalizeName('শামীমা শাহ্রিন')];
     const unique = Array.from(new Set(filteredForOptions.map(e => normalizeName(e.receiverName || e.presentedToName)).filter(name => 
       name !== 'অনির্ধারিত' && 
-      name !== targetToRemove && 
-      !name.includes('শান্ত্রিন')
+      !targetsToRemove.includes(name) && 
+      !name.includes('শান্ত্রিন') &&
+      !name.includes('শাহরিন') &&
+      !name.includes('শাহ্রিন')
     )));
     return ['সকল', ...unique];
   }, [entries, filterBranch]);
@@ -96,10 +98,10 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     const reportingDateObj = new Date(selectedReportingDate);
     if (isNaN(reportingDateObj.getTime())) return data;
 
-    const targetToRemove = normalizeName('শামীমা শান্ত্রিন');
+    const targetsToRemove = [normalizeName('শামীমা শান্ত্রিন'), normalizeName('শামীমা শাহরিন'), normalizeName('শামীমা শাহ্রিন')];
     data = data.filter(e => {
       const auditorName = normalizeName(e.receiverName || e.presentedToName);
-      if (auditorName === targetToRemove || auditorName.includes('শান্ত্রিন')) return false;
+      if (targetsToRemove.includes(auditorName) || auditorName.includes('শান্ত্রিন') || auditorName.includes('শাহরিন') || auditorName.includes('শাহ্রিন')) return false;
       
       if (!e.diaryDate) return false;
       const dDateStr = toEnglishDigits(e.diaryDate);
