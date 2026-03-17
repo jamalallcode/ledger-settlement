@@ -203,10 +203,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter, badgeId: 'side-nav-register', isDropdown: true },
     { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return', isDropdown: true },
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, badgeId: 'side-nav-archive' },
-    ...(isAdmin ? [
-      { id: 'dashboard', label: 'ড্যাশবোর্ড', icon: LayoutDashboard, badgeId: 'side-nav-dashboard' },
-      { id: 'setup', label: 'সেটআপ', icon: ShieldCheck, badgeId: 'side-nav-setup', isDropdown: true }
-    ] : []),
   ];
 
   const IDBadge = ({ id }: { id: string }) => {
@@ -617,14 +613,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             
             {isAdmin ? (
               <div className="grid grid-cols-1 gap-1">
-
-                <button 
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg bg-red-500/5 text-red-400 hover:bg-red-500 hover:text-white transition-all font-bold text-[9px] group border border-red-500/10 hover:border-red-400"
-                >
-                  <LogOut size={10} className="group-hover:-translate-x-1 transition-transform" />
-                  লগআউট করুন
-                </button>
               </div>
             ) : (
               <button 
@@ -712,15 +700,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                       className="flex-1 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-xs hover:from-blue-500 hover:to-indigo-500 transition-all active:scale-95 shadow-xl shadow-blue-600/20 ring-4 ring-blue-500/10"
                     >
                       প্রবেশ করুন
-                    </button>
-                  </div>
-                  <div className="text-center pt-1">
-                    <button 
-                      type="button"
-                      onClick={() => { setShowAdminModal(false); onOpenChangePassword && onOpenChangePassword(); }}
-                      className="text-[8px] font-black text-slate-500 hover:text-blue-400 uppercase tracking-[0.2em] transition-colors"
-                    >
-                      পাসওয়ার্ড পরিবর্তন করতে চান?
                     </button>
                   </div>
                 </form>
