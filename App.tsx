@@ -11,6 +11,7 @@ import VotingSystem from './components/VotingSystem';
 import DocumentArchive from './components/DocumentArchive';
 import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
+import ChangePasswordModal from './components/ChangePasswordModal';
 import { SettlementEntry, GroupOption, CumulativeStats } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
@@ -42,6 +43,7 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   
   // State for direct module entry from sidebar
   const [entryModule, setEntryModule] = useState<'settlement' | 'correspondence' | null>(null);
@@ -539,6 +541,7 @@ const App: React.FC = () => {
             isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
             isAdmin={isAdmin} setIsAdmin={setIsAdmin}
             onLogout={handleLogout}
+            onOpenChangePassword={() => setShowChangePassword(true)}
             pendingCount={totalPendingCount}
             entryModule={entryModule}
             registerSubModule={registerSubModule}
@@ -762,12 +765,18 @@ const App: React.FC = () => {
                   correspondenceEntries={correspondenceEntries}
                   pendingCount={totalPendingCount}
                   setActiveTab={handleTabChange}
+                  onOpenChangePassword={() => setShowChangePassword(true)}
                 />
               )}
             </div>
           </div>
         </main>
       </div>
+
+      <ChangePasswordModal 
+        isOpen={showChangePassword} 
+        onClose={() => setShowChangePassword(false)} 
+      />
 
       {/* Admin Proactive Notification */}
       {showAdminAlert && (
