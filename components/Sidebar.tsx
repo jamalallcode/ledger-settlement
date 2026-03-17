@@ -229,7 +229,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // Helper for active styling
   const getSubItemCls = (isActive: boolean) => 
-    `w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black transition-all group ${isActive ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`;
+    `w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] font-black transition-all group ${isActive ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`;
 
   const getSubIconCls = (isActive: boolean, hoverColor: string = 'emerald') => 
     `${isActive ? 'text-white' : `text-slate-400 group-hover:text-${hoverColor}-400`} transition-transform group-hover:scale-110`;
@@ -238,22 +238,22 @@ const Sidebar: React.FC<SidebarProps> = ({
     <>
       <div id="sidebar-container" className="w-48 bg-slate-900 h-full text-slate-300 flex flex-col border-r border-slate-800 shadow-2xl overflow-hidden relative z-[5000]">
         <IDBadge id="sidebar-container" />
-        <div id="sidebar-header" className="p-6 border-b border-slate-800 flex items-center justify-between relative">
+        <div id="sidebar-header" className="p-2 border-b border-slate-800 flex items-center justify-between relative">
           <IDBadge id="sidebar-header" />
-          <div id="sidebar-logo" onClick={handleLogoClick} className="flex items-center gap-3 relative cursor-pointer select-none active:scale-95 transition-transform">
+          <div id="sidebar-logo" onClick={handleLogoClick} className="flex items-center gap-2 relative cursor-pointer select-none active:scale-95 transition-transform">
             <IDBadge id="sidebar-logo" />
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/40">
-              <LayoutDashboard size={20} className="text-white" />
+            <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/40">
+              <LayoutDashboard size={16} className="text-white" />
             </div>
-            <span className="font-black text-white tracking-tight text-xs">অডিট রেজিস্টার</span>
+            <span className="font-black text-white tracking-tight text-[10px]">অডিট রেজিস্টার</span>
           </div>
           <button onClick={onToggleVisibility} className="p-1 hover:bg-slate-800 rounded transition-colors text-slate-400 hover:text-white relative">
             <IDBadge id="btn-sidebar-toggle" />
-            <ChevronLeft size={20} />
+            <ChevronLeft size={16} />
           </button>
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
-          <nav id="sidebar-nav" className="py-4 px-4 space-y-1 relative">
+          <nav id="sidebar-nav" className="py-1 px-2 space-y-0.5 relative">
             <IDBadge id="sidebar-nav" />
             {menuItems.map((item) => (
               <div 
@@ -277,16 +277,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                       setActiveTab(item.id);
                     }
                   }} 
-                  className={`w-full flex items-center justify-between px-3 py-3 rounded-xl font-bold transition-all relative group ${activeTab === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
+                  className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg font-bold transition-all relative group ${activeTab === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
                 >
                   <IDBadge id={item.badgeId} />
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <div className="relative">
-                      <item.icon size={18} />
+                      <item.icon size={14} />
                     </div>
-                    <span className="text-sm">{item.label}</span>
+                    <span className="text-[12px]">{item.label}</span>
                   </div>
-                  {item.isDropdown && <ChevronDown size={14} className={`transition-transform duration-300 ${(item.id === 'entry' && isEntryExpanded) || (item.id === 'register' && isRegisterExpanded) || (item.id === 'return' && isReturnExpanded) || (item.id === 'setup' && isSetupExpanded) ? 'rotate-180' : ''}`} />}
+                  {item.isDropdown && <ChevronDown size={10} className={`transition-transform duration-300 ${(item.id === 'entry' && isEntryExpanded) || (item.id === 'register' && isRegisterExpanded) || (item.id === 'return' && isReturnExpanded) || (item.id === 'setup' && isSetupExpanded) ? 'rotate-180' : ''}`} />}
                 </button>
 
                 {/* Nested Sub-menu for Entry */}
@@ -335,13 +335,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                     {/* ১. মাসিক (Toggle) */}
                     <button 
                       onClick={() => setIsMonthlyExpanded(!isMonthlyExpanded)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[12px] font-black transition-all ${isMonthlyExpanded ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-black transition-all ${isMonthlyExpanded ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-1.5 h-1.5 rounded-full ${reportType?.includes('মাসিক') ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]' : 'bg-blue-500'}`}></div>
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-1 h-1 rounded-full ${reportType?.includes('মাসিক') ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]' : 'bg-blue-500'}`}></div>
                         <span>১. মাসিক</span>
                       </div>
-                      <ChevronDown size={12} className={`transition-transform duration-300 ${isMonthlyExpanded ? 'rotate-180' : ''}`} />
+                      <ChevronDown size={10} className={`transition-transform duration-300 ${isMonthlyExpanded ? 'rotate-180' : ''}`} />
                     </button>
 
                     {/* Monthly Sub-items */}
@@ -450,13 +450,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                     {/* ২. ত্রৈমাসিক (Toggle) */}
                     <button 
                       onClick={() => setIsQuarterlyExpanded(!isQuarterlyExpanded)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[12px] font-black transition-all ${isQuarterlyExpanded ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-black transition-all ${isQuarterlyExpanded ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-1.5 h-1.5 rounded-full ${reportType?.includes('ত্রৈমাসিক') ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]' : 'bg-amber-500'}`}></div>
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-1 h-1 rounded-full ${reportType?.includes('ত্রৈমাসিক') ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]' : 'bg-amber-500'}`}></div>
                         <span>২. ত্রৈমাসিক</span>
                       </div>
-                      <ChevronDown size={12} className={`transition-transform duration-300 ${isQuarterlyExpanded ? 'rotate-180' : ''}`} />
+                      <ChevronDown size={10} className={`transition-transform duration-300 ${isQuarterlyExpanded ? 'rotate-180' : ''}`} />
                     </button>
 
                     {/* Quarterly Sub-items */}
@@ -507,38 +507,37 @@ const Sidebar: React.FC<SidebarProps> = ({
                     {/* ২. প্রারম্ভিক জের সেটআপ (Nested Toggle) */}
                     <button 
                       onClick={() => setIsInitialBalanceExpanded(!isInitialBalanceExpanded)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[11px] font-black transition-all ${reportType?.includes('জের সেটআপ') ? 'bg-slate-800 text-blue-400' : 'text-slate-500 hover:bg-slate-800 hover:text-white'}`}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[10px] font-black transition-all ${reportType?.includes('জের সেটআপ') ? 'bg-slate-800 text-blue-400' : 'text-slate-500 hover:bg-slate-800 hover:text-white'}`}
                     >
-                      <div className="flex items-center gap-3">
-                        <Lock size={12} className={reportType?.includes('জের সেটআপ') ? 'text-blue-400' : 'text-slate-600'} />
+                      <div className="flex items-center gap-2">
+                        <Lock size={10} className={reportType?.includes('জের সেটআপ') ? 'text-blue-400' : 'text-slate-600'} />
                         <span>২. প্রারম্ভিক জের সেটআপ</span>
                       </div>
-                      <ChevronDown size={12} className={`transition-transform duration-300 ${isInitialBalanceExpanded ? 'rotate-180' : ''}`} />
+                      <ChevronDown size={10} className={`transition-transform duration-300 ${isInitialBalanceExpanded ? 'rotate-180' : ''}`} />
                     </button>
-
                     {isInitialBalanceExpanded && (
                       <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
                         <button 
                           onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক')}
-                          className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: মাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                          className={`w-full text-left px-2 py-1 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: মাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                         >
                           ১. মাসিক
                         </button>
                         <button 
                           onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: ত্রৈমাসিক')}
-                          className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: ত্রৈমাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                          className={`w-full text-left px-2 py-1 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: ত্রৈমাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                         >
                           ২. ত্রৈমাসিক
                         </button>
                         <button 
                           onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: ষাণ্মাসিক')}
-                          className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: ষাণ্মাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                          className={`w-full text-left px-2 py-1 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: ষাণ্মাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                         >
                           ৩. ষাণ্মাসিক
                         </button>
                         <button 
                           onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: বাৎসরিক')}
-                          className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: বাৎসরিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                          className={`w-full text-left px-2 py-1 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: বাৎসরিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                         >
                           ৪. বাৎসরিক
                         </button>
@@ -556,33 +555,32 @@ const Sidebar: React.FC<SidebarProps> = ({
                 )}
               </div>
             ))}
-
             {/* New Important Links Section */}
-            <div className="pt-4 space-y-1">
+            <div className="pt-2 space-y-0.5">
               <div 
                 id="side-nav-links-header"
                 onClick={() => setIsLinksOpen(!isLinksOpen)}
-                className={`w-full flex items-center justify-between px-3 py-3 rounded-xl font-bold transition-all relative cursor-pointer group ${isLinksOpen ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`}
+                className={`w-full flex items-center justify-between px-2 py-2 rounded-lg font-bold transition-all relative cursor-pointer group ${isLinksOpen ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`}
               >
                 <IDBadge id="side-nav-links-header" />
-                <div className="flex items-center gap-3">
-                  <Globe size={18} />
-                  <span className="text-xs">প্রয়োজনীয় লিঙ্কসমূহ</span>
+                <div className="flex items-center gap-2">
+                  <Globe size={16} />
+                  <span className="text-[11px]">প্রয়োজনীয় লিঙ্কসমূহ</span>
                 </div>
-                <ChevronDown size={14} className={`transition-transform duration-300 ${isLinksOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={12} className={`transition-transform duration-300 ${isLinksOpen ? 'rotate-180' : ''}`} />
               </div>
 
               {isLinksOpen && (
-                <div className="pl-4 space-y-1 animate-in slide-in-from-top-2 duration-300">
+                <div className="pl-3 space-y-0.5 animate-in slide-in-from-top-2 duration-300">
                   {importantLinks.map((link, idx) => (
-                    <div key={idx} className="group/link flex items-center gap-2">
+                    <div key={idx} className="group/link flex items-center gap-1">
                       <a 
                         href={link.url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="flex-1 flex items-center gap-2 px-3 py-2 text-[11px] font-bold text-slate-500 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all truncate"
+                        className="flex-1 flex items-center gap-2 px-2 py-1.5 text-[10px] font-bold text-slate-500 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all truncate"
                       >
-                        <LinkIcon size={12} className="shrink-0" />
+                        <LinkIcon size={10} className="shrink-0" />
                         <span className="truncate">{link.name}</span>
                       </a>
                       {isAdmin && (
@@ -590,7 +588,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                           onClick={(e) => handleRemoveLink(e, idx)}
                           className="opacity-0 group-hover/link:opacity-100 p-1 text-slate-600 hover:text-red-500 transition-all"
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={10} />
                         </button>
                       )}
                     </div>
@@ -599,9 +597,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                   {isAdmin && (
                     <button 
                       onClick={handleAddLink}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-black text-blue-500 hover:bg-blue-500/10 rounded-lg transition-all mt-2"
+                      className="w-full flex items-center gap-2 px-2 py-1.5 text-[10px] font-black text-blue-500 hover:bg-blue-500/10 rounded-lg transition-all mt-1"
                     >
-                      <Plus size={14} />
+                      <Plus size={12} />
                       <span>লিঙ্ক যুক্ত করুন</span>
                     </button>
                   )}
@@ -610,52 +608,52 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
             
             {/* Sidebar Footer Content moved into Nav for scrolling */}
-            <div id="sidebar-footer" className="pt-4 mt-4 border-t border-slate-800 space-y-4 relative">
+            <div id="sidebar-footer" className="pt-1 mt-1 border-t border-slate-800 space-y-1 relative">
               <IDBadge id="sidebar-footer" />
               
               {/* Security & Account Section - Premium Design */}
-              <div className="space-y-3">
+              <div className="space-y-1">
                 <div className="flex items-center gap-2 px-1">
-                  <div className="w-1 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Security & Account</span>
+                  <div className="w-1 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-[0.2em]">Security & Account</span>
                 </div>
                 
                 {isAdmin ? (
-                  <div className="grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-1 gap-1">
                     <button 
                       onClick={() => onOpenChangePassword && onOpenChangePassword()}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-slate-800/50 text-slate-300 hover:bg-blue-600 hover:text-white transition-all font-bold text-[11px] group border border-slate-700/50 hover:border-blue-400 shadow-sm"
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg bg-slate-800/50 text-slate-300 hover:bg-blue-600 hover:text-white transition-all font-bold text-[9px] group border border-slate-700/50 hover:border-blue-400 shadow-sm"
                     >
-                      <KeyRound size={14} className="group-hover:rotate-12 transition-transform text-blue-400 group-hover:text-white" />
+                      <KeyRound size={10} className="group-hover:rotate-12 transition-transform text-blue-400 group-hover:text-white" />
                       পাসওয়ার্ড পরিবর্তন
                     </button>
                     <button 
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-red-500/5 text-red-400 hover:bg-red-500 hover:text-white transition-all font-bold text-[11px] group border border-red-500/10 hover:border-red-400"
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg bg-red-500/5 text-red-400 hover:bg-red-500 hover:text-white transition-all font-bold text-[9px] group border border-red-500/10 hover:border-red-400"
                     >
-                      <LogOut size={14} className="group-hover:-translate-x-1 transition-transform" />
+                      <LogOut size={10} className="group-hover:-translate-x-1 transition-transform" />
                       লগআউট করুন
                     </button>
                   </div>
                 ) : (
                   <button 
                     onClick={() => setShowAdminModal(true)}
-                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-slate-800 to-slate-850 text-slate-200 hover:from-blue-600 hover:to-blue-700 hover:text-white transition-all font-black text-[11px] group border border-slate-700 hover:border-blue-400 shadow-xl shadow-black/20"
+                    className="w-full flex items-center justify-between px-2 py-2 rounded-lg bg-gradient-to-r from-slate-800 to-slate-850 text-slate-200 hover:from-blue-600 hover:to-blue-700 hover:text-white transition-all font-black text-[9px] group border border-slate-700 hover:border-blue-400 shadow-xl shadow-black/20"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                        <Lock size={14} className="text-blue-400 group-hover:text-white transition-colors" />
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-md bg-blue-500/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                        <Lock size={10} className="text-blue-400 group-hover:text-white transition-colors" />
                       </div>
                       <span>এডমিন লগইন</span>
                     </div>
-                    <ArrowRight size={14} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    <ArrowRight size={10} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                   </button>
                 )}
               </div>
 
-              <div className="pt-2 flex items-center justify-center gap-2 opacity-30">
-                 <ShieldCheck size={10} className="text-slate-500" />
-                 <p className="text-[7px] font-black text-slate-500 uppercase tracking-[0.3em]">Secure Node v1.0.4</p>
+              <div className="pt-0.5 flex items-center justify-center gap-2 opacity-30">
+                 <ShieldCheck size={7} className="text-slate-500" />
+                 <p className="text-[5px] font-black text-slate-500 uppercase tracking-[0.3em]">Secure Node v1.0.4</p>
               </div>
             </div>
           </nav>
