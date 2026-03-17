@@ -284,7 +284,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+        <nav className="flex-1 overflow-y-auto p-4 space-y-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -521,7 +521,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {showAdminModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-500">
           <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 space-y-6 animate-in zoom-in-95 duration-500 relative overflow-hidden group">
             <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/20 blur-[80px] rounded-full group-hover:bg-blue-600/30 transition-colors duration-700"></div>
             <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-600/10 blur-[80px] rounded-full group-hover:bg-emerald-600/20 transition-colors duration-700"></div>
@@ -610,7 +610,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Recovery Modal */}
       {showRecoveryModal && (
-        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-black/70 animate-in fade-in duration-500">
           <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[1.5rem] p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -680,7 +680,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Change Password Modal */}
       {showChangePasswordModal && (
-        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-black/70 animate-in fade-in duration-500">
           <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[1.5rem] p-5 space-y-3 shadow-2xl">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-blue-500/20 text-blue-500 rounded-lg flex items-center justify-center">
