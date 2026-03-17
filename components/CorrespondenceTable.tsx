@@ -142,7 +142,6 @@ const PremiumInlineSelect: React.FC<{
     const defaultList = ['সুপার', 'এএন্ডএও', 'উপপরিচালক']; 
     
     const filterUnwanted = (s: string) => 
-      s !== 'শামীমা রহমান' && 
       s !== 'পরিচালক' && 
       s !== 'মহাপরিচালক' && 
       s !== 'উপ-পরিচালক';
@@ -176,7 +175,7 @@ const PremiumInlineSelect: React.FC<{
 
   const handleAddNew = () => {
     const trimmed = searchTerm.trim();
-    if (!trimmed || trimmed === 'শামীমা রহমান' || trimmed === 'পরিচালক' || trimmed === 'মহাপরিচালক' || trimmed === 'উপ-পরিচালক') return;
+    if (!trimmed || trimmed === 'পরিচালক' || trimmed === 'মহাপরিচালক' || trimmed === 'উপ-পরিচালক') return;
     const next = Array.from(new Set([trimmed, ...suggestions]));
     setSuggestions(next);
     localStorage.setItem('ledger_correspondence_presented_to', JSON.stringify(next));
@@ -235,7 +234,6 @@ const PremiumInlineSelect: React.FC<{
               </div>
             ))}
             {searchTerm && !suggestions.includes(searchTerm) && 
-             searchTerm !== 'শামীমা রহমান' && 
              searchTerm !== 'পরিচালক' && 
              searchTerm !== 'মহাপরিচালক' && 
              searchTerm !== 'উপ-পরিচালক' && (
@@ -480,22 +478,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [expandedCycles, groupedEntries]);
 
-  // IDBadge definition inside component
-  const IDBadge = ({ id }: { id: string }) => {
-    const [copied, setCopied] = useState(false);
-    if (!isLayoutEditable) return null;
-    const handleCopy = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      navigator.clipboard.writeText(id);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    };
-    return (
-      <span onClick={handleCopy} className={`absolute -top-3 left-2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 z-[300] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'ring-2 ring-emerald-500 bg-emerald-600' : ''}`}>
-        {copied ? 'COPIED!' : `#${id}`}
-      </span>
-    );
-  };
 
   const handleInlineChange = (entryId: string, field: keyof CorrespondenceEntry, value: any) => {
     setPendingChanges(prev => ({
@@ -560,7 +542,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
   return (
     <div id="section-correspondence-register" className="w-full space-y-4 animate-premium-page relative">
-      <IDBadge id="section-correspondence-register" />
       
       {/* Header Controls */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print relative">
@@ -762,7 +743,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
       {/* Table Container */}
       <div className="table-container border border-slate-300 rounded-sm overflow-auto relative shadow-xl bg-white max-w-full">
-        <IDBadge id="table-correspondence-ledger" />
         <table className="w-full border-separate border-spacing-0 table-fixed">
           <colgroup>
             <col className="w-[30px]" />
