@@ -544,13 +544,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       </div>
                     )}
 
-                    <button 
-                      onClick={() => onOpenChangePassword && onOpenChangePassword()}
-                      className={getSubItemCls(false)}
-                    >
-                      <KeyRound size={14} className={getSubIconCls(false, 'amber')} />
-                      <span>৩. পাসওয়ার্ড পরিবর্তন</span>
-                    </button>
+
                   </div>
                 )}
               </div>
@@ -607,56 +601,51 @@ const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
             
-            {/* Sidebar Footer Content moved into Nav for scrolling */}
-            <div id="sidebar-footer" className="pt-1 mt-1 border-t border-slate-800 space-y-1 relative">
-              <IDBadge id="sidebar-footer" />
-              
-              {/* Security & Account Section - Premium Design */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 px-1">
-                  <div className="w-1 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-[0.2em]">Security & Account</span>
-                </div>
-                
-                {isAdmin ? (
-                  <div className="grid grid-cols-1 gap-1">
-                    <button 
-                      onClick={() => onOpenChangePassword && onOpenChangePassword()}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg bg-slate-800/50 text-slate-300 hover:bg-blue-600 hover:text-white transition-all font-bold text-[9px] group border border-slate-700/50 hover:border-blue-400 shadow-sm"
-                    >
-                      <KeyRound size={10} className="group-hover:rotate-12 transition-transform text-blue-400 group-hover:text-white" />
-                      পাসওয়ার্ড পরিবর্তন
-                    </button>
-                    <button 
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg bg-red-500/5 text-red-400 hover:bg-red-500 hover:text-white transition-all font-bold text-[9px] group border border-red-500/10 hover:border-red-400"
-                    >
-                      <LogOut size={10} className="group-hover:-translate-x-1 transition-transform" />
-                      লগআউট করুন
-                    </button>
-                  </div>
-                ) : (
-                  <button 
-                    onClick={() => setShowAdminModal(true)}
-                    className="w-full flex items-center justify-between px-2 py-2 rounded-lg bg-gradient-to-r from-slate-800 to-slate-850 text-slate-200 hover:from-blue-600 hover:to-blue-700 hover:text-white transition-all font-black text-[9px] group border border-slate-700 hover:border-blue-400 shadow-xl shadow-black/20"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-md bg-blue-500/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                        <Lock size={10} className="text-blue-400 group-hover:text-white transition-colors" />
-                      </div>
-                      <span>এডমিন লগইন</span>
-                    </div>
-                    <ArrowRight size={10} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                  </button>
-                )}
-              </div>
-
-              <div className="pt-0.5 flex items-center justify-center gap-2 opacity-30">
-                 <ShieldCheck size={7} className="text-slate-500" />
-                 <p className="text-[5px] font-black text-slate-500 uppercase tracking-[0.3em]">Secure Node v1.0.4</p>
-              </div>
-            </div>
           </nav>
+        </div>
+
+        {/* Fixed Footer Section - Moved out of scrollable area to the very bottom */}
+        <div id="sidebar-footer" className="p-2 border-t border-slate-800 bg-slate-900/80 backdrop-blur-sm space-y-1 relative shrink-0">
+          <IDBadge id="sidebar-footer" />
+          
+          {/* Security & Account Section - Premium Design */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 px-1">
+              <div className="w-1 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-[7px] font-black text-slate-500 uppercase tracking-[0.2em]">Security & Account</span>
+            </div>
+            
+            {isAdmin ? (
+              <div className="grid grid-cols-1 gap-1">
+
+                <button 
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg bg-red-500/5 text-red-400 hover:bg-red-500 hover:text-white transition-all font-bold text-[9px] group border border-red-500/10 hover:border-red-400"
+                >
+                  <LogOut size={10} className="group-hover:-translate-x-1 transition-transform" />
+                  লগআউট করুন
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setShowAdminModal(true)}
+                className="w-full flex items-center justify-between px-2 py-2 rounded-lg bg-gradient-to-r from-slate-800 to-slate-850 text-slate-200 hover:from-blue-600 hover:to-blue-700 hover:text-white transition-all font-black text-[9px] group border border-slate-700 hover:border-blue-400 shadow-xl shadow-black/20"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-md bg-blue-500/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                    <Lock size={10} className="text-blue-400 group-hover:text-white transition-colors" />
+                  </div>
+                  <span>এডমিন লগইন</span>
+                </div>
+                <ArrowRight size={10} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+              </button>
+            )}
+          </div>
+
+          <div className="pt-0.5 flex items-center justify-center gap-2 opacity-30">
+             <ShieldCheck size={7} className="text-slate-500" />
+             <p className="text-[5px] font-black text-slate-500 uppercase tracking-[0.3em]">Secure Node v1.0.4</p>
+          </div>
         </div>
       </div>
       {showAdminModal && (
