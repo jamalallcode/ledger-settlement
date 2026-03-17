@@ -13,6 +13,7 @@ interface AdminDashboardProps {
   correspondenceEntries: any[];
   pendingCount: number;
   setActiveTab: (tab: string, subModule?: any, reportType?: string) => void;
+  onOpenChangePassword: () => void;
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -20,7 +21,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   entries,
   correspondenceEntries,
   pendingCount,
-  setActiveTab
+  setActiveTab,
+  onOpenChangePassword
 }) => {
   if (!isAdmin) return null;
 
@@ -64,6 +66,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     { id: 'register', label: 'রেজিস্টার দেখুন', icon: FileText, color: 'emerald', desc: 'সকল রেজিস্টার ব্রাউজ করুন' },
     { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, color: 'purple', desc: 'ভোট প্রদান ও ফলাফল' },
     { id: 'setup_receivers', label: 'প্রাপক ব্যবস্থাপনা', icon: Users, color: 'amber', desc: 'প্রাপক তালিকা আপডেট করুন' },
+    { id: 'initial_balance', label: 'জের সেটআপ', icon: ShieldCheck, color: 'blue', desc: 'প্রারম্ভিক জের সেটআপ করুন' },
+    { id: 'change_pass', label: 'পাসওয়ার্ড পরিবর্তন', icon: KeyRound, color: 'indigo', desc: 'সিকিউরিটি সেটিংস আপডেট করুন' },
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, color: 'rose', desc: 'সংরক্ষিত ফাইলসমূহ' },
     { id: 'return', label: 'রিপোর্ট ও সারাংশ', icon: PieChart, color: 'indigo', desc: 'মাসিক ও বাৎসরিক রিটার্ন' }
   ];
@@ -141,7 +145,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {quickActions.map((action, idx) => (
               <button 
                 key={idx}
-                onClick={() => setActiveTab(action.id)}
+                onClick={() => {
+                  if (action.id === 'change_pass') {
+                    onOpenChangePassword();
+                  } else if (action.id === 'initial_balance') {
+                    setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক');
+                  } else {
+                    setActiveTab(action.id);
+                  }
+                }}
                 className="group relative p-5 rounded-2xl bg-white border border-slate-200 hover:border-blue-500/30 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 text-left overflow-hidden"
               >
                 <div className={`absolute top-0 right-0 w-24 h-24 bg-${action.color}-500/5 blur-2xl rounded-full translate-x-12 -translate-y-12 group-hover:scale-150 transition-transform`}></div>
