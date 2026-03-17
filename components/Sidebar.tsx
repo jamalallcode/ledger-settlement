@@ -239,6 +239,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, badgeId: 'side-nav-archive' },
     ...(isAdmin ? [
       { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, badgeId: 'side-nav-voting' },
+      { id: 'change_pass', label: 'পাসওয়ার্ড পরিবর্তন', icon: KeyRound, badgeId: 'side-nav-pass' },
       { id: 'setup', label: 'সেটআপ', icon: ShieldCheck, badgeId: 'side-nav-setup', isDropdown: true }
     ] : []),
   ];
@@ -728,6 +729,15 @@ const Sidebar: React.FC<SidebarProps> = ({
                       প্রবেশ করুন
                     </button>
                   </div>
+                  <div className="text-center pt-2">
+                    <button 
+                      type="button"
+                      onClick={() => { setShowAdminModal(false); setShowChangePasswordModal(true); }}
+                      className="text-[9px] font-black text-slate-500 hover:text-blue-400 uppercase tracking-[0.2em] transition-colors"
+                    >
+                      পাসওয়ার্ড পরিবর্তন করতে চান?
+                    </button>
+                  </div>
                 </form>
               </div>
             </div>
@@ -756,17 +766,30 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest">আপনার পাসওয়ার্ড:</p>
                     <p className="text-white font-black text-3xl tracking-[0.2em]">{recoveredPassword}</p>
                   </div>
-                  <button 
-                    onClick={() => {
-                      setShowRecoveryModal(false);
-                      setRecoveredPassword(null);
-                      setRecoveryAnswer('');
-                      setShowAdminModal(true);
-                    }}
-                    className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20"
-                  >
-                    লগইন পেজে ফিরে যান
-                  </button>
+                  <div className="flex flex-col gap-3">
+                    <button 
+                      onClick={() => {
+                        setShowRecoveryModal(false);
+                        setRecoveredPassword(null);
+                        setRecoveryAnswer('');
+                        setShowChangePasswordModal(true);
+                      }}
+                      className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-black text-sm hover:from-emerald-500 hover:to-teal-500 transition-all shadow-xl shadow-emerald-600/20"
+                    >
+                      নতুন পাসওয়ার্ড সেট করুন
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowRecoveryModal(false);
+                        setRecoveredPassword(null);
+                        setRecoveryAnswer('');
+                        setShowAdminModal(true);
+                      }}
+                      className="w-full py-4 bg-white/5 text-slate-400 rounded-2xl font-black text-sm hover:bg-white/10 transition-all"
+                    >
+                      লগইন পেজে ফিরে যান
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <>
