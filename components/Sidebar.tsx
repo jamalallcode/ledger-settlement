@@ -14,6 +14,7 @@ interface SidebarProps {
   onImportSystem?: (file: File) => void;
   isAdmin: boolean;
   setIsAdmin: (status: boolean) => void;
+  onLogout?: () => void;
   pendingCount?: number;
   entryModule?: 'settlement' | 'correspondence' | null;
   registerSubModule?: 'settlement' | 'correspondence' | null;
@@ -32,6 +33,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onImportSystem,
   isAdmin,
   setIsAdmin,
+  onLogout,
   pendingCount = 0,
   entryModule,
   registerSubModule,
@@ -53,6 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isOnlineExpanded, setIsOnlineExpanded] = useState(false);
   const [isQuarterlyExpanded, setIsQuarterlyExpanded] = useState(false);
   const [isSetupExpanded, setIsSetupExpanded] = useState(false);
+  const [isInitialBalanceExpanded, setIsInitialBalanceExpanded] = useState(false);
 
   // Auto-expand menus based on active state
   useEffect(() => {
@@ -73,7 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           setIsQuarterlyExpanded(true);
         }
         if (reportType.includes('জের সেটআপ')) {
-          setIsSetupExpanded(true);
+          setIsInitialBalanceExpanded(true);
         }
       }
     }
@@ -143,6 +146,17 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout();
+    } else {
+      if (window.confirm("আপনি কি এডমিন একাউন্ট থেকে লগআউট করতে চান?")) {
+        setIsAdmin(false);
+        localStorage.removeItem('ledger_admin_access_v1');
+      }
+    }
+  };
+
   const menuItems = [
     { id: 'landing', label: 'হোম', icon: Home, badgeId: 'side-nav-home' },
     { id: 'entry', label: 'নতুন এন্ট্রি', icon: FilePlus2, badgeId: 'side-nav-entry', isDropdown: true },
@@ -182,7 +196,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      <div id="sidebar-container" className="w-48 bg-slate-900 h-screen text-slate-300 flex flex-col border-r border-slate-800 shadow-2xl overflow-hidden relative">
+      <div id="sidebar-container" className="w-48 bg-slate-900 h-screen text-slate-300 flex flex-col border-r border-slate-800 shadow-2xl overflow-hidden relative z-[5000]">
         <IDBadge id="sidebar-container" />
         <div id="sidebar-header" className="p-6 border-b border-slate-800 flex items-center justify-between relative">
           <IDBadge id="sidebar-header" />
@@ -434,22 +448,32 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <div className={`w-1.5 h-1.5 rounded-full ${reportType === 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-white' : 'bg-rose-500'}`}></div>
                     <span>৪. বাৎসরিক</span>
                   </button>
+                </div>
+              )}
+              {/* Nested Sub-menu for Setup */}
+              {item.id === 'setup' && isSetupExpanded && (
+                <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
+                  <button 
+                    onClick={() => setActiveTab('setup_receivers')}
+                    className={getSubItemCls(activeTab === 'setup_receivers')}
+                  >
+                    <User size={14} className={getSubIconCls(activeTab === 'setup_receivers', 'blue')} />
+                    <span>১. প্রাপক ব্যবস্থাপনা</span>
+                  </button>
 
-                  {/* Setup Mode for Admin only */}
-                  {isAdmin && (
-                    <button 
-                      onClick={() => setIsSetupExpanded(!isSetupExpanded)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[11px] font-black transition-all border-t border-slate-800 mt-2 ${reportType?.includes('জের সেটআপ') ? 'bg-slate-800 text-blue-400' : 'text-slate-500 hover:bg-slate-800 hover:text-white'}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Lock size={12} className={reportType?.includes('জের সেটআপ') ? 'text-blue-400' : 'text-slate-600'} />
-                        <span>প্রারম্ভিক জের সেটআপ</span>
-                      </div>
-                      <ChevronDown size={12} className={`transition-transform duration-300 ${isSetupExpanded ? 'rotate-180' : ''}`} />
-                    </button>
-                  )}
+                  {/* ২. প্রারম্ভিক জের সেটআপ (Nested Toggle) */}
+                  <button 
+                    onClick={() => setIsInitialBalanceExpanded(!isInitialBalanceExpanded)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[11px] font-black transition-all ${reportType?.includes('জের সেটআপ') ? 'bg-slate-800 text-blue-400' : 'text-slate-500 hover:bg-slate-800 hover:text-white'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Lock size={12} className={reportType?.includes('জের সেটআপ') ? 'text-blue-400' : 'text-slate-600'} />
+                      <span>২. প্রারম্ভিক জের সেটআপ</span>
+                    </div>
+                    <ChevronDown size={12} className={`transition-transform duration-300 ${isInitialBalanceExpanded ? 'rotate-180' : ''}`} />
+                  </button>
 
-                  {isAdmin && isSetupExpanded && (
+                  {isInitialBalanceExpanded && (
                     <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
                       <button 
                         onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক')}
@@ -477,18 +501,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                       </button>
                     </div>
                   )}
-                </div>
-              )}
-              {/* Nested Sub-menu for Setup */}
-              {item.id === 'setup' && isSetupExpanded && (
-                <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
-                  <button 
-                    onClick={() => setActiveTab('setup_receivers')}
-                    className={getSubItemCls(activeTab === 'setup_receivers')}
-                  >
-                    <User size={14} className={getSubIconCls(activeTab === 'setup_receivers', 'blue')} />
-                    <span>১. প্রাপক ব্যবস্থাপনা</span>
-                  </button>
                 </div>
               )}
             </div>
@@ -548,7 +560,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         </nav>
         <div id="sidebar-footer" className="p-4 border-t border-slate-800 space-y-4 relative">
           <IDBadge id="sidebar-footer" />
-          {!isAdmin && (
+          {isAdmin ? (
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all font-black text-xs group"
+            >
+              <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
+              লগআউট করুন
+            </button>
+          ) : (
             <div className="px-2 py-4 text-center">
               <div className="flex flex-col items-center gap-2 opacity-20 group hover:opacity-40 transition-opacity cursor-default">
                  <ShieldCheck size={24} className="text-slate-600" />
@@ -559,25 +579,64 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
       {showAdminModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="w-full max-sm bg-slate-900 border border-slate-800 rounded-[2rem] shadow-2xl p-8 space-y-6 animate-in zoom-in-95 duration-300">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-600/20 text-blue-500 rounded-xl flex items-center justify-center">
-                  <KeyRound size={20} />
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-500">
+          <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-10 space-y-8 animate-in zoom-in-95 duration-500 relative overflow-hidden group">
+            {/* Decorative Glows */}
+            <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/20 blur-[80px] rounded-full group-hover:bg-blue-600/30 transition-colors duration-700"></div>
+            <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-600/10 blur-[80px] rounded-full group-hover:bg-emerald-600/20 transition-colors duration-700"></div>
+            
+            <div className="relative z-10 space-y-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 ring-4 ring-blue-500/10">
+                    <Fingerprint size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-black text-xl tracking-tight">সিকিউরিটি এক্সেস</h3>
+                    <p className="text-blue-400/60 text-[10px] font-black uppercase tracking-[0.2em]">Administrator Portal</p>
+                  </div>
                 </div>
-                <h3 className="text-white font-black text-lg">সিকিউরিটি এক্সেস</h3>
+                <button 
+                  onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} 
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all border border-white/5"
+                >
+                  <X size={20} />
+                </button>
               </div>
-              <button onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} className="text-slate-500 hover:text-white transition-colors"><X size={20} /></button>
+
+              <div className="space-y-2">
+                <p className="text-slate-300 text-sm font-bold ml-1">মালিকের সিক্রেট পাসওয়ার্ড দিন:</p>
+                <form onSubmit={handleAdminSubmit} className="space-y-8">
+                  <div className="relative group/input">
+                    <input 
+                      autoFocus 
+                      type="password" 
+                      placeholder="••••••••" 
+                      value={adminPassword} 
+                      onChange={(e) => setAdminPassword(e.target.value)} 
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-white font-black text-center text-2xl outline-none focus:border-blue-500/50 focus:ring-8 focus:ring-blue-500/5 transition-all placeholder:text-slate-700 tracking-[0.5em]" 
+                    />
+                    <div className="absolute inset-0 rounded-2xl bg-blue-500/5 opacity-0 group-focus-within/input:opacity-100 pointer-events-none transition-opacity"></div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <button 
+                      type="button" 
+                      onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} 
+                      className="flex-1 py-4 bg-white/5 text-slate-300 rounded-2xl font-black text-sm hover:bg-white/10 transition-all active:scale-95 border border-white/5"
+                    >
+                      বাতিল
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="flex-1 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-sm hover:from-blue-500 hover:to-indigo-500 transition-all active:scale-95 shadow-xl shadow-blue-600/20 ring-4 ring-blue-500/10"
+                    >
+                      প্রবেশ করুন
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed">মালিকের সিক্রেট পাসওয়ার্ড দিন:</p>
-            <form onSubmit={handleAdminSubmit} className="space-y-6">
-              <input autoFocus type="password" placeholder="••••••••" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} className="w-full bg-slate-800 border-slate-700 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder:text-slate-600" />
-              <div className="flex gap-3">
-                <button type="button" onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} className="flex-1 py-3 bg-slate-800 text-slate-300 rounded-xl font-black text-sm hover:bg-slate-700 transition-all active:scale-95">বাতিল</button>
-                <button type="submit" className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-black text-sm hover:bg-blue-500 transition-all active:scale-95 shadow-lg shadow-blue-600/20">প্রবেশ</button>
-              </div>
-            </form>
           </div>
         </div>
       )}
