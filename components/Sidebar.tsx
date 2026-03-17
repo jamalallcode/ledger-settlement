@@ -520,7 +520,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <>
           <div className="fixed inset-0 z-[9990] bg-black/60 animate-in fade-in duration-500" onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} />
           <div className="fixed inset-0 z-[9992] flex items-center justify-center p-4 pointer-events-none">
-            <div className="w-full max-w-lg bg-slate-900 border border-white/10 rounded-[2.5rem] shadow-2xl p-8 flex flex-col animate-in zoom-in-95 duration-500 relative overflow-hidden group pointer-events-auto">
+            <div className="w-full max-w-xl bg-slate-900 border border-white/10 rounded-[2.5rem] shadow-2xl p-8 flex flex-col animate-in zoom-in-95 duration-500 relative overflow-hidden group pointer-events-auto">
               <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/10 blur-[80px] rounded-full group-hover:bg-blue-600/20 transition-colors duration-700"></div>
               <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-600/5 blur-[80px] rounded-full group-hover:bg-emerald-600/10 transition-colors duration-700"></div>
               
@@ -614,7 +614,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <>
           <div className="fixed inset-0 z-[9990] bg-black/70 animate-in fade-in duration-500" onClick={() => { setShowRecoveryModal(false); setRecoveryAnswer(''); setRecoveredPassword(null); }} />
           <div className="fixed inset-0 z-[9992] flex items-center justify-center p-4 pointer-events-none">
-            <div className="w-full max-w-lg bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 flex flex-col shadow-2xl overflow-hidden relative group pointer-events-auto">
+            <div className="w-full max-w-xl bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 flex flex-col shadow-2xl overflow-hidden relative group pointer-events-auto">
               <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-600/10 blur-[80px] rounded-full"></div>
               
               <div className="relative z-10 flex-1 flex flex-col">
@@ -697,7 +697,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <>
           <div className="fixed inset-0 z-[9990] bg-black/70 animate-in fade-in duration-500" onClick={() => setShowChangePasswordModal(false)} />
           <div className="fixed inset-0 z-[9992] flex items-center justify-center p-4 pointer-events-none">
-            <div className="w-full max-w-2xl bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 flex flex-col shadow-2xl relative overflow-hidden group pointer-events-auto">
+            <div className="w-full max-w-3xl bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 flex flex-col shadow-2xl relative overflow-hidden group pointer-events-auto">
               <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/10 blur-[80px] rounded-full"></div>
               
               <div className="relative z-10 flex-1 flex flex-col">
