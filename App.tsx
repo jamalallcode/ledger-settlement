@@ -51,6 +51,12 @@ const App: React.FC = () => {
 
   // New state for direct report selection from sidebar
   const [reportType, setReportType] = useState<string | null>(null);
+  const [showAdminAlert, setShowAdminAlert] = useState(false);
+  const [hasShownAlert, setHasShownAlert] = useState(false);
+
+  const pendingEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'pending'), [entries]);
+  const pendingCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'pending'), [correspondenceEntries]);
+  const totalPendingCount = pendingEntries.length + pendingCorrespondence.length;
   
   const [allPrevStats, setAllPrevStats] = useState<Record<string, CumulativeStats>>({
     monthly: { inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, entitiesSFI: {}, entitiesNonSFI: {} },
@@ -199,6 +205,14 @@ const App: React.FC = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Proactive Admin Notification Effect
+  useEffect(() => {
+    if (userEmail === 'websitetogather@gmail.com' && totalPendingCount > 0 && !hasShownAlert && !isLoading) {
+      setShowAdminAlert(true);
+      setHasShownAlert(true);
+    }
+  }, [userEmail, totalPendingCount, hasShownAlert, isLoading]);
 
   useEffect(() => {
     if (mainScrollRef.current) mainScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -490,11 +504,6 @@ const App: React.FC = () => {
     return sortedBranches.length > 0 ? [{ label: 'পূর্বের শাখা তালিকা', options: sortedBranches }] : [];
   }, [entries, correspondenceEntries]);
 
-  const pendingEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'pending'), [entries]);
-  const pendingCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'pending'), [correspondenceEntries]);
-  
-  const totalPendingCount = pendingEntries.length + pendingCorrespondence.length;
-
   const handleLogout = async () => {
     if (window.confirm("আপনি কি এডমিন একাউন্ট থেকে লগআউট করতে চান?")) {
       setIsAdmin(false);
@@ -761,6 +770,47 @@ const App: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* Admin Proactive Notification */}
+      {showAdminAlert && (
+        <div className="fixed top-24 right-6 z-[11000] animate-in slide-in-from-right-10 duration-500 no-print">
+          <div className="bg-slate-900 border-2 border-amber-500 rounded-[2rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] max-w-sm relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-24 h-24 bg-amber-500/10 blur-2xl rounded-full"></div>
+            <div className="relative z-10 space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20 animate-bounce">
+                  <BellRing size={24} />
+                </div>
+                <div>
+                  <h4 className="text-white font-black text-lg tracking-tight">নতুন এন্ট্রি পাওয়া গেছে!</h4>
+                  <p className="text-amber-400/60 text-[9px] font-black uppercase tracking-[0.2em]">Pending Moderation</p>
+                </div>
+              </div>
+              <p className="text-slate-300 text-sm font-bold leading-relaxed">
+                সম্মানিত এডমিন, সিস্টেমে <span className="text-amber-400 text-lg">{toBengaliDigits(totalPendingCount.toString())}টি</span> নতুন এন্ট্রি অনুমোদনের অপেক্ষায় আছে। দয়া করে যাচাই করুন।
+              </p>
+              <div className="flex gap-3 pt-2">
+                <button 
+                  onClick={() => setShowAdminAlert(false)}
+                  className="flex-1 py-3 bg-white/5 text-slate-400 rounded-xl font-black text-xs hover:bg-white/10 transition-all border border-white/5"
+                >
+                  পরে দেখব
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowAdminAlert(false);
+                    setActiveTab('register');
+                    setShowPendingOnly(true);
+                  }}
+                  className="flex-1 py-3 bg-amber-500 text-slate-900 rounded-xl font-black text-xs hover:bg-amber-600 transition-all shadow-xl shadow-amber-500/20 active:scale-95"
+                >
+                  এখনই দেখুন
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
