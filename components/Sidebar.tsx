@@ -41,9 +41,49 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [newQuestion, setNewQuestion] = useState('');
+  const [newAnswer, setNewAnswer] = useState('');
+  const [recoveryAnswer, setRecoveryAnswer] = useState('');
+  const [recoveredPassword, setRecoveredPassword] = useState<string | null>(null);
+  const [storedPassword, setStoredPassword] = useState('123');
+  const [storedRecoveryQuestion, setStoredRecoveryQuestion] = useState('আপনার প্রিয় রং কি?');
+  const [storedRecoveryAnswer, setStoredRecoveryAnswer] = useState('নীল');
+  
   const clickCount = useRef(0);
   const lastClickTime = useRef(0);
+
+  // Load admin settings from storage
+  useEffect(() => {
+    const savedPass = localStorage.getItem('ledger_admin_password_v1');
+    const savedQuestion = localStorage.getItem('ledger_admin_recovery_q_v1');
+    const savedAnswer = localStorage.getItem('ledger_admin_recovery_a_v1');
+    
+    if (savedPass) setStoredPassword(savedPass);
+    if (savedQuestion) setStoredRecoveryQuestion(savedQuestion);
+    if (savedAnswer) setStoredRecoveryAnswer(savedAnswer);
+  }, []);
+
+  // Pre-fill change password fields
+  useEffect(() => {
+    if (showChangePasswordModal) {
+      setNewQuestion(storedRecoveryQuestion);
+      setNewAnswer(storedRecoveryAnswer);
+    }
+  }, [showChangePasswordModal, storedRecoveryQuestion, storedRecoveryAnswer]);
+
+  const saveAdminSettings = (pass: string, q: string, a: string) => {
+    localStorage.setItem('ledger_admin_password_v1', pass);
+    localStorage.setItem('ledger_admin_recovery_q_v1', q);
+    localStorage.setItem('ledger_admin_recovery_a_v1', a);
+    setStoredPassword(pass);
+    setStoredRecoveryQuestion(q);
+    setStoredRecoveryAnswer(a);
+  };
 
   // --- Sub-menu States ---
   const [isEntryExpanded, setIsEntryExpanded] = useState(false);
@@ -136,7 +176,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleAdminSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (adminPassword === '123') {
+    if (adminPassword === storedPassword) {
       setIsAdmin(true);
       localStorage.setItem('ledger_admin_access_v1', 'true');
       setShowAdminModal(false);
@@ -144,6 +184,40 @@ const Sidebar: React.FC<SidebarProps> = ({
     } else {
       alert("ভুল পাসওয়ার্ড!");
     }
+  };
+
+  const handleRecoverySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (recoveryAnswer.trim().toLowerCase() === storedRecoveryAnswer.trim().toLowerCase()) {
+      setRecoveredPassword(storedPassword);
+    } else {
+      alert("ভুল উত্তর! আবার চেষ্টা করুন।");
+    }
+  };
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 3) {
+      alert("পাসওয়ার্ড কমপক্ষে ৩ অক্ষরের হতে হবে।");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      alert("পাসওয়ার্ড দুটি মিলেনি!");
+      return;
+    }
+    
+    if (!newQuestion.trim() || !newAnswer.trim()) {
+      alert("অনুগ্রহ করে নিরাপত্তা প্রশ্ন এবং উত্তর প্রদান করুন।");
+      return;
+    }
+    
+    saveAdminSettings(newPassword, newQuestion, newAnswer);
+    alert("পাসওয়ার্ড এবং নিরাপত্তা সেটিংস সফলভাবে পরিবর্তন করা হয়েছে।");
+    setShowChangePasswordModal(false);
+    setNewPassword('');
+    setConfirmPassword('');
+    setNewQuestion('');
+    setNewAnswer('');
   };
 
   const handleLogout = () => {
@@ -165,6 +239,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, badgeId: 'side-nav-archive' },
     ...(isAdmin ? [
       { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, badgeId: 'side-nav-voting' },
+      { id: 'change_pass', label: 'পাসওয়ার্ড পরিবর্তন', icon: KeyRound, badgeId: 'side-nav-pass' },
       { id: 'setup', label: 'সেটআপ', icon: ShieldCheck, badgeId: 'side-nav-setup', isDropdown: true }
     ] : []),
   ];
@@ -230,6 +305,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                     setIsReturnExpanded(!isReturnExpanded);
                   } else if (item.id === 'setup') {
                     setIsSetupExpanded(!isSetupExpanded);
+                  } else if (item.id === 'change_pass') {
+                    setShowChangePasswordModal(true);
                   } else {
                     setActiveTab(item.id);
                   }
@@ -606,7 +683,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
               <div className="space-y-2">
                 <p className="text-slate-300 text-sm font-bold ml-1">মালিকের সিক্রেট পাসওয়ার্ড দিন:</p>
-                <form onSubmit={handleAdminSubmit} className="space-y-8">
+                <form onSubmit={handleAdminSubmit} className="space-y-6">
                   <div className="relative group/input">
                     <input 
                       autoFocus 
@@ -617,6 +694,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                       className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-white font-black text-center text-2xl outline-none focus:border-blue-500/50 focus:ring-8 focus:ring-blue-500/5 transition-all placeholder:text-slate-700 tracking-[0.5em]" 
                     />
                     <div className="absolute inset-0 rounded-2xl bg-blue-500/5 opacity-0 group-focus-within/input:opacity-100 pointer-events-none transition-opacity"></div>
+                  </div>
+
+                  <div className="text-center">
+                    <button 
+                      type="button"
+                      onClick={() => { setShowAdminModal(false); setShowRecoveryModal(true); }}
+                      className="text-[10px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-widest transition-colors"
+                    >
+                      পাসওয়ার্ড ভুলে গেছেন? উদ্ধার করুন
+                    </button>
                   </div>
 
                   <div className="flex gap-4">
@@ -637,6 +724,165 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </form>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recovery Modal */}
+      {showRecoveryModal && (
+        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
+          <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[2.5rem] p-10 space-y-8 shadow-2xl">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-amber-500/20 text-amber-500 rounded-2xl flex items-center justify-center">
+                <AlertCircle size={24} />
+              </div>
+              <div>
+                <h3 className="text-white font-black text-xl">পাসওয়ার্ড উদ্ধার</h3>
+                <p className="text-amber-400/60 text-[10px] font-black uppercase tracking-widest">Security Recovery</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {recoveredPassword ? (
+                <div className="space-y-6 animate-in zoom-in-95 duration-300">
+                  <div className="p-6 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-center space-y-2">
+                    <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest">আপনার পাসওয়ার্ড:</p>
+                    <p className="text-white font-black text-3xl tracking-[0.2em]">{recoveredPassword}</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setShowRecoveryModal(false);
+                      setRecoveredPassword(null);
+                      setRecoveryAnswer('');
+                      setShowAdminModal(true);
+                    }}
+                    className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20"
+                  >
+                    লগইন পেজে ফিরে যান
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">নিরাপত্তা প্রশ্ন:</p>
+                    <p className="text-white font-bold">{storedRecoveryQuestion}</p>
+                  </div>
+
+                  <form onSubmit={handleRecoverySubmit} className="space-y-6">
+                    <div className="space-y-2">
+                      <p className="text-slate-300 text-sm font-bold ml-1">আপনার উত্তর দিন:</p>
+                      <input 
+                        autoFocus
+                        type="text" 
+                        value={recoveryAnswer} 
+                        onChange={(e) => setRecoveryAnswer(e.target.value)} 
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-amber-500/50 transition-all" 
+                        placeholder="উত্তর এখানে লিখুন..."
+                      />
+                    </div>
+
+                    <div className="flex gap-4">
+                      <button 
+                        type="button" 
+                        onClick={() => { setShowRecoveryModal(false); setRecoveryAnswer(''); }} 
+                        className="flex-1 py-4 bg-white/5 text-slate-300 rounded-2xl font-black text-sm hover:bg-white/10 transition-all"
+                      >
+                        বাতিল
+                      </button>
+                      <button 
+                        type="submit" 
+                        className="flex-1 py-4 bg-amber-600 text-white rounded-2xl font-black text-sm hover:bg-amber-500 transition-all shadow-xl shadow-amber-600/20"
+                      >
+                        যাচাই করুন
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showChangePasswordModal && (
+        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
+          <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[2.5rem] p-10 space-y-8 shadow-2xl">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-blue-500/20 text-blue-500 rounded-2xl flex items-center justify-center">
+                <KeyRound size={24} />
+              </div>
+              <div>
+                <h3 className="text-white font-black text-xl">পাসওয়ার্ড পরিবর্তন</h3>
+                <p className="text-blue-400/60 text-[10px] font-black uppercase tracking-widest">Update Security</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleChangePassword} className="space-y-6">
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 no-scrollbar">
+                <div className="space-y-2">
+                  <p className="text-slate-300 text-sm font-bold ml-1">নতুন পাসওয়ার্ড:</p>
+                  <input 
+                    type="password" 
+                    value={newPassword} 
+                    onChange={(e) => setNewPassword(e.target.value)} 
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all" 
+                    placeholder="কমপক্ষে ৩ অক্ষর"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-slate-300 text-sm font-bold ml-1">পাসওয়ার্ড নিশ্চিত করুন:</p>
+                  <input 
+                    type="password" 
+                    value={confirmPassword} 
+                    onChange={(e) => setConfirmPassword(e.target.value)} 
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all" 
+                    placeholder="আবার লিখুন"
+                  />
+                </div>
+                
+                <div className="pt-4 border-t border-white/10">
+                  <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-4">পাসওয়ার্ড উদ্ধারের জন্য সেটিংস</p>
+                  
+                  <div className="space-y-2">
+                    <p className="text-slate-300 text-sm font-bold ml-1">নিরাপত্তা প্রশ্ন:</p>
+                    <input 
+                      type="text" 
+                      value={newQuestion} 
+                      onChange={(e) => setNewQuestion(e.target.value)} 
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all" 
+                      placeholder="যেমন: আপনার প্রিয় রং কি?"
+                    />
+                  </div>
+                  <div className="space-y-2 mt-4">
+                    <p className="text-slate-300 text-sm font-bold ml-1">প্রশ্নের উত্তর:</p>
+                    <input 
+                      type="text" 
+                      value={newAnswer} 
+                      onChange={(e) => setNewAnswer(e.target.value)} 
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all" 
+                      placeholder="উত্তরটি এখানে লিখুন"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <button 
+                  type="button" 
+                  onClick={() => setShowChangePasswordModal(false)} 
+                  className="flex-1 py-4 bg-white/5 text-slate-300 rounded-2xl font-black text-sm hover:bg-white/10 transition-all"
+                >
+                  বাতিল
+                </button>
+                <button 
+                  type="submit" 
+                  className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20"
+                >
+                  সংরক্ষণ করুন
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
