@@ -238,6 +238,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return', isDropdown: true },
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, badgeId: 'side-nav-archive' },
     ...(isAdmin ? [
+      { id: 'dashboard', label: 'ড্যাশবোর্ড', icon: LayoutDashboard, badgeId: 'side-nav-dashboard' },
       { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, badgeId: 'side-nav-voting' },
       { id: 'change_pass', label: 'পাসওয়ার্ড পরিবর্তন', icon: KeyRound, badgeId: 'side-nav-pass' },
       { id: 'setup', label: 'সেটআপ', icon: ShieldCheck, badgeId: 'side-nav-setup', isDropdown: true }
@@ -884,7 +885,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Change Password Modal */}
       {showChangePasswordModal && (
-        <div className="fixed inset-0 z-[1001] flex items-start justify-center p-4 pt-20 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[1001] flex items-start justify-center p-4 pt-24 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
           <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2.5rem] p-8 space-y-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-500 relative overflow-hidden group">
             {/* Decorative Glow */}
             <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/20 blur-[80px] rounded-full group-hover:bg-blue-600/30 transition-colors duration-700"></div>
