@@ -10,6 +10,7 @@ import LandingPage from './components/LandingPage';
 import VotingSystem from './components/VotingSystem';
 import DocumentArchive from './components/DocumentArchive';
 import ReceiverManagement from './components/ReceiverManagement';
+import AdminDashboard from './components/AdminDashboard';
 import { SettlementEntry, GroupOption, CumulativeStats } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
@@ -33,7 +34,6 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('landing'); 
   const [resetKey, setResetKey] = useState(0); 
   const [editingEntry, setEditingEntry] = useState<any | null>(null);
-  const [isLayoutEditable, setIsLayoutEditable] = useState(false);
   const [isLockedMode, setIsLockedMode] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -495,24 +495,6 @@ const App: React.FC = () => {
   
   const totalPendingCount = pendingEntries.length + pendingCorrespondence.length;
 
-  const IDBadge = ({ id }: { id: string }) => {
-    const [copied, setCopied] = useState(false);
-    if (!isLayoutEditable) return null;
-    const handleCopy = (e: React.MouseEvent) => {
-      e.preventDefault(); e.stopPropagation();
-      navigator.clipboard.writeText(id);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    };
-    return (
-      <div onClick={handleCopy} className="absolute top-0 left-0 -translate-y-full z-[9995] pointer-events-auto no-print">
-        <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md font-black text-[9px] bg-black text-white border border-white/30 shadow-2xl transition-all duration-300 hover:scale-150 hover:bg-blue-600 hover:z-[99999] active:scale-95 cursor-copy origin-bottom-left ${copied ? 'bg-emerald-600 border-emerald-400 ring-4 ring-emerald-500/30 !scale-125' : ''}`}>
-          {copied ? <><CheckCircle2 size={10} /> Copied</> : <><ClipboardList size={10} /> {id}</>}
-        </span>
-      </div>
-    );
-  };
-
   const handleLogout = async () => {
     if (window.confirm("আপনি কি এডমিন একাউন্ট থেকে লগআউট করতে চান?")) {
       setIsAdmin(false);
@@ -543,12 +525,12 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-bengali">
       {isSidebarOpen && (
-        <div className="no-print h-full relative z-[5000]">
+        <div className="no-print h-full relative z-[10000]">
           <Sidebar 
             activeTab={activeTab} setActiveTab={handleTabChange} 
             onToggleVisibility={() => setIsSidebarOpen(false)}
             isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
-            isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} setIsAdmin={setIsAdmin}
+            isAdmin={isAdmin} setIsAdmin={setIsAdmin}
             onLogout={handleLogout}
             pendingCount={totalPendingCount}
             entryModule={entryModule}
@@ -563,7 +545,6 @@ const App: React.FC = () => {
           <Navbar 
             activeTab={activeTab} setActiveTab={handleTabChange} onDemoLoad={() => {}}
             isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
-            isLayoutEditable={isLayoutEditable} setIsLayoutEditable={setIsLockedMode}
             onExportSystem={() => {}} onImportSystem={() => {}}
             isAdmin={isAdmin} setIsAdmin={setIsAdmin} cycleLabel={cycleLabelBengali}
             showRegisterFilters={showRegisterFilters} setShowRegisterFilters={setShowRegisterFilters}
@@ -589,14 +570,13 @@ const App: React.FC = () => {
                   setActiveTab={handleTabChange} 
                   cycleLabel={cycleLabelBengali} 
                   isLockedMode={isLockedMode} 
-                  isLayoutEditable={isLayoutEditable} 
                   isAdmin={isAdmin}
                   pendingCount={totalPendingCount}
                   onShowPending={() => { setActiveTab('register'); setShowPendingOnly(true); }}
                 />
               )}
               
-              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} />}
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} />}
               
               {activeTab === 'register' && (
                 <div className="space-y-6 relative">
@@ -645,7 +625,6 @@ const App: React.FC = () => {
                             entries={pendingCorrespondence} 
                             onBack={() => {}}
                             isAdmin={isAdmin}
-                            isLayoutEditable={isLayoutEditable}
                             onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
                             onInlineUpdate={handleInlineUpdateEntry}
                             onDelete={handleDelete}
@@ -667,7 +646,6 @@ const App: React.FC = () => {
                             entries={pendingEntries} 
                             onDelete={handleDelete} 
                             onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
-                            isLayoutEditable={isLayoutEditable} 
                             showFilters={false} 
                             setShowFilters={setShowRegisterFilters}
                             isAdminView={true}
@@ -680,14 +658,12 @@ const App: React.FC = () => {
                     </div>
                   ) : !registerSubModule ? (
                     <div id="section-register-choice" className="w-full py-2 animate-in slide-in-from-left-10 duration-700 relative">
-                      <IDBadge id="section-register-choice" />
                       <div className="space-y-5 max-w-4xl text-left">
                         {/* Option 1: Incoming Correspondence Register */}
                         <div 
                           onClick={() => setRegisterSubModule('correspondence')}
                           className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards"
                         >
-                          <IDBadge id="reg-opt-correspondence" />
                           <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.4)]"></div>
                           <div className="flex items-center justify-center pl-7">
                             <div className="w-12 h-12 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-600 transition-all duration-500">
@@ -708,7 +684,6 @@ const App: React.FC = () => {
                           onClick={() => setRegisterSubModule('settlement')}
                           className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards delay-100"
                         >
-                          <IDBadge id="reg-opt-settlement" />
                           <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]"></div>
                           <div className="flex items-center justify-center pl-7">
                             <div className="w-12 h-12 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-600 transition-all duration-500">
@@ -741,7 +716,6 @@ const App: React.FC = () => {
                         entries={approvedEntries} 
                         onDelete={handleDelete} 
                         onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
-                        isLayoutEditable={isLayoutEditable} 
                         showFilters={showRegisterFilters} 
                         setShowFilters={setShowRegisterFilters} 
                         isAdmin={isAdmin}
@@ -754,7 +728,6 @@ const App: React.FC = () => {
                       <CorrespondenceTable 
                         entries={approvedCorrespondence} 
                         onBack={() => setRegisterSubModule(null)} 
-                        isLayoutEditable={isLayoutEditable}
                         isAdmin={isAdmin}
                         onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
                         onInlineUpdate={handleInlineUpdateEntry}
@@ -769,11 +742,21 @@ const App: React.FC = () => {
                 </div>
               )}
               
-              {activeTab === 'return' && <ReturnView key={`return-reset-${resetKey}`} entries={approvedEntries} correspondenceEntries={approvedCorrespondence} cycleLabel={cycleLabelBengali} prevStats={currentPrevStats} setPrevStats={handleSetCurrentPrevStats} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} selectedReportType={reportType} setSelectedReportType={setReportType} />}
+              {activeTab === 'return' && <ReturnView key={`return-reset-${resetKey}`} entries={approvedEntries} correspondenceEntries={approvedCorrespondence} cycleLabel={cycleLabelBengali} prevStats={currentPrevStats} setPrevStats={handleSetCurrentPrevStats} isAdmin={isAdmin} selectedReportType={reportType} setSelectedReportType={setReportType} />}
               
               {activeTab === 'archive' && <DocumentArchive isAdmin={isAdmin} />}
 
               {activeTab === 'voting' && <VotingSystem isAdmin={isAdmin} />}
+
+              {activeTab === 'dashboard' && (
+                <AdminDashboard 
+                  isAdmin={isAdmin}
+                  entries={entries}
+                  correspondenceEntries={correspondenceEntries}
+                  pendingCount={totalPendingCount}
+                  setActiveTab={handleTabChange}
+                />
+              )}
             </div>
           </div>
         </main>
