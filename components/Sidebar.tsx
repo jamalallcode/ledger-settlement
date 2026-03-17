@@ -9,7 +9,6 @@ interface SidebarProps {
   onDemoLoad?: () => void;
   isLockedMode: boolean;
   setIsLockedMode: (val: boolean) => void;
-  isLayoutEditable?: boolean;
   onExportSystem?: () => void;
   onImportSystem?: (file: File) => void;
   isAdmin: boolean;
@@ -28,7 +27,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   onDemoLoad,
   isLockedMode,
   setIsLockedMode,
-  isLayoutEditable = false,
   onExportSystem,
   onImportSystem,
   isAdmin,
@@ -235,25 +233,17 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const menuItems = [
-    { id: 'landing', label: 'হোম', icon: Home, badgeId: 'side-nav-home' },
-    { id: 'entry', label: 'নতুন এন্ট্রি', icon: FilePlus2, badgeId: 'side-nav-entry', isDropdown: true },
-    { id: 'register', label: 'রেজিস্টার', icon: ListFilter, badgeId: 'side-nav-register', isDropdown: true },
-    { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return', isDropdown: true },
-    { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, badgeId: 'side-nav-archive' },
+    { id: 'landing', label: 'হোম', icon: Home },
+    { id: 'entry', label: 'নতুন এন্ট্রি', icon: FilePlus2, isDropdown: true },
+    { id: 'register', label: 'রেজিস্টার', icon: ListFilter, isDropdown: true },
+    { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, isDropdown: true },
+    { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library },
     ...(isAdmin ? [
-      { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, badgeId: 'side-nav-voting' },
-      { id: 'change_pass', label: 'পাসওয়ার্ড পরিবর্তন', icon: KeyRound, badgeId: 'side-nav-pass' },
-      { id: 'setup', label: 'সেটআপ', icon: ShieldCheck, badgeId: 'side-nav-setup', isDropdown: true }
+      { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint },
+      { id: 'change_pass', label: 'পাসওয়ার্ড পরিবর্তন', icon: KeyRound },
+      { id: 'setup', label: 'সেটআপ', icon: ShieldCheck, isDropdown: true }
     ] : []),
   ];
-
-  const IDBadge = ({ id }: { id: string }) => (
-    <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-      <span className="text-[6px] font-mono text-slate-700 bg-slate-800/50 px-1 rounded border border-slate-700/30">
-        #{id}
-      </span>
-    </div>
-  );
 
   const getSubItemCls = (isActive: boolean) => `
     w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[11px] font-bold transition-all relative group
@@ -274,7 +264,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           onClick={handleLogoClick}
           className="p-6 border-b border-slate-800 flex items-center gap-3 cursor-pointer group relative"
         >
-          <IDBadge id="sidebar-logo" />
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20 group-hover:scale-105 transition-transform">
             <LayoutDashboard className="text-white" size={24} />
           </div>
@@ -296,7 +285,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => setShowChangePasswordModal(true)}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all relative group ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`}
                 >
-                  <IDBadge id={item.badgeId} />
                   <div className="flex items-center gap-3">
                     <Icon size={20} className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'} />
                     <span className="text-sm">{item.label}</span>
@@ -320,7 +308,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                   }}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all relative group ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`}
                 >
-                  <IDBadge id={item.badgeId} />
                   <div className="flex items-center gap-3">
                     <Icon size={20} className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'} />
                     <span className="text-sm">{item.label}</span>
@@ -334,12 +321,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {item.id === 'entry' && isEntryExpanded && (
                   <div className="pl-4 space-y-1 animate-in slide-in-from-top-2 duration-300">
                     <button onClick={() => setActiveTab('entry', 'settlement')} className={getSubItemCls(entryModule === 'settlement')}>
-                      <IDBadge id="sub-entry-settlement" />
                       <CheckCircle2 size={14} className={getSubIconCls(entryModule === 'settlement')} />
                       নিষ্পত্তি এন্ট্রি
                     </button>
                     <button onClick={() => setActiveTab('entry', 'correspondence')} className={getSubItemCls(entryModule === 'correspondence')}>
-                      <IDBadge id="sub-entry-correspondence" />
                       <Mail size={14} className={getSubIconCls(entryModule === 'correspondence')} />
                       চিঠিপত্র এন্ট্রি
                     </button>
@@ -349,12 +334,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {item.id === 'register' && isRegisterExpanded && (
                   <div className="pl-4 space-y-1 animate-in slide-in-from-top-2 duration-300">
                     <button onClick={() => setActiveTab('register', 'settlement')} className={getSubItemCls(registerSubModule === 'settlement')}>
-                      <IDBadge id="sub-reg-settlement" />
                       <ClipboardList size={14} className={getSubIconCls(registerSubModule === 'settlement')} />
                       নিষ্পত্তি রেজিস্টার
                     </button>
                     <button onClick={() => setActiveTab('register', 'correspondence')} className={getSubItemCls(registerSubModule === 'correspondence')}>
-                      <IDBadge id="sub-reg-correspondence" />
                       <Mail size={14} className={getSubIconCls(registerSubModule === 'correspondence')} />
                       চিঠিপত্র রেজিস্টার
                     </button>
@@ -437,7 +420,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {item.id === 'setup' && isSetupExpanded && (
                   <div className="pl-4 space-y-1 animate-in slide-in-from-top-2 duration-300">
                     <button onClick={() => setActiveTab('setup')} className={getSubItemCls(activeTab === 'setup')}>
-                      <IDBadge id="sub-setup-main" />
                       <ShieldCheck size={14} className={getSubIconCls(activeTab === 'setup')} />
                       মাস্টার সেটআপ
                     </button>
@@ -453,7 +435,6 @@ const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => setIsLinksOpen(!isLinksOpen)}
               className={`w-full flex items-center justify-between px-3 py-3 rounded-xl font-bold transition-all relative cursor-pointer group ${isLinksOpen ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`}
             >
-              <IDBadge id="side-nav-links-header" />
               <div className="flex items-center gap-3">
                 <Globe size={18} />
                 <span className="text-xs">প্রয়োজনীয় লিঙ্কসমূহ</span>
