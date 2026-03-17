@@ -250,7 +250,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <ChevronLeft size={20} />
           </button>
         </div>
-        <nav id="sidebar-nav" className="flex-1 overflow-y-auto py-4 px-4 space-y-1 relative">
+        <nav id="sidebar-nav" className="flex-1 overflow-y-auto py-4 px-4 space-y-1 relative no-scrollbar">
           <IDBadge id="sidebar-nav" />
           {menuItems.map((item) => (
             <div 
@@ -607,7 +607,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
           
           {/* Sidebar Footer Content moved into Nav for scrolling */}
-          <div id="sidebar-footer" className="pt-4 mt-8 border-t border-slate-800 space-y-4 relative pb-12">
+          <div id="sidebar-footer" className="pt-4 mt-4 border-t border-slate-800 space-y-4 relative">
             <IDBadge id="sidebar-footer" />
             
             {/* Security & Account Section - Premium Design */}
