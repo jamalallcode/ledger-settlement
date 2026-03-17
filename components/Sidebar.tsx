@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3, User, Eye, EyeOff } from 'lucide-react';
+import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3, User } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 
 interface SidebarProps {
@@ -44,11 +44,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
-  const [showAdminPass, setShowAdminPass] = useState(false);
   const [newPassword, setNewPassword] = useState('');
-  const [showNewPass, setShowNewPass] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [newQuestion, setNewQuestion] = useState('');
   const [newAnswer, setNewAnswer] = useState('');
   const [recoveryAnswer, setRecoveryAnswer] = useState('');
@@ -247,207 +244,355 @@ const Sidebar: React.FC<SidebarProps> = ({
     ] : []),
   ];
 
-  const IDBadge = ({ id }: { id: string }) => (
-    <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-      <span className="text-[6px] font-mono text-slate-700 bg-slate-800/50 px-1 rounded border border-slate-700/30">
-        #{id}
-      </span>
-    </div>
-  );
+  const IDBadge = ({ id }: { id: string }) => {
+    const [copied, setCopied] = useState(false);
+    if (!isLayoutEditable) return null;
+    const handleCopy = (e: React.MouseEvent) => {
+      e.preventDefault(); e.stopPropagation();
+      navigator.clipboard.writeText(id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
+    return (
+      <div onClick={handleCopy} className="absolute top-0 left-0 -translate-y-full z-[9995] pointer-events-auto no-print">
+        <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md font-black text-[9px] bg-black text-white border border-white/30 shadow-2xl transition-all duration-300 hover:scale-150 hover:bg-blue-600 hover:z-[99999] active:scale-95 cursor-copy origin-bottom-left ${copied ? 'bg-emerald-600 border-emerald-400 ring-4 ring-emerald-500/30 !scale-125' : ''}`}>
+          {copied ? <><CheckCircle2 size={10} /> COPIED</> : `#${id}`}
+        </span>
+      </div>
+    );
+  };
 
-  const getSubItemCls = (isActive: boolean) => `
-    w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[11px] font-bold transition-all relative group
-    ${isActive 
-      ? 'bg-blue-500/10 text-blue-400 shadow-sm shadow-blue-500/5' 
-      : 'text-slate-500 hover:bg-slate-800/50 hover:text-slate-300'}
-  `;
+  // Helper for active styling
+  const getSubItemCls = (isActive: boolean) => 
+    `w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] font-black transition-all group ${isActive ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`;
 
-  const getSubIconCls = (isActive: boolean) => `
-    transition-transform duration-300 group-hover:scale-110
-    ${isActive ? 'text-blue-400' : 'text-slate-600'}
-  `;
+  const getSubIconCls = (isActive: boolean, hoverColor: string = 'emerald') => 
+    `${isActive ? 'text-white' : `text-slate-400 group-hover:text-${hoverColor}-400`} transition-transform group-hover:scale-110`;
 
   return (
     <>
-      <div className="w-64 h-screen bg-slate-900 border-r border-slate-800 flex flex-col relative z-50">
-        <div 
-          onClick={handleLogoClick}
-          className="p-6 border-b border-slate-800 flex items-center gap-3 cursor-pointer group relative"
-        >
-          <IDBadge id="sidebar-logo" />
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20 group-hover:scale-105 transition-transform">
-            <LayoutDashboard className="text-white" size={24} />
+      <div id="sidebar-container" className="w-48 bg-slate-900 h-screen text-slate-300 flex flex-col border-r border-slate-800 shadow-2xl overflow-hidden relative z-[5000]">
+        <IDBadge id="sidebar-container" />
+        <div id="sidebar-header" className="p-6 border-b border-slate-800 flex items-center justify-between relative">
+          <IDBadge id="sidebar-header" />
+          <div id="sidebar-logo" onClick={handleLogoClick} className="flex items-center gap-3 relative cursor-pointer select-none active:scale-95 transition-transform">
+            <IDBadge id="sidebar-logo" />
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/40">
+              <LayoutDashboard size={20} className="text-white" />
+            </div>
+            <span className="font-black text-white tracking-tight text-xs">অডিট রেজিস্টার</span>
           </div>
-          <div>
-            <h1 className="text-white font-black text-lg tracking-tight">ডিজিটাল লেজার</h1>
-            <p className="text-blue-500 text-[10px] font-black uppercase tracking-widest">Smart Accounting</p>
-          </div>
+          <button onClick={onToggleVisibility} className="p-1 hover:bg-slate-800 rounded transition-colors text-slate-400 hover:text-white relative">
+            <IDBadge id="btn-sidebar-toggle" />
+            <ChevronLeft size={20} />
+          </button>
         </div>
-
-        <nav className="flex-1 overflow-y-auto p-4 space-y-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            
-            if (item.id === 'change_pass') {
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setShowChangePasswordModal(true)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all relative group ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`}
-                >
-                  <IDBadge id={item.badgeId} />
-                  <div className="flex items-center gap-3">
-                    <Icon size={20} className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'} />
-                    <span className="text-sm">{item.label}</span>
+        <nav id="sidebar-nav" className="flex-1 overflow-y-auto py-4 px-4 space-y-1 relative no-scrollbar">
+          <IDBadge id="sidebar-nav" />
+          {menuItems.map((item) => (
+            <div 
+              key={item.id}
+              className="relative"
+            >
+              <button 
+                id={item.badgeId} 
+                onClick={() => {
+                  if (item.id === 'entry') {
+                    setIsEntryExpanded(!isEntryExpanded);
+                  } else if (item.id === 'register') {
+                    setIsRegisterExpanded(!isRegisterExpanded);
+                  } else if (item.id === 'return') {
+                    setIsReturnExpanded(!isReturnExpanded);
+                  } else if (item.id === 'setup') {
+                    setIsSetupExpanded(!isSetupExpanded);
+                  } else if (item.id === 'change_pass') {
+                    setShowChangePasswordModal(true);
+                  } else {
+                    setActiveTab(item.id);
+                  }
+                }} 
+                className={`w-full flex items-center justify-between px-3 py-3 rounded-xl font-bold transition-all relative group ${activeTab === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
+              >
+                <IDBadge id={item.badgeId} />
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <item.icon size={18} />
                   </div>
-                </button>
-              );
-            }
+                  <span className="text-sm">{item.label}</span>
+                </div>
+                {item.isDropdown && <ChevronDown size={14} className={`transition-transform duration-300 ${(item.id === 'entry' && isEntryExpanded) || (item.id === 'register' && isRegisterExpanded) || (item.id === 'return' && isReturnExpanded) || (item.id === 'setup' && isSetupExpanded) ? 'rotate-180' : ''}`} />}
+              </button>
 
-            return (
-              <div key={item.id} className="space-y-1">
-                <button
-                  onClick={() => {
-                    if (item.isDropdown) {
-                      if (item.id === 'entry') setIsEntryExpanded(!isEntryExpanded);
-                      if (item.id === 'register') setIsRegisterExpanded(!isRegisterExpanded);
-                      if (item.id === 'return') setIsReturnExpanded(!isReturnExpanded);
-                      if (item.id === 'setup') setIsSetupExpanded(!isSetupExpanded);
-                    } else {
-                      setActiveTab(item.id);
-                    }
-                  }}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all relative group ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`}
-                >
-                  <IDBadge id={item.badgeId} />
-                  <div className="flex items-center gap-3">
-                    <Icon size={20} className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'} />
-                    <span className="text-sm">{item.label}</span>
-                  </div>
-                  {item.isDropdown && (
-                    <ChevronDown size={16} className={`transition-transform duration-300 ${(item.id === 'entry' && isEntryExpanded) || (item.id === 'register' && isRegisterExpanded) || (item.id === 'return' && isReturnExpanded) || (item.id === 'setup' && isSetupExpanded) ? 'rotate-180' : ''}`} />
+              {/* Nested Sub-menu for Entry */}
+              {item.id === 'entry' && isEntryExpanded && (
+                <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
+                  <button 
+                    onClick={() => setActiveTab('entry', 'correspondence')}
+                    className={getSubItemCls(activeTab === 'entry' && entryModule === 'correspondence')}
+                  >
+                    <Mail size={14} className={getSubIconCls(activeTab === 'entry' && entryModule === 'correspondence', 'emerald')} />
+                    <span>১. চিঠিপত্র এন্ট্রি</span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('entry', 'settlement')}
+                    className={getSubItemCls(activeTab === 'entry' && entryModule === 'settlement')}
+                  >
+                    <ClipboardList size={14} className={getSubIconCls(activeTab === 'entry' && entryModule === 'settlement', 'blue')} />
+                    <span>২. মীমাংসা এন্ট্রি</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Nested Sub-menu for Register */}
+              {item.id === 'register' && isRegisterExpanded && (
+                <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
+                  <button 
+                    onClick={() => setActiveTab('register', 'correspondence')}
+                    className={getSubItemCls(activeTab === 'register' && registerSubModule === 'correspondence')}
+                  >
+                    <Mail size={14} className={getSubIconCls(activeTab === 'register' && registerSubModule === 'correspondence', 'emerald')} />
+                    <span>১. চিঠিপত্র রেজি:</span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('register', 'settlement')}
+                    className={getSubItemCls(activeTab === 'register' && registerSubModule === 'settlement')}
+                  >
+                    <ClipboardList size={14} className={getSubIconCls(activeTab === 'register' && registerSubModule === 'settlement', 'blue')} />
+                    <span>২. মীমাংসিত রেজি:</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Nested Sub-menu for Return & Summary */}
+              {item.id === 'return' && isReturnExpanded && (
+                <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
+                  {/* ১. মাসিক (Toggle) */}
+                  <button 
+                    onClick={() => setIsMonthlyExpanded(!isMonthlyExpanded)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[12px] font-black transition-all ${isMonthlyExpanded ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-1.5 h-1.5 rounded-full ${reportType?.includes('মাসিক') ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]' : 'bg-blue-500'}`}></div>
+                      <span>১. মাসিক</span>
+                    </div>
+                    <ChevronDown size={12} className={`transition-transform duration-300 ${isMonthlyExpanded ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Monthly Sub-items */}
+                  {isMonthlyExpanded && (
+                    <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                      {/* ১. চিঠিপত্র (Toggle) */}
+                      <button 
+                        onClick={() => setIsMonthlyCorrExpanded(!isMonthlyCorrExpanded)}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-[11px] font-black transition-all ${isMonthlyCorrExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Mail size={12} />
+                          <span>১. চিঠিপত্র</span>
+                        </div>
+                        <ChevronDown size={10} className={`transition-transform duration-300 ${isMonthlyCorrExpanded ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {/* Corr Sub-items */}
+                      {isMonthlyCorrExpanded && (
+                        <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                          {/* ১. ঢাকা */}
+                          <button 
+                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')}
+                            className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                          >
+                            ১. ঢাকা
+                          </button>
+
+                          {/* ২. নিষ্পত্তি (Toggle) */}
+                          <button 
+                            onClick={() => setIsSettlementExpanded(!isSettlementExpanded)}
+                            className={`w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${isSettlementExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span>২. নিষ্পত্তি</span>
+                            </div>
+                            <ChevronDown size={10} className={`transition-transform duration-300 ${isSettlementExpanded ? 'rotate-180' : ''}`} />
+                          </button>
+
+                          {isSettlementExpanded && (
+                            <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর')}
+                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                ১. বিএসআর
+                              </button>
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়')}
+                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                ২. দ্বিপক্ষীয়
+                              </button>
+                            </div>
+                          )}
+
+                          {/* ৩. অনলাইন প্রাপ্তি (Toggle) */}
+                          <button 
+                            onClick={() => setIsOnlineExpanded(!isOnlineExpanded)}
+                            className={`w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${isOnlineExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span>৩. অনলাইন প্রাপ্তি</span>
+                            </div>
+                            <ChevronDown size={10} className={`transition-transform duration-300 ${isOnlineExpanded ? 'rotate-180' : ''}`} />
+                          </button>
+
+                          {isOnlineExpanded && (
+                            <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর')}
+                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                ১. বিএসআর
+                              </button>
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়')}
+                                className={`w-full text-left px-3 py-1.5 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                ২. দ্বিপক্ষীয়
+                              </button>
+                            </div>
+                          )}
+
+                          {/* ৪. ডিডি স্যার */}
+                          <button 
+                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।')}
+                            className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                          >
+                            ৪. ডিডি স্যার
+                          </button>
+                        </div>
+                      )}
+
+                      {/* ২. অনুচ্ছেদ */}
+                      <button 
+                        onClick={() => setActiveTab('return', null, 'মাসিক রিটারন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-[11px] font-black transition-all ${reportType === 'মাসিক রিটারন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-blue-400'}`}
+                      >
+                        <BarChart3 size={12} />
+                        <span>২. অনুচ্ছেদ</span>
+                      </button>
+                    </div>
                   )}
-                </button>
 
-                {/* Sub-menus */}
-                {item.id === 'entry' && isEntryExpanded && (
-                  <div className="pl-4 space-y-1 animate-in slide-in-from-top-2 duration-300">
-                    <button onClick={() => setActiveTab('entry', 'settlement')} className={getSubItemCls(entryModule === 'settlement')}>
-                      <IDBadge id="sub-entry-settlement" />
-                      <CheckCircle2 size={14} className={getSubIconCls(entryModule === 'settlement')} />
-                      নিষ্পত্তি এন্ট্রি
-                    </button>
-                    <button onClick={() => setActiveTab('entry', 'correspondence')} className={getSubItemCls(entryModule === 'correspondence')}>
-                      <IDBadge id="sub-entry-correspondence" />
-                      <Mail size={14} className={getSubIconCls(entryModule === 'correspondence')} />
-                      চিঠিপত্র এন্ট্রি
-                    </button>
-                  </div>
-                )}
+                  {/* ২. ত্রৈমাসিক (Toggle) */}
+                  <button 
+                    onClick={() => setIsQuarterlyExpanded(!isQuarterlyExpanded)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[12px] font-black transition-all ${isQuarterlyExpanded ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-1.5 h-1.5 rounded-full ${reportType?.includes('ত্রৈমাসিক') ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]' : 'bg-amber-500'}`}></div>
+                      <span>২. ত্রৈমাসিক</span>
+                    </div>
+                    <ChevronDown size={12} className={`transition-transform duration-300 ${isQuarterlyExpanded ? 'rotate-180' : ''}`} />
+                  </button>
 
-                {item.id === 'register' && isRegisterExpanded && (
-                  <div className="pl-4 space-y-1 animate-in slide-in-from-top-2 duration-300">
-                    <button onClick={() => setActiveTab('register', 'settlement')} className={getSubItemCls(registerSubModule === 'settlement')}>
-                      <IDBadge id="sub-reg-settlement" />
-                      <ClipboardList size={14} className={getSubIconCls(registerSubModule === 'settlement')} />
-                      নিষ্পত্তি রেজিস্টার
-                    </button>
-                    <button onClick={() => setActiveTab('register', 'correspondence')} className={getSubItemCls(registerSubModule === 'correspondence')}>
-                      <IDBadge id="sub-reg-correspondence" />
-                      <Mail size={14} className={getSubIconCls(registerSubModule === 'correspondence')} />
-                      চিঠিপত্র রেজিস্টার
-                    </button>
-                  </div>
-                )}
-
-                {item.id === 'return' && isReturnExpanded && (
-                  <div className="pl-4 space-y-1 animate-in slide-in-from-top-2 duration-300">
-                    <button 
-                      onClick={() => setIsMonthlyExpanded(!isMonthlyExpanded)}
-                      className="w-full flex items-center justify-between px-3 py-2 text-[11px] font-bold text-slate-500 hover:text-slate-300 transition-all"
-                    >
-                      <div className="flex items-center gap-3">
-                        <BarChart3 size={14} className="text-slate-600" />
-                        মাসিক রিটার্ণ
-                      </div>
-                      <ChevronDown size={12} className={`transition-transform ${isMonthlyExpanded ? 'rotate-180' : ''}`} />
-                    </button>
-                    
-                    {isMonthlyExpanded && (
-                      <div className="pl-4 space-y-1 animate-in slide-in-from-top-2 duration-300">
+                  {/* Quarterly Sub-items */}
+                  {isQuarterlyExpanded && (
+                    <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                      {[1, 2, 3, 4, 5, 6].map(num => (
                         <button 
-                          onClick={() => setIsMonthlyCorrExpanded(!isMonthlyCorrExpanded)}
-                          className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-bold text-slate-600 hover:text-slate-400 transition-all"
+                          key={num}
+                          onClick={() => setActiveTab('return', null, `ত্রৈমাসিক রিটার্ন - ${toBengaliDigits(num.toString())}`)}
+                          className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === `ত্রৈমাসিক রিটার্ন - ${toBengaliDigits(num.toString())}` ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                         >
-                          চিঠিপত্র রিটার্ণ
-                          <ChevronDown size={10} className={`transition-transform ${isMonthlyCorrExpanded ? 'rotate-180' : ''}`} />
+                          রিটার্ন - {toBengaliDigits(num.toString())}
                         </button>
-                        {isMonthlyCorrExpanded && (
-                          <div className="pl-4 space-y-1">
-                            <button onClick={() => setActiveTab('return', null, 'মাসিক চিঠিপত্র নিষ্পত্তি')} className={getSubItemCls(reportType === 'মাসিক চিঠিপত্র নিষ্পত্তি')}>
-                              নিষ্পত্তি
-                            </button>
-                            <button onClick={() => setActiveTab('return', null, 'মাসিক চিঠিপত্র অনলাইন')} className={getSubItemCls(reportType === 'মাসিক চিঠিপত্র অনলাইন')}>
-                              অনলাইন
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                      ))}
+                    </div>
+                  )}
 
-                    <button 
-                      onClick={() => setIsQuarterlyExpanded(!isQuarterlyExpanded)}
-                      className="w-full flex items-center justify-between px-3 py-2 text-[11px] font-bold text-slate-500 hover:text-slate-300 transition-all"
-                    >
-                      <div className="flex items-center gap-3">
-                        <PieChart size={14} className="text-slate-600" />
-                        ত্রৈমাসিক রিটার্ণ
-                      </div>
-                      <ChevronDown size={12} className={`transition-transform ${isQuarterlyExpanded ? 'rotate-180' : ''}`} />
-                    </button>
-                    {isQuarterlyExpanded && (
-                      <div className="pl-4 space-y-1">
-                        <button onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ণ')} className={getSubItemCls(reportType === 'ত্রৈমাসিক রিটার্ণ')}>
-                          রিপোর্ট দেখুন
-                        </button>
-                      </div>
-                    )}
+                  {/* ৩. ষাণ্মাসিক */}
+                  <button 
+                    onClick={() => setActiveTab('return', null, 'ষাণ্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                    className={getSubItemCls(reportType === 'ষাণ্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                  >
+                    <div className={`w-1.5 h-1.5 rounded-full ${reportType === 'ষাণ্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-white' : 'bg-purple-500'}`}></div>
+                    <span>৩. ষাণ্মাসিক</span>
+                  </button>
 
-                    <button 
-                      onClick={() => setIsInitialBalanceExpanded(!isInitialBalanceExpanded)}
-                      className="w-full flex items-center justify-between px-3 py-2 text-[11px] font-bold text-slate-500 hover:text-slate-300 transition-all"
-                    >
-                      <div className="flex items-center gap-3">
-                        <ShieldCheck size={14} className="text-slate-600" />
-                        জের সেটআপ
-                      </div>
-                      <ChevronDown size={12} className={`transition-transform ${isInitialBalanceExpanded ? 'rotate-180' : ''}`} />
-                    </button>
-                    {isInitialBalanceExpanded && (
-                      <div className="pl-4 space-y-1">
-                        <button onClick={() => setActiveTab('return', null, 'জের সেটআপ')} className={getSubItemCls(reportType === 'জের সেটআপ')}>
-                          জের এন্ট্রি
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  {/* ৪. বাৎসরিক */}
+                  <button 
+                    onClick={() => setActiveTab('return', null, 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                    className={getSubItemCls(reportType === 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                  >
+                    <div className={`w-1.5 h-1.5 rounded-full ${reportType === 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-white' : 'bg-rose-500'}`}></div>
+                    <span>৪. বাৎসরিক</span>
+                  </button>
+                </div>
+              )}
+              {/* Nested Sub-menu for Setup */}
+              {item.id === 'setup' && isSetupExpanded && (
+                <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
+                  <button 
+                    onClick={() => setActiveTab('setup_receivers')}
+                    className={getSubItemCls(activeTab === 'setup_receivers')}
+                  >
+                    <User size={14} className={getSubIconCls(activeTab === 'setup_receivers', 'blue')} />
+                    <span>১. প্রাপক ব্যবস্থাপনা</span>
+                  </button>
 
-                {item.id === 'setup' && isSetupExpanded && (
-                  <div className="pl-4 space-y-1 animate-in slide-in-from-top-2 duration-300">
-                    <button onClick={() => setActiveTab('setup')} className={getSubItemCls(activeTab === 'setup')}>
-                      <IDBadge id="sub-setup-main" />
-                      <ShieldCheck size={14} className={getSubIconCls(activeTab === 'setup')} />
-                      মাস্টার সেটআপ
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  {/* ২. প্রারম্ভিক জের সেটআপ (Nested Toggle) */}
+                  <button 
+                    onClick={() => setIsInitialBalanceExpanded(!isInitialBalanceExpanded)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[11px] font-black transition-all ${reportType?.includes('জের সেটআপ') ? 'bg-slate-800 text-blue-400' : 'text-slate-500 hover:bg-slate-800 hover:text-white'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Lock size={12} className={reportType?.includes('জের সেটআপ') ? 'text-blue-400' : 'text-slate-600'} />
+                      <span>২. প্রারম্ভিক জের সেটআপ</span>
+                    </div>
+                    <ChevronDown size={12} className={`transition-transform duration-300 ${isInitialBalanceExpanded ? 'rotate-180' : ''}`} />
+                  </button>
 
-          <div className="pt-4 border-t border-slate-800">
+                  {isInitialBalanceExpanded && (
+                    <div className="pl-4 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                      <button 
+                        onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক')}
+                        className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: মাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                      >
+                        ১. মাসিক
+                      </button>
+                      <button 
+                        onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: ত্রৈমাসিক')}
+                        className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: ত্রৈমাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                      >
+                        ২. ত্রৈমাসিক
+                      </button>
+                      <button 
+                        onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: ষাণ্মাসিক')}
+                        className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: ষাণ্মাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                      >
+                        ৩. ষাণ্মাসিক
+                      </button>
+                      <button 
+                        onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: বাৎসরিক')}
+                        className={`w-full text-left px-3 py-1.5 text-[10px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: বাৎসরিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                      >
+                        ৪. বাৎসরিক
+                      </button>
+                    </div>
+                  )}
+
+                  <button 
+                    onClick={() => setShowChangePasswordModal(true)}
+                    className={getSubItemCls(false)}
+                  >
+                    <KeyRound size={14} className={getSubIconCls(false, 'amber')} />
+                    <span>৩. পাসওয়ার্ড পরিবর্তন</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* New Important Links Section */}
+          <div className="pt-4 space-y-1">
             <div 
               id="side-nav-links-header"
               onClick={() => setIsLinksOpen(!isLinksOpen)}
@@ -484,330 +629,292 @@ const Sidebar: React.FC<SidebarProps> = ({
                     )}
                   </div>
                 ))}
+                
                 {isAdmin && (
                   <button 
                     onClick={handleAddLink}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-black text-blue-400 hover:text-blue-300 hover:bg-blue-500/5 rounded-lg transition-all mt-2 border border-dashed border-blue-500/20"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-black text-blue-500 hover:bg-blue-500/10 rounded-lg transition-all mt-2"
                   >
-                    <Plus size={12} />
-                    <span>নতুন লিঙ্ক যোগ করুন</span>
+                    <Plus size={14} />
+                    <span>লিঙ্ক যুক্ত করুন</span>
                   </button>
                 )}
               </div>
             )}
           </div>
         </nav>
-
-        <div className="p-4 border-t border-slate-800 space-y-2">
-          {isAdmin && (
+        <div id="sidebar-footer" className="p-4 border-t border-slate-800 space-y-4 relative">
+          <IDBadge id="sidebar-footer" />
+          {isAdmin ? (
             <button 
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 text-red-500 font-bold hover:bg-red-500 hover:text-white transition-all group"
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all font-black text-xs group"
             >
-              <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" />
-              <span className="text-sm">লগআউট</span>
+              <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
+              লগআউট করুন
             </button>
+          ) : (
+            <div className="px-2 py-4 text-center">
+              <div className="flex flex-col items-center gap-2 opacity-20 group hover:opacity-40 transition-opacity cursor-default">
+                 <ShieldCheck size={24} className="text-slate-600" />
+                 <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Secure Node</p>
+              </div>
+            </div>
           )}
-          <div className="flex items-center justify-center gap-2 py-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">System Active</span>
-          </div>
         </div>
       </div>
-
-      {/* Admin Access Modal */}
       {showAdminModal && (
-        <>
-          <div className="fixed top-16 left-64 right-0 bottom-0 z-[9990] bg-black/60 animate-in fade-in duration-500" onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} />
-          <div className="fixed top-16 left-64 right-0 bottom-0 z-[9992] flex items-center justify-center p-4 pointer-events-none">
-            <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-3xl shadow-2xl p-6 flex flex-col animate-in zoom-in-95 duration-500 relative overflow-hidden group pointer-events-auto">
-              <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/10 blur-[80px] rounded-full group-hover:bg-blue-600/20 transition-colors duration-700"></div>
-              <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-600/5 blur-[80px] rounded-full group-hover:bg-emerald-600/10 transition-colors duration-700"></div>
-              
-              <div className="relative z-10 space-y-4 flex-1">
-                <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-600/20 text-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/10">
-                      <Fingerprint size={20} />
-                    </div>
-                    <div>
-                      <h3 className="text-white font-black text-lg tracking-tight">সিকিউরিটি এক্সেস</h3>
-                      <p className="text-blue-400/60 text-[9px] font-black uppercase tracking-[0.2em]">Administrator Portal</p>
-                    </div>
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-500">
+          <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 space-y-6 animate-in zoom-in-95 duration-500 relative overflow-hidden group">
+            {/* Decorative Glows */}
+            <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/20 blur-[80px] rounded-full group-hover:bg-blue-600/30 transition-colors duration-700"></div>
+            <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-600/10 blur-[80px] rounded-full group-hover:bg-emerald-600/20 transition-colors duration-700"></div>
+            
+            <div className="relative z-10 space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 ring-4 ring-blue-500/10">
+                    <Fingerprint size={20} />
                   </div>
-                  <button 
-                    onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} 
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all border border-white/5"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-
-                <div className="space-y-6 py-2">
-                  <div className="space-y-3">
-                    <p className="text-slate-300 text-xs font-bold text-center">মালিকের সিক্রেট পাসওয়ার্ড দিন:</p>
-                    <form onSubmit={handleAdminSubmit} className="space-y-6">
-                      <div className="relative group/input">
-                        <input 
-                          autoFocus 
-                          type={showAdminPass ? "text" : "password"} 
-                          placeholder="••••••••" 
-                          value={adminPassword} 
-                          onChange={(e) => setAdminPassword(e.target.value)} 
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white font-black text-center text-2xl outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-800 tracking-[0.3em]" 
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowAdminPass(!showAdminPass)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-white transition-colors"
-                        >
-                          {showAdminPass ? <EyeOff size={20} /> : <Eye size={20} />}
-                        </button>
-                      </div>
-
-                      <div className="text-center">
-                        <button 
-                          type="button"
-                          onClick={() => { setShowAdminModal(false); setShowRecoveryModal(true); }}
-                          className="text-[10px] font-black text-blue-400/80 hover:text-blue-400 uppercase tracking-widest transition-colors"
-                        >
-                          পাসওয়ার্ড ভুলে গেছেন? উদ্ধার করুন
-                        </button>
-                      </div>
-
-                      <div className="flex gap-3 pt-4">
-                        <button 
-                          type="button" 
-                          onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} 
-                          className="flex-1 py-4 bg-white/5 text-slate-400 rounded-xl font-black text-xs hover:bg-white/10 transition-all border border-white/5"
-                        >
-                          বাতিল
-                        </button>
-                        <button 
-                          type="submit" 
-                          className="flex-1 py-4 bg-blue-600 text-white rounded-xl font-black text-xs hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20"
-                        >
-                          প্রবেশ করুন
-                        </button>
-                      </div>
-                      
-                      <div className="text-center pt-2">
-                        <button 
-                          type="button"
-                          onClick={() => { setShowAdminModal(false); setShowChangePasswordModal(true); }}
-                          className="text-[9px] font-black text-slate-600 hover:text-blue-400 uppercase tracking-[0.2em] transition-colors"
-                        >
-                          পাসওয়ার্ড পরিবর্তন করতে চান?
-                        </button>
-                      </div>
-                    </form>
+                  <div>
+                    <h3 className="text-white font-black text-lg tracking-tight">সিকিউরিটি এক্সেস</h3>
+                    <p className="text-blue-400/60 text-[9px] font-black uppercase tracking-[0.2em]">Administrator Portal</p>
                   </div>
                 </div>
+                <button 
+                  onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} 
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all border border-white/5"
+                >
+                  <X size={18} />
+                </button>
               </div>
-            </div>
-          </div>
-        </>
-      )}
 
-      {/* Recovery Modal */}
-      {showRecoveryModal && (
-        <>
-          <div className="fixed top-16 left-64 right-0 bottom-0 z-[9990] bg-black/70 animate-in fade-in duration-500" onClick={() => { setShowRecoveryModal(false); setRecoveryAnswer(''); setRecoveredPassword(null); }} />
-          <div className="fixed top-16 left-64 right-0 bottom-0 z-[9992] flex items-center justify-center p-4 pointer-events-none">
-            <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-3xl p-6 flex flex-col shadow-2xl overflow-hidden relative group pointer-events-auto">
-              <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-600/10 blur-[80px] rounded-full"></div>
-              
-              <div className="relative z-10 flex-1 flex flex-col">
-                <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-500/20 text-blue-500 rounded-xl flex items-center justify-center">
-                      <Fingerprint size={20} />
-                    </div>
-                    <div>
-                      <h3 className="text-white font-black text-lg">পাসওয়ার্ড উদ্ধার</h3>
-                      <p className="text-blue-400/60 text-[9px] font-black uppercase tracking-widest">Security Recovery</p>
-                    </div>
+              <div className="space-y-2">
+                <p className="text-slate-300 text-sm font-bold ml-1">মালিকের সিক্রেট পাসওয়ার্ড দিন:</p>
+                <form onSubmit={handleAdminSubmit} className="space-y-4">
+                  <div className="relative group/input">
+                    <input 
+                      autoFocus 
+                      type="password" 
+                      placeholder="••••••••" 
+                      value={adminPassword} 
+                      onChange={(e) => setAdminPassword(e.target.value)} 
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-black text-center text-2xl outline-none focus:border-blue-500/50 focus:ring-8 focus:ring-blue-500/5 transition-all placeholder:text-slate-700 tracking-[0.5em]" 
+                    />
+                    <div className="absolute inset-0 rounded-2xl bg-blue-500/5 opacity-0 group-focus-within/input:opacity-100 pointer-events-none transition-opacity"></div>
                   </div>
-                  <button 
-                    onClick={() => { setShowRecoveryModal(false); setRecoveryAnswer(''); setRecoveredPassword(null); }}
-                    className="p-1.5 hover:bg-white/5 rounded-full text-slate-500 transition-colors"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
 
-                <div className="space-y-6 py-2 flex-1">
-                  {recoveredPassword ? (
-                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 text-center space-y-4 animate-in zoom-in duration-300 my-auto">
-                      <div className="w-12 h-12 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
-                        <CheckCircle2 size={24} />
-                      </div>
-                      <div>
-                        <p className="text-slate-400 text-xs font-bold mb-1">আপনার পাসওয়ার্ড হলো:</p>
-                        <p className="text-white text-2xl font-black tracking-widest">{recoveredPassword}</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      <div className="bg-blue-500/5 border border-blue-500/10 rounded-xl p-4">
-                        <p className="text-blue-400 text-[9px] font-black uppercase tracking-widest mb-2">নিরাপত্তা প্রশ্ন:</p>
-                        <p className="text-white font-bold text-lg leading-relaxed">{storedRecoveryQuestion}</p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <p className="text-slate-300 text-xs font-bold ml-1">আপনার উত্তর:</p>
-                        <input 
-                          autoFocus
-                          type="text" 
-                          value={recoveryAnswer} 
-                          onChange={(e) => setRecoveryAnswer(e.target.value)} 
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-base" 
-                          placeholder="উত্তরটি এখানে লিখুন"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-6 mt-auto">
-                  {recoveredPassword ? (
+                  <div className="text-center">
                     <button 
-                      onClick={() => { setShowRecoveryModal(false); setRecoveredPassword(null); setRecoveryAnswer(''); }}
-                      className="w-full py-4 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-500 transition-all shadow-xl shadow-emerald-600/20"
+                      type="button"
+                      onClick={() => { setShowAdminModal(false); setShowRecoveryModal(true); }}
+                      className="text-[9px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-widest transition-colors"
                     >
-                      বুঝেছি
+                      পাসওয়ার্ড ভুলে গেছেন? উদ্ধার করুন
                     </button>
-                  ) : (
-                    <button 
-                      onClick={(e) => handleRecoverySubmit(e as any)}
-                      className="w-full py-4 bg-blue-600 text-white rounded-xl font-black text-xs hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20"
-                    >
-                      যাচাই করুন
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Change Password Modal */}
-      {showChangePasswordModal && (
-        <>
-          <div className="fixed top-16 left-64 right-0 bottom-0 z-[9990] bg-black/70 animate-in fade-in duration-500" onClick={() => setShowChangePasswordModal(false)} />
-          <div className="fixed top-16 left-64 right-0 bottom-0 z-[9992] flex items-center justify-center p-4 pointer-events-none">
-            <div className="w-full max-w-lg bg-slate-900 border border-white/10 rounded-3xl p-6 flex flex-col shadow-2xl relative overflow-hidden group pointer-events-auto">
-              <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/10 blur-[80px] rounded-full"></div>
-              
-              <div className="relative z-10 flex-1 flex flex-col">
-                <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-500/20 text-blue-500 rounded-xl flex items-center justify-center">
-                      <KeyRound size={20} />
-                    </div>
-                    <div>
-                      <h3 className="text-white font-black text-lg">পাসওয়ার্ড পরিবর্তন</h3>
-                      <p className="text-blue-400/60 text-[9px] font-black uppercase tracking-widest">Update Security</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => setShowChangePasswordModal(false)}
-                    className="p-1.5 hover:bg-white/5 rounded-full text-slate-500 transition-colors"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-
-                <form onSubmit={handleChangePassword} className="space-y-4 py-2 flex-1 flex flex-col">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <p className="text-slate-400 text-[9px] font-black uppercase tracking-wider ml-1">নতুন পাসওয়ার্ড:</p>
-                      <div className="relative">
-                        <input 
-                          type={showNewPass ? "text" : "password"} 
-                          value={newPassword} 
-                          onChange={(e) => setNewPassword(e.target.value)} 
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-sm" 
-                          placeholder="নতুন পাসওয়ার্ড দিন"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowNewPass(!showNewPass)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-white transition-colors"
-                        >
-                          {showNewPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-slate-400 text-[9px] font-black uppercase tracking-wider ml-1">নিশ্চিত করুন:</p>
-                      <div className="relative">
-                        <input 
-                          type={showConfirmPass ? "text" : "password"} 
-                          value={confirmPassword} 
-                          onChange={(e) => setConfirmPassword(e.target.value)} 
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-sm" 
-                          placeholder="আবার লিখুন"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPass(!showConfirmPass)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-white transition-colors"
-                        >
-                          {showConfirmPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="pt-4 border-t border-white/5 space-y-3">
-                    <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.2em]">পাসওয়ার্ড উদ্ধারের জন্য সেটিংস</p>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <p className="text-slate-400 text-[9px] font-black uppercase tracking-wider ml-1">নিরাপত্তা প্রশ্ন:</p>
-                        <input 
-                          type="text" 
-                          value={newQuestion} 
-                          onChange={(e) => setNewQuestion(e.target.value)} 
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-sm" 
-                          placeholder="আপনার প্রিয় রং কি?"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-slate-400 text-[9px] font-black uppercase tracking-wider ml-1">প্রশ্নের উত্তর:</p>
-                        <input 
-                          type="text" 
-                          value={newAnswer} 
-                          onChange={(e) => setNewAnswer(e.target.value)} 
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-sm" 
-                          placeholder="সাদা"
-                        />
-                      </div>
-                    </div>
                   </div>
 
-                  <div className="flex gap-3 pt-6 mt-auto">
+                  <div className="flex gap-4">
                     <button 
                       type="button" 
-                      onClick={() => setShowChangePasswordModal(false)} 
-                      className="flex-1 py-4 bg-white/5 text-slate-400 rounded-xl font-black text-xs hover:bg-white/10 transition-all border border-white/5"
+                      onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} 
+                      className="flex-1 py-3.5 bg-white/5 text-slate-300 rounded-2xl font-black text-xs hover:bg-white/10 transition-all active:scale-95 border border-white/5"
                     >
                       বাতিল
                     </button>
                     <button 
                       type="submit" 
-                      className="flex-1 py-4 bg-blue-600 text-white rounded-xl font-black text-xs hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20"
+                      className="flex-1 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-xs hover:from-blue-500 hover:to-indigo-500 transition-all active:scale-95 shadow-xl shadow-blue-600/20 ring-4 ring-blue-500/10"
                     >
-                      সংরক্ষণ করুন
+                      প্রবেশ করুন
+                    </button>
+                  </div>
+                  <div className="text-center pt-1">
+                    <button 
+                      type="button"
+                      onClick={() => { setShowAdminModal(false); setShowChangePasswordModal(true); }}
+                      className="text-[8px] font-black text-slate-500 hover:text-blue-400 uppercase tracking-[0.2em] transition-colors"
+                    >
+                      পাসওয়ার্ড পরিবর্তন করতে চান?
                     </button>
                   </div>
                 </form>
               </div>
             </div>
           </div>
-        </>
+        </div>
+      )}
+
+      {/* Recovery Modal */}
+      {showRecoveryModal && (
+        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
+          <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[2rem] p-8 space-y-6 shadow-2xl">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-amber-500/20 text-amber-500 rounded-xl flex items-center justify-center">
+                <AlertCircle size={20} />
+              </div>
+              <div>
+                <h3 className="text-white font-black text-lg">পাসওয়ার্ড উদ্ধার</h3>
+                <p className="text-amber-400/60 text-[9px] font-black uppercase tracking-widest">Security Recovery</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {recoveredPassword ? (
+                <div className="space-y-6 animate-in zoom-in-95 duration-300">
+                  <div className="p-6 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-center space-y-2">
+                    <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest">আপনার পাসওয়ার্ড:</p>
+                    <p className="text-white font-black text-3xl tracking-[0.2em]">{recoveredPassword}</p>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <button 
+                      onClick={() => {
+                        setShowRecoveryModal(false);
+                        setRecoveredPassword(null);
+                        setRecoveryAnswer('');
+                        setShowChangePasswordModal(true);
+                      }}
+                      className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-black text-sm hover:from-emerald-500 hover:to-teal-500 transition-all shadow-xl shadow-emerald-600/20"
+                    >
+                      নতুন পাসওয়ার্ড সেট করুন
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowRecoveryModal(false);
+                        setRecoveredPassword(null);
+                        setRecoveryAnswer('');
+                        setShowAdminModal(true);
+                      }}
+                      className="w-full py-4 bg-white/5 text-slate-400 rounded-2xl font-black text-sm hover:bg-white/10 transition-all"
+                    >
+                      লগইন পেজে ফিরে যান
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">নিরাপত্তা প্রশ্ন:</p>
+                    <p className="text-white font-bold">{storedRecoveryQuestion}</p>
+                  </div>
+
+                  <form onSubmit={handleRecoverySubmit} className="space-y-6">
+                    <div className="space-y-2">
+                      <p className="text-slate-300 text-sm font-bold ml-1">আপনার উত্তর দিন:</p>
+                      <input 
+                        autoFocus
+                        type="text" 
+                        value={recoveryAnswer} 
+                        onChange={(e) => setRecoveryAnswer(e.target.value)} 
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-amber-500/50 transition-all" 
+                        placeholder="উত্তর এখানে লিখুন..."
+                      />
+                    </div>
+
+                    <div className="flex gap-4">
+                      <button 
+                        type="button" 
+                        onClick={() => { setShowRecoveryModal(false); setRecoveryAnswer(''); }} 
+                        className="flex-1 py-4 bg-white/5 text-slate-300 rounded-2xl font-black text-sm hover:bg-white/10 transition-all"
+                      >
+                        বাতিল
+                      </button>
+                      <button 
+                        type="submit" 
+                        className="flex-1 py-4 bg-amber-600 text-white rounded-2xl font-black text-sm hover:bg-amber-500 transition-all shadow-xl shadow-amber-600/20"
+                      >
+                        যাচাই করুন
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showChangePasswordModal && (
+        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
+          <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[2rem] p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-blue-500/20 text-blue-500 rounded-xl flex items-center justify-center">
+                <KeyRound size={20} />
+              </div>
+              <div>
+                <h3 className="text-white font-black text-lg">পাসওয়ার্ড পরিবর্তন</h3>
+                <p className="text-blue-400/60 text-[9px] font-black uppercase tracking-widest">Update Security</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <p className="text-slate-300 text-xs font-bold ml-1">নতুন পাসওয়ার্ড:</p>
+                  <input 
+                    type="password" 
+                    value={newPassword} 
+                    onChange={(e) => setNewPassword(e.target.value)} 
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-sm" 
+                    placeholder="কমপক্ষে ৩ অক্ষর"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-slate-300 text-xs font-bold ml-1">পাসওয়ার্ড নিশ্চিত করুন:</p>
+                  <input 
+                    type="password" 
+                    value={confirmPassword} 
+                    onChange={(e) => setConfirmPassword(e.target.value)} 
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-sm" 
+                    placeholder="আবার লিখুন"
+                  />
+                </div>
+                
+                <div className="pt-3 border-t border-white/10">
+                  <p className="text-blue-400 text-[9px] font-black uppercase tracking-widest mb-3">পাসওয়ার্ড উদ্ধারের জন্য সেটিংস</p>
+                  
+                  <div className="space-y-1.5">
+                    <p className="text-slate-300 text-xs font-bold ml-1">নিরাপত্তা প্রশ্ন:</p>
+                    <input 
+                      type="text" 
+                      value={newQuestion} 
+                      onChange={(e) => setNewQuestion(e.target.value)} 
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-sm" 
+                      placeholder="যেমন: আপনার প্রিয় রং কি?"
+                    />
+                  </div>
+                  <div className="space-y-1.5 mt-3">
+                    <p className="text-slate-300 text-xs font-bold ml-1">প্রশ্নের উত্তর:</p>
+                    <input 
+                      type="text" 
+                      value={newAnswer} 
+                      onChange={(e) => setNewAnswer(e.target.value)} 
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-sm" 
+                      placeholder="উত্তরটি এখানে লিখুন"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setShowChangePasswordModal(false)} 
+                  className="flex-1 py-3 bg-white/5 text-slate-300 rounded-xl font-black text-xs hover:bg-white/10 transition-all"
+                >
+                  বাতিল
+                </button>
+                <button 
+                  type="submit" 
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-black text-xs hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20"
+                >
+                  সংরক্ষণ করুন
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </>
   );

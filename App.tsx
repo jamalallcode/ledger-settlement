@@ -543,7 +543,7 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-bengali">
       {isSidebarOpen && (
-        <div className="no-print h-full relative z-[10000]">
+        <div className="no-print h-full relative z-[5000]">
           <Sidebar 
             activeTab={activeTab} setActiveTab={handleTabChange} 
             onToggleVisibility={() => setIsSidebarOpen(false)}

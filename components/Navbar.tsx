@@ -103,7 +103,7 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <nav className="sticky top-0 z-[9991] bg-slate-900 border-b border-slate-800 h-20 shadow-2xl no-print relative">
+    <nav className="sticky top-0 z-[5000] bg-slate-900 border-b border-slate-800 h-20 shadow-2xl no-print relative">
       <IDBadge id="premium-navbar-main" />
       <div className="max-w-[1600px] mx-auto h-full px-4 md:px-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
