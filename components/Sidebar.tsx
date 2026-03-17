@@ -201,7 +201,22 @@ const Sidebar: React.FC<SidebarProps> = ({
         <nav id="sidebar-nav" className="flex-1 overflow-y-auto py-4 px-4 space-y-1 relative no-scrollbar">
           <IDBadge id="sidebar-nav" />
           {menuItems.map((item) => (
-            <React.Fragment key={item.id}>
+            <div 
+              key={item.id}
+              className="relative"
+              onMouseEnter={() => {
+                if (item.id === 'entry') setIsEntryExpanded(true);
+                if (item.id === 'register') setIsRegisterExpanded(true);
+                if (item.id === 'return') setIsReturnExpanded(true);
+                if (item.id === 'setup') setIsSetupExpanded(true);
+              }}
+              onMouseLeave={() => {
+                if (item.id === 'entry') setIsEntryExpanded(false);
+                if (item.id === 'register') setIsRegisterExpanded(false);
+                if (item.id === 'return') setIsReturnExpanded(false);
+                if (item.id === 'setup') setIsSetupExpanded(false);
+              }}
+            >
               <button 
                 id={item.badgeId} 
                 onClick={() => {
@@ -488,7 +503,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   </button>
                 </div>
               )}
-            </React.Fragment>
+            </div>
           ))}
 
           {/* New Important Links Section */}
