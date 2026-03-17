@@ -551,7 +551,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   // Header font-black
   const thCls = "sticky top-0 border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[11px] bg-slate-200 z-[110] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
   // Data cells reverted to font-bold
-  const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-slate-800 font-bold leading-tight align-top bg-white transition-colors group-hover:bg-blue-50/50 break-words";
+  const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-slate-800 font-bold leading-tight align-top transition-colors group-hover:bg-blue-50/50 break-words";
   const labelCls = "text-[10px] font-bold text-emerald-700 shrink-0";
   const valCls = "text-[10px] font-black text-slate-900";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[48px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
@@ -949,7 +949,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                     const isPendingForApproval = entry.approvalStatus === 'pending';
 
                     return (
-                      <tr key={entry.id} className="group transition-all">
+                      <tr key={entry.id} className="group transition-all bg-white">
                         <td className={tdCls + " text-center font-black"}>{toBengaliDigits(idx + 1)}</td>
                         <td className={tdCls}>{entry.description}</td>
                         <td className={tdCls}>

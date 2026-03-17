@@ -13,13 +13,14 @@ interface SettlementFormProps {
   onCancel?: () => void;
   isLayoutEditable?: boolean;
   isAdmin?: boolean;
+  userEmail?: string | null;
   preSelectedModule?: 'settlement' | 'correspondence' | null;
   correspondenceEntries?: any[];
   entries?: SettlementEntry[];
   navigateToEntry?: (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => void;
 }
 
-const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, nextSl, branchSuggestions, initialEntry, onCancel, isLayoutEditable, isAdmin = false, preSelectedModule = null, correspondenceEntries, entries, navigateToEntry }) => {
+const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, nextSl, branchSuggestions, initialEntry, onCancel, isLayoutEditable, isAdmin = false, userEmail, preSelectedModule = null, correspondenceEntries, entries, navigateToEntry }) => {
   const [mainModule, setMainModule] = useState<'settlement' | 'correspondence' | null>(preSelectedModule);
 
   useEffect(() => {
@@ -108,7 +109,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, 
   }
 
   if (mainModule === 'correspondence') {
-    return <CorrespondenceEntryModule onBackToMenu={() => setMainModule(null)} onViewRegister={() => onViewRegister('correspondence')} onAdd={onAdd} isLayoutEditable={isLayoutEditable} initialEntry={initialEntry} isAdmin={isAdmin} existingEntries={correspondenceEntries} navigateToEntry={navigateToEntry} />;
+    return <CorrespondenceEntryModule onBackToMenu={() => setMainModule(null)} onViewRegister={() => onViewRegister('correspondence')} onAdd={onAdd} isLayoutEditable={isLayoutEditable} initialEntry={initialEntry} isAdmin={isAdmin} userEmail={userEmail} existingEntries={correspondenceEntries} navigateToEntry={navigateToEntry} />;
   }
 
   return (

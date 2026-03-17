@@ -148,7 +148,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
 
   const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-emerald-600 ring-4 ring-emerald-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-300'}`;
-  const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight bg-white h-[40px] align-middle overflow-hidden break-words";
+  const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight h-[40px] align-middle overflow-hidden break-words";
   
   const reportingLimitDate = useMemo(() => {
     const today = new Date();
@@ -355,9 +355,9 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
             </thead>
             <tbody>
               {filteredData.length > 0 ? filteredData.map((entry, idx) => (
-                <tr key={entry.id} className="group hover:bg-blue-100/70 transition-all duration-200 cursor-default">
+                <tr key={entry.id} className="group bg-white hover:bg-blue-100/70 transition-all duration-200 cursor-default">
                   <td className={tdS}>{toBengaliDigits(idx + 1)}</td>
-                  <td className={`${tdS} text-left px-2 group-hover:bg-blue-50/30 transition-colors`}>{entry.description}</td>
+                  <td className={`${tdS} text-left px-2 transition-colors`}>{entry.description}</td>
                   <td className={tdS}>{entry.diaryNo}<br/>{formatDateBN(entry.diaryDate)}</td>
                   <td className={tdS}>{entry.letterNo}<br/>{formatDateBN(entry.letterDate)}</td>
                   <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'এসএফআই' ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>

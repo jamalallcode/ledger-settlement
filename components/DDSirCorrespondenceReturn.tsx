@@ -51,9 +51,24 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   }, []);
 
   const auditorOptions = useMemo(() => {
-    const unique = Array.from(new Set(entries.map(e => normalizeName(e.receiverName || e.presentedToName)).filter(name => name !== 'অনির্ধারিত')));
+    let filteredForOptions = entries || [];
+    if (filterBranch !== 'সকল') {
+      filteredForOptions = entries.filter(e => e.paraType === filterBranch);
+    }
+    const targetToRemove = normalizeName('শামীমা শান্ত্রিন');
+    const unique = Array.from(new Set(filteredForOptions.map(e => normalizeName(e.receiverName || e.presentedToName)).filter(name => 
+      name !== 'অনির্ধারিত' && 
+      name !== targetToRemove && 
+      !name.includes('শান্ত্রিন')
+    )));
     return ['সকল', ...unique];
-  }, [entries]);
+  }, [entries, filterBranch]);
+
+  useEffect(() => {
+    if (filterAuditor !== 'সকল' && !auditorOptions.includes(filterAuditor)) {
+      setFilterAuditor('সকল');
+    }
+  }, [filterBranch, auditorOptions, filterAuditor]);
 
   const reportingLimitDate = useMemo(() => {
     const today = new Date();
@@ -81,7 +96,11 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     const reportingDateObj = new Date(selectedReportingDate);
     if (isNaN(reportingDateObj.getTime())) return data;
 
+    const targetToRemove = normalizeName('শামীমা শান্ত্রিন');
     data = data.filter(e => {
+      const auditorName = normalizeName(e.receiverName || e.presentedToName);
+      if (auditorName === targetToRemove || auditorName.includes('শান্ত্রিন')) return false;
+      
       if (!e.diaryDate) return false;
       const dDateStr = toEnglishDigits(e.diaryDate);
       const dDate = new Date(dDateStr);
@@ -229,12 +248,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   // Header font is font-bold
   const thStyle = "border border-slate-300 px-1 py-2 font-bold text-center text-[11px] leading-tight align-middle bg-slate-200";
   // Data cells reverted to font-bold (700 weight as per instruction)
-  const tdStyle = "border border-slate-300 px-1.5 py-1.5 text-[12px] text-center font-bold leading-tight bg-white align-middle transition-colors group-hover:bg-blue-50";
+  const tdStyle = "border border-slate-300 px-1.5 py-1.5 text-[12px] text-center font-bold leading-tight align-middle transition-colors";
   
   // Reverted sticky header from bold to black
   const stickyThStyle = "border border-slate-300 px-1 py-3 font-black text-center text-[10px] bg-slate-200";
   // Reverted sticky data from medium to bold
-  const stickyTdStyle = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-center font-bold leading-tight bg-white align-middle transition-colors group-hover:bg-blue-50";
+  const stickyTdStyle = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-center font-bold leading-tight align-middle transition-colors";
 
   const getPositionColor = (name: string) => {
     const pos = name || 'অডিটর';
@@ -463,7 +482,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               </thead>
               <tbody>
                 {reportTableData.length > 0 ? reportTableData.map((row, idx) => (
-                  <tr key={idx} className="group hover:bg-blue-100/50 transition-all duration-200">
+                  <tr key={idx} className="group bg-white hover:bg-blue-100/50 transition-all duration-200">
                     <td className={tdStyle}>{toBengaliDigits(idx + 1)}</td>
                     <td className={tdStyle + " text-left text-[11px] font-bold group-hover:bg-blue-50/30"}>{row.name}</td>
                     <td className={tdStyle}>{row.karyapatra.less > 0 ? `${toBengaliDigits(row.karyapatra.less)} টি` : '-'}</td>
@@ -551,7 +570,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   return detailedListData.map((group) => group.rows.map((row, rowIdx) => {
                     globalIdx++;
                     return (
-                      <tr key={row.id} className="group hover:bg-blue-100/70 transition-all duration-200 cursor-default">
+                      <tr key={row.id} className="group bg-white hover:bg-blue-100/70 transition-all duration-200 cursor-default">
                         <td className={stickyTdStyle}>{toBengaliDigits(globalIdx)}</td>
                         {rowIdx === 0 && (
                           <td rowSpan={group.rows.length} className={stickyTdStyle + " bg-slate-50/50 group-hover:bg-blue-200/40 transition-colors"}>

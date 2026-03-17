@@ -9,6 +9,7 @@ import ReturnView from './components/ReturnView';
 import LandingPage from './components/LandingPage';
 import VotingSystem from './components/VotingSystem';
 import DocumentArchive from './components/DocumentArchive';
+import ReceiverManagement from './components/ReceiverManagement';
 import { SettlementEntry, GroupOption, CumulativeStats } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
@@ -35,6 +36,7 @@ const App: React.FC = () => {
   const [isLayoutEditable, setIsLayoutEditable] = useState(false);
   const [isLockedMode, setIsLockedMode] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showRegisterFilters, setShowRegisterFilters] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -109,6 +111,13 @@ const App: React.FC = () => {
   const navigateToEntry = (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => {
     setActiveTab('register');
     setRegisterSubModule(type);
+    
+    // Determine if the entry is pending or approved to set the correct view
+    const isPending = entries.some(e => e.id === id && e.approvalStatus === 'pending') || 
+                      correspondenceEntries.some(e => e.id === id && e.approvalStatus === 'pending');
+    
+    setShowPendingOnly(isPending);
+
     if (searchNo) {
       setHighlightSearch(searchNo);
       setShowRegisterFilters(true);
@@ -169,9 +178,14 @@ const App: React.FC = () => {
   // STRICT AUTO-ADMIN DETECTION
   useEffect(() => {
     const handleAdminSync = (email?: string) => {
-      if (email === 'websitetogather@gmail.com') {
+      setUserEmail(email || null);
+      const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com'];
+      if (email && adminEmails.includes(email)) {
         setIsAdmin(true);
         localStorage.setItem(ADMIN_MODE_KEY, 'true');
+      } else {
+        // Optional: Reset isAdmin if not in list, but be careful with existing localStorage
+        // For now, let's just allow the new one
       }
     };
 
@@ -552,7 +566,11 @@ const App: React.FC = () => {
           <div className="p-4 md:p-8 max-w-full mx-auto w-full flex flex-col">
             <div className="animate-in fade-in duration-500 flex-1">
               
-              {activeTab === 'landing' && (
+              {activeTab === 'setup_receivers' && (
+            <ReceiverManagement isAdmin={isAdmin} />
+          )}
+
+          {activeTab === 'landing' && (
                 <LandingPage 
                   entries={approvedEntries} 
                   setActiveTab={handleTabChange} 
@@ -565,7 +583,7 @@ const App: React.FC = () => {
                 />
               )}
               
-              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} />}
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} />}
               
               {activeTab === 'register' && (
                 <div className="space-y-6 relative">

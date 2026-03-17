@@ -7,6 +7,8 @@ import {
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { getCycleForDate } from '../utils/cycleHelper';
 import { getDateError } from '../utils/dateValidation';
+import { SFI_RECEIVERS } from '../utils/sfi';
+import { NONSFI_RECEIVERS } from '../utils/nonsfi';
 
 /**
  * @security-protocol LOCKED_MODE
@@ -179,6 +181,90 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
 };
 
 /**
+ * Premium Dropdown for Branch Type (Para Type)
+ */
+const PremiumParaTypeSelect = ({ value, onChange, IDBadge }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const options = [
+    { id: 'sfi', label: 'এসএফআই (SFI)', value: 'এসএফআই', icon: ShieldCheck, color: 'blue', desc: 'Special Audit Branch' },
+    { id: 'nonsfi', label: 'নন এসএফআই (NON-SFI)', value: 'নন এসএফআই', icon: Layout, color: 'indigo', desc: 'General Audit Branch' },
+  ];
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOpt = options.find(opt => opt.value === value) || options[0];
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <IDBadge id="corr-field-para-type-custom" />
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`${inputCls} flex items-center justify-between cursor-pointer group hover:border-blue-400 hover:ring-4 hover:ring-blue-50 transition-all duration-300 ${isOpen ? 'border-blue-500 ring-4 ring-blue-50 bg-white shadow-md' : 'border-emerald-500 shadow-sm'}`}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-8 h-8 bg-${selectedOpt.color}-100 text-${selectedOpt.color}-600 rounded-lg flex items-center justify-center shadow-sm`}>
+            <selectedOpt.icon size={16} />
+          </div>
+          <span className="text-slate-900 font-black">{selectedOpt.label}</span>
+        </div>
+        <ChevronDown size={18} className={`text-slate-400 transition-transform duration-500 ${isOpen ? 'rotate-180 text-blue-600' : 'group-hover:text-blue-500'}`} />
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-[calc(100%+12px)] left-0 w-full bg-white border border-slate-200 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.15)] z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 border-t-4 border-t-blue-600">
+          <div className="p-3 space-y-1">
+            <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Sparkles size={12} className="text-blue-500" /> শাখা নির্বাচন করুন
+              </span>
+            </div>
+            {options.map((opt) => (
+              <div 
+                key={opt.id}
+                onClick={() => {
+                  onChange(opt.value);
+                  setIsOpen(false);
+                }}
+                className={`px-4 py-3.5 mx-1 rounded-2xl cursor-pointer flex items-center justify-between transition-all group relative ${
+                  value === opt.value ? `bg-${opt.color}-50 text-${opt.color}-700 shadow-sm` : 'hover:bg-slate-50 text-slate-600'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                    value === opt.value ? `bg-${opt.color}-600 text-white shadow-lg shadow-${opt.color}-200` : 'bg-slate-100 text-slate-400 group-hover:bg-white group-hover:shadow-md'
+                  }`}>
+                    <opt.icon size={20} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className={`text-[14px] font-black transition-colors ${value === opt.value ? `text-${opt.color}-700` : 'text-slate-700'}`}>{opt.label}</span>
+                    <span className="text-[10px] font-bold text-slate-400">{opt.desc}</span>
+                  </div>
+                </div>
+                {value === opt.value && (
+                  <div className={`w-6 h-6 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-md animate-in zoom-in duration-300`}>
+                    <Check size={14} strokeWidth={3} />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
  * Segmented Date Input Component (Mirrored from Settlement Module Logic)
  * Handles auto-padding, max limits, smart year expansion, and auto-focus jump.
  */
@@ -296,6 +382,7 @@ interface CorrespondenceEntryModuleProps {
   isLayoutEditable?: boolean;
   initialEntry?: any;
   isAdmin?: boolean;
+  userEmail?: string | null;
   existingEntries?: any[];
   navigateToEntry?: (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => void;
 }
@@ -307,9 +394,14 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   isLayoutEditable, 
   initialEntry, 
   isAdmin = false,
+  userEmail,
   existingEntries = [],
   navigateToEntry
 }) => {
+  // Admin check for receiver management
+  const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com'];
+  const isReceiverAdmin = isAdmin || (userEmail && adminEmails.includes(userEmail));
+
   const [isSuccess, setIsSuccess] = useState(false);
   const [calculatedCycle, setCalculatedCycle] = useState<string>('');
   
@@ -364,12 +456,35 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const descriptionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const savedNames = localStorage.getItem('ledger_correspondence_receivers');
-    if (savedNames) setReceiverSuggestions(JSON.parse(savedNames));
+    const loadReceivers = () => {
+      const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+      const initialList = formData.paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
+      
+      const savedNames = localStorage.getItem(key);
+      if (savedNames) {
+        const parsed = JSON.parse(savedNames);
+        const filtered = parsed.filter((n: string) => n !== 'শামীমা শান্ত্রিন');
+        setReceiverSuggestions(filtered);
+      } else {
+        const filteredInitial = initialList.filter(n => n !== 'শামীমা শান্ত্রিন');
+        setReceiverSuggestions(filteredInitial);
+        localStorage.setItem(key, JSON.stringify(filteredInitial));
+      }
+    };
+
+    loadReceivers();
+
+    const handleStorageChange = () => {
+      loadReceivers();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
 
     const savedDescriptions = localStorage.getItem('ledger_correspondence_descriptions');
     if (savedDescriptions) setDescriptionSuggestions(JSON.parse(savedDescriptions));
-  }, []);
+
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [formData.paraType]);
 
   const formatDateSegments = (d: string, m: string, y: string) => {
     if (!d || !m || !y || y.length < 4) return '';
@@ -517,21 +632,25 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   };
 
   const handleAddReceiver = () => {
+    if (!isReceiverAdmin) return;
     if (tempReceiverName.trim()) {
+      const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
       const updated = [...receiverSuggestions, tempReceiverName.trim()];
       setReceiverSuggestions(updated);
-      localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updated));
+      localStorage.setItem(key, JSON.stringify(updated));
       setTempReceiverName('');
       setIsManagingReceivers(false);
     }
   };
 
   const handleEditReceiver = (idx: number) => {
+    if (!isReceiverAdmin) return;
     if (tempReceiverName.trim()) {
+      const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
       const updated = [...receiverSuggestions];
       updated[idx] = tempReceiverName.trim();
       setReceiverSuggestions(updated);
-      localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updated));
+      localStorage.setItem(key, JSON.stringify(updated));
       setEditingReceiverIdx(null);
       setTempReceiverName('');
     }
@@ -539,9 +658,11 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
   const handleDeleteReceiver = (idx: number, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isReceiverAdmin) return;
+    const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
     const updated = receiverSuggestions.filter((_, i) => i !== idx);
     setReceiverSuggestions(updated);
-    localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updated));
+    localStorage.setItem(key, JSON.stringify(updated));
     if (formData.receiverName === receiverSuggestions[idx]) {
       setFormData(prev => ({ ...prev, receiverName: '' }));
     }
@@ -619,10 +740,11 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     
     // Defer heavy work to next tick to avoid blocking UI (INP fix)
     setTimeout(() => {
-      if (formData.receiverName.trim()) {
+      if (isReceiverAdmin && formData.receiverName.trim()) {
+        const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
         const updatedNames = Array.from(new Set([formData.receiverName.trim(), ...receiverSuggestions]));
         setReceiverSuggestions(updatedNames);
-        localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updatedNames));
+        localStorage.setItem(key, JSON.stringify(updatedNames));
       }
       
       if (formData.description.trim()) {
@@ -794,15 +916,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 2 */}
             <div className={`${colWrapper} border-blue-100`}>
-              <IDBadge id="corr-field-2" />
               <label className={labelCls}><span className={numBadge}>২</span> <ShieldCheck size={14} className="text-blue-600" /> শাখার ধরণ:</label>
-              <select 
-                className={`${inputCls} ${formData.paraType ? 'border-emerald-500' : 'border-red-500'}`} value={formData.paraType}
-                onChange={e => setFormData({...formData, paraType: e.target.value})}
-              >
-                <option value="এসএফআই">এসএফআই (SFI)</option>
-                <option value="নন এসএফআই">নন এসএফআই (NON-SFI)</option>
-              </select>
+              <PremiumParaTypeSelect 
+                value={formData.paraType}
+                onChange={(val: string) => setFormData({...formData, paraType: val})}
+                IDBadge={IDBadge}
+              />
             </div>
 
             {/* Field 3 */}
@@ -952,7 +1071,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             {/* Field 10 */}
             <div className={`${colWrapper} border-slate-200`} ref={receiverRef}>
               <IDBadge id="corr-field-10" />
-              <label className={labelCls}><span className={numBadge}>১০</span> <User size={14} className="text-slate-600" /> গৃহীতার নাম:</label>
+              <label className={labelCls}><span className={numBadge}>১০</span> <User size={14} className="text-slate-600" /> গ্রহীতার নাম:</label>
               <div className="relative group flex gap-2">
                 <div className="relative flex-1">
                   <input 
@@ -973,18 +1092,20 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   </button>
                 </div>
                 
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setEditingReceiverIdx(null);
-                    setTempReceiverName('');
-                    setIsManagingReceivers(true);
-                  }}
-                  className="w-[52px] h-[52px] bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 shrink-0"
-                  title="নতুন গ্রহীতা যোগ করুন"
-                >
-                  <Plus size={24} />
-                </button>
+                {isReceiverAdmin && (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setEditingReceiverIdx(null);
+                      setTempReceiverName('');
+                      setIsManagingReceivers(true);
+                    }}
+                    className="w-[52px] h-[52px] bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 shrink-0"
+                    title="নতুন গ্রহীতা যোগ করুন"
+                  >
+                    <Plus size={24} />
+                  </button>
+                )}
 
                 {showReceiverDropdown && (
                   <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600">
@@ -1008,26 +1129,30 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                           >
                             <span className="text-[13px]">{name}</span>
                             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button 
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingReceiverIdx(idx);
-                                  setTempReceiverName(name);
-                                  setIsManagingReceivers(true);
-                                  setShowReceiverDropdown(false);
-                                }}
-                                className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === name ? 'hover:bg-blue-500 text-white' : 'hover:bg-blue-100 text-blue-600'}`}
-                              >
-                                <FileEdit size={14} />
-                              </button>
-                              <button 
-                                type="button"
-                                onClick={(e) => handleDeleteReceiver(idx, e)}
-                                className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === name ? 'hover:bg-red-500 text-white' : 'hover:bg-red-100 text-red-600'}`}
-                              >
-                                <Trash size={14} />
-                              </button>
+                              {isReceiverAdmin && (
+                                <>
+                                  <button 
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingReceiverIdx(idx);
+                                      setTempReceiverName(name);
+                                      setIsManagingReceivers(true);
+                                      setShowReceiverDropdown(false);
+                                    }}
+                                    className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === name ? 'hover:bg-blue-500 text-white' : 'hover:bg-blue-100 text-blue-600'}`}
+                                  >
+                                    <FileEdit size={14} />
+                                  </button>
+                                  <button 
+                                    type="button"
+                                    onClick={(e) => handleDeleteReceiver(idx, e)}
+                                    className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === name ? 'hover:bg-red-500 text-white' : 'hover:bg-red-100 text-red-600'}`}
+                                  >
+                                    <Trash size={14} />
+                                  </button>
+                                </>
+                              )}
                               {formData.receiverName === name && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
                             </div>
                           </div>
