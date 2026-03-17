@@ -201,7 +201,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         <nav id="sidebar-nav" className="flex-1 overflow-y-auto py-4 px-4 space-y-1 relative no-scrollbar">
           <IDBadge id="sidebar-nav" />
           {menuItems.map((item) => (
-            <React.Fragment key={item.id}>
+            <div 
+              key={item.id}
+              className="relative"
+            >
               <button 
                 id={item.badgeId} 
                 onClick={() => {
@@ -488,7 +491,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   </button>
                 </div>
               )}
-            </React.Fragment>
+            </div>
           ))}
 
           {/* New Important Links Section */}
