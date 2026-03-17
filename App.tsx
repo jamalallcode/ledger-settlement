@@ -513,6 +513,18 @@ const App: React.FC = () => {
     );
   };
 
+  const handleLogout = async () => {
+    if (window.confirm("আপনি কি এডমিন একাউন্ট থেকে লগআউট করতে চান?")) {
+      setIsAdmin(false);
+      localStorage.removeItem(ADMIN_MODE_KEY);
+      await supabase.auth.signOut();
+      setActiveTab('landing');
+      setEntryModule(null);
+      setRegisterSubModule(null);
+      setReportType(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
@@ -531,12 +543,13 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-bengali">
       {isSidebarOpen && (
-        <div className="no-print h-full">
+        <div className="no-print h-full relative z-[5000]">
           <Sidebar 
             activeTab={activeTab} setActiveTab={handleTabChange} 
             onToggleVisibility={() => setIsSidebarOpen(false)}
             isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
             isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} setIsAdmin={setIsAdmin}
+            onLogout={handleLogout}
             pendingCount={totalPendingCount}
             entryModule={entryModule}
             registerSubModule={registerSubModule}
