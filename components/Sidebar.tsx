@@ -202,7 +202,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return', isDropdown: true },
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, badgeId: 'side-nav-archive' },
     ...(isAdmin ? [
-      { id: 'dashboard', label: 'ড্যাশবোর্ড', icon: LayoutDashboard, badgeId: 'side-nav-dashboard' }
+      { id: 'dashboard', label: 'ড্যাশবোর্ড', icon: LayoutDashboard, badgeId: 'side-nav-dashboard' },
+      { id: 'setup', label: 'সেটআপ', icon: ShieldCheck, badgeId: 'side-nav-setup', isDropdown: true }
     ] : []),
   ];
 
@@ -604,55 +605,57 @@ const Sidebar: React.FC<SidebarProps> = ({
               </div>
             )}
           </div>
-        </nav>
-        <div id="sidebar-footer" className="p-4 border-t border-slate-800 space-y-4 relative bg-slate-900/50 backdrop-blur-sm">
-          <IDBadge id="sidebar-footer" />
           
-          {/* Security & Account Section - Premium Design */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <div className="w-1 h-3 bg-blue-500 rounded-full"></div>
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Security & Account</span>
-            </div>
+          {/* Sidebar Footer Content moved into Nav for scrolling */}
+          <div id="sidebar-footer" className="pt-4 mt-4 border-t border-slate-800 space-y-4 relative">
+            <IDBadge id="sidebar-footer" />
             
-            {isAdmin ? (
-              <div className="grid grid-cols-1 gap-2">
-                <button 
-                  onClick={() => onOpenChangePassword && onOpenChangePassword()}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-slate-800/50 text-slate-300 hover:bg-blue-600 hover:text-white transition-all font-bold text-[11px] group border border-slate-700/50 hover:border-blue-400 shadow-sm"
-                >
-                  <KeyRound size={14} className="group-hover:rotate-12 transition-transform text-blue-400 group-hover:text-white" />
-                  পাসওয়ার্ড পরিবর্তন
-                </button>
-                <button 
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-red-500/5 text-red-400 hover:bg-red-500 hover:text-white transition-all font-bold text-[11px] group border border-red-500/10 hover:border-red-400"
-                >
-                  <LogOut size={14} className="group-hover:-translate-x-1 transition-transform" />
-                  লগআউট করুন
-                </button>
+            {/* Security & Account Section - Premium Design */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 px-1">
+                <div className="w-1 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Security & Account</span>
               </div>
-            ) : (
-              <button 
-                onClick={() => setShowAdminModal(true)}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-slate-800 to-slate-850 text-slate-200 hover:from-blue-600 hover:to-blue-700 hover:text-white transition-all font-black text-[11px] group border border-slate-700 hover:border-blue-400 shadow-xl shadow-black/20"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                    <Lock size={14} className="text-blue-400 group-hover:text-white transition-colors" />
-                  </div>
-                  <span>এডমিন লগইন</span>
+              
+              {isAdmin ? (
+                <div className="grid grid-cols-1 gap-2">
+                  <button 
+                    onClick={() => onOpenChangePassword && onOpenChangePassword()}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-slate-800/50 text-slate-300 hover:bg-blue-600 hover:text-white transition-all font-bold text-[11px] group border border-slate-700/50 hover:border-blue-400 shadow-sm"
+                  >
+                    <KeyRound size={14} className="group-hover:rotate-12 transition-transform text-blue-400 group-hover:text-white" />
+                    পাসওয়ার্ড পরিবর্তন
+                  </button>
+                  <button 
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-red-500/5 text-red-400 hover:bg-red-500 hover:text-white transition-all font-bold text-[11px] group border border-red-500/10 hover:border-red-400"
+                  >
+                    <LogOut size={14} className="group-hover:-translate-x-1 transition-transform" />
+                    লগআউট করুন
+                  </button>
                 </div>
-                <ArrowRight size={14} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-              </button>
-            )}
-          </div>
+              ) : (
+                <button 
+                  onClick={() => setShowAdminModal(true)}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-slate-800 to-slate-850 text-slate-200 hover:from-blue-600 hover:to-blue-700 hover:text-white transition-all font-black text-[11px] group border border-slate-700 hover:border-blue-400 shadow-xl shadow-black/20"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                      <Lock size={14} className="text-blue-400 group-hover:text-white transition-colors" />
+                    </div>
+                    <span>এডমিন লগইন</span>
+                  </div>
+                  <ArrowRight size={14} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                </button>
+              )}
+            </div>
 
-          <div className="pt-2 flex items-center justify-center gap-2 opacity-30">
-             <ShieldCheck size={10} className="text-slate-500" />
-             <p className="text-[7px] font-black text-slate-500 uppercase tracking-[0.3em]">Secure Node v1.0.4</p>
+            <div className="pt-2 flex items-center justify-center gap-2 opacity-30">
+               <ShieldCheck size={10} className="text-slate-500" />
+               <p className="text-[7px] font-black text-slate-500 uppercase tracking-[0.3em]">Secure Node v1.0.4</p>
+            </div>
           </div>
-        </div>
+        </nav>
       </div>
       {showAdminModal && (
         <div className="fixed inset-0 z-[1000] flex items-start justify-center p-4 pt-48 bg-black/40 backdrop-blur-md animate-in fade-in duration-500">
