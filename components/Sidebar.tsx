@@ -52,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [recoveredPassword, setRecoveredPassword] = useState<string | null>(null);
   const [storedPassword, setStoredPassword] = useState('123');
   const [storedRecoveryQuestion, setStoredRecoveryQuestion] = useState('আপনার প্রিয় রং কি?');
-  const [storedRecoveryAnswer, setStoredRecoveryAnswer] = useState('নীল');
+  const [storedRecoveryAnswer, setStoredRecoveryAnswer] = useState('সাদা');
   
   const clickCount = useRef(0);
   const lastClickTime = useRef(0);
