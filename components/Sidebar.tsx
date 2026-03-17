@@ -884,7 +884,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Change Password Modal */}
       {showChangePasswordModal && (
-        <div className="fixed inset-0 z-[1001] flex items-start justify-center p-4 pt-48 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[1001] flex items-start justify-center p-4 pt-20 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
           <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2.5rem] p-8 space-y-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-500 relative overflow-hidden group">
             {/* Decorative Glow */}
             <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/20 blur-[80px] rounded-full group-hover:bg-blue-600/30 transition-colors duration-700"></div>
