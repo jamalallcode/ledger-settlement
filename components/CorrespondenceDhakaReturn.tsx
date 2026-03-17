@@ -98,7 +98,9 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     
     const reportingLimitDate = selectedMonthStart.getTime() > currentMonthStart.getTime()
       ? today
-      : new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 0, 23, 59, 59);
+      : selectedMonthStart.getTime() === currentMonthStart.getTime()
+        ? today
+        : new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1, 0, 23, 59, 59);
     
     data = data.filter(e => {
       if (!e.diaryDate) return false;
@@ -109,17 +111,23 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       // Must be received ON OR BEFORE reportingLimitDate
       if (dDate.getTime() > reportingLimitDate.getTime()) return false;
       
-      // Must NOT be issued (If it has a valid issue number and date, it's no longer pending)
-      const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
-      const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
-      const hasValidNo = rawNo !== '' && rawNo !== '০' && rawNo !== '0' && !rawNo.includes('নং-');
-      const hasValidDate = rawDate !== '' && rawDate !== '0000-00-00';
+      // If it was issued AFTER reportingLimitDate, it was still pending AT THAT TIME
+      const issueDateStr = e.issueLetterDate ? toEnglishDigits(e.issueLetterDate) : null;
+      const issueDate = issueDateStr ? new Date(issueDateStr) : null;
       
-      if (hasValidNo && hasValidDate) {
-        return false; 
+      const hasIssueNo = e.issueLetterNo && 
+                         e.issueLetterNo !== '০' && 
+                         e.issueLetterNo !== '0' && 
+                         !e.issueLetterNo.includes('নং-');
+
+      if (hasIssueNo && issueDate && !isNaN(issueDate.getTime())) {
+        if (issueDate.getTime() > reportingLimitDate.getTime()) {
+          return true; // Still pending at reporting time
+        }
+        return false; // Already issued by reporting time
       }
       
-      return true;
+      return true; // Not issued yet
     });
     
     if (filterParaType !== 'সকল') {
@@ -158,9 +166,12 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     if (selectedMonthStart.getTime() > currentMonthStart.getTime()) {
       // Next month selected: show up to today (Current Status)
       return today;
+    } else if (selectedMonthStart.getTime() === currentMonthStart.getTime()) {
+      // Current month selected: show up to today
+      return today;
     } else {
-      // Current or Past month selected: show up to the end of the month BEFORE the selected month
-      return new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 0, 23, 59, 59);
+      // Past month selected: show up to the end of that month
+      return new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1, 0, 23, 59, 59);
     }
   }, [selectedMonthDate]);
 

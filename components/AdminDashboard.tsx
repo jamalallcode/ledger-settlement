@@ -13,6 +13,7 @@ interface AdminDashboardProps {
   correspondenceEntries: any[];
   pendingCount: number;
   setActiveTab: (tab: string, subModule?: any, reportType?: string) => void;
+  onOpenChangePassword: () => void;
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -20,7 +21,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   entries,
   correspondenceEntries,
   pendingCount,
-  setActiveTab
+  setActiveTab,
+  onOpenChangePassword
 }) => {
   if (!isAdmin) return null;
 
@@ -64,6 +66,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     { id: 'register', label: 'রেজিস্টার দেখুন', icon: FileText, color: 'emerald', desc: 'সকল রেজিস্টার ব্রাউজ করুন' },
     { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, color: 'purple', desc: 'ভোট প্রদান ও ফলাফল' },
     { id: 'setup_receivers', label: 'প্রাপক ব্যবস্থাপনা', icon: Users, color: 'amber', desc: 'প্রাপক তালিকা আপডেট করুন' },
+    { id: 'initial_balance', label: 'জের সেটআপ', icon: ShieldCheck, color: 'blue', desc: 'প্রারম্ভিক জের সেটআপ করুন' },
+    { id: 'change_pass', label: 'পাসওয়ার্ড পরিবর্তন', icon: KeyRound, color: 'indigo', desc: 'সিকিউরিটি সেটিংস আপডেট করুন' },
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, color: 'rose', desc: 'সংরক্ষিত ফাইলসমূহ' },
     { id: 'return', label: 'রিপোর্ট ও সারাংশ', icon: PieChart, color: 'indigo', desc: 'মাসিক ও বাৎসরিক রিটার্ন' }
   ];
@@ -106,18 +110,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, idx) => (
-          <div key={idx} className="relative p-6 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-xl hover:bg-white/10 transition-all duration-500 group overflow-hidden">
-            <div className={`absolute -right-8 -bottom-8 w-24 h-24 bg-${stat.color}-500/10 blur-3xl rounded-full group-hover:scale-150 transition-transform duration-700`}></div>
+          <div key={idx} className="relative p-6 rounded-[2rem] bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all duration-500 group overflow-hidden">
+            <div className={`absolute -right-8 -bottom-8 w-24 h-24 bg-${stat.color}-500/5 blur-3xl rounded-full group-hover:scale-150 transition-transform duration-700`}></div>
             <div className="relative z-10 space-y-4">
               <div className="flex items-center justify-between">
-                <div className={`w-10 h-10 bg-${stat.color}-500/10 rounded-xl flex items-center justify-center text-${stat.color}-400 group-hover:scale-110 transition-transform`}>
+                <div className={`w-10 h-10 bg-${stat.color}-50 rounded-xl flex items-center justify-center text-${stat.color}-600 group-hover:scale-110 transition-transform`}>
                   <stat.icon size={20} />
                 </div>
-                <Sparkles size={14} className="text-slate-700 group-hover:text-amber-400 transition-colors" />
+                <Sparkles size={14} className="text-slate-300 group-hover:text-amber-400 transition-colors" />
               </div>
               <div>
                 <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{stat.label}</p>
-                <h3 className="text-3xl font-black text-white tracking-tighter">{stat.value}</h3>
+                <h3 className={`text-4xl font-black text-${stat.color}-600`}>{stat.value}</h3>
               </div>
               <p className="text-slate-400 text-[10px] font-bold">{stat.desc}</p>
             </div>
@@ -141,7 +145,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {quickActions.map((action, idx) => (
               <button 
                 key={idx}
-                onClick={() => setActiveTab(action.id)}
+                onClick={() => {
+                  if (action.id === 'change_pass') {
+                    onOpenChangePassword();
+                  } else if (action.id === 'initial_balance') {
+                    setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক');
+                  } else {
+                    setActiveTab(action.id);
+                  }
+                }}
                 className="group relative p-5 rounded-2xl bg-white border border-slate-200 hover:border-blue-500/30 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 text-left overflow-hidden"
               >
                 <div className={`absolute top-0 right-0 w-24 h-24 bg-${action.color}-500/5 blur-2xl rounded-full translate-x-12 -translate-y-12 group-hover:scale-150 transition-transform`}></div>

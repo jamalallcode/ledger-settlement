@@ -55,13 +55,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     if (filterBranch !== 'সকল') {
       filteredForOptions = entries.filter(e => e.paraType === filterBranch);
     }
-    const targetsToRemove = [normalizeName('শামীমা শান্ত্রিন'), normalizeName('শামীমা শাহরিন'), normalizeName('শামীমা শাহ্রিন')];
     const unique = Array.from(new Set(filteredForOptions.map(e => normalizeName(e.receiverName || e.presentedToName)).filter(name => 
-      name !== 'অনির্ধারিত' && 
-      !targetsToRemove.includes(name) && 
-      !name.includes('শান্ত্রিন') &&
-      !name.includes('শাহরিন') &&
-      !name.includes('শাহ্রিন')
+      name !== 'অনির্ধারিত'
     )));
     return ['সকল', ...unique];
   }, [entries, filterBranch]);
@@ -80,9 +75,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     if (selectedMonthStart.getTime() > currentMonthStart.getTime()) {
       // Next month selected: show up to today (Current Status)
       return today;
+    } else if (selectedMonthStart.getTime() === currentMonthStart.getTime()) {
+      // Current month selected: show up to today
+      return today;
     } else {
-      // Current or Past month selected: show up to the end of the month BEFORE the selected month
-      return new Date(activeCycle.end.getFullYear(), activeCycle.end.getMonth(), 0, 23, 59, 59);
+      // Past month selected: show up to the end of that month
+      return new Date(activeCycle.end.getFullYear(), activeCycle.end.getMonth() + 1, 0, 23, 59, 59);
     }
   }, [activeCycle.start]);
 
@@ -98,11 +96,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     const reportingDateObj = new Date(selectedReportingDate);
     if (isNaN(reportingDateObj.getTime())) return data;
 
-    const targetsToRemove = [normalizeName('শামীমা শান্ত্রিন'), normalizeName('শামীমা শাহরিন'), normalizeName('শামীমা শাহ্রিন')];
     data = data.filter(e => {
-      const auditorName = normalizeName(e.receiverName || e.presentedToName);
-      if (targetsToRemove.includes(auditorName) || auditorName.includes('শান্ত্রিন') || auditorName.includes('শাহরিন') || auditorName.includes('শাহ্রিন')) return false;
-      
       if (!e.diaryDate) return false;
       const dDateStr = toEnglishDigits(e.diaryDate);
       const dDate = new Date(dDateStr);
@@ -111,17 +105,23 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       // Must be received ON OR BEFORE reportingDateObj
       if (dDate.getTime() > reportingDateObj.getTime()) return false;
       
-      // Must NOT be issued (If it has a valid issue number and date, it's no longer pending)
-      const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
-      const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
-      const hasValidNo = rawNo !== '' && rawNo !== '০' && rawNo !== '0' && !rawNo.includes('নং-');
-      const hasValidDate = rawDate !== '' && rawDate !== '0000-00-00';
+      // If it was issued AFTER reportingDateObj, it was still pending AT THAT TIME
+      const issueDateStr = e.issueLetterDate ? toEnglishDigits(e.issueLetterDate) : null;
+      const issueDate = issueDateStr ? new Date(issueDateStr) : null;
       
-      if (hasValidNo && hasValidDate) {
-        return false; 
+      const hasIssueNo = e.issueLetterNo && 
+                         e.issueLetterNo !== '০' && 
+                         e.issueLetterNo !== '0' && 
+                         !e.issueLetterNo.includes('নং-');
+
+      if (hasIssueNo && issueDate && !isNaN(issueDate.getTime())) {
+        if (issueDate.getTime() > reportingDateObj.getTime()) {
+          return true; // Still pending at reporting time
+        }
+        return false; // Already issued by reporting time
       }
       
-      return true;
+      return true; // Not issued yet
     });
 
     if (filterAuditor !== 'সকল') {

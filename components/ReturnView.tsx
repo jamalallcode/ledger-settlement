@@ -233,9 +233,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     if (selectedMonthStart.getTime() > currentMonthStart.getTime()) {
       // Next month selected: show up to today (Current Status)
       reportingLimitDate = today;
+    } else if (selectedMonthStart.getTime() === currentMonthStart.getTime()) {
+      // Current month selected: show up to today
+      reportingLimitDate = today;
     } else {
-      // Current or Past month selected: show up to the end of the month BEFORE the selected month
-      reportingLimitDate = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth(), 0, 23, 59, 59);
+      // Past month selected: show up to the end of that month
+      reportingLimitDate = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0, 23, 59, 59);
     }
 
     return (correspondenceEntries || []).filter(e => {
