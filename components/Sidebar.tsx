@@ -19,6 +19,7 @@ interface SidebarProps {
   entryModule?: 'settlement' | 'correspondence' | null;
   registerSubModule?: 'settlement' | 'correspondence' | null;
   reportType?: string | null;
+  onOpenChangePassword?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -34,6 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   isAdmin,
   setIsAdmin,
   onLogout,
+  onOpenChangePassword,
   pendingCount = 0,
   entryModule,
   registerSubModule,
@@ -42,12 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [newQuestion, setNewQuestion] = useState('');
-  const [newAnswer, setNewAnswer] = useState('');
   const [recoveryAnswer, setRecoveryAnswer] = useState('');
   const [recoveredPassword, setRecoveredPassword] = useState<string | null>(null);
   const [storedPassword, setStoredPassword] = useState('123');
@@ -67,14 +64,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (savedQuestion) setStoredRecoveryQuestion(savedQuestion);
     if (savedAnswer) setStoredRecoveryAnswer(savedAnswer);
   }, []);
-
-  // Pre-fill change password fields
-  useEffect(() => {
-    if (showChangePasswordModal) {
-      setNewQuestion(storedRecoveryQuestion);
-      setNewAnswer(storedRecoveryAnswer);
-    }
-  }, [showChangePasswordModal, storedRecoveryQuestion, storedRecoveryAnswer]);
 
   const saveAdminSettings = (pass: string, q: string, a: string) => {
     localStorage.setItem('ledger_admin_password_v1', pass);
@@ -195,31 +184,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword.length < 3) {
-      alert("পাসওয়ার্ড কমপক্ষে ৩ অক্ষরের হতে হবে।");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      alert("পাসওয়ার্ড দুটি মিলেনি!");
-      return;
-    }
-    
-    if (!newQuestion.trim() || !newAnswer.trim()) {
-      alert("অনুগ্রহ করে নিরাপত্তা প্রশ্ন এবং উত্তর প্রদান করুন।");
-      return;
-    }
-    
-    saveAdminSettings(newPassword, newQuestion, newAnswer);
-    alert("পাসওয়ার্ড এবং নিরাপত্তা সেটিংস সফলভাবে পরিবর্তন করা হয়েছে।");
-    setShowChangePasswordModal(false);
-    setNewPassword('');
-    setConfirmPassword('');
-    setNewQuestion('');
-    setNewAnswer('');
-  };
-
   const handleLogout = () => {
     if (onLogout) {
       onLogout();
@@ -238,10 +202,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return', isDropdown: true },
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, badgeId: 'side-nav-archive' },
     ...(isAdmin ? [
-      { id: 'dashboard', label: 'ড্যাশবোর্ড', icon: LayoutDashboard, badgeId: 'side-nav-dashboard' },
-      { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, badgeId: 'side-nav-voting' },
-      { id: 'change_pass', label: 'পাসওয়ার্ড পরিবর্তন', icon: KeyRound, badgeId: 'side-nav-pass' },
-      { id: 'setup', label: 'সেটআপ', icon: ShieldCheck, badgeId: 'side-nav-setup', isDropdown: true }
+      { id: 'dashboard', label: 'ড্যাশবোর্ড', icon: LayoutDashboard, badgeId: 'side-nav-dashboard' }
     ] : []),
   ];
 
@@ -307,7 +268,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   } else if (item.id === 'setup') {
                     setIsSetupExpanded(!isSetupExpanded);
                   } else if (item.id === 'change_pass') {
-                    setShowChangePasswordModal(true);
+                    if (onOpenChangePassword) onOpenChangePassword();
                   } else {
                     setActiveTab(item.id);
                   }
@@ -581,7 +542,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   )}
 
                   <button 
-                    onClick={() => setShowChangePasswordModal(true)}
+                    onClick={() => onOpenChangePassword && onOpenChangePassword()}
                     className={getSubItemCls(false)}
                   >
                     <KeyRound size={14} className={getSubIconCls(false, 'amber')} />
@@ -657,7 +618,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             {isAdmin ? (
               <div className="grid grid-cols-1 gap-2">
                 <button 
-                  onClick={() => setShowChangePasswordModal(true)}
+                  onClick={() => onOpenChangePassword && onOpenChangePassword()}
                   className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-slate-800/50 text-slate-300 hover:bg-blue-600 hover:text-white transition-all font-bold text-[11px] group border border-slate-700/50 hover:border-blue-400 shadow-sm"
                 >
                   <KeyRound size={14} className="group-hover:rotate-12 transition-transform text-blue-400 group-hover:text-white" />
@@ -762,7 +723,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <div className="text-center pt-1">
                     <button 
                       type="button"
-                      onClick={() => { setShowAdminModal(false); setShowChangePasswordModal(true); }}
+                      onClick={() => { setShowAdminModal(false); onOpenChangePassword && onOpenChangePassword(); }}
                       className="text-[8px] font-black text-slate-500 hover:text-blue-400 uppercase tracking-[0.2em] transition-colors"
                     >
                       পাসওয়ার্ড পরিবর্তন করতে চান?
@@ -815,7 +776,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                           setShowRecoveryModal(false);
                           setRecoveredPassword(null);
                           setRecoveryAnswer('');
-                          setShowChangePasswordModal(true);
+                          if (onOpenChangePassword) onOpenChangePassword();
                         }}
                         className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-black text-sm hover:from-emerald-500 hover:to-teal-500 transition-all shadow-xl shadow-emerald-600/20 active:scale-95"
                       >
@@ -883,106 +844,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       )}
 
-      {/* Change Password Modal */}
-      {showChangePasswordModal && (
-        <div className="fixed inset-0 z-[1001] flex items-start justify-center p-4 pt-24 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
-          <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2.5rem] p-8 space-y-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-500 relative overflow-hidden group">
-            {/* Decorative Glow */}
-            <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/20 blur-[80px] rounded-full group-hover:bg-blue-600/30 transition-colors duration-700"></div>
-            
-            <div className="relative z-10 space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 ring-4 ring-blue-500/10">
-                    <KeyRound size={20} />
-                  </div>
-                  <div>
-                    <h3 className="text-white font-black text-lg tracking-tight">পাসওয়ার্ড পরিবর্তন</h3>
-                    <p className="text-blue-400/60 text-[9px] font-black uppercase tracking-[0.2em]">Update Security</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setShowChangePasswordModal(false)} 
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all border border-white/5"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <form onSubmit={handleChangePassword} className="space-y-6">
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <p className="text-slate-300 text-[10px] font-black uppercase tracking-widest ml-1">নতুন পাসওয়ার্ড:</p>
-                      <input 
-                        type="password" 
-                        value={newPassword} 
-                        onChange={(e) => setNewPassword(e.target.value)} 
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white font-bold outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all text-sm placeholder:text-slate-700" 
-                        placeholder="••••••••"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-slate-300 text-[10px] font-black uppercase tracking-widest ml-1">নিশ্চিত করুন:</p>
-                      <input 
-                        type="password" 
-                        value={confirmPassword} 
-                        onChange={(e) => setConfirmPassword(e.target.value)} 
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white font-bold outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all text-sm placeholder:text-slate-700" 
-                        placeholder="••••••••"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="pt-6 border-t border-white/10 space-y-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertCircle size={12} className="text-blue-400" />
-                      <p className="text-blue-400 text-[9px] font-black uppercase tracking-[0.2em]">পাসওয়ার্ড উদ্ধারের জন্য সেটিংস</p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <p className="text-slate-300 text-[10px] font-black uppercase tracking-widest ml-1">নিরাপত্তা প্রশ্ন:</p>
-                      <input 
-                        type="text" 
-                        value={newQuestion} 
-                        onChange={(e) => setNewQuestion(e.target.value)} 
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white font-bold outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all text-sm placeholder:text-slate-700" 
-                        placeholder="যেমন: আপনার প্রিয় রং কি?"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-slate-300 text-[10px] font-black uppercase tracking-widest ml-1">প্রশ্নের উত্তর:</p>
-                      <input 
-                        type="text" 
-                        value={newAnswer} 
-                        onChange={(e) => setNewAnswer(e.target.value)} 
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white font-bold outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all text-sm placeholder:text-slate-700" 
-                        placeholder="উত্তরটি এখানে লিখুন"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 pt-2">
-                  <button 
-                    type="button" 
-                    onClick={() => setShowChangePasswordModal(false)} 
-                    className="flex-1 py-4 bg-white/5 text-slate-300 rounded-2xl font-black text-xs hover:bg-white/10 transition-all border border-white/5 active:scale-95"
-                  >
-                    বাতিল
-                  </button>
-                  <button 
-                    type="submit" 
-                    className="flex-1 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-xs hover:from-blue-500 hover:to-indigo-500 transition-all shadow-xl shadow-blue-600/20 active:scale-95 ring-4 ring-blue-500/10"
-                  >
-                    সংরক্ষণ করুন
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };
