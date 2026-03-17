@@ -204,18 +204,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div 
               key={item.id}
               className="relative"
-              onMouseEnter={() => {
-                if (item.id === 'entry') setIsEntryExpanded(true);
-                if (item.id === 'register') setIsRegisterExpanded(true);
-                if (item.id === 'return') setIsReturnExpanded(true);
-                if (item.id === 'setup') setIsSetupExpanded(true);
-              }}
-              onMouseLeave={() => {
-                if (item.id === 'entry') setIsEntryExpanded(false);
-                if (item.id === 'register') setIsRegisterExpanded(false);
-                if (item.id === 'return') setIsReturnExpanded(false);
-                if (item.id === 'setup') setIsSetupExpanded(false);
-              }}
             >
               <button 
                 id={item.badgeId} 
