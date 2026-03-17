@@ -519,13 +519,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       {showAdminModal && (
         <>
           <div className="fixed inset-0 z-[9990] bg-black/60 animate-in fade-in duration-500" onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} />
-          <div className="fixed inset-0 z-[9992] flex items-center justify-center p-4 pointer-events-none overflow-y-auto">
-            <div className="w-full max-w-md min-h-[700px] max-h-[90vh] bg-slate-900 border border-white/10 rounded-[2.5rem] shadow-2xl p-8 flex flex-col justify-between animate-in zoom-in-95 duration-500 relative overflow-hidden group scrollbar-hide pointer-events-auto">
+          <div className="fixed inset-0 z-[9992] flex items-center justify-center p-4 pointer-events-none">
+            <div className="w-full max-w-lg bg-slate-900 border border-white/10 rounded-[2.5rem] shadow-2xl p-8 flex flex-col animate-in zoom-in-95 duration-500 relative overflow-hidden group pointer-events-auto">
               <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/10 blur-[80px] rounded-full group-hover:bg-blue-600/20 transition-colors duration-700"></div>
               <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-600/5 blur-[80px] rounded-full group-hover:bg-emerald-600/10 transition-colors duration-700"></div>
               
-              <div className="relative z-10 space-y-8 overflow-y-auto pr-2 custom-scrollbar flex-1">
-                <div className="flex items-center justify-between sticky top-0 bg-slate-900/80 backdrop-blur-md py-4 z-20 border-b border-white/5 mb-6">
+              <div className="relative z-10 space-y-6 flex-1">
+                <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-blue-600/20 text-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/10">
                       <Fingerprint size={24} />
@@ -613,12 +613,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       {showRecoveryModal && (
         <>
           <div className="fixed inset-0 z-[9990] bg-black/70 animate-in fade-in duration-500" onClick={() => { setShowRecoveryModal(false); setRecoveryAnswer(''); setRecoveredPassword(null); }} />
-          <div className="fixed inset-0 z-[9992] flex items-center justify-center p-4 pointer-events-none overflow-y-auto">
-            <div className="w-full max-w-md min-h-[650px] max-h-[90vh] bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 flex flex-col justify-between shadow-2xl overflow-hidden relative group pointer-events-auto">
+          <div className="fixed inset-0 z-[9992] flex items-center justify-center p-4 pointer-events-none">
+            <div className="w-full max-w-lg bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 flex flex-col shadow-2xl overflow-hidden relative group pointer-events-auto">
               <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-600/10 blur-[80px] rounded-full"></div>
               
-              <div className="relative z-10 flex-1 flex flex-col overflow-y-auto pr-2 custom-scrollbar">
-                <div className="flex items-center justify-between sticky top-0 bg-slate-900/80 backdrop-blur-md py-4 z-20 border-b border-white/5 mb-8">
+              <div className="relative z-10 flex-1 flex flex-col">
+                <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-blue-500/20 text-blue-500 rounded-2xl flex items-center justify-center">
                       <Fingerprint size={24} />
@@ -696,12 +696,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       {showChangePasswordModal && (
         <>
           <div className="fixed inset-0 z-[9990] bg-black/70 animate-in fade-in duration-500" onClick={() => setShowChangePasswordModal(false)} />
-          <div className="fixed inset-0 z-[9992] flex items-center justify-center p-4 pointer-events-none overflow-y-auto">
-            <div className="w-full max-w-md min-h-[750px] max-h-[90vh] bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 flex flex-col justify-between shadow-2xl relative overflow-hidden group pointer-events-auto">
+          <div className="fixed inset-0 z-[9992] flex items-center justify-center p-4 pointer-events-none">
+            <div className="w-full max-w-2xl bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 flex flex-col shadow-2xl relative overflow-hidden group pointer-events-auto">
               <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/10 blur-[80px] rounded-full"></div>
               
-              <div className="relative z-10 flex-1 flex flex-col overflow-y-auto pr-2 custom-scrollbar">
-                <div className="flex items-center justify-between sticky top-0 bg-slate-900/80 backdrop-blur-md py-4 z-20 border-b border-white/5 mb-8">
+              <div className="relative z-10 flex-1 flex flex-col">
+                <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-blue-500/20 text-blue-500 rounded-2xl flex items-center justify-center">
                       <KeyRound size={24} />
@@ -719,8 +719,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                   </button>
                 </div>
 
-                <form onSubmit={handleChangePassword} className="space-y-8 py-4 flex-1 flex flex-col">
-                  <div className="grid grid-cols-1 gap-6">
+                <form onSubmit={handleChangePassword} className="space-y-6 py-4 flex-1 flex flex-col">
+                  <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-3">
                       <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider ml-1">নতুন পাসওয়ার্ড:</p>
                       <div className="relative">
@@ -761,10 +761,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </div>
                   </div>
                   
-                  <div className="pt-8 border-t border-white/5 space-y-6 mt-4">
+                  <div className="pt-6 border-t border-white/5 space-y-4">
                     <p className="text-blue-400 text-[11px] font-black uppercase tracking-[0.2em]">পাসওয়ার্ড উদ্ধারের জন্য সেটিংস</p>
                     
-                    <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-6">
                       <div className="space-y-3">
                         <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider ml-1">নিরাপত্তা প্রশ্ন:</p>
                         <input 
