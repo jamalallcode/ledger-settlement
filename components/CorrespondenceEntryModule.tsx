@@ -181,6 +181,90 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
 };
 
 /**
+ * Premium Dropdown for Branch Type (Para Type)
+ */
+const PremiumParaTypeSelect = ({ value, onChange, IDBadge }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const options = [
+    { id: 'sfi', label: 'এসএফআই (SFI)', value: 'এসএফআই', icon: ShieldCheck, color: 'blue', desc: 'Special Audit Branch' },
+    { id: 'nonsfi', label: 'নন এসএফআই (NON-SFI)', value: 'নন এসএফআই', icon: Layout, color: 'indigo', desc: 'General Audit Branch' },
+  ];
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOpt = options.find(opt => opt.value === value) || options[0];
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <IDBadge id="corr-field-para-type-custom" />
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`${inputCls} flex items-center justify-between cursor-pointer group hover:border-blue-400 hover:ring-4 hover:ring-blue-50 transition-all duration-300 ${isOpen ? 'border-blue-500 ring-4 ring-blue-50 bg-white shadow-md' : 'border-emerald-500 shadow-sm'}`}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-8 h-8 bg-${selectedOpt.color}-100 text-${selectedOpt.color}-600 rounded-lg flex items-center justify-center shadow-sm`}>
+            <selectedOpt.icon size={16} />
+          </div>
+          <span className="text-slate-900 font-black">{selectedOpt.label}</span>
+        </div>
+        <ChevronDown size={18} className={`text-slate-400 transition-transform duration-500 ${isOpen ? 'rotate-180 text-blue-600' : 'group-hover:text-blue-500'}`} />
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-[calc(100%+12px)] left-0 w-full bg-white border border-slate-200 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.15)] z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 border-t-4 border-t-blue-600">
+          <div className="p-3 space-y-1">
+            <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Sparkles size={12} className="text-blue-500" /> শাখা নির্বাচন করুন
+              </span>
+            </div>
+            {options.map((opt) => (
+              <div 
+                key={opt.id}
+                onClick={() => {
+                  onChange(opt.value);
+                  setIsOpen(false);
+                }}
+                className={`px-4 py-3.5 mx-1 rounded-2xl cursor-pointer flex items-center justify-between transition-all group relative ${
+                  value === opt.value ? `bg-${opt.color}-50 text-${opt.color}-700 shadow-sm` : 'hover:bg-slate-50 text-slate-600'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                    value === opt.value ? `bg-${opt.color}-600 text-white shadow-lg shadow-${opt.color}-200` : 'bg-slate-100 text-slate-400 group-hover:bg-white group-hover:shadow-md'
+                  }`}>
+                    <opt.icon size={20} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className={`text-[14px] font-black transition-colors ${value === opt.value ? `text-${opt.color}-700` : 'text-slate-700'}`}>{opt.label}</span>
+                    <span className="text-[10px] font-bold text-slate-400">{opt.desc}</span>
+                  </div>
+                </div>
+                {value === opt.value && (
+                  <div className={`w-6 h-6 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-md animate-in zoom-in duration-300`}>
+                    <Check size={14} strokeWidth={3} />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
  * Segmented Date Input Component (Mirrored from Settlement Module Logic)
  * Handles auto-padding, max limits, smart year expansion, and auto-focus jump.
  */
