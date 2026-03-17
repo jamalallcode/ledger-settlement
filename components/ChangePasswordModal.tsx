@@ -70,7 +70,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[10001] flex items-start justify-center p-4 pt-32 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
+    <div className="fixed inset-0 z-[10001] flex items-start justify-center p-4 pt-4 pb-8 overflow-y-auto bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
       <div className="w-full max-w-md bg-white border border-slate-200 rounded-[2.5rem] p-8 space-y-6 shadow-[0_0_50px_rgba(0,0,0,0.3)] animate-in zoom-in-95 duration-500 relative overflow-hidden group">
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/5 blur-[80px] rounded-full"></div>
         
