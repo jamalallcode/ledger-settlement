@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3, User } from 'lucide-react';
+import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3, User, ArrowRight } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 
 interface SidebarProps {
@@ -643,29 +643,58 @@ const Sidebar: React.FC<SidebarProps> = ({
             )}
           </div>
         </nav>
-        <div id="sidebar-footer" className="p-4 border-t border-slate-800 space-y-4 relative">
+        <div id="sidebar-footer" className="p-4 border-t border-slate-800 space-y-4 relative bg-slate-900/50 backdrop-blur-sm">
           <IDBadge id="sidebar-footer" />
-          {isAdmin ? (
-            <button 
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all font-black text-xs group"
-            >
-              <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
-              লগআউট করুন
-            </button>
-          ) : (
-            <div className="px-2 py-4 text-center">
-              <div className="flex flex-col items-center gap-2 opacity-20 group hover:opacity-40 transition-opacity cursor-default">
-                 <ShieldCheck size={24} className="text-slate-600" />
-                 <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Secure Node</p>
-              </div>
+          
+          {/* Security & Account Section - Premium Design */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 px-1">
+              <div className="w-1 h-3 bg-blue-500 rounded-full"></div>
+              <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Security & Account</span>
             </div>
-          )}
+            
+            {isAdmin ? (
+              <div className="grid grid-cols-1 gap-2">
+                <button 
+                  onClick={() => setShowChangePasswordModal(true)}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-slate-800/50 text-slate-300 hover:bg-blue-600 hover:text-white transition-all font-bold text-[11px] group border border-slate-700/50 hover:border-blue-400 shadow-sm"
+                >
+                  <KeyRound size={14} className="group-hover:rotate-12 transition-transform text-blue-400 group-hover:text-white" />
+                  পাসওয়ার্ড পরিবর্তন
+                </button>
+                <button 
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-red-500/5 text-red-400 hover:bg-red-500 hover:text-white transition-all font-bold text-[11px] group border border-red-500/10 hover:border-red-400"
+                >
+                  <LogOut size={14} className="group-hover:-translate-x-1 transition-transform" />
+                  লগআউট করুন
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setShowAdminModal(true)}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-slate-800 to-slate-850 text-slate-200 hover:from-blue-600 hover:to-blue-700 hover:text-white transition-all font-black text-[11px] group border border-slate-700 hover:border-blue-400 shadow-xl shadow-black/20"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                    <Lock size={14} className="text-blue-400 group-hover:text-white transition-colors" />
+                  </div>
+                  <span>এডমিন লগইন</span>
+                </div>
+                <ArrowRight size={14} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+              </button>
+            )}
+          </div>
+
+          <div className="pt-2 flex items-center justify-center gap-2 opacity-30">
+             <ShieldCheck size={10} className="text-slate-500" />
+             <p className="text-[7px] font-black text-slate-500 uppercase tracking-[0.3em]">Secure Node v1.0.4</p>
+          </div>
         </div>
       </div>
       {showAdminModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-500">
-          <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 space-y-6 animate-in zoom-in-95 duration-500 relative overflow-hidden group">
+        <div className="fixed inset-0 z-[1000] flex items-start justify-center p-4 pt-48 bg-black/40 backdrop-blur-md animate-in fade-in duration-500">
+          <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 space-y-6 animate-in zoom-in-95 duration-500 relative overflow-y-auto max-h-[90vh] group no-scrollbar">
             {/* Decorative Glows */}
             <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/20 blur-[80px] rounded-full group-hover:bg-blue-600/30 transition-colors duration-700"></div>
             <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-600/10 blur-[80px] rounded-full group-hover:bg-emerald-600/20 transition-colors duration-700"></div>
@@ -747,88 +776,107 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Recovery Modal */}
       {showRecoveryModal && (
-        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
-          <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[2rem] p-8 space-y-6 shadow-2xl">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-amber-500/20 text-amber-500 rounded-xl flex items-center justify-center">
-                <AlertCircle size={20} />
-              </div>
-              <div>
-                <h3 className="text-white font-black text-lg">পাসওয়ার্ড উদ্ধার</h3>
-                <p className="text-amber-400/60 text-[9px] font-black uppercase tracking-widest">Security Recovery</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {recoveredPassword ? (
-                <div className="space-y-6 animate-in zoom-in-95 duration-300">
-                  <div className="p-6 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-center space-y-2">
-                    <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest">আপনার পাসওয়ার্ড:</p>
-                    <p className="text-white font-black text-3xl tracking-[0.2em]">{recoveredPassword}</p>
+        <div className="fixed inset-0 z-[1001] flex items-start justify-center p-4 pt-48 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
+          <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2.5rem] p-8 space-y-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-500 relative overflow-hidden group">
+            {/* Decorative Glow */}
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-600/20 blur-[80px] rounded-full group-hover:bg-amber-600/30 transition-colors duration-700"></div>
+            
+            <div className="relative z-10 space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20 ring-4 ring-amber-500/10">
+                    <AlertCircle size={20} />
                   </div>
-                  <div className="flex flex-col gap-3">
-                    <button 
-                      onClick={() => {
-                        setShowRecoveryModal(false);
-                        setRecoveredPassword(null);
-                        setRecoveryAnswer('');
-                        setShowChangePasswordModal(true);
-                      }}
-                      className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-black text-sm hover:from-emerald-500 hover:to-teal-500 transition-all shadow-xl shadow-emerald-600/20"
-                    >
-                      নতুন পাসওয়ার্ড সেট করুন
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setShowRecoveryModal(false);
-                        setRecoveredPassword(null);
-                        setRecoveryAnswer('');
-                        setShowAdminModal(true);
-                      }}
-                      className="w-full py-4 bg-white/5 text-slate-400 rounded-2xl font-black text-sm hover:bg-white/10 transition-all"
-                    >
-                      লগইন পেজে ফিরে যান
-                    </button>
+                  <div>
+                    <h3 className="text-white font-black text-lg tracking-tight">পাসওয়ার্ড উদ্ধার</h3>
+                    <p className="text-amber-400/60 text-[9px] font-black uppercase tracking-[0.2em]">Security Recovery</p>
                   </div>
                 </div>
-              ) : (
-                <>
-                  <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">নিরাপত্তা প্রশ্ন:</p>
-                    <p className="text-white font-bold">{storedRecoveryQuestion}</p>
+                <button 
+                  onClick={() => { setShowRecoveryModal(false); setRecoveryAnswer(''); setRecoveredPassword(null); }} 
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all border border-white/5"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {recoveredPassword ? (
+                  <div className="space-y-6 animate-in zoom-in-95 duration-300">
+                    <div className="p-8 bg-white/5 border border-white/10 rounded-3xl text-center space-y-3 relative overflow-hidden group/pass">
+                      <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover/pass:opacity-100 transition-opacity"></div>
+                      <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.3em] relative z-10">আপনার পাসওয়ার্ড:</p>
+                      <p className="text-white font-black text-4xl tracking-[0.3em] relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">{recoveredPassword}</p>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <button 
+                        onClick={() => {
+                          setShowRecoveryModal(false);
+                          setRecoveredPassword(null);
+                          setRecoveryAnswer('');
+                          setShowChangePasswordModal(true);
+                        }}
+                        className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-black text-sm hover:from-emerald-500 hover:to-teal-500 transition-all shadow-xl shadow-emerald-600/20 active:scale-95"
+                      >
+                        নতুন পাসওয়ার্ড সেট করুন
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setShowRecoveryModal(false);
+                          setRecoveredPassword(null);
+                          setRecoveryAnswer('');
+                          setShowAdminModal(true);
+                        }}
+                        className="w-full py-4 bg-white/5 text-slate-400 rounded-2xl font-black text-sm hover:bg-white/10 transition-all active:scale-95 border border-white/5"
+                      >
+                        লগইন পেজে ফিরে যান
+                      </button>
+                    </div>
                   </div>
-
-                  <form onSubmit={handleRecoverySubmit} className="space-y-6">
-                    <div className="space-y-2">
-                      <p className="text-slate-300 text-sm font-bold ml-1">আপনার উত্তর দিন:</p>
-                      <input 
-                        autoFocus
-                        type="text" 
-                        value={recoveryAnswer} 
-                        onChange={(e) => setRecoveryAnswer(e.target.value)} 
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-amber-500/50 transition-all" 
-                        placeholder="উত্তর এখানে লিখুন..."
-                      />
+                ) : (
+                  <>
+                    <div className="p-5 bg-white/5 rounded-2xl border border-white/10 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck size={12} className="text-amber-500" />
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">নিরাপত্তা প্রশ্ন:</p>
+                      </div>
+                      <p className="text-white font-bold text-lg leading-relaxed">{storedRecoveryQuestion}</p>
                     </div>
 
-                    <div className="flex gap-4">
-                      <button 
-                        type="button" 
-                        onClick={() => { setShowRecoveryModal(false); setRecoveryAnswer(''); }} 
-                        className="flex-1 py-4 bg-white/5 text-slate-300 rounded-2xl font-black text-sm hover:bg-white/10 transition-all"
-                      >
-                        বাতিল
-                      </button>
-                      <button 
-                        type="submit" 
-                        className="flex-1 py-4 bg-amber-600 text-white rounded-2xl font-black text-sm hover:bg-amber-500 transition-all shadow-xl shadow-amber-600/20"
-                      >
-                        যাচাই করুন
-                      </button>
-                    </div>
-                  </form>
-                </>
-              )}
+                    <form onSubmit={handleRecoverySubmit} className="space-y-6">
+                      <div className="space-y-3">
+                        <p className="text-slate-300 text-sm font-bold ml-1">আপনার উত্তর দিন:</p>
+                        <div className="relative group/input">
+                          <input 
+                            autoFocus
+                            type="text" 
+                            value={recoveryAnswer} 
+                            onChange={(e) => setRecoveryAnswer(e.target.value)} 
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-amber-500/50 focus:ring-8 focus:ring-amber-500/5 transition-all placeholder:text-slate-700" 
+                            placeholder="উত্তর এখানে লিখুন..."
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4">
+                        <button 
+                          type="button" 
+                          onClick={() => { setShowRecoveryModal(false); setRecoveryAnswer(''); }} 
+                          className="flex-1 py-4 bg-white/5 text-slate-300 rounded-2xl font-black text-xs hover:bg-white/10 transition-all border border-white/5"
+                        >
+                          বাতিল
+                        </button>
+                        <button 
+                          type="submit" 
+                          className="flex-1 py-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-2xl font-black text-xs hover:from-amber-500 hover:to-orange-500 transition-all shadow-xl shadow-amber-600/20 active:scale-95 ring-4 ring-amber-500/10"
+                        >
+                          যাচাই করুন
+                        </button>
+                      </div>
+                    </form>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -836,83 +884,101 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Change Password Modal */}
       {showChangePasswordModal && (
-        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
-          <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[2rem] p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-blue-500/20 text-blue-500 rounded-xl flex items-center justify-center">
-                <KeyRound size={20} />
-              </div>
-              <div>
-                <h3 className="text-white font-black text-lg">পাসওয়ার্ড পরিবর্তন</h3>
-                <p className="text-blue-400/60 text-[9px] font-black uppercase tracking-widest">Update Security</p>
-              </div>
-            </div>
-
-            <form onSubmit={handleChangePassword} className="space-y-4">
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <p className="text-slate-300 text-xs font-bold ml-1">নতুন পাসওয়ার্ড:</p>
-                  <input 
-                    type="password" 
-                    value={newPassword} 
-                    onChange={(e) => setNewPassword(e.target.value)} 
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-sm" 
-                    placeholder="কমপক্ষে ৩ অক্ষর"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <p className="text-slate-300 text-xs font-bold ml-1">পাসওয়ার্ড নিশ্চিত করুন:</p>
-                  <input 
-                    type="password" 
-                    value={confirmPassword} 
-                    onChange={(e) => setConfirmPassword(e.target.value)} 
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-sm" 
-                    placeholder="আবার লিখুন"
-                  />
-                </div>
-                
-                <div className="pt-3 border-t border-white/10">
-                  <p className="text-blue-400 text-[9px] font-black uppercase tracking-widest mb-3">পাসওয়ার্ড উদ্ধারের জন্য সেটিংস</p>
-                  
-                  <div className="space-y-1.5">
-                    <p className="text-slate-300 text-xs font-bold ml-1">নিরাপত্তা প্রশ্ন:</p>
-                    <input 
-                      type="text" 
-                      value={newQuestion} 
-                      onChange={(e) => setNewQuestion(e.target.value)} 
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-sm" 
-                      placeholder="যেমন: আপনার প্রিয় রং কি?"
-                    />
+        <div className="fixed inset-0 z-[1001] flex items-start justify-center p-4 pt-20 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
+          <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2.5rem] p-8 space-y-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-500 relative overflow-hidden group">
+            {/* Decorative Glow */}
+            <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/20 blur-[80px] rounded-full group-hover:bg-blue-600/30 transition-colors duration-700"></div>
+            
+            <div className="relative z-10 space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 ring-4 ring-blue-500/10">
+                    <KeyRound size={20} />
                   </div>
-                  <div className="space-y-1.5 mt-3">
-                    <p className="text-slate-300 text-xs font-bold ml-1">প্রশ্নের উত্তর:</p>
-                    <input 
-                      type="text" 
-                      value={newAnswer} 
-                      onChange={(e) => setNewAnswer(e.target.value)} 
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all text-sm" 
-                      placeholder="উত্তরটি এখানে লিখুন"
-                    />
+                  <div>
+                    <h3 className="text-white font-black text-lg tracking-tight">পাসওয়ার্ড পরিবর্তন</h3>
+                    <p className="text-blue-400/60 text-[9px] font-black uppercase tracking-[0.2em]">Update Security</p>
                   </div>
                 </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
                 <button 
-                  type="button" 
                   onClick={() => setShowChangePasswordModal(false)} 
-                  className="flex-1 py-3 bg-white/5 text-slate-300 rounded-xl font-black text-xs hover:bg-white/10 transition-all"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all border border-white/5"
                 >
-                  বাতিল
-                </button>
-                <button 
-                  type="submit" 
-                  className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-black text-xs hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20"
-                >
-                  সংরক্ষণ করুন
+                  <X size={18} />
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleChangePassword} className="space-y-6">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <p className="text-slate-300 text-[10px] font-black uppercase tracking-widest ml-1">নতুন পাসওয়ার্ড:</p>
+                      <input 
+                        type="password" 
+                        value={newPassword} 
+                        onChange={(e) => setNewPassword(e.target.value)} 
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white font-bold outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all text-sm placeholder:text-slate-700" 
+                        placeholder="••••••••"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-slate-300 text-[10px] font-black uppercase tracking-widest ml-1">নিশ্চিত করুন:</p>
+                      <input 
+                        type="password" 
+                        value={confirmPassword} 
+                        onChange={(e) => setConfirmPassword(e.target.value)} 
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white font-bold outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all text-sm placeholder:text-slate-700" 
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="pt-6 border-t border-white/10 space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertCircle size={12} className="text-blue-400" />
+                      <p className="text-blue-400 text-[9px] font-black uppercase tracking-[0.2em]">পাসওয়ার্ড উদ্ধারের জন্য সেটিংস</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <p className="text-slate-300 text-[10px] font-black uppercase tracking-widest ml-1">নিরাপত্তা প্রশ্ন:</p>
+                      <input 
+                        type="text" 
+                        value={newQuestion} 
+                        onChange={(e) => setNewQuestion(e.target.value)} 
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white font-bold outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all text-sm placeholder:text-slate-700" 
+                        placeholder="যেমন: আপনার প্রিয় রং কি?"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-slate-300 text-[10px] font-black uppercase tracking-widest ml-1">প্রশ্নের উত্তর:</p>
+                      <input 
+                        type="text" 
+                        value={newAnswer} 
+                        onChange={(e) => setNewAnswer(e.target.value)} 
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white font-bold outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all text-sm placeholder:text-slate-700" 
+                        placeholder="উত্তরটি এখানে লিখুন"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-2">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowChangePasswordModal(false)} 
+                    className="flex-1 py-4 bg-white/5 text-slate-300 rounded-2xl font-black text-xs hover:bg-white/10 transition-all border border-white/5 active:scale-95"
+                  >
+                    বাতিল
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="flex-1 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-xs hover:from-blue-500 hover:to-indigo-500 transition-all shadow-xl shadow-blue-600/20 active:scale-95 ring-4 ring-blue-500/10"
+                  >
+                    সংরক্ষণ করুন
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
