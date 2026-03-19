@@ -133,7 +133,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
             pastRC += parseBengaliNumber(rCountRaw);
         }
-        if (entry.manualRaisedAmount) pastRA += (Number(entry.manualRaisedAmount) || 0);
+        if (entry.manualRaisedAmount) pastRA += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
 
         if (entry.paragraphs) {
           entry.paragraphs.forEach(p => {
@@ -142,7 +142,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             if (p.id && !processedParaIds.has(p.id) && hasDigit) {
               processedParaIds.add(p.id);
               const status = robustNormalize(p.status || '');
-              const settledAmt = (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
+              const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
               if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                   pastSC++; 
               }
@@ -212,20 +212,18 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 if (p.id && !processedParaIds.has(p.id) && hasDigit) {
                   processedParaIds.add(p.id);
                   const status = robustNormalize(p.status || '');
-                  const settledAmt = (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
+                  const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
                   
                   if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                     curFC++; curSC++; 
                     if (isSFI) {
                       curSFIC++;
-                      sfiSA += settledAmt;
                       if (letterType === 'বিএসআর') sfiBSR++;
                       else if (letterType === 'ত্রিপক্ষীয় সভা (কার্যপত্র)') sfiTriWork++;
                       else if (letterType === 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)') sfiTriMin++;
                       else if (letterType === 'মিলিকরণ') sfiRecon++;
                     } else {
                       curNonSFIC++;
-                      nonSfiSA += settledAmt;
                       if (letterType === 'বিএসআর') nonSfiBSR++;
                       else if (letterType === 'দ্বিপক্ষীয় সভা (কার্যপত্র)') nonSfiBiWork++;
                       else if (letterType === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)') nonSfiBiMin++;
@@ -234,13 +232,17 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   } else if (status === robustNormalize('আংশিক')) {
                     curPC++;
                   }
+
+                  if (isSFI) sfiSA += settledAmt;
+                  else nonSfiSA += settledAmt;
+                  
                   curSA += settledAmt;
                 }
               });
             }
             const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
             if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") curRC += parseBengaliNumber(rCountRaw);
-            if (entry.manualRaisedAmount) curRA += (Number(entry.manualRaisedAmount) || 0);
+            if (entry.manualRaisedAmount) curRA += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
           });
           return { 
             entity: entityName, 
@@ -305,7 +307,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }, [correspondenceEntries, selectedReportType, activeCycle]);
 
   const grandTotals = useMemo(() => {
-    if (!reportData || reportData.length === 0) return { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0, cSFIC: 0, cNonSFIC: 0 };
+    const initial = { 
+      pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0, 
+      cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0,
+      sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0,
+      nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0
+    };
+    if (!reportData || reportData.length === 0) return initial;
     return reportData.reduce((acc, mGroup) => {
       mGroup.entityRows.forEach((row: any) => {
         acc.pUC += (row.prev.unsettledCount || 0); acc.pUA += (row.prev.unsettledAmount || 0); 
@@ -314,9 +322,20 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         acc.cSC += (row.currentSettledCount || 0); acc.cSA += (row.currentSettledAmount || 0);
         acc.cFC += (row.currentFullCount || 0); acc.cPC += (row.currentPartialCount || 0);
         acc.cSFIC += (row.currentSFICount || 0); acc.cNonSFIC += (row.currentNonSFICount || 0);
+        acc.cSFIA += (row.currentSFIAmount || 0); acc.cNonSFIA += (row.currentNonSFIAmount || 0);
+        
+        acc.sfiBSR += (row.sfiBreakdown?.bsr || 0);
+        acc.sfiTriWork += (row.sfiBreakdown?.triWork || 0);
+        acc.sfiTriMin += (row.sfiBreakdown?.triMin || 0);
+        acc.sfiRecon += (row.sfiBreakdown?.recon || 0);
+        
+        acc.nonSfiBSR += (row.nonSfiBreakdown?.bsr || 0);
+        acc.nonSfiBiWork += (row.nonSfiBreakdown?.biWork || 0);
+        acc.nonSfiBiMin += (row.nonSfiBreakdown?.biMin || 0);
+        acc.nonSfiRecon += (row.nonSfiBreakdown?.recon || 0);
       });
       return acc;
-    }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0, cSFIC: 0, cNonSFIC: 0 });
+    }, initial);
   }, [reportData]);
 
   const handleSaveSetup = () => {
