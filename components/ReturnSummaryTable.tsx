@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ChevronLeft, Printer, Database, CheckCircle2, Search, X, ChevronDown, Check, LayoutGrid, MapPin, PieChart, BarChart3, Building2, Landmark, ListChecks } from 'lucide-react';
+import { ChevronLeft, Printer, Database, CheckCircle2, Search, X, ChevronDown, Check, LayoutGrid, MapPin, PieChart, BarChart3, Building2, Landmark, ListChecks, Sparkles } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import HighlightText from './HighlightText';
 import { OFFICE_HEADER } from '../constants';
@@ -33,7 +33,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   filterMinistry
 }) => {
   const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
-  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
+  const [isStatsHovered, setIsStatsHovered] = useState(false);
   const ministryDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -79,16 +79,40 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
         mAcc.pSC += (row.prev.settledCount || 0); mAcc.pSA += (row.prev.settledAmount || 0);
         mAcc.cSC += (row.currentSettledCount || 0); mAcc.cSA += (row.currentSettledAmount || 0);
         mAcc.cSFIC += (row.currentSFICount || 0); mAcc.cNonSFIC += (row.currentNonSFICount || 0);
+        mAcc.cSFIA += (row.currentSFIAmount || 0); mAcc.cNonSFIA += (row.currentNonSFIAmount || 0);
+        
+        mAcc.sfiBSR = (mAcc.sfiBSR || 0) + (row.sfiBreakdown?.bsr || 0);
+        mAcc.sfiTriWork = (mAcc.sfiTriWork || 0) + (row.sfiBreakdown?.triWork || 0);
+        mAcc.sfiTriMin = (mAcc.sfiTriMin || 0) + (row.sfiBreakdown?.triMin || 0);
+        mAcc.sfiRecon = (mAcc.sfiRecon || 0) + (row.sfiBreakdown?.recon || 0);
+        
+        mAcc.nonSfiBSR = (mAcc.nonSfiBSR || 0) + (row.nonSfiBreakdown?.bsr || 0);
+        mAcc.nonSfiBiWork = (mAcc.nonSfiBiWork || 0) + (row.nonSfiBreakdown?.biWork || 0);
+        mAcc.nonSfiBiMin = (mAcc.nonSfiBiMin || 0) + (row.nonSfiBreakdown?.biMin || 0);
+        mAcc.nonSfiRecon = (mAcc.nonSfiRecon || 0) + (row.nonSfiBreakdown?.recon || 0);
+        
         return mAcc;
-      }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cSFIC: 0, cNonSFIC: 0 });
+      }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0, sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0, nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0 });
       
       acc.pUC += mTotals.pUC; acc.pUA += mTotals.pUA;
       acc.cRC += mTotals.cRC; acc.cRA += mTotals.cRA;
       acc.pSC += mTotals.pSC; acc.pSA += mTotals.pSA;
       acc.cSC += mTotals.cSC; acc.cSA += mTotals.cSA;
       acc.cSFIC += mTotals.cSFIC; acc.cNonSFIC += mTotals.cNonSFIC;
+      acc.cSFIA += mTotals.cSFIA; acc.cNonSFIA += mTotals.cNonSFIA;
+      
+      acc.sfiBSR = (acc.sfiBSR || 0) + mTotals.sfiBSR;
+      acc.sfiTriWork = (acc.sfiTriWork || 0) + mTotals.sfiTriWork;
+      acc.sfiTriMin = (acc.sfiTriMin || 0) + mTotals.sfiTriMin;
+      acc.sfiRecon = (acc.sfiRecon || 0) + mTotals.sfiRecon;
+      
+      acc.nonSfiBSR = (acc.nonSfiBSR || 0) + mTotals.nonSfiBSR;
+      acc.nonSfiBiWork = (acc.nonSfiBiWork || 0) + mTotals.nonSfiBiWork;
+      acc.nonSfiBiMin = (acc.nonSfiBiMin || 0) + mTotals.nonSfiBiMin;
+      acc.nonSfiRecon = (acc.nonSfiRecon || 0) + mTotals.nonSfiRecon;
+      
       return acc;
-    }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cSFIC: 0, cNonSFIC: 0 });
+    }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0, sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0, nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0 });
   }, [filteredReportData, searchTerm, grandTotals]);
 
   const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
@@ -100,123 +124,71 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
     <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative">
       <IDBadge id="section-report-summary" />
       {showFilters && (
-        <div id="summary-header-controls" className="flex flex-col md:flex-row items-center justify-end gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print relative">
+        <div id="summary-header-controls" className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print relative">
           <IDBadge id="summary-header-controls" />
-          <div className="flex flex-wrap items-center gap-4">
-            <HistoricalFilter />
-            {selectedReportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত' && (
-              <button
-                onClick={() => setIsStatsModalOpen(true)}
-                className="flex items-center gap-2 px-5 h-[48px] bg-emerald-600 text-white rounded-xl font-black text-[13.5px] shadow-lg shadow-emerald-200 hover:bg-emerald-700 hover:scale-105 active:scale-95 transition-all duration-300 no-print"
+          
+          <div className="flex items-center">
+            {selectedReportType === 'মাসিক রিটারন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' && (
+              <div 
+                className="relative"
+                onMouseEnter={() => setIsStatsHovered(true)}
+                onMouseLeave={() => setIsStatsHovered(false)}
               >
-                <PieChart size={18} />
-                পরিসংখ্যান
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Statistics Modal */}
-      {isStatsModalOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300 no-print">
-          <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-200">
-            <div className="bg-slate-900 p-8 text-white relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
-              <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center border border-emerald-500/30">
-                    <BarChart3 className="text-emerald-400" size={24} />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-black tracking-tight">নিষ্পত্তি পরিসংখ্যান</h2>
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">{toBengaliDigits(activeCycle.label)}</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setIsStatsModalOpen(false)}
-                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+                <button
+                  className={`flex items-center gap-2 px-4 h-[40px] bg-slate-50 text-slate-700 rounded-xl font-bold text-[13px] border border-slate-200 transition-all duration-300 no-print ${isStatsHovered ? 'bg-white shadow-md border-blue-200' : ''}`}
                 >
-                  <X size={20} />
+                  <Sparkles size={16} className="text-blue-500" />
+                  পরিসংখ্যান
+                  <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${isStatsHovered ? 'rotate-180' : ''}`} />
                 </button>
-              </div>
-            </div>
 
-            <div className="p-8 space-y-8">
-              {/* Main Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100 space-y-2">
-                  <div className="flex items-center gap-2 text-blue-600">
-                    <ListChecks size={18} />
-                    <span className="text-[10px] font-black uppercase tracking-wider">মোট নিষ্পত্তি</span>
-                  </div>
-                  <div className="text-4xl font-black text-blue-900">{toBengaliDigits(filteredGrandTotals.cSC)}</div>
-                  <div className="text-[10px] font-bold text-blue-600/70">চলতি মাসে সম্পন্ন</div>
-                </div>
-
-                <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 space-y-2">
-                  <div className="flex items-center gap-2 text-emerald-600">
-                    <Landmark size={18} />
-                    <span className="text-[10px] font-black uppercase tracking-wider">এসএফআই শাখা</span>
-                  </div>
-                  <div className="text-4xl font-black text-emerald-900">{toBengaliDigits(filteredGrandTotals.cSFIC)}</div>
-                  <div className="text-[10px] font-bold text-emerald-600/70">নিষ্পত্তিকৃত অনুচ্ছেদ</div>
-                </div>
-
-                <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100 space-y-2">
-                  <div className="flex items-center gap-2 text-amber-600">
-                    <Building2 size={18} />
-                    <span className="text-[10px] font-black uppercase tracking-wider">নন-এসএফআই শাখা</span>
-                  </div>
-                  <div className="text-4xl font-black text-amber-900">{toBengaliDigits(filteredGrandTotals.cNonSFIC)}</div>
-                  <div className="text-[10px] font-bold text-amber-600/70">নিষ্পত্তিকৃত অনুচ্ছেদ</div>
-                </div>
-              </div>
-
-              {/* Ministry Breakdown */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between px-2">
-                  <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-                    <LayoutGrid size={16} className="text-blue-600" />
-                    মন্ত্রণালয় ভিত্তিক সারসংক্ষেপ
-                  </h3>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">নিষ্পত্তি সংখ্যা</span>
-                </div>
-                
-                <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
-                  {filteredReportData.map(m => {
-                    const mSettled = m.entityRows.reduce((sum: number, row: any) => sum + (row.currentSettledCount || 0), 0);
-                    const percentage = filteredGrandTotals.cSC > 0 ? (mSettled / filteredGrandTotals.cSC) * 100 : 0;
-                    
-                    return (
-                      <div key={m.ministry} className="group p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-300">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-[13px] font-black text-slate-700 group-hover:text-blue-700 transition-colors">{m.ministry}</span>
-                          <span className="px-3 py-1 bg-white rounded-lg text-xs font-black text-slate-900 border border-slate-200 shadow-sm">
-                            {toBengaliDigits(mSettled)} টি
-                          </span>
-                        </div>
-                        <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-blue-600 rounded-full transition-all duration-1000 ease-out"
-                            style={{ width: `${percentage}%` }}
-                          ></div>
+                {isStatsHovered && (
+                  <div className="absolute top-full left-0 w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="space-y-5">
+                      <div className="flex items-center justify-between border-b border-slate-50 pb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                            <BarChart3 size={16} className="text-blue-600" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-blue-700 font-black text-[15px]">মোট নিষ্পত্তি: {toBengaliDigits(filteredGrandTotals.cSC)} টি</span>
+                            <span className="text-emerald-600 font-bold text-[12px]">মোট নিষ্পত্তিকৃত টাকা: {toBengaliDigits(Math.round(filteredGrandTotals.cSA))} টাকা</span>
+                          </div>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
 
-            <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
-              <button 
-                onClick={() => setIsStatsModalOpen(false)}
-                className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-200"
-              >
-                বন্ধ করুন
-              </button>
-            </div>
+                      <div className="space-y-4">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-blue-700 font-black text-[14px]">এসএফআই:</span>
+                            <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(filteredGrandTotals.cSFIC)} টি</span>
+                            <span className="text-emerald-600 font-bold text-[12px] ml-1">({toBengaliDigits(Math.round(filteredGrandTotals.cSFIA))} টাকা)</span>
+                          </div>
+                          <div className="text-slate-600 font-bold text-[11px] leading-relaxed pl-4">
+                            (বিএসআর: {toBengaliDigits(filteredGrandTotals.sfiBSR)} টি, ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(filteredGrandTotals.sfiTriWork)} টি, ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(filteredGrandTotals.sfiTriMin)} টি, মিলিকরণ: {toBengaliDigits(filteredGrandTotals.sfiRecon)} টি)
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-blue-700 font-black text-[14px]">নন এসএফআই:</span>
+                            <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(filteredGrandTotals.cNonSFIC)} টি</span>
+                            <span className="text-emerald-600 font-bold text-[12px] ml-1">({toBengaliDigits(Math.round(filteredGrandTotals.cNonSFIA))} টাকা)</span>
+                          </div>
+                          <div className="text-slate-600 font-bold text-[11px] leading-relaxed pl-4">
+                            (বিএসআর: {toBengaliDigits(filteredGrandTotals.nonSfiBSR)} টি, দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(filteredGrandTotals.nonSfiBiWork)} টি, দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(filteredGrandTotals.nonSfiBiMin)} টি, মিলিকরণ: {toBengaliDigits(filteredGrandTotals.nonSfiRecon)} টি)
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            <HistoricalFilter />
           </div>
         </div>
       )}
