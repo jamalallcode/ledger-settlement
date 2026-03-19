@@ -187,6 +187,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [formData, setFormData] = useState({
     paraType: 'এসএফআই' as ParaType, 
     meetingType: 'বিএসআর',
+    letterType: 'বিএসআর',
     ministryName: '',
     entityName: '',
     branchName: '',
@@ -328,6 +329,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       setFormData({
         paraType: initialEntry.paraType || 'এসএফআই',
         meetingType: initialEntry.meetingType || (initialEntry.isMeeting ? 'ত্রিপক্ষীয় সভা' : 'বিএসআর'),
+        letterType: initialEntry.letterType || initialEntry.meetingType || (initialEntry.isMeeting ? 'ত্রিপক্ষীয় সভা' : 'বিএসআর'),
         ministryName: initialEntry.ministryName || '',
         entityName: initialEntry.entityName || '',
         branchName: initialEntry.branchName || '',
@@ -549,6 +551,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     setFormData({
       paraType: 'এসএফআই' as ParaType, 
       meetingType: 'বিএসআর',
+      letterType: 'বিএসআর',
       ministryName: '',
       entityName: '',
       branchName: '',
@@ -775,8 +778,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       <form id="form-entry" onSubmit={handleSubmit} className="space-y-10">
         <fieldset className="space-y-10 border-none p-0 m-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-6">
-            <div id="field-1" className={col1Style}><SearchableSelect label={<><span className={numBadge}>১</span> <Building2 size={14} className="text-blue-600 shrink-0" /> শাখা (SFI/Non-SFI)</>} groups={[{ label: 'শাখা ধরণ', options: ['এসএফআই', 'নন এসএফআই'] }]} value={formData.paraType} onChange={v => setFormData({ ...formData, paraType: v as ParaType })} required badgeId="select-para-type" /></div>
-            <div id="field-2" className={col2Style}><SearchableSelect label={<><span className={numBadge}>২</span> <Layout size={14} className="text-emerald-600 shrink-0" /> চিঠির ধরণ</>} groups={[{ label: 'চিঠি তালিকা', options: formData.paraType === 'এসএফআই' ? ['বিএসআর', 'ত্রিপক্ষীয় সভা'] : ['বিএসআর', 'দ্বিপক্ষীয় সভা'] }]} value={formData.meetingType} onChange={v => setFormData({...formData, meetingType: v, isMeeting: v !== 'বিএসআর'})} required badgeId="select-meeting-type" /></div>
+            <div id="field-1" className={col1Style}><SearchableSelect label={<><span className={numBadge}>১</span> <Building2 size={14} className="text-blue-600 shrink-0" /> শাখা (SFI/Non-SFI)</>} groups={[{ label: 'শাখা ধরণ', options: ['এসএফআই', 'নন এসএফআই'] }]} value={formData.paraType} onChange={v => setFormData({ ...formData, paraType: v as ParaType, meetingType: 'বিএসআর', letterType: 'বিএসআর', isMeeting: false })} required badgeId="select-para-type" /></div>
+            <div id="field-2" className={col2Style}><SearchableSelect label={<><span className={numBadge}>২</span> <Layout size={14} className="text-emerald-600 shrink-0" /> চিঠির ধরণ</>} groups={[{ label: 'চিঠি তালিকা', options: formData.paraType === 'এসএফআই' ? ['বিএসআর', 'ত্রিপক্ষীয় সভা'] : ['বিএসআর', 'দ্বিপক্ষীয় সভা'] }]} value={formData.meetingType} onChange={v => setFormData({...formData, meetingType: v, letterType: v, isMeeting: v !== 'বিএসআর'})} required badgeId="select-meeting-type" /></div>
             <div id="field-3" className={col3Style}><SearchableSelect label={<><span className={numBadge}>৩</span> <Building size={14} className="text-amber-600 shrink-0" /> মন্ত্রণালয়</>} groups={MINISTRIES_LIST} value={formData.ministryName} onChange={v => setFormData(f=>({...f, ministryName: v}))} required badgeId="select-ministry" /></div>
             <div id="field-4" className={col4Style}><SearchableSelect label={<><span className={numBadge}>৪</span> <Building2 size={14} className="text-purple-600 shrink-0" /> এনটিটি / সংস্থা</>} groups={[{label: 'এনটিটি তালিকা', options: entityOpts}]} value={formData.entityName} onChange={v => setFormData(f=>({...f, entityName: v}))} required badgeId="select-entity" /></div>
             <div id="field-5" className={col1Style}><SearchableSelect label={<><span className={numBadge}>৫</span> <Building size={14} className="text-sky-600 shrink-0" /> শাখা (বিস্তারিত বিবরণ)</>} groups={branchOpts.length > 0 ? [{label: ' শাখা তালিকা', options: branchOpts}] : branchSuggestions} value={formData.branchName} onChange={v => setFormData(f=>({...f, branchName: v}))} required badgeId="select-branch" /></div>
