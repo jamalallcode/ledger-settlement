@@ -532,9 +532,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   };
 
   // Header font-black
-  const thCls = "sticky top-0 border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[13px] bg-slate-200 z-[110] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
+  const thCls = "sticky top-0 border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[13px] bg-slate-200 z-[110] shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
   // Data cells reverted to font-bold
-  const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[13px] text-slate-800 font-bold leading-tight align-top transition-colors group-hover:bg-blue-50/50 break-words";
+  const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[13px] text-slate-800 font-bold leading-tight align-top transition-colors group-hover:bg-blue-50/50 break-words relative";
   const labelCls = "text-[11px] font-bold text-emerald-700 shrink-0";
   const valCls = "text-[11px] font-black text-slate-900";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[48px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
@@ -811,8 +811,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
               return groupedEntries.map((group) => (
                 <tbody key={group.label}>
                   {/* Sticky Cycle Header */}
-                  <tr className="sticky top-[40px] z-[90] no-print">
-                    <td colSpan={7} className="p-0 border border-slate-300">
+                  <tr className="sticky top-[40px] z-[105] no-print">
+                    <td colSpan={7} className="p-0 border border-slate-400 shadow-sm">
                       <div 
                         ref={el => { cycleRefs.current[group.label] = el; }}
                         onClick={() => {
@@ -929,7 +929,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                     const isPendingForApproval = entry.approvalStatus === 'pending';
 
                     return (
-                      <tr key={entry.id} className="group transition-all bg-white">
+                      <tr key={entry.id} className="group transition-all bg-white hover:bg-blue-50/30">
                         <td className={tdCls + " text-center font-black"}>{toBengaliDigits(idx + 1)}</td>
                         <td className={tdCls}>
                           <HighlightText text={entry.description} searchTerm={searchTerm} />
@@ -1160,6 +1160,16 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                       </tr>
                     );
                   })}
+                  {/* Cycle Total Row */}
+                  <tr className="bg-slate-50/80 font-black border-t-2 border-slate-400 h-[38px] no-print">
+                    <td colSpan={2} className="px-4 text-left italic text-[11px] text-blue-900 border border-slate-300">
+                      মোট: <span className="text-emerald-700">{toBengaliDigits(group.entries.length)} টি চিঠি</span>
+                    </td>
+                    <td className="px-2 text-center border border-slate-300 text-blue-700 text-[11px]">
+                      {toBengaliDigits(group.entries.length)} টি
+                    </td>
+                    <td colSpan={4} className="border border-slate-300 bg-slate-50/30"></td>
+                  </tr>
                 </tbody>
               ));
             })()
@@ -1175,11 +1185,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
               </tr>
             </tbody>
           )}
-          <tfoot className="z-[110]">
-            <tr className="bg-slate-900 text-white font-black text-[11px] h-9 shadow-[0_-5px_15px_rgba(0,0,0,0.2)]">
-              <td colSpan={2} className="px-4 text-left border-t border-slate-700">সর্বমোট:</td>
-              <td colSpan={1} className="px-2 text-center border-t border-slate-700 text-emerald-400">{toBengaliDigits(filteredEntries.length)} টি</td>
-              <td colSpan={4} className="border-t border-slate-700"></td>
+          <tfoot className="sticky bottom-0 z-[110]">
+            <tr className="bg-slate-900 text-white font-black text-[12px] h-10 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]">
+              <td colSpan={2} className="px-4 text-left border-t border-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">সর্বমোট (ফিল্টার ডাটা):</td>
+              <td colSpan={1} className="px-2 text-center border-t border-slate-700 text-amber-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">{toBengaliDigits(filteredEntries.length)} টি</td>
+              <td colSpan={4} className="border-t border-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"></td>
             </tr>
           </tfoot>
         </table>
