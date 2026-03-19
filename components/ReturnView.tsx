@@ -196,10 +196,15 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
             return entryDate >= cycleStartStr && entryDate <= cycleEndStr;
           });
-          let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0, curSFIC = 0, curNonSFIC = 0;
+          let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0, curSFIC = 0, curNonSFIC = 0, sfiSA = 0, nonSfiSA = 0;
+          let sfiBSR = 0, sfiTriWork = 0, sfiTriMin = 0, sfiRecon = 0;
+          let nonSfiBSR = 0, nonSfiBiWork = 0, nonSfiBiMin = 0, nonSfiRecon = 0;
+
           const processedParaIds = new Set<string>();
           matchingEntries.forEach(entry => {
             const isSFI = robustNormalize(entry.paraType || '') === robustNormalize('এসএফআই');
+            const letterType = entry.letterType || '';
+
             if (entry.paragraphs && entry.paragraphs.length > 0) {
               entry.paragraphs.forEach(p => { 
                 const cleanParaNo = String(p.paraNo || '').trim();
@@ -208,9 +213,24 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   processedParaIds.add(p.id);
                   const status = robustNormalize(p.status || '');
                   const settledAmt = (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
+                  
                   if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                     curFC++; curSC++; 
-                    if (isSFI) curSFIC++; else curNonSFIC++;
+                    if (isSFI) {
+                      curSFIC++;
+                      sfiSA += settledAmt;
+                      if (letterType === 'বিএসআর') sfiBSR++;
+                      else if (letterType === 'ত্রিপক্ষীয় সভা (কার্যপত্র)') sfiTriWork++;
+                      else if (letterType === 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)') sfiTriMin++;
+                      else if (letterType === 'মিলিকরণ') sfiRecon++;
+                    } else {
+                      curNonSFIC++;
+                      nonSfiSA += settledAmt;
+                      if (letterType === 'বিএসআর') nonSfiBSR++;
+                      else if (letterType === 'দ্বিপক্ষীয় সভা (কার্যপত্র)') nonSfiBiWork++;
+                      else if (letterType === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)') nonSfiBiMin++;
+                      else if (letterType === 'মিলিকরণ') nonSfiRecon++;
+                    }
                   } else if (status === robustNormalize('আংশিক')) {
                     curPC++;
                   }
@@ -228,6 +248,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             currentSettledCount: curSC, currentSettledAmount: curSA,
             currentFullCount: curFC, currentPartialCount: curPC,
             currentSFICount: curSFIC, currentNonSFICount: curNonSFIC,
+            currentSFIAmount: sfiSA, currentNonSFIAmount: nonSfiSA,
+            sfiBreakdown: { bsr: sfiBSR, triWork: sfiTriWork, triMin: sfiTriMin, recon: sfiRecon },
+            nonSfiBreakdown: { bsr: nonSfiBSR, biWork: nonSfiBiWork, biMin: nonSfiBiMin, recon: nonSfiRecon },
             prev: ePrev 
           };
         })
