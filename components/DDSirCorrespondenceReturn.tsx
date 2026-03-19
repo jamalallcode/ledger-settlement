@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { ChevronLeft, Printer, Mail, Calendar, RotateCcw, Search, X, User, ChevronDown, Check, Sparkles } from 'lucide-react';
+import { ChevronLeft, Printer, Mail, Calendar, RotateCcw, Search, X, User, ChevronDown, Check, Sparkles, BarChart3 } from 'lucide-react';
 import React from 'react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
@@ -228,18 +228,24 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const summaryStats = useMemo(() => {
     const stats = {
       total: entries.length,
-      sfi: { total: 0, bsr: 0, kp: 0, kb: 0, reconciliation: 0 },
-      nonSfi: { total: 0, bsr: 0, kp: 0, kb: 0, reconciliation: 0 }
+      totalParas: 0,
+      sfi: { total: 0, bsr: 0, kp: 0, kb: 0, reconciliation: 0, paras: 0 },
+      nonSfi: { total: 0, bsr: 0, kp: 0, kb: 0, reconciliation: 0, paras: 0 }
     };
     entries.forEach(e => {
+      const paras = parseInt(toEnglishDigits(e.totalParas || '0')) || 0;
+      stats.totalParas += paras;
+
       if (e.paraType === 'এসএফআই') {
         stats.sfi.total++;
+        stats.sfi.paras += paras;
         if (e.letterType === 'বিএসআর') stats.sfi.bsr++;
         if (e.letterType?.includes('কার্যপত্র')) stats.sfi.kp++;
         if (e.letterType?.includes('কার্যবিবরণী')) stats.sfi.kb++;
         if (e.letterType === 'মিলিকরণ') stats.sfi.reconciliation++;
       } else if (e.paraType === 'নন এসএফআই') {
         stats.nonSfi.total++;
+        stats.nonSfi.paras += paras;
         if (e.letterType === 'বিএসআর') stats.nonSfi.bsr++;
         if (e.letterType?.includes('কার্যপত্র')) stats.nonSfi.kp++;
         if (e.letterType?.includes('কার্যবিবরণী')) stats.nonSfi.kb++;
@@ -284,36 +290,41 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <Sparkles size={14} className={showStats ? 'animate-pulse' : ''} />
                 পরিসংখ্যান <ChevronDown size={14} className="transition-transform duration-300 group-hover:rotate-180" />
               </button>
-              <div className="absolute top-full left-0 pt-2 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
-                <div className="min-w-[300px] p-5 bg-white border-2 border-slate-200 rounded-2xl shadow-2xl">
-                  <div className="flex flex-col gap-3 font-black text-slate-700">
-                    <div className="flex items-center gap-2 text-[14px]">
-                      <span className="text-blue-700 font-black">মোট চিঠি:</span>
-                      <span className="text-slate-900 font-black">{toBengaliDigits(summaryStats.total)} টি</span>
+              <div className="absolute top-full left-0 w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all">
+                <div className="space-y-5 text-left">
+                  <div className="flex items-center justify-between border-b border-slate-50 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                        <BarChart3 size={16} className="text-blue-600" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-blue-700 font-black text-[15px]">মোট চিঠি: {toBengaliDigits(summaryStats.total)} টি</span>
+                        <span className="text-emerald-600 font-bold text-[12px]">মোট অনুচ্ছেদ: {toBengaliDigits(summaryStats.totalParas)} টি</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-[13px]">
-                      <span className="text-blue-700 font-black">এসএফআই:</span>
-                      <span className="text-slate-900 font-black">
-                        {toBengaliDigits(summaryStats.sfi.total)} টি 
-                        <span className="text-slate-700 font-black ml-1">
-                          (বিএসআর: {toBengaliDigits(summaryStats.sfi.bsr)} টি, 
-                          ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.sfi.kp)} টি, 
-                          ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি,
-                          মিলিকরণ: {toBengaliDigits(summaryStats.sfi.reconciliation)} টি।
-                        </span>
-                      </span>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-blue-700 font-black text-[14px]">এসএফআই:</span>
+                        <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(summaryStats.sfi.total)} টি</span>
+                        <span className="text-emerald-600 font-bold text-[12px] ml-1">({toBengaliDigits(summaryStats.sfi.paras)} টি অনুচ্ছেদ)</span>
+                      </div>
+                      <div className="text-slate-600 font-bold text-[11px] leading-relaxed pl-4">
+                        (বিএসআর: {toBengaliDigits(summaryStats.sfi.bsr)} টি, ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.sfi.kp)} টি, ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি, মিলিকরণ: {toBengaliDigits(summaryStats.sfi.reconciliation)} টি)
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-[13px]">
-                      <span className="text-blue-700 font-black">নন এসএফআই:</span>
-                      <span className="text-slate-900 font-black">
-                        {toBengaliDigits(summaryStats.nonSfi.total)} টি 
-                        <span className="text-slate-700 font-black ml-1">
-                          (বিএসআর: {toBengaliDigits(summaryStats.nonSfi.bsr)} টি, 
-                          দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.nonSfi.kp)} টি, 
-                          দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি,
-                          মিলিকরণ: {toBengaliDigits(summaryStats.nonSfi.reconciliation)} টি।
-                        </span>
-                      </span>
+
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-blue-700 font-black text-[14px]">নন এসএফআই:</span>
+                        <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(summaryStats.nonSfi.total)} টি</span>
+                        <span className="text-emerald-600 font-bold text-[12px] ml-1">({toBengaliDigits(summaryStats.nonSfi.paras)} টি অনুচ্ছেদ)</span>
+                      </div>
+                      <div className="text-slate-600 font-bold text-[11px] leading-relaxed pl-4">
+                        (বিএসআর: {toBengaliDigits(summaryStats.nonSfi.bsr)} টি, দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.nonSfi.kp)} টি, দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি, মিলিকরণ: {toBengaliDigits(summaryStats.nonSfi.reconciliation)} টি)
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -417,7 +428,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         <div className="text-center mb-8 pt-4">
           <div className="inline-block relative">
             <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
-              চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন
+              চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন (ডিডি স্যার)
             </h1>
             <div className="flex items-center justify-center gap-4">
               <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
