@@ -33,16 +33,16 @@ const sectionTitleCls = "text-[12px] font-black text-slate-400 uppercase trackin
 /**
  * Premium Multi-level Dropdown for Letter Type
  */
-const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }: any) => {
+const PremiumLetterTypeSelect = ({ value, onChange, onMeetingTypeChange, isLayoutEditable, IDBadge }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const mainOptions = [
-    { id: 'broadsheet', label: 'বিএসআর (BSR)', value: 'বিএসআর', icon: FileText, color: 'emerald' },
-    { id: 'bilateral', label: 'দ্বিপক্ষীয় সভা', hasSub: true, icon: User, color: 'blue' },
-    { id: 'trilateral', label: 'ত্রিপক্ষীয় সভা', hasSub: true, icon: Layout, color: 'indigo' },
-    { id: 'reconciliation', label: 'মিলিকরণ', value: 'মিলিকরণ', icon: Sparkles, color: 'amber' },
+    { id: 'broadsheet', label: 'বিএসআর (BSR)', value: 'বিএসআর', icon: FileText, color: 'emerald', meetingType: 'বিএসআর' },
+    { id: 'bilateral', label: 'দ্বিপক্ষীয় সভা', hasSub: true, icon: User, color: 'blue', meetingType: 'দ্বিপক্ষীয় সভা' },
+    { id: 'trilateral', label: 'ত্রিপক্ষীয় সভা', hasSub: true, icon: Layout, color: 'indigo', meetingType: 'ত্রিপক্ষীয় সভা' },
+    { id: 'reconciliation', label: 'মিলিকরণ', value: 'মিলিকরণ', icon: Sparkles, color: 'amber', meetingType: 'মিলিকরণ' },
   ];
 
   const subOptions = [
@@ -103,6 +103,9 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
                 onClick={() => {
                   if (!opt.hasSub) {
                     onChange(opt.value);
+                    if (onMeetingTypeChange && opt.meetingType) {
+                      onMeetingTypeChange(opt.meetingType);
+                    }
                     setIsOpen(false);
                   }
                 }}
@@ -153,6 +156,9 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
                             onClick={(e) => {
                               e.stopPropagation();
                               onChange(fullVal);
+                              if (onMeetingTypeChange && opt.meetingType) {
+                                onMeetingTypeChange(opt.meetingType);
+                              }
                               setIsOpen(false);
                               setHoveredItem(null);
                             }}
@@ -409,6 +415,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     description: '',
     paraType: 'এসএফআই',
     letterType: 'বিএসআর',
+    meetingType: 'বিএসআর',
     letterNo: '',
     letterDate: '',
     totalParas: '',
@@ -533,6 +540,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         description: initialEntry.description || '',
         paraType: initialEntry.paraType || 'এসএফআই',
         letterType: initialEntry.letterType || 'বিএসআর',
+        meetingType: initialEntry.meetingType || 'বিএসআর',
         letterNo: initialEntry.letterNo || '',
         letterDate: initialEntry.letterDate || '',
         totalParas: initialEntry.totalParas || '',
@@ -687,6 +695,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       description: '',
       paraType: 'এসএফআই',
       letterType: 'বিএসআর',
+      meetingType: 'বিএসআর',
       letterNo: '',
       letterDate: '',
       totalParas: '',
@@ -928,6 +937,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               <PremiumLetterTypeSelect 
                 value={formData.letterType}
                 onChange={(val: string) => setFormData({...formData, letterType: val})}
+                onMeetingTypeChange={(val: string) => setFormData(prev => ({...prev, meetingType: val}))}
                 isLayoutEditable={isLayoutEditable}
                 IDBadge={IDBadge}
               />
