@@ -91,9 +91,9 @@ const App: React.FC = () => {
     }
     
     // Handle Direct Entry Modules
-    if (tab === 'entry' && subModule) {
-      setEntryModule(subModule);
-    } else if (tab !== 'entry') {
+    if (tab === 'entry') {
+      setEntryModule(subModule || 'correspondence');
+    } else {
       setEntryModule(null);
     }
 
@@ -666,93 +666,65 @@ const App: React.FC = () => {
                         </div>
                       )}
                     </div>
-                  ) : !registerSubModule ? (
-                    <div id="section-register-choice" className="w-full py-2 animate-in slide-in-from-left-10 duration-700 relative">
-                      <div className="space-y-5 max-w-4xl text-left">
-                        {/* Option 1: Incoming Correspondence Register */}
-                        <div 
-                          onClick={() => setRegisterSubModule('correspondence')}
-                          className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards"
-                        >
-                          <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.4)]"></div>
-                          <div className="flex items-center justify-center pl-7">
-                            <div className="w-12 h-12 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-600 transition-all duration-500">
-                              <Mail size={24} className="text-emerald-500 group-hover:text-white" />
-                            </div>
-                          </div>
-                          <div className="flex flex-col justify-center pl-8 flex-1">
-                            <h3 className="text-[20px] font-black text-white tracking-tight leading-tight group-hover:text-emerald-400 transition-colors">১. প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টার</h3>
-                            <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider mt-0.5 group-hover:text-slate-300 transition-colors">প্রাপ্ত সকল চিঠিপত্র এবং ডায়েরি এন্ট্রির পরিসংখ্যান দেখুন।</p>
-                          </div>
-                          <div className="pr-10 opacity-30 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-                            <ArrowRightCircle size={22} className="text-white" />
-                          </div>
-                        </div>
-
-                        {/* Option 2: Settlement Register */}
-                        <div 
-                          onClick={() => setRegisterSubModule('settlement')}
-                          className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards delay-100"
-                        >
-                          <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]"></div>
-                          <div className="flex items-center justify-center pl-7">
-                            <div className="w-12 h-12 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-600 transition-all duration-500">
-                              <ClipboardList size={24} className="text-blue-500 group-hover:text-white" />
-                            </div>
-                          </div>
-                          <div className="flex flex-col justify-center pl-8 flex-1">
-                            <h3 className="text-[20px] font-black text-white tracking-tight leading-tight group-hover:text-blue-400 transition-colors">২. মীমাংসা রেজিস্টার</h3>
-                            <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider mt-0.5 group-hover:text-slate-300 transition-colors">অডিট আপত্তি নিষ্পত্তি সংক্রান্ত বিস্তারিত রিপোর্ট এবং তথ্য।</p>
-                          </div>
-                          <div className="pr-10 opacity-30 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-                            <ArrowRightCircle size={22} className="text-white" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : registerSubModule === 'settlement' ? (
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-4 no-print mb-2">
-                        <button 
-                          onClick={() => setRegisterSubModule(null)}
-                          className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all flex items-center gap-2 font-black text-[11px] border border-slate-200"
-                        >
-                          <ChevronLeft size={16} /> মেনুতে ফিরুন
-                        </button>
-                      </div>
-
-                      <SettlementTable 
-                        key={`register-reset-${resetKey}`} 
-                        entries={approvedEntries} 
-                        onDelete={handleDelete} 
-                        onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
-                        showFilters={showRegisterFilters} 
-                        setShowFilters={setShowRegisterFilters} 
-                        isAdmin={isAdmin}
-                        highlightSearch={highlightSearch}
-                        onClearHighlight={() => setHighlightSearch(null)}
-                      />
-                    </div>
                   ) : (
                     <div className="animate-in fade-in duration-700">
-                      <CorrespondenceTable 
-                        entries={approvedCorrespondence} 
-                        onBack={() => setRegisterSubModule(null)} 
-                        isAdmin={isAdmin}
-                        onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
-                        onInlineUpdate={handleInlineUpdateEntry}
-                        onDelete={handleDelete}
-                        showFilters={showRegisterFilters}
-                        setShowFilters={setShowRegisterFilters}
-                        highlightSearch={highlightSearch}
-                        onClearHighlight={() => setHighlightSearch(null)}
-                      />
+                      {(registerSubModule === 'settlement') ? (
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-4 no-print mb-2">
+                            <button 
+                              onClick={() => setRegisterSubModule(null)}
+                              className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all flex items-center gap-2 font-black text-[11px] border border-slate-200"
+                            >
+                              <ChevronLeft size={16} /> মেনুতে ফিরুন
+                            </button>
+                          </div>
+
+                          <SettlementTable 
+                            key={`register-reset-${resetKey}`} 
+                            entries={approvedEntries} 
+                            onDelete={handleDelete} 
+                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
+                            showFilters={showRegisterFilters} 
+                            setShowFilters={setShowRegisterFilters} 
+                            isAdmin={isAdmin}
+                            highlightSearch={highlightSearch}
+                            onClearHighlight={() => setHighlightSearch(null)}
+                          />
+                        </div>
+                      ) : (
+                        <CorrespondenceTable 
+                          entries={approvedCorrespondence} 
+                          onBack={() => setRegisterSubModule(null)} 
+                          isAdmin={isAdmin}
+                          onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
+                          onInlineUpdate={handleInlineUpdateEntry}
+                          onDelete={handleDelete}
+                          showFilters={showRegisterFilters}
+                          setShowFilters={setShowRegisterFilters}
+                          highlightSearch={highlightSearch}
+                          onClearHighlight={() => setHighlightSearch(null)}
+                        />
+                      )}
                     </div>
                   )}
                 </div>
               )}
               
-              {activeTab === 'return' && <ReturnView key={`return-reset-${resetKey}`} entries={approvedEntries} correspondenceEntries={approvedCorrespondence} cycleLabel={cycleLabelBengali} prevStats={currentPrevStats} setPrevStats={handleSetCurrentPrevStats} isAdmin={isAdmin} selectedReportType={reportType} setSelectedReportType={setReportType} />}
+              {activeTab === 'return' && (
+                <ReturnView 
+                  key={`return-reset-${resetKey}`} 
+                  entries={approvedEntries} 
+                  correspondenceEntries={approvedCorrespondence} 
+                  cycleLabel={cycleLabelBengali} 
+                  prevStats={currentPrevStats} 
+                  setPrevStats={handleSetCurrentPrevStats} 
+                  isAdmin={isAdmin} 
+                  selectedReportType={reportType} 
+                  setSelectedReportType={setReportType}
+                  showFilters={showRegisterFilters}
+                  setShowFilters={setShowRegisterFilters}
+                />
+              )}
               
               {activeTab === 'archive' && <DocumentArchive isAdmin={isAdmin} />}
 
