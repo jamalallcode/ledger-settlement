@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import React from 'react';
-import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
+import { SettlementEntry, CumulativeStats, MinistryPrevStats, CorrespondenceEntry } from '../types';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP } from '../constants';
 import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid } from 'lucide-react';
@@ -19,7 +19,7 @@ import QR_6 from './QR_6';
 
 interface ReturnViewProps {
   entries: SettlementEntry[];
-  correspondenceEntries?: any[];
+  correspondenceEntries?: CorrespondenceEntry[];
   cycleLabel: string;
   onDownloadPDF?: () => void;
   isGeneratingPDF?: boolean;
