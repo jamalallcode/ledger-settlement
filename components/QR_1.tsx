@@ -75,21 +75,21 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
       </div>
 
       {/* Table Section */}
-      <div className="table-container qr-table-container overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
+      <div className="table-container qr-table-container overflow-auto border border-slate-400 shadow-sm rounded-lg">
         <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">
-              <th rowSpan={2} className={thCls}>ক্রঃ নং</th>
+              <th rowSpan={2} className={`${thCls} w-[34px]`}>ক্রঃ নং</th>
               <th rowSpan={2} className={`${thCls} w-[12%]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
-              <th rowSpan={2} className={thCls}>দ্বি-পক্ষীয় সভার সংখ্যা</th>
+              <th rowSpan={2} className={`${thCls} w-[62px]`}>দ্বি-পক্ষীয় সভার সংখ্যা</th>
               <th rowSpan={2} className={thCls}>সভা অনুষ্ঠানের তারিখ</th>
-              <th rowSpan={2} className={thCls}>আলোচিত অনুচ্ছেদ সংখ্যা</th>
+              <th rowSpan={2} className={`${thCls} w-[62px]`}>আলোচিত অনুচ্ছেদ সংখ্যা</th>
               <th rowSpan={2} className={thCls}>সুপারিশকৃত অনুচ্ছেদ সংখ্যা</th>
               <th rowSpan={2} className={thCls}>কার্য বিবরণী প্রাপ্তির তারিখ</th>
               <th rowSpan={2} className={thCls}>মীমাংসাপত্র জারীর তারিখ</th>
               <th rowSpan={2} className={thCls}>মীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
               <th colSpan={3} className={thCls}>সভার প্রেক্ষিতে আদায় সমন্বয়ের পরিমাণ</th>
-              <th rowSpan={2} className={thCls}>মন্তব্য</th>
+              <th rowSpan={2} className={`${thCls.replace('p-2', 'p-1')} w-[42px]`}>মন্তব্য</th>
             </tr>
             <tr className="h-[38px]">
               <th className={thCls}>আদায়</th>
@@ -98,7 +98,11 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
             </tr>
             <tr className="h-[32px]">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(n => (
-                <th key={n} className={thCls + " text-[10px] font-bold text-slate-500"}>{toBengaliDigits(n.toString())}</th>
+                <th key={n} className={`${
+                  n === 13 ? thCls.replace('p-2', 'p-1') + " w-[42px]" : 
+                  (n === 3 || n === 5) ? thCls + " w-[62px]" :
+                  thCls
+                } text-[10px] font-bold text-slate-500`}>{toBengaliDigits(n.toString())}</th>
               ))}
             </tr>
           </thead>
@@ -109,9 +113,9 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
                 <td className={tdCls}>
                   <HighlightText text={m} searchTerm={searchTerm} />
                 </td>
-                <td className={numTdCls}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("১") : ""}</td>
+                <td className={`${numTdCls} w-[62px]`}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("১") : ""}</td>
                 <td className={numTdCls}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("১৬-০৭-২৫") : ""}</td>
-                <td className={numTdCls}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("৩০") : ""}</td>
+                <td className={`${numTdCls} w-[62px]`}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("৩০") : ""}</td>
                 <td className={numTdCls}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("২৬") : ""}</td>
                 <td className={numTdCls}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("১৮-০৮-২৫") : ""}</td>
                 <td className={numTdCls}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("০৭-১০-২৫") : ""}</td>
@@ -119,10 +123,38 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
                 <td className={numTdCls}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("২৫৫৭৭৪৩") : ""}</td>
                 <td className={numTdCls}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("১৩৭৮৭৪৮১৮") : ""}</td>
                 <td className={numTdCls}></td>
-                <td className={tdCls}></td>
+                <td className={tdCls.replace('p-2', 'p-1') + " w-[42px]"}></td>
               </tr>
             ))}
           </tbody>
+          <tfoot>
+            <tr className="bg-slate-200 font-bold">
+              <td className={numTdCls} colSpan={2}>মোট</td>
+              <td className={`${numTdCls} w-[62px]`}>
+                {toBengaliDigits(filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length.toString())}
+              </td>
+              <td className={numTdCls}></td>
+              <td className={`${numTdCls} w-[62px]`}>
+                {toBengaliDigits((filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length * 30).toString())}
+              </td>
+              <td className={numTdCls}>
+                {toBengaliDigits((filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length * 26).toString())}
+              </td>
+              <td className={numTdCls}></td>
+              <td className={numTdCls}></td>
+              <td className={numTdCls}>
+                {toBengaliDigits((filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length * 140432661).toString())}
+              </td>
+              <td className={numTdCls}>
+                {toBengaliDigits((filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length * 2557743).toString())}
+              </td>
+              <td className={numTdCls}>
+                {toBengaliDigits((filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length * 137874818).toString())}
+              </td>
+              <td className={numTdCls}></td>
+              <td className={tdCls.replace('p-2', 'p-1') + " w-[42px]"}></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
 
