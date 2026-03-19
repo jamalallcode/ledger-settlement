@@ -12,7 +12,7 @@ import DocumentArchive from './components/DocumentArchive';
 import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
-import { SettlementEntry, GroupOption, CumulativeStats } from './types';
+import { SettlementEntry, CorrespondenceEntry, GroupOption, CumulativeStats } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
 import { supabase } from './lib/supabase';
@@ -31,10 +31,10 @@ const generateId = () => {
 
 const App: React.FC = () => {
   const [entries, setEntries] = useState<SettlementEntry[]>([]);
-  const [correspondenceEntries, setCorrespondenceEntries] = useState<any[]>([]);
+  const [correspondenceEntries, setCorrespondenceEntries] = useState<CorrespondenceEntry[]>([]);
   const [activeTab, setActiveTab] = useState('landing'); 
   const [resetKey, setResetKey] = useState(0); 
-  const [editingEntry, setEditingEntry] = useState<any | null>(null);
+  const [editingEntry, setEditingEntry] = useState<SettlementEntry | CorrespondenceEntry | null>(null);
   const [isLockedMode, setIsLockedMode] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
