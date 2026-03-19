@@ -117,19 +117,19 @@ const QR_3: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
     const totals = { pC: 0, pA: 0, cC: 0, cA: 0, tC: 0, sC: 0, sA: 0, fC: 0, fA: 0 };
 
     return (
-      <div className="table-container qr-table-container mb-10 overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
+      <div className="table-container qr-table-container mb-10 overflow-auto border border-slate-400 shadow-sm rounded-lg">
         <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">
-              <th rowSpan={2} className={`${thCls} w-[calc(5%-2px)]`}>ক্রঃ নং</th>
+              <th rowSpan={2} className={`${thCls} w-10`}>ক্রঃ নং</th>
               <th rowSpan={2} className={`${thCls} w-[calc(12%-2px)]`}>মন্ত্রণালয়ের নাম</th>
-              <th rowSpan={2} className={`${thCls} w-[12%]`}>সংস্থার নাম</th>
+              <th rowSpan={2} className={`${thCls} w-[calc(12%-2px)]`}>সংস্থার নাম</th>
               <th colSpan={2} className={thCls}>{getMonthNameBN(prevMonthDate)}/{formatYearBN(prevMonthDate)} পর্যন্ত অমীমাংসিত অডিট আপত্তি</th>
               <th colSpan={2} className={thCls}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত উত্থাপিত অডিট আপত্তি</th>
               <th rowSpan={2} className={thCls}>মোট অডিট আপত্তি</th>
               <th colSpan={2} className={thCls}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত মীমাংসিত অডিট আপত্তি</th>
               <th colSpan={2} className={thCls}>{getMonthNameBN(endDate)}/{formatYearBN(endDate)} পর্যন্ত অমীমাংসিত অডিট আপত্তি</th>
-              <th rowSpan={2} className={thCls}>মন্তব্য</th>
+              <th rowSpan={2} className={`${thCls} w-[calc(8%-2px)]`}>মন্তব্য</th>
             </tr>
             <tr className="h-[38px]">
               <th className={thCls}>সংখ্যা</th>
@@ -189,7 +189,7 @@ const QR_3: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
                 })}
               </React.Fragment>
             ))}
-            <tr className="bg-slate-100 font-black sticky bottom-0 z-10">
+            <tr className={`font-black h-[28px] qr-sticky-footer ${tableId === 'table-2' ? 'qr-sticky-footer-offset' : 'qr-sticky-footer-bottom'}`}>
               <td colSpan={3} className={tdCls + " text-right"}>মোট</td>
               <td className={numTdCls}>{toBengaliDigits(totals.pC.toString())}</td>
               <td className={numTdCls}>{toBengaliDigits(totals.pA.toString())}</td>
@@ -203,7 +203,7 @@ const QR_3: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
               <td className={tdCls}></td>
             </tr>
             {tableId === 'table-2' && (
-               <tr className="bg-slate-200 font-black">
+               <tr className="font-black h-[28px] qr-sticky-footer qr-sticky-footer-bottom">
                 <td colSpan={3} className={tdCls + " text-right"}>সর্বমোট</td>
                 <td colSpan={10} className={tdCls}></td>
               </tr>
