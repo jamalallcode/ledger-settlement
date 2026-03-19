@@ -3,6 +3,7 @@ import React from 'react';
 import { SettlementEntry } from '../types.ts';
 import { Trash2, Pencil, Calendar, Printer, CheckCircle2, ChevronDown, ChevronUp, FileText, Fingerprint, Banknote, ListOrdered, Archive, MapPin, CalendarDays, Sparkles, ClipboardList, Filter, X, Search, LayoutGrid, CalendarSearch, Check, ShieldCheck, XCircle, AlertCircle, MessageSquare } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, formatDateBN, toEnglishDigits } from '../utils/numberUtils.ts';
+import HighlightText from './HighlightText';
 import { OFFICE_HEADER } from '../constants.ts';
 import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper.ts';
 import { format, addMonths } from 'date-fns';
@@ -776,13 +777,48 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                                   <td rowSpan={paras.length} onClick={() => toggleExpand(entry.id)} className={tdBase + " cursor-pointer group-hover:bg-blue-50/50 transition-all text-left p-3"}>
                                     <div className="flex items-start justify-between">
                                       <div className="space-y-1 text-left flex-1">
-                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">মন্ত্রণালয়:</span> <span className="font-bold text-slate-900">{entry.ministryName}</span></p>
-                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">এনটিটি:</span> <span className="font-bold text-slate-900">{entry.entityName}</span></p>
-                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">শাখা:</span> <span className="font-bold text-slate-900">{entry.branchName}</span></p>
-                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">নিরীক্ষা সাল:</span> <span className="font-bold text-slate-900">{toBengaliDigits(entry.auditYear)}</span></p>
-                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">পত্র নং ও তারিখ:</span> <span className="font-bold text-slate-900">{formatLetterInfoForDisplay(entry.letterNoDate)}</span></p>
-                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">ডায়েরি নং ও তারিখ:</span> <span className="font-bold text-slate-900">{formatDiaryInfoForDisplay(entry.workpaperNoDate)}</span></p>
-                                        <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">জারিপত্র নং ও তারিখ:</span> <span className="font-bold text-slate-900">{formatIssueInfoForDisplay(entry.issueLetterNoDate)}</span></p>
+                                        <p className="text-[10px] leading-tight">
+                                          <span className="font-black text-emerald-700">মন্ত্রণালয়:</span>{" "}
+                                          <span className="font-bold text-slate-900">
+                                            <HighlightText text={entry.ministryName} searchTerm={searchTerm} />
+                                          </span>
+                                        </p>
+                                        <p className="text-[10px] leading-tight">
+                                          <span className="font-black text-emerald-700">এনটিটি:</span>{" "}
+                                          <span className="font-bold text-slate-900">
+                                            <HighlightText text={entry.entityName} searchTerm={searchTerm} />
+                                          </span>
+                                        </p>
+                                        <p className="text-[10px] leading-tight">
+                                          <span className="font-black text-emerald-700">শাখা:</span>{" "}
+                                          <span className="font-bold text-slate-900">
+                                            <HighlightText text={entry.branchName} searchTerm={searchTerm} />
+                                          </span>
+                                        </p>
+                                        <p className="text-[10px] leading-tight">
+                                          <span className="font-black text-emerald-700">নিরীক্ষা সাল:</span>{" "}
+                                          <span className="font-bold text-slate-900">
+                                            <HighlightText text={toBengaliDigits(entry.auditYear)} searchTerm={searchTerm} />
+                                          </span>
+                                        </p>
+                                        <p className="text-[10px] leading-tight">
+                                          <span className="font-black text-emerald-700">পত্র নং ও তারিখ:</span>{" "}
+                                          <span className="font-bold text-slate-900">
+                                            <HighlightText text={formatLetterInfoForDisplay(entry.letterNoDate)} searchTerm={searchTerm} />
+                                          </span>
+                                        </p>
+                                        <p className="text-[10px] leading-tight">
+                                          <span className="font-black text-emerald-700">ডায়েরি নং ও তারিখ:</span>{" "}
+                                          <span className="font-bold text-slate-900">
+                                            <HighlightText text={formatDiaryInfoForDisplay(entry.workpaperNoDate)} searchTerm={searchTerm} />
+                                          </span>
+                                        </p>
+                                        <p className="text-[10px] leading-tight">
+                                          <span className="font-black text-emerald-700">জারিপত্র নং ও তারিখ:</span>{" "}
+                                          <span className="font-bold text-slate-900">
+                                            <HighlightText text={formatIssueInfoForDisplay(entry.issueLetterNoDate)} searchTerm={searchTerm} />
+                                          </span>
+                                        </p>
                                       </div>
                                       <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
                                         {isExpanded ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}
@@ -838,8 +874,18 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                                 <div className="flex items-start justify-between">
                                   <div className="space-y-1 text-left flex-1">
                                     <p className="text-[10px] leading-tight font-black text-red-600 underline underline-offset-2 tracking-tighter">উত্থাপিত এন্ট্রি (কোন অনুচ্ছেদ নেই)</p>
-                                    <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">সংস্থা:</span> <span className="font-bold text-slate-900">{entry.entityName}</span></p>
-                                    <p className="text-[10px] leading-tight"><span className="font-black text-emerald-700">জারিপত্র:</span> <span className="font-bold text-slate-900">{formatIssueInfoForDisplay(entry.issueLetterNoDate)}</span></p>
+                                    <p className="text-[10px] leading-tight">
+                                      <span className="font-black text-emerald-700">সংস্থা:</span>{" "}
+                                      <span className="font-bold text-slate-900">
+                                        <HighlightText text={entry.entityName} searchTerm={searchTerm} />
+                                      </span>
+                                    </p>
+                                    <p className="text-[10px] leading-tight">
+                                      <span className="font-black text-emerald-700">জারিপত্র:</span>{" "}
+                                      <span className="font-bold text-slate-900">
+                                        <HighlightText text={formatIssueInfoForDisplay(entry.issueLetterNoDate)} searchTerm={searchTerm} />
+                                      </span>
+                                    </p>
                                   </div>
                                   <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
                                     {isExpanded ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}
@@ -905,7 +951,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
           </tbody>
           {!isAdminView && (
             <tfoot className="z-[100]">
-              <tr className="h-[45px] bg-slate-900 text-white shadow-[0_-10px_20px_rgba(0,0,0,0.1)]">
+              <tr className="h-[45px] bg-black text-white shadow-[0_-10px_20px_rgba(0,0,0,0.1)]">
                 <td colSpan={2} className={footerTdCls + " text-white uppercase tracking-wider"}>সর্বমোট (ফিল্টার ডাটা):</td>
                 <td className={footerTdCls + " text-amber-400"}>{toBengaliDigits(grandTotals.paraCount)}</td><td className={footerTdCls + " text-amber-400"}>{toBengaliDigits(Math.round(grandTotals.inv))}</td>
                 <td className={footerTdCls + " text-amber-400"}>{toBengaliDigits(grandTotals.raisedCount)}</td><td className={footerTdCls + " text-amber-400"}>{toBengaliDigits(Math.round(grandTotals.raisedAmount))}</td>
