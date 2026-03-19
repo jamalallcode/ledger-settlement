@@ -79,7 +79,7 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
         <p>শাখার নামঃ নন এসএফআই শাখা।</p>
       </div>
 
-      <div className="table-container qr-table-container overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
+      <div className="table-container qr-table-container overflow-auto border border-slate-400 shadow-sm rounded-lg">
         <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">
@@ -127,7 +127,7 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
                 <td className={numTdCls}>{toBengaliDigits(row.remarks)}</td>
               </tr>
             ))}
-            <tr className="bg-slate-100 font-black sticky bottom-0 z-10">
+            <tr className="font-black h-[28px] qr-sticky-footer qr-sticky-footer-bottom">
               <td colSpan={2} className={tdCls + " text-center font-black"}>মোট</td>
               <td className={numTdCls}>{toBengaliDigits(totals.amount.toString())}</td>
               <td className={numTdCls}>{toBengaliDigits(totals.auditRec.toString())}</td>
