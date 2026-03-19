@@ -70,7 +70,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   }, [reportData, searchTerm, filterMinistry]);
 
   const filteredGrandTotals = useMemo(() => {
-    if (!searchTerm.trim()) return grandTotals;
+    if (!searchTerm.trim() && (!filterMinistry || filterMinistry === 'সকল')) return grandTotals;
     
     return filteredReportData.reduce((acc: any, m: any) => {
       const mTotals = m.entityRows.reduce((mAcc: any, row: any) => {
