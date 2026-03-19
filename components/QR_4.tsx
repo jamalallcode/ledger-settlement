@@ -110,13 +110,17 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
   const thCls = "border-r border-b border-slate-400 p-1 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center";
   const tdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-700 align-middle";
   const numTdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-700 text-center align-middle font-bold";
+  
+  // Footer-specific classes without borders to avoid double borders with inset box-shadow
+  const footerTdCls = "p-1 text-[10px] text-slate-700 align-middle";
+  const footerNumTdCls = "p-1 text-[10px] text-slate-700 text-center align-middle font-bold";
 
   const renderTable = (data: any[], tableId: string) => {
     let globalIdx = 1;
     const totals = { pR: 0, cR: 0, tR: 0, pS: 0, cS: 0, tS: 0, pnd: 0, cSA: 0, pndA: 0 };
 
     return (
-      <div className="table-container qr-table-container mb-10 overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
+      <div className="table-container qr-table-container mb-10 overflow-y-scroll overflow-x-auto border border-slate-400 shadow-sm rounded-lg">
         <table className="w-full border-separate border-spacing-0 min-w-[1000px] !table-auto">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">
@@ -173,30 +177,30 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
                 })}
               </React.Fragment>
             ))}
-            <tr className="bg-slate-100 font-black sticky bottom-0 z-10">
-              <td colSpan={3} className={tdCls + " text-right"}>মোট</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.pR.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.cR.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.tR.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.pS.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.cS.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.tS.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.pnd.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.cSA.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.pndA.toString())}</td>
+            <tr className={`font-black h-[28px] qr-sticky-footer ${tableId === 'table-2' ? 'qr-sticky-footer-offset' : 'qr-sticky-footer-bottom'}`}>
+              <td colSpan={3} className={footerTdCls + " text-right"}>মোট</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.pR.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.cR.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.tR.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.pS.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.cS.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.tS.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.pnd.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.cSA.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.pndA.toString())}</td>
             </tr>
             {tableId === 'table-2' && (
-               <tr className="bg-slate-200 font-black">
-                <td colSpan={3} className={tdCls + " text-right"}>সর্বমোট</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.pR).toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.cR).toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.tR).toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.pS).toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.cS).toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.tS).toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.pnd).toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.cSA).toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.pndA).toString())}</td>
+               <tr className="font-black h-[28px] qr-sticky-footer qr-sticky-footer-bottom">
+                <td colSpan={3} className={footerTdCls + " text-right"}>সর্বমোট</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.pR).toString())}</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.cR).toString())}</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.tR).toString())}</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.pS).toString())}</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.cS).toString())}</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.tS).toString())}</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.pnd).toString())}</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.cSA).toString())}</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.pndA).toString())}</td>
               </tr>
             )}
           </tbody>
