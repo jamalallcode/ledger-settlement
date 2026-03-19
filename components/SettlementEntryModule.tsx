@@ -31,6 +31,7 @@ const SegmentedInput = ({
   noSetter, daySetter, monthSetter, yearSetter, dayRef, monthRef, yearRef, 
   isFocused, focusSetter, extra, error, warning 
 }: any) => {
+  const datePickerRef = useRef<HTMLInputElement>(null);
   
   const handleSegmentChange = (val: string, type: 'day'|'month'|'year', setter: (v: string) => void, nextRef?: React.RefObject<HTMLInputElement>) => {
     const cleaned = toEnglishDigits(val).replace(/[^0-9]/g, '');
@@ -117,6 +118,30 @@ const SegmentedInput = ({
               onBlur={(e) => handleSegmentBlur(e.target.value, 'year', yearSetter)}
               placeholder="...."
             />
+          </div>
+          <div className="relative flex items-center justify-center ml-2 mr-4 h-8 shrink-0">
+            <input 
+              type="date" 
+              ref={datePickerRef}
+              className="absolute inset-0 opacity-0 cursor-pointer z-20 w-full h-full"
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val) {
+                  const [y, m, d] = val.split('-');
+                  daySetter(toBengaliDigits(d));
+                  monthSetter(toBengaliDigits(m));
+                  yearSetter(toBengaliDigits(y));
+                }
+              }}
+              onClick={(e) => {
+                try {
+                  (e.target as any).showPicker();
+                } catch (err) {
+                  // Fallback for older browsers
+                }
+              }}
+            />
+            <Calendar size={18} className="text-slate-400" />
           </div>
         </div>
       </div>
