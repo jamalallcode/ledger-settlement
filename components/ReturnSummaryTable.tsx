@@ -113,7 +113,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
       
       return acc;
     }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0, sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0, nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0 });
-  }, [filteredReportData, searchTerm, grandTotals]);
+  }, [filteredReportData, searchTerm, grandTotals, filterMinistry]);
 
   const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
@@ -151,7 +151,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                             <BarChart3 size={16} className="text-blue-600" />
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-blue-700 font-black text-[15px]">মোট নিষ্পত্তি: {toBengaliDigits(filteredGrandTotals.cSC)} টি</span>
+                            <span className="text-blue-700 font-black text-[15px]">মোট নিষ্পত্তি: {toBengaliDigits(filteredGrandTotals.cSFIC + filteredGrandTotals.cNonSFIC)} টি</span>
                             <span className="text-emerald-600 font-bold text-[12px]">মোট নিষ্পত্তিকৃত টাকা: {toBengaliDigits(Math.round(filteredGrandTotals.cSA))} টাকা</span>
                           </div>
                         </div>
