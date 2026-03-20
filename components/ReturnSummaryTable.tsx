@@ -257,9 +257,54 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             </div>
           </div>
         </div>
-          <div className="mt-4 flex justify-center">
+          <div className="mt-4 flex justify-center mb-6">
             <div className="inline-flex items-center gap-3 px-6 py-1.5 bg-slate-900 text-white rounded-xl text-[10px] font-black border border-slate-700 shadow-md">
               <span className="text-blue-400">{selectedReportType}</span> | {toBengaliDigits(activeCycle.label)}
+            </div>
+          </div>
+
+          {/* Ministry-wise Summary Table */}
+          <div className="mb-8 px-4">
+            <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden shadow-sm max-w-2xl mx-auto">
+              <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 flex items-center justify-between">
+                <h3 className="text-[12px] font-black text-slate-700">মন্ত্রণালয় ভিত্তিক সারসংক্ষেপ</h3>
+                <span className="text-[10px] text-slate-500 font-bold">নিষ্পত্তি (পূর্ণাঙ্গ)</span>
+              </div>
+              <table className="w-full border-collapse text-[11px]">
+                <thead>
+                  <tr className="bg-slate-50/50">
+                    <th className="border-b border-r border-slate-200 p-2 text-left font-black text-slate-600">মন্ত্রণালয়/বিভাগ</th>
+                    <th className="border-b border-r border-slate-200 p-2 text-center font-black text-slate-600">সংখ্যা (টি)</th>
+                    <th className="border-b border-slate-200 p-2 text-right font-black text-slate-600">টাকার পরিমাণ (টাকা)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ministryStats
+                    .sort((a, b) => b.count - a.count)
+                    .map((m) => (
+                      <tr key={m.ministry} className="hover:bg-white transition-colors">
+                        <td className="border-b border-r border-slate-100 p-2 font-bold text-slate-700">
+                          {m.ministry}
+                        </td>
+                        <td className="border-b border-r border-slate-100 p-2 text-center font-black text-blue-700">
+                          {toBengaliDigits(m.count)}
+                        </td>
+                        <td className="border-b border-slate-100 p-2 text-right font-black text-slate-900">
+                          {toBengaliDigits(m.amount)}
+                        </td>
+                      </tr>
+                    ))}
+                  <tr className="bg-slate-100/80 font-black">
+                    <td className="p-2 text-center text-slate-700">সর্বমোট</td>
+                    <td className="p-2 text-center text-blue-800 border-r border-slate-200">
+                      {toBengaliDigits(filteredGrandTotals.cSC)}
+                    </td>
+                    <td className="p-2 text-right text-slate-900">
+                      {toBengaliDigits(filteredGrandTotals.cSA)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
