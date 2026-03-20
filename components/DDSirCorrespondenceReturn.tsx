@@ -280,7 +280,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
   return (
     <div id="dd-sir-report-container" className="space-y-6 py-2 w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view">
-      <IDBadge id="dd-sir-report-container" />
+      <IDBadge id="dd-sir-report-container" isLayoutEditable={isLayoutEditable} />
       {/* Control Bar (No Print) */}
       {showFilters && (
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
@@ -437,6 +437,13 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
               চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন (ডিডি স্যার)
             </h1>
+            
+            <div className="mt-4 flex justify-center mb-4">
+              <div className="inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
+                <span className="text-blue-400">শাখা ভিত্তিক {reportingDateBN} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।</span>
+              </div>
+            </div>
+
             <div className="flex items-center justify-center gap-4">
               <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
               <div className="w-2 h-2 rounded-full bg-blue-600"></div>

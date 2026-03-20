@@ -5,6 +5,7 @@ import {
   ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send, FileEdit, ClipboardCheck
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
+import IDBadge from './IDBadge';
 import { getCycleForDate } from '../utils/cycleHelper';
 import { getDateError } from '../utils/dateValidation';
 import { SFI_RECEIVERS } from '../utils/sfi';
@@ -308,27 +309,11 @@ const SegmentedInput = ({
 
   const hiddenInputRef = useRef<HTMLInputElement>(null);
 
-  const IDBadge = ({ id }: { id: string }) => {
-    const [copied, setCopied] = useState(false);
-    if (!isLayoutEditable) return null;
-    const handleCopy = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      navigator.clipboard.writeText(id);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    };
-    return (
-      <span onClick={handleCopy} className={`absolute -top-3 left-2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 z-[300] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'ring-2 ring-emerald-500 bg-emerald-600' : ''}`}>
-        {copied ? 'COPIED!' : `#${id}`}
-      </span>
-    );
-  };
-
   const isFilled = dayValue && monthValue && yearValue;
 
   return (
     <div className={`p-5 rounded-2xl border transition-all hover:shadow-lg relative min-w-0 ${error ? 'bg-red-50 border-red-200' : `bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`}`}>
-      <IDBadge id={id} />
+      <IDBadge id={id} isLayoutEditable={isLayoutEditable} />
       <label className="block text-[13px] font-black text-slate-700 mb-2 flex items-center gap-2 truncate">
         {/* Adjusted Serial and Icon Position as per request */}
         <span className={numBadge}>{num}</span> <Icon size={14} className={`${error ? 'text-red-600' : `text-${color}-600`} shrink-0`} /> <span className="truncate">{label}</span>
@@ -763,25 +748,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const receiptDateError = getDateError(formData.receiptDate, formData.diaryDate, 'শাখায় প্রাপ্তির তারিখ', 'ডায়েরি তারিখ');
   const receivedDateError = getDateError(formData.receivedDate, formData.receiptDate, 'গ্রহণের তারিখ', 'শাখায় প্রাপ্তির তারিখ');
 
-  const IDBadge = ({ id }: { id: string }) => {
-    const [copied, setCopied] = useState(false);
-    if (!isLayoutEditable) return null;
-    const handleCopy = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      navigator.clipboard.writeText(id);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    };
-    return (
-      <span onClick={handleCopy} title="Click to copy ID" className={`absolute -top-3 left-2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 z-[300] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'ring-2 ring-emerald-500 bg-emerald-600' : ''}`}>
-        {copied ? 'COPIED!' : `#${id}`}
-      </span>
-    );
-  };
-
   return (
     <div id="form-container-correspondence" className="bg-white p-4 md:p-10 rounded-[2.5rem] border border-slate-200 shadow-2xl animate-landing-premium max-w-7xl mx-auto overflow-x-hidden relative">
-      <IDBadge id="view-correspondence-form" />
+      <IDBadge id="view-correspondence-form" isLayoutEditable={isLayoutEditable} />
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-10 pb-6 border-b border-slate-100 gap-4 relative">

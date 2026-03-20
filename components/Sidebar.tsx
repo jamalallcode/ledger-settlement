@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3, Settings, ArrowRight } from 'lucide-react';
+import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3, Settings, ArrowRight, Users } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 
 interface SidebarProps {
@@ -132,6 +132,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'entry', label: 'নতুন এন্ট্রি', icon: FilePlus2, badgeId: 'side-nav-entry', isDropdown: true },
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter, badgeId: 'side-nav-register', isDropdown: true },
     { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return', isDropdown: true },
+    { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, badgeId: 'side-nav-voting' },
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, badgeId: 'side-nav-archive' },
   ];
 
@@ -417,17 +418,48 @@ const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Dashboard Section - Moved out of Settings */}
             {isAdmin && (
-              <div className="pt-1 relative">
-                <button 
-                  id="side-nav-dashboard" 
-                  onClick={() => setActiveTab('dashboard')} 
-                  className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
-                >
-                  <IDBadge id="side-nav-dashboard" />
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px]">ড্যাশবোর্ড</span>
-                  </div>
-                </button>
+              <div className="space-y-0.5">
+                <div className="pt-1 relative">
+                  <button 
+                    id="side-nav-receivers" 
+                    onClick={() => setActiveTab('setup_receivers')} 
+                    className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group ${activeTab === 'setup_receivers' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
+                  >
+                    <IDBadge id="side-nav-receivers" />
+                    <div className="flex items-center gap-1.5">
+                      <Users size={12} className={activeTab === 'setup_receivers' ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'} />
+                      <span className="text-[10px]">প্রাপক ব্যবস্থাপনা</span>
+                    </div>
+                  </button>
+                </div>
+
+                <div className="pt-1 relative">
+                  <button 
+                    id="side-nav-initial-balance" 
+                    onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক')} 
+                    className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group ${activeTab === 'return' && reportType === 'প্রারম্ভিক জের সেটআপ: মাসিক' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
+                  >
+                    <IDBadge id="side-nav-initial-balance" />
+                    <div className="flex items-center gap-1.5">
+                      <ShieldCheck size={12} className={activeTab === 'return' && reportType === 'প্রারম্ভিক জের সেটআপ: মাসিক' ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'} />
+                      <span className="text-[10px]">জের সেটআপ</span>
+                    </div>
+                  </button>
+                </div>
+
+                <div className="pt-1 relative">
+                  <button 
+                    id="side-nav-dashboard" 
+                    onClick={() => setActiveTab('dashboard')} 
+                    className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
+                  >
+                    <IDBadge id="side-nav-dashboard" />
+                    <div className="flex items-center gap-1.5">
+                      <LayoutDashboard size={12} className={activeTab === 'dashboard' ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'} />
+                      <span className="text-[10px]">ড্যাশবোর্ড</span>
+                    </div>
+                  </button>
+                </div>
               </div>
             )}
           </nav>
