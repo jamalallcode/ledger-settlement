@@ -237,6 +237,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       const nonSfiBSR = nonSfiEntries.filter(e => !e.isMeeting || e.meetingType === 'বিএসআর').length;
       const nonSfiBi = nonSfiEntries.filter(e => e.meetingType === 'দ্বিপক্ষীয় সভা').length;
       const cycleSettledParasCount = group.entries.reduce((acc, ent) => acc + (ent.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').length || 0), 0);
+      const cycleSettledAmount = group.entries.reduce((acc, ent) => acc + (ent.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').reduce((sum, p) => sum + (p.involvedAmount || 0), 0) || 0), 0);
       
       const getSettledDetails = (typeEntries: SettlementEntry[]) => {
         const grouped = typeEntries.reduce((acc, ent) => {
@@ -261,6 +262,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         nonSfiBSR,
         nonSfiBi,
         cycleSettledParasCount,
+        cycleSettledAmount,
         sfiSettled,
         nonSfiSettled
       };
@@ -729,6 +731,12 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                                     <CheckCircle2 size={14} className="text-emerald-600" />
                                     <span>মোট মীমাংসিত অনুচ্ছেদ:</span>
                                     <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">{toBengaliDigits(stats.cycleSettledParasCount)} টি</span>
+                                 </div>
+                                 <div className="w-[1px] h-4 bg-slate-300"></div>
+                                 <div className="flex items-center gap-2">
+                                    <Banknote size={14} className="text-emerald-600" />
+                                    <span>টাকার পরিমাণ:</span>
+                                    <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">{toBengaliDigits(Math.round(stats.cycleSettledAmount))} টাকা</span>
                                  </div>
                                  <div className="w-[1px] h-4 bg-slate-300"></div>
                                  <div className="flex items-center gap-2">
