@@ -13,6 +13,7 @@ interface ReturnSummaryTableProps {
   setSelectedReportType: (type: string | null) => void;
   isAdmin: boolean;
   HistoricalFilter: React.FC;
+  IDBadge: React.FC<{ id: string }>;
   showFilters: boolean;
   searchTerm: string;
   filterMinistry: string;
@@ -137,8 +138,10 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
 
   return (
     <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative">
+      <IDBadge id="section-report-summary" />
       {showFilters && (
         <div id="summary-header-controls" className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print relative">
+          <IDBadge id="summary-header-controls" />
           
           <div className="flex items-center">
             {selectedReportType === 'মাসিক রিটারন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' && (
@@ -156,12 +159,12 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                 </button>
 
                 {isStatsHovered && (
-                  <div className="absolute top-full left-0 w-full bg-white rounded-xl shadow-2xl border border-slate-100 p-2.5 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-1">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 bg-blue-50 rounded-lg flex items-center justify-center">
-                            <BarChart3 size={14} className="text-blue-600" />
+                  <div className="absolute top-full left-0 w-full bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                            <BarChart3 size={20} className="text-blue-600" />
                           </div>
                           <div className="flex flex-col">
                             <span className="text-blue-900 font-black text-[16px]">সর্বমোট নিষ্পত্তি: {toBengaliDigits(filteredGrandTotals.cSFIC + filteredGrandTotals.cNonSFIC)} টি</span>
@@ -170,55 +173,61 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                         </div>
                       </div>
 
-                      <div className="space-y-1 max-h-[200px] overflow-y-auto pr-1 no-scrollbar">
+                      <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
                         {ministryStats.length > 0 ? (
                           ministryStats.map((ms, idx) => (
-                            <div key={idx} className="p-1.5 bg-slate-50 rounded-lg border border-slate-100 space-y-0.5">
-                              <div className="flex items-center gap-2 border-b border-slate-200 pb-0.5">
-                                <Building2 size={10} className="text-slate-500" />
-                                <span className="text-slate-900 font-black text-[14px]">{ms.ministry}</span>
+                            <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+                              <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                                <Building2 size={14} className="text-slate-500" />
+                                <span className="text-slate-900 font-black text-[13.5px]">{ms.ministry}</span>
                               </div>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div className="space-y-0.5">
-                                  <div className="flex items-center justify-between text-[12px] text-slate-500 font-bold">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-bold">
                                     <span>মোট নিষ্পত্তি:</span>
                                     <span className="text-blue-700 font-black">{toBengaliDigits(ms.count)} টি</span>
                                   </div>
-                                  <div className="flex items-center justify-between text-[12px] text-slate-500 font-bold">
+                                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-bold">
                                     <span>মোট টাকা:</span>
                                     <span className="text-emerald-600 font-black">{toBengaliDigits(Math.round(ms.amount))}</span>
                                   </div>
                                 </div>
-                                <div className="space-y-0.5 border-l border-slate-200 pl-2">
-                                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-bold">
+                                <div className="space-y-1 border-l border-slate-200 pl-4">
+                                  <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold">
                                     <span>এসএফআই:</span>
-                                    <span className="text-slate-700 font-black">{toBengaliDigits(ms.sfiCount)} টি</span>
+                                    <span className="text-slate-700 font-black">{toBengaliDigits(ms.sfiCount)} টি ({toBengaliDigits(Math.round(ms.sfiAmount))})</span>
                                   </div>
-                                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-bold">
+                                  <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold">
                                     <span>নন এসএফআই:</span>
-                                    <span className="text-slate-700 font-black">{toBengaliDigits(ms.nonSfiCount)} টি</span>
+                                    <span className="text-slate-700 font-black">{toBengaliDigits(ms.nonSfiCount)} টি ({toBengaliDigits(Math.round(ms.nonSfiAmount))})</span>
                                   </div>
                                 </div>
                               </div>
                             </div>
                           ))
                         ) : (
-                          <div className="text-center py-4 text-slate-400 font-bold text-[12px]">কোন নিষ্পত্তির তথ্য পাওয়া যায়নি</div>
+                          <div className="text-center py-8 text-slate-400 font-bold text-[13px]">কোন নিষ্পত্তির তথ্য পাওয়া যায়নি</div>
                         )}
                       </div>
 
-                      <div className="pt-1.5 border-t border-slate-100 grid grid-cols-2 gap-2">
-                        <div className="flex flex-col gap-0.5">
+                      <div className="pt-4 border-t border-slate-100 grid grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
                             <span className="text-blue-700 font-black text-[13px]">এসএফআই (মোট):</span>
                             <span className="text-slate-900 font-black text-[13px]">{toBengaliDigits(filteredGrandTotals.cSFIC)} টি</span>
                           </div>
+                          <div className="text-slate-500 font-bold text-[10px] leading-relaxed">
+                            (বিএসআর: {toBengaliDigits(filteredGrandTotals.sfiBSR)}, ত্রিপক্ষীয় (প): {toBengaliDigits(filteredGrandTotals.sfiTriWork)}, ত্রিপক্ষীয় (বি): {toBengaliDigits(filteredGrandTotals.sfiTriMin)}, মিলিকরণ: {toBengaliDigits(filteredGrandTotals.sfiRecon)})
+                          </div>
                         </div>
 
-                        <div className="flex flex-col gap-0.5">
+                        <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
                             <span className="text-blue-700 font-black text-[13px]">নন এসএফআই (মোট):</span>
                             <span className="text-slate-900 font-black text-[13px]">{toBengaliDigits(filteredGrandTotals.cNonSFIC)} টি</span>
+                          </div>
+                          <div className="text-slate-500 font-bold text-[10px] leading-relaxed">
+                            (বিএসআর: {toBengaliDigits(filteredGrandTotals.nonSfiBSR)}, দ্বিপক্ষীয় (প): {toBengaliDigits(filteredGrandTotals.nonSfiBiWork)}, দ্বিপক্ষীয় (বি): {toBengaliDigits(filteredGrandTotals.nonSfiBiMin)}, মিলিকরণ: {toBengaliDigits(filteredGrandTotals.nonSfiRecon)})
                           </div>
                         </div>
                       </div>
@@ -249,11 +258,62 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
           </div>
         </div>
 
+
+          {/* Ministry-wise Summary Table */}
+          <div className="mb-8 px-4">
+            <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden shadow-sm max-w-2xl mx-auto">
+              <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 flex items-center justify-between">
+                <h3 className="text-[12px] font-black text-slate-700">মন্ত্রণালয় ভিত্তিক সারসংক্ষেপ</h3>
+                <span className="text-[10px] text-slate-500 font-bold">নিষ্পত্তি (পূর্ণাঙ্গ)</span>
+              </div>
+              <table className="w-full border-collapse text-[11px]">
+                <thead>
+                  <tr className="bg-slate-50/50">
+                    <th className="border-b border-r border-slate-200 p-2 text-left font-black text-slate-600">মন্ত্রণালয়/বিভাগ</th>
+                    <th className="border-b border-r border-slate-200 p-2 text-center font-black text-slate-600">সংখ্যা (টি)</th>
+                    <th className="border-b border-slate-200 p-2 text-right font-black text-slate-600">টাকার পরিমাণ (টাকা)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ministryStats
+                    .sort((a, b) => b.count - a.count)
+                    .map((m) => (
+                      <tr key={m.ministry} className="hover:bg-white transition-colors">
+                        <td className="border-b border-r border-slate-100 p-2 font-bold text-slate-700">
+                          {m.ministry}
+                        </td>
+                        <td className="border-b border-r border-slate-100 p-2 text-center font-black text-blue-700">
+                          {toBengaliDigits(m.count)}
+                        </td>
+                        <td className="border-b border-slate-100 p-2 text-right font-black text-slate-900">
+                          {toBengaliDigits(m.amount)}
+                        </td>
+                      </tr>
+                    ))}
+                  <tr className="bg-slate-100/80 font-black">
+                    <td className="p-2 text-center text-slate-700">সর্বমোট</td>
+                    <td className="p-2 text-center text-blue-800 border-r border-slate-200">
+                      {toBengaliDigits(filteredGrandTotals.cSC)}
+                    </td>
+                    <td className="p-2 text-right text-slate-900">
+                      {toBengaliDigits(filteredGrandTotals.cSA)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <div className="table-container qr-table-container border border-slate-300 overflow-auto relative rounded-lg">
           <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0 !table-auto">
             <colgroup>
               <col className="w-[50px]" />
               <col className="w-[110px]" />
+              <col className="w-[30px]" />
+              <col className="w-[55px]" />
+              <col className="w-[30px]" />
+              <col className="w-[55px]" />
               <col className="w-[30px]" />
               <col className="w-[55px]" />
               <col className="w-[30px]" />
@@ -272,10 +332,14 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                 <th colSpan={2} className={`${reportThStyle}`}>প্রারম্ভিক অমীমাংসিত</th>
                 <th colSpan={2} className={`${reportThStyle}`}>বর্তমান উত্থাপিত</th>
                 <th colSpan={2} className={`${reportThStyle}`}>মোট অমীমাংসিত</th>
+                <th colSpan={2} className={`${reportThStyle}`}>প্রারম্ভিক মীমাংসিত</th>
                 <th colSpan={2} className={`${reportThStyle}`}>চলতি মীমাংসিত</th>
+                <th colSpan={2} className={`${reportThStyle}`}>মোট মীমাংসিত</th>
                 <th colSpan={2} className={`${reportThStyle}`}>সর্বমোট অমীমাংসিত</th>
               </tr>
               <tr className="h-[38px]">
+                <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
+                <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
                 <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
                 <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
                 <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
@@ -321,7 +385,9 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                           <td className={tdStyle}>{toBengaliDigits(openingUC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(openingUA))}</td>
                           <td className={tdStyle}>{toBengaliDigits(row.currentRaisedCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.currentRaisedAmount))}</td>
                           <td className={tdStyle + " bg-slate-100/50 font-bold"}>{toBengaliDigits(totalUC)}</td><td className={tdStyle + " text-center bg-slate-100/50 border-r border-slate-300 font-bold"}>{toBengaliDigits(Math.round(totalUA))}</td>
+                          <td className={tdStyle}>{toBengaliDigits(row.prev.settledCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.prev.settledAmount))}</td>
                           <td className={tdStyle}>{toBengaliDigits(currentSC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(currentSA))}</td>
+                          <td className={tdStyle + " bg-emerald-50/50 font-bold"}>{toBengaliDigits(totalSC)}</td><td className={tdStyle + " text-center bg-emerald-50/50 border-r border-slate-300 font-bold"}>{toBengaliDigits(Math.round(totalSA))}</td>
                           <td className={tdStyle + " bg-amber-50 text-blue-700 font-bold"}>{toBengaliDigits(closingUC)}</td><td className={tdStyle + " text-center bg-amber-50 text-blue-700 font-bold"}>{toBengaliDigits(Math.round(closingUA))}</td>
                         </tr>
                       );
@@ -331,7 +397,9 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                       <td className={tdStyle + " font-black"}>{toBengaliDigits(Math.max(0, mTotals.pUC - mTotals.pSC))}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(Math.max(0, mTotals.pUA - mTotals.pSA)))}</td>
                       <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.cRC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.cRA))}</td>
                       <td className={tdStyle + " bg-slate-200/50 font-black"}>{toBengaliDigits(Math.max(0, mTotals.pUC - mTotals.pSC) + mTotals.cRC)}</td><td className={tdStyle + " text-center bg-slate-200/50 border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(Math.max(0, mTotals.pUA - mTotals.pSA) + mTotals.cRA))}</td>
+                      <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.pSC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pSA))}</td>
                       <td className={tdStyle + " font-black"}>{toBengaliDigits(mTotals.cSC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.cSA))}</td>
+                      <td className={tdStyle + " bg-emerald-200/50 font-black"}>{toBengaliDigits(mTotals.pSC + mTotals.cSC)}</td><td className={tdStyle + " text-center bg-emerald-200/50 border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pSA + mTotals.cSA))}</td>
                       <td className={tdStyle + " bg-amber-100/30 font-black"}>{toBengaliDigits((mTotals.pUC + mTotals.cRC) - (mTotals.pSC + mTotals.cSC))}</td><td className={tdStyle + " text-center bg-amber-100/30 font-black"}>{toBengaliDigits(Math.round((mTotals.pUA + mTotals.cRA) - (mTotals.pSA + mTotals.cSA)))}</td>
                     </tr>
                   </React.Fragment>
@@ -344,15 +412,16 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                 <td className={grandStyle}>{toBengaliDigits(Math.max(0, filteredGrandTotals.pUC - filteredGrandTotals.pSC))}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(Math.max(0, filteredGrandTotals.pUA - filteredGrandTotals.pSA)))}</td>
                 <td className={grandStyle}>{toBengaliDigits(filteredGrandTotals.cRC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(filteredGrandTotals.cRA))}</td>
                 <td className={grandStyle + " !bg-slate-200/80 font-black"}>{toBengaliDigits(Math.max(0, filteredGrandTotals.pUC - filteredGrandTotals.pSC) + filteredGrandTotals.cRC)}</td><td className={grandStyle + " text-center !bg-slate-200/80 font-black"}>{toBengaliDigits(Math.round(Math.max(0, filteredGrandTotals.pUA - filteredGrandTotals.pSA) + filteredGrandTotals.cRA))}</td>
+                <td className={grandStyle}>{toBengaliDigits(filteredGrandTotals.pSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(filteredGrandTotals.pSA))}</td>
                 <td className={grandStyle}>{toBengaliDigits(filteredGrandTotals.cSC)}</td><td className={grandStyle + " text-center"}>{toBengaliDigits(Math.round(filteredGrandTotals.cSA))}</td>
+                <td className={grandStyle + " !bg-emerald-100/80 font-black"}>{toBengaliDigits(filteredGrandTotals.pSC + filteredGrandTotals.cSC)}</td><td className={grandStyle + " text-center !bg-emerald-100/80 font-black"}>{toBengaliDigits(Math.round(filteredGrandTotals.pSA + filteredGrandTotals.cSA))}</td>
                 <td className={grandStyle + " !bg-orange-100 text-slate-900 font-black"}>{toBengaliDigits((filteredGrandTotals.pUC + filteredGrandTotals.cRC) - (filteredGrandTotals.pSC + filteredGrandTotals.cSC))}</td><td className={grandStyle + " text-center !bg-orange-100 text-slate-900 font-black"}>{toBengaliDigits(Math.round((filteredGrandTotals.pUA + filteredGrandTotals.cRA) - (filteredGrandTotals.pSA + filteredGrandTotals.cSA)))}</td>
               </tr>
             </tfoot>
           </table>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
-export default ReturnSummaryTable;
+  export default ReturnSummaryTable;
