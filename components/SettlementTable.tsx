@@ -814,11 +814,11 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                       return (
                         <React.Fragment key={entry.id}>
                           {paras.length > 0 ? paras.map((p, pIdx) => (
-                            <tr key={p.id} className={`transition-colors group bg-white ${isAdminView ? 'hover:bg-amber-100/50' : 'hover:bg-blue-50/30'}`}>
+                            <tr key={p.id} className={`transition-colors group bg-white ${isAdminView ? 'hover:bg-amber-100/50' : 'hover:bg-blue-100/40'}`}>
                               {pIdx === 0 && (
                                 <>
                                   <td rowSpan={paras.length} className={tdBase + " font-black"}>{toBengaliDigits(idx + 1)}</td>
-                                  <td rowSpan={paras.length} onClick={() => toggleExpand(entry.id)} className={tdBase + " cursor-pointer group-hover:bg-blue-50/50 transition-all text-left p-3"}>
+                                  <td rowSpan={paras.length} onClick={() => toggleExpand(entry.id)} className={tdBase + " cursor-pointer group-hover:bg-blue-100/60 transition-all text-left p-3"}>
                                     <div className="flex items-start justify-between">
                                       <div className="space-y-1 text-left flex-1">
                                         <p className="text-[10px] leading-tight">
@@ -912,9 +912,9 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                               </td>
                             </tr>
                           )) : (
-                            <tr className={`transition-colors group bg-white ${isAdminView ? 'hover:bg-amber-100/50' : 'hover:bg-blue-50/30'}`}>
+                            <tr className={`transition-colors group bg-white ${isAdminView ? 'hover:bg-amber-100/50' : 'hover:bg-blue-100/40'}`}>
                               <td className={tdBase + " font-black"}>{toBengaliDigits(idx + 1)}</td>
-                              <td onClick={() => toggleExpand(entry.id)} className={tdBase + " cursor-pointer group-hover:bg-blue-50/50 transition-all text-left p-3"}>
+                              <td onClick={() => toggleExpand(entry.id)} className={tdBase + " cursor-pointer group-hover:bg-blue-100/60 transition-all text-left p-3"}>
                                 <div className="flex items-start justify-between">
                                   <div className="space-y-1 text-left flex-1">
                                     <p className="text-[10px] leading-tight font-black text-red-600 underline underline-offset-2 tracking-tighter">উত্থাপিত এন্ট্রি (কোন অনুচ্ছেদ নেই)</p>
@@ -966,8 +966,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                               </td>
                             </tr>
                           )}
-                          <tr className={`${isAdminView ? 'bg-amber-100/40' : 'bg-blue-50/60'} font-black border-t border-slate-300 h-[38px]`}>
-                            <td colSpan={2} className="px-4 text-left italic text-[10px] text-blue-900 border border-slate-300">মোট মিমাংসিত অনুচ্ছেদ: <span className="text-emerald-700">{toBengaliDigits(entrySettledCount)} টি</span> | মোট জড়িত টাকা: <span className="text-blue-700">{toBengaliDigits(Math.round(entryInvolvedAmount))}</span></td>
+                          <tr className="bg-blue-100 font-black border-t border-slate-300 h-[38px] hover:bg-blue-100">
+                            <td colSpan={2} className="px-4 text-left italic text-[10px] text-blue-900 border border-slate-300">উপমোট: মোট মিমাংসিত অনুচ্ছেদ: <span className="text-emerald-700">{toBengaliDigits(entrySettledCount)} টি</span> | মোট জড়িত টাকা: <span className="text-blue-700">{toBengaliDigits(Math.round(entryInvolvedAmount))}</span></td>
                             <td className="text-center text-[10px] text-emerald-800 border border-slate-300 bg-emerald-50/30">{toBengaliDigits(entrySettledCount)}</td><td className="text-center text-[10px] text-blue-800 border border-slate-300 bg-blue-50/30">{toBengaliDigits(Math.round(entryInvolvedAmount))}</td>
                             <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{mRaisedCount}</td><td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(mRaisedAmount))}</td>
                             <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(entry.vatRec || 0))}</td><td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">{toBengaliDigits(Math.round(entry.vatAdj || 0))}</td>
