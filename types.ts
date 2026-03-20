@@ -47,32 +47,6 @@ export interface ParagraphDetail {
   othersAdj: number;
 }
 
-export interface CorrespondenceEntry {
-  id: string;
-  description: string;
-  paraType: ParaType;
-  letterType: string;
-  meetingType?: string;
-  letterNo: string;
-  letterDate: string;
-  totalParas: string;
-  totalAmount: string;
-  diaryNo: string;
-  diaryDate: string;
-  receiptDate: string;
-  digitalFileNo: string;
-  presentationDate: string;
-  presentedToName: string;
-  sentParaCount: string;
-  receiverName: string;
-  receivedDate: string;
-  isOnline: 'হ্যাঁ' | 'না';
-  archiveNo: string;
-  remarks: string;
-  approvalStatus?: 'approved' | 'pending';
-  createdAt: string;
-}
-
 export interface SettlementEntry {
   id: string;
   sl: number;
@@ -84,7 +58,6 @@ export interface SettlementEntry {
   workpaperNoDate: string;
   minutesNoDate: string;
   paraType: ParaType;
-  letterType?: string;
   paragraphs: ParagraphDetail[];
   involvedAmount: number;
   vatRec: number;
