@@ -33,13 +33,17 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   filterMinistry
 }) => {
   const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
-  const [isStatsHovered, setIsStatsHovered] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
   const ministryDropdownRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (ministryDropdownRef.current && !ministryDropdownRef.current.contains(e.target as Node)) {
         setIsMinistryDropdownOpen(false);
+      }
+      if (statsRef.current && !statsRef.current.contains(e.target as Node)) {
+        setIsStatsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -146,20 +150,20 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
           <div className="flex items-center">
             {selectedReportType === 'মাসিক রিটারন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' && (
               <div 
-                className=""
-                onMouseEnter={() => setIsStatsHovered(true)}
-                onMouseLeave={() => setIsStatsHovered(false)}
+                className="relative"
+                ref={statsRef}
               >
                 <button
-                  className={`flex items-center gap-2 px-4 h-[40px] bg-slate-50 text-slate-700 rounded-xl font-bold text-[13px] border border-slate-200 transition-all duration-300 no-print ${isStatsHovered ? 'bg-white shadow-md border-blue-200' : ''}`}
+                  onClick={() => setIsStatsOpen(!isStatsOpen)}
+                  className={`flex items-center gap-2 px-4 h-[40px] bg-slate-50 text-slate-700 rounded-xl font-bold text-[13px] border border-slate-200 transition-all duration-300 no-print ${isStatsOpen ? 'bg-white shadow-md border-blue-200 ring-2 ring-blue-50' : ''}`}
                 >
                   <Sparkles size={16} className="text-blue-500" />
                   পরিসংখ্যান
-                  <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${isStatsHovered ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${isStatsOpen ? 'rotate-180' : ''}`} />
                 </button>
 
-                {isStatsHovered && (
-                  <div className="absolute top-full left-0 w-full bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
+                {isStatsOpen && (
+                  <div className="absolute top-full left-0 w-[350px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200 mt-2">
                     <div className="space-y-6">
                       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                         <div className="flex items-center gap-3">
@@ -181,8 +185,8 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                                 <Building2 size={14} className="text-slate-500" />
                                 <span className="text-slate-900 font-black text-[13.5px]">{ms.ministry}</span>
                               </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
+                              <div className="grid grid-cols-1 gap-3">
+                                <div className="space-y-1 pb-2 border-b border-slate-100">
                                   <div className="flex items-center justify-between text-[11px] text-slate-500 font-bold">
                                     <span>মোট নিষ্পত্তি:</span>
                                     <span className="text-blue-700 font-black">{toBengaliDigits(ms.count)} টি</span>
@@ -192,7 +196,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                                     <span className="text-emerald-600 font-black">{toBengaliDigits(Math.round(ms.amount))}</span>
                                   </div>
                                 </div>
-                                <div className="space-y-1 border-l border-slate-200 pl-4">
+                                <div className="space-y-1">
                                   <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold">
                                     <span>এসএফআই:</span>
                                     <span className="text-slate-700 font-black">{toBengaliDigits(ms.sfiCount)} টি ({toBengaliDigits(Math.round(ms.sfiAmount))})</span>
@@ -210,7 +214,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                         )}
                       </div>
 
-                      <div className="pt-4 border-t border-slate-100 grid grid-cols-2 gap-4">
+                      <div className="pt-4 border-t border-slate-100 space-y-4">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
                             <span className="text-blue-700 font-black text-[13px]">এসএফআই (মোট):</span>
