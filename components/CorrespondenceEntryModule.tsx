@@ -837,7 +837,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        <fieldset disabled={isSuccess} className="space-y-8 border-none p-0 m-0">
+        <fieldset className="space-y-8 border-none p-0 m-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             
             {/* Field 1 - Full Width Description with Suggestions */}
@@ -1342,14 +1342,14 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           100% { width: 100%; }
         }
         .animate-progress-loading-premium {
-          animation: progress-loading-premium 4s linear forwards;
+          animation: progress-loading-premium 0.6s linear forwards;
         }
         @keyframes fade-in-complete {
           0%, 95% { opacity: 0; transform: translateY(10px); }
           100% { opacity: 1; transform: translateY(0); }
         }
         .animate-complete-text {
-          animation: fade-in-complete 4.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          animation: fade-in-complete 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}} />
     </div>

@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --font-bengali: 'Hind Siliguri', 'Noto Sans Bengali', sans-serif;
+}
+
+* {
+  font-family: var(--font-bengali) !important;
+}
+
+body {
+  font-family: var(--font-bengali) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Ensure all input, button, select, textarea use the same font */
+input, button, select, textarea, optgroup, option {
+  font-family: var(--font-bengali) !important;
+}
+
+/* Specific weights for Bengali text to match the "Premium" look */
+.font-black {
+  font-weight: 900 !important;
+}
+
+.font-bold {
+  font-weight: 700 !important;
+}
+
+.font-semibold {
+  font-weight: 600 !important;
+}
+
+.font-medium {
+  font-weight: 500 !important;
+}
+
+.font-normal {
+  font-weight: 400 !important;
+}
+
+.font-light {
+  font-weight: 300 !important;
+}

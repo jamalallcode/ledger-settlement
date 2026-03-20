@@ -1,14 +1,18 @@
 import React from 'react';
+import { Printer } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { format, subMonths } from 'date-fns';
+import HighlightText from './HighlightText';
 
 interface QRProps {
   activeCycle: any;
   IDBadge: React.FC<{ id: string }>;
   onBack?: () => void;
+  searchTerm?: string;
+  filterMinistry?: string;
 }
 
-const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
+const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
   const startDate = activeCycle.start;
   const endDate = activeCycle.end;
   const prevMonthDate = subMonths(startDate, 1);
@@ -79,19 +83,47 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
     }
   ];
 
+  const filterData = (data: any[]) => {
+    return data.filter(mGroup => {
+      const matchMinistry = filterMinistry === '' || mGroup.ministry.includes(filterMinistry);
+      const matchSearch = searchTerm === '' || mGroup.ministry.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      if (matchMinistry && matchSearch) return true;
+      
+      if (searchTerm !== '') {
+        return mGroup.entities.some((ent: any) => ent.name.toLowerCase().includes(searchTerm.toLowerCase()));
+      }
+      
+      return false;
+    }).map(mGroup => ({
+      ...mGroup,
+      entities: mGroup.entities.filter((ent: any) => {
+        if (searchTerm === '') return true;
+        return ent.name.toLowerCase().includes(searchTerm.toLowerCase()) || mGroup.ministry.toLowerCase().includes(searchTerm.toLowerCase());
+      })
+    })).filter(mGroup => mGroup.entities.length > 0);
+  };
+
+  const filteredTable1Data = filterData(table1Data);
+  const filteredTable2Data = filterData(table2Data);
+
   const thCls = "border-r border-b border-slate-400 p-1 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center";
   const tdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-700 align-middle";
   const numTdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-700 text-center align-middle font-bold";
+  
+  // Footer-specific classes without borders to avoid double borders with inset box-shadow
+  const footerTdCls = "p-1 text-[10px] text-slate-700 align-middle";
+  const footerNumTdCls = "p-1 text-[10px] text-slate-700 text-center align-middle font-bold";
 
   const renderTable = (data: any[], tableId: string) => {
     let globalIdx = 1;
     const totals = { pR: 0, cR: 0, tR: 0, pS: 0, cS: 0, tS: 0, pnd: 0, cSA: 0, pndA: 0 };
 
     return (
-      <div className="mb-10 overflow-auto border-t border-l border-slate-400 shadow-sm rounded-lg">
+      <div className="table-container qr-table-container mb-10 overflow-y-scroll overflow-x-auto border border-slate-400 shadow-sm rounded-lg">
         <table className="w-full border-separate border-spacing-0 min-w-[1000px] !table-auto">
           <thead className="bg-slate-100">
-            <tr>
+            <tr className="h-[42px]">
               <th className={thCls + " w-10"}>ক্রঃ নং</th>
               <th className={`${thCls} w-[8%]`}>মন্ত্রণালয়ের নাম</th>
               <th className={`${thCls} w-[8%]`}>প্রতিষ্ঠানের নাম</th>
@@ -124,9 +156,13 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
                         <td rowSpan={mGroup.entities.length} className={numTdCls + " w-10"}>{toBengaliDigits((globalIdx++).toString())}</td>
                       )}
                       {eIdx === 0 && (
-                        <td rowSpan={mGroup.entities.length} className={tdCls + " font-black"}>{mGroup.ministry}</td>
+                        <td rowSpan={mGroup.entities.length} className={tdCls + " font-black"}>
+                          <HighlightText text={mGroup.ministry} searchTerm={searchTerm} />
+                        </td>
                       )}
-                      <td className={tdCls}>{ent.name}</td>
+                      <td className={tdCls}>
+                        <HighlightText text={ent.name} searchTerm={searchTerm} />
+                      </td>
                       <td className={numTdCls}>{toBengaliDigits(ent.pRaised.toString())}</td>
                       <td className={numTdCls}>{toBengaliDigits(ent.cRaised.toString())}</td>
                       <td className={numTdCls}>{toBengaliDigits(totalRaised.toString())}</td>
@@ -141,30 +177,30 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
                 })}
               </React.Fragment>
             ))}
-            <tr className="bg-slate-100 font-black sticky bottom-0 z-10">
-              <td colSpan={3} className={tdCls + " text-right"}>মোট</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.pR.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.cR.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.tR.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.pS.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.cS.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.tS.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.pnd.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.cSA.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.pndA.toString())}</td>
+            <tr className={`font-black h-[28px] qr-sticky-footer ${tableId === 'table-2' ? 'qr-sticky-footer-offset' : 'qr-sticky-footer-bottom'}`}>
+              <td colSpan={3} className={footerTdCls + " text-right"}>মোট</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.pR.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.cR.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.tR.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.pS.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.cS.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.tS.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.pnd.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.cSA.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.pndA.toString())}</td>
             </tr>
             {tableId === 'table-2' && (
-               <tr className="bg-slate-200 font-black">
-                <td colSpan={3} className={tdCls + " text-right"}>সর্বমোট</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.pR).toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.cR).toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.tR).toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.pS).toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.cS).toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.tS).toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.pnd).toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.cSA).toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits((totals.pndA).toString())}</td>
+               <tr className="font-black h-[28px] qr-sticky-footer qr-sticky-footer-bottom">
+                <td colSpan={3} className={footerTdCls + " text-right"}>সর্বমোট</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.pR).toString())}</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.cR).toString())}</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.tR).toString())}</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.pS).toString())}</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.cS).toString())}</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.tS).toString())}</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.pnd).toString())}</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.cSA).toString())}</td>
+                <td className={footerNumTdCls}>{toBengaliDigits((totals.pndA).toString())}</td>
               </tr>
             )}
           </tbody>
@@ -177,10 +213,21 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
     <div id="qr-4-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
       <IDBadge id="qr-4-container" />
       
+      <div className="flex justify-end mb-4 no-print">
+      </div>
+
       {/* Header Section */}
-      <div className="text-center space-y-1 mb-6">
-        <h1 className="text-lg font-black text-slate-900">বাণিজ্যিক অডিট অধিদপ্তর</h1>
-        <h2 className="text-md font-bold text-slate-800">আঞ্চলিক কার্যালয় (সে-৬) খুলনা।</h2>
+      <div className="text-center mb-8 pt-4">
+        <div className="inline-block relative">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
+            ত্রৈমাসিক রিটার্ন - ৪
+          </h1>
+          <div className="flex items-center justify-center gap-4">
+            <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
+            <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+            <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-slate-400"></div>
+          </div>
+        </div>
       </div>
 
       <div className="flex justify-between items-center mb-4 text-[12px] font-bold text-slate-800">
@@ -188,12 +235,12 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge }) => {
         <p>নন এসএফআই</p>
       </div>
 
-      {renderTable(table1Data, 'table-1')}
+      {renderTable(filteredTable1Data, 'table-1')}
       
       <div className="mb-4 text-[12px] font-bold text-slate-800">
         <p>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত অডিট আপত্তির ত্রৈমাসিক রিটার্ন</p>
       </div>
-      {renderTable(table2Data, 'table-2')}
+      {renderTable(filteredTable2Data, 'table-2')}
 
     </div>
   );

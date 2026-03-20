@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles, Save, CalendarSearch, LayoutGrid, CalendarDays } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
+import HighlightText from './HighlightText';
 import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper';
 import { format, addMonths } from 'date-fns';
 
@@ -198,7 +199,7 @@ const PremiumInlineSelect: React.FC<{
       </div>
 
       {isOpen && (
-        <div className={`absolute ${openUp ? 'bottom-[calc(100%+4px)]' : 'top-[calc(100%+4px)]'} left-0 w-40 bg-white border border-slate-200 rounded-xl shadow-2xl z-[1000] overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 border-t-2 border-t-blue-600`}>
+        <div className={`absolute ${openUp ? 'bottom-[calc(100%+4px)]' : 'top-[calc(100%+4px)]'} left-0 w-32 bg-white border border-slate-200 rounded-xl shadow-2xl z-[1000] overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 border-t-2 border-t-blue-600`}>
           <div className="p-2 bg-slate-50 border-b border-slate-100">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" size={10} />
@@ -531,11 +532,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   };
 
   // Header font-black
-  const thCls = "sticky top-0 border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[11px] bg-slate-200 z-[110] shadow-[inset_0_-1px_0_#cbd5e1] leading-tight";
+  const thCls = "sticky top-0 border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[13px] bg-slate-200 z-[110] shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
   // Data cells reverted to font-bold
-  const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-slate-800 font-bold leading-tight align-top transition-colors group-hover:bg-blue-50/50 break-words";
-  const labelCls = "text-[10px] font-bold text-emerald-700 shrink-0";
-  const valCls = "text-[10px] font-black text-slate-900";
+  const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[13px] text-slate-800 font-bold leading-tight align-top transition-colors group-hover:bg-blue-50/50 break-words relative";
+  const labelCls = "text-[11px] font-bold text-emerald-700 shrink-0";
+  const valCls = "text-[11px] font-black text-slate-900";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[48px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
 
   const hasChanges = Object.keys(pendingChanges).length > 0;
@@ -577,7 +578,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                আপডেট করুন {toBengaliDigits(Object.keys(pendingChanges).length)} টি এন্ট্রি
              </button>
            )}
-           <button onClick={() => window.print()} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-black text-[11px] flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95"><Printer size={16} /> প্রিন্ট</button>
         </div>
       </div>
 
@@ -811,8 +811,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
               return groupedEntries.map((group) => (
                 <tbody key={group.label}>
                   {/* Sticky Cycle Header */}
-                  <tr className="sticky top-[40px] z-[90] no-print">
-                    <td colSpan={7} className="p-0 border border-slate-300">
+                  <tr className="sticky top-[40px] z-[105] no-print">
+                    <td colSpan={7} className="p-0 border border-slate-400 shadow-sm">
                       <div 
                         ref={el => { cycleRefs.current[group.label] = el; }}
                         onClick={() => {
@@ -929,30 +929,42 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                     const isPendingForApproval = entry.approvalStatus === 'pending';
 
                     return (
-                      <tr key={entry.id} className="group transition-all bg-white">
+                      <tr key={entry.id} className="group transition-all bg-white hover:bg-blue-50/30">
                         <td className={tdCls + " text-center font-black"}>{toBengaliDigits(idx + 1)}</td>
-                        <td className={tdCls}>{entry.description}</td>
+                        <td className={tdCls}>
+                          <HighlightText text={entry.description} searchTerm={searchTerm} />
+                        </td>
                         <td className={tdCls}>
                            <div className="space-y-2">
                               <div className="flex flex-col">
                                 <span className={labelCls}>১. শাখার ধরণ:</span> 
-                                <span className={valCls + " pl-3"}>{entry.paraType}</span>
+                                <span className={valCls + " pl-3"}>
+                                  <HighlightText text={entry.paraType} searchTerm={searchTerm} />
+                                </span>
                               </div>
                               <div className="flex flex-col">
                                 <span className={labelCls}>২. পত্রের ধরণ:</span> 
-                                <span className={valCls + " pl-3"}>{entry.letterType}</span>
+                                <span className={valCls + " pl-3"}>
+                                  <HighlightText text={entry.letterType} searchTerm={searchTerm} />
+                                </span>
                               </div>
                               <div className="flex flex-col">
                                 <span className={labelCls}>৩. পত্র নং ও তারিখ:</span> 
-                                <span className={valCls + " pl-3"}>{entry.letterNo}, {formatDateBN(entry.letterDate)}</span>
+                                <span className={valCls + " pl-3"}>
+                                  <HighlightText text={`${entry.letterNo}, ${formatDateBN(entry.letterDate)}`} searchTerm={searchTerm} />
+                                </span>
                               </div>
                               <div className="flex flex-col">
                                 <span className={labelCls}>৪. প্রেরিত অনু: সংখ্যা:</span> 
-                                <span className={valCls + " pl-3"}>{toBengaliDigits(entry.totalParas)} টি</span>
+                                <span className={valCls + " pl-3"}>
+                                  <HighlightText text={`${toBengaliDigits(entry.totalParas)} টি`} searchTerm={searchTerm} />
+                                </span>
                               </div>
                               <div className="flex flex-col">
                                 <span className={labelCls}>৫. মোট জড়িত টাকা:</span> 
-                                <span className={valCls + " pl-3"}>{toBengaliDigits(entry.totalAmount)}</span>
+                                <span className={valCls + " pl-3"}>
+                                  <HighlightText text={toBengaliDigits(entry.totalAmount)} searchTerm={searchTerm} />
+                                </span>
                               </div>
                            </div>
                         </td>
@@ -960,23 +972,33 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                            <div className="space-y-2">
                               <div className="flex flex-col">
                                 <span className={labelCls}>১. ডায়েরি নং ও তারিখ:</span> 
-                                <span className={valCls + " pl-3"}>{entry.diaryNo}, {formatDateBN(entry.diaryDate)}</span>
+                                <span className={valCls + " pl-3"}>
+                                  <HighlightText text={`${entry.diaryNo}, ${formatDateBN(entry.diaryDate)}`} searchTerm={searchTerm} />
+                                </span>
                               </div>
                               <div className="flex flex-col">
                                 <span className={labelCls}>২. শাখায় প্রাপ্তির তারিখ:</span> 
-                                <span className={valCls + " pl-3"}>{formatDateBN(entry.receiptDate)}</span>
+                                <span className={valCls + " pl-3"}>
+                                  <HighlightText text={formatDateBN(entry.receiptDate)} searchTerm={searchTerm} />
+                                </span>
                               </div>
                               <div className="flex flex-col">
                                 <span className={labelCls}>৩. ডিজিটাল নথি নং-:</span> 
-                                <span className={valCls + " pl-3"}>{entry.digitalFileNo}</span>
+                                <span className={valCls + " pl-3"}>
+                                  <HighlightText text={entry.digitalFileNo} searchTerm={searchTerm} />
+                                </span>
                               </div>
                               <div className="flex flex-col">
                                 <span className={labelCls}>৪. গ্রহণের তারিখ:</span> 
-                                <span className={valCls + " pl-3"}>{formatDateBN(entry.receivedDate)}</span>
+                                <span className={valCls + " pl-3"}>
+                                  <HighlightText text={formatDateBN(entry.receivedDate)} searchTerm={searchTerm} />
+                                </span>
                               </div>
                               <div className="flex flex-col">
                                 <span className={labelCls}>৫. অনলাইনে প্রাপ্তি:</span> 
-                                <span className={valCls + " pl-3"}>{entry.isOnline}</span>
+                                <span className={valCls + " pl-3"}>
+                                  <HighlightText text={entry.isOnline} searchTerm={searchTerm} />
+                                </span>
                               </div>
                            </div>
                         </td>
@@ -984,7 +1006,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                            <div className="space-y-2">
                               <div className="p-1.5 bg-slate-50 border border-slate-100 rounded-lg relative">
                                  <div className="text-[9px] font-bold text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1"><Inbox size={8} /> গ্রহণকারী</div>
-                                 <div className="font-bold text-slate-900 text-[10px] leading-tight truncate">{entry.receiverName || '-'}</div>
+                                 <div className="font-bold text-slate-900 text-[12px] leading-tight break-words">
+                                   <HighlightText text={entry.receiverName || '-'} searchTerm={searchTerm} />
+                                 </div>
                                  <div className="text-[9px] text-slate-500 font-bold">{formatDateBN(entry.receivedDate)}</div>
                               </div>
 
@@ -1136,6 +1160,16 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                       </tr>
                     );
                   })}
+                  {/* Cycle Total Row */}
+                  <tr className="bg-slate-50/80 font-black border-t-2 border-slate-400 h-[38px] no-print">
+                    <td colSpan={2} className="px-4 text-left italic text-[11px] text-blue-900 border border-slate-300">
+                      মোট: <span className="text-emerald-700">{toBengaliDigits(group.entries.length)} টি চিঠি</span>
+                    </td>
+                    <td className="px-2 text-center border border-slate-300 text-blue-700 text-[11px]">
+                      {toBengaliDigits(group.entries.length)} টি
+                    </td>
+                    <td colSpan={4} className="border border-slate-300 bg-slate-50/30"></td>
+                  </tr>
                 </tbody>
               ));
             })()
@@ -1151,11 +1185,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
               </tr>
             </tbody>
           )}
-          <tfoot className="z-[110]">
-            <tr className="bg-slate-900 text-white font-black text-[11px] h-9 shadow-[0_-5px_15px_rgba(0,0,0,0.2)]">
-              <td colSpan={2} className="px-4 text-left border-t border-slate-700">সর্বমোট:</td>
-              <td colSpan={1} className="px-2 text-center border-t border-slate-700 text-emerald-400">{toBengaliDigits(filteredEntries.length)} টি</td>
-              <td colSpan={4} className="border-t border-slate-700"></td>
+          <tfoot className="sticky bottom-0 z-[110]">
+            <tr className="bg-slate-900 text-white font-black text-[12px] h-10 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]">
+              <td colSpan={2} className="px-4 text-left border-t border-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">সর্বমোট (ফিল্টার ডাটা):</td>
+              <td colSpan={1} className="px-2 text-center border-t border-slate-700 text-amber-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">{toBengaliDigits(filteredEntries.length)} টি</td>
+              <td colSpan={4} className="border-t border-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"></td>
             </tr>
           </tfoot>
         </table>

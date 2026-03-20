@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { ChevronLeft, Printer, Mail, Calendar, RotateCcw, Search, X, User, ChevronDown, Check, Sparkles } from 'lucide-react';
+import { ChevronLeft, Printer, Mail, Calendar, RotateCcw, Search, X, User, ChevronDown, Check, Sparkles, BarChart3 } from 'lucide-react';
 import React from 'react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
@@ -11,6 +11,7 @@ interface DDSirCorrespondenceReturnProps {
   onBack: () => void;
   isLayoutEditable?: boolean;
   IDBadge: React.FC<{ id: string }>;
+  showFilters: boolean;
 }
 
 const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({ 
@@ -18,7 +19,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   activeCycle, 
   onBack, 
   isLayoutEditable,
-  IDBadge
+  IDBadge,
+  showFilters
 }) => {
   const [filterBranch, setFilterBranch] = useState('সকল');
   const [filterAuditor, setFilterAuditor] = useState('সকল');
@@ -226,18 +228,24 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const summaryStats = useMemo(() => {
     const stats = {
       total: entries.length,
-      sfi: { total: 0, bsr: 0, kp: 0, kb: 0, reconciliation: 0 },
-      nonSfi: { total: 0, bsr: 0, kp: 0, kb: 0, reconciliation: 0 }
+      totalParas: 0,
+      sfi: { total: 0, bsr: 0, kp: 0, kb: 0, reconciliation: 0, paras: 0 },
+      nonSfi: { total: 0, bsr: 0, kp: 0, kb: 0, reconciliation: 0, paras: 0 }
     };
     entries.forEach(e => {
+      const paras = parseInt(toEnglishDigits(e.totalParas || '0')) || 0;
+      stats.totalParas += paras;
+
       if (e.paraType === 'এসএফআই') {
         stats.sfi.total++;
+        stats.sfi.paras += paras;
         if (e.letterType === 'বিএসআর') stats.sfi.bsr++;
         if (e.letterType?.includes('কার্যপত্র')) stats.sfi.kp++;
         if (e.letterType?.includes('কার্যবিবরণী')) stats.sfi.kb++;
         if (e.letterType === 'মিলিকরণ') stats.sfi.reconciliation++;
       } else if (e.paraType === 'নন এসএফআই') {
         stats.nonSfi.total++;
+        stats.nonSfi.paras += paras;
         if (e.letterType === 'বিএসআর') stats.nonSfi.bsr++;
         if (e.letterType?.includes('কার্যপত্র')) stats.nonSfi.kp++;
         if (e.letterType?.includes('কার্যবিবরণী')) stats.nonSfi.kb++;
@@ -270,161 +278,164 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     <div id="dd-sir-report-container" className="space-y-6 py-2 w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view">
       <IDBadge id="dd-sir-report-container" />
       {/* Control Bar (No Print) */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-all text-slate-600">
-            <ChevronLeft size={20} />
-          </button>
-          <div className="flex flex-col">
-            <span className="text-xs font-black text-blue-600 uppercase tracking-tighter">স্পেশাল ভিউ:</span>
-            <span className="text-lg font-black text-slate-900 leading-tight">ডিডি স্যার ফরম্যাট</span>
-          </div>
-          
-          <div className="relative group ml-4">
-            <button 
-              className={`px-4 py-2 rounded-xl border transition-all flex items-center gap-2 font-bold text-[12px] no-print ${showStats ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm'}`}
-            >
-              <Sparkles size={14} className={showStats ? 'animate-pulse' : ''} />
-              পরিসংখ্যান <ChevronDown size={14} className="transition-transform duration-300 group-hover:rotate-180" />
-            </button>
-            <div className="absolute top-full left-0 pt-2 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
-              <div className="min-w-[300px] p-5 bg-white border-2 border-slate-200 rounded-2xl shadow-2xl">
-                <div className="flex flex-col gap-3 font-black text-slate-700">
-                  <div className="flex items-center gap-2 text-[14px]">
-                    <span className="text-blue-700 font-black">মোট চিঠি:</span>
-                    <span className="text-slate-900 font-black">{toBengaliDigits(summaryStats.total)} টি</span>
+      {showFilters && (
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
+          <div className="flex items-center gap-3">
+
+            
+            <div className="relative group ml-4">
+              <button 
+                className={`px-4 py-2 rounded-xl border transition-all flex items-center gap-2 font-bold text-[12px] no-print ${showStats ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm'}`}
+              >
+                <Sparkles size={14} className={showStats ? 'animate-pulse' : ''} />
+                পরিসংখ্যান <ChevronDown size={14} className="transition-transform duration-300 group-hover:rotate-180" />
+              </button>
+              <div className="absolute top-full left-0 w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all">
+                <div className="space-y-5 text-left">
+                  <div className="flex items-center justify-between border-b border-slate-50 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                        <BarChart3 size={16} className="text-blue-600" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-blue-700 font-black text-[15px]">মোট চিঠি: {toBengaliDigits(summaryStats.total)} টি</span>
+                        <span className="text-emerald-600 font-bold text-[12px]">মোট অনুচ্ছেদ: {toBengaliDigits(summaryStats.totalParas)} টি</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-[13px]">
-                    <span className="text-blue-700 font-black">এসএফআই:</span>
-                    <span className="text-slate-900 font-black">
-                      {toBengaliDigits(summaryStats.sfi.total)} টি 
-                      <span className="text-slate-700 font-black ml-1">
-                        (বিএসআর: {toBengaliDigits(summaryStats.sfi.bsr)} টি, 
-                        ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.sfi.kp)} টি, 
-                        ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি,
-                        মিলিকরণ: {toBengaliDigits(summaryStats.sfi.reconciliation)} টি।
-                      </span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[13px]">
-                    <span className="text-blue-700 font-black">নন এসএফআই:</span>
-                    <span className="text-slate-900 font-black">
-                      {toBengaliDigits(summaryStats.nonSfi.total)} টি 
-                      <span className="text-slate-700 font-black ml-1">
-                        (বিএসআর: {toBengaliDigits(summaryStats.nonSfi.bsr)} টি, 
-                        দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.nonSfi.kp)} টি, 
-                        দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি,
-                        মিলিকরণ: {toBengaliDigits(summaryStats.nonSfi.reconciliation)} টি।
-                      </span>
-                    </span>
+
+                  <div className="space-y-4">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-blue-700 font-black text-[14px]">এসএফআই:</span>
+                        <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(summaryStats.sfi.total)} টি</span>
+                        <span className="text-emerald-600 font-bold text-[12px] ml-1">({toBengaliDigits(summaryStats.sfi.paras)} টি অনুচ্ছেদ)</span>
+                      </div>
+                      <div className="text-slate-600 font-bold text-[11px] leading-relaxed pl-4">
+                        (বিএসআর: {toBengaliDigits(summaryStats.sfi.bsr)} টি, ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.sfi.kp)} টি, ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি, মিলিকরণ: {toBengaliDigits(summaryStats.sfi.reconciliation)} টি)
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-blue-700 font-black text-[14px]">নন এসএফআই:</span>
+                        <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(summaryStats.nonSfi.total)} টি</span>
+                        <span className="text-emerald-600 font-bold text-[12px] ml-1">({toBengaliDigits(summaryStats.nonSfi.paras)} টি অনুচ্ছেদ)</span>
+                      </div>
+                      <div className="text-slate-600 font-bold text-[11px] leading-relaxed pl-4">
+                        (বিএসআর: {toBengaliDigits(summaryStats.nonSfi.bsr)} টি, দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.nonSfi.kp)} টি, দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি, মিলিকরণ: {toBengaliDigits(summaryStats.nonSfi.reconciliation)} টি)
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Branch Filter */}
+            <div className="space-y-1 relative group" ref={branchDropdownRef}>
+              <div 
+                className={customDropdownCls(false) + " min-w-[150px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
+              >
+                <Mail size={16} className="text-blue-600" />
+                <span className="font-bold text-[12px] text-slate-900 truncate">
+                  {filterBranch === 'সকল' ? 'সকল শাখা' : filterBranch}
+                </span>
+                <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600" />
+              </div>
+              
+              <div className="absolute top-full left-0 w-full pt-2 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
+                <div className="min-w-[180px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
+                  <div className="max-h-[250px] overflow-y-auto no-scrollbar py-2">
+                    {['সকল', 'এসএফআই', 'নন এসএফআই'].map((opt, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={() => setFilterBranch(opt)} 
+                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterBranch === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
+                      >
+                        <span>{opt === 'সকল' ? 'সকল শাখা' : opt}</span>
+                        {filterBranch === opt && <Check size={14} strokeWidth={3} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Auditor Filter */}
+            <div className="space-y-1 relative group" ref={auditorDropdownRef}>
+              <div 
+                className={customDropdownCls(false) + " min-w-[180px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
+              >
+                <User size={16} className="text-blue-600" />
+                <span className="font-bold text-[12px] text-slate-900 truncate">
+                  {filterAuditor === 'সকল' ? 'সকল অডিটর' : filterAuditor}
+                </span>
+                <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600" />
+              </div>
+              
+              <div className="absolute top-full left-0 w-full pt-2 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
+                <div className="min-w-[200px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl z-[2000] overflow-hidden">
+                  <div className="max-h-[250px] overflow-y-auto no-scrollbar py-2">
+                    {auditorOptions.map((opt, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={() => setFilterAuditor(opt)} 
+                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterAuditor === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
+                      >
+                        <span>{opt === 'সকল' ? 'সকল অডিটর' : opt}</span>
+                        {filterAuditor === opt && <Check size={14} strokeWidth={3} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 h-[44px] rounded-xl relative group">
+               <Calendar size={16} className="text-blue-600" />
+               <label className="text-[11px] font-black text-slate-500 uppercase tracking-tighter mr-1">রিপোর্টিং তারিখ:</label>
+               <div className="relative flex items-center">
+                 <span className="font-black text-slate-900 text-xs pointer-events-none">
+                   {toBengaliDigits(format(reportingDate, 'dd/MM/yyyy'))}
+                 </span>
+                 <input 
+                   type="date" 
+                   className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                   value={selectedReportingDate}
+                   onChange={(e) => setSelectedReportingDate(e.target.value)}
+                 />
+               </div>
+               {selectedReportingDate !== format(reportingLimitDate, 'yyyy-MM-dd') && (
+                 <button 
+                  onClick={() => setSelectedReportingDate(format(reportingLimitDate, 'yyyy-MM-dd'))}
+                  className="p-1 hover:bg-white rounded-md text-blue-400 hover:text-blue-600 transition-all"
+                  title="ডিফল্ট তারিখে ফিরুন"
+                 >
+                   <RotateCcw size={14} />
+                 </button>
+               )}
             </div>
           </div>
         </div>
-
-        <div className="flex items-center gap-3">
-          {/* Branch Filter */}
-          <div className="space-y-1 relative group" ref={branchDropdownRef}>
-            <div 
-              className={customDropdownCls(false) + " min-w-[150px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
-            >
-              <Mail size={16} className="text-blue-600" />
-              <span className="font-bold text-[12px] text-slate-900 truncate">
-                {filterBranch === 'সকল' ? 'সকল শাখা' : filterBranch}
-              </span>
-              <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600" />
-            </div>
-            
-            <div className="absolute top-full left-0 w-full pt-2 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
-              <div className="min-w-[180px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
-                <div className="max-h-[250px] overflow-y-auto no-scrollbar py-2">
-                  {['সকল', 'এসএফআই', 'নন এসএফআই'].map((opt, idx) => (
-                    <div 
-                      key={idx} 
-                      onClick={() => setFilterBranch(opt)} 
-                      className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterBranch === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
-                    >
-                      <span>{opt === 'সকল' ? 'সকল শাখা' : opt}</span>
-                      {filterBranch === opt && <Check size={14} strokeWidth={3} />}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Auditor Filter */}
-          <div className="space-y-1 relative group" ref={auditorDropdownRef}>
-            <div 
-              className={customDropdownCls(false) + " min-w-[180px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
-            >
-              <User size={16} className="text-blue-600" />
-              <span className="font-bold text-[12px] text-slate-900 truncate">
-                {filterAuditor === 'সকল' ? 'সকল অডিটর' : filterAuditor}
-              </span>
-              <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600" />
-            </div>
-            
-            <div className="absolute top-full left-0 w-full pt-2 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
-              <div className="min-w-[200px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl z-[2000] overflow-hidden">
-                <div className="max-h-[250px] overflow-y-auto no-scrollbar py-2">
-                  {auditorOptions.map((opt, idx) => (
-                    <div 
-                      key={idx} 
-                      onClick={() => setFilterAuditor(opt)} 
-                      className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterAuditor === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
-                    >
-                      <span>{opt === 'সকল' ? 'সকল অডিটর' : opt}</span>
-                      {filterAuditor === opt && <Check size={14} strokeWidth={3} />}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 h-[44px] rounded-xl relative group">
-             <Calendar size={16} className="text-blue-600" />
-             <label className="text-[11px] font-black text-slate-500 uppercase tracking-tighter mr-1">রিপোর্টিং তারিখ:</label>
-             <div className="relative flex items-center">
-               <span className="font-black text-slate-900 text-xs pointer-events-none">
-                 {toBengaliDigits(format(reportingDate, 'dd/MM/yyyy'))}
-               </span>
-               <input 
-                 type="date" 
-                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                 value={selectedReportingDate}
-                 onChange={(e) => setSelectedReportingDate(e.target.value)}
-               />
-             </div>
-             {selectedReportingDate !== format(reportingLimitDate, 'yyyy-MM-dd') && (
-               <button 
-                onClick={() => setSelectedReportingDate(format(reportingLimitDate, 'yyyy-MM-dd'))}
-                className="p-1 hover:bg-white rounded-md text-blue-400 hover:text-blue-600 transition-all"
-                title="ডিফল্ট তারিখে ফিরুন"
-               >
-                 <RotateCcw size={14} />
-               </button>
-             )}
-          </div>
-          
-          <button onClick={() => window.print()} className="h-[44px] px-6 bg-slate-900 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95">
-            <Printer size={18} /> প্রিন্ট করুন
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Summary Stats Panel (Removed as it's now in hover) */}
 
       <div className="w-full bg-white p-2 md:p-6 relative">
         {/* Office Header */}
-        <div className="text-center space-y-1 mb-8">
-          <h1 className="text-[19px] font-bold text-black leading-tight">{OFFICE_HEADER.main}</h1>
-          <h2 className="text-[17px] font-bold text-black leading-tight">{OFFICE_HEADER.sub}</h2>
-          <h3 className="text-[16px] font-bold text-black leading-tight">{OFFICE_HEADER.address}</h3>
-          <h4 className="text-[15px] font-bold text-black leading-tight">খুলনা-৯০০০</h4>
+        <div className="text-center mb-8 pt-4">
+          <div className="inline-block relative">
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
+              চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন (ডিডি স্যার)
+            </h1>
+            <div className="flex items-center justify-center gap-4">
+              <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
+              <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+              <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-slate-400"></div>
+            </div>
+          </div>
         </div>
 
         {/* SECTION 1: সারসংক্ষেপ টেবিল */}
@@ -618,10 +629,10 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 )}
               </tbody>
               <tfoot>
-                <tr className="bg-slate-900 text-white font-bold text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] border-t border-slate-700">
-                  <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-slate-900">সর্বমোট চিঠিপত্র (ফিল্টারকৃত):</td>
-                  <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-slate-900 text-white font-bold">{toBengaliDigits(filteredEntries.length)} টি</td>
-                  <td colSpan={6} className="border-t border-slate-700 bg-slate-900"></td>
+                <tr className="bg-black text-white font-bold text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] border-t border-slate-700">
+                  <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-black">সর্বমোট চিঠিপত্র (ফিল্টারকৃত):</td>
+                  <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-black text-white font-bold">{toBengaliDigits(filteredEntries.length)} টি</td>
+                  <td colSpan={6} className="border-t border-slate-700 bg-black"></td>
                 </tr>
               </tfoot>
             </table>
