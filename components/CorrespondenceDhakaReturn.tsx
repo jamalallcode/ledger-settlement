@@ -176,9 +176,9 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     );
   }, [correspondenceEntries, searchTerm, filterParaType, filterLetterType, selectedMonthDate]);
 
-  const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[12px] md:text-[13px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
+  const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-emerald-600 ring-4 ring-emerald-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-300'}`;
-  const tdS = "border border-slate-300 px-2 py-2 text-[12px] md:text-[13px] text-center font-bold leading-tight min-h-[40px] align-middle break-words";
+  const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight min-h-[40px] align-middle break-words";
   
   const reportingLimitDate = useMemo(() => {
     const today = new Date();
@@ -498,7 +498,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               )}
             </tbody>
             <tfoot className="z-[120]">
-              <tr className="bg-slate-50 text-slate-900 font-black text-[11px] h-11 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] border-t-2 border-slate-300">
+              <tr className="bg-slate-50 text-slate-900 font-black text-[10px] h-11 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] border-t-2 border-slate-300">
                 <td colSpan={2} className="px-4 text-left border-t border-slate-300 bg-slate-50">সর্বমোট চিঠিপত্র (ফিল্টারকৃত):</td>
                 <td colSpan={2} className="px-4 text-center border-t border-slate-300 bg-slate-50 text-emerald-600">{toBengaliDigits(filteredData.length)} টি</td>
                 <td colSpan={9} className="border-t border-slate-300 bg-slate-50"></td>

@@ -670,15 +670,6 @@ const App: React.FC = () => {
                     <div className="animate-in fade-in duration-700">
                       {(registerSubModule === 'settlement') ? (
                         <div className="space-y-6">
-                          <div className="flex items-center gap-4 no-print mb-2">
-                            <button 
-                              onClick={() => setRegisterSubModule(null)}
-                              className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all flex items-center gap-2 font-black text-[11px] border border-slate-200"
-                            >
-                              <ChevronLeft size={16} /> মেনুতে ফিরুন
-                            </button>
-                          </div>
-
                           <SettlementTable 
                             key={`register-reset-${resetKey}`} 
                             entries={approvedEntries} 
@@ -690,6 +681,7 @@ const App: React.FC = () => {
                             isAdmin={isAdmin}
                             highlightSearch={highlightSearch}
                             onClearHighlight={() => setHighlightSearch(null)}
+                            onBack={() => setRegisterSubModule(null)}
                           />
                         </div>
                       ) : (
