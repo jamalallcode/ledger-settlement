@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { GroupOption } from '../types.ts';
+import { GroupOption } from '../types';
 import { ChevronDown, X, PlusCircle, Check } from 'lucide-react';
 
 interface SearchableSelectProps {
