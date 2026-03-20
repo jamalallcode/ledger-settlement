@@ -30,6 +30,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [showSettlementData, setShowSettlementData] = useState(false);
   
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
@@ -432,7 +433,127 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           </div>
         </div>
 
-        <div className="table-container relative overflow-auto border border-slate-300 rounded-lg">
+        {/* Collapsible Settlement Data Summary - Premium Design */}
+        <div className="no-print w-full px-6 mb-6">
+          <button
+            onClick={() => setShowSettlementData(!showSettlementData)}
+            className="w-full flex items-center justify-between p-5 bg-white border border-slate-200 rounded-3xl shadow-sm hover:shadow-xl hover:border-emerald-200 transition-all duration-500 group relative overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 transition-all duration-500 group-hover:w-2"></div>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-100 transition-all duration-500">
+                <Sparkles className="text-emerald-600" size={24} />
+              </div>
+              <div className="text-left">
+                <h3 className="text-[18px] font-black text-slate-800 tracking-tight group-hover:text-emerald-700 transition-colors">মীমাংসা রেজিস্টার থেকে পাওয়া ডাটা</h3>
+                <p className="text-[12px] font-bold text-slate-500">বিস্তারিত সারসংক্ষেপ এবং পরিসংখ্যান দেখতে এখানে ক্লিক করুন</p>
+              </div>
+            </div>
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 ${showSettlementData ? 'bg-emerald-600 text-white rotate-180 shadow-lg shadow-emerald-200' : 'bg-slate-100 text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600'}`}>
+              <ChevronDown size={20} />
+            </div>
+          </button>
+
+          {showSettlementData && (
+            <div className="mt-4 animate-in fade-in slide-in-from-top-6 duration-700 ease-out">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Total Card - Ultra Premium */}
+                <div className="bg-slate-900 p-6 rounded-[2rem] shadow-2xl border border-slate-800 relative overflow-hidden group">
+                  <div className="absolute -right-8 -top-8 w-32 h-32 bg-blue-600/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
+                  <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-indigo-600/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="w-12 h-12 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/10">
+                        <BarChart3 className="text-blue-400" size={24} />
+                      </div>
+                      <span className="text-blue-400/60 text-[11px] font-black uppercase tracking-[0.2em]">মোট চিঠিপত্র</span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-baseline gap-2">
+                        <h4 className="text-4xl font-black text-white tracking-tighter">{toBengaliDigits(summaryStats.total)}</h4>
+                        <span className="text-lg font-bold text-white/40">টি চিঠি</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-blue-400/80 text-[14px] font-bold bg-blue-400/10 w-fit px-3 py-1 rounded-full border border-blue-400/20">
+                        <FileText size={14} />
+                        <span>মোট অনুচ্ছেদ: {toBengaliDigits(summaryStats.totalParas)} টি</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SFI Card - Ultra Premium */}
+                <div className="bg-white p-6 rounded-[2rem] shadow-xl border border-slate-100 relative overflow-hidden group hover:border-emerald-200 transition-all duration-500">
+                  <div className="absolute -right-8 -top-8 w-32 h-32 bg-emerald-50 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                        <LayoutGrid className="text-emerald-600" size={24} />
+                      </div>
+                      <span className="text-slate-400 text-[11px] font-black uppercase tracking-[0.2em]">এসএফআই (SFI)</span>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex items-end justify-between">
+                        <div className="flex items-baseline gap-2">
+                          <h4 className="text-3xl font-black text-slate-800 tracking-tighter">{toBengaliDigits(summaryStats.sfi.total)}</h4>
+                          <span className="text-sm font-bold text-slate-400">টি চিঠি</span>
+                        </div>
+                        <div className="px-3 py-1 bg-emerald-50 text-emerald-600 font-black text-[12px] rounded-full border border-emerald-100">
+                          {toBengaliDigits(summaryStats.sfi.paras)} অনুচ্ছেদ
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+                        <div className="space-y-1">
+                          <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">বিএসআর</span>
+                          <p className="text-[16px] text-slate-700 font-black">{toBengaliDigits(summaryStats.sfi.bsr)} <span className="text-[10px] opacity-60">টি</span></p>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">কার্যবিবরণী</span>
+                          <p className="text-[16px] text-slate-700 font-black">{toBengaliDigits(summaryStats.sfi.kb)} <span className="text-[10px] opacity-60">টি</span></p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Non-SFI Card - Ultra Premium */}
+                <div className="bg-white p-6 rounded-[2rem] shadow-xl border border-slate-100 relative overflow-hidden group hover:border-orange-200 transition-all duration-500">
+                  <div className="absolute -right-8 -top-8 w-32 h-32 bg-orange-50 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center group-hover:bg-orange-100 transition-colors">
+                        <FileText className="text-orange-600" size={24} />
+                      </div>
+                      <span className="text-slate-400 text-[11px] font-black uppercase tracking-[0.2em]">নন-এসএফআই (Non-SFI)</span>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex items-end justify-between">
+                        <div className="flex items-baseline gap-2">
+                          <h4 className="text-3xl font-black text-slate-800 tracking-tighter">{toBengaliDigits(summaryStats.nonSfi.total)}</h4>
+                          <span className="text-sm font-bold text-slate-400">টি চিঠি</span>
+                        </div>
+                        <div className="px-3 py-1 bg-orange-50 text-orange-600 font-black text-[12px] rounded-full border border-orange-100">
+                          {toBengaliDigits(summaryStats.nonSfi.paras)} অনুচ্ছেদ
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+                        <div className="space-y-1">
+                          <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">বিএসআর</span>
+                          <p className="text-[16px] text-slate-700 font-black">{toBengaliDigits(summaryStats.nonSfi.bsr)} <span className="text-[10px] opacity-60">টি</span></p>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">কার্যবিবরণী</span>
+                          <p className="text-[16px] text-slate-700 font-black">{toBengaliDigits(summaryStats.nonSfi.kb)} <span className="text-[10px] opacity-60">টি</span></p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="table-container relative overflow-auto border border-slate-300 rounded-lg px-6 pb-6">
           <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
             <colgroup>
               <col className="w-[40px]" />
