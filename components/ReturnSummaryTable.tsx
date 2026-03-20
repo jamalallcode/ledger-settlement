@@ -77,9 +77,10 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
         mAcc.pUC += (row.prev.unsettledCount || 0); mAcc.pUA += (row.prev.unsettledAmount || 0);
         mAcc.cRC += (row.currentRaisedCount || 0); mAcc.cRA += (row.currentRaisedAmount || 0);
         mAcc.pSC += (row.prev.settledCount || 0); mAcc.pSA += (row.prev.settledAmount || 0);
-        mAcc.cSC += (row.currentSettledCount || 0); mAcc.cSA += (row.currentSettledAmount || 0);
         mAcc.cSFIC += (row.currentSFICount || 0); mAcc.cNonSFIC += (row.currentNonSFICount || 0);
         mAcc.cSFIA += (row.currentSFIAmount || 0); mAcc.cNonSFIA += (row.currentNonSFIAmount || 0);
+        mAcc.cSC += (row.currentSFICount || 0) + (row.currentNonSFICount || 0);
+        mAcc.cSA += (row.currentSFIAmount || 0) + (row.currentNonSFIAmount || 0);
         
         mAcc.sfiBSR = (mAcc.sfiBSR || 0) + (row.sfiBreakdown?.bsr || 0);
         mAcc.sfiTriWork = (mAcc.sfiTriWork || 0) + (row.sfiBreakdown?.triWork || 0);
@@ -118,8 +119,8 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   const ministryStats = useMemo(() => {
     return filteredReportData.map(m => {
       const stats = m.entityRows.reduce((acc: any, row: any) => {
-        acc.count += (row.currentSettledCount || 0);
-        acc.amount += (row.currentSettledAmount || 0);
+        acc.count += (row.currentSFICount || 0) + (row.currentNonSFICount || 0);
+        acc.amount += (row.currentSFIAmount || 0) + (row.currentNonSFIAmount || 0);
         acc.sfiCount += (row.currentSFICount || 0);
         acc.nonSfiCount += (row.currentNonSFICount || 0);
         acc.sfiAmount += (row.currentSFIAmount || 0);
@@ -309,7 +310,9 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
               {filteredReportData.map(m => {
                 const mTotals = m.entityRows.reduce((acc: any, row: any) => {
                   acc.pUC += (row.prev.unsettledCount || 0); acc.pUA += (row.prev.unsettledAmount || 0); acc.cRC += (row.currentRaisedCount || 0); acc.cRA += (row.currentRaisedAmount || 0);
-                  acc.pSC += (row.prev.settledCount || 0); acc.pSA += (row.prev.settledAmount || 0); acc.cSC += (row.currentSettledCount || 0); acc.cSA += (row.currentSettledAmount || 0);
+                  acc.pSC += (row.prev.settledCount || 0); acc.pSA += (row.prev.settledAmount || 0); 
+                  acc.cSC += (row.currentSFICount || 0) + (row.currentNonSFICount || 0); 
+                  acc.cSA += (row.currentSFIAmount || 0) + (row.currentNonSFIAmount || 0);
                   acc.cFC += (row.currentFullCount || 0); acc.cPC += (row.currentPartialCount || 0);
                   return acc;
                 }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0 });
@@ -317,14 +320,16 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                 return (
                   <React.Fragment key={m.ministry}>
                     {m.entityRows.map((row, rIdx) => {
+                      const currentSC = (row.currentSFICount || 0) + (row.currentNonSFICount || 0);
+                      const currentSA = (row.currentSFIAmount || 0) + (row.currentNonSFIAmount || 0);
                       const openingUC = Math.max(0, (row.prev.unsettledCount || 0) - (row.prev.settledCount || 0));
                       const openingUA = Math.max(0, (row.prev.unsettledAmount || 0) - (row.prev.settledAmount || 0));
                       const totalUC = openingUC + (row.currentRaisedCount || 0); 
                       const totalUA = openingUA + (row.currentRaisedAmount || 0);
-                      const totalSC = (row.prev.settledCount || 0) + (row.currentSettledCount || 0); 
-                      const totalSA = (row.prev.settledAmount || 0) + (row.currentSettledAmount || 0);
-                      const closingUC = totalUC - (row.currentSettledCount || 0);
-                      const closingUA = totalUA - (row.currentSettledAmount || 0);
+                      const totalSC = (row.prev.settledCount || 0) + currentSC; 
+                      const totalSA = (row.prev.settledAmount || 0) + currentSA;
+                      const closingUC = totalUC - currentSC;
+                      const closingUA = totalUA - currentSA;
 
                       return (
                         <tr key={row.entity} className="group hover:bg-blue-50/50 bg-white">
@@ -340,7 +345,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                           <td className={tdStyle}>{toBengaliDigits(row.currentRaisedCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.currentRaisedAmount))}</td>
                           <td className={tdStyle + " bg-slate-100/50 font-bold"}>{toBengaliDigits(totalUC)}</td><td className={tdStyle + " text-center bg-slate-100/50 border-r border-slate-300 font-bold"}>{toBengaliDigits(Math.round(totalUA))}</td>
                           <td className={tdStyle}>{toBengaliDigits(row.prev.settledCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.prev.settledAmount))}</td>
-                          <td className={tdStyle}>{toBengaliDigits(row.currentSettledCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.currentSettledAmount))}</td>
+                          <td className={tdStyle}>{toBengaliDigits(currentSC)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(currentSA))}</td>
                           <td className={tdStyle + " bg-emerald-50/50 font-bold"}>{toBengaliDigits(totalSC)}</td><td className={tdStyle + " text-center bg-emerald-50/50 border-r border-slate-300 font-bold"}>{toBengaliDigits(Math.round(totalSA))}</td>
                           <td className={tdStyle + " bg-amber-50 text-blue-700 font-bold"}>{toBengaliDigits(closingUC)}</td><td className={tdStyle + " text-center bg-amber-50 text-blue-700 font-bold"}>{toBengaliDigits(Math.round(closingUA))}</td>
                         </tr>
