@@ -146,7 +146,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
           <div className="flex items-center">
             {selectedReportType === 'মাসিক রিটারন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' && (
               <div 
-                className="relative"
+                className=""
                 onMouseEnter={() => setIsStatsHovered(true)}
                 onMouseLeave={() => setIsStatsHovered(false)}
               >
@@ -159,7 +159,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                 </button>
 
                 {isStatsHovered && (
-                  <div className="absolute top-full left-0 w-[480px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="absolute top-full left-0 w-full bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="space-y-6">
                       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                         <div className="flex items-center gap-3">
@@ -257,11 +257,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             </div>
           </div>
         </div>
-          <div className="mt-4 flex justify-center mb-6">
-            <div className="inline-flex items-center gap-3 px-6 py-1.5 bg-slate-900 text-white rounded-xl text-[10px] font-black border border-slate-700 shadow-md">
-              <span className="text-blue-400">{selectedReportType}</span> | {toBengaliDigits(activeCycle.label)}
-            </div>
-          </div>
+
 
           {/* Ministry-wise Summary Table */}
           <div className="mb-8 px-4">
