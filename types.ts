@@ -69,6 +69,8 @@ export interface SettlementEntry {
   totalRec: number;
   totalAdj: number;
   issueLetterNoDate: string;
+  issueLetterNo?: string;
+  issueLetterDate?: string;
   issueDateISO?: string; 
   cycleLabel?: string;   
   actualEntryDate?: string; 

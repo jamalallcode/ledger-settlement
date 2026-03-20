@@ -1,18 +1,22 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Printer } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
-import { format, subMonths } from 'date-fns';
+import { format, subMonths, isWithinInterval, parseISO } from 'date-fns';
 import HighlightText from './HighlightText';
+import { SettlementEntry } from '../types';
+import { MINISTRY_ENTITY_MAP } from '../constants';
 
 interface QRProps {
   activeCycle: any;
-  IDBadge: React.FC<{ id: string }>;
+  entries: SettlementEntry[];
+  IDBadge: React.FC<{ id: string; isLayoutEditable?: boolean }>;
   onBack?: () => void;
   searchTerm?: string;
   filterMinistry?: string;
+  isLayoutEditable?: boolean;
 }
 
-const QR_3: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
+const QR_3: React.FC<QRProps> = ({ activeCycle, entries, IDBadge, searchTerm = '', filterMinistry = '', isLayoutEditable }) => {
   const startDate = activeCycle.start;
   const endDate = activeCycle.end;
   const prevMonthDate = subMonths(startDate, 1);
@@ -25,63 +29,53 @@ const QR_3: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
   const formatYearBN = (date: Date) => toBengaliDigits(format(date, 'yyyy'));
   const formatShortYearBN = (date: Date) => toBengaliDigits(format(date, 'yy'));
 
-  const table1Data = [
-    {
-      ministry: "শিল্প মন্ত্রণালয়",
-      entities: [
-        { name: "চিনি ও খাদ্য সংস্থা", pCount: 621, pAmount: 17330266370, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "ক্ষুদ্র ও কুটির শিল্প", pCount: 85, pAmount: 166675293, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "বিটাক", pCount: 0, pAmount: 0, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "রসায়ন শিল্প সংস্থা", pCount: 2, pAmount: 553176, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-      ]
-    },
-    {
-      ministry: "বস্ত্র ও পাট মন্ত্রণালয়",
-      entities: [
-        { name: "পাটকল সংস্থা", pCount: 1778, pAmount: 21918286207, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "পাট সংস্থা", pCount: 3, pAmount: 32016629, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "বস্ত্রকল সংস্থা", pCount: 160, pAmount: 16231079081, cCount: 0, cAmount: 0, sCount: 1, sAmount: 15000 },
-        { name: "রেশম বোর্ড", pCount: 7, pAmount: 2751732, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-      ]
-    },
-    {
-      ministry: "বাণিজ্য মন্ত্রণালয়",
-      entities: [
-        { name: "টিসিবি", pCount: 57, pAmount: 230832525, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "আমদানি ও রপ্তানি", pCount: 3, pAmount: 1577323, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-      ]
-    },
-    {
-      ministry: "বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয়",
-      entities: [
-        { name: "বাংলাদেশ বিমান", pCount: 60, pAmount: 460866121, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "পর্যটন কর্পোরেশন", pCount: 53, pAmount: 3355279, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-      ]
-    }
-  ];
+  const { table1Data, table2Data } = useMemo(() => {
+    const startDate = new Date(activeCycle.start);
+    const endDate = new Date(activeCycle.end);
 
-  const table2Data = [
-    {
-      ministry: "আর্থিক প্রতিষ্ঠান বিভাগ",
-      entities: [
-        { name: "সোনালী ব্যাংক পিএলসি", pCount: 2680, pAmount: 39827509886, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "জনতা ব্যাংক পিএলসি", pCount: 1818, pAmount: 17363929591, cCount: 0, cAmount: 0, sCount: 29, sAmount: 141343683 },
-        { name: "অগ্রণী ব্যাংক পিএলসি", pCount: 1954, pAmount: 16238136822, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "বাংলাদেশ কৃষি ব্যাংক", pCount: 2018, pAmount: 1830197716, cCount: 0, cAmount: 0, sCount: 1, sAmount: 2410046 },
-        { name: "রূপালী ব্যাংক পিএলসি", pCount: 1109, pAmount: 34816801304, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "বাংলাদেশ ব্যাংক", pCount: 318, pAmount: 5278296389, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "বাংলাদেশ ডেভেলপমেন্ট ব্যাংক লিঃ", pCount: 117, pAmount: 1673007818, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "গৃহনির্মাণ ঋণদান সংস্থা", pCount: 52, pAmount: 220803333, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "কর্মসংস্থান ব্যাংক", pCount: 111, pAmount: 72967576, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "বেসিক ব্যাংক লিঃ", pCount: 195, pAmount: 3021693705, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "আনসার ভিডিপি উন্নয়ন ব্যাংক লিঃ", pCount: 53, pAmount: 44416195, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "ইনভেস্টমেন্ট কর্পোরেশন অব বাংলাদেশ", pCount: 29, pAmount: 220711456, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "সাধারণ বীমা কর্পোরেশন", pCount: 44, pAmount: 669179270, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "জীবন বীমা কর্পোরেশন", pCount: 131, pAmount: 1588032223, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "প্রবাসী কল্যাণ ব্যাংক", pCount: 1, pAmount: 1011000, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-      ]
-    }
-  ];
+    const bsrEntries = entries.filter(entry => {
+      try {
+        const entryDate = parseISO(entry.date);
+        const isWithin = isWithinInterval(entryDate, { start: startDate, end: endDate });
+        const isBSR = entry.meetingType === 'বিএসআর' || entry.letterType === 'বিএসআর';
+        return isWithin && isBSR;
+      } catch (e) {
+        return false;
+      }
+    });
+
+    const processTableData = (ministries: string[]) => {
+      return ministries.map(ministryName => {
+        const entityNames = MINISTRY_ENTITY_MAP[ministryName] || [];
+        const entities = entityNames.map(entityName => {
+          const entityEntries = bsrEntries.filter(e => e.ministry === ministryName && e.entity === entityName);
+          
+          return {
+            name: entityName,
+            pCount: 0, // Opening (JER) - would need historical data or a specific field
+            pAmount: 0,
+            cCount: entityEntries.length,
+            cAmount: entityEntries.reduce((sum, e) => sum + (e.amount || 0), 0),
+            sCount: entityEntries.filter(e => e.status === 'নিষ্পন্ন').length,
+            sAmount: entityEntries.filter(e => e.status === 'নিষ্পন্ন').reduce((sum, e) => sum + (e.settledAmount || 0), 0)
+          };
+        });
+
+        return {
+          ministry: ministryName,
+          entities: entities.filter(ent => ent.cCount > 0 || ent.sCount > 0 || ent.pCount > 0)
+        };
+      }).filter(group => group.entities.length > 0);
+    };
+
+    const table1Ministries = ["শিল্প মন্ত্রণালয়", "বস্ত্র ও পাট মন্ত্রণালয়", "বাণিজ্য মন্ত্রণালয়", "বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয়"];
+    const table2Ministries = ["আর্থিক প্রতিষ্ঠান বিভাগ"];
+
+    return {
+      table1Data: processTableData(table1Ministries),
+      table2Data: processTableData(table2Ministries)
+    };
+  }, [entries, activeCycle]);
 
   const filterData = (data: any[]) => {
     return data.filter(mGroup => {
@@ -216,7 +210,7 @@ const QR_3: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
 
   return (
     <div id="qr-3-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
-      <IDBadge id="qr-3-container" />
+      <IDBadge id="qr-3-container" isLayoutEditable={isLayoutEditable} />
       
       <div className="flex justify-end mb-4 no-print">
       </div>
@@ -227,6 +221,13 @@ const QR_3: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
             ত্রৈমাসিক রিটার্ন - ৩
           </h1>
+          
+          <div className="mt-4 flex justify-center mb-4">
+            <div className="inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
+              <span className="text-blue-400">ত্রৈমাসিক প্রতিবেদন</span>
+            </div>
+          </div>
+
           <div className="flex items-center justify-center gap-4">
             <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
             <div className="w-2 h-2 rounded-full bg-blue-600"></div>

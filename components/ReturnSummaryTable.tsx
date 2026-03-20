@@ -13,10 +13,11 @@ interface ReturnSummaryTableProps {
   setSelectedReportType: (type: string | null) => void;
   isAdmin: boolean;
   HistoricalFilter: React.FC;
-  IDBadge: React.FC<{ id: string }>;
+  IDBadge: React.FC<{ id: string; isLayoutEditable?: boolean }>;
   showFilters: boolean;
   searchTerm: string;
   filterMinistry: string;
+  isLayoutEditable?: boolean;
 }
 
 const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
@@ -30,7 +31,8 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   IDBadge,
   showFilters,
   searchTerm,
-  filterMinistry
+  filterMinistry,
+  isLayoutEditable
 }) => {
   const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
@@ -142,10 +144,10 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
 
   return (
     <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative">
-      <IDBadge id="section-report-summary" />
+      <IDBadge id="section-report-summary" isLayoutEditable={isLayoutEditable} />
       {showFilters && (
         <div id="summary-header-controls" className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print relative">
-          <IDBadge id="summary-header-controls" />
+          <IDBadge id="summary-header-controls" isLayoutEditable={isLayoutEditable} />
           
           <div className="flex items-center">
             {selectedReportType === 'মাসিক রিটারন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' && (
@@ -254,6 +256,13 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
               {selectedReportType}
             </h1>
+            
+            <div className="mt-4 flex justify-center mb-4">
+              <div className="inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
+                <span className="text-blue-400">অডিট লেজার সেটেলমেন্ট রিপোর্ট</span>
+              </div>
+            </div>
+
             <div className="flex items-center justify-center gap-4">
               <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
               <div className="w-2 h-2 rounded-full bg-blue-600"></div>
