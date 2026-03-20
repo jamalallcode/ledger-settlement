@@ -562,55 +562,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="relative group">
-             <button 
-               onClick={() => setShowSummary(!showSummary)} 
-               className={`px-4 py-2.5 rounded-xl font-black text-[11px] flex items-center gap-2 transition-all shadow-lg active:scale-95 ${showSummary ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100'}`}
-             >
-               <Sparkles size={16} /> রেজিস্টার সারসংক্ষেপ
-             </button>
-
-             {/* Hover Tooltip for Quick Stats */}
-             <div className="absolute top-full right-0 pt-3 w-72 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-[2000] translate-y-2 group-hover:translate-y-0">
-                <div className="bg-white border-2 border-blue-100 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-4 relative">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">একনজরে পরিসংখ্যান</span>
-                      <div className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black">লাইভ ডাটা</div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                        <p className="text-[9px] font-bold text-slate-500 uppercase">মোট চিঠিপত্র</p>
-                        <p className="text-lg font-black text-slate-900 leading-none mt-1">{toBengaliDigits(stats.total)}</p>
-                      </div>
-                      <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100">
-                        <p className="text-[9px] font-bold text-emerald-600 uppercase">এসএফআই (SFI)</p>
-                        <p className="text-lg font-black text-emerald-900 leading-none mt-1">{toBengaliDigits(stats.sfi.total)}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="font-bold text-slate-600">নন-এসএফআই (Non-SFI)</span>
-                        <span className="font-black text-slate-900">{toBengaliDigits(stats.nonSfi.total)} টি</span>
-                      </div>
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="font-bold text-slate-600">বিএসআর (BSR)</span>
-                        <span className="font-black text-slate-900">{toBengaliDigits(stats.sfi.bsr + stats.nonSfi.bsr)} টি</span>
-                      </div>
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                        <span className="text-[10px] font-black text-blue-600 uppercase">মিলিকরণ</span>
-                        <span className="text-[12px] font-black text-slate-900">{toBengaliDigits(stats.sfi.reconciliation + stats.nonSfi.reconciliation)} টি</span>
-                      </div>
-                    </div>
-                  </div>
-                  {/* Arrow */}
-                  <div className="absolute -top-2 right-10 w-4 h-4 bg-white border-t-2 border-l-2 border-blue-100 rotate-45"></div>
-                </div>
-             </div>
-          </div>
-          {hasChanges && (
+           <button 
+             onClick={() => setShowSummary(!showSummary)} 
+             className={`px-4 py-2.5 rounded-xl font-black text-[11px] flex items-center gap-2 transition-all shadow-lg active:scale-95 ${showSummary ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100'}`}
+           >
+             <Sparkles size={16} /> রেজিস্টার সারসংক্ষেপ
+           </button>
+           {hasChanges && (
              <button 
               onClick={saveAllChanges}
               disabled={isUpdating}
@@ -619,7 +577,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                {isUpdating ? <Clock size={16} className="animate-spin" /> : <Save size={16} />}
                আপডেট করুন {toBengaliDigits(Object.keys(pendingChanges).length)} টি এন্ট্রি
              </button>
-          )}
+           )}
         </div>
       </div>
 
