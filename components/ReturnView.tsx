@@ -208,12 +208,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             
             // For settlements, refine based on workpaper/minutes fields
             if (entry.meetingType) {
+              const hasMinutes = entry.meetingMinutes || (entry.meetingWorkpaper && entry.meetingWorkpaper.includes('কার্যবিবরণী'));
               if (entry.meetingType === 'ত্রিপক্ষীয় সভা') {
-                if (entry.meetingWorkpaper) letterType = 'ত্রিপক্ষীয় সভা (কার্যপত্র)';
-                else if (entry.meetingMinutes) letterType = 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)';
+                if (hasMinutes) letterType = 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)';
+                else if (entry.meetingWorkpaper) letterType = 'ত্রিপক্ষীয় সভা (কার্যপত্র)';
               } else if (entry.meetingType === 'দ্বিপক্ষীয় সভা') {
-                if (entry.meetingWorkpaper) letterType = 'দ্বিপক্ষীয় সভা (কার্যপত্র)';
-                else if (entry.meetingMinutes) letterType = 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)';
+                if (hasMinutes) letterType = 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)';
+                else if (entry.meetingWorkpaper) letterType = 'দ্বিপক্ষীয় সভা (কার্যপত্র)';
               }
             }
 
@@ -228,28 +229,32 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   
                   if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                     curFC++; curSC++; 
+                    
+                    if (isSFI) {
+                      curSFIC++;
+                      if (letterType === 'বিএসআর') sfiBSR++;
+                      else if (letterType.includes('ত্রিপক্ষীয় সভা')) {
+                        // If settled, it MUST be counted as Minutes. If not settled, follow the letterType.
+                        if (status === robustNormalize('পূর্ণাঙ্গ') || letterType.includes('কার্যবিবরণী')) sfiTriMin++;
+                        else sfiTriWork++;
+                      }
+                      else if (letterType === 'মিলিকরণ') sfiRecon++;
+                      sfiSA += settledAmt;
+                    } else {
+                      curNonSFIC++;
+                      if (letterType === 'বিএসআর') nonSfiBSR++;
+                      else if (letterType.includes('দ্বিপক্ষীয় সভা')) {
+                        // If settled, it MUST be counted as Minutes. If not settled, follow the letterType.
+                        if (status === robustNormalize('পূর্ণাঙ্গ') || letterType.includes('কার্যবিবরণী')) nonSfiBiMin++;
+                        else nonSfiBiWork++;
+                      }
+                      else if (letterType === 'মিলিকরণ') nonSfiRecon++;
+                      nonSfiSA += settledAmt;
+                    }
+                    curSA += settledAmt;
                   } else if (status === robustNormalize('আংশিক')) {
                     curPC++;
                   }
-
-                  if (isSFI) {
-                    curSFIC++;
-                    if (letterType === 'বিএসআর') sfiBSR++;
-                    else if (letterType === 'ত্রিপক্ষীয় সভা (কার্যপত্র)') sfiTriWork++;
-                    else if (letterType === 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)') sfiTriMin++;
-                    else if (letterType === 'মিলিকরণ') sfiRecon++;
-                  } else {
-                    curNonSFIC++;
-                    if (letterType === 'বিএসআর') nonSfiBSR++;
-                    else if (letterType === 'দ্বিপক্ষীয় সভা (কার্যপত্র)') nonSfiBiWork++;
-                    else if (letterType === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)') nonSfiBiMin++;
-                    else if (letterType === 'মিলিকরণ') nonSfiRecon++;
-                  }
-
-                  if (isSFI) sfiSA += settledAmt;
-                  else nonSfiSA += settledAmt;
-                  
-                  curSA += settledAmt;
                 }
               });
             }
