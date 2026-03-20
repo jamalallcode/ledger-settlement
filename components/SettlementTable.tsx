@@ -1,12 +1,12 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import React from 'react';
-import { SettlementEntry } from '../types.ts';
+import { SettlementEntry } from '../types';
 import { Trash2, Pencil, Calendar, Printer, CheckCircle2, ChevronDown, ChevronUp, FileText, Fingerprint, Banknote, ListOrdered, Archive, MapPin, CalendarDays, Sparkles, ClipboardList, Filter, X, Search, LayoutGrid, CalendarSearch, Check, ShieldCheck, XCircle, AlertCircle, MessageSquare, Inbox, UserCheck, Hash, Save, Plus, ChevronRight, CalendarRange } from 'lucide-react';
-import { toBengaliDigits, parseBengaliNumber, formatDateBN, toEnglishDigits } from '../utils/numberUtils.ts';
+import { toBengaliDigits, parseBengaliNumber, formatDateBN, toEnglishDigits } from '../utils/numberUtils';
 import HighlightText from './HighlightText';
 import IDBadge from './IDBadge';
-import { OFFICE_HEADER } from '../constants.ts';
-import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper.ts';
+import { OFFICE_HEADER } from '../constants';
+import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper';
 import { format, addMonths } from 'date-fns';
 
 interface SettlementTableProps {
