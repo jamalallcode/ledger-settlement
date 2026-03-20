@@ -236,14 +236,20 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   if (isSFI) {
                     curSFIC++;
                     if (letterType === 'বিএসআর') sfiBSR++;
-                    else if (letterType === 'ত্রিপক্ষীয় সভা (কার্যপত্র)') sfiTriWork++;
-                    else if (letterType === 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)') sfiTriMin++;
+                    else if (letterType.includes('ত্রিপক্ষীয় সভা')) {
+                      // If settled, it MUST be counted as Minutes. If not settled, follow the letterType.
+                      if (status === robustNormalize('পূর্ণাঙ্গ') || letterType.includes('কার্যবিবরণী')) sfiTriMin++;
+                      else sfiTriWork++;
+                    }
                     else if (letterType === 'মিলিকরণ') sfiRecon++;
                   } else {
                     curNonSFIC++;
                     if (letterType === 'বিএসআর') nonSfiBSR++;
-                    else if (letterType === 'দ্বিপক্ষীয় সভা (কার্যপত্র)') nonSfiBiWork++;
-                    else if (letterType === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)') nonSfiBiMin++;
+                    else if (letterType.includes('দ্বিপক্ষীয় সভা')) {
+                      // If settled, it MUST be counted as Minutes. If not settled, follow the letterType.
+                      if (status === robustNormalize('পূর্ণাঙ্গ') || letterType.includes('কার্যবিবরণী')) nonSfiBiMin++;
+                      else nonSfiBiWork++;
+                    }
                     else if (letterType === 'মিলিকরণ') nonSfiRecon++;
                   }
 
