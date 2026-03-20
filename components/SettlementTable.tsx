@@ -250,8 +250,33 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         return { total, details };
       };
 
+      const getMinistryStats = (entries: SettlementEntry[]) => {
+        const grouped = entries.reduce((acc, ent) => {
+          const settledParas = ent.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ') || [];
+          const count = settledParas.length;
+          const amount = settledParas.reduce((sum, p) => sum + (p.involvedAmount || 0), 0);
+          
+          if (count > 0) {
+            const mName = ent.ministryName || 'অনির্ধারিত মন্ত্রণালয়';
+            if (!acc[mName]) {
+              acc[mName] = { count: 0, amount: 0 };
+            }
+            acc[mName].count += count;
+            acc[mName].amount += amount;
+          }
+          return acc;
+        }, {} as Record<string, { count: number; amount: number }>);
+
+        if (Object.keys(grouped).length === 0) return null;
+
+        return Object.entries(grouped).map(([name, data]) => 
+          `${name}: ${toBengaliDigits(data.count)} টি (${toBengaliDigits(Math.round(data.amount))} টাকা)`
+        ).join(' | ');
+      };
+
       const sfiSettled = getSettledDetails(sfiEntries);
       const nonSfiSettled = getSettledDetails(nonSfiEntries);
+      const ministrySettledDetails = getMinistryStats(group.entries);
 
       statsMap[group.label] = {
         totalLetters,
@@ -264,7 +289,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         cycleSettledParasCount,
         cycleSettledAmount,
         sfiSettled,
-        nonSfiSettled
+        nonSfiSettled,
+        ministrySettledDetails
       };
     });
 
@@ -751,6 +777,16 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                                     {stats.nonSfiSettled.details && <span className="text-slate-400 font-bold">({stats.nonSfiSettled.details})</span>}
                                  </div>
                               </div>
+
+                              {stats.ministrySettledDetails && (
+                                <div className="flex items-start gap-2 px-4 py-2 bg-amber-50/50 rounded-xl border border-amber-100 text-[11px] font-black shadow-inner">
+                                   <MapPin size={14} className="text-amber-600 mt-0.5 shrink-0" />
+                                   <div className="flex flex-col gap-1">
+                                      <span className="text-amber-800 uppercase text-[9px] tracking-wider font-black">মন্ত্রণালয় ভিত্তিক নিষ্পত্তি:</span>
+                                      <span className="text-slate-700 leading-relaxed">{stats.ministrySettledDetails}</span>
+                                   </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>
