@@ -1,12 +1,12 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import React from 'react';
-import { SettlementEntry } from '../types';
-import { Trash2, Pencil, Calendar, Printer, CheckCircle2, ChevronDown, ChevronUp, FileText, Fingerprint, Banknote, ListOrdered, Archive, MapPin, CalendarDays, Sparkles, ClipboardList, Filter, X, Search, LayoutGrid, CalendarSearch, Check, ShieldCheck, XCircle, AlertCircle, MessageSquare, Inbox, UserCheck, Hash, Save, Plus, ChevronRight, CalendarRange } from 'lucide-react';
-import { toBengaliDigits, parseBengaliNumber, formatDateBN, toEnglishDigits } from '../utils/numberUtils';
+import { SettlementEntry } from '../types.ts';
+import { Trash2, Pencil, Calendar, Printer, CheckCircle2, ChevronDown, ChevronUp, FileText, Fingerprint, Banknote, ListOrdered, Archive, MapPin, CalendarDays, Sparkles, ClipboardList, Filter, X, Search, LayoutGrid, CalendarSearch, Check, ShieldCheck, XCircle, AlertCircle, MessageSquare, Inbox, UserCheck, Hash, Save, Plus } from 'lucide-react';
+import { toBengaliDigits, parseBengaliNumber, formatDateBN, toEnglishDigits } from '../utils/numberUtils.ts';
 import HighlightText from './HighlightText';
 import IDBadge from './IDBadge';
-import { OFFICE_HEADER } from '../constants';
-import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper';
+import { OFFICE_HEADER } from '../constants.ts';
+import { getCurrentCycle, getCycleForDate } from '../utils/cycleHelper.ts';
 import { format, addMonths } from 'date-fns';
 
 interface SettlementTableProps {
@@ -23,7 +23,6 @@ interface SettlementTableProps {
   isAdmin?: boolean;
   highlightSearch?: string | null;
   onClearHighlight?: () => void;
-  onBack?: () => void;
 }
 
 const PremiumInlineSelect: React.FC<{
@@ -153,7 +152,7 @@ const PremiumInlineSelect: React.FC<{
 const SettlementTable: React.FC<SettlementTableProps> = ({ 
   entries, onDelete, onEdit, onInlineUpdate, isLayoutEditable, showFilters, setShowFilters,
   isAdminView = false, onApprove, onReject, isAdmin = false,
-  highlightSearch = null, onClearHighlight, onBack
+  highlightSearch = null, onClearHighlight
 }) => {
   const [pendingChanges, setPendingChanges] = useState<Record<string, Partial<SettlementEntry>>>({});
   const [isUpdating, setIsUpdating] = useState(false);
@@ -216,7 +215,6 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
 
-  const [showSummary, setShowSummary] = useState(false);
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -327,11 +325,6 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                entityMatch;
       })();
 
-      // If search is active, it takes precedence
-      if (searchTerm !== '') {
-        return matchSearch;
-      }
-
       const entryType = entry.isMeeting ? entry.meetingType : 'বিএসআর';
       const matchType = filterType === '' || entryType === filterType;
       const matchParaType = filterParaType === '' || entry.paraType === filterParaType;
@@ -346,39 +339,19 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       const hasRaisedAmount = entry.manualRaisedAmount !== null && entry.manualRaisedAmount !== 0;
       const hasMeaningfulContent = (entry.paragraphs && entry.paragraphs.length > 0) || (entry.isMeeting && (entry.meetingUnsettledAmount || 0) > 0) || hasRaisedCount || hasRaisedAmount;
       
+      // If we have a search term and it matches, we should show it regardless of "meaningful content"
+      if (searchTerm !== '' && matchSearch) return matchDate && matchType && matchParaType && matchStatus;
+      
       if (!hasMeaningfulContent) return false;
       
-      return matchDate && matchType && matchParaType && matchStatus;
+      return matchDate && matchSearch && matchType && matchParaType && matchStatus;
     }).sort((a, b) => {
       const timeB = b.issueDateISO ? new Date(b.issueDateISO).getTime() : 0;
       const timeA = a.issueDateISO ? new Date(a.issueDateISO).getTime() : 0;
       if (timeB !== timeA) return timeB - timeA;
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  }, [entries, searchTerm, filterParaType, filterType, filterStatus, activeCycle]);
-
-  const stats = useMemo(() => {
-    const total = filteredEntries.length;
-    const sfi = filteredEntries.filter(e => e.paraType === 'এসএফআই');
-    const nonSfi = filteredEntries.filter(e => e.paraType === 'নন এসএফআই');
-
-    const getCount = (list: SettlementEntry[], type: string) => 
-      list.filter(e => (e.isMeeting ? e.meetingType : 'বিএসআর') === type).length;
-
-    return {
-      total,
-      sfi: {
-        total: sfi.length,
-        bsr: getCount(sfi, 'বিএসআর'),
-        tri: getCount(sfi, 'ত্রিপক্ষীয় সভা'),
-      },
-      nonSfi: {
-        total: nonSfi.length,
-        bsr: getCount(nonSfi, 'বিএসআর'),
-        bi: getCount(nonSfi, 'দ্বিপক্ষীয় সভা'),
-      }
-    };
-  }, [filteredEntries]);
+  }, [entries, searchTerm, filterParaType, filterType, activeCycle]);
 
   const { cycleStats, groupedEntries } = useMemo(() => {
     const groupsMap: Record<string, SettlementEntry[]> = {};
@@ -518,23 +491,17 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
 
   const formatIssueInfoForDisplay = (info: string) => {
     if (!info) return "";
-    let cleaned = info.replace(/জারিপত্র নং-?\s*/g, '').replace(/জারিপত্রের তারিখ-?\s*/g, '').trim();
-    if (cleaned && !cleaned.endsWith('খ্রি:')) cleaned += " খ্রি:";
-    return cleaned;
+    return info.replace(/জারিপত্র নং-/g, '').replace(/জারিপত্রের তারিখ-/g, '').trim() + " খ্রি:";
   };
 
   const formatDiaryInfoForDisplay = (info: string) => {
     if (!info) return "";
-    let cleaned = info.replace(/ডায়েরি নং-?\s*/g, '').replace(/ডায়েরির তারিখ-?\s*/g, '').trim();
-    if (cleaned && !cleaned.endsWith('খ্রি:')) cleaned += " খ্রি:";
-    return cleaned;
+    return info.replace(/ডায়েরি নং-/g, '').replace(/ডায়েরির তারিখ-/g, '').trim() + " খ্রি:";
   };
 
   const formatLetterInfoForDisplay = (info: string) => {
     if (!info) return "";
-    let cleaned = info.replace(/পত্র নং-?\s*/g, '').replace(/পত্রের তারিখ-?\s*/g, '').trim();
-    if (cleaned && !cleaned.endsWith('খ্রি:')) cleaned += " খ্রি:";
-    return cleaned;
+    return info.replace(/পত্র নং-/g, '').replace(/পত্রের তারিখ-/g, '').trim() + " খ্রি:";
   };
 
   // Headers reverted to font-black
@@ -612,76 +579,17 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
     <div id="table-register-container" className="w-full relative animate-premium-page">
       <IDBadge id="view-register-table" />
       {!isAdminView && (
-        <div id="section-register-top-header" className="relative mb-6 no-print">
+        <div id="section-register-top-header" className="relative mb-4 no-print">
           <IDBadge id="section-register-top-header" />
-          
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print relative">
-            <div className="flex items-center gap-4">
-              {onBack && (
-                <button onClick={onBack} className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all shadow-sm">
-                  <ChevronRight className="rotate-180" size={18} />
-                </button>
-              )}
-              <div>
-                <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                  <ClipboardList className="text-emerald-600" size={20} /> মীমাংসা রেজিস্টার
-                </h3>
-                <div className="flex items-center gap-2 mt-0.5">
-                   <p className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">Settlement Ledger</p>
-                   <div className="h-3 w-[1px] bg-slate-300"></div>
-                   <div className="flex items-center gap-1 text-blue-600 font-bold text-[10px]">
-                      <CalendarRange size={12} /> সাইকেল: {toBengaliDigits(cycleInfo.label)}
-                   </div>
-                </div>
+          <div id="section-register-hero-banner" className="pt-0 text-center space-y-3 relative overflow-hidden group transition-all duration-500">
+            <IDBadge id="section-register-hero-banner" />
+            <div className="relative z-10 flex flex-col items-center gap-4">
+              <div className="w-14 h-14 bg-emerald-50 rounded-[1.2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100"><ClipboardList size={30} strokeWidth={2.5} /></div>
+              <div className="space-y-0.5"><h2 className="text-4xl font-black text-slate-900 tracking-tighter drop-shadow-sm">মীমাংসা রেজিস্টার</h2></div>
+              <div className="inline-flex items-center gap-4 px-8 py-2.5 bg-emerald-600 text-white rounded-2xl font-bold text-[14px] shadow-[0_10px_30px_-5px_rgba(16,185,129,0.4)] border-2 border-emerald-400">
+                <div className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-100 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-white shadow-md"></span></div>
+                <span>চলমান মাস:</span><span className="text-emerald-50 tracking-tight">{toBengaliDigits(cycleInfo.label)}</span>
               </div>
-            </div>
-            <div className="flex items-center gap-2 relative group">
-               <button 
-                 onClick={() => setShowSummary(!showSummary)} 
-                 className={`px-4 py-2.5 rounded-xl font-black text-[11px] flex items-center gap-2 transition-all shadow-lg active:scale-95 border-2 ${showSummary ? 'bg-blue-600 text-white border-blue-400 shadow-blue-200' : 'bg-white text-blue-700 border-blue-100 hover:bg-blue-50'}`}
-               >
-                 <Sparkles size={16} /> রেজিস্টার সারসংক্ষেপ
-               </button>
-
-               {/* Hover Tooltip for Quick Stats */}
-               <div className="absolute top-full right-0 pt-3 w-72 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-[2000] translate-y-2 group-hover:translate-y-0">
-                  <div className="bg-white border-2 border-blue-100 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-4 relative">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">একনজরে পরিসংখ্যান</span>
-                        <div className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black">লাইভ ডাটা</div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                          <p className="text-[9px] font-bold text-slate-500 uppercase">মোট জারিপত্র</p>
-                          <p className="text-lg font-black text-slate-900 leading-none mt-1">{toBengaliDigits(stats.total)}</p>
-                        </div>
-                        <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100">
-                          <p className="text-[9px] font-bold text-emerald-600 uppercase">মীমাংসিত অনুচ্ছেদ</p>
-                          <p className="text-lg font-black text-emerald-900 leading-none mt-1">{toBengaliDigits(grandTotals.paraCount)}</p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-bold text-slate-600">এসএফআই (SFI)</span>
-                          <span className="font-black text-slate-900">{toBengaliDigits(stats.sfi.total)} টি</span>
-                        </div>
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-bold text-slate-600">নন-এসএফআই (Non-SFI)</span>
-                          <span className="font-black text-slate-900">{toBengaliDigits(stats.nonSfi.total)} টি</span>
-                        </div>
-                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                          <span className="text-[10px] font-black text-blue-600 uppercase">মোট আদায়/সমন্বয়</span>
-                          <span className="text-[12px] font-black text-slate-900">{toBengaliDigits(Math.round(grandTotals.tRec + grandTotals.tAdj))} ৳</span>
-                        </div>
-                      </div>
-                    </div>
-                    {/* Arrow */}
-                    <div className="absolute -top-2 right-10 w-4 h-4 bg-white border-t-2 border-l-2 border-blue-100 rotate-45"></div>
-                  </div>
-               </div>
             </div>
           </div>
         </div>
@@ -891,7 +799,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                 className="w-full h-[38px] bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-lg font-black text-[11px] transition-all flex items-center justify-center gap-1.5 border border-slate-200 hover:border-red-200 group"
               >
                 <X size={14} className="group-hover:rotate-90 transition-transform duration-300" />
-                রিসেট করুন
+                মুছুন
               </button>
             </div>
 
@@ -947,54 +855,6 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
               <th className={thBase2}>সমন্বয়</th>
             </tr>
           </thead>
-          {showSummary && (
-            <tbody className="no-print">
-              <tr>
-                <td colSpan={16} className="p-0 border border-slate-300">
-                  <div className="bg-blue-50/80 p-4 animate-in fade-in slide-in-from-top-2 duration-500 border-b border-blue-200">
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg">
-                          <Sparkles size={20} />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-black text-blue-900">রেজিস্টার সারসংক্ষেপ</h4>
-                          <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Register Summary Statistics</p>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-6">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase">মোট চিঠি</span>
-                          <span className="text-lg font-black text-slate-900">{toBengaliDigits(stats.total)} টি</span>
-                        </div>
-                        <div className="h-8 w-[1px] bg-blue-200 hidden md:block"></div>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-tighter">এসএফআই: {toBengaliDigits(stats.sfi.total)} টি</span>
-                          <span className="text-[11px] font-black text-slate-700">
-                            (বিএসআর: {toBengaliDigits(stats.sfi.bsr)} টি, ত্রিপক্ষীয় সভা: {toBengaliDigits(stats.sfi.tri)} টি)
-                          </span>
-                        </div>
-                        <div className="h-8 w-[1px] bg-blue-200 hidden md:block"></div>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-amber-600 uppercase tracking-tighter">নন এসএফআই: {toBengaliDigits(stats.nonSfi.total)} টি</span>
-                          <span className="text-[11px] font-black text-slate-700">
-                            (বিএসআর: {toBengaliDigits(stats.nonSfi.bsr)} টি, দ্বিপক্ষীয় সভা: {toBengaliDigits(stats.nonSfi.bi)} টি)
-                          </span>
-                        </div>
-                        <div className="h-8 w-[1px] bg-blue-200 hidden md:block"></div>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-tighter">নিষ্পত্তি তথ্য:</span>
-                          <span className="text-[11px] font-black text-slate-700">
-                            মোট মীমাংসিত অনুচ্ছেদ: {toBengaliDigits(grandTotals.paraCount)} টি | জড়িত টাকা: {toBengaliDigits(Math.round(grandTotals.inv))}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          )}
           <tbody>
             {groupedEntries.length > 0 ? (
               groupedEntries.map((group) => {
