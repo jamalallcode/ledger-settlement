@@ -115,6 +115,21 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
     }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0, sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0, nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0 });
   }, [filteredReportData, searchTerm, grandTotals, filterMinistry]);
 
+  const ministryStats = useMemo(() => {
+    return filteredReportData.map(m => {
+      const stats = m.entityRows.reduce((acc: any, row: any) => {
+        acc.count += (row.currentSettledCount || 0);
+        acc.amount += (row.currentSettledAmount || 0);
+        acc.sfiCount += (row.currentSFICount || 0);
+        acc.nonSfiCount += (row.currentNonSFICount || 0);
+        acc.sfiAmount += (row.currentSFIAmount || 0);
+        acc.nonSfiAmount += (row.currentNonSFIAmount || 0);
+        return acc;
+      }, { count: 0, amount: 0, sfiCount: 0, nonSfiCount: 0, sfiAmount: 0, nonSfiAmount: 0 });
+      return { ministry: m.ministry, ...stats };
+    }).filter(m => m.count > 0);
+  }, [filteredReportData]);
+
   const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] md:text-[10px] text-center font-bold leading-tight group-hover:bg-blue-50/90 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
   const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[9.5px] bg-slate-100 z-[190] shadow-[inset_0_1px_0_#cbd5e1,inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
@@ -143,40 +158,75 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                 </button>
 
                 {isStatsHovered && (
-                  <div className="absolute top-full left-0 w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="space-y-5">
-                      <div className="flex items-center justify-between border-b border-slate-50 pb-3">
+                  <div className="absolute top-full left-0 w-[480px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                            <BarChart3 size={16} className="text-blue-600" />
+                          <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                            <BarChart3 size={20} className="text-blue-600" />
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-blue-700 font-black text-[15px]">মোট নিষ্পত্তি: {toBengaliDigits(filteredGrandTotals.cSFIC + filteredGrandTotals.cNonSFIC)} টি</span>
-                            <span className="text-emerald-600 font-bold text-[12px]">মোট নিষ্পত্তিকৃত টাকা: {toBengaliDigits(Math.round(filteredGrandTotals.cSA))} টাকা</span>
+                            <span className="text-blue-900 font-black text-[16px]">সর্বমোট নিষ্পত্তি: {toBengaliDigits(filteredGrandTotals.cSFIC + filteredGrandTotals.cNonSFIC)} টি</span>
+                            <span className="text-emerald-600 font-bold text-[13px]">মোট নিষ্পত্তিকৃত টাকা: {toBengaliDigits(Math.round(filteredGrandTotals.cSA))} টাকা</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="space-y-4">
+                      <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
+                        {ministryStats.length > 0 ? (
+                          ministryStats.map((ms, idx) => (
+                            <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+                              <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                                <Building2 size={14} className="text-slate-500" />
+                                <span className="text-slate-900 font-black text-[13.5px]">{ms.ministry}</span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-bold">
+                                    <span>মোট নিষ্পত্তি:</span>
+                                    <span className="text-blue-700 font-black">{toBengaliDigits(ms.count)} টি</span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-bold">
+                                    <span>মোট টাকা:</span>
+                                    <span className="text-emerald-600 font-black">{toBengaliDigits(Math.round(ms.amount))}</span>
+                                  </div>
+                                </div>
+                                <div className="space-y-1 border-l border-slate-200 pl-4">
+                                  <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold">
+                                    <span>এসএফআই:</span>
+                                    <span className="text-slate-700 font-black">{toBengaliDigits(ms.sfiCount)} টি ({toBengaliDigits(Math.round(ms.sfiAmount))})</span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold">
+                                    <span>নন এসএফআই:</span>
+                                    <span className="text-slate-700 font-black">{toBengaliDigits(ms.nonSfiCount)} টি ({toBengaliDigits(Math.round(ms.nonSfiAmount))})</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-8 text-slate-400 font-bold text-[13px]">কোন নিষ্পত্তির তথ্য পাওয়া যায়নি</div>
+                        )}
+                      </div>
+
+                      <div className="pt-4 border-t border-slate-100 grid grid-cols-2 gap-4">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-blue-700 font-black text-[14px]">এসএফআই:</span>
-                            <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(filteredGrandTotals.cSFIC)} টি</span>
-                            <span className="text-emerald-600 font-bold text-[12px] ml-1">({toBengaliDigits(Math.round(filteredGrandTotals.cSFIA))} টাকা)</span>
+                            <span className="text-blue-700 font-black text-[13px]">এসএফআই (মোট):</span>
+                            <span className="text-slate-900 font-black text-[13px]">{toBengaliDigits(filteredGrandTotals.cSFIC)} টি</span>
                           </div>
-                          <div className="text-slate-600 font-bold text-[11px] leading-relaxed pl-4">
-                            (বিএসআর: {toBengaliDigits(filteredGrandTotals.sfiBSR)} টি, ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(filteredGrandTotals.sfiTriWork)} টি, ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(filteredGrandTotals.sfiTriMin)} টি, মিলিকরণ: {toBengaliDigits(filteredGrandTotals.sfiRecon)} টি)
+                          <div className="text-slate-500 font-bold text-[10px] leading-relaxed">
+                            (বিএসআর: {toBengaliDigits(filteredGrandTotals.sfiBSR)}, ত্রিপক্ষীয় (প): {toBengaliDigits(filteredGrandTotals.sfiTriWork)}, ত্রিপক্ষীয় (বি): {toBengaliDigits(filteredGrandTotals.sfiTriMin)}, মিলিকরণ: {toBengaliDigits(filteredGrandTotals.sfiRecon)})
                           </div>
                         </div>
 
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-blue-700 font-black text-[14px]">নন এসএফআই:</span>
-                            <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(filteredGrandTotals.cNonSFIC)} টি</span>
-                            <span className="text-emerald-600 font-bold text-[12px] ml-1">({toBengaliDigits(Math.round(filteredGrandTotals.cNonSFIA))} টাকা)</span>
+                            <span className="text-blue-700 font-black text-[13px]">নন এসএফআই (মোট):</span>
+                            <span className="text-slate-900 font-black text-[13px]">{toBengaliDigits(filteredGrandTotals.cNonSFIC)} টি</span>
                           </div>
-                          <div className="text-slate-600 font-bold text-[11px] leading-relaxed pl-4">
-                            (বিএসআর: {toBengaliDigits(filteredGrandTotals.nonSfiBSR)} টি, দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(filteredGrandTotals.nonSfiBiWork)} টি, দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(filteredGrandTotals.nonSfiBiMin)} টি, মিলিকরণ: {toBengaliDigits(filteredGrandTotals.nonSfiRecon)} টি)
+                          <div className="text-slate-500 font-bold text-[10px] leading-relaxed">
+                            (বিএসআর: {toBengaliDigits(filteredGrandTotals.nonSfiBSR)}, দ্বিপক্ষীয় (প): {toBengaliDigits(filteredGrandTotals.nonSfiBiWork)}, দ্বিপক্ষীয় (বি): {toBengaliDigits(filteredGrandTotals.nonSfiBiMin)}, মিলিকরণ: {toBengaliDigits(filteredGrandTotals.nonSfiRecon)})
                           </div>
                         </div>
                       </div>
