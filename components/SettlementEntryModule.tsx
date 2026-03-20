@@ -193,6 +193,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     auditYear: '',
     letterNoDate: '',
     meetingWorkpaper: '', 
+    meetingMinutes: '',
     workpaperNoDate: '', 
     issueLetterNoDate: '', 
     issueDateISO: '', 
@@ -212,6 +213,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     manualRaisedCount: null as string | null,
     manualRaisedAmount: null as number | null
   });
+
+  const [meetingDocType, setMeetingDocType] = useState<'workpaper' | 'minutes'>('workpaper');
 
   const [wizardStep, setWizardStep] = useState('details'); 
   const [isSuccess, setIsSuccess] = useState(false);
@@ -334,6 +337,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         auditYear: initialEntry.auditYear || '',
         letterNoDate: initialEntry.letterNoDate || '',
         meetingWorkpaper: initialEntry.meetingWorkpaper || '',
+        meetingMinutes: initialEntry.meetingMinutes || '',
         workpaperNoDate: initialEntry.workpaperNoDate || '',
         issueLetterNoDate: initialEntry.issueLetterNoDate || '',
         issueDateISO: initialEntry.issueDateISO || '',
@@ -357,7 +361,15 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       const f7 = extractSegments(initialEntry.letterNoDate, 'পত্র নং-', 'পত্রের তারিখ-');
       setLetterNoPart(f7.no); setLetterDay(f7.d); setLetterMonth(f7.m); setLetterYear(f7.y);
 
-      const f8 = extractSegments(initialEntry.meetingWorkpaper, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-');
+      // Determine if it's minutes or workpaper
+      const isMinutes = Boolean(initialEntry.meetingMinutes) || (initialEntry.meetingWorkpaper?.includes('কার্যবিবরণী'));
+      setMeetingDocType(isMinutes ? 'minutes' : 'workpaper');
+
+      const meetingDocStr = isMinutes ? (initialEntry.meetingMinutes || initialEntry.meetingWorkpaper) : initialEntry.meetingWorkpaper;
+      const prefix = isMinutes ? 'কার্যবিবরণী নং-' : 'কার্যপত্র নং-';
+      const datePrefix = isMinutes ? 'কার্যবিবরণীর তারিখ-' : 'কার্যপত্রের তারিখ-';
+
+      const f8 = extractSegments(meetingDocStr, prefix, datePrefix);
       setWpNoPart(f8.no); setWpDay(f8.d); setWpMonth(f8.m); setWpYear(f8.y);
 
       const f10 = extractSegments(initialEntry.workpaperNoDate, 'ডায়েরি নং-', 'ডায়েরির তারিখ-');
@@ -411,8 +423,16 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   }, [letterNoPart, letterDay, letterMonth, letterYear]);
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, meetingWorkpaper: buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-') }));
-  }, [wpNoPart, wpDay, wpMonth, wpYear]);
+    const prefix = meetingDocType === 'workpaper' ? 'কার্যপত্র নং-' : 'কার্যবিবরণী নং-';
+    const datePrefix = meetingDocType === 'workpaper' ? 'কার্যপত্রের তারিখ-' : 'কার্যবিবরণীর তারিখ-';
+    const combined = buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, prefix, datePrefix);
+    
+    setFormData(prev => ({ 
+      ...prev, 
+      meetingWorkpaper: meetingDocType === 'workpaper' ? combined : '',
+      meetingMinutes: meetingDocType === 'minutes' ? combined : ''
+    }));
+  }, [wpNoPart, wpDay, wpMonth, wpYear, meetingDocType]);
 
   /* useMemo added to track values for validation */
   const currentDiaryISO = useMemo(() => getIsoFromSegments(diaryDay, diaryMonth, diaryYear), [diaryDay, diaryMonth, diaryYear]);
@@ -536,6 +556,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         paragraphs, cycleLabel, isLate, actualEntryDate: now.toISOString(), involvedAmount: paraInvTotal + (formData.meetingUnsettledAmount || 0),
         meetingUnsettledAmount: calculatedUnsettledAmount,
         totalUnsettledAmount: calculatedUnsettledAmount,
+        meetingMinutes: formData.meetingMinutes,
         vatRec: totals.vR, vatAdj: totals.vA, itRec: totals.iR, itAdj: totals.iA, othersRec: totals.oR, othersAdj: totals.oA, totalRec: totals.vR + totals.iR + totals.oR, totalAdj: totals.vA + totals.iA + totals.oA 
       };
 
@@ -902,8 +923,19 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                 </div>
                 <div id="field-18" className={col2Style}><label className={labelCls}><span className={numBadge}>১৮</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> আলোচিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingDiscussedParaCount'] || formData.meetingDiscussedParaCount)} value={rawInputs['direct-meetingDiscussedParaCount'] || (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount))} onChange={e => handleNumericInput('direct', 'meetingDiscussedParaCount', e.target.value)} placeholder="০" /></div>
                 <div id="field-19" className={col3Style}><label className={labelCls}><span className={numBadge}>১৯</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingRecommendedParaCount'] || formData.meetingRecommendedParaCount)} value={rawInputs['direct-meetingRecommendedParaCount'] || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount))} onChange={e => handleNumericInput('direct', 'meetingRecommendedParaCount', e.target.value)} placeholder="০" /></div>
+                <div id="field-20-doc-type" className={col4Style}>
+                  <label className={labelCls}><span className={numBadge}>২০</span> <FileText size={14} className="text-purple-600 shrink-0" /> ডকুমেন্টের ধরণ</label>
+                  <div className="flex bg-slate-100 rounded-xl p-1 border border-slate-200 h-[48px]">
+                    <button type="button" onClick={() => setMeetingDocType('workpaper')} className={`flex-1 flex items-center justify-center gap-2 text-[11px] font-black rounded-lg transition-all ${meetingDocType === 'workpaper' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-500'}`}>
+                      কার্যপত্র
+                    </button>
+                    <button type="button" onClick={() => setMeetingDocType('minutes')} className={`flex-1 flex items-center justify-center gap-2 text-[11px] font-black rounded-lg transition-all ${meetingDocType === 'minutes' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-500'}`}>
+                      কার্যবিবরণী
+                    </button>
+                  </div>
+                </div>
                 <div id="field-20a" className={`${colWrapperCls} bg-purple-50/70 border-purple-100 hover:border-purple-300`}>
-                  <label className={labelCls}><span className={numBadge}>{toBengaliDigits('২০.ক')}</span> <Hash size={14} className="text-purple-600 shrink-0" /> কার্যপত্র নং:</label>
+                  <label className={labelCls}><span className={numBadge}>{toBengaliDigits('২০.ক')}</span> <Hash size={14} className="text-purple-600 shrink-0" /> {meetingDocType === 'workpaper' ? 'কার্যপত্র' : 'কার্যবিবরণী'} নং:</label>
                   <input 
                     type="text" 
                     className={getDynamicInputCls(wpNoPart)} 
@@ -912,7 +944,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                     placeholder="নং লিখুন"
                   />
                 </div>
-                <SegmentedInput id="field-20b" icon={FileEdit} label="কার্যপত্র তারিখ" color="purple" noValue="DATE_ONLY" dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} noSetter={()=>{}} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} isFocused={isWpFocused} focusSetter={setIsWpFocused} />
+                <SegmentedInput id="field-20b" icon={FileEdit} label={meetingDocType === 'workpaper' ? 'কার্যপত্র তারিখ' : 'কার্যবিবরণী তারিখ'} color="purple" noValue="DATE_ONLY" dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} noSetter={()=>{}} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} isFocused={isWpFocused} focusSetter={setIsWpFocused} />
               </>
             )}
           </div>
