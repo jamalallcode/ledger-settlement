@@ -203,7 +203,19 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           const processedParaIds = new Set<string>();
           matchingEntries.forEach(entry => {
             const isSFI = robustNormalize(entry.paraType || '') === robustNormalize('এসএফআই');
-            const letterType = entry.letterType || '';
+            // Enhanced letterType extraction for both Settlement and Correspondence entries
+            let letterType = (entry as any).letterType || (entry as any).meetingType || '';
+            
+            // For settlements, refine based on workpaper/minutes fields
+            if (entry.meetingType) {
+              if (entry.meetingType === 'ত্রিপক্ষীয় সভা') {
+                if (entry.meetingWorkpaper) letterType = 'ত্রিপক্ষীয় সভা (কার্যপত্র)';
+                else if (entry.meetingMinutes) letterType = 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)';
+              } else if (entry.meetingType === 'দ্বিপক্ষীয় সভা') {
+                if (entry.meetingWorkpaper) letterType = 'দ্বিপক্ষীয় সভা (কার্যপত্র)';
+                else if (entry.meetingMinutes) letterType = 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)';
+              }
+            }
 
             if (entry.paragraphs && entry.paragraphs.length > 0) {
               entry.paragraphs.forEach(p => { 
@@ -249,6 +261,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             entity: entityName, 
             currentRaisedCount: curRC, currentRaisedAmount: curRA,
             currentSettledCount: curSC, 
+            currentSettledAmount: curSA,
             currentFullCount: curFC, currentPartialCount: curPC,
             currentSFICount: curSFIC, currentNonSFICount: curNonSFIC,
             currentSFIAmount: sfiSA, currentNonSFIAmount: nonSfiSA,
