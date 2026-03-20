@@ -1,5 +1,5 @@
 
-import { GroupOption } from './types.ts';
+import { GroupOption } from './types';
 
 export const OFFICE_HEADER = {
   main: "মহাপরিচালকের কার্যালয়",
