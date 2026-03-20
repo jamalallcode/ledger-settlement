@@ -164,8 +164,8 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                             <BarChart3 size={14} className="text-blue-600" />
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-blue-900 font-black text-[13px]">সর্বমোট নিষ্পত্তি: {toBengaliDigits(filteredGrandTotals.cSFIC + filteredGrandTotals.cNonSFIC)} টি</span>
-                            <span className="text-emerald-600 font-bold text-[10px]">মোট নিষ্পত্তিকৃত টাকা: {toBengaliDigits(Math.round(filteredGrandTotals.cSA))} টাকা</span>
+                            <span className="text-blue-900 font-black text-[16px]">সর্বমোট নিষ্পত্তি: {toBengaliDigits(filteredGrandTotals.cSFIC + filteredGrandTotals.cNonSFIC)} টি</span>
+                            <span className="text-emerald-600 font-bold text-[13px]">মোট নিষ্পত্তিকৃত টাকা: {toBengaliDigits(Math.round(filteredGrandTotals.cSA))} টাকা</span>
                           </div>
                         </div>
                       </div>
@@ -176,25 +176,25 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                             <div key={idx} className="p-1.5 bg-slate-50 rounded-lg border border-slate-100 space-y-0.5">
                               <div className="flex items-center gap-2 border-b border-slate-200 pb-0.5">
                                 <Building2 size={10} className="text-slate-500" />
-                                <span className="text-slate-900 font-black text-[11px]">{ms.ministry}</span>
+                                <span className="text-slate-900 font-black text-[14px]">{ms.ministry}</span>
                               </div>
                               <div className="grid grid-cols-2 gap-2">
                                 <div className="space-y-0.5">
-                                  <div className="flex items-center justify-between text-[9px] text-slate-500 font-bold">
+                                  <div className="flex items-center justify-between text-[12px] text-slate-500 font-bold">
                                     <span>মোট নিষ্পত্তি:</span>
                                     <span className="text-blue-700 font-black">{toBengaliDigits(ms.count)} টি</span>
                                   </div>
-                                  <div className="flex items-center justify-between text-[9px] text-slate-500 font-bold">
+                                  <div className="flex items-center justify-between text-[12px] text-slate-500 font-bold">
                                     <span>মোট টাকা:</span>
                                     <span className="text-emerald-600 font-black">{toBengaliDigits(Math.round(ms.amount))}</span>
                                   </div>
                                 </div>
                                 <div className="space-y-0.5 border-l border-slate-200 pl-2">
-                                  <div className="flex items-center justify-between text-[8px] text-slate-500 font-bold">
+                                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-bold">
                                     <span>এসএফআই:</span>
                                     <span className="text-slate-700 font-black">{toBengaliDigits(ms.sfiCount)} টি</span>
                                   </div>
-                                  <div className="flex items-center justify-between text-[8px] text-slate-500 font-bold">
+                                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-bold">
                                     <span>নন এসএফআই:</span>
                                     <span className="text-slate-700 font-black">{toBengaliDigits(ms.nonSfiCount)} টি</span>
                                   </div>
@@ -210,15 +210,15 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                       <div className="pt-1.5 border-t border-slate-100 grid grid-cols-2 gap-2">
                         <div className="flex flex-col gap-0.5">
                           <div className="flex items-center gap-2">
-                            <span className="text-blue-700 font-black text-[10px]">এসএফআই (মোট):</span>
-                            <span className="text-slate-900 font-black text-[10px]">{toBengaliDigits(filteredGrandTotals.cSFIC)} টি</span>
+                            <span className="text-blue-700 font-black text-[13px]">এসএফআই (মোট):</span>
+                            <span className="text-slate-900 font-black text-[13px]">{toBengaliDigits(filteredGrandTotals.cSFIC)} টি</span>
                           </div>
                         </div>
 
                         <div className="flex flex-col gap-0.5">
                           <div className="flex items-center gap-2">
-                            <span className="text-blue-700 font-black text-[10px]">নন এসএফআই (মোট):</span>
-                            <span className="text-slate-900 font-black text-[10px]">{toBengaliDigits(filteredGrandTotals.cNonSFIC)} টি</span>
+                            <span className="text-blue-700 font-black text-[13px]">নন এসএফআই (মোট):</span>
+                            <span className="text-slate-900 font-black text-[13px]">{toBengaliDigits(filteredGrandTotals.cNonSFIC)} টি</span>
                           </div>
                         </div>
                       </div>
