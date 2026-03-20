@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOption } from '../types';
-import SearchableSelect from './SearchableSelect';
-import { MINISTRIES_LIST, MINISTRY_ENTITY_MAP, ENTITY_BRANCH_MAP, AUDIT_YEARS_OPTIONS } from '../constants';
+import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOption } from '../types.ts';
+import SearchableSelect from './SearchableSelect.tsx';
+import { MINISTRIES_LIST, MINISTRY_ENTITY_MAP, ENTITY_BRANCH_MAP, AUDIT_YEARS_OPTIONS } from '../constants.ts';
 import { Trash2, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus, Hash } from 'lucide-react';
-import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
-import { getCycleForDate, isEntryLate } from '../utils/cycleHelper';
+import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils.ts';
+import { getCycleForDate, isEntryLate } from '../utils/cycleHelper.ts';
 import { getDateError } from '../utils/dateValidation';
 import { format } from 'date-fns';
 
