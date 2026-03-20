@@ -237,7 +237,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       const nonSfiBSR = nonSfiEntries.filter(e => !e.isMeeting || e.meetingType === 'বিএসআর').length;
       const nonSfiBi = nonSfiEntries.filter(e => e.meetingType === 'দ্বিপক্ষীয় সভা').length;
       const cycleSettledParasCount = group.entries.reduce((acc, ent) => acc + (ent.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').length || 0), 0);
-      const cycleSettledAmount = group.entries.reduce((acc, ent) => acc + (ent.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').reduce((sum, p) => sum + (p.involvedAmount || 0), 0) || 0), 0);
+      const cycleSettledAmount = group.entries.reduce((acc, ent) => acc + (ent.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').reduce((sum, p) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0) || 0), 0);
       
       const getSettledDetails = (typeEntries: SettlementEntry[]) => {
         const grouped = typeEntries.reduce((acc, ent) => {
@@ -254,7 +254,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         const grouped = entries.reduce((acc, ent) => {
           const settledParas = ent.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ') || [];
           const count = settledParas.length;
-          const amount = settledParas.reduce((sum, p) => sum + (p.involvedAmount || 0), 0);
+          const amount = settledParas.reduce((sum, p) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0);
           
           if (count > 0) {
             const mName = ent.ministryName || 'অনির্ধারিত মন্ত্রণালয়';
