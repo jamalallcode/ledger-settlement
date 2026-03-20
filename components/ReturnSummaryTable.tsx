@@ -34,7 +34,6 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
 }) => {
   const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
-  const [showSettlementData, setShowSettlementData] = useState(false);
   const ministryDropdownRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
 
@@ -249,181 +248,6 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
         </div>
       )}
 
-      {/* Collapsible Settlement Data Section - Premium Design */}
-      <div className="no-print w-full px-4 mb-6">
-        <div className="max-w-4xl mx-auto">
-          <button
-            onClick={() => setShowSettlementData(!showSettlementData)}
-            className={`w-full group relative flex items-center justify-between p-6 rounded-[2rem] transition-all duration-500 border overflow-hidden ${
-              showSettlementData 
-                ? 'bg-slate-900 border-slate-800 shadow-2xl' 
-                : 'bg-white border-slate-200 shadow-sm hover:shadow-xl hover:border-blue-200'
-            }`}
-          >
-            {/* Background Glows */}
-            {showSettlementData && (
-              <>
-                <div className="absolute -right-20 -top-20 w-64 h-64 bg-blue-600/10 rounded-full blur-[100px] animate-pulse"></div>
-                <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-emerald-600/10 rounded-full blur-[100px] animate-pulse"></div>
-              </>
-            )}
-
-            <div className="flex items-center gap-5 relative z-10">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${
-                showSettlementData ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40 rotate-12' : 'bg-blue-50 text-blue-600 group-hover:scale-110 group-hover:bg-blue-100'
-              }`}>
-                <Database size={28} />
-              </div>
-              <div className="text-left">
-                <h3 className={`text-[20px] font-black tracking-tight transition-colors duration-500 ${
-                  showSettlementData ? 'text-white' : 'text-slate-800 group-hover:text-blue-700'
-                }`}>
-                  মীমাংসা রেজিস্টার থেকে পাওয়া ডাটা
-                </h3>
-                <p className={`text-[12px] font-bold transition-colors duration-500 ${
-                  showSettlementData ? 'text-slate-400' : 'text-slate-500'
-                }`}>
-                  {showSettlementData ? 'বিস্তারিত তথ্য বন্ধ করতে ক্লিক করুন' : 'বিস্তারিত সারসংক্ষেপ এবং পরিসংখ্যান দেখতে এখানে ক্লিক করুন'}
-                </p>
-              </div>
-            </div>
-
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 relative z-10 ${
-              showSettlementData 
-                ? 'bg-white/10 text-white rotate-180 backdrop-blur-md border border-white/10' 
-                : 'bg-slate-100 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600'
-            }`}>
-              <ChevronDown size={24} />
-            </div>
-          </button>
-
-          {showSettlementData && (
-            <div className="mt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500 ease-out">
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* SFI Card */}
-                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl relative overflow-hidden group hover:border-blue-200 transition-all duration-300">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-[5rem] -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-4 mb-8">
-                      <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
-                        <CheckCircle2 className="text-white" size={24} />
-                      </div>
-                      <div>
-                        <h4 className="text-[18px] font-black text-slate-900">এসএফআই (SFI)</h4>
-                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">নিষ্পত্তি সংক্রান্ত তথ্য</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-5">
-                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                        <span className="text-[13px] font-black text-slate-600">মোট নিষ্পত্তি:</span>
-                        <div className="text-right">
-                          <div className="text-[20px] font-black text-blue-700">{toBengaliDigits(filteredGrandTotals.cSFIC)} টি</div>
-                          <div className="text-[11px] font-bold text-emerald-600">{toBengaliDigits(Math.round(filteredGrandTotals.cSFIA))} টাকা</div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm">
-                          <div className="text-[10px] font-bold text-slate-400 mb-1">বিএসআর</div>
-                          <div className="text-[15px] font-black text-slate-800">{toBengaliDigits(filteredGrandTotals.sfiBSR)} টি</div>
-                        </div>
-                        <div className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm">
-                          <div className="text-[10px] font-bold text-slate-400 mb-1">ত্রিপক্ষীয় (প)</div>
-                          <div className="text-[15px] font-black text-slate-800">{toBengaliDigits(filteredGrandTotals.sfiTriWork)} টি</div>
-                        </div>
-                        <div className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm">
-                          <div className="text-[10px] font-bold text-slate-400 mb-1">ত্রিপক্ষীয় (বি)</div>
-                          <div className="text-[15px] font-black text-slate-800">{toBengaliDigits(filteredGrandTotals.sfiTriMin)} টি</div>
-                        </div>
-                        <div className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm">
-                          <div className="text-[10px] font-bold text-slate-400 mb-1">মিলিকরণ</div>
-                          <div className="text-[15px] font-black text-slate-800">{toBengaliDigits(filteredGrandTotals.sfiRecon)} টি</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Non-SFI Card */}
-                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl relative overflow-hidden group hover:border-emerald-200 transition-all duration-300">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-[5rem] -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-4 mb-8">
-                      <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200">
-                        <ListChecks className="text-white" size={24} />
-                      </div>
-                      <div>
-                        <h4 className="text-[18px] font-black text-slate-900">নন এসএফআই (Non-SFI)</h4>
-                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">নিষ্পত্তি সংক্রান্ত তথ্য</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-5">
-                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                        <span className="text-[13px] font-black text-slate-600">মোট নিষ্পত্তি:</span>
-                        <div className="text-right">
-                          <div className="text-[20px] font-black text-emerald-700">{toBengaliDigits(filteredGrandTotals.cNonSFIC)} টি</div>
-                          <div className="text-[11px] font-bold text-emerald-600">{toBengaliDigits(Math.round(filteredGrandTotals.cNonSFIA))} টাকা</div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm">
-                          <div className="text-[10px] font-bold text-slate-400 mb-1">বিএসআর</div>
-                          <div className="text-[15px] font-black text-slate-800">{toBengaliDigits(filteredGrandTotals.nonSfiBSR)} টি</div>
-                        </div>
-                        <div className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm">
-                          <div className="text-[10px] font-bold text-slate-400 mb-1">দ্বিপক্ষীয় (প)</div>
-                          <div className="text-[15px] font-black text-slate-800">{toBengaliDigits(filteredGrandTotals.nonSfiBiWork)} টি</div>
-                        </div>
-                        <div className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm">
-                          <div className="text-[10px] font-bold text-slate-400 mb-1">দ্বিপক্ষীয় (বি)</div>
-                          <div className="text-[15px] font-black text-slate-800">{toBengaliDigits(filteredGrandTotals.nonSfiBiMin)} টি</div>
-                        </div>
-                        <div className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm">
-                          <div className="text-[10px] font-bold text-slate-400 mb-1">মিলিকরণ</div>
-                          <div className="text-[15px] font-black text-slate-800">{toBengaliDigits(filteredGrandTotals.nonSfiRecon)} টি</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Grand Total Summary Bar */}
-              <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-8 rounded-[2rem] shadow-2xl border border-slate-700 relative overflow-hidden">
-                <div className="absolute right-0 top-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-                  <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-white/10 backdrop-blur-xl rounded-[1.5rem] flex items-center justify-center border border-white/20 shadow-inner">
-                      <PieChart className="text-blue-400" size={32} />
-                    </div>
-                    <div>
-                      <h4 className="text-white font-black text-[22px] tracking-tight">সর্বমোট নিষ্পত্তির সারসংক্ষেপ</h4>
-                      <p className="text-slate-400 text-[13px] font-bold">সকল মন্ত্রণালয় ও সংস্থার সম্মিলিত তথ্য</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-12">
-                    <div className="text-center">
-                      <div className="text-slate-400 text-[11px] font-black uppercase tracking-widest mb-1">মোট সংখ্যা</div>
-                      <div className="text-white text-[32px] font-black leading-none">{toBengaliDigits(filteredGrandTotals.cSC)} <span className="text-[16px] text-blue-400 ml-1">টি</span></div>
-                    </div>
-                    <div className="w-px h-12 bg-slate-700"></div>
-                    <div className="text-center">
-                      <div className="text-slate-400 text-[11px] font-black uppercase tracking-widest mb-1">মোট টাকা</div>
-                      <div className="text-emerald-400 text-[32px] font-black leading-none">{toBengaliDigits(Math.round(filteredGrandTotals.cSA))} <span className="text-[16px] text-emerald-500/60 ml-1">টাকা</span></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
       <div id="card-report-table-container" className="bg-white border border-slate-300 shadow-2xl w-full overflow-x-auto p-1 relative animate-table-entrance">
         <div className="text-center mb-8 pt-4">
           <div className="inline-block relative">
@@ -438,52 +262,6 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
           </div>
         </div>
 
-
-          {/* Ministry-wise Summary Table */}
-          <div className="mb-8 px-4">
-            <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden shadow-sm max-w-2xl mx-auto">
-              <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 flex items-center justify-between">
-                <h3 className="text-[12px] font-black text-slate-700">মন্ত্রণালয় ভিত্তিক সারসংক্ষেপ</h3>
-                <span className="text-[10px] text-slate-500 font-bold">নিষ্পত্তি (পূর্ণাঙ্গ)</span>
-              </div>
-              <table className="w-full border-collapse text-[11px]">
-                <thead>
-                  <tr className="bg-slate-50/50">
-                    <th className="border-b border-r border-slate-200 p-2 text-left font-black text-slate-600">মন্ত্রণালয়/বিভাগ</th>
-                    <th className="border-b border-r border-slate-200 p-2 text-center font-black text-slate-600">সংখ্যা (টি)</th>
-                    <th className="border-b border-slate-200 p-2 text-right font-black text-slate-600">টাকার পরিমাণ (টাকা)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ministryStats
-                    .sort((a, b) => b.count - a.count)
-                    .map((m) => (
-                      <tr key={m.ministry} className="hover:bg-white transition-colors">
-                        <td className="border-b border-r border-slate-100 p-2 font-bold text-slate-700">
-                          {m.ministry}
-                        </td>
-                        <td className="border-b border-r border-slate-100 p-2 text-center font-black text-blue-700">
-                          {toBengaliDigits(m.count)}
-                        </td>
-                        <td className="border-b border-slate-100 p-2 text-right font-black text-slate-900">
-                          {toBengaliDigits(m.amount)}
-                        </td>
-                      </tr>
-                    ))}
-                  <tr className="bg-slate-100/80 font-black">
-                    <td className="p-2 text-center text-slate-700">সর্বমোট</td>
-                    <td className="p-2 text-center text-blue-800 border-r border-slate-200">
-                      {toBengaliDigits(filteredGrandTotals.cSC)}
-                    </td>
-                    <td className="p-2 text-right text-slate-900">
-                      {toBengaliDigits(filteredGrandTotals.cSA)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
 
         <div className="table-container qr-table-container border border-slate-300 overflow-auto relative rounded-lg">
           <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0 !table-auto">
@@ -601,6 +379,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
           </table>
         </div>
       </div>
+    </div>
     );
   };
 
