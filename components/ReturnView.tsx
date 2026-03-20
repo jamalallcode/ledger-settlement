@@ -208,11 +208,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             
             // For settlements, refine based on workpaper/minutes fields
             if (entry.meetingType) {
+              const hasMinutes = entry.meetingMinutes || (entry.meetingWorkpaper && entry.meetingWorkpaper.includes('কার্যবিবরণী'));
               if (entry.meetingType === 'ত্রিপক্ষীয় সভা') {
-                if (entry.meetingMinutes) letterType = 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)';
+                if (hasMinutes) letterType = 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)';
                 else if (entry.meetingWorkpaper) letterType = 'ত্রিপক্ষীয় সভা (কার্যপত্র)';
               } else if (entry.meetingType === 'দ্বিপক্ষীয় সভা') {
-                if (entry.meetingMinutes) letterType = 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)';
+                if (hasMinutes) letterType = 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)';
                 else if (entry.meetingWorkpaper) letterType = 'দ্বিপক্ষীয় সভা (কার্যপত্র)';
               }
             }
