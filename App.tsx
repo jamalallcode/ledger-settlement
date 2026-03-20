@@ -684,7 +684,6 @@ const App: React.FC = () => {
                             entries={approvedEntries} 
                             onDelete={handleDelete} 
                             onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
-                            onInlineUpdate={handleInlineUpdateEntry}
                             showFilters={showRegisterFilters} 
                             setShowFilters={setShowRegisterFilters} 
                             isAdmin={isAdmin}
