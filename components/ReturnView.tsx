@@ -391,23 +391,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     setTempPrevStats(newStats);
   };
 
-  const IDBadge = ({ id }: { id: string }) => {
-    const [copied, setCopied] = useState(false);
-    if (!isLayoutEditable) return null;
-    const handleCopy = (e: React.MouseEvent) => {
-      e.preventDefault(); e.stopPropagation();
-      navigator.clipboard.writeText(id);
-      setCopied(true); setTimeout(() => setCopied(false), 2000);
-    };
-    return (
-      <div onClick={handleCopy} className="absolute top-0 left-0 -translate-y-full z-[9995] pointer-events-auto no-print">
-        <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md font-black text-[9px] bg-black text-white border border-white/30 shadow-2xl transition-all duration-300 hover:scale-150 hover:bg-blue-600 hover:z-[99999] active:scale-95 cursor-copy origin-bottom-left ${copied ? 'bg-emerald-600 border-emerald-400 ring-4 ring-emerald-500/30 !scale-125' : ''}`}>
-          {copied ? <><CheckCircle2 size={10} /> COPIED</> : `#${id}`}
-        </span>
-      </div>
-    );
-  };
-
   const HistoricalFilter = () => (
     <div className="flex items-center gap-3 no-print">
       {showFilters && (
@@ -514,7 +497,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   if (!selectedReportType && !isSetupMode) {
     return (
       <div id="section-report-selector" className="max-w-4xl py-20 animate-report-page relative pt-0 text-center">
-        <IDBadge id="section-report-selector" />
         <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-16 rounded-[3rem] space-y-6">
            <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto shadow-xl"><PieChart size={40} /></div>
            <div className="space-y-2"><h3 className="text-3xl font-black text-slate-800">রিটার্ণ মডিউলে স্বাগতম</h3><p className="text-slate-500 font-bold max-w-sm mx-auto">অনুগ্রহ করে বাম পাশের সাইডবার মেনু থেকে কাঙ্ক্ষিত রিটার্ণ বা সারাংশের ধরনটি নির্বাচন করুন।</p></div>
@@ -525,25 +507,25 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }
 
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
-    return <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
+    return <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} showFilters={showFilters} />;
   }
 
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
-    return <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} showFilters={showFilters} />;
+    return <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={HistoricalFilter} showFilters={showFilters} />;
   }
 
   if (isSetupMode) {
-    return <OpeningBalanceSetup ministryGroups={ministryGroups} tempPrevStats={tempPrevStats} setTempPrevStats={setTempPrevStats} isEditingSetup={isEditingSetup} setIsEditingSetup={setIsEditingSetup} handleSaveSetup={handleSaveSetup} handleSetupPaste={handleSetupPaste} setIsSetupMode={setIsSetupMode} setSelectedReportType={setSelectedReportType} IDBadge={IDBadge} setupType={selectedReportType || ''} />;
+    return <OpeningBalanceSetup ministryGroups={ministryGroups} tempPrevStats={tempPrevStats} setTempPrevStats={setTempPrevStats} isEditingSetup={isEditingSetup} setIsEditingSetup={setIsEditingSetup} handleSaveSetup={handleSaveSetup} handleSetupPaste={handleSetupPaste} setIsSetupMode={setIsSetupMode} setSelectedReportType={setSelectedReportType} setupType={selectedReportType || ''} />;
   }
 
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') return <QR_1 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') return <QR_2 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') return <QR_3 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') return <QR_4 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') return <QR_5 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') return <QR_6 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') return <QR_1 activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') return <QR_2 activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') return <QR_3 activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') return <QR_4 activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') return <QR_5 activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') return <QR_6 activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
 
-  return <ReturnSummaryTable reportData={reportData} grandTotals={grandTotals} activeCycle={activeCycle} selectedReportType={selectedReportType} setSelectedReportType={setSelectedReportType} isAdmin={isAdmin || false} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} showFilters={showFilters} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  return <ReturnSummaryTable reportData={reportData} grandTotals={grandTotals} activeCycle={activeCycle} selectedReportType={selectedReportType} setSelectedReportType={setSelectedReportType} isAdmin={isAdmin || false} HistoricalFilter={HistoricalFilter} showFilters={showFilters} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
 };
 
 export default ReturnView;
