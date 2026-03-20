@@ -3,7 +3,7 @@ import {
   ShieldCheck, LayoutDashboard, MapPin, ExternalLink, 
   Github, Mail, Globe, CheckCircle2, ShieldHalf, Cpu
 } from 'lucide-react';
-import { OFFICE_HEADER } from '../constants';
+import { OFFICE_HEADER } from '../constants.ts';
 
 interface FooterProps {
   setActiveTab: (tab: string) => void;
