@@ -197,8 +197,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             return entryDate >= cycleStartStr && entryDate <= cycleEndStr;
           });
           let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0, curSFIC = 0, curNonSFIC = 0, sfiSA = 0, nonSfiSA = 0;
-          let sfiBSR = 0, sfiTriWork = 0, sfiTriMin = 0, sfiRecon = 0, sfiOthers = 0;
-          let nonSfiBSR = 0, nonSfiBiWork = 0, nonSfiBiMin = 0, nonSfiRecon = 0, nonSfiOthers = 0;
+          let sfiBSR = 0, sfiTriWork = 0, sfiTriMin = 0, sfiRecon = 0;
+          let nonSfiBSR = 0, nonSfiBiWork = 0, nonSfiBiMin = 0, nonSfiRecon = 0;
 
           const processedParaIds = new Set<string>();
           matchingEntries.forEach(entry => {
@@ -223,7 +223,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                       else if (letterType === 'ত্রিপক্ষীয় সভা (কার্যপত্র)') sfiTriWork++;
                       else if (letterType === 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)') sfiTriMin++;
                       else if (letterType === 'মিলিকরণ') sfiRecon++;
-                      else sfiOthers++;
                       sfiSA += settledAmt;
                     } else {
                       curNonSFIC++;
@@ -231,7 +230,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                       else if (letterType === 'দ্বিপক্ষীয় সভা (কার্যপত্র)') nonSfiBiWork++;
                       else if (letterType === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)') nonSfiBiMin++;
                       else if (letterType === 'মিলিকরণ') nonSfiRecon++;
-                      else nonSfiOthers++;
                       nonSfiSA += settledAmt;
                     }
                     curSA += settledAmt;
@@ -252,8 +250,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             currentFullCount: curFC, currentPartialCount: curPC,
             currentSFICount: curSFIC, currentNonSFICount: curNonSFIC,
             currentSFIAmount: sfiSA, currentNonSFIAmount: nonSfiSA,
-            sfiBreakdown: { bsr: sfiBSR, triWork: sfiTriWork, triMin: sfiTriMin, recon: sfiRecon, others: sfiOthers },
-            nonSfiBreakdown: { bsr: nonSfiBSR, biWork: nonSfiBiWork, biMin: nonSfiBiMin, recon: nonSfiRecon, others: nonSfiOthers },
+            sfiBreakdown: { bsr: sfiBSR, triWork: sfiTriWork, triMin: sfiTriMin, recon: sfiRecon },
+            nonSfiBreakdown: { bsr: nonSfiBSR, biWork: nonSfiBiWork, biMin: nonSfiBiMin, recon: nonSfiRecon },
             prev: ePrev 
           };
         })
@@ -311,8 +309,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     const initial = { 
       pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0, 
       cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0,
-      sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0, sfiOthers: 0,
-      nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0, nonSfiOthers: 0
+      sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0,
+      nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0
     };
     if (!reportData || reportData.length === 0) return initial;
     return reportData.reduce((acc, mGroup) => {
@@ -329,13 +327,11 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         acc.sfiTriWork += (row.sfiBreakdown?.triWork || 0);
         acc.sfiTriMin += (row.sfiBreakdown?.triMin || 0);
         acc.sfiRecon += (row.sfiBreakdown?.recon || 0);
-        acc.sfiOthers += (row.sfiBreakdown?.others || 0);
         
         acc.nonSfiBSR += (row.nonSfiBreakdown?.bsr || 0);
         acc.nonSfiBiWork += (row.nonSfiBreakdown?.biWork || 0);
         acc.nonSfiBiMin += (row.nonSfiBreakdown?.biMin || 0);
         acc.nonSfiRecon += (row.nonSfiBreakdown?.recon || 0);
-        acc.nonSfiOthers += (row.nonSfiBreakdown?.others || 0);
       });
       return acc;
     }, initial);
