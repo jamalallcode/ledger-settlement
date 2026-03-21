@@ -33,13 +33,17 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   filterMinistry
 }) => {
   const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
-  const [isStatsHovered, setIsStatsHovered] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
   const ministryDropdownRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (ministryDropdownRef.current && !ministryDropdownRef.current.contains(e.target as Node)) {
         setIsMinistryDropdownOpen(false);
+      }
+      if (statsRef.current && !statsRef.current.contains(e.target as Node)) {
+        setIsStatsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -85,16 +89,14 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
         mAcc.sfiTriWork = (mAcc.sfiTriWork || 0) + (row.sfiBreakdown?.triWork || 0);
         mAcc.sfiTriMin = (mAcc.sfiTriMin || 0) + (row.sfiBreakdown?.triMin || 0);
         mAcc.sfiRecon = (mAcc.sfiRecon || 0) + (row.sfiBreakdown?.recon || 0);
-        mAcc.sfiOthers = (mAcc.sfiOthers || 0) + (row.sfiBreakdown?.others || 0);
         
         mAcc.nonSfiBSR = (mAcc.nonSfiBSR || 0) + (row.nonSfiBreakdown?.bsr || 0);
         mAcc.nonSfiBiWork = (mAcc.nonSfiBiWork || 0) + (row.nonSfiBreakdown?.biWork || 0);
         mAcc.nonSfiBiMin = (mAcc.nonSfiBiMin || 0) + (row.nonSfiBreakdown?.biMin || 0);
         mAcc.nonSfiRecon = (mAcc.nonSfiRecon || 0) + (row.nonSfiBreakdown?.recon || 0);
-        mAcc.nonSfiOthers = (mAcc.nonSfiOthers || 0) + (row.nonSfiBreakdown?.others || 0);
         
         return mAcc;
-      }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0, sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0, sfiOthers: 0, nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0, nonSfiOthers: 0 });
+      }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0, sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0, nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0 });
       
       acc.pUC += mTotals.pUC; acc.pUA += mTotals.pUA;
       acc.cRC += mTotals.cRC; acc.cRA += mTotals.cRA;
@@ -107,16 +109,14 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
       acc.sfiTriWork = (acc.sfiTriWork || 0) + mTotals.sfiTriWork;
       acc.sfiTriMin = (acc.sfiTriMin || 0) + mTotals.sfiTriMin;
       acc.sfiRecon = (acc.sfiRecon || 0) + mTotals.sfiRecon;
-      acc.sfiOthers = (acc.sfiOthers || 0) + mTotals.sfiOthers;
       
       acc.nonSfiBSR = (acc.nonSfiBSR || 0) + mTotals.nonSfiBSR;
       acc.nonSfiBiWork = (acc.nonSfiBiWork || 0) + mTotals.nonSfiBiWork;
       acc.nonSfiBiMin = (acc.nonSfiBiMin || 0) + mTotals.nonSfiBiMin;
       acc.nonSfiRecon = (acc.nonSfiRecon || 0) + mTotals.nonSfiRecon;
-      acc.nonSfiOthers = (acc.nonSfiOthers || 0) + mTotals.nonSfiOthers;
       
       return acc;
-    }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0, sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0, sfiOthers: 0, nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0, nonSfiOthers: 0 });
+    }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0, sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0, nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0 });
   }, [filteredReportData, searchTerm, grandTotals, filterMinistry]);
 
   const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8.5px] md:text-[9.5px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
@@ -134,18 +134,18 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             {selectedReportType === 'মাসিক রিটারন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' && (
               <div 
                 className="relative"
-                onMouseEnter={() => setIsStatsHovered(true)}
-                onMouseLeave={() => setIsStatsHovered(false)}
+                ref={statsRef}
               >
                 <button
-                  className={`flex items-center gap-2 px-4 h-[40px] bg-slate-50 text-slate-700 rounded-xl font-bold text-[13px] border border-slate-200 transition-all duration-300 no-print ${isStatsHovered ? 'bg-white shadow-md border-blue-200' : ''}`}
+                  onClick={() => setIsStatsOpen(!isStatsOpen)}
+                  className={`flex items-center gap-2 px-4 h-[40px] bg-slate-50 text-slate-700 rounded-xl font-bold text-[13px] border border-slate-200 transition-all duration-300 no-print ${isStatsOpen ? 'bg-white shadow-md border-blue-200' : ''}`}
                 >
                   <Sparkles size={16} className="text-blue-500" />
                   পরিসংখ্যান
-                  <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${isStatsHovered ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${isStatsOpen ? 'rotate-180' : ''}`} />
                 </button>
 
-                {isStatsHovered && (
+                {isStatsOpen && (
                   <div className="absolute top-full left-0 w-[450px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="space-y-6">
                       {/* Overall Header */}
@@ -160,7 +160,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                       </div>
 
                       {/* Ministry List */}
-                      <div className="max-h-[300px] overflow-y-auto pr-2 space-y-4 custom-scrollbar">
+                      <div className="space-y-4">
                         {filteredReportData.map((m: any) => {
                           const mSfiC = m.entityRows.reduce((sum: number, r: any) => sum + (r.currentSFICount || 0), 0);
                           const mNonSfiC = m.entityRows.reduce((sum: number, r: any) => sum + (r.currentNonSFICount || 0), 0);
@@ -200,7 +200,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                             <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(filteredGrandTotals.cSFIC)} টি</span>
                           </div>
                           <div className="text-slate-500 font-bold text-[11px] leading-relaxed bg-blue-50/50 p-2 rounded-lg border border-blue-100/50">
-                            (বিএসআর: {toBengaliDigits(filteredGrandTotals.sfiBSR)}, ত্রিপক্ষীয় (প): {toBengaliDigits(filteredGrandTotals.sfiTriWork)}, ত্রিপক্ষীয় (বি): {toBengaliDigits(filteredGrandTotals.sfiTriMin)}, মিলিকরণ: {toBengaliDigits(filteredGrandTotals.sfiRecon)}, অন্যান্য: {toBengaliDigits(filteredGrandTotals.sfiOthers)})
+                            (বিএসআর: {toBengaliDigits(filteredGrandTotals.sfiBSR)}, ত্রিপক্ষীয় (প): {toBengaliDigits(filteredGrandTotals.sfiTriWork)}, ত্রিপক্ষীয় (বি): {toBengaliDigits(filteredGrandTotals.sfiTriMin)}, মিলিকরণ: {toBengaliDigits(filteredGrandTotals.sfiRecon)})
                           </div>
                         </div>
 
@@ -210,7 +210,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                             <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(filteredGrandTotals.cNonSFIC)} টি</span>
                           </div>
                           <div className="text-slate-500 font-bold text-[11px] leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100">
-                            (বিএসআর: {toBengaliDigits(filteredGrandTotals.nonSfiBSR)}, দ্বিপক্ষীয় (প): {toBengaliDigits(filteredGrandTotals.nonSfiBiWork)}, দ্বিপক্ষীয় (বি): {toBengaliDigits(filteredGrandTotals.nonSfiBiMin)}, মিলিকরণ: {toBengaliDigits(filteredGrandTotals.nonSfiRecon)}, অন্যান্য: {toBengaliDigits(filteredGrandTotals.nonSfiOthers)})
+                            (বিএসআর: {toBengaliDigits(filteredGrandTotals.nonSfiBSR)}, দ্বিপক্ষীয় (প): {toBengaliDigits(filteredGrandTotals.nonSfiBiWork)}, দ্বিপক্ষীয় (বি): {toBengaliDigits(filteredGrandTotals.nonSfiBiMin)}, মিলিকরণ: {toBengaliDigits(filteredGrandTotals.nonSfiRecon)})
                           </div>
                         </div>
                       </div>
