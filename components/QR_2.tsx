@@ -79,6 +79,16 @@ const QR_2: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
             ত্রৈমাসিক রিটার্ন - ২
           </h1>
+
+          {/* Date Range Pill */}
+          <div className="mt-4 mb-6 flex justify-center">
+            <div className="inline-flex items-center gap-3 px-6 py-2 bg-blue-50 border border-blue-100 rounded-full shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+              <span className="text-blue-700 font-bold text-sm">
+                ত্রৈমাসিক রিটার্ন - ২ | {activeCycle.label}
+              </span>
+            </div>
+          </div>
           <div className="flex items-center justify-center gap-4 mb-4">
             <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
             <div className="w-2 h-2 rounded-full bg-blue-600"></div>

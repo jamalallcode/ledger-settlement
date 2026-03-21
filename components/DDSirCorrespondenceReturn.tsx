@@ -430,6 +430,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
               চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন (ডিডি স্যার)
             </h1>
+
             <div className="flex items-center justify-center gap-4">
               <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
               <div className="w-2 h-2 rounded-full bg-blue-600"></div>
