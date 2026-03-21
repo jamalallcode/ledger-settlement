@@ -10,9 +10,8 @@ interface CorrespondenceDhakaReturnProps {
   activeCycle: any;
   setSelectedReportType: (type: string | null) => void;
   HistoricalFilter: React.FC;
-  IDBadge: React.FC<{ id: string; isLayoutEditable?: boolean }>;
+  IDBadge: React.FC<{ id: string }>;
   showFilters: boolean;
-  isLayoutEditable?: boolean;
 }
 
 const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
@@ -21,8 +20,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   setSelectedReportType,
   HistoricalFilter,
   IDBadge,
-  showFilters,
-  isLayoutEditable
+  showFilters
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterParaType, setFilterParaType] = useState('সকল');
@@ -35,23 +33,6 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
-  const statsRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) {
-        setIsBranchDropdownOpen(false);
-      }
-      if (typeDropdownRef.current && !typeDropdownRef.current.contains(e.target as Node)) {
-        setIsTypeDropdownOpen(false);
-      }
-      if (statsRef.current && !statsRef.current.contains(e.target as Node)) {
-        setShowStats(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   useEffect(() => {
     setFilterLetterType('সকল');
@@ -176,9 +157,9 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     );
   }, [correspondenceEntries, searchTerm, filterParaType, filterLetterType, selectedMonthDate]);
 
-  const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] md:text-[11px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
+  const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[12px] md:text-[13px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-emerald-600 ring-4 ring-emerald-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-300'}`;
-  const tdS = "border border-slate-300 px-2 py-2 text-[10px] md:text-[11px] text-center font-bold leading-tight min-h-[40px] align-middle break-words";
+  const tdS = "border border-slate-300 px-2 py-2 text-[12px] md:text-[13px] text-center font-bold leading-tight min-h-[40px] align-middle break-words";
   
   const reportingLimitDate = useMemo(() => {
     const today = new Date();
@@ -249,59 +230,56 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
 
   return (
     <div id="correspondence-dhaka-container" className="space-y-4 py-2 w-full animate-report-page relative">
-      <IDBadge id="correspondence-dhaka-container" isLayoutEditable={isLayoutEditable} />
+      <IDBadge id="correspondence-dhaka-container" />
       {showFilters && (
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
           <div className="flex items-center gap-3">
-            <div className="relative" ref={statsRef}>
+            <div className="relative group">
               <button 
-                onClick={() => setShowStats(!showStats)}
-                className={`px-4 py-2 rounded-xl border transition-all flex items-center gap-2 font-bold text-[12px] no-print ${showStats ? 'bg-blue-600 text-white border-blue-600 shadow-lg ring-2 ring-blue-50' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm'}`}
+                className={`px-4 py-2 rounded-xl border transition-all flex items-center gap-2 font-bold text-[12px] no-print ${showStats ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm'}`}
               >
                 <Sparkles size={14} className={showStats ? 'animate-pulse' : ''} />
-                পরিসংখ্যান <ChevronDown size={14} className={`transition-transform duration-300 ${showStats ? 'rotate-180' : ''}`} />
+                পরিসংখ্যান <ChevronDown size={14} className="transition-transform duration-300 group-hover:rotate-180" />
               </button>
-              {showStats && (
-                <div className="absolute top-full left-0 w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200 mt-2">
-                  <div className="space-y-5 text-left">
-                    <div className="flex items-center justify-between border-b border-slate-50 pb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                          <BarChart3 size={16} className="text-blue-600" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-blue-700 font-black text-[15px]">মোট চিঠি: {toBengaliDigits(summaryStats.total)} টি</span>
-                          <span className="text-emerald-600 font-bold text-[12px]">মোট অনুচ্ছেদ: {toBengaliDigits(summaryStats.totalParas)} টি</span>
-                        </div>
+              <div className="absolute top-full left-0 w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all">
+                <div className="space-y-5 text-left">
+                  <div className="flex items-center justify-between border-b border-slate-50 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                        <BarChart3 size={16} className="text-blue-600" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-blue-700 font-black text-[15px]">মোট চিঠি: {toBengaliDigits(summaryStats.total)} টি</span>
+                        <span className="text-emerald-600 font-bold text-[12px]">মোট অনুচ্ছেদ: {toBengaliDigits(summaryStats.totalParas)} টি</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-blue-700 font-black text-[14px]">এসএফআই:</span>
+                        <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(summaryStats.sfi.total)} টি</span>
+                        <span className="text-emerald-600 font-bold text-[12px] ml-1">({toBengaliDigits(summaryStats.sfi.paras)} টি অনুচ্ছেদ)</span>
+                      </div>
+                      <div className="text-slate-600 font-bold text-[11px] leading-relaxed pl-4">
+                        (বিএসআর: {toBengaliDigits(summaryStats.sfi.bsr)} টি, ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.sfi.kp)} টি, ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি, মিলিকরণ: {toBengaliDigits(summaryStats.sfi.reconciliation)} টি)
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-blue-700 font-black text-[14px]">এসএফআই:</span>
-                          <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(summaryStats.sfi.total)} টি</span>
-                          <span className="text-emerald-600 font-bold text-[12px] ml-1">({toBengaliDigits(summaryStats.sfi.paras)} টি অনুচ্ছেদ)</span>
-                        </div>
-                        <div className="text-slate-600 font-bold text-[11px] leading-relaxed pl-4">
-                          (বিএসআর: {toBengaliDigits(summaryStats.sfi.bsr)} টি, ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.sfi.kp)} টি, ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি, মিলিকরণ: {toBengaliDigits(summaryStats.sfi.reconciliation)} টি)
-                        </div>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-blue-700 font-black text-[14px]">নন এসএফআই:</span>
+                        <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(summaryStats.nonSfi.total)} টি</span>
+                        <span className="text-emerald-600 font-bold text-[12px] ml-1">({toBengaliDigits(summaryStats.nonSfi.paras)} টি অনুচ্ছেদ)</span>
                       </div>
-
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-blue-700 font-black text-[14px]">নন এসএফআই:</span>
-                          <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(summaryStats.nonSfi.total)} টি</span>
-                          <span className="text-emerald-600 font-bold text-[12px] ml-1">({toBengaliDigits(summaryStats.nonSfi.paras)} টি অনুচ্ছেদ)</span>
-                        </div>
-                        <div className="text-slate-600 font-bold text-[11px] leading-relaxed pl-4">
-                          (বিএসআর: {toBengaliDigits(summaryStats.nonSfi.bsr)} টি, দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.nonSfi.kp)} টি, দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি, মিলিকরণ: {toBengaliDigits(summaryStats.nonSfi.reconciliation)} টি)
-                        </div>
+                      <div className="text-slate-600 font-bold text-[11px] leading-relaxed pl-4">
+                        (বিএসআর: {toBengaliDigits(summaryStats.nonSfi.bsr)} টি, দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.nonSfi.kp)} টি, দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি, মিলিকরণ: {toBengaliDigits(summaryStats.nonSfi.reconciliation)} টি)
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -420,13 +398,6 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
             <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
               চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন (ঢাকা)
             </h1>
-            
-            <div className="mt-4 flex justify-center mb-4">
-              <div className="inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
-                <span className="text-blue-400">শাখা ভিত্তিক {reportingDateBN} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।</span>
-              </div>
-            </div>
-
             <div className="flex items-center justify-center gap-4">
               <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
               <div className="w-2 h-2 rounded-full bg-blue-600"></div>
@@ -434,8 +405,14 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
             </div>
           </div>
         </div>
+          <div className="mt-4 flex justify-center">
+            <div className="inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
+              <span className="text-blue-400">শাখা ভিত্তিক {reportingDateBN} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।</span>
+            </div>
+          </div>
+        </div>
 
-        <div className="table-container relative overflow-auto border border-slate-300 rounded-lg px-6 pb-6">
+        <div className="table-container relative overflow-auto border border-slate-300 rounded-lg">
           <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
             <colgroup>
               <col className="w-[40px]" />
@@ -498,7 +475,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               )}
             </tbody>
             <tfoot className="z-[120]">
-              <tr className="bg-slate-50 text-slate-900 font-black text-[10px] h-11 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] border-t-2 border-slate-300">
+              <tr className="bg-slate-50 text-slate-900 font-black text-[11px] h-11 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] border-t-2 border-slate-300">
                 <td colSpan={2} className="px-4 text-left border-t border-slate-300 bg-slate-50">সর্বমোট চিঠিপত্র (ফিল্টারকৃত):</td>
                 <td colSpan={2} className="px-4 text-center border-t border-slate-300 bg-slate-50 text-emerald-600">{toBengaliDigits(filteredData.length)} টি</td>
                 <td colSpan={9} className="border-t border-slate-300 bg-slate-50"></td>
@@ -507,8 +484,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           </table>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   export default CorrespondenceDhakaReturn;

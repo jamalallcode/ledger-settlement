@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GroupOption } from '../types.ts';
 import { ChevronDown, X, PlusCircle, Check } from 'lucide-react';
-import IDBadge from './IDBadge.tsx';
 
 interface SearchableSelectProps {
   label: React.ReactNode;
@@ -78,9 +77,31 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       : (isFilled ? 'border-emerald-500 bg-white hover:border-emerald-600' : 'border-red-500 bg-white hover:border-red-600')
   }`;
 
+  const IDBadge = ({ id }: { id: string }) => {
+    const [copied, setCopied] = useState(false);
+    if (!isLayoutEditable) return null;
+    
+    const handleCopy = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    };
+
+    return (
+      <span 
+        onClick={handleCopy}
+        title="Click to copy ID"
+        className={`absolute -top-3 left-2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 z-[9999] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'ring-2 ring-emerald-500 bg-emerald-600' : ''}`}
+      >
+        {copied ? 'COPIED!' : `#${id}`}
+      </span>
+    );
+  };
+
   return (
     <div className="relative w-full" ref={containerRef}>
-      {badgeId && <IDBadge id={badgeId} isLayoutEditable={isLayoutEditable} />}
+      {badgeId && <IDBadge id={badgeId} />}
       <label className="block text-[13px] font-black text-slate-700 mb-2 flex items-center gap-1.5">{label}</label>
       
       <div 

@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { 
   LayoutDashboard, ArrowRight, ShieldCheck, CheckCircle2, CalendarRange, Bell, ShieldAlert, Sparkles, UserCheck, AlertTriangle, ArrowRightCircle
 } from 'lucide-react';
-import { SettlementEntry } from '../types';
-import { toBengaliDigits } from '../utils/numberUtils';
+import { SettlementEntry } from '../types.ts';
+import { toBengaliDigits } from '../utils/numberUtils.ts';
 
 interface LandingPageProps {
   entries: SettlementEntry[];

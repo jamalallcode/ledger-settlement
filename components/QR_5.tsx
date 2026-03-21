@@ -1,23 +1,20 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Printer } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
-import { format, isWithinInterval, parseISO, isBefore } from 'date-fns';
+import { format } from 'date-fns';
 import HighlightText from './HighlightText';
-import { SettlementEntry } from '../types';
 
 interface QRProps {
   activeCycle: any;
-  entries: SettlementEntry[];
-  IDBadge: React.FC<{ id: string; isLayoutEditable?: boolean }>;
+  IDBadge: React.FC<{ id: string }>;
   onBack?: () => void;
   searchTerm?: string;
   filterMinistry?: string;
-  isLayoutEditable?: boolean;
 }
 
-const QR_5: React.FC<QRProps> = ({ activeCycle, entries, IDBadge, searchTerm = '', filterMinistry = '', isLayoutEditable }) => {
-  const startDate = new Date(activeCycle.start);
-  const endDate = new Date(activeCycle.end);
+const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
+  const startDate = activeCycle.start;
+  const endDate = activeCycle.end;
 
   const getMonthNameBN = (date: Date) => {
     const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
@@ -26,39 +23,15 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, entries, IDBadge, searchTerm = '
 
   const formatYearBN = (date: Date) => toBengaliDigits(format(date, 'yyyy'));
 
-  const processedData = useMemo(() => {
-    const ministries = ["বস্ত্র ও পাট মন্ত্রণালয়", "শিল্প মন্ত্রণালয়", "বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয়", "বাণিজ্য মন্ত্রণালয়", "আর্থিক প্রতিষ্ঠান বিভাগ"];
-    
-    return ministries.map(mName => {
-      const mEntries = entries.filter(e => e.ministryName === mName);
-      const currentEntries = mEntries.filter(e => e.issueDateISO && isWithinInterval(parseISO(e.issueDateISO), { start: startDate, end: endDate }));
-      const oldEntries = mEntries.filter(e => e.issueDateISO && isBefore(parseISO(e.issueDateISO), startDate));
+  const sampleData = [
+    { name: "বস্ত্র ও পাট মন্ত্রণালয়", amount: 0, auditRec: 0, auditAdj: 0, currentRec: 0, currentAdj: 0, oldRec: 15000, oldAdj: 0, totalRec: 15000, totalAdj: 0, remarks: "০" },
+    { name: "শিল্প মন্ত্রণালয়", amount: 0, auditRec: 0, auditAdj: 0, currentRec: 0, currentAdj: 0, oldRec: 0, oldAdj: 0, totalRec: 0, totalAdj: 0, remarks: "০" },
+    { name: "বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয়", amount: 0, auditRec: 0, auditAdj: 0, currentRec: 0, currentAdj: 0, oldRec: 0, oldAdj: 0, totalRec: 0, totalAdj: 0, remarks: "০" },
+    { name: "বাণিজ্য মন্ত্রণালয়", amount: 0, auditRec: 0, auditAdj: 0, currentRec: 0, currentAdj: 0, oldRec: 0, oldAdj: 0, totalRec: 0, totalAdj: 0, remarks: "০" },
+    { name: "আর্থিক প্রতিষ্ঠান বিভাগ", amount: 0, auditRec: 0, auditAdj: 0, currentRec: 0, currentAdj: 0, oldRec: 3307905, oldAdj: 0, totalRec: 3307905, totalAdj: 0, remarks: "০" },
+  ];
 
-      const amount = currentEntries.reduce((sum, e) => sum + (e.involvedAmount || 0), 0);
-      const auditRec = 0; // Placeholder
-      const auditAdj = 0; // Placeholder
-      const currentRec = currentEntries.reduce((sum, e) => sum + (e.totalRec || 0), 0);
-      const currentAdj = currentEntries.reduce((sum, e) => sum + (e.totalAdj || 0), 0);
-      const oldRec = oldEntries.reduce((sum, e) => sum + (e.totalRec || 0), 0);
-      const oldAdj = oldEntries.reduce((sum, e) => sum + (e.totalAdj || 0), 0);
-
-      return {
-        name: mName,
-        amount,
-        auditRec,
-        auditAdj,
-        currentRec,
-        currentAdj,
-        oldRec,
-        oldAdj,
-        totalRec: currentRec + oldRec,
-        totalAdj: currentAdj + oldAdj,
-        remarks: "০"
-      };
-    });
-  }, [entries, activeCycle, startDate, endDate]);
-
-  const filteredData = processedData.filter(row => {
+  const filteredData = sampleData.filter(row => {
     const matchMinistry = filterMinistry === '' || row.name.includes(filterMinistry);
     const matchSearch = searchTerm === '' || row.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchMinistry && matchSearch;
@@ -82,7 +55,7 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, entries, IDBadge, searchTerm = '
 
   return (
     <div id="qr-5-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
-      <IDBadge id="qr-5-container" isLayoutEditable={isLayoutEditable} />
+      <IDBadge id="qr-5-container" />
       
       <div className="flex justify-end mb-4 no-print">
       </div>
@@ -93,13 +66,6 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, entries, IDBadge, searchTerm = '
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
             ত্রৈমাসিক রিটার্ন - ৫
           </h1>
-          
-          <div className="mt-4 flex justify-center mb-4">
-            <div className="inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
-              <span className="text-blue-400">ত্রৈমাসিক প্রতিবেদন</span>
-            </div>
-          </div>
-
           <div className="flex items-center justify-center gap-4">
             <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
             <div className="w-2 h-2 rounded-full bg-blue-600"></div>

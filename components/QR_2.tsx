@@ -1,21 +1,18 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Printer } from 'lucide-react';
-import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
-import { format, subMonths, addMonths, setDate, isWithinInterval, parseISO } from 'date-fns';
+import { toBengaliDigits } from '../utils/numberUtils';
+import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
-import { SettlementEntry } from '../types';
 
 interface QRProps {
-  entries: SettlementEntry[];
   activeCycle: any;
-  IDBadge: React.FC<{ id: string; isLayoutEditable?: boolean }>;
+  IDBadge: React.FC<{ id: string }>;
   onBack?: () => void;
   searchTerm?: string;
   filterMinistry?: string;
-  isLayoutEditable?: boolean;
 }
 
-const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', isLayoutEditable }) => {
+const QR_2: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
   // Date calculation based on user's logic: 
   // "তিন মাস বলতে পূর্ববর্তী মাসের ১৬ তারিখ হতে ৩য় মাসের ১৫ তারিখ পযন্ত"
   const startDate = setDate(subMonths(activeCycle.start, 1), 16);
@@ -26,69 +23,44 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     return months[date.getMonth()];
   };
 
-  const reportData = useMemo(() => {
-    // Filter entries for tripartite meetings within the date range
-    const filtered = entries.filter(e => {
-      if (e.meetingType !== 'ত্রিপক্ষীয় সভা') return false;
-      if (!e.meetingDate) return false;
-      
-      try {
-        const mDate = parseISO(e.meetingDate);
-        return isWithinInterval(mDate, { start: startDate, end: endDate });
-      } catch (err) {
-        return false;
-      }
-    });
+  const sampleData = [
+    {
+      ministry: "বস্ত্র ও পাট মন্ত্রণালয়, দৌলতপুর জুট মিলস লিমিটেড, খালিশপুর, খুলনা (২০১৭-১৮)",
+      bsCount: "১",
+      memo: "২৬৬, ১৬/০৯/২৫",
+      sentPara: "৪",
+      settledPara: "১",
+      diary: "১৮১, ২৩/০৯/২৫",
+      issueDate: "৭৪২, ১৬/১০/২৫",
+      amount: "২৮৮০০",
+      recovery: "১৫০০০",
+      adjustment: "-",
+      others: "-",
+      remarks: "পূর্বের আদায় ১৩৮০০",
+      archive: "KG -1004"
+    },
+    {
+      ministry: "আর্থিক প্রতিষ্ঠান বিভাগ, জনতা ব্যাংক পিএলসি এর বিভিন্ন শাখা (১৯৯৭-১৩)",
+      bsCount: "১",
+      memo: "৫৮৬, ২৯/১০/২৫",
+      sentPara: "১৮",
+      settledPara: "৮",
+      diary: "১৭৪, ০৬/১১/২৫",
+      issueDate: "৭৪৩, ১৭/১০/২৫",
+      amount: "২১১২১১",
+      recovery: "২১১২১১",
+      adjustment: "-",
+      others: "-",
+      remarks: "",
+      archive: "KG-0136, KG-0067, KG-0053"
+    }
+  ];
 
-    // Group by ministry
-    const groups: Record<string, any> = {};
-    filtered.forEach(e => {
-      const min = e.ministryName || 'অন্যান্য';
-      if (!groups[min]) {
-        groups[min] = {
-          ministry: min,
-          meetingCount: 0,
-          meetingDates: [] as string[],
-          discussedParas: 0,
-          recommendedParas: 0,
-          minutesDate: '', 
-          settlementLetterDate: e.issueLetterNoDate || '',
-          settledAmount: 0,
-          recovery: 0,
-          adjustment: 0,
-          others: 0,
-          remarks: e.remarks || '',
-          archive: e.archiveNo || ''
-        };
-      }
-      groups[min].meetingCount += 1;
-      if (e.meetingDate) groups[min].meetingDates.push(e.meetingDate);
-      groups[min].discussedParas += parseBengaliNumber(e.meetingSentParaCount || '0');
-      groups[min].recommendedParas += parseBengaliNumber(e.meetingRecommendedParaCount || '0');
-      groups[min].settledAmount += (e.totalRec || 0) + (e.totalAdj || 0);
-      groups[min].recovery += (e.totalRec || 0);
-      groups[min].adjustment += (e.totalAdj || 0);
-    });
-
-    return Object.values(groups).filter(g => {
-      const matchMinistry = filterMinistry === '' || g.ministry.includes(filterMinistry);
-      const matchSearch = searchTerm === '' || g.ministry.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchMinistry && matchSearch;
-    });
-  }, [entries, startDate, endDate, filterMinistry, searchTerm]);
-
-  const totals = useMemo(() => {
-    return reportData.reduce((acc, curr) => ({
-      meetingCount: acc.meetingCount + curr.meetingCount,
-      discussedParas: acc.discussedParas + curr.discussedParas,
-      recommendedParas: acc.recommendedParas + curr.recommendedParas,
-      settledAmount: acc.settledAmount + curr.settledAmount,
-      recovery: acc.recovery + curr.recovery,
-      adjustment: acc.adjustment + curr.adjustment
-    }), {
-      meetingCount: 0, discussedParas: 0, recommendedParas: 0, settledAmount: 0, recovery: 0, adjustment: 0
-    });
-  }, [reportData]);
+  const filteredData = sampleData.filter(row => {
+    const matchMinistry = filterMinistry === '' || row.ministry.includes(filterMinistry);
+    const matchSearch = searchTerm === '' || row.ministry.toLowerCase().includes(searchTerm.toLowerCase()) || row.remarks.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchMinistry && matchSearch;
+  });
 
   const thCls = "border-r border-b border-slate-400 p-1 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center";
   const tdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-700 align-middle";
@@ -96,7 +68,7 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
 
   return (
     <div id="qr-2-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
-      <IDBadge id="qr-2-container" isLayoutEditable={isLayoutEditable} />
+      <IDBadge id="qr-2-container" />
       
       <div className="flex justify-end mb-4 no-print">
       </div>
@@ -107,17 +79,13 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
             ত্রৈমাসিক রিটার্ন - ২
           </h1>
-          
-          <div className="mt-4 flex justify-center mb-4">
-            <div className="inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
-              <span className="text-blue-400">ছক: ৪(ক)</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-4 mb-4">
             <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
             <div className="w-2 h-2 rounded-full bg-blue-600"></div>
             <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-slate-400"></div>
+          </div>
+          <div className="inline-block border-b-2 border-slate-900 pb-0.5">
+            <span className="text-md font-black text-slate-900">ছক: ৪(ক)</span>
           </div>
         </div>
       </div>
@@ -161,30 +129,28 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
             </tr>
           </thead>
           <tbody>
-            {reportData.map((row, idx) => (
+            {filteredData.map((row, idx) => (
               <tr key={idx} className="hover:bg-slate-50 transition-colors">
                 <td className={numTdCls}>{toBengaliDigits((idx + 1).toString())}</td>
                 <td className={tdCls}>
                   <HighlightText text={row.ministry} searchTerm={searchTerm} />
                 </td>
-                <td className={numTdCls}>{toBengaliDigits(row.meetingCount.toString())}</td>
-                <td className={numTdCls}>
-                  {row.meetingDates.map(d => toBengaliDigits(format(parseISO(d), 'dd-MM-yy'))).join(', ')}
-                </td>
-                <td className={numTdCls}>{toBengaliDigits(row.discussedParas.toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.recommendedParas.toString())}</td>
-                <td className={numTdCls}>{row.minutesDate ? toBengaliDigits(row.minutesDate) : ""}</td>
-                <td className={numTdCls}>{row.settlementLetterDate ? toBengaliDigits(row.settlementLetterDate) : ""}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.settledAmount.toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.recovery.toString())}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.adjustment.toString())}</td>
-                <td className={numTdCls}>{row.others ? toBengaliDigits(row.others.toString()) : ""}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.bsCount)}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.memo)}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.sentPara)}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.settledPara)}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.diary)}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.issueDate)}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.amount)}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.recovery)}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.adjustment)}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.others)}</td>
                 <td className={tdCls}>{row.remarks}</td>
                 <td className={numTdCls}>{row.archive}</td>
               </tr>
             ))}
-            {/* Empty rows if no data */}
-            {reportData.length === 0 && Array.from({ length: 3 }).map((_, i) => (
+            {/* Empty rows */}
+            {Array.from({ length: 3 }).map((_, i) => (
               <tr key={`empty-${i}`} className="h-10">
                 {Array.from({ length: 14 }).map((_, j) => (
                   <td key={j} className="border-r border-b border-slate-400"></td>

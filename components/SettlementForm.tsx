@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SettlementEntry, GroupOption } from '../types';
+import { SettlementEntry, GroupOption } from '../types.ts';
 import { Layout, ClipboardList, Mail, ArrowRightCircle, CheckCircle2, ChevronRight, LayoutGrid, FileText, ArrowRight } from 'lucide-react';
 import SettlementEntryModule from './SettlementEntryModule';
 import CorrespondenceEntryModule from './CorrespondenceEntryModule';
