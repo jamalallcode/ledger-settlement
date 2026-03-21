@@ -830,9 +830,8 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
           )}
           
           <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-slate-200 shadow-xl space-y-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-slate-100">
-              <div className="flex items-center gap-4 w-full md:w-auto"><div className="p-4 bg-purple-50 text-purple-600 rounded-2xl"><ShieldCheck size={32} /></div><div><h3 className="text-2xl font-black text-slate-900">এডমিন কন্ট্রোল প্যানেল</h3><p className="text-slate-500 font-bold">সিস্টেম ম্যানেজমেন্ট ও রিসেট অপশন।</p></div></div>
-              <div className="flex flex-wrap gap-4 justify-center md:justify-end">
+            <div className="flex flex-col md:flex-row items-center justify-start gap-6 pb-6 border-b border-slate-100">
+              <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                 <button onClick={toggleResultsLock} className={`px-5 py-2.5 rounded-xl font-black text-xs flex items-center gap-2 border transition-all shadow-sm ${isResultsLocked ? 'bg-amber-600 text-white border-amber-700' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}>
                   {isResultsLocked ? <Unlock size={16} /> : <Lock size={16} />} 
                   {isResultsLocked ? 'ফলাফল আনলক করুন' : 'ফলাফল লক করুন'}
