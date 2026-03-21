@@ -561,6 +561,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
         
         setMessage({ type: 'success', text: 'অফলাইন ভোট গ্রহণ করা হয়েছে। ইন্টারনেট সংযোগ পেলে তা স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।' });
         setSelections({}); setPollSelection(''); setVoterTokenInput('');
+        setTimeout(() => setMessage(null), 5000);
       } else {
         const { error: voteError } = await supabase.from('settlement_entries').upsert({ id: entryId, content: voteData });
 
@@ -573,6 +574,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
           setMessage({ type: 'success', text: 'আপনার ভোট সফলভাবে সম্পন্ন হয়েছে।' });
           setSelections({}); setPollSelection(''); setVoterTokenInput('');
           fetchTokens();
+          setTimeout(() => setMessage(null), 5000);
         }
       }
     } catch (err: any) {
@@ -654,7 +656,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
            <div className="bg-slate-900 text-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl space-y-8 relative overflow-hidden h-fit">
               <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-4"><div className="w-1.5 h-6 bg-blue-500 rounded-full"></div><h3 className="text-xl font-black tracking-tight text-white">সিক্রেট টোকেন</h3></div>
-                <input type="text" placeholder="যেমন: VOTE-XXXXX" value={voterTokenInput} onChange={(e) => setVoterTokenInput(e.target.value.toUpperCase())} className="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl px-6 py-5 text-white font-black text-2xl tracking-widest outline-none focus:border-blue-500 transition-all placeholder:text-slate-700" />
+                <input type="text" placeholder="যেমন: VOTE-XXXXX" value={voterTokenInput} onChange={(e) => { setVoterTokenInput(e.target.value.toUpperCase()); if (message) setMessage(null); }} className="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl px-6 py-5 text-white font-black text-2xl tracking-widest outline-none focus:border-blue-500 transition-all placeholder:text-slate-700" />
                 <p className="mt-4 text-slate-400 text-sm">টোকেনটি শুধুমাত্র একবার ব্যবহারযোগ্য। ভোট দেওয়ার সাথে সাথে এটি নিষ্ক্রিয় হয়ে যাবে।</p>
               </div>
            </div>
@@ -687,7 +689,10 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
                 )}
                 
                 {message?.type === 'success' ? (
-                  <div className="w-full py-5 bg-emerald-100 text-emerald-700 rounded-2xl font-black text-lg flex items-center justify-center gap-3 border-2 border-emerald-200 animate-in zoom-in duration-500">
+                  <div 
+                    onClick={() => setMessage(null)}
+                    className="w-full py-5 bg-emerald-100 text-emerald-700 rounded-2xl font-black text-lg flex items-center justify-center gap-3 border-2 border-emerald-200 animate-in zoom-in duration-500 cursor-pointer hover:bg-emerald-200 transition-all"
+                  >
                     <CheckCircle2 size={24} /> {message.text}
                   </div>
                 ) : (
@@ -744,7 +749,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
               </div>
               <div className="space-y-4">
                 <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">সিক্রেট টোকেন</label>
-                <input type="text" placeholder="VOTE-XXXXX" value={voterTokenInput} onChange={(e) => setVoterTokenInput(e.target.value.toUpperCase())} className="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl px-6 py-4 text-white font-black text-xl tracking-widest outline-none focus:border-emerald-500" />
+                <input type="text" placeholder="VOTE-XXXXX" value={voterTokenInput} onChange={(e) => { setVoterTokenInput(e.target.value.toUpperCase()); if (message) setMessage(null); }} className="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl px-6 py-4 text-white font-black text-xl tracking-widest outline-none focus:border-emerald-500" />
               </div>
 
               <div className="space-y-4 pt-4">
@@ -756,7 +761,10 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
                 )}
                 
                 {message?.type === 'success' ? (
-                  <div className="w-full py-5 bg-emerald-100 text-emerald-700 rounded-2xl font-black text-lg flex items-center justify-center gap-3 border-2 border-emerald-200 animate-in zoom-in duration-500">
+                  <div 
+                    onClick={() => setMessage(null)}
+                    className="w-full py-5 bg-emerald-100 text-emerald-700 rounded-2xl font-black text-lg flex items-center justify-center gap-3 border-2 border-emerald-200 animate-in zoom-in duration-500 cursor-pointer hover:bg-emerald-200 transition-all"
+                  >
                     <CheckCircle2 size={24} /> {message.text}
                   </div>
                 ) : (
