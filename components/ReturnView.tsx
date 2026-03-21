@@ -203,7 +203,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           const processedParaIds = new Set<string>();
           matchingEntries.forEach(entry => {
             const isSFI = robustNormalize(entry.paraType || '') === robustNormalize('এসএফআই');
-            const letterType = entry.letterType || '';
+            // Support both Settlement Register (meetingType) and Correspondence Register (letterType)
+            const rawLT = entry.meetingType || entry.letterType || '';
+            const normLT = robustNormalize(rawLT);
 
             if (entry.paragraphs && entry.paragraphs.length > 0) {
               entry.paragraphs.forEach(p => { 
@@ -219,19 +221,33 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                     
                     if (isSFI) {
                       curSFIC++;
-                      const normLT = robustNormalize(letterType);
-                      if (normLT === robustNormalize('বিএসআর')) sfiBSR++;
-                      else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়')) && (normLT.includes(robustNormalize('কার্যপত্র')) || normLT.includes(robustNormalize('(প)')))) sfiTriWork++;
-                      else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়')) && (normLT.includes(robustNormalize('কার্যবিবরণী')) || normLT.includes(robustNormalize('(বি)')))) sfiTriMin++;
-                      else if (normLT === robustNormalize('মিলিকরণ')) sfiRecon++;
+                      if (normLT.includes(robustNormalize('বিএসআর'))) {
+                        sfiBSR++;
+                      } else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়'))) {
+                        // If it contains "বিবরণী" or "(বি)", it's Minutes. Otherwise default to Workpaper.
+                        if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)'))) {
+                          sfiTriMin++;
+                        } else {
+                          sfiTriWork++;
+                        }
+                      } else if (normLT.includes(robustNormalize('মিলিকরণ'))) {
+                        sfiRecon++;
+                      }
                       sfiSA += settledAmt;
                     } else {
                       curNonSFIC++;
-                      const normLT = robustNormalize(letterType);
-                      if (normLT === robustNormalize('বিএসআর')) nonSfiBSR++;
-                      else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়')) && (normLT.includes(robustNormalize('কার্যপত্র')) || normLT.includes(robustNormalize('(প)')))) nonSfiBiWork++;
-                      else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়')) && (normLT.includes(robustNormalize('কার্যবিবরণী')) || normLT.includes(robustNormalize('(বি)')))) nonSfiBiMin++;
-                      else if (normLT === robustNormalize('মিলিকরণ')) nonSfiRecon++;
+                      if (normLT.includes(robustNormalize('বিএসআর'))) {
+                        nonSfiBSR++;
+                      } else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়'))) {
+                        // If it contains "বিবরণী" or "(বি)", it's Minutes. Otherwise default to Workpaper.
+                        if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)'))) {
+                          nonSfiBiMin++;
+                        } else {
+                          nonSfiBiWork++;
+                        }
+                      } else if (normLT.includes(robustNormalize('মিলিকরণ'))) {
+                        nonSfiRecon++;
+                      }
                       nonSfiSA += settledAmt;
                     }
                     curSA += settledAmt;
