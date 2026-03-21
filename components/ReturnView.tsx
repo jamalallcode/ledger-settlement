@@ -3,7 +3,7 @@ import React from 'react';
 import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP } from '../constants';
-import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid } from 'lucide-react';
+import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles } from 'lucide-react';
 import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
 import { getCycleForDate } from '../utils/cycleHelper';
 import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
@@ -511,12 +511,52 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
   if (!selectedReportType && !isSetupMode) {
     return (
-      <div id="section-report-selector" className="max-w-4xl py-20 animate-report-page relative pt-0 text-center">
+      <div id="section-report-selector" className="min-h-[70vh] flex items-center justify-center animate-in fade-in zoom-in duration-700 relative py-4">
         <IDBadge id="section-report-selector" />
-        <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-16 rounded-[3rem] space-y-6">
-           <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto shadow-xl"><PieChart size={40} /></div>
-           <div className="space-y-2"><h3 className="text-3xl font-black text-slate-800">রিটার্ণ মডিউলে স্বাগতম</h3><p className="text-slate-500 font-bold max-w-sm mx-auto">অনুগ্রহ করে বাম পাশের সাইডবার মেনু থেকে কাঙ্ক্ষিত রিটার্ণ বা সারাংশের ধরনটি নির্বাচন করুন।</p></div>
-           <div className="flex justify-center items-center gap-4 text-slate-400 font-black text-sm uppercase tracking-widest pt-4"><ArrowRightCircle size={20} className="text-blue-500 animate-pulse" /> সাইডবার থেকে সিলেক্ট করুন</div>
+        
+        {/* Background Decorative Elements */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full overflow-hidden pointer-events-none opacity-20">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-400 rounded-full blur-[120px] translate-x-1/2 translate-y-1/2"></div>
+        </div>
+
+        <div className="relative z-10 w-full max-w-4xl bg-white/40 backdrop-blur-xl border border-white/60 p-8 md:p-12 rounded-[3.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] space-y-6 text-center group transition-all duration-500 hover:shadow-[0_48px_80px_-16px_rgba(0,0,0,0.12)]">
+           <div className="relative inline-block">
+             <div className="absolute inset-0 bg-blue-600 blur-3xl opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
+             <div className="relative w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl shadow-blue-500/30 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+               <PieChart size={40} strokeWidth={1.5} />
+             </div>
+             <div className="absolute -bottom-1 -right-1 w-9 h-9 bg-amber-400 text-slate-900 rounded-xl flex items-center justify-center shadow-lg border-4 border-white animate-bounce">
+               <Sparkles size={18} fill="currentColor" />
+             </div>
+           </div>
+
+           <div className="space-y-3">
+             <h3 className="text-4xl font-black text-slate-900 tracking-tight leading-tight">
+               রিটার্ন মডিউলে <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">স্বাগতম</span>
+             </h3>
+             <p className="text-slate-600 font-bold text-base max-w-lg mx-auto leading-relaxed">
+               আপনার কাঙ্ক্ষিত রিটার্ন বা সারাংশের ধরনটি নির্বাচন করে কাজ শুরু করুন। আমরা আপনার তথ্যের সঠিকতা ও নিরাপত্তা নিশ্চিত করি।
+             </p>
+           </div>
+
+           <div className="pt-4">
+             <div className="inline-flex items-center gap-3 px-7 py-3.5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.15em] shadow-2xl shadow-slate-900/20 hover:bg-blue-600 hover:shadow-blue-500/30 transition-all duration-300 cursor-default group/btn">
+               <ArrowRightCircle size={20} className="text-blue-400 group-hover/btn:translate-x-1 transition-transform" />
+               বাম পাশের সাইডবার থেকে সিলেক্ট করুন
+             </div>
+           </div>
+
+           {/* Bottom Stats or Decorative Line */}
+           <div className="flex items-center justify-center gap-6 pt-6 opacity-40">
+             <div className="h-px w-24 bg-gradient-to-r from-transparent to-slate-400"></div>
+             <div className="flex gap-2">
+               <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+               <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
+               <div className="w-2 h-2 rounded-full bg-slate-400"></div>
+             </div>
+             <div className="h-px w-24 bg-gradient-to-l from-transparent to-slate-400"></div>
+           </div>
         </div>
       </div>
     );
