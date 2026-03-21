@@ -1,23 +1,20 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Printer } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
-import { format, isWithinInterval, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import HighlightText from './HighlightText';
-import { SettlementEntry } from '../types';
 
 interface QRProps {
   activeCycle: any;
-  entries: SettlementEntry[];
-  IDBadge: React.FC<{ id: string; isLayoutEditable?: boolean }>;
+  IDBadge: React.FC<{ id: string }>;
   onBack?: () => void;
   searchTerm?: string;
   filterMinistry?: string;
-  isLayoutEditable?: boolean;
 }
 
-const QR_6: React.FC<QRProps> = ({ activeCycle, entries, IDBadge, searchTerm = '', filterMinistry = '', isLayoutEditable }) => {
-  const startDate = new Date(activeCycle.start);
-  const endDate = new Date(activeCycle.end);
+const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
+  const startDate = activeCycle.start;
+  const endDate = activeCycle.end;
 
   const getMonthNameBN = (date: Date) => {
     const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
@@ -26,34 +23,15 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, entries, IDBadge, searchTerm = '
 
   const formatYearBN = (date: Date) => toBengaliDigits(format(date, 'yyyy'));
 
-  const processedData = useMemo(() => {
-    const ministries = ["বস্ত্র ও পাট মন্ত্রণালয়", "শিল্প মন্ত্রণালয়", "বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয়", "বাণিজ্য মন্ত্রণালয়", "আর্থিক প্রতিষ্ঠান বিভাগ"];
-    
-    return ministries.map(mName => {
-      const mEntries = entries.filter(e => 
-        e.ministryName === mName && 
-        e.issueDateISO && isWithinInterval(parseISO(e.issueDateISO), { start: startDate, end: endDate })
-      );
+  const sampleData = [
+    { name: "বস্ত্র ও পাট মন্ত্রণালয়", involved: 28000, taxRec: 0, taxAdj: 0, otherRec: 15000, otherAdj: 0, remarks: "০" },
+    { name: "শিল্প মন্ত্রণালয়", involved: 0, taxRec: 0, taxAdj: 0, otherRec: 0, otherAdj: 0, remarks: "০" },
+    { name: "বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয়", involved: 0, taxRec: 0, taxAdj: 0, otherRec: 0, otherAdj: 0, remarks: "০" },
+    { name: "বাণিজ্য মন্ত্রণালয়", involved: 0, taxRec: 0, taxAdj: 0, otherRec: 0, otherAdj: 0, remarks: "০" },
+    { name: "আর্থিক প্রতিষ্ঠান বিভাগ", involved: 3307905, taxRec: 0, taxAdj: 0, otherRec: 3307905, otherAdj: 0, remarks: "০" },
+  ];
 
-      const involved = mEntries.reduce((sum, e) => sum + (e.involvedAmount || 0), 0);
-      const taxRec = mEntries.reduce((sum, e) => sum + (e.vatRec || 0) + (e.itRec || 0), 0);
-      const taxAdj = mEntries.reduce((sum, e) => sum + (e.vatAdj || 0) + (e.itAdj || 0), 0);
-      const otherRec = mEntries.reduce((sum, e) => sum + (e.othersRec || 0), 0);
-      const otherAdj = mEntries.reduce((sum, e) => sum + (e.othersAdj || 0), 0);
-
-      return {
-        name: mName,
-        involved,
-        taxRec,
-        taxAdj,
-        otherRec,
-        otherAdj,
-        remarks: "০"
-      };
-    });
-  }, [entries, activeCycle, startDate, endDate]);
-
-  const filteredData = processedData.filter(row => {
+  const filteredData = sampleData.filter(row => {
     const matchMinistry = filterMinistry === '' || row.name.includes(filterMinistry);
     const matchSearch = searchTerm === '' || row.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchMinistry && matchSearch;
@@ -73,7 +51,7 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, entries, IDBadge, searchTerm = '
 
   return (
     <div id="qr-6-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
-      <IDBadge id="qr-6-container" isLayoutEditable={isLayoutEditable} />
+      <IDBadge id="qr-6-container" />
       
       <div className="flex justify-end mb-4 no-print">
       </div>
@@ -84,13 +62,16 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, entries, IDBadge, searchTerm = '
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
             ত্রৈমাসিক রিটার্ন - ৬
           </h1>
-          
-          <div className="mt-4 flex justify-center mb-4">
-            <div className="inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
-              <span className="text-blue-400">ত্রৈমাসিক প্রতিবেদন</span>
+
+          {/* Date Range Pill */}
+          <div className="mt-4 mb-6 flex justify-center">
+            <div className="inline-flex items-center gap-3 px-6 py-2 bg-blue-50 border border-blue-100 rounded-full shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+              <span className="text-blue-700 font-bold text-sm">
+                ত্রৈমাসিক রিটার্ন - ৬ | {activeCycle.label}
+              </span>
             </div>
           </div>
-
           <div className="flex items-center justify-center gap-4">
             <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
             <div className="w-2 h-2 rounded-full bg-blue-600"></div>

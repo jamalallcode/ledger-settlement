@@ -14,7 +14,6 @@
       "node"
     ],
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
     "allowJs": true,
@@ -24,6 +23,7 @@
         "./*"
       ]
     },
+    "allowImportingTsExtensions": true,
     "noEmit": true
   },
   "include": ["src", "components", "utils", "lib", "types.ts", "App.tsx", "main.tsx"]

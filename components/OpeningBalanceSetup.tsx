@@ -15,9 +15,8 @@ interface OpeningBalanceSetupProps {
   handleSetupPaste: (e: React.ClipboardEvent, startEntity: string, startField: keyof MinistryPrevStats) => void;
   setIsSetupMode: (val: boolean) => void;
   setSelectedReportType: (type: string | null) => void;
-  IDBadge: React.FC<{ id: string; isLayoutEditable?: boolean }>;
+  IDBadge: React.FC<{ id: string }>;
   setupType: string;
-  isLayoutEditable?: boolean;
 }
 
 const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
@@ -31,8 +30,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
   setIsSetupMode,
   setSelectedReportType,
   IDBadge,
-  setupType,
-  isLayoutEditable
+  setupType
 }) => {
   const isQuarterly = setupType.includes('ত্রৈমাসিক');
   const displayFields: { key: keyof MinistryPrevStats, label: string, subLabel?: string }[] = isQuarterly ? [
@@ -61,9 +59,9 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
 
   return (
     <div id="section-prev-stats-setup" className="max-w-full mx-auto space-y-6 py-4 animate-table-entrance relative px-2">
-      <IDBadge id="section-prev-stats-setup" isLayoutEditable={isLayoutEditable} />
+      <IDBadge id="section-prev-stats-setup" />
       <div id="container-setup-controls" className="flex flex-col md:flex-row items-center justify-between bg-white p-6 rounded-3xl border border-slate-200 shadow-xl gap-4 no-print relative">
-        <IDBadge id="container-setup-controls" isLayoutEditable={isLayoutEditable} />
+        <IDBadge id="container-setup-controls" />
         <div className="flex items-center gap-4">
           <button onClick={() => { setIsSetupMode(false); setSelectedReportType(null); }} className="p-3 bg-slate-100 border border-slate-200 rounded-2xl hover:bg-slate-200 text-slate-600 shadow-sm transition-all"><ChevronLeft size={22} /></button>
           <div className="flex flex-col">

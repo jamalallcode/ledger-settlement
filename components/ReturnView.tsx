@@ -10,7 +10,6 @@ import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
 import CorrespondenceDhakaReturn from './CorrespondenceDhakaReturn';
 import OpeningBalanceSetup from './OpeningBalanceSetup';
 import ReturnSummaryTable from './ReturnSummaryTable';
-import IDBadge from './IDBadge';
 import QR_1 from './QR_1';
 import QR_2 from './QR_2';
 import QR_3 from './QR_3';
@@ -204,20 +203,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           const processedParaIds = new Set<string>();
           matchingEntries.forEach(entry => {
             const isSFI = robustNormalize(entry.paraType || '') === robustNormalize('এসএফআই');
-            // Enhanced letterType extraction for both Settlement and Correspondence entries
-            let letterType = (entry as any).letterType || (entry as any).meetingType || '';
-            
-            // For settlements, refine based on workpaper/minutes fields
-            if (entry.meetingType) {
-              const hasMinutes = entry.meetingMinutes || (entry.meetingWorkpaper && entry.meetingWorkpaper.includes('কার্যবিবরণী'));
-              if (entry.meetingType === 'ত্রিপক্ষীয় সভা') {
-                if (hasMinutes) letterType = 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)';
-                else if (entry.meetingWorkpaper) letterType = 'ত্রিপক্ষীয় সভা (কার্যপত্র)';
-              } else if (entry.meetingType === 'দ্বিপক্ষীয় সভা') {
-                if (hasMinutes) letterType = 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)';
-                else if (entry.meetingWorkpaper) letterType = 'দ্বিপক্ষীয় সভা (কার্যপত্র)';
-              }
-            }
+            // Support both Settlement Register (meetingType) and Correspondence Register (letterType)
+            const rawLT = entry.meetingType || entry.letterType || '';
+            const normLT = robustNormalize(rawLT);
 
             if (entry.paragraphs && entry.paragraphs.length > 0) {
               entry.paragraphs.forEach(p => { 
@@ -233,23 +221,33 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                     
                     if (isSFI) {
                       curSFIC++;
-                      if (letterType === 'বিএসআর') sfiBSR++;
-                      else if (letterType.includes('ত্রিপক্ষীয় সভা')) {
-                        // If settled, it MUST be counted as Minutes. If not settled, follow the letterType.
-                        if (status === robustNormalize('পূর্ণাঙ্গ') || letterType.includes('কার্যবিবরণী')) sfiTriMin++;
-                        else sfiTriWork++;
+                      if (normLT.includes(robustNormalize('বিএসআর'))) {
+                        sfiBSR++;
+                      } else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়'))) {
+                        // If it contains "বিবরণী", "(বি)", or "সভা", or is from Settlement Register, it's Minutes.
+                        if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !!entry.meetingType) {
+                          sfiTriMin++;
+                        } else {
+                          sfiTriWork++;
+                        }
+                      } else if (normLT.includes(robustNormalize('মিলিকরণ'))) {
+                        sfiRecon++;
                       }
-                      else if (letterType === 'মিলিকরণ') sfiRecon++;
                       sfiSA += settledAmt;
                     } else {
                       curNonSFIC++;
-                      if (letterType === 'বিএসআর') nonSfiBSR++;
-                      else if (letterType.includes('দ্বিপক্ষীয় সভা')) {
-                        // If settled, it MUST be counted as Minutes. If not settled, follow the letterType.
-                        if (status === robustNormalize('পূর্ণাঙ্গ') || letterType.includes('কার্যবিবরণী')) nonSfiBiMin++;
-                        else nonSfiBiWork++;
+                      if (normLT.includes(robustNormalize('বিএসআর'))) {
+                        nonSfiBSR++;
+                      } else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়'))) {
+                        // If it contains "বিবরণী", "(বি)", or "সভা", or is from Settlement Register, it's Minutes.
+                        if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !!entry.meetingType) {
+                          nonSfiBiMin++;
+                        } else {
+                          nonSfiBiWork++;
+                        }
+                      } else if (normLT.includes(robustNormalize('মিলিকরণ'))) {
+                        nonSfiRecon++;
                       }
-                      else if (letterType === 'মিলিকরণ') nonSfiRecon++;
                       nonSfiSA += settledAmt;
                     }
                     curSA += settledAmt;
@@ -266,8 +264,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           return { 
             entity: entityName, 
             currentRaisedCount: curRC, currentRaisedAmount: curRA,
-            currentSettledCount: curSC, 
-            currentSettledAmount: curSA,
+            currentSettledCount: curSC, currentSettledAmount: curSA,
             currentFullCount: curFC, currentPartialCount: curPC,
             currentSFICount: curSFIC, currentNonSFICount: curNonSFIC,
             currentSFIAmount: sfiSA, currentNonSFIAmount: nonSfiSA,
@@ -392,6 +389,23 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     setTempPrevStats(newStats);
   };
 
+  const IDBadge = ({ id }: { id: string }) => {
+    const [copied, setCopied] = useState(false);
+    if (!isLayoutEditable) return null;
+    const handleCopy = (e: React.MouseEvent) => {
+      e.preventDefault(); e.stopPropagation();
+      navigator.clipboard.writeText(id);
+      setCopied(true); setTimeout(() => setCopied(false), 2000);
+    };
+    return (
+      <div onClick={handleCopy} className="absolute top-0 left-0 -translate-y-full z-[9995] pointer-events-auto no-print">
+        <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md font-black text-[9px] bg-black text-white border border-white/30 shadow-2xl transition-all duration-300 hover:scale-150 hover:bg-blue-600 hover:z-[99999] active:scale-95 cursor-copy origin-bottom-left ${copied ? 'bg-emerald-600 border-emerald-400 ring-4 ring-emerald-500/30 !scale-125' : ''}`}>
+          {copied ? <><CheckCircle2 size={10} /> COPIED</> : `#${id}`}
+        </span>
+      </div>
+    );
+  };
+
   const HistoricalFilter = () => (
     <div className="flex items-center gap-3 no-print">
       {showFilters && (
@@ -498,6 +512,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   if (!selectedReportType && !isSetupMode) {
     return (
       <div id="section-report-selector" className="max-w-4xl py-20 animate-report-page relative pt-0 text-center">
+        <IDBadge id="section-report-selector" />
         <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-16 rounded-[3rem] space-y-6">
            <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto shadow-xl"><PieChart size={40} /></div>
            <div className="space-y-2"><h3 className="text-3xl font-black text-slate-800">রিটার্ণ মডিউলে স্বাগতম</h3><p className="text-slate-500 font-bold max-w-sm mx-auto">অনুগ্রহ করে বাম পাশের সাইডবার মেনু থেকে কাঙ্ক্ষিত রিটার্ণ বা সারাংশের ধরনটি নির্বাচন করুন।</p></div>
@@ -508,25 +523,25 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }
 
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
-    return <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} showFilters={showFilters} IDBadge={IDBadge} />;
+    return <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
   }
 
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
-    return <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={HistoricalFilter} showFilters={showFilters} IDBadge={IDBadge} isLayoutEditable={isLayoutEditable} />;
+    return <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} showFilters={showFilters} />;
   }
 
   if (isSetupMode) {
-    return <OpeningBalanceSetup ministryGroups={ministryGroups} tempPrevStats={tempPrevStats} setTempPrevStats={setTempPrevStats} isEditingSetup={isEditingSetup} setIsEditingSetup={setIsEditingSetup} handleSaveSetup={handleSaveSetup} handleSetupPaste={handleSetupPaste} setIsSetupMode={setIsSetupMode} setSelectedReportType={setSelectedReportType} setupType={selectedReportType || ''} IDBadge={IDBadge} isLayoutEditable={isLayoutEditable} />;
+    return <OpeningBalanceSetup ministryGroups={ministryGroups} tempPrevStats={tempPrevStats} setTempPrevStats={setTempPrevStats} isEditingSetup={isEditingSetup} setIsEditingSetup={setIsEditingSetup} handleSaveSetup={handleSaveSetup} handleSetupPaste={handleSetupPaste} setIsSetupMode={setIsSetupMode} setSelectedReportType={setSelectedReportType} IDBadge={IDBadge} setupType={selectedReportType || ''} />;
   }
 
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') return <QR_1 entries={entries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} IDBadge={IDBadge} isLayoutEditable={isLayoutEditable} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') return <QR_2 entries={entries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} IDBadge={IDBadge} isLayoutEditable={isLayoutEditable} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') return <QR_3 entries={entries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} IDBadge={IDBadge} isLayoutEditable={isLayoutEditable} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') return <QR_4 entries={entries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} IDBadge={IDBadge} isLayoutEditable={isLayoutEditable} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') return <QR_5 entries={entries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} IDBadge={IDBadge} isLayoutEditable={isLayoutEditable} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') return <QR_6 entries={entries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} IDBadge={IDBadge} isLayoutEditable={isLayoutEditable} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') return <QR_1 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') return <QR_2 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') return <QR_3 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') return <QR_4 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') return <QR_5 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') return <QR_6 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
 
-  return <ReturnSummaryTable reportData={reportData} grandTotals={grandTotals} activeCycle={activeCycle} selectedReportType={selectedReportType} setSelectedReportType={setSelectedReportType} isAdmin={isAdmin || false} HistoricalFilter={HistoricalFilter} showFilters={showFilters} searchTerm={searchTerm} filterMinistry={filterMinistry} IDBadge={IDBadge} isLayoutEditable={isLayoutEditable} />;
+  return <ReturnSummaryTable reportData={reportData} grandTotals={grandTotals} activeCycle={activeCycle} selectedReportType={selectedReportType} setSelectedReportType={setSelectedReportType} isAdmin={isAdmin || false} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} showFilters={showFilters} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
 };
 
 export default ReturnView;

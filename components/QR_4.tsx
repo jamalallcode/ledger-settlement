@@ -1,24 +1,20 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Printer } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
-import { format, subMonths, isWithinInterval, parseISO, isBefore } from 'date-fns';
+import { format, subMonths } from 'date-fns';
 import HighlightText from './HighlightText';
-import { SettlementEntry } from '../types';
-import { MINISTRY_ENTITY_MAP } from '../constants';
 
 interface QRProps {
   activeCycle: any;
-  entries: SettlementEntry[];
-  IDBadge: React.FC<{ id: string; isLayoutEditable?: boolean }>;
+  IDBadge: React.FC<{ id: string }>;
   onBack?: () => void;
   searchTerm?: string;
   filterMinistry?: string;
-  isLayoutEditable?: boolean;
 }
 
-const QR_4: React.FC<QRProps> = ({ activeCycle, entries, IDBadge, searchTerm = '', filterMinistry = '', isLayoutEditable }) => {
-  const startDate = new Date(activeCycle.start);
-  const endDate = new Date(activeCycle.end);
+const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
+  const startDate = activeCycle.start;
+  const endDate = activeCycle.end;
   const prevMonthDate = subMonths(startDate, 1);
 
   const getMonthNameBN = (date: Date) => {
@@ -29,62 +25,63 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, entries, IDBadge, searchTerm = '
   const formatYearBN = (date: Date) => toBengaliDigits(format(date, 'yyyy'));
   const formatShortYearBN = (date: Date) => toBengaliDigits(format(date, 'yy'));
 
-  const { table1Data, table2Data } = useMemo(() => {
-    const processTableData = (ministries: string[]) => {
-      return ministries.map(ministryName => {
-        const entityNames = MINISTRY_ENTITY_MAP[ministryName] || [];
-        const entities = entityNames.map(entityName => {
-          const entityEntries = entries.filter(e => e.ministryName === ministryName && e.entityName === entityName);
-          
-          const pRaised = entityEntries.filter(e => e.issueDateISO && isBefore(parseISO(e.issueDateISO), startDate)).length;
-          const cRaised = entityEntries.filter(e => e.issueDateISO && isWithinInterval(parseISO(e.issueDateISO), { start: startDate, end: endDate })).length;
-          
-          // For settlement, we'll assume if it's settled and the entry is in this cycle, it's cSettled.
-          // This is a simplification as we don't have a separate settledDate.
-          const cSettled = entityEntries.filter(e => 
-            e.approvalStatus === 'approved' && 
-            e.issueDateISO && isWithinInterval(parseISO(e.issueDateISO), { start: startDate, end: endDate })
-          ).length;
-          
-          const pSettled = entityEntries.filter(e => 
-            e.approvalStatus === 'approved' && 
-            e.issueDateISO && isBefore(parseISO(e.issueDateISO), startDate)
-          ).length;
+  const table1Data = [
+    {
+      ministry: "শিল্প মন্ত্রণালয়",
+      entities: [
+        { name: "চিনি ও খাদ্য সংস্থা", pRaised: 1064, cRaised: 0, pSettled: 373, cSettled: 0, cSettledAmount: 0, pendingAmount: 17330266370 },
+        { name: "ক্ষুদ্র ও কুটির শিল্প সংস্থা", pRaised: 133, cRaised: 0, pSettled: 49, cSettled: 0, cSettledAmount: 0, pendingAmount: 166675293 },
+        { name: "বিটাক", pRaised: 0, cRaised: 0, pSettled: 0, cSettled: 0, cSettledAmount: 0, pendingAmount: 0 },
+        { name: "রসায়ন শিল্প সংস্থা", pRaised: 2, cRaised: 0, pSettled: 0, cSettled: 0, cSettledAmount: 0, pendingAmount: 553176 },
+      ]
+    },
+    {
+      ministry: "বস্ত্র ও পাট মন্ত্রণালয়",
+      entities: [
+        { name: "পাটকল সংস্থা", pRaised: 2608, cRaised: 0, pSettled: 830, cSettled: 9, cSettledAmount: 15000, pendingAmount: 21918286207 },
+        { name: "পাট সংস্থা", pRaised: 9, cRaised: 0, pSettled: 6, cSettled: 0, cSettledAmount: 0, pendingAmount: 32016629 },
+        { name: "বস্ত্রকল সংস্থা", pRaised: 295, cRaised: 0, pSettled: 135, cSettled: 0, cSettledAmount: 0, pendingAmount: 16231079081 },
+        { name: "রেশম বোর্ড", pRaised: 7, cRaised: 0, pSettled: 0, cSettled: 0, cSettledAmount: 0, pendingAmount: 2751732 },
+      ]
+    },
+    {
+      ministry: "বাণিজ্য মন্ত্রণালয়",
+      entities: [
+        { name: "টিসিবি", pRaised: 72, cRaised: 0, pSettled: 15, cSettled: 0, cSettledAmount: 0, pendingAmount: 230832525 },
+        { name: "আমদানি ও রপ্তানি", pRaised: 4, cRaised: 0, pSettled: 1, cSettled: 0, cSettledAmount: 0, pendingAmount: 1577323 },
+      ]
+    },
+    {
+      ministry: "বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয়",
+      entities: [
+        { name: "বাংলাদেশ বিমান", pRaised: 76, cRaised: 0, pSettled: 16, cSettled: 0, cSettledAmount: 0, pendingAmount: 460866121 },
+        { name: "পর্যটন কর্পোরেশন", pRaised: 63, cRaised: 0, pSettled: 10, cSettled: 0, cSettledAmount: 0, pendingAmount: 3355279 },
+      ]
+    }
+  ];
 
-          const cSettledAmount = entityEntries
-            .filter(e => e.issueDateISO && isWithinInterval(parseISO(e.issueDateISO), { start: startDate, end: endDate }))
-            .reduce((sum, e) => sum + (e.totalRec || 0) + (e.totalAdj || 0), 0);
-
-          const pendingAmount = entityEntries
-            .filter(e => e.approvalStatus !== 'approved')
-            .reduce((sum, e) => sum + (e.involvedAmount || 0), 0);
-
-          return {
-            name: entityName,
-            pRaised,
-            cRaised,
-            pSettled,
-            cSettled,
-            cSettledAmount,
-            pendingAmount
-          };
-        });
-
-        return {
-          ministry: ministryName,
-          entities: entities.filter(ent => ent.pRaised > 0 || ent.cRaised > 0 || ent.pSettled > 0 || ent.cSettled > 0)
-        };
-      }).filter(group => group.entities.length > 0);
-    };
-
-    const table1Ministries = ["শিল্প মন্ত্রণালয়", "বস্ত্র ও পাট মন্ত্রণালয়", "বাণিজ্য মন্ত্রণালয়", "বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয়"];
-    const table2Ministries = ["আর্থিক প্রতিষ্ঠান বিভাগ"];
-
-    return {
-      table1Data: processTableData(table1Ministries),
-      table2Data: processTableData(table2Ministries)
-    };
-  }, [entries, activeCycle, startDate, endDate]);
+  const table2Data = [
+    {
+      ministry: "আর্থিক প্রতিষ্ঠান বিভাগ",
+      entities: [
+        { name: "সোনালী ব্যাংক পিএলসি", pRaised: 3058, cRaised: 0, pSettled: 378, cSettled: 0, cSettledAmount: 0, pendingAmount: 39827509886 },
+        { name: "জনতা ব্যাংক পিএলসি", pRaised: 2223, cRaised: 0, pSettled: 206, cSettled: 29, cSettledAmount: 141343683, pendingAmount: 17222585908 },
+        { name: "অগ্রণী ব্যাংক পিএলসি", pRaised: 2282, cRaised: 0, pSettled: 328, cSettled: 0, cSettledAmount: 0, pendingAmount: 16238136822 },
+        { name: "বাংলাদেশ কৃষি ব্যাংক", pRaised: 2008, cRaised: 0, pSettled: 330, cSettled: 1, cSettledAmount: 2410046, pendingAmount: 1827787670 },
+        { name: "রূপালী ব্যাংক পিএলসি", pRaised: 1446, cRaised: 0, pSettled: 337, cSettled: 0, cSettledAmount: 0, pendingAmount: 34816801304 },
+        { name: "বাংলাদেশ ব্যাংক", pRaised: 334, cRaised: 0, pSettled: 16, cSettled: 0, cSettledAmount: 0, pendingAmount: 5278296389 },
+        { name: "বাংলাদেশ ডেভেলপমেন্ট ব্যাংক লিঃ", pRaised: 123, cRaised: 0, pSettled: 6, cSettled: 0, cSettledAmount: 0, pendingAmount: 1673007818 },
+        { name: "গৃহনির্মাণ ঋণদান সংস্থা", pRaised: 73, cRaised: 0, pSettled: 21, cSettled: 0, cSettledAmount: 0, pendingAmount: 220803333 },
+        { name: "কর্মসংস্থান ব্যাংক", pRaised: 127, cRaised: 0, pSettled: 16, cSettled: 0, cSettledAmount: 0, pendingAmount: 72967576 },
+        { name: "বেসিক ব্যাংক লিঃ", pRaised: 231, cRaised: 0, pSettled: 36, cSettled: 0, cSettledAmount: 0, pendingAmount: 3021693705 },
+        { name: "আনসার ভিডিপি উন্নয়ন ব্যাংক লিঃ", pRaised: 53, cRaised: 0, pSettled: 0, cSettled: 0, cSettledAmount: 0, pendingAmount: 44416195 },
+        { name: "ইনভেস্টমেন্ট কর্পোরেশন অব বাংলাদেশ", pRaised: 32, cRaised: 0, pSettled: 3, cSettled: 0, cSettledAmount: 0, pendingAmount: 220711456 },
+        { name: "সাধারণ বীমা কর্পোরেশন", pRaised: 55, cRaised: 0, pSettled: 11, cSettled: 0, cSettledAmount: 0, pendingAmount: 669179270 },
+        { name: "জীবন বীমা কর্পোরেশন", pRaised: 138, cRaised: 0, pSettled: 7, cSettled: 0, cSettledAmount: 0, pendingAmount: 1588032223 },
+        { name: "প্রবাসী কল্যাণ ব্যাংক", pRaised: 1, cRaised: 0, pSettled: 0, cSettled: 0, cSettledAmount: 0, pendingAmount: 1011000 },
+      ]
+    }
+  ];
 
   const filterData = (data: any[]) => {
     return data.filter(mGroup => {
@@ -214,7 +211,7 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, entries, IDBadge, searchTerm = '
 
   return (
     <div id="qr-4-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
-      <IDBadge id="qr-4-container" isLayoutEditable={isLayoutEditable} />
+      <IDBadge id="qr-4-container" />
       
       <div className="flex justify-end mb-4 no-print">
       </div>
@@ -225,13 +222,16 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, entries, IDBadge, searchTerm = '
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
             ত্রৈমাসিক রিটার্ন - ৪
           </h1>
-          
-          <div className="mt-4 flex justify-center mb-4">
-            <div className="inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
-              <span className="text-blue-400">ত্রৈমাসিক প্রতিবেদন</span>
+
+          {/* Date Range Pill */}
+          <div className="mt-4 mb-6 flex justify-center">
+            <div className="inline-flex items-center gap-3 px-6 py-2 bg-blue-50 border border-blue-100 rounded-full shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+              <span className="text-blue-700 font-bold text-sm">
+                ত্রৈমাসিক রিটার্ন - ৪ | {activeCycle.label}
+              </span>
             </div>
           </div>
-
           <div className="flex items-center justify-center gap-4">
             <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
             <div className="w-2 h-2 rounded-full bg-blue-600"></div>
