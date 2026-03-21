@@ -4,7 +4,7 @@ import { EMPLOYEES, VOTE_POSITIONS } from '../constants';
 import { BallotVote, PositionResult, VoterToken } from '../types';
 import { 
   CheckCircle2, AlertCircle, BarChart3, Fingerprint, 
-  Send, Trophy, UserCheck, Loader2, Key, RefreshCw, Copy, Check, Trash2, ShieldCheck, Ticket, Database, HelpCircle, ArrowRight, RotateCcw, MessageSquare, Plus, Settings2, Vote, Lock, Unlock, UserPlus, UserMinus, Eye, EyeOff, LayoutGrid, Trash, Pencil, X, ChevronDown, Search, KeyRound
+  Send, Trophy, UserCheck, Loader2, Key, RefreshCw, Copy, Check, Trash2, ShieldCheck, Ticket, Database, HelpCircle, ArrowRight, RotateCcw, MessageSquare, Plus, Settings2, Vote, Lock, Unlock, UserPlus, UserMinus, Eye, EyeOff, LayoutGrid, Trash, Pencil, X, ChevronDown, Search, KeyRound, Link, ExternalLink
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 
@@ -88,8 +88,8 @@ const PremiumVoterSelect: React.FC<{
   );
 };
 
-const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'vote' | 'results' | 'admin' | 'poll'>('vote');
+const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' | 'results' | 'admin' }> = ({ isAdmin, initialTab }) => {
+  const [activeSubTab, setActiveSubTab] = useState<'vote' | 'results' | 'admin' | 'poll'>(initialTab || 'vote');
   const [voterTokenInput, setVoterTokenInput] = useState('');
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [pollSelection, setPollSelection] = useState<string>('');
@@ -122,6 +122,9 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const [pollQuestion, setPollQuestion] = useState('আপনারা কি এ বছর বার্ষিক পিকনিকে যেতে ইচ্ছুক?');
   const [pollOptions, setPollOptions] = useState(['হ্যাঁ', 'না', 'ব বলা যাচ্ছে না']);
   const [isResultsLocked, setIsResultsLocked] = useState(false);
+  const [showVoteLink, setShowVoteLink] = useState(false);
+  const [generatedVoteLink, setGeneratedVoteLink] = useState('');
+  const [linkType, setLinkType] = useState<'vote' | 'poll'>('vote');
 
   // --- PERSISTENCE HELPERS ---
   const syncConfigToDB = async (updates: any) => {
@@ -440,6 +443,15 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     setIsResultsLocked(nextState);
     syncConfigToDB({ isResultsLocked: nextState });
     setMessage({ type: 'success', text: nextState ? 'ফলাফল লক করা হয়েছে।' : 'ফলাফল আনলক করা হয়েছে।' });
+  };
+
+  const handleGenerateVoteLink = (type: 'vote' | 'poll') => {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const voteUrl = `${baseUrl}?mode=${type}`;
+    setGeneratedVoteLink(voteUrl);
+    setLinkType(type);
+    setShowVoteLink(true);
+    setMessage({ type: 'success', text: `${type === 'vote' ? 'ভোটিং' : 'পাবলিক পোল'} লিংক সফলভাবে তৈরি করা হয়েছে।` });
   };
 
   const clearOnlyVotes = async () => {
@@ -819,9 +831,45 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                 </button>
                 <button onClick={clearOnlyVotes} className="px-5 py-2.5 bg-amber-50 text-amber-600 rounded-xl font-black text-xs flex items-center gap-2 border border-amber-100 hover:bg-amber-600 hover:text-white transition-all shadow-sm"><RotateCcw size={16} /> ফলাফল রিসেট</button>
                 <button onClick={clearAllTokens} className="px-5 py-2.5 bg-red-50 text-red-600 rounded-xl font-black text-xs flex items-center gap-2 border border-red-100 hover:bg-red-600 hover:text-white transition-all shadow-sm"><Trash2 size={16} /> ফ্যাক্টরি রিসেট</button>
+                <button onClick={() => handleGenerateVoteLink('vote')} className="px-5 py-2.5 bg-blue-50 text-blue-600 rounded-xl font-black text-xs flex items-center gap-2 border border-blue-100 hover:bg-blue-600 hover:text-white transition-all shadow-sm"><Link size={16} /> ভোটিং লিংক তৈরি</button>
+                <button onClick={() => handleGenerateVoteLink('poll')} className="px-5 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl font-black text-xs flex items-center gap-2 border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"><MessageSquare size={16} /> পোল লিংক তৈরি</button>
                 <button onClick={generateTokens} className="px-6 py-2.5 bg-purple-600 text-white rounded-xl font-black text-xs flex items-center gap-2 shadow-xl hover:bg-purple-700 transition-all"><Plus size={16} /> {toBengaliDigits(voterList.length)}টি টোকেন তৈরি</button>
               </div>
             </div>
+
+            {showVoteLink && (
+              <div className={`p-6 text-white rounded-[2rem] shadow-2xl animate-in slide-in-from-top-4 duration-500 relative overflow-hidden group ${linkType === 'vote' ? 'bg-blue-600' : 'bg-emerald-600'}`}>
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-xl">
+                      {linkType === 'vote' ? <ExternalLink size={28} /> : <MessageSquare size={28} />}
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-black tracking-tight">শেয়ারযোগ্য {linkType === 'vote' ? 'ভোটিং' : 'পাবলিক পোল'} লিংক</h4>
+                      <p className={`${linkType === 'vote' ? 'text-blue-100' : 'text-emerald-100'} font-bold text-sm`}>এই লিংকটি কপি করে ভোটারদের পাঠিয়ে দিন।</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 w-full md:w-auto">
+                    <div className="flex-1 md:w-80 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 font-mono text-xs truncate select-all">
+                      {generatedVoteLink}
+                    </div>
+                    <button 
+                      onClick={() => copyToClipboard(generatedVoteLink)}
+                      className={`p-3 bg-white rounded-xl font-black shadow-xl transition-all active:scale-95 shrink-0 ${linkType === 'vote' ? 'text-blue-600 hover:bg-blue-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
+                    >
+                      {copiedToken === generatedVoteLink ? <Check size={20} strokeWidth={3} /> : <Copy size={20} />}
+                    </button>
+                    <button 
+                      onClick={() => setShowVoteLink(false)}
+                      className={`p-3 text-white rounded-xl transition-all shrink-0 ${linkType === 'vote' ? 'bg-blue-700 hover:bg-blue-800' : 'bg-emerald-700 hover:bg-emerald-800'}`}
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
               {/* Election Positions Management */}

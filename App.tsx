@@ -516,6 +516,13 @@ const App: React.FC = () => {
     }
   };
 
+  const viewMode = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('mode');
+  }, []);
+
+  const isDirectMode = viewMode === 'vote' || viewMode === 'poll';
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
@@ -527,6 +534,17 @@ const App: React.FC = () => {
         </div>
         <h2 className="mt-6 text-2xl font-bold text-slate-800 animate-pulse">সিস্টেম লোড হচ্ছে...</h2>
         <p className="mt-2 text-slate-500">অনুগ্রহ করে অপেক্ষা করুন</p>
+      </div>
+    );
+  }
+
+  // Direct Mode: Show only the VotingSystem without any other UI elements
+  if (isDirectMode) {
+    return (
+      <div className="min-h-screen bg-slate-50 p-4 md:p-8 flex items-center justify-center font-bengali">
+        <div className="w-full max-w-6xl">
+          <VotingSystem isAdmin={false} initialTab={viewMode === 'poll' ? 'poll' : 'vote'} />
+        </div>
       </div>
     );
   }
