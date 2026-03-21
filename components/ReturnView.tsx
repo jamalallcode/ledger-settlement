@@ -219,17 +219,19 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                     
                     if (isSFI) {
                       curSFIC++;
-                      if (letterType === 'বিএসআর') sfiBSR++;
-                      else if (letterType === 'ত্রিপক্ষীয় সভা (কার্যপত্র)') sfiTriWork++;
-                      else if (letterType === 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)') sfiTriMin++;
-                      else if (letterType === 'মিলিকরণ') sfiRecon++;
+                      const normLT = robustNormalize(letterType);
+                      if (normLT === robustNormalize('বিএসআর')) sfiBSR++;
+                      else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়')) && (normLT.includes(robustNormalize('কার্যপত্র')) || normLT.includes(robustNormalize('(প)')))) sfiTriWork++;
+                      else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়')) && (normLT.includes(robustNormalize('কার্যবিবরণী')) || normLT.includes(robustNormalize('(বি)')))) sfiTriMin++;
+                      else if (normLT === robustNormalize('মিলিকরণ')) sfiRecon++;
                       sfiSA += settledAmt;
                     } else {
                       curNonSFIC++;
-                      if (letterType === 'বিএসআর') nonSfiBSR++;
-                      else if (letterType === 'দ্বিপক্ষীয় সভা (কার্যপত্র)') nonSfiBiWork++;
-                      else if (letterType === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)') nonSfiBiMin++;
-                      else if (letterType === 'মিলিকরণ') nonSfiRecon++;
+                      const normLT = robustNormalize(letterType);
+                      if (normLT === robustNormalize('বিএসআর')) nonSfiBSR++;
+                      else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়')) && (normLT.includes(robustNormalize('কার্যপত্র')) || normLT.includes(robustNormalize('(প)')))) nonSfiBiWork++;
+                      else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়')) && (normLT.includes(robustNormalize('কার্যবিবরণী')) || normLT.includes(robustNormalize('(বি)')))) nonSfiBiMin++;
+                      else if (normLT === robustNormalize('মিলিকরণ')) nonSfiRecon++;
                       nonSfiSA += settledAmt;
                     }
                     curSA += settledAmt;
