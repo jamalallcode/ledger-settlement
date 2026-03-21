@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { SettlementEntry } from '../types.ts';
 import { Trash2, Pencil, Calendar, Printer, CheckCircle2, ChevronDown, ChevronUp, FileText, Fingerprint, Banknote, ListOrdered, Archive, MapPin, CalendarDays, Sparkles, ClipboardList, Filter, X, Search, LayoutGrid, CalendarSearch, Check, ShieldCheck, XCircle, AlertCircle, MessageSquare } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, formatDateBN, toEnglishDigits } from '../utils/numberUtils.ts';
@@ -29,6 +30,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   highlightSearch = null, onClearHighlight
 }) => {
   const [showCycleStats, setShowCycleStats] = useState<Record<string, boolean>>({});
+  const [showSummary, setShowSummary] = useState(false);
   const lastActiveLabel = useRef<string>("");
   const cycleRefs = useRef<Record<string, HTMLDivElement | null>>({});
   
@@ -312,6 +314,33 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
     }, { paraCount: 0, inv: 0, raisedCount: 0, raisedAmount: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, tRec: 0, tAdj: 0 });
   }, [filteredEntries]);
 
+  const globalStats = useMemo(() => {
+    const totalLetters = filteredEntries.length;
+    const sfiEntries = filteredEntries.filter(e => e.paraType === 'এসএফআই');
+    const nonSfiEntries = filteredEntries.filter(e => e.paraType === 'নন এসএফআই');
+    
+    const sfiBSR = sfiEntries.filter(e => !e.isMeeting || e.meetingType === 'বিএসআর').length;
+    const sfiTri = sfiEntries.filter(e => e.meetingType === 'ত্রিপক্ষীয় সভা').length;
+    const nonSfiBSR = nonSfiEntries.filter(e => !e.isMeeting || e.meetingType === 'বিএসআর').length;
+    const nonSfiBi = nonSfiEntries.filter(e => e.meetingType === 'দ্বিপক্ষীয় সভা').length;
+
+    return {
+      totalLetters,
+      sfi: {
+        total: sfiEntries.length,
+        bsr: sfiBSR,
+        tri: sfiTri
+      },
+      nonSfi: {
+        total: nonSfiEntries.length,
+        bsr: nonSfiBSR,
+        bi: nonSfiBi
+      },
+      settledParas: grandTotals.paraCount,
+      totalInvolved: grandTotals.inv
+    };
+  }, [filteredEntries, grandTotals]);
+
   const formatIssueInfoForDisplay = (info: string) => {
     if (!info) return "";
     return info.replace(/জারিপত্র নং-/g, '').replace(/জারিপত্রের তারিখ-/g, '').trim() + " খ্রি:";
@@ -328,11 +357,11 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   };
 
   // Headers reverted to font-black
-  const thBase = "sticky top-0 border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-200 z-[110] relative";
-  const thBase2 = "sticky top-[42px] border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[10px] md:text-[11px] leading-tight align-middle h-full bg-slate-200 z-[110] relative";
+  const thBase = "sticky top-0 border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 z-[110] relative";
+  const thBase2 = "sticky top-[42px] border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 z-[110] relative";
   // Body cells reverted to font-bold
-  const tdBase = "border border-slate-300 px-0.5 py-1.5 text-center align-middle text-[10px] leading-tight font-bold text-slate-900 relative";
-  const tdMoney = "border border-slate-300 px-0.5 py-1 text-center align-middle text-[10px] font-black text-slate-950 relative";
+  const tdBase = "border border-slate-300 px-0.5 py-1.5 text-center align-middle text-[9px] leading-tight font-bold text-slate-900 relative";
+  const tdMoney = "border border-slate-300 px-0.5 py-1 text-center align-middle text-[9px] font-black text-slate-950 relative";
 
   const renderMetadataGrid = (entry: SettlementEntry) => {
     const paras = entry.paragraphs || [];
@@ -402,16 +431,158 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
     <div id="table-register-container" className="w-full relative animate-premium-page">
       <IDBadge id="view-register-table" />
       {!isAdminView && (
-        <div id="section-register-top-header" className="relative mb-4 no-print">
+        <div id="section-register-top-header" className="relative mb-6 no-print z-[99999]">
           <IDBadge id="section-register-top-header" />
-          <div id="section-register-hero-banner" className="pt-0 text-center space-y-3 relative overflow-hidden group transition-all duration-500">
-            <IDBadge id="section-register-hero-banner" />
-            <div className="relative z-10 flex flex-col items-center gap-4">
-              <div className="w-14 h-14 bg-emerald-50 rounded-[1.2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100"><ClipboardList size={30} strokeWidth={2.5} /></div>
-              <div className="space-y-0.5"><h2 className="text-4xl font-black text-slate-900 tracking-tighter drop-shadow-sm">মীমাংসা রেজিস্টার</h2></div>
-              <div className="inline-flex items-center gap-4 px-8 py-2.5 bg-emerald-600 text-white rounded-2xl font-bold text-[14px] shadow-[0_10px_30px_-5px_rgba(16,185,129,0.4)] border-2 border-emerald-400">
-                <div className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-100 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-white shadow-md"></span></div>
-                <span>চলমান মাস:</span><span className="text-emerald-50 tracking-tight">{toBengaliDigits(cycleInfo.label)}</span>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 relative group transition-all duration-500 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)]">
+            
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="w-14 h-14 bg-emerald-50 rounded-[1.2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100/50 group-hover:scale-105 transition-transform duration-500">
+                <ClipboardList size={28} strokeWidth={2} />
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">মীমাংসা রেজিস্টার</h2>
+                <div className="flex items-center gap-3">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500 text-white rounded-full font-bold text-[10px] shadow-lg shadow-emerald-200 border border-emerald-400/30">
+                    <div className="h-1.5 w-1.5 rounded-full bg-white shadow-sm"></div>
+                    <span>চলমান মাস: {toBengaliDigits(cycleInfo.label)}</span>
+                  </div>
+                  <p className="text-slate-400 font-bold text-[9px] uppercase tracking-[0.2em]">Settlement Ledger</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 relative z-10">
+              <div className="relative">
+                <button 
+                  onClick={() => setShowSummary(!showSummary)} 
+                  className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-2xl ${showSummary ? 'bg-blue-600 text-white shadow-blue-200' : 'bg-[#f0f7ff] text-blue-700 border border-blue-100/50 hover:bg-blue-100 shadow-blue-500/10'}`}
+                >
+                  <Sparkles size={16} className={showSummary ? 'text-blue-100' : 'text-blue-500'} /> রেজিস্টার সারসংক্ষেপ
+                </button>
+
+                <AnimatePresence>
+                  {showSummary && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -15, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -15, scale: 0.98 }}
+                      transition={{ 
+                        type: "spring", 
+                        stiffness: 260, 
+                        damping: 25,
+                        opacity: { duration: 0.3 }
+                      }}
+                      style={{ 
+                        position: 'absolute', 
+                        top: 'calc(100% + 12px)', 
+                        right: 0, 
+                        width: '450px', 
+                        zIndex: 9999999 
+                      }}
+                      className="bg-white rounded-[2rem] shadow-[0_40px_100px_-15px_rgba(0,0,0,0.4)] border border-slate-200 overflow-hidden no-print text-left"
+                    >
+                      <div className="bg-gradient-to-r from-emerald-700 to-teal-700 p-6 flex items-center justify-between">
+                        <div className="flex items-center gap-3 text-white">
+                          <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center shadow-inner">
+                            <Sparkles size={22} className="text-white" />
+                          </div>
+                          <div>
+                            <h4 className="text-base font-black tracking-tight">রেজিস্টার সারসংক্ষেপ</h4>
+                            <p className="text-[10px] font-bold opacity-70 uppercase tracking-[0.2em]">Settlement Summary Overview</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setShowSummary(false)}
+                          className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full text-white transition-all duration-300"
+                        >
+                          <XCircle size={20} />
+                        </button>
+                      </div>
+
+                      <div className="p-6 space-y-6">
+                        {/* Total Letters Card */}
+                        <div className="relative overflow-hidden bg-slate-50 rounded-2xl p-5 border border-slate-200 group">
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-700"></div>
+                          <div className="relative flex items-center justify-between">
+                            <div>
+                              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">সর্বমোট চিঠিপত্র</p>
+                              <h2 className="text-3xl font-black text-slate-900 tracking-tighter">
+                                {toBengaliDigits(globalStats.totalLetters)} <span className="text-sm font-bold text-slate-500">টি</span>
+                              </h2>
+                            </div>
+                            <Archive className="text-emerald-200" size={40} />
+                          </div>
+                        </div>
+
+                        {/* SFI Section */}
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-[2px] flex-1 bg-emerald-100"></div>
+                            <h5 className="text-[11px] font-black text-emerald-700 uppercase tracking-[0.15em] flex items-center gap-2">
+                              <CheckCircle2 size={14} /> এসএফআই (SFI)
+                            </h5>
+                            <div className="h-[2px] flex-1 bg-emerald-100"></div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3 hover:bg-emerald-50 transition-colors">
+                              <p className="text-[10px] font-bold text-emerald-600/70 uppercase mb-1">বিএসআর</p>
+                              <p className="text-base font-black text-slate-800">{toBengaliDigits(globalStats.sfi.bsr)} টি</p>
+                            </div>
+                            <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3 hover:bg-emerald-50 transition-colors">
+                              <p className="text-[10px] font-bold text-emerald-600/70 uppercase mb-1">ত্রিপক্ষীয় সভা</p>
+                              <p className="text-base font-black text-slate-800">{toBengaliDigits(globalStats.sfi.tri)} টি</p>
+                            </div>
+                          </div>
+                          <div className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-center">
+                            <span className="text-xs font-black">মোট এসএফআই: {toBengaliDigits(globalStats.sfi.total)} টি</span>
+                          </div>
+                        </div>
+
+                        {/* Non-SFI Section */}
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-[2px] flex-1 bg-amber-100"></div>
+                            <h5 className="text-[11px] font-black text-amber-700 uppercase tracking-[0.15em] flex items-center gap-2">
+                              <FileText size={14} /> নন এসএফআই (Non-SFI)
+                            </h5>
+                            <div className="h-[2px] flex-1 bg-amber-100"></div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-3 hover:bg-amber-50 transition-colors">
+                              <p className="text-[10px] font-bold text-amber-600/70 uppercase mb-1">বিএসআর</p>
+                              <p className="text-base font-black text-slate-800">{toBengaliDigits(globalStats.nonSfi.bsr)} টি</p>
+                            </div>
+                            <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-3 hover:bg-amber-50 transition-colors">
+                              <p className="text-[10px] font-bold text-amber-600/70 uppercase mb-1">দ্বিপক্ষীয় সভা</p>
+                              <p className="text-base font-black text-slate-800">{toBengaliDigits(globalStats.nonSfi.bi)} টি</p>
+                            </div>
+                          </div>
+                          <div className="bg-amber-600 text-white px-4 py-2 rounded-xl text-center">
+                            <span className="text-xs font-black">মোট নন এসএফআই: {toBengaliDigits(globalStats.nonSfi.total)} টি</span>
+                          </div>
+                        </div>
+
+                        {/* Settled Paras & Amount */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+                            <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">মীমাংসিত অনুচ্ছেদ</p>
+                            <p className="text-xl font-black text-slate-900">{toBengaliDigits(globalStats.settledParas)} টি</p>
+                          </div>
+                          <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4">
+                            <p className="text-[10px] font-bold text-purple-600 uppercase mb-1">জড়িত টাকা</p>
+                            <p className="text-xl font-black text-slate-900">{toBengaliDigits(Math.round(globalStats.totalInvolved))}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-900 p-4 text-center">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Ledger Management System</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </div>
@@ -630,7 +801,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         </div>
       )}
 
-      <div className="table-container border border-slate-300 rounded-sm overflow-auto relative">
+      <div className="table-container border border-slate-300 rounded-sm overflow-auto relative z-[1]">
         <IDBadge id="table-main-ledger" />
         <table id="table-main-ledger" ref={tableRef} className="w-full border-separate border-spacing-0">
           <colgroup><col className="w-[30px]" /><col className="w-[130px]" /><col className="w-[45px]" /><col className="w-[65px]" /><col className="w-[40px]" /><col className="w-[65px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /></colgroup>

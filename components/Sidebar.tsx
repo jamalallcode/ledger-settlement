@@ -83,6 +83,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isSettlementExpanded, setIsSettlementExpanded] = useState(false);
   const [isOnlineExpanded, setIsOnlineExpanded] = useState(false);
   const [isQuarterlyExpanded, setIsQuarterlyExpanded] = useState(false);
+  
+  // Auto-expand based on activeTab
+  useEffect(() => {
+    if (activeTab === 'entry') setIsEntryExpanded(true);
+    if (activeTab === 'register') setIsRegisterExpanded(true);
+    if (activeTab === 'return') setIsReturnExpanded(true);
+  }, [activeTab]);
 
   const handleLogoClick = () => {
     const now = Date.now();

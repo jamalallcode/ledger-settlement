@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   Mail, X, FileText, Calendar, Hash, Banknote, BookOpen, 
   Inbox, Computer, User, CheckCircle2, Layout, Sparkles, 
-  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send, FileEdit, ClipboardCheck
+  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash2, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send, FileEdit, ClipboardCheck, Globe
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { getCycleForDate } from '../utils/cycleHelper';
@@ -499,21 +499,32 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     }
   };
 
+  const handleDeleteDescription = (e: React.MouseEvent, descToDelete: string) => {
+    e.stopPropagation();
+    if (!window.confirm(`আপনি কি নিশ্চিতভাবে "${descToDelete}" বিবরণটি তালিকা থেকে মুছে ফেলতে চান?`)) return;
+    
+    const updated = descriptionSuggestions.filter(d => d !== descToDelete);
+    setDescriptionSuggestions(updated);
+    localStorage.setItem('ledger_correspondence_descriptions', JSON.stringify(updated));
+  };
+
   /**
    * Duplicate Check Logic
    */
   const duplicates = useMemo(() => {
-    const normalizedDiary = toEnglishDigits(formData.diaryNo).trim();
-    const normalizedLetter = toEnglishDigits(formData.letterNo).trim();
-
+    const normalizedDiary = toEnglishDigits(formData.diaryNo.replace(/\s+/g, ''));
+    const normalizedLetter = toEnglishDigits(formData.letterNo.replace(/\s+/g, ''));
+    
     const diaryDuplicate = normalizedDiary ? existingEntries.find(entry => {
       if (initialEntry && entry.id === initialEntry.id) return false;
-      return toEnglishDigits(entry.diaryNo || '').trim() === normalizedDiary;
+      const entryDiary = toEnglishDigits((entry.diaryNo || '').replace(/\s+/g, ''));
+      return entryDiary === normalizedDiary;
     }) : null;
 
     const letterDuplicate = normalizedLetter ? existingEntries.find(entry => {
       if (initialEntry && entry.id === initialEntry.id) return false;
-      return toEnglishDigits(entry.letterNo || '').trim() === normalizedLetter;
+      const entryLetter = toEnglishDigits((entry.letterNo || '').replace(/\s+/g, ''));
+      return entryLetter === normalizedLetter;
     }) : null;
 
     return {
@@ -896,8 +907,19 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                           }}
                           className={`px-5 py-3.5 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.description === desc ? 'bg-emerald-600 text-white shadow-lg' : 'hover:bg-emerald-50 text-slate-700 font-bold'}`}
                         >
-                          <span className="text-[13px] leading-relaxed">{desc}</span>
-                          {formData.description === desc && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                          <div className="flex items-center gap-3">
+                            <span className="text-[13px] leading-relaxed flex-1">{desc}</span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {formData.description === desc && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                              <button 
+                                type="button"
+                                onClick={(e) => handleDeleteDescription(e, desc)}
+                                className={`p-1.5 rounded-lg transition-all ${formData.description === desc ? 'bg-white/20 hover:bg-white/40 text-white' : 'bg-red-50 hover:bg-red-100 text-red-500 opacity-0 group-hover:opacity-100'}`}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1147,7 +1169,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                                     onClick={(e) => handleDeleteReceiver(idx, e)}
                                     className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === name ? 'hover:bg-red-500 text-white' : 'hover:bg-red-100 text-red-600'}`}
                                   >
-                                    <Trash size={14} />
+                                    <Trash2 size={14} />
                                   </button>
                                 </>
                               )}

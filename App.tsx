@@ -98,9 +98,9 @@ const App: React.FC = () => {
     }
 
     // Handle Direct Register Modules
-    if (tab === 'register' && subModule) {
-      setRegisterSubModule(subModule);
-    } else if (tab === 'register' && !subModule) {
+    if (tab === 'register') {
+      setRegisterSubModule(subModule || 'correspondence');
+    } else {
       setRegisterSubModule(null);
     }
 
@@ -550,7 +550,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <div className="flex-1 flex flex-col min-w-0">
         <div className="no-print">
           <Navbar 
             activeTab={activeTab} setActiveTab={handleTabChange} onDemoLoad={() => {}}
@@ -593,12 +593,6 @@ const App: React.FC = () => {
                   {showPendingOnly ? (
                     <div className="space-y-8 animate-in fade-in duration-700">
                       <div className="flex items-center justify-between no-print mb-4">
-                        <button 
-                          onClick={() => setShowPendingOnly(false)}
-                          className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all flex items-center gap-2 font-black text-[11px] border border-slate-200"
-                        >
-                          <ChevronLeft size={16} /> মূল রেজিস্টারে ফিরুন
-                        </button>
                       </div>
 
                       {(pendingEntries.length > 0 || pendingCorrespondence.length > 0) ? (
@@ -671,12 +665,6 @@ const App: React.FC = () => {
                       {(registerSubModule === 'settlement') ? (
                         <div className="space-y-6">
                           <div className="flex items-center gap-4 no-print mb-2">
-                            <button 
-                              onClick={() => setRegisterSubModule(null)}
-                              className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all flex items-center gap-2 font-black text-[11px] border border-slate-200"
-                            >
-                              <ChevronLeft size={16} /> মেনুতে ফিরুন
-                            </button>
                           </div>
 
                           <SettlementTable 
@@ -694,7 +682,7 @@ const App: React.FC = () => {
                       ) : (
                         <CorrespondenceTable 
                           entries={approvedCorrespondence} 
-                          onBack={() => setRegisterSubModule(null)} 
+                          onBack={() => setActiveTab('landing')} 
                           isAdmin={isAdmin}
                           onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
                           onInlineUpdate={handleInlineUpdateEntry}
