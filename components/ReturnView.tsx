@@ -216,30 +216,28 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   
                   if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                     curFC++; curSC++; 
+                    
+                    if (isSFI) {
+                      curSFIC++;
+                      if (letterType === 'বিএসআর') sfiBSR++;
+                      else if (letterType === 'ত্রিপক্ষীয় সভা (কার্যপত্র)') sfiTriWork++;
+                      else if (letterType === 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)') sfiTriMin++;
+                      else if (letterType === 'মিলিকরণ') sfiRecon++;
+                      else sfiOthers++;
+                      sfiSA += settledAmt;
+                    } else {
+                      curNonSFIC++;
+                      if (letterType === 'বিএসআর') nonSfiBSR++;
+                      else if (letterType === 'দ্বিপক্ষীয় সভা (কার্যপত্র)') nonSfiBiWork++;
+                      else if (letterType === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)') nonSfiBiMin++;
+                      else if (letterType === 'মিলিকরণ') nonSfiRecon++;
+                      else nonSfiOthers++;
+                      nonSfiSA += settledAmt;
+                    }
+                    curSA += settledAmt;
                   } else if (status === robustNormalize('আংশিক')) {
                     curPC++;
                   }
-
-                  if (isSFI) {
-                    curSFIC++;
-                    if (letterType === 'বিএসআর') sfiBSR++;
-                    else if (letterType === 'ত্রিপক্ষীয় সভা (কার্যপত্র)') sfiTriWork++;
-                    else if (letterType === 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)') sfiTriMin++;
-                    else if (letterType === 'মিলিকরণ') sfiRecon++;
-                    else sfiOthers++;
-                  } else {
-                    curNonSFIC++;
-                    if (letterType === 'বিএসআর') nonSfiBSR++;
-                    else if (letterType === 'দ্বিপক্ষীয় সভা (কার্যপত্র)') nonSfiBiWork++;
-                    else if (letterType === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)') nonSfiBiMin++;
-                    else if (letterType === 'মিলিকরণ') nonSfiRecon++;
-                    else nonSfiOthers++;
-                  }
-
-                  if (isSFI) sfiSA += settledAmt;
-                  else nonSfiSA += settledAmt;
-                  
-                  curSA += settledAmt;
                 }
               });
             }
@@ -250,7 +248,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           return { 
             entity: entityName, 
             currentRaisedCount: curRC, currentRaisedAmount: curRA,
-            currentSettledCount: curSC, 
+            currentSettledCount: curSC, currentSettledAmount: curSA,
             currentFullCount: curFC, currentPartialCount: curPC,
             currentSFICount: curSFIC, currentNonSFICount: curNonSFIC,
             currentSFIAmount: sfiSA, currentNonSFIAmount: nonSfiSA,
