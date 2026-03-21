@@ -224,8 +224,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                       if (normLT.includes(robustNormalize('বিএসআর'))) {
                         sfiBSR++;
                       } else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়'))) {
-                        // If it contains "বিবরণী" or "(বি)", it's Minutes. Otherwise default to Workpaper.
-                        if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)'))) {
+                        // If it contains "বিবরণী", "(বি)", or "সভা", or is from Settlement Register, it's Minutes.
+                        if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !!entry.meetingType) {
                           sfiTriMin++;
                         } else {
                           sfiTriWork++;
@@ -239,8 +239,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                       if (normLT.includes(robustNormalize('বিএসআর'))) {
                         nonSfiBSR++;
                       } else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়'))) {
-                        // If it contains "বিবরণী" or "(বি)", it's Minutes. Otherwise default to Workpaper.
-                        if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)'))) {
+                        // If it contains "বিবরণী", "(বি)", or "সভা", or is from Settlement Register, it's Minutes.
+                        if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !!entry.meetingType) {
                           nonSfiBiMin++;
                         } else {
                           nonSfiBiWork++;
