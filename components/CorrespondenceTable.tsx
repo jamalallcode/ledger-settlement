@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Calendar, Hash, FileText, User, MapPin, Inbox, Computer, CheckCircle2, ChevronRight, ArrowRightCircle, ListOrdered, Banknote, BookOpen, Clock, Printer, Pencil, Trash2, CalendarRange, Check, XCircle, Send, UserCheck, Plus, Search, ChevronDown, Sparkles, Save, CalendarSearch, LayoutGrid, CalendarDays } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import HighlightText from './HighlightText';
@@ -545,30 +546,164 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
     <div id="section-correspondence-register" className="w-full space-y-4 animate-premium-page relative">
       
       {/* Header Controls */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print relative">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all shadow-sm"><ChevronRight className="rotate-180" size={18} /></button>
-          <div>
-            <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
-              <Mail className="text-emerald-600" size={20} /> প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টার
-            </h3>
-            <div className="flex items-center gap-2 mt-0.5">
-               <p className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">Correspondence Ledger</p>
-               <div className="h-3 w-[1px] bg-slate-300"></div>
-               <div className="flex items-center gap-1 text-blue-600 font-bold text-[10px]">
-                  <CalendarRange size={12} /> সাইকেল: {toBengaliDigits(cycleInfo.label)}
-               </div>
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 relative group transition-all duration-500 no-print z-[99999]">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        
+        <div className="flex items-center gap-6 relative z-10">
+          <div className="w-20 h-20 bg-emerald-50 rounded-[2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100/50 group-hover:scale-105 transition-transform duration-500">
+            <Mail size={40} strokeWidth={2} />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-4xl font-black text-slate-900 tracking-tight">প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টার</h2>
+            <div className="flex items-center gap-4">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-500 text-white rounded-full font-bold text-[12px] shadow-lg shadow-blue-200 border border-blue-400/30">
+                <CalendarRange size={14} />
+                <span>সাইকেল: {toBengaliDigits(cycleInfo.label)}</span>
+              </div>
+              <p className="text-slate-400 font-bold text-[11px] uppercase tracking-[0.2em]">Correspondence Ledger</p>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-           <button 
-             onClick={() => setShowSummary(!showSummary)} 
-             className={`px-4 py-2.5 rounded-xl font-black text-[11px] flex items-center gap-2 transition-all shadow-lg active:scale-95 ${showSummary ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100'}`}
-           >
-             <Sparkles size={16} /> রেজিস্টার সারসংক্ষেপ
-           </button>
-           {hasChanges && (
+
+        <div className="flex items-center gap-3 relative z-10">
+          <div className="relative">
+            <button 
+              onClick={() => setShowSummary(!showSummary)} 
+              className={`px-6 py-4 rounded-2xl font-black text-[14px] flex items-center gap-3 transition-all shadow-2xl ${showSummary ? 'bg-blue-600 text-white shadow-blue-200' : 'bg-[#f0f7ff] text-blue-700 border border-blue-100/50 hover:bg-blue-100 shadow-blue-500/10'}`}
+            >
+              <Sparkles size={20} className={showSummary ? 'text-blue-100' : 'text-blue-500'} /> রেজিস্টার সারসংক্ষেপ
+            </button>
+
+           <AnimatePresence>
+             {showSummary && (
+               <motion.div 
+                 initial={{ opacity: 0, y: -15, scale: 0.98 }}
+                 animate={{ opacity: 1, y: 0, scale: 1 }}
+                 exit={{ opacity: 0, y: -15, scale: 0.98 }}
+                 transition={{ 
+                   type: "spring", 
+                   stiffness: 260, 
+                   damping: 25,
+                   opacity: { duration: 0.3 }
+                 }}
+                 style={{ 
+                   position: 'absolute', 
+                   top: 'calc(100% + 12px)', 
+                   right: 0, 
+                   width: '450px', 
+                   zIndex: 9999999 
+                 }}
+                 className="bg-white rounded-[2rem] shadow-[0_40px_100px_-15px_rgba(0,0,0,0.4)] border border-slate-200 overflow-hidden no-print"
+               >
+                 <div className="bg-gradient-to-r from-blue-700 to-indigo-700 p-6 flex items-center justify-between">
+                   <div className="flex items-center gap-3 text-white">
+                     <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center shadow-inner">
+                       <Sparkles size={22} className="text-white" />
+                     </div>
+                     <div>
+                       <h4 className="text-base font-black tracking-tight">রেজিস্টার সারসংক্ষেপ</h4>
+                       <p className="text-[10px] font-bold opacity-70 uppercase tracking-[0.2em]">Register Summary Overview</p>
+                     </div>
+                   </div>
+                   <button 
+                     onClick={() => setShowSummary(false)}
+                     className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full text-white transition-all duration-300"
+                   >
+                     <XCircle size={20} />
+                   </button>
+                 </div>
+
+                 <div className="p-6 space-y-6">
+                   {/* Total Letters Card */}
+                   <div className="relative overflow-hidden bg-slate-50 rounded-2xl p-5 border border-slate-200 group">
+                     <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-700"></div>
+                     <div className="relative flex items-center justify-between">
+                       <div>
+                         <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">সর্বমোট চিঠিপত্র</p>
+                         <h2 className="text-3xl font-black text-slate-900 tracking-tighter">
+                           {toBengaliDigits(stats.total)} <span className="text-sm font-bold text-slate-500">টি</span>
+                         </h2>
+                       </div>
+                       <Inbox className="text-blue-200" size={40} />
+                     </div>
+                   </div>
+
+                   {/* SFI Section */}
+                   <div className="space-y-4">
+                     <div className="flex items-center gap-3">
+                       <div className="h-[2px] flex-1 bg-emerald-100"></div>
+                       <h5 className="text-[11px] font-black text-emerald-700 uppercase tracking-[0.15em] flex items-center gap-2">
+                         <CheckCircle2 size={14} /> এসএফআই (SFI)
+                       </h5>
+                       <div className="h-[2px] flex-1 bg-emerald-100"></div>
+                     </div>
+                     
+                     <div className="grid grid-cols-2 gap-3">
+                       <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3 hover:bg-emerald-50 transition-colors">
+                         <p className="text-[10px] font-bold text-emerald-600/70 uppercase mb-1">বিএসআর</p>
+                         <p className="text-base font-black text-slate-800">{toBengaliDigits(stats.sfi.bsr)} টি</p>
+                       </div>
+                       <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3 hover:bg-emerald-50 transition-colors">
+                         <p className="text-[10px] font-bold text-emerald-600/70 uppercase mb-1">মিলিকরণ</p>
+                         <p className="text-base font-black text-slate-800">{toBengaliDigits(stats.sfi.reconciliation)} টি</p>
+                       </div>
+                       <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3 hover:bg-emerald-50 transition-colors">
+                         <p className="text-[10px] font-bold text-emerald-600/70 uppercase mb-1">ত্রিপক্ষীয় (কার্যপত্র)</p>
+                         <p className="text-base font-black text-slate-800">{toBengaliDigits(stats.sfi.triWork)} টি</p>
+                       </div>
+                       <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3 hover:bg-emerald-50 transition-colors">
+                         <p className="text-[10px] font-bold text-emerald-600/70 uppercase mb-1">ত্রিপক্ষীয় (বিবরণী)</p>
+                         <p className="text-base font-black text-slate-800">{toBengaliDigits(stats.sfi.triMin)} টি</p>
+                       </div>
+                     </div>
+                     <div className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-center">
+                       <span className="text-xs font-black">মোট এসএফআই: {toBengaliDigits(stats.sfi.total)} টি</span>
+                     </div>
+                   </div>
+
+                   {/* Non-SFI Section */}
+                   <div className="space-y-4">
+                     <div className="flex items-center gap-3">
+                       <div className="h-[2px] flex-1 bg-amber-100"></div>
+                       <h5 className="text-[11px] font-black text-amber-700 uppercase tracking-[0.15em] flex items-center gap-2">
+                         <FileText size={14} /> নন এসএফআই (Non-SFI)
+                       </h5>
+                       <div className="h-[2px] flex-1 bg-amber-100"></div>
+                     </div>
+                     
+                     <div className="grid grid-cols-2 gap-3">
+                       <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-3 hover:bg-amber-50 transition-colors">
+                         <p className="text-[10px] font-bold text-amber-600/70 uppercase mb-1">বিএসআর</p>
+                         <p className="text-base font-black text-slate-800">{toBengaliDigits(stats.nonSfi.bsr)} টি</p>
+                       </div>
+                       <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-3 hover:bg-amber-50 transition-colors">
+                         <p className="text-[10px] font-bold text-amber-600/70 uppercase mb-1">মিলিকরণ</p>
+                         <p className="text-base font-black text-slate-800">{toBengaliDigits(stats.nonSfi.reconciliation)} টি</p>
+                       </div>
+                       <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-3 hover:bg-amber-50 transition-colors">
+                         <p className="text-[10px] font-bold text-amber-600/70 uppercase mb-1">দ্বিপক্ষীয় (কার্যপত্র)</p>
+                         <p className="text-base font-black text-slate-800">{toBengaliDigits(stats.nonSfi.biWork)} টি</p>
+                       </div>
+                       <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-3 hover:bg-amber-50 transition-colors">
+                         <p className="text-[10px] font-bold text-amber-600/70 uppercase mb-1">দ্বিপক্ষীয় (বিবরণী)</p>
+                         <p className="text-base font-black text-slate-800">{toBengaliDigits(stats.nonSfi.biMin)} টি</p>
+                       </div>
+                     </div>
+                     <div className="bg-amber-600 text-white px-4 py-2 rounded-xl text-center">
+                       <span className="text-xs font-black">মোট নন এসএফআই: {toBengaliDigits(stats.nonSfi.total)} টি</span>
+                     </div>
+                   </div>
+                 </div>
+
+                 <div className="bg-slate-900 p-4 text-center">
+                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Ledger Management System</p>
+                 </div>
+               </motion.div>
+             )}
+           </AnimatePresence>
+          </div>
+
+          {hasChanges && (
              <button 
               onClick={saveAllChanges}
               disabled={isUpdating}
@@ -742,7 +877,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
       )}
 
       {/* Table Container */}
-      <div className="table-container border border-slate-300 rounded-sm overflow-auto relative shadow-xl bg-white max-w-full">
+      <div className="table-container border border-slate-300 rounded-sm overflow-auto relative z-[1] shadow-xl bg-white max-w-full">
         <table className="w-full border-separate border-spacing-0 table-fixed">
           <colgroup>
             <col className="w-[30px]" />
@@ -764,47 +899,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
               <th className={thCls}>মন্তব্য</th>
             </tr>
           </thead>
-          {showSummary && (
-            <tbody className="no-print">
-              <tr>
-                <td colSpan={7} className="p-0 border border-slate-300">
-                  <div className="bg-blue-50/80 p-4 animate-in fade-in slide-in-from-top-2 duration-500 border-b border-blue-200">
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg">
-                          <Sparkles size={20} />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-black text-blue-900">রেজিস্টার সারসংক্ষেপ</h4>
-                          <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Register Summary Statistics</p>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-6">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase">মোট চিঠি</span>
-                          <span className="text-lg font-black text-slate-900">{toBengaliDigits(stats.total)} টি</span>
-                        </div>
-                        <div className="h-8 w-[1px] bg-blue-200 hidden md:block"></div>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-emerald-600 uppercase">এসএফআই: {toBengaliDigits(stats.sfi.total)} টি</span>
-                          <span className="text-[11px] font-black text-slate-700">
-                            (বিএসআর: {toBengaliDigits(stats.sfi.bsr)} টি, ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(stats.sfi.triWork)} টি, ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(stats.sfi.triMin)} টি, মিলিকরণ: {toBengaliDigits(stats.sfi.reconciliation)} টি)
-                          </span>
-                        </div>
-                        <div className="h-8 w-[1px] bg-blue-200 hidden md:block"></div>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-amber-600 uppercase">নন এসএফআই: {toBengaliDigits(stats.nonSfi.total)} টি</span>
-                          <span className="text-[11px] font-black text-slate-700">
-                            (বিএসআর: {toBengaliDigits(stats.nonSfi.bsr)} টি, দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(stats.nonSfi.biWork)} টি, দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(stats.nonSfi.biMin)} টি, মিলিকরণ: {toBengaliDigits(stats.nonSfi.reconciliation)} টি)
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          )}
           {groupedEntries.length > 0 ? (
             (() => {
               let globalIdx = 0;

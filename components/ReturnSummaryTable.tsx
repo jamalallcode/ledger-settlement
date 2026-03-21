@@ -55,11 +55,16 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
     return ['সকল', ...unique];
   }, [reportData]);
 
+  const robustNormalize = (str: string = '') => {
+    return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+  };
+
   const filteredReportData = useMemo(() => {
     let data = reportData;
     
     if (filterMinistry && filterMinistry !== 'সকল') {
-      data = data.filter(m => m.ministry === filterMinistry);
+      const normFilter = robustNormalize(filterMinistry);
+      data = data.filter(m => robustNormalize(m.ministry) === normFilter);
     }
 
     if (!searchTerm.trim()) return data;
@@ -131,7 +136,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
           <IDBadge id="summary-header-controls" />
           
           <div className="flex items-center">
-            {selectedReportType === 'মাসিক রিটারন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' && (
+            {selectedReportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' && (
               <div 
                 className="relative"
                 ref={statsRef}

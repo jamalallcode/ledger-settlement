@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOption } from '../types.ts';
 import SearchableSelect from './SearchableSelect.tsx';
 import { MINISTRIES_LIST, MINISTRY_ENTITY_MAP, ENTITY_BRANCH_MAP, AUDIT_YEARS_OPTIONS } from '../constants.ts';
-import { Trash2, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus, Hash } from 'lucide-react';
+import { Trash2, Globe, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus, Hash } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils.ts';
 import { getCycleForDate, isEntryLate } from '../utils/cycleHelper.ts';
 import { getDateError } from '../utils/dateValidation';
@@ -25,6 +25,12 @@ const getDynamicInputCls = (value: any) => {
 const labelCls = "block text-[13px] font-black text-slate-700 mb-2 flex items-center gap-1.5";
 const numBadge = "inline-flex items-center justify-center w-5 h-5 bg-white text-slate-600 rounded-md text-[10px] font-black mr-1 shadow-sm shrink-0";
 const colWrapperCls = "p-5 rounded-2xl border transition-all hover:shadow-lg relative min-w-0";
+
+const IDBadge = ({ id }: { id: string }) => (
+  <div className="absolute -top-2 -left-2 px-2 py-0.5 bg-slate-900 text-white text-[8px] font-black rounded-md shadow-sm z-10 border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity">
+    {id}
+  </div>
+);
 
 const SegmentedInput = ({ 
   id, icon: Icon, label, color, noValue, dayValue, monthValue, yearValue, 
@@ -207,6 +213,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     meetingUnsettledAmount: 0,
     totalInvolvedAmount: 0,
     isMeeting: false,
+    isOnline: 'না',
     remarks: '',
     meetingDate: '',
     manualRaisedCount: null as string | null,
@@ -253,10 +260,10 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       // The format is "Prefix Number, DatePrefix Date"
       const firstPart = combinedStr.split(',')[0];
       // Remove the prefix and any leading/trailing whitespace using regex
-      const extractedNo = firstPart.replace(prefixRegex, '').trim();
+      const extractedNo = firstPart.replace(prefixRegex, '').replace(/\s+/g, '');
       
-      const engExtracted = toEnglishDigits(extractedNo).trim();
-      const engSearch = toEnglishDigits(searchNo).trim();
+      const engExtracted = toEnglishDigits(extractedNo);
+      const engSearch = toEnglishDigits(searchNo.replace(/\s+/g, ''));
       
       return engExtracted === engSearch;
     };
@@ -569,6 +576,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       meetingUnsettledAmount: 0,
       totalInvolvedAmount: 0,
       isMeeting: false,
+      isOnline: 'না',
       remarks: '',
       meetingDate: '',
       manualRaisedCount: null as string | null,
@@ -711,7 +719,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
           <div className="p-3 bg-slate-900 rounded-2xl text-white shrink-0">
             <Layout size={24} />
           </div>
-          <div><h3 className="text-2xl font-black text-slate-900 leading-tight">মীমাংসা এন্ট্রি</h3><p className="text-slate-500 font-bold text-sm">অনুগ্রহ করে নিচের {toBengaliDigits(formData.meetingType === 'বিএসআর' ? 16 : 20)}টি ফিল্ড সঠিকভাবে পূরণ করুন</p></div>
+          <div><h3 className="text-2xl font-black text-slate-900 leading-tight">মীমাংসা এন্ট্রি</h3><p className="text-slate-500 font-bold text-sm">অনুগ্রহ করে নিচের {toBengaliDigits(formData.meetingType === 'বিএসআর' ? 17 : 21)}টি ফিল্ড সঠিকভাবে পূরণ করুন</p></div>
         </div>
         {onCancel && (
           <button 
@@ -889,21 +897,41 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                 {toBengaliDigits(paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ').length)} টি
               </div>
             </div>
-            <div id="field-16" className={col4Style}>
-              <label className={labelCls}><span className={numBadge}>১৬</span> <MessageSquare size={14} className="text-purple-600" /> মন্তব্য</label>
+            {/* Field: Online/Offline Status */}
+            <div className={`${colWrapperCls} border-emerald-100`}>
+              <IDBadge id="settlement-field-online" />
+              <label className={labelCls}><span className={numBadge}>১৬</span> <Globe size={14} className="text-emerald-600" /> অনলাইন এন্ট্রি:</label>
+              <div className="flex gap-2 h-[52px] p-1 bg-slate-100 rounded-2xl border-2 border-slate-200">
+                <button 
+                  type="button" onClick={() => setFormData({...formData, isOnline: 'হ্যাঁ'})}
+                  className={`flex-1 h-full rounded-xl font-black text-sm transition-all border-2 ${formData.isOnline === 'হ্যাঁ' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-slate-400 border-slate-200'}`}
+                >
+                  হ্যাঁ
+                </button>
+                <button 
+                  type="button" onClick={() => setFormData({...formData, isOnline: 'না'})}
+                  className={`flex-1 h-full rounded-xl font-black text-sm transition-all border-2 ${formData.isOnline === 'না' ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-400 border-slate-200'}`}
+                >
+                  না
+                </button>
+              </div>
+            </div>
+
+            <div id="field-17" className={col4Style}>
+              <label className={labelCls}><span className={numBadge}>১৭</span> <MessageSquare size={14} className="text-purple-600" /> মন্তব্য</label>
               <input type="text" className={getDynamicInputCls(formData.remarks)} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
             </div>
 
             {formData.meetingType !== 'বিএসআর' && (
               <>
-                <div id="field-17" className={col1Style}>
-                  <label className={labelCls}><span className={numBadge}>১৭</span> <Calendar size={14} className="text-amber-600 shrink-0" /> সভার তারিখ</label>
+                <div id="field-18" className={col1Style}>
+                  <label className={labelCls}><span className={numBadge}>১৮</span> <Calendar size={14} className="text-amber-600 shrink-0" /> সভার তারিখ</label>
                   <input type="date" className={getDynamicInputCls(formData.meetingDate)} value={formData.meetingDate} onChange={e => setFormData({...formData, meetingDate: e.target.value})} />
                 </div>
-                <div id="field-18" className={col2Style}><label className={labelCls}><span className={numBadge}>১৮</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> আলোচিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingDiscussedParaCount'] || formData.meetingDiscussedParaCount)} value={rawInputs['direct-meetingDiscussedParaCount'] || (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount))} onChange={e => handleNumericInput('direct', 'meetingDiscussedParaCount', e.target.value)} placeholder="০" /></div>
-                <div id="field-19" className={col3Style}><label className={labelCls}><span className={numBadge}>১৯</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingRecommendedParaCount'] || formData.meetingRecommendedParaCount)} value={rawInputs['direct-meetingRecommendedParaCount'] || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount))} onChange={e => handleNumericInput('direct', 'meetingRecommendedParaCount', e.target.value)} placeholder="০" /></div>
-                <div id="field-20a" className={`${colWrapperCls} bg-purple-50/70 border-purple-100 hover:border-purple-300`}>
-                  <label className={labelCls}><span className={numBadge}>{toBengaliDigits('২০.ক')}</span> <Hash size={14} className="text-purple-600 shrink-0" /> কার্যপত্র নং:</label>
+                <div id="field-19" className={col2Style}><label className={labelCls}><span className={numBadge}>১৯</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> আলোচিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingDiscussedParaCount'] || formData.meetingDiscussedParaCount)} value={rawInputs['direct-meetingDiscussedParaCount'] || (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount))} onChange={e => handleNumericInput('direct', 'meetingDiscussedParaCount', e.target.value)} placeholder="০" /></div>
+                <div id="field-20" className={col3Style}><label className={labelCls}><span className={numBadge}>২০</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingRecommendedParaCount'] || formData.meetingRecommendedParaCount)} value={rawInputs['direct-meetingRecommendedParaCount'] || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount))} onChange={e => handleNumericInput('direct', 'meetingRecommendedParaCount', e.target.value)} placeholder="০" /></div>
+                <div id="field-21a" className={`${colWrapperCls} bg-purple-50/70 border-purple-100 hover:border-purple-300`}>
+                  <label className={labelCls}><span className={numBadge}>{toBengaliDigits('২১.ক')}</span> <Hash size={14} className="text-purple-600 shrink-0" /> কার্যপত্র নং:</label>
                   <input 
                     type="text" 
                     className={getDynamicInputCls(wpNoPart)} 
@@ -912,7 +940,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                     placeholder="নং লিখুন"
                   />
                 </div>
-                <SegmentedInput id="field-20b" icon={FileEdit} label="কার্যপত্র তারিখ" color="purple" noValue="DATE_ONLY" dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} noSetter={()=>{}} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} isFocused={isWpFocused} focusSetter={setIsWpFocused} />
+                <SegmentedInput id="field-21b" icon={FileEdit} num="২১.খ" label="কার্যপত্র তারিখ" color="purple" noValue="DATE_ONLY" dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} noSetter={()=>{}} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} isFocused={isWpFocused} focusSetter={setIsWpFocused} />
               </>
             )}
           </div>
