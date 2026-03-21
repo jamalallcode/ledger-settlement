@@ -433,21 +433,20 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       {!isAdminView && (
         <div id="section-register-top-header" className="relative mb-6 no-print z-[99999]">
           <IDBadge id="section-register-top-header" />
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 relative group transition-all duration-500">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 relative group transition-all duration-500 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)]">
             
-            <div className="flex items-center gap-6 relative z-10">
-              <div className="w-20 h-20 bg-emerald-50 rounded-[2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100/50 group-hover:scale-105 transition-transform duration-500">
-                <ClipboardList size={40} strokeWidth={2} />
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="w-14 h-14 bg-emerald-50 rounded-[1.2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100/50 group-hover:scale-105 transition-transform duration-500">
+                <ClipboardList size={28} strokeWidth={2} />
               </div>
-              <div className="space-y-2">
-                <h2 className="text-4xl font-black text-slate-900 tracking-tight">মীমাংসা রেজিস্টার</h2>
-                <div className="flex items-center gap-4">
-                  <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500 text-white rounded-full font-bold text-[12px] shadow-lg shadow-emerald-200 border border-emerald-400/30">
-                    <div className="h-2 w-2 rounded-full bg-white shadow-sm"></div>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">মীমাংসা রেজিস্টার</h2>
+                <div className="flex items-center gap-3">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500 text-white rounded-full font-bold text-[10px] shadow-lg shadow-emerald-200 border border-emerald-400/30">
+                    <div className="h-1.5 w-1.5 rounded-full bg-white shadow-sm"></div>
                     <span>চলমান মাস: {toBengaliDigits(cycleInfo.label)}</span>
                   </div>
-                  <p className="text-slate-400 font-bold text-[11px] uppercase tracking-[0.2em]">Settlement Ledger</p>
+                  <p className="text-slate-400 font-bold text-[9px] uppercase tracking-[0.2em]">Settlement Ledger</p>
                 </div>
               </div>
             </div>
@@ -456,9 +455,9 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
               <div className="relative">
                 <button 
                   onClick={() => setShowSummary(!showSummary)} 
-                  className={`px-6 py-4 rounded-2xl font-black text-[14px] flex items-center gap-3 transition-all shadow-2xl ${showSummary ? 'bg-blue-600 text-white shadow-blue-200' : 'bg-[#f0f7ff] text-blue-700 border border-blue-100/50 hover:bg-blue-100 shadow-blue-500/10'}`}
+                  className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-2xl ${showSummary ? 'bg-blue-600 text-white shadow-blue-200' : 'bg-[#f0f7ff] text-blue-700 border border-blue-100/50 hover:bg-blue-100 shadow-blue-500/10'}`}
                 >
-                  <Sparkles size={20} className={showSummary ? 'text-blue-100' : 'text-blue-500'} /> রেজিস্টার সারসংক্ষেপ
+                  <Sparkles size={16} className={showSummary ? 'text-blue-100' : 'text-blue-500'} /> রেজিস্টার সারসংক্ষেপ
                 </button>
 
                 <AnimatePresence>
