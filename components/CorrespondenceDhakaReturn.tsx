@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Printer, ChevronLeft, Search, X, ChevronDown, Check, LayoutGrid, FileText, ChevronRight, Sparkles, BarChart3, Calendar } from 'lucide-react';
+import { Printer, ChevronLeft, Search, X, ChevronDown, Check, LayoutGrid, FileText, ChevronRight, Sparkles, BarChart3 } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 import { format as dateFnsFormat } from 'date-fns';
@@ -30,34 +30,9 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
   const [showStats, setShowStats] = useState(false);
-  const [dateInputText, setDateInputText] = useState(dateFnsFormat(selectedMonthDate, 'dd/MM/yyyy'));
   
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
-  const dateInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setDateInputText(dateFnsFormat(selectedMonthDate, 'dd/MM/yyyy'));
-  }, [selectedMonthDate]);
-
-  const handleDateTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setDateInputText(val);
-    
-    // Simple DD/MM/YYYY parser
-    const parts = val.split('/');
-    if (parts.length === 3) {
-      const d = parseInt(parts[0]);
-      const m = parseInt(parts[1]) - 1;
-      const y = parseInt(parts[2]);
-      if (y > 1900 && y < 2100 && m >= 0 && m < 12 && d > 0 && d <= 31) {
-        const newDate = new Date(y, m, d);
-        if (!isNaN(newDate.getTime())) {
-          setSelectedMonthDate(newDate);
-        }
-      }
-    }
-  };
 
   useEffect(() => {
     setFilterLetterType('সকল');
@@ -115,8 +90,20 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       return !isExcludedType;
     });
 
-    // 2. Filter by selected date (As of Date)
-    const reportingLimitDate = selectedMonthDate;
+    // 2. Filter by selected month (Pending Logic)
+    // User Requirement: 
+    // - If past month selected: Show letters received UP TO THE PREVIOUS MONTH end.
+    // - If current month selected: Show letters received UP TO TODAY.
+    // - Never exceed current date.
+    const today = new Date();
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const selectedMonthStart = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 1);
+    
+    const reportingLimitDate = selectedMonthStart.getTime() > currentMonthStart.getTime()
+      ? today
+      : selectedMonthStart.getTime() === currentMonthStart.getTime()
+        ? today
+        : new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1, 0, 23, 59, 59);
     
     data = data.filter(e => {
       if (!e.diaryDate) return false;
@@ -175,7 +162,20 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   const tdS = "border border-slate-300 px-2 py-2 text-[11px] text-center font-bold leading-tight min-h-[40px] align-middle break-words";
   
   const reportingLimitDate = useMemo(() => {
-    return selectedMonthDate;
+    const today = new Date();
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const selectedMonthStart = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 1);
+    
+    if (selectedMonthStart.getTime() > currentMonthStart.getTime()) {
+      // Next month selected: show up to today (Current Status)
+      return today;
+    } else if (selectedMonthStart.getTime() === currentMonthStart.getTime()) {
+      // Current month selected: show up to today
+      return today;
+    } else {
+      // Past month selected: show up to the end of that month
+      return new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1, 0, 23, 59, 59);
+    }
   }, [selectedMonthDate]);
 
   const reportingDateBN = useMemo(() => 
@@ -362,34 +362,30 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               )}
             </div>
             
-            {/* Date Picker */}
-            <div className="relative group flex items-center">
-              <div className="relative flex items-center w-[180px] h-[44px] bg-white border border-slate-300 rounded-xl shadow-sm hover:border-emerald-600 transition-all duration-300 overflow-hidden">
-                <input 
-                  type="text"
-                  value={dateInputText}
-                  onChange={handleDateTextChange}
-                  placeholder="DD/MM/YYYY"
-                  className="pl-4 pr-10 w-full h-full bg-transparent outline-none font-bold text-[14px] text-slate-800"
-                  title="বাম পাশে টাইপ করুন"
-                />
-                <div className="absolute right-3 pointer-events-none text-slate-400 group-hover:text-emerald-600 transition-colors">
-                  <Calendar size={18} />
+            {/* Month Selector Dropdown */}
+            <div className="space-y-1 relative group">
+              <div className="flex items-center gap-3 px-5 h-[44px] bg-white border border-slate-300 rounded-xl shadow-sm group-hover:border-emerald-600 group-hover:ring-4 group-hover:ring-emerald-50 transition-all duration-300 cursor-pointer">
+                 <span className="font-bold text-[13px] text-slate-800">{currentSelectedLabel}</span>
+                 <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-emerald-600" />
+              </div>
+
+              <div className="absolute top-full right-0 w-full pt-2 opacity-0 invisible translate-y-4 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 ease-out z-[2000]">
+                <div className="min-w-[160px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
+                  <div className="max-h-[300px] overflow-y-auto no-scrollbar py-2">
+                    {cycleOptions.map((opt, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={() => {
+                          setSelectedMonthDate(opt.date);
+                        }} 
+                        className={`flex items-center justify-center px-4 py-2.5 cursor-pointer transition-all ${currentSelectedLabel === opt.label ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[12px]'}`}
+                      >
+                        <span>{opt.label}</span>
+                        {currentSelectedLabel === opt.label && <Check size={14} strokeWidth={3} className="ml-2" />}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                {/* Interaction Layer: Covers the right 60% of the area to capture clicks for the calendar */}
-                <input 
-                  ref={dateInputRef}
-                  type="date"
-                  value={dateFnsFormat(selectedMonthDate, 'yyyy-MM-dd')}
-                  onChange={(e) => {
-                    const newDate = new Date(e.target.value);
-                    if (!isNaN(newDate.getTime())) {
-                      setSelectedMonthDate(newDate);
-                    }
-                  }}
-                  className="absolute top-0 right-0 bottom-0 w-[60%] opacity-0 cursor-pointer z-10"
-                  title="ক্যালেন্ডার ওপেন করতে এখানে ক্লিক করুন"
-                />
               </div>
             </div>
           </div>
@@ -399,12 +395,12 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       <div className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-6 relative animate-table-entrance">
         <div className="text-center mb-8 pt-4">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-4">
-            চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)
+            চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন (ঢাকা)
           </h1>
           
           <div className="mb-6 flex justify-center">
             <div className="inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
-              <span className="text-blue-400">চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা) | {toBengaliDigits(dateFnsFormat(selectedMonthDate, 'dd/MM/yyyy'))} খ্রি: তারিখ পর্যন্ত।</span>
+              <span className="text-blue-400">মাসিক রিটারন: চিঠিপত্র নিষ্পত্তি সংক্রান্ত (ঢাকা)। | {activeCycle.label}</span>
             </div>
           </div>
 
