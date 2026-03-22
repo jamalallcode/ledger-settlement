@@ -90,38 +90,46 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
    */
   const extractCleanId = (rawId: string) => {
     if (!rawId) return '';
-    const clean = rawId.trim();
+    let clean = rawId.trim();
     
-    // 1. Try to match from a full URL with common prefixes
-    // This handles archive.org/details/ID, archive.org/embed/ID, etc.
-    const urlRegex = /archive\.org\/(?:details|embed|stream|download|metadata|services\/img)\/([^\/\?\#\s]+)/i;
-    const urlMatch = clean.match(urlRegex);
-    if (urlMatch && urlMatch[1]) {
-      const id = urlMatch[1];
+    // 1. Handle server-style URLs: iaXXXX.us.archive.org/items/ID/...
+    const itemsMatch = clean.match(/archive\.org\/items\/([^\/\?\#\s]+)/i);
+    if (itemsMatch && itemsMatch[1]) return itemsMatch[1];
+
+    // 2. Standard details/embed/etc: archive.org/details/ID
+    const standardMatch = clean.match(/archive\.org\/(?:details|embed|stream|download|metadata|services\/img)\/([^\/\?\#\s]+)/i);
+    if (standardMatch && standardMatch[1]) {
+      const id = standardMatch[1];
       if (id.toLowerCase() !== 'upload') return id;
     }
     
-    // 2. Handle cases where the ID might be after a collection or user prefix
-    // e.g., archive.org/details/@username/ID or archive.org/details/collection/ID
-    if (clean.includes('archive.org/details/')) {
-      const pathPart = clean.split('archive.org/details/')[1];
-      if (pathPart) {
-        const segments = pathPart.split(/[?#]/)[0].split('/').filter(Boolean);
-        if (segments.length > 0 && segments[0].toLowerCase() !== 'upload') return segments[0];
+    // 3. Fallback: If it's not a URL, or we couldn't parse it as one
+    const segments = clean.split('/').filter(Boolean);
+    const ignored = ['http:', 'https:', 'www.archive.org', 'archive.org', 'details', 'embed', 'stream', 'download', 'metadata', 'upload', 'ia'];
+    
+    // Look for segments following 'details', 'items', etc in case regex missed it
+    const markers = ['details', 'items', 'download', 'stream', 'metadata'];
+    for (let i = 0; i < segments.length - 1; i++) {
+      if (markers.includes(segments[i].toLowerCase())) {
+        const potentialId = segments[i+1].split(/[?#]/)[0];
+        if (potentialId && !potentialId.includes('.archive.org')) {
+          return potentialId;
+        }
       }
     }
-    
-    // 3. Fallback: If it's not a URL, or we couldn't parse it as one
-    // Split by slashes and find the first segment that isn't a protocol or domain
-    const segments = clean.split('/').filter(Boolean);
-    const ignored = ['http:', 'https:', 'www.archive.org', 'archive.org', 'details', 'embed', 'stream', 'download', 'metadata', 'upload'];
+
     for (const segment of segments) {
-      if (!ignored.includes(segment.toLowerCase())) {
+      const s = segment.toLowerCase();
+      // Ignore empty, ignored list, server names, and purely numeric segments (usually path parts like '24')
+      if (s && !ignored.includes(s) && !s.includes('.archive.org') && !/^\d+$/.test(s)) {
         return segment.split(/[?#]/)[0];
       }
     }
     
-    return clean.split(/[?#]/)[0];
+    const finalId = clean.split(/[?#]/)[0];
+    // If the final result still looks like a server name, it's probably not a valid ID
+    if (finalId.includes('.archive.org')) return '';
+    return finalId;
   };
 
   const handleAddDocument = async (e: React.FormEvent) => {
@@ -395,8 +403,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
       {/* View Modal */}
       {selectedDoc && (
-        <div className="fixed inset-0 z-[1000] flex items-start justify-center pt-2 md:pt-4 px-4 pb-20 bg-slate-950/90 backdrop-blur-xl animate-in fade-in duration-300 overflow-y-auto">
-           <div className="w-full max-w-6xl bg-white rounded-[3rem] overflow-hidden flex flex-col shadow-2xl relative">
+        <div className="fixed inset-0 z-[1000] flex items-start justify-center pt-4 md:pt-10 px-4 pb-10 bg-slate-950/90 backdrop-blur-xl animate-in fade-in duration-300 overflow-y-auto">
+           <div className="w-full max-w-6xl bg-white rounded-[3rem] overflow-hidden flex flex-col shadow-2xl relative my-auto">
               <button 
                 onClick={() => setSelectedDoc(null)}
                 className="absolute top-6 right-6 z-[1010] p-4 bg-slate-900 text-white rounded-2xl hover:bg-red-600 transition-all shadow-xl active:scale-95"
@@ -490,8 +498,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-[1000] flex items-start justify-center pt-2 md:pt-4 px-4 pb-20 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
-           <div className="w-full max-w-3xl bg-white rounded-[2.5rem] p-10 shadow-2xl space-y-8 animate-in zoom-in-95 duration-300 no-scrollbar">
+        <div className="fixed inset-0 z-[1000] flex items-start justify-center pt-4 md:pt-10 px-4 pb-10 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
+           <div className="w-full max-w-3xl bg-white rounded-[2.5rem] p-10 shadow-2xl space-y-8 animate-in zoom-in-95 duration-300 no-scrollbar my-auto">
               <div className="flex items-center justify-between border-b border-slate-100 pb-6">
                  <div className="flex items-center gap-4">
                     <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><Plus size={24} /></div>
@@ -501,6 +509,59 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               </div>
 
               <form onSubmit={handleAddDocument} className="space-y-6">
+                 <div className="space-y-3 bg-blue-50 p-6 rounded-[2rem] border border-blue-100">
+                    <div className="flex items-center gap-2 text-blue-700 font-black text-xs uppercase tracking-widest"><AlertCircle size={14} /> আর্কাইভ লিঙ্ক (Archive Link)</div>
+                    <p className="text-[11px] font-bold text-blue-600 leading-relaxed">
+                      ডকুমেন্টটি <button 
+                        type="button"
+                        onClick={() => {
+                          const w = 800;
+                          const h = 600;
+                          const left = (window.screen.width / 2) - (w / 2);
+                          const top = (window.screen.height / 2) - (h / 2);
+                          window.open('https://archive.org/upload/', 'archive_upload', `width=${w},height=${h},top=${top},left=${left},menubar=no,toolbar=no,location=no,status=no`);
+                        }}
+                        className="underline font-black hover:text-blue-800 transition-colors cursor-pointer"
+                      >Archive.org</button> এ আপলোড করে সেই লিঙ্কটি এখানে দিন।
+                    </p>
+                    <div className="flex gap-2">
+                       <input 
+                         type="text" 
+                         required
+                         placeholder="এখানে লিঙ্ক বা আইডি পেস্ট করুন" 
+                         className="flex-1 px-5 h-[50px] bg-white border border-blue-200 rounded-xl font-black text-blue-900 placeholder:text-blue-300 outline-none focus:border-blue-500 transition-all text-sm tracking-widest"
+                         value={newDoc.archiveId}
+                         onChange={e => setNewDoc({...newDoc, archiveId: e.target.value})}
+                       />
+                       <button 
+                         type="button"
+                         onClick={() => {
+                           const id = extractCleanId(newDoc.archiveId);
+                           if (id) window.open(`https://archive.org/details/${id}`, '_blank');
+                           else alert("প্রথমে একটি সঠিক লিঙ্ক দিন!");
+                         }}
+                         className="px-4 bg-blue-100 text-blue-600 rounded-xl font-black text-[10px] uppercase hover:bg-blue-200 transition-all border border-blue-200"
+                       >
+                         পরীক্ষা করুন
+                       </button>
+                    </div>
+                    {newDoc.archiveId && (
+                      <div className="space-y-1 px-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">শনাক্তকৃত আইডি:</span>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded border ${!extractCleanId(newDoc.archiveId) ? 'text-red-600 bg-red-50 border-red-100' : 'text-blue-600 bg-blue-100/50 border-blue-100'}`}>
+                            {extractCleanId(newDoc.archiveId) || 'শনাক্ত করা যায়নি'}
+                          </span>
+                        </div>
+                        {newDoc.archiveId.includes('.archive.org') && !extractCleanId(newDoc.archiveId) && (
+                          <p className="text-[10px] font-bold text-red-500 flex items-center gap-1">
+                            <AlertCircle size={10} /> আপনি সম্ভবত সার্ভারের নাম পেস্ট করেছেন। অনুগ্রহ করে আসল আইটেম লিঙ্কটি দিন (যেমন: archive.org/details/ITEM_ID)।
+                          </p>
+                        )}
+                      </div>
+                    )}
+                 </div>
+
                  <div className="space-y-2">
                     <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ডকুমেন্ট শিরোনাম</label>
                     <input 
@@ -570,52 +631,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     />
                  </div>
 
-                 <div className="space-y-3 bg-blue-50 p-6 rounded-[2rem] border border-blue-100">
-                    <div className="flex items-center gap-2 text-blue-700 font-black text-xs uppercase tracking-widest"><AlertCircle size={14} /> গুরুত্বপূর্ণ নির্দেশিকা</div>
-                    <p className="text-[11px] font-bold text-blue-600 leading-relaxed">
-                      ডকুমেন্টটি স্থায়ীভাবে সংরক্ষণের জন্য <button 
-                        type="button"
-                        onClick={() => {
-                          const w = 800;
-                          const h = 600;
-                          const left = (window.screen.width / 2) - (w / 2);
-                          const top = (window.screen.height / 2) - (h / 2);
-                          window.open('https://archive.org/upload/', 'archive_upload', `width=${w},height=${h},top=${top},left=${left},menubar=no,toolbar=no,location=no,status=no`);
-                        }}
-                        className="underline font-black hover:text-blue-800 transition-colors cursor-pointer"
-                      >Archive.org</button> এ আপলোড করুন। আপলোড শেষে ওই পেজের লিঙ্কটি নিচে দিন।
-                      <br />
-                      <span className="text-amber-600 flex items-center gap-1 mt-1"><Clock size={10} /> নতুন আপলোড করা ফাইল লাইব্রেরিতে দৃশ্যমান হতে ২-৫ মিনিট সময় লাগতে পারে।</span>
-                    </p>
-                    <div className="flex gap-2">
-                       <input 
-                         type="text" 
-                         required
-                         placeholder="এখানে লিঙ্ক বা আইডি পেস্ট করুন" 
-                         className="flex-1 px-5 h-[50px] bg-white border border-blue-200 rounded-xl font-black text-blue-900 placeholder:text-blue-300 outline-none focus:border-blue-500 transition-all text-sm tracking-widest"
-                         value={newDoc.archiveId}
-                         onChange={e => setNewDoc({...newDoc, archiveId: e.target.value})}
-                       />
-                       <button 
-                         type="button"
-                         onClick={() => {
-                           const id = extractCleanId(newDoc.archiveId);
-                           if (id) window.open(`https://archive.org/details/${id}`, '_blank');
-                           else alert("প্রথমে একটি সঠিক লিঙ্ক দিন!");
-                         }}
-                         className="px-4 bg-blue-100 text-blue-600 rounded-xl font-black text-[10px] uppercase hover:bg-blue-200 transition-all border border-blue-200"
-                       >
-                         পরীক্ষা করুন
-                       </button>
-                    </div>
-                    {newDoc.archiveId && (
-                      <div className="flex items-center gap-2 px-2">
-                        <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">শনাক্তকৃত আইডি:</span>
-                        <span className="text-[10px] font-black text-blue-600 bg-blue-100/50 px-2 py-0.5 rounded border border-blue-100">{extractCleanId(newDoc.archiveId) || 'শনাক্ত করা যায়নি'}</span>
-                      </div>
-                    )}
-                 </div>
-
                  <div className="space-y-2">
                     <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">বিবরণ (ঐচ্ছিক)</label>
                     <textarea 
@@ -624,6 +639,12 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                       value={newDoc.description}
                       onChange={e => setNewDoc({...newDoc, description: e.target.value})}
                     ></textarea>
+                 </div>
+
+                 <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
+                    <p className="text-[11px] font-bold text-amber-700 flex items-center gap-2">
+                      <Clock size={14} /> নতুন আপলোড করা ফাইল লাইব্রেরিতে দৃশ্যমান হতে ২-৫ মিনিট সময় লাগতে পারে।
+                    </p>
                  </div>
 
                  <div className="flex gap-4 pt-4">
