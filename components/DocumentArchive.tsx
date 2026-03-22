@@ -419,7 +419,13 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     <p className="text-[11px] font-bold text-blue-600 leading-relaxed">
                       ডকুমেন্টটি প্রথমে <button 
                         type="button"
-                        onClick={() => window.open('https://archive.org/upload/', 'archive_upload', 'width=1000,height=800,menubar=no,toolbar=no,location=no,status=no')}
+                        onClick={() => {
+                          const w = 800;
+                          const h = 600;
+                          const left = (window.screen.width / 2) - (w / 2);
+                          const top = (window.screen.height / 2) - (h / 2);
+                          window.open('https://archive.org/upload/', 'archive_upload', `width=${w},height=${h},top=${top},left=${left},menubar=no,toolbar=no,location=no,status=no`);
+                        }}
                         className="underline font-black hover:text-blue-800 transition-colors cursor-pointer"
                       >Archive.org</button> এ আপলোড করুন। আপলোড সম্পন্ন হলে URL বা Archive ID নিচে দিন। <br/>
                       সঠিক ফরম্যাট: <span className="bg-blue-200 px-1 rounded text-blue-900 font-black tracking-tight">https://archive.org/details/20260214_20260214_2027</span>
