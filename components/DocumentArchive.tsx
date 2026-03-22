@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { ArchiveDoc } from '../types';
 import { 
   Library, Search, Filter, Plus, FileText, Calendar, 
-  ExternalLink, Trash2, LayoutGrid, List, X, 
+  ExternalLink, Trash2, LayoutGrid, List, X, Edit2,
   ChevronRight, BookOpen, Clock, Download, Eye, Loader2, Sparkles, AlertCircle
 } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
@@ -21,6 +21,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const [activeCategory, setActiveCategory] = useState<string>('সকল');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingDoc, setEditingDoc] = useState<ExtendedArchiveDoc | null>(null);
   const [selectedDoc, setSelectedDoc] = useState<ExtendedArchiveDoc | null>(null);
 
   // New Doc Form State
@@ -40,6 +41,22 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   useEffect(() => {
     fetchDocuments();
   }, []);
+
+  useEffect(() => {
+    if (editingDoc) {
+      setNewDoc({
+        title: editingDoc.title,
+        category: editingDoc.category,
+        archiveId: editingDoc.archiveId,
+        docDate: editingDoc.docDate,
+        description: editingDoc.description || '',
+        memoNo: editingDoc.memoNo || '',
+        authority: editingDoc.authority || '',
+        tags: editingDoc.tags || ''
+      });
+      setShowAddModal(true);
+    }
+  }, [editingDoc]);
 
   const fetchDocuments = async () => {
     setIsLoading(true);
@@ -140,12 +157,12 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       return alert("শিরোনাম এবং সঠিক আর্কাইভ লিঙ্ক বা আইডি আবশ্যক!");
     }
 
-    const docId = `doc_${Date.now()}`;
+    const docId = editingDoc ? editingDoc.id : `doc_${Date.now()}`;
     const docData: ExtendedArchiveDoc = {
       id: docId,
       ...newDoc,
-      archiveId: cleanId, // Save the cleaned ID to prevent display issues
-      createdAt: new Date().toISOString()
+      archiveId: cleanId,
+      createdAt: editingDoc ? editingDoc.createdAt : new Date().toISOString()
     };
 
     try {
@@ -155,8 +172,14 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       });
 
       if (!error) {
-        setDocuments(prev => [docData, ...prev]);
+        if (editingDoc) {
+          setDocuments(prev => prev.map(d => d.id === docId ? docData : d));
+        } else {
+          setDocuments(prev => [docData, ...prev]);
+        }
+        
         setShowAddModal(false);
+        setEditingDoc(null);
         setNewDoc({ 
           title: '', 
           category: 'সার্কুলার', 
@@ -318,25 +341,45 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                            >
                              <Eye size={24} />
                            </button>
-                           <a href={`https://archive.org/details/${extractCleanId(doc.archiveId)}`} target="_blank" className="p-4 bg-blue-600 text-white rounded-2xl shadow-2xl hover:scale-110 active:scale-95 transition-all"><Download size={24} /></a>
+                           <button 
+                             onClick={() => {
+                               const id = extractCleanId(doc.archiveId);
+                               window.open(`https://archive.org/download/${id}/${id}.pdf`, '_blank');
+                             }} 
+                             className="p-4 bg-blue-600 text-white rounded-2xl shadow-2xl hover:scale-110 active:scale-95 transition-all"
+                             title="সরাসরি ডাউনলোড"
+                           >
+                             <Download size={24} />
+                           </button>
                         </div>
                      </div>
                      <div className="space-y-2 px-2">
                         <h4 className="text-lg font-black text-slate-900 leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">{doc.title}</h4>
                         {doc.memoNo && <p className="text-[11px] font-black text-blue-600 uppercase tracking-widest">স্মারক: {doc.memoNo}</p>}
-                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-tighter">
-                           <div className="flex items-center gap-1.5"><Calendar size={12} /> {formatDateBN(doc.docDate)}</div>
-                           <div className="flex items-center gap-1.5"><Clock size={12} /> {formatDateBN(doc.createdAt)}</div>
+                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                           <div className="flex items-center gap-1" title="ইস্যু তারিখ"><Calendar size={12} /> ইস্যু: {formatDateBN(doc.docDate)}</div>
+                           <div className="flex items-center gap-1" title="আপলোড তারিখ"><Clock size={12} /> আপলোড: {formatDateBN(doc.createdAt)}</div>
                         </div>
                      </div>
                   </div>
                   <div className="p-4 mt-auto border-t border-slate-50 flex items-center justify-between bg-slate-50/50 rounded-b-[2.5rem]">
-                     <button 
-                       onClick={() => window.open(`https://archive.org/details/${extractCleanId(doc.archiveId)}`, '_blank')} 
-                       className="text-xs font-black text-blue-600 flex items-center gap-2 hover:underline"
-                     >
-                       সরাসরি ওপেন করুন <ChevronRight size={14} />
-                     </button>
+                     <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => window.open(`https://archive.org/details/${extractCleanId(doc.archiveId)}`, '_blank')} 
+                          className="text-xs font-black text-blue-600 flex items-center gap-2 hover:underline"
+                        >
+                          সরাসরি ওপেন করুন <ChevronRight size={14} />
+                        </button>
+                        {isAdmin && (
+                          <button 
+                            onClick={() => setEditingDoc(doc)} 
+                            className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
+                            title="এডিট করুন"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                        )}
+                     </div>
                      {isAdmin && (
                        <button onClick={() => handleDelete(doc.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
                      )}
@@ -394,9 +437,27 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                              <Eye size={16} />
                            </button>
                            <button onClick={() => copyCitation(doc)} className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-amber-500 hover:text-white transition-all border border-slate-200" title="রেফারেন্স কপি করুন"><FileText size={16} /></button>
-                           <a href={`https://archive.org/details/${extractCleanId(doc.archiveId)}`} target="_blank" className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all border border-slate-200" title="ডাউনলোড"><Download size={16} /></a>
+                           <button 
+                             onClick={() => {
+                               const id = extractCleanId(doc.archiveId);
+                               window.open(`https://archive.org/download/${id}/${id}.pdf`, '_blank');
+                             }} 
+                             className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all border border-slate-200" 
+                             title="সরাসরি ডাউনলোড"
+                           >
+                             <Download size={16} />
+                           </button>
                            {isAdmin && (
-                             <button onClick={() => handleDelete(doc.id)} className="p-2.5 bg-slate-50 text-slate-300 hover:bg-red-600 hover:text-white transition-all border border-slate-200"><Trash2 size={16} /></button>
+                             <>
+                               <button 
+                                 onClick={() => setEditingDoc(doc)} 
+                                 className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all border border-slate-200"
+                                 title="এডিট করুন"
+                               >
+                                 <Edit2 size={16} />
+                               </button>
+                               <button onClick={() => handleDelete(doc.id)} className="p-2.5 bg-slate-50 text-slate-300 hover:bg-red-600 hover:text-white transition-all border border-slate-200"><Trash2 size={16} /></button>
+                             </>
                            )}
                         </div>
                       </td>
@@ -513,16 +574,38 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
         </div>
       )}
 
-      {/* Add Modal */}
+      {/* Add/Edit Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-[1000] flex items-start justify-center pt-4 md:pt-10 px-4 pb-10 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
            <div className="w-full max-w-3xl bg-white rounded-[2.5rem] p-10 shadow-2xl space-y-8 animate-in zoom-in-95 duration-300 no-scrollbar my-auto">
               <div className="flex items-center justify-between border-b border-slate-100 pb-6">
                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><Plus size={24} /></div>
-                    <h3 className="text-2xl font-black text-slate-900">নতুন রেফারেন্স এন্ট্রি</h3>
+                    <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+                      {editingDoc ? <Edit2 size={24} /> : <Plus size={24} />}
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900">
+                      {editingDoc ? 'রেফারেন্স এডিট করুন' : 'নতুন রেফারেন্স এন্ট্রি'}
+                    </h3>
                  </div>
-                 <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
+                 <button 
+                   onClick={() => {
+                     setShowAddModal(false);
+                     setEditingDoc(null);
+                     setNewDoc({ 
+                       title: '', 
+                       category: 'সার্কুলার', 
+                       archiveId: '', 
+                       docDate: new Date().toISOString().split('T')[0], 
+                       description: '',
+                       memoNo: '',
+                       authority: '',
+                       tags: ''
+                     });
+                   }} 
+                   className="text-slate-400 hover:text-slate-900 transition-colors"
+                 >
+                   <X size={24} />
+                 </button>
               </div>
 
               <form onSubmit={handleAddDocument} className="space-y-6">
@@ -665,9 +748,28 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                  </div>
 
                  <div className="flex gap-4 pt-4">
-                    <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-sm hover:bg-slate-100 transition-all">বাতিল</button>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setShowAddModal(false);
+                        setEditingDoc(null);
+                        setNewDoc({ 
+                          title: '', 
+                          category: 'সার্কুলার', 
+                          archiveId: '', 
+                          docDate: new Date().toISOString().split('T')[0], 
+                          description: '',
+                          memoNo: '',
+                          authority: '',
+                          tags: ''
+                        });
+                      }} 
+                      className="flex-1 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-sm hover:bg-slate-100 transition-all"
+                    >
+                      বাতিল
+                    </button>
                     <button type="submit" className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-3">
-                       <Sparkles size={18} className="text-blue-300" /> আর্কাইভে যুক্ত করুন
+                       <Sparkles size={18} className="text-blue-300" /> {editingDoc ? 'আপডেট করুন' : 'আর্কাইভে যুক্ত করুন'}
                     </button>
                  </div>
               </form>
