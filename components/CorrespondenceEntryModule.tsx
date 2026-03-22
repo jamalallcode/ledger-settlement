@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   Mail, X, FileText, Calendar, Hash, Banknote, BookOpen, 
   Inbox, Computer, User, CheckCircle2, Layout, Sparkles, 
-  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash2, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send, FileEdit, ClipboardCheck, Globe, UserCheck
+  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash2, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send, FileEdit, ClipboardCheck, Globe
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { getCycleForDate } from '../utils/cycleHelper';
@@ -265,86 +265,6 @@ const PremiumParaTypeSelect = ({ value, onChange, IDBadge }: any) => {
 };
 
 /**
- * Premium Dropdown for Presented To
- */
-const PremiumPresentedToSelect = ({ value, onChange, IDBadge }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const options = [
-    { label: 'সুপার', value: 'সুপার' },
-    { label: 'এএন্ডএও', value: 'এএন্ডএও' },
-    { label: 'উপপরিচালক', value: 'উপপরিচালক' },
-  ];
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  return (
-    <div className="relative w-full" ref={dropdownRef}>
-      <IDBadge id="corr-field-presented-to-custom" />
-      <div 
-        onClick={() => setIsOpen(!isOpen)}
-        className={`${inputCls} flex items-center justify-between cursor-pointer group hover:border-blue-400 hover:ring-4 hover:ring-blue-50 transition-all duration-300 ${isOpen ? 'border-blue-500 ring-4 ring-blue-50 bg-white shadow-md' : (value ? 'border-emerald-500' : 'border-red-500') + ' shadow-sm'}`}
-      >
-        <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 ${value ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'} rounded-lg flex items-center justify-center shadow-sm`}>
-            <UserCheck size={16} />
-          </div>
-          <span className={`font-black ${value ? 'text-slate-900' : 'text-slate-400'}`}>{value || 'পদবি বাছুন...'}</span>
-        </div>
-        <ChevronDown size={18} className={`text-slate-400 transition-transform duration-500 ${isOpen ? 'rotate-180 text-blue-600' : 'group-hover:text-blue-500'}`} />
-      </div>
-
-      {isOpen && (
-        <div className="absolute top-[calc(100%+12px)] left-0 w-full bg-white border border-slate-200 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.15)] z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 border-t-4 border-t-blue-600">
-          <div className="p-3 space-y-1">
-            <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Sparkles size={12} className="text-blue-500" /> পদবি নির্বাচন করুন
-              </span>
-            </div>
-            {options.map((opt, idx) => (
-              <div 
-                key={idx}
-                onClick={() => {
-                  onChange(opt.value);
-                  setIsOpen(false);
-                }}
-                className={`px-4 py-3.5 mx-1 rounded-2xl cursor-pointer flex items-center justify-between transition-all group relative ${
-                  value === opt.value ? 'bg-blue-50 text-blue-700 shadow-sm' : 'hover:bg-slate-50 text-slate-600'
-                }`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                    value === opt.value ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-slate-100 text-slate-400 group-hover:bg-white group-hover:shadow-md'
-                  }`}>
-                    <UserCheck size={20} />
-                  </div>
-                  <span className={`text-[14px] font-black transition-colors ${value === opt.value ? 'text-blue-700' : 'text-slate-700'}`}>{opt.label}</span>
-                </div>
-                {value === opt.value && (
-                  <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-md animate-in zoom-in duration-300">
-                    <Check size={14} strokeWidth={3} />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-/**
  * Segmented Date Input Component (Mirrored from Settlement Module Logic)
  * Handles auto-padding, max limits, smart year expansion, and auto-focus jump.
  */
@@ -511,14 +431,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const [ld, setLd] = useState(''), [lm, setLm] = useState(''), [ly, setLy] = useState('');
   const [dd, setDd] = useState(''), [dm, setDm] = useState(''), [dy, setDy] = useState('');
   const [rd, setRd] = useState(''), [rm, setRm] = useState(''), [ry, setRy] = useState('');
-  const [pd, setPd] = useState(''), [pm, setPm] = useState(''), [py, setPy] = useState('');
   const [rcd, setRcd] = useState(''), [rcm, setRcm] = useState(''), [rcy, setRcy] = useState('');
 
   // Refs for auto-focus jump logic
   const ldRef = useRef<HTMLInputElement>(null), lmRef = useRef<HTMLInputElement>(null), lyRef = useRef<HTMLInputElement>(null);
   const ddRef = useRef<HTMLInputElement>(null), dmRef = useRef<HTMLInputElement>(null), dyRef = useRef<HTMLInputElement>(null);
   const rdRef = useRef<HTMLInputElement>(null), rmRef = useRef<HTMLInputElement>(null), ryRef = useRef<HTMLInputElement>(null);
-  const pdRef = useRef<HTMLInputElement>(null), pmRef = useRef<HTMLInputElement>(null), pyRef = useRef<HTMLInputElement>(null);
   const rcdRef = useRef<HTMLInputElement>(null), rcmRef = useRef<HTMLInputElement>(null), rcyRef = useRef<HTMLInputElement>(null);
 
   const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
@@ -644,10 +562,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         remarks: initialEntry.remarks || ''
       });
       
-    setSegmentsFromDate(initialEntry.letterDate, setLd, setLm, setLy);
+      setSegmentsFromDate(initialEntry.letterDate, setLd, setLm, setLy);
       setSegmentsFromDate(initialEntry.diaryDate, setDd, setDm, setDy);
       setSegmentsFromDate(initialEntry.receiptDate, setRd, setRm, setRy);
-      setSegmentsFromDate(initialEntry.presentationDate, setPd, setPm, setPy);
       setSegmentsFromDate(initialEntry.receivedDate, setRcd, setRcm, setRcy);
 
       setRawInputs({
@@ -671,7 +588,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     } else { setCalculatedCycle(''); }
   }, [dd, dm, dy]);
   useEffect(() => { setFormData(prev => ({ ...prev, receiptDate: formatDateSegments(rd, rm, ry) })); }, [rd, rm, ry]);
-  useEffect(() => { setFormData(prev => ({ ...prev, presentationDate: formatDateSegments(pd, pm, py) })); }, [pd, pm, py]);
   useEffect(() => { setFormData(prev => ({ ...prev, receivedDate: formatDateSegments(rcd, rcm, rcy) })); }, [rcd, rcm, rcy]);
 
   useEffect(() => {
@@ -687,7 +603,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     if (type === 'letter') setSegmentsFromDate(iso, setLd, setLm, setLy);
     else if (type === 'diary') setSegmentsFromDate(iso, setDd, setDm, setDy);
     else if (type === 'receipt') setSegmentsFromDate(iso, setRd, setRm, setRy);
-    else if (type === 'presentation') setSegmentsFromDate(iso, setPd, setPm, setPy);
     else if (type === 'received') setSegmentsFromDate(iso, setRcd, setRcm, setRcy);
   };
 
@@ -803,7 +718,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     setLd(''); setLm(''); setLy('');
     setDd(''); setDm(''); setDy('');
     setRd(''); setRm(''); setRy('');
-    setPd(''); setPm(''); setPy('');
     setRcd(''); setRcm(''); setRcy('');
     setRawInputs({});
     setCalculatedCycle('');
@@ -859,7 +773,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const diaryDateError = getDateError(formData.diaryDate, formData.letterDate, 'ডায়েরি তারিখ', 'পত্রের তারিখ');
   const receiptDateError = getDateError(formData.receiptDate, formData.diaryDate, 'শাখায় প্রাপ্তির তারিখ', 'ডায়েরি তারিখ');
   const receivedDateError = getDateError(formData.receivedDate, formData.receiptDate, 'গ্রহণের তারিখ', 'শাখায় প্রাপ্তির তারিখ');
-  const presentationDateError = getDateError(formData.presentationDate, formData.receiptDate, 'উপস্থাপনের তারিখ', 'শাখায় প্রাপ্তির তারিখ');
 
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = useState(false);
@@ -1328,28 +1241,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 11 - Smart Segmented Date */}
             <SegmentedInput 
-              id="corr-field-presentation-date" icon={Calendar} num="১১" label="উপস্থাপনের তারিখ" color="blue" 
-              dayValue={pd} monthValue={pm} yearValue={py} 
-              daySetter={setPd} monthSetter={setPm} yearSetter={setPy} 
-              dayRef={pdRef} monthRef={pmRef} yearRef={pyRef} 
-              isLayoutEditable={isLayoutEditable} originalValue={formData.presentationDate} 
-              onDateSelect={(iso: string) => handleManualDateSelect(iso, 'presentation')}
-              error={presentationDateError}
-            />
-
-            {/* Field 12 */}
-            <div className={`${colWrapper} border-blue-100`}>
-              <label className={labelCls}><span className={numBadge}>১২</span> <UserCheck size={14} className="text-blue-600" /> উপস্থাপন:</label>
-              <PremiumPresentedToSelect 
-                value={formData.presentedToName}
-                onChange={(val: string) => setFormData({...formData, presentedToName: val})}
-                IDBadge={IDBadge}
-              />
-            </div>
-
-            {/* Field 13 - Smart Segmented Date */}
-            <SegmentedInput 
-              id="corr-field-11" icon={Calendar} num="১৩" label="গ্রহণের তারিখ" color="blue" 
+              id="corr-field-11" icon={Calendar} num="১১" label="গ্রহণের তারিখ" color="blue" 
               dayValue={rcd} monthValue={rcm} yearValue={rcy} 
               daySetter={setRcd} monthSetter={setRcm} yearSetter={setRcy} 
               dayRef={rcdRef} monthRef={rcmRef} yearRef={rcyRef} 
@@ -1358,10 +1250,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               error={receivedDateError}
             />
 
-            {/* Field 14 */}
+            {/* Field 12 */}
             <div className={`${colWrapper} border-emerald-100`}>
               <IDBadge id="corr-field-12" />
-              <label className={labelCls}><span className={numBadge}>১৪</span> <Computer size={14} className="text-emerald-600" /> অনলাইনে প্রাপ্তি:</label>
+              <label className={labelCls}><span className={numBadge}>১২</span> <Computer size={14} className="text-emerald-600" /> অনলাইনে প্রাপ্তি:</label>
               <div className="flex gap-4 h-[52px] items-center px-2">
                 <button 
                   type="button" onClick={() => setFormData({...formData, isOnline: 'হ্যাঁ'})}
@@ -1374,10 +1266,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               </div>
             </div>
 
-            {/* Field 15 - আর্কাইভ নং */}
+            {/* Field 13 - আর্কাইভ নং */}
             <div className={`${colWrapper} border-amber-100`}>
               <IDBadge id="corr-field-archive-no" />
-              <label className={labelCls}><span className={numBadge}>১৫</span> <Hash size={14} className="text-amber-600" /> আর্কাইভ নং:</label>
+              <label className={labelCls}><span className={numBadge}>১৩</span> <Hash size={14} className="text-amber-600" /> আর্কাইভ নং:</label>
               <input 
                 type="text" 
                 className={`${inputCls} ${formData.archiveNo ? 'border-emerald-500' : 'border-red-500'}`} 
@@ -1387,10 +1279,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               />
             </div>
 
-            {/* Field 16 - Remarks */}
+            {/* Field 14 - Remarks */}
             <div className={`${colWrapper} border-slate-200 col-span-full`}>
               <IDBadge id="corr-field-14" />
-              <label className={labelCls}><span className={numBadge}>১৬</span> <FileText size={14} className="text-slate-600" /> মন্তব্য:</label>
+              <label className={labelCls}><span className={numBadge}>১৪</span> <FileText size={14} className="text-slate-600" /> মন্তব্য:</label>
               <textarea 
                 className={`${inputCls} ${formData.remarks ? 'border-emerald-500' : 'border-red-500'} h-24 py-3 resize-none`}
                 value={formData.remarks}
@@ -1456,9 +1348,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                <button 
                   type="submit"
                   disabled={isDuplicate || !!diaryDateError || !!receiptDateError || !!receivedDateError}
-                  className={`flex-[2] py-5 rounded-[2rem] font-black text-xl shadow-[0_20px_40px_rgba(5,150,105,0.3)] transition-all active:scale-95 flex items-center justify-center gap-4 group relative overflow-hidden ${isDuplicate || diaryDateError || receiptDateError || receivedDateError || presentationDateError ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                  className={`flex-[2] py-5 rounded-[2rem] font-black text-xl shadow-[0_20px_40px_rgba(5,150,105,0.3)] transition-all active:scale-95 flex items-center justify-center gap-4 group relative overflow-hidden ${isDuplicate || diaryDateError || receiptDateError || receivedDateError ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
                >
-                 {(!isDuplicate && !diaryDateError && !receiptDateError && !receivedDateError && !presentationDateError) && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>}
+                 {(!isDuplicate && !diaryDateError && !receiptDateError && !receivedDateError) && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>}
                  <CheckCircle2 size={24} /> {initialEntry ? 'তথ্য আপডেট করুন' : 'তথ্য সংরক্ষণ করুন'}
                </button>
             </div>

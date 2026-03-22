@@ -132,7 +132,8 @@ const SegmentedTableDateInput: React.FC<{
 const PremiumInlineSelect: React.FC<{
   value: string;
   onSelect: (val: string) => void;
-}> = ({ value, onSelect }) => {
+  disabled?: boolean;
+}> = ({ value, onSelect, disabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [openUp, setOpenUp] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -158,6 +159,7 @@ const PremiumInlineSelect: React.FC<{
   }, []);
 
   const handleToggle = () => {
+    if (disabled) return;
     if (!isOpen && dropdownRef.current) {
       const rect = dropdownRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
@@ -191,12 +193,12 @@ const PremiumInlineSelect: React.FC<{
     <div className="relative w-full" ref={dropdownRef}>
       <div 
         onClick={handleToggle}
-        className={`w-full h-7 px-1.5 bg-slate-50 border rounded-lg flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-blue-500 ring-2 ring-blue-50 bg-white shadow-sm' : 'border-slate-200 hover:border-slate-300'}`}
+        className={`w-full h-7 px-1.5 bg-slate-50 border rounded-lg flex items-center justify-between transition-all ${disabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'} ${isOpen ? 'border-blue-500 ring-2 ring-blue-50 bg-white shadow-sm' : 'border-slate-200 hover:border-slate-300'}`}
       >
         <span className={`text-[10px] font-black truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>
           {value || 'বাছুন...'}
         </span>
-        <ChevronDown size={10} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        {!disabled && <ChevronDown size={10} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
       </div>
 
       {isOpen && (
@@ -1108,7 +1110,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               <div className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.presentationDate || pending.presentedToName ? 'bg-blue-600/10 border-blue-400 ring-2 ring-blue-50' : 'bg-blue-50/50 border-blue-100'}`}>
                                  <div className="flex items-center justify-between">
                                     <div className="text-[9px] font-bold text-blue-700 uppercase tracking-tighter flex items-center gap-1"><UserCheck size={8} /> উপস্থাপন</div>
-                                    {(currentPresDate || currentPresName) && (
+                                    {isAdmin && (currentPresDate || currentPresName) && (
                                       <button 
                                         type="button"
                                         onClick={() => {
@@ -1126,16 +1128,18 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                        <div className="relative flex items-center h-3 w-3">
                                           <Calendar 
                                             size={11} 
-                                            className="text-blue-500 cursor-pointer hover:text-blue-700 transition-colors" 
+                                            className={`text-blue-500 transition-colors ${isAdmin ? 'cursor-pointer hover:text-blue-700' : 'opacity-50'}`} 
                                             onClick={(e) => {
+                                              if (!isAdmin) return;
                                               const input = (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement);
                                               if (input) input.showPicker();
                                             }}
                                           />
                                           <input 
                                             type="date" 
-                                            className="absolute inset-0 opacity-0 w-3 h-3 cursor-pointer"
+                                            className={`absolute inset-0 opacity-0 w-3 h-3 ${isAdmin ? 'cursor-pointer' : 'pointer-events-none'}`}
                                             value={currentPresDate}
+                                            disabled={!isAdmin}
                                             onChange={e => handleInlineChange(entry.id, 'presentationDate', e.target.value)}
                                           />
                                        </div>
@@ -1144,6 +1148,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                  <PremiumInlineSelect 
                                     value={currentPresName} 
                                     onSelect={val => handleInlineChange(entry.id, 'presentedToName', val)}
+                                    disabled={!isAdmin}
                                  />
                               </div>
                            </div>
@@ -1168,8 +1173,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                        <input 
                                          type="text" 
                                          placeholder="নং"
-                                         className="w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none focus:border-emerald-400 bg-white" 
+                                         className={`w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none bg-white ${isAdmin ? 'focus:border-emerald-400' : 'cursor-not-allowed opacity-70'}`} 
                                          value={currentIssueNo} 
+                                         disabled={!isAdmin}
                                          onChange={e => handleInlineChange(entry.id, 'issueLetterNo', toBengaliDigits(e.target.value))}
                                        />
                                     </div>
@@ -1182,16 +1188,18 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                              <div className="relative flex items-center h-3 w-3">
                                                 <Calendar 
                                                   size={11} 
-                                                  className={`${iconColorCls} cursor-pointer hover:opacity-80 transition-colors`} 
+                                                  className={`${iconColorCls} transition-colors ${isAdmin ? 'cursor-pointer hover:opacity-80' : 'opacity-50'}`} 
                                                   onClick={(e) => {
+                                                    if (!isAdmin) return;
                                                     const input = (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement);
                                                     if (input) input.showPicker();
                                                   }}
                                                 />
                                                 <input 
                                                   type="date" 
-                                                  className="absolute inset-0 opacity-0 w-3 h-3 cursor-pointer"
+                                                  className={`absolute inset-0 opacity-0 w-3 h-3 ${isAdmin ? 'cursor-pointer' : 'pointer-events-none'}`}
                                                   value={currentIssueDate}
+                                                  disabled={!isAdmin}
                                                   onChange={e => handleInlineChange(entry.id, 'issueLetterDate', e.target.value)}
                                                 />
                                              </div>
