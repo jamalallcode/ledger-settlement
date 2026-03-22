@@ -46,12 +46,17 @@ export const formatBengaliAmount = (num: number): string => {
  */
 export const formatDateBN = (iso: string | undefined | null): string => {
   if (!iso || iso === '0000-00-00' || iso.startsWith('0000')) return '';
+  
+  // Extract only the date part if it's a full ISO string (e.g., 2024-03-22T10:00:00Z)
+  const datePart = iso.split('T')[0];
+  
   // If it's already in DD/MM/YYYY format (contains /), just convert digits
-  if (iso.includes('/')) return toBengaliDigits(iso);
+  if (datePart.includes('/')) return toBengaliDigits(datePart);
+  
   // If it's ISO YYYY-MM-DD
-  const parts = iso.split('-');
+  const parts = datePart.split('-');
   if (parts.length === 3) {
     return toBengaliDigits(`${parts[2]}/${parts[1]}/${parts[0]}`);
   }
-  return toBengaliDigits(iso);
+  return toBengaliDigits(datePart);
 };

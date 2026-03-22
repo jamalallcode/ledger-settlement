@@ -260,7 +260,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
             {/* Work: Added Premium Quick Upload Plus Button */}
             <button 
               onClick={() => setShowAddModal(true)}
-              className="h-[50px] w-[50px] shrink-0 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 hover:scale-110 active:scale-95 transition-all duration-300 group"
+              className="h-[50px] w-[50px] shrink-0 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all duration-300 group"
               title="দ্রুত আপলোড"
             >
               <Plus size={24} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-500" />
