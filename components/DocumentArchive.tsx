@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { ArchiveDoc } from '../types';
 import { 
-  Library, Search, Filter, Plus, FileText, Calendar, 
+  Library, Search, Filter, FileText, Calendar, 
   ExternalLink, Trash2, LayoutGrid, List, X, 
   ChevronRight, BookOpen, Clock, Download, Eye, Loader2, Sparkles, AlertCircle
 } from 'lucide-react';
@@ -21,7 +21,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const [activeCategory, setActiveCategory] = useState<string>('সকল');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState<ExtendedArchiveDoc | null>(null);
+  const [selectedDoc, setSelectedDoc] = useState<ArchiveDoc | null>(null);
 
   // New Doc Form State
   const [newDoc, setNewDoc] = useState({
@@ -29,10 +29,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     category: 'সার্কুলার' as ArchiveDoc['category'],
     archiveId: '',
     docDate: new Date().toISOString().split('T')[0],
-    description: '',
-    memoNo: '',
-    authority: '',
-    tags: ''
+    description: ''
   });
 
   const categories = ['সকল', 'সার্কুলার', 'অফিস আদেশ', 'গেজেট', 'অন্যান্য'];
@@ -91,57 +88,27 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const extractCleanId = (rawId: string) => {
     if (!rawId) return '';
     let clean = rawId.trim();
-    
-    // 1. Handle server-style URLs: iaXXXX.us.archive.org/items/ID/...
-    const itemsMatch = clean.match(/archive\.org\/items\/([^\/\?\#\s]+)/i);
-    if (itemsMatch && itemsMatch[1]) return itemsMatch[1];
-
-    // 2. Standard details/embed/etc: archive.org/details/ID
-    const standardMatch = clean.match(/archive\.org\/(?:details|embed|stream|download|metadata|services\/img)\/([^\/\?\#\s]+)/i);
-    if (standardMatch && standardMatch[1]) {
-      const id = standardMatch[1];
-      if (id.toLowerCase() !== 'upload') return id;
-    }
-    
-    // 3. Fallback: If it's not a URL, or we couldn't parse it as one
-    const segments = clean.split('/').filter(Boolean);
-    const ignored = ['http:', 'https:', 'www.archive.org', 'archive.org', 'details', 'embed', 'stream', 'download', 'metadata', 'upload', 'ia'];
-    
-    // Look for segments following 'details', 'items', etc in case regex missed it
-    const markers = ['details', 'items', 'download', 'stream', 'metadata'];
-    for (let i = 0; i < segments.length - 1; i++) {
-      if (markers.includes(segments[i].toLowerCase())) {
-        const potentialId = segments[i+1].split(/[?#]/)[0];
-        if (potentialId && !potentialId.includes('.archive.org')) {
-          return potentialId;
-        }
+    if (clean.includes('archive.org/')) {
+      const parts = clean.split('/');
+      // Look for the segment after 'details' or 'embed'
+      const detailIdx = parts.indexOf('details');
+      const embedIdx = parts.indexOf('embed');
+      const targetIdx = detailIdx !== -1 ? detailIdx : embedIdx;
+      
+      if (targetIdx !== -1 && parts[targetIdx + 1]) {
+        clean = parts[targetIdx + 1].split('?')[0].split('#')[0];
       }
     }
-
-    for (const segment of segments) {
-      const s = segment.toLowerCase();
-      // Ignore empty, ignored list, server names, and purely numeric segments (usually path parts like '24')
-      if (s && !ignored.includes(s) && !s.includes('.archive.org') && !/^\d+$/.test(s)) {
-        return segment.split(/[?#]/)[0];
-      }
-    }
-    
-    const finalId = clean.split(/[?#]/)[0];
-    // If the final result still looks like a server name, it's probably not a valid ID
-    if (finalId.includes('.archive.org')) return '';
-    return finalId;
+    return clean;
   };
 
   const handleAddDocument = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanId = extractCleanId(newDoc.archiveId);
-    
-    if (!newDoc.title || !cleanId) {
-      return alert("শিরোনাম এবং সঠিক আর্কাইভ লিঙ্ক বা আইডি আবশ্যক!");
-    }
+    if (!newDoc.title || !newDoc.archiveId) return alert("শিরোনাম এবং আর্কাইভ আইডি আবশ্যক!");
 
+    const cleanId = extractCleanId(newDoc.archiveId);
     const docId = `doc_${Date.now()}`;
-    const docData: ExtendedArchiveDoc = {
+    const docData: ArchiveDoc = {
       id: docId,
       ...newDoc,
       archiveId: cleanId, // Save the cleaned ID to prevent display issues
@@ -157,16 +124,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       if (!error) {
         setDocuments(prev => [docData, ...prev]);
         setShowAddModal(false);
-        setNewDoc({ 
-          title: '', 
-          category: 'সার্কুলার', 
-          archiveId: '', 
-          docDate: new Date().toISOString().split('T')[0], 
-          description: '',
-          memoNo: '',
-          authority: '',
-          tags: ''
-        });
+        setNewDoc({ title: '', category: 'সার্কুলার', archiveId: '', docDate: new Date().toISOString().split('T')[0], description: '' });
       }
     } catch (err) {
       alert("সংরক্ষণে ত্রুটি হয়েছে।");
@@ -226,18 +184,19 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-landing-premium pb-20">
       {/* Header Section - Height Reduced (p-10 to p-8) */}
-      <div className="bg-slate-900 rounded-3xl md:rounded-[3rem] p-6 md:p-10 text-white relative overflow-hidden shadow-2xl">
-        <div className="absolute top-0 right-0 p-8 md:p-12 text-white/5"><Library size={120} className="md:w-[240px] md:h-[240px]" /></div>
-        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-           <div className="space-y-4 text-center md:text-left">
-              <div className="flex flex-col md:flex-row items-center gap-4">
-                 <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/40"><Library size={24} /></div>
-                 <h2 className="text-2xl md:text-4xl font-black tracking-tight">অডিট রেফারেন্স ও ডকুমেন্ট লাইব্রেরি</h2>
+      <div className="bg-slate-900 rounded-[3rem] p-8 text-white relative overflow-hidden shadow-2xl">
+        <div className="absolute top-0 right-0 p-12 text-white/5"><Library size={240} /></div>
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+           <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg"><Library size={20} /></div>
+                 <h2 className="text-2xl md:text-3xl font-black tracking-tight">ডকুমেন্ট আর্কাইভ ও লাইব্রেরি</h2>
               </div>
-              <p className="text-slate-400 font-bold max-w-xl text-sm md:text-lg leading-relaxed">সরকারি বিধি-বিধান, সার্কুলার এবং অডিট ক্রাইটেরিয়া এখন এক জায়গায়। দ্রুত রেফারেন্স খুঁজে পেতে স্মারক নম্বর বা বিষয় দিয়ে সার্চ করুন।</p>
+              <p className="text-slate-400 font-bold max-w-xl text-sm md:text-base leading-relaxed">সরকারি অর্ডার, সার্কুলার এবং গুরুত্বপূর্ণ সকল ডকুমেন্ট এখন এক জায়গার। Archive.org ইন্টিগ্রেশনের মাধ্যমে আপনার ফাইলগুলো থাকছে নিরাপদ।</p>
            </div>
-           <button onClick={() => setShowAddModal(true)} className="w-full md:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black flex items-center justify-center gap-3 shadow-xl shadow-blue-900/40 active:scale-95 transition-all shrink-0">
-              <Plus size={20} /> নতুন রেফারেন্স যুক্ত করুন
+           {/* Work: Removed {isAdmin && (...)} wrapper to allow all users to upload */}
+           <button onClick={() => setShowAddModal(true)} className="px-7 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black flex items-center gap-3 shadow-xl shadow-blue-900/40 active:scale-95 transition-all shrink-0">
+              <Plus size={18} /> নতুন ডকুমেন্ট যুক্ত করুন
            </button>
         </div>
       </div>
@@ -255,15 +214,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                 className="w-full pl-11 pr-4 h-[50px] bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-sm"
               />
             </div>
-            
-            {/* Work: Added Premium Quick Upload Plus Button */}
-            <button 
-              onClick={() => setShowAddModal(true)}
-              className="h-[50px] w-[50px] shrink-0 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 hover:scale-110 active:scale-95 transition-all duration-300 group"
-              title="দ্রুত আপলোড"
-            >
-              <Plus size={24} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-500" />
-            </button>
          </div>
 
          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0 justify-center">
@@ -497,70 +447,17 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-[1000] flex items-start justify-center pt-4 md:pt-10 px-4 pb-10 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
-           <div className="w-full max-w-3xl bg-white rounded-[2.5rem] p-10 shadow-2xl space-y-8 animate-in zoom-in-95 duration-300 no-scrollbar my-auto">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
+           <div className="w-full max-w-2xl bg-white rounded-[2.5rem] p-10 shadow-2xl space-y-8 animate-in zoom-in-95 duration-300">
               <div className="flex items-center justify-between border-b border-slate-100 pb-6">
                  <div className="flex items-center gap-4">
                     <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><Plus size={24} /></div>
-                    <h3 className="text-2xl font-black text-slate-900">নতুন রেফারেন্স এন্ট্রি</h3>
+                    <h3 className="text-2xl font-black text-slate-900">নতুন আর্কাইভ এন্ট্রি</h3>
                  </div>
                  <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
               </div>
 
               <form onSubmit={handleAddDocument} className="space-y-6">
-                 <div className="space-y-3 bg-blue-50 p-6 rounded-[2rem] border border-blue-100">
-                    <div className="flex items-center gap-2 text-blue-700 font-black text-xs uppercase tracking-widest"><AlertCircle size={14} /> আর্কাইভ লিঙ্ক (Archive Link)</div>
-                    <p className="text-[11px] font-bold text-blue-600 leading-relaxed">
-                      ডকুমেন্টটি <button 
-                        type="button"
-                        onClick={() => {
-                          const w = 800;
-                          const h = 600;
-                          const left = (window.screen.width / 2) - (w / 2);
-                          const top = (window.screen.height / 2) - (h / 2);
-                          window.open('https://archive.org/upload/', 'archive_upload', `width=${w},height=${h},top=${top},left=${left},menubar=no,toolbar=no,location=no,status=no`);
-                        }}
-                        className="underline font-black hover:text-blue-800 transition-colors cursor-pointer"
-                      >Archive.org</button> এ আপলোড করে সেই লিঙ্কটি এখানে দিন।
-                    </p>
-                    <div className="flex gap-2">
-                       <input 
-                         type="text" 
-                         required
-                         placeholder="এখানে লিঙ্ক বা আইডি পেস্ট করুন" 
-                         className="flex-1 px-5 h-[50px] bg-white border border-blue-200 rounded-xl font-black text-blue-900 placeholder:text-blue-300 outline-none focus:border-blue-500 transition-all text-sm tracking-widest"
-                         value={newDoc.archiveId}
-                         onChange={e => setNewDoc({...newDoc, archiveId: e.target.value})}
-                       />
-                       <button 
-                         type="button"
-                         onClick={() => {
-                           const id = extractCleanId(newDoc.archiveId);
-                           if (id) window.open(`https://archive.org/details/${id}`, '_blank');
-                           else alert("প্রথমে একটি সঠিক লিঙ্ক দিন!");
-                         }}
-                         className="px-4 bg-blue-100 text-blue-600 rounded-xl font-black text-[10px] uppercase hover:bg-blue-200 transition-all border border-blue-200"
-                       >
-                         পরীক্ষা করুন
-                       </button>
-                    </div>
-                    {newDoc.archiveId && (
-                      <div className="space-y-1 px-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">শনাক্তকৃত আইডি:</span>
-                          <span className={`text-[10px] font-black px-2 py-0.5 rounded border ${!extractCleanId(newDoc.archiveId) ? 'text-red-600 bg-red-50 border-red-100' : 'text-blue-600 bg-blue-100/50 border-blue-100'}`}>
-                            {extractCleanId(newDoc.archiveId) || 'শনাক্ত করা যায়নি'}
-                          </span>
-                        </div>
-                        {newDoc.archiveId.includes('.archive.org') && !extractCleanId(newDoc.archiveId) && (
-                          <p className="text-[10px] font-bold text-red-500 flex items-center gap-1">
-                            <AlertCircle size={10} /> আপনি সম্ভবত সার্ভারের নাম পেস্ট করেছেন। অনুগ্রহ করে আসল আইটেম লিঙ্কটি দিন (যেমন: archive.org/details/ITEM_ID)।
-                          </p>
-                        )}
-                      </div>
-                    )}
-                 </div>
-
                  <div className="space-y-2">
                     <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ডকুমেন্ট শিরোনাম</label>
                     <input 
@@ -573,7 +470,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     />
                  </div>
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ক্যাটাগরি</label>
                        <select 
@@ -596,37 +493,16 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     </div>
                  </div>
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">স্মারক নম্বর (Memo No.)</label>
-                       <input 
-                         type="text" 
-                         placeholder="যেমন: ০৫.০০.০০০০.১২৩.৪৫.৬৭৮" 
-                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
-                         value={newDoc.memoNo}
-                         onChange={e => setNewDoc({...newDoc, memoNo: e.target.value})}
-                       />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ইস্যুকারী কর্তৃপক্ষ</label>
-                       <input 
-                         type="text" 
-                         placeholder="যেমন: অর্থ মন্ত্রণালয় / বাংলাদেশ ব্যাংক" 
-                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
-                         value={newDoc.authority}
-                         onChange={e => setNewDoc({...newDoc, authority: e.target.value})}
-                       />
-                    </div>
-                 </div>
-
-                 <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ট্যাগসমূহ (কমা দিয়ে আলাদা করুন)</label>
+                 <div className="space-y-3 bg-blue-50 p-6 rounded-[2rem] border border-blue-100">
+                    <div className="flex items-center gap-2 text-blue-700 font-black text-xs uppercase tracking-widest"><AlertCircle size={14} /> গুরুত্বপূর্ণ নির্দেশিকা</div>
+                    <p className="text-[11px] font-bold text-blue-600 leading-relaxed">ডকুমেন্টটি প্রথমে Archive.org এ আপলোড করুন। আপলোড সম্পন্ন হলে URL বা Archive ID নিচে দিন। <br/>সঠিক ফরম্যাট: <span className="bg-blue-200 px-1 rounded text-blue-900 font-black tracking-tight">https://archive.org/details/20260214_20260214_2027</span></p>
                     <input 
                       type="text" 
-                      placeholder="যেমন: বোনাস, ভাতা, বেতন কাঠামো" 
-                      className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
-                      value={newDoc.tags}
-                      onChange={e => setNewDoc({...newDoc, tags: e.target.value})}
+                      required
+                      placeholder="এখানে লিঙ্ক বা আইডি পেস্ট করুন" 
+                      className="w-full px-5 h-[50px] bg-white border border-blue-200 rounded-xl font-black text-blue-900 placeholder:text-blue-300 outline-none focus:border-blue-500 transition-all text-sm tracking-widest"
+                      value={newDoc.archiveId}
+                      onChange={e => setNewDoc({...newDoc, archiveId: e.target.value})}
                     />
                  </div>
 
@@ -638,12 +514,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                       value={newDoc.description}
                       onChange={e => setNewDoc({...newDoc, description: e.target.value})}
                     ></textarea>
-                 </div>
-
-                 <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
-                    <p className="text-[11px] font-bold text-amber-700 flex items-center gap-2">
-                      <Clock size={14} /> নতুন আপলোড করা ফাইল লাইব্রেরিতে দৃশ্যমান হতে ২-৫ মিনিট সময় লাগতে পারে।
-                    </p>
                  </div>
 
                  <div className="flex gap-4 pt-4">
