@@ -324,9 +324,15 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                      <div className="space-y-2 px-2">
                         <h4 className="text-lg font-black text-slate-900 leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">{doc.title}</h4>
                         {doc.memoNo && <p className="text-[11px] font-black text-blue-600 uppercase tracking-widest">স্মারক: {doc.memoNo}</p>}
-                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-tighter">
-                           <div className="flex items-center gap-1.5"><Calendar size={12} /> {formatDateBN(doc.docDate)}</div>
-                           <div className="flex items-center gap-1.5"><Clock size={12} /> {formatDateBN(doc.createdAt)}</div>
+                        <div className="grid grid-cols-2 gap-2 text-[10px] font-black text-slate-500 uppercase tracking-tight">
+                           <div className="flex items-center gap-1.5 bg-slate-50 p-2 rounded-xl border border-slate-100" title="ডকুমেন্ট তারিখ">
+                              <Calendar size={12} className="text-blue-600" /> 
+                              <span>{formatDateBN(doc.docDate)}</span>
+                           </div>
+                           <div className="flex items-center gap-1.5 bg-slate-50 p-2 rounded-xl border border-slate-100" title="আপলোড তারিখ">
+                              <Clock size={12} className="text-blue-600" /> 
+                              <span>{formatDateBN(doc.createdAt)}</span>
+                           </div>
                         </div>
                      </div>
                   </div>
