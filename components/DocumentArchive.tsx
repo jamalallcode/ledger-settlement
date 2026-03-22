@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { ArchiveDoc } from '../types';
 import { 
-  Library, Search, Filter, Plus, FileText, Calendar, 
+  Library, Search, Filter, FileText, Calendar, 
   ExternalLink, Trash2, LayoutGrid, List, X, 
   ChevronRight, BookOpen, Clock, Download, Eye, Loader2, Sparkles, AlertCircle
 } from 'lucide-react';
@@ -20,20 +20,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('সকল');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [showAddModal, setShowAddModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<ExtendedArchiveDoc | null>(null);
-
-  // New Doc Form State
-  const [newDoc, setNewDoc] = useState({
-    title: '',
-    category: 'সার্কুলার' as ArchiveDoc['category'],
-    archiveId: '',
-    docDate: new Date().toISOString().split('T')[0],
-    description: '',
-    memoNo: '',
-    authority: '',
-    tags: ''
-  });
 
   const categories = ['সকল', 'সার্কুলার', 'অফিস আদেশ', 'গেজেট', 'অন্যান্য'];
 
@@ -132,47 +119,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     return finalId;
   };
 
-  const handleAddDocument = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanId = extractCleanId(newDoc.archiveId);
-    
-    if (!newDoc.title || !cleanId) {
-      return alert("শিরোনাম এবং সঠিক আর্কাইভ লিঙ্ক বা আইডি আবশ্যক!");
-    }
-
-    const docId = `doc_${Date.now()}`;
-    const docData: ExtendedArchiveDoc = {
-      id: docId,
-      ...newDoc,
-      archiveId: cleanId, // Save the cleaned ID to prevent display issues
-      createdAt: new Date().toISOString()
-    };
-
-    try {
-      const { error } = await supabase.from('settlement_entries').upsert({
-        id: docId,
-        content: docData
-      });
-
-      if (!error) {
-        setDocuments(prev => [docData, ...prev]);
-        setShowAddModal(false);
-        setNewDoc({ 
-          title: '', 
-          category: 'সার্কুলার', 
-          archiveId: '', 
-          docDate: new Date().toISOString().split('T')[0], 
-          description: '',
-          memoNo: '',
-          authority: '',
-          tags: ''
-        });
-      }
-    } catch (err) {
-      alert("সংরক্ষণে ত্রুটি হয়েছে।");
-    }
-  };
-
   const handleDelete = async (id: string) => {
     if (!window.confirm("আপনি কি নিশ্চিতভাবে এই ডকুমেন্টটি লাইব্রেরি থেকে সরিয়ে ফেলতে চান?")) return;
     try {
@@ -236,10 +182,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               </div>
               <p className="text-slate-400 font-bold max-w-xl text-sm md:text-base leading-relaxed">সরকারি বিধি-বিধান, সার্কুলার এবং অডিট ক্রাইটেরিয়া এখন এক জায়গায়। দ্রুত রেফারেন্স খুঁজে পেতে স্মারক নম্বর বা বিষয় দিয়ে সার্চ করুন।</p>
            </div>
-           {/* Work: Removed {isAdmin && (...)} wrapper to allow all users to upload */}
-           <button onClick={() => setShowAddModal(true)} className="px-7 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black flex items-center gap-3 shadow-xl shadow-blue-900/40 active:scale-95 transition-all shrink-0">
-              <Plus size={18} /> নতুন রেফারেন্স যুক্ত করুন
-           </button>
         </div>
       </div>
 
@@ -256,15 +198,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                 className="w-full pl-11 pr-4 h-[50px] bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-sm"
               />
             </div>
-            
-            {/* Work: Added Premium Quick Upload Plus Button */}
-            <button 
-              onClick={() => setShowAddModal(true)}
-              className="h-[50px] w-[50px] shrink-0 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 hover:scale-110 active:scale-95 transition-all duration-300 group"
-              title="দ্রুত আপলোড"
-            >
-              <Plus size={24} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-500" />
-            </button>
          </div>
 
          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0 justify-center">
@@ -492,168 +425,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     </div>
                  </div>
               </div>
-           </div>
-        </div>
-      )}
-
-      {/* Add Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-[1000] flex items-start justify-center pt-4 md:pt-10 px-4 pb-10 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
-           <div className="w-full max-w-3xl bg-white rounded-[2.5rem] p-10 shadow-2xl space-y-8 animate-in zoom-in-95 duration-300 no-scrollbar my-auto">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-6">
-                 <div className="flex items-center gap-4">
-                    <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><Plus size={24} /></div>
-                    <h3 className="text-2xl font-black text-slate-900">নতুন রেফারেন্স এন্ট্রি</h3>
-                 </div>
-                 <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
-              </div>
-
-              <form onSubmit={handleAddDocument} className="space-y-6">
-                 <div className="space-y-3 bg-blue-50 p-6 rounded-[2rem] border border-blue-100">
-                    <div className="flex items-center gap-2 text-blue-700 font-black text-xs uppercase tracking-widest"><AlertCircle size={14} /> আর্কাইভ লিঙ্ক (Archive Link)</div>
-                    <p className="text-[11px] font-bold text-blue-600 leading-relaxed">
-                      ডকুমেন্টটি <button 
-                        type="button"
-                        onClick={() => {
-                          const w = 800;
-                          const h = 600;
-                          const left = (window.screen.width / 2) - (w / 2);
-                          const top = (window.screen.height / 2) - (h / 2);
-                          window.open('https://archive.org/upload/', 'archive_upload', `width=${w},height=${h},top=${top},left=${left},menubar=no,toolbar=no,location=no,status=no`);
-                        }}
-                        className="underline font-black hover:text-blue-800 transition-colors cursor-pointer"
-                      >Archive.org</button> এ আপলোড করে সেই লিঙ্কটি এখানে দিন।
-                    </p>
-                    <div className="flex gap-2">
-                       <input 
-                         type="text" 
-                         required
-                         placeholder="এখানে লিঙ্ক বা আইডি পেস্ট করুন" 
-                         className="flex-1 px-5 h-[50px] bg-white border border-blue-200 rounded-xl font-black text-blue-900 placeholder:text-blue-300 outline-none focus:border-blue-500 transition-all text-sm tracking-widest"
-                         value={newDoc.archiveId}
-                         onChange={e => setNewDoc({...newDoc, archiveId: e.target.value})}
-                       />
-                       <button 
-                         type="button"
-                         onClick={() => {
-                           const id = extractCleanId(newDoc.archiveId);
-                           if (id) window.open(`https://archive.org/details/${id}`, '_blank');
-                           else alert("প্রথমে একটি সঠিক লিঙ্ক দিন!");
-                         }}
-                         className="px-4 bg-blue-100 text-blue-600 rounded-xl font-black text-[10px] uppercase hover:bg-blue-200 transition-all border border-blue-200"
-                       >
-                         পরীক্ষা করুন
-                       </button>
-                    </div>
-                    {newDoc.archiveId && (
-                      <div className="space-y-1 px-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">শনাক্তকৃত আইডি:</span>
-                          <span className={`text-[10px] font-black px-2 py-0.5 rounded border ${!extractCleanId(newDoc.archiveId) ? 'text-red-600 bg-red-50 border-red-100' : 'text-blue-600 bg-blue-100/50 border-blue-100'}`}>
-                            {extractCleanId(newDoc.archiveId) || 'শনাক্ত করা যায়নি'}
-                          </span>
-                        </div>
-                        {newDoc.archiveId.includes('.archive.org') && !extractCleanId(newDoc.archiveId) && (
-                          <p className="text-[10px] font-bold text-red-500 flex items-center gap-1">
-                            <AlertCircle size={10} /> আপনি সম্ভবত সার্ভারের নাম পেস্ট করেছেন। অনুগ্রহ করে আসল আইটেম লিঙ্কটি দিন (যেমন: archive.org/details/ITEM_ID)।
-                          </p>
-                        )}
-                      </div>
-                    )}
-                 </div>
-
-                 <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ডকুমেন্ট শিরোনাম</label>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="যেমন: বার্ষিক অডিট সার্কুলার ২০২৪-২৫" 
-                      className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
-                      value={newDoc.title}
-                      onChange={e => setNewDoc({...newDoc, title: e.target.value})}
-                    />
-                 </div>
-
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ক্যাটাগরি</label>
-                       <select 
-                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
-                         value={newDoc.category}
-                         onChange={e => setNewDoc({...newDoc, category: e.target.value as any})}
-                       >
-                          {categories.filter(c => c !== 'সকল').map(c => <option key={c} value={c}>{c}</option>)}
-                       </select>
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ডকুমেন্ট তারিখ</label>
-                       <input 
-                         type="date" 
-                         required
-                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
-                         value={newDoc.docDate}
-                         onChange={e => setNewDoc({...newDoc, docDate: e.target.value})}
-                       />
-                    </div>
-                 </div>
-
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">স্মারক নম্বর (Memo No.)</label>
-                       <input 
-                         type="text" 
-                         placeholder="যেমন: ০৫.০০.০০০০.১২৩.৪৫.৬৭৮" 
-                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
-                         value={newDoc.memoNo}
-                         onChange={e => setNewDoc({...newDoc, memoNo: e.target.value})}
-                       />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ইস্যুকারী কর্তৃপক্ষ</label>
-                       <input 
-                         type="text" 
-                         placeholder="যেমন: অর্থ মন্ত্রণালয় / বাংলাদেশ ব্যাংক" 
-                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
-                         value={newDoc.authority}
-                         onChange={e => setNewDoc({...newDoc, authority: e.target.value})}
-                       />
-                    </div>
-                 </div>
-
-                 <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ট্যাগসমূহ (কমা দিয়ে আলাদা করুন)</label>
-                    <input 
-                      type="text" 
-                      placeholder="যেমন: বোনাস, ভাতা, বেতন কাঠামো" 
-                      className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
-                      value={newDoc.tags}
-                      onChange={e => setNewDoc({...newDoc, tags: e.target.value})}
-                    />
-                 </div>
-
-                 <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">বিবরণ (ঐচ্ছিক)</label>
-                    <textarea 
-                      placeholder="ডকুমেন্টের সারসংক্ষেপ বা গুরুত্বপূর্ণ নোট এখানে লিখুন..." 
-                      className="w-full p-5 min-h-[100px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all resize-none"
-                      value={newDoc.description}
-                      onChange={e => setNewDoc({...newDoc, description: e.target.value})}
-                    ></textarea>
-                 </div>
-
-                 <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
-                    <p className="text-[11px] font-bold text-amber-700 flex items-center gap-2">
-                      <Clock size={14} /> নতুন আপলোড করা ফাইল লাইব্রেরিতে দৃশ্যমান হতে ২-৫ মিনিট সময় লাগতে পারে।
-                    </p>
-                 </div>
-
-                 <div className="flex gap-4 pt-4">
-                    <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-sm hover:bg-slate-100 transition-all">বাতিল</button>
-                    <button type="submit" className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-3">
-                       <Sparkles size={18} className="text-blue-300" /> আর্কাইভে যুক্ত করুন
-                    </button>
-                 </div>
-              </form>
            </div>
         </div>
       )}
