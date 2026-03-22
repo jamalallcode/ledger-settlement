@@ -117,8 +117,8 @@ const QR_3: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
     const totals = { pC: 0, pA: 0, cC: 0, cA: 0, tC: 0, sC: 0, sA: 0, fC: 0, fA: 0 };
 
     return (
-      <div className="table-container qr-table-container mb-10 overflow-auto border border-slate-400 shadow-sm rounded-lg flex-grow min-h-[600px]">
-        <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto min-h-full">
+      <div className="table-container qr-table-container mb-10 overflow-auto border border-slate-400 shadow-sm rounded-lg">
+        <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">
               <th rowSpan={2} className={`${thCls} w-10`}>ক্রঃ নং</th>
@@ -215,7 +215,7 @@ const QR_3: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
   };
 
   return (
-    <div id="qr-3-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans flex flex-col min-h-[calc(100vh-120px)]">
+    <div id="qr-3-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
       <IDBadge id="qr-3-container" />
       
       <div className="flex justify-end mb-4 no-print">

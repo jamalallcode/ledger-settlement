@@ -275,7 +275,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   };
 
   return (
-    <div id="dd-sir-report-container" className="space-y-6 py-2 w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view flex flex-col min-h-[calc(100vh-120px)]">
+    <div id="dd-sir-report-container" className="space-y-6 py-2 w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view">
       <IDBadge id="dd-sir-report-container" />
       {/* Control Bar (No Print) */}
       {showFilters && (
@@ -441,8 +441,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
         {/* SECTION 1: সারসংক্ষেপ টেবিল */}
         <div className="mb-10 flex justify-center overflow-visible">
-          <div className="table-container max-w-full w-full border border-slate-300 rounded-lg overflow-auto flex-grow min-h-[600px]">
-            <table className="w-full border-separate table-fixed border-spacing-0 !table-auto min-h-full">
+          <div className="table-container max-w-full w-full border border-slate-300 rounded-lg overflow-auto">
+            <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
               <colgroup>
                 <col className="w-[30px]" />
                 <col className="w-[130px]" />
@@ -552,8 +552,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
              </div>
           </div>
 
-          <div className="table-container relative overflow-auto w-full border border-slate-300 rounded-lg flex-grow min-h-[600px]">
-            <table className="w-full border-separate table-fixed border-spacing-0 !table-auto min-h-full">
+          <div className="table-container relative overflow-auto w-full border border-slate-300 rounded-lg">
+            <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
               <colgroup>
                 <col className="w-[30px]" />
                 <col className="w-[80px]" />

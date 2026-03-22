@@ -428,7 +428,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-1.5 px-2 h-[38px] bg-white border rounded-lg cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
 
   return (
-    <div id="table-register-container" className="w-full relative animate-premium-page flex flex-col min-h-[calc(100vh-120px)]">
+    <div id="table-register-container" className="w-full relative animate-premium-page">
       <IDBadge id="view-register-table" />
       {!isAdminView && (
         <div id="section-register-top-header" className="relative mb-6 no-print z-[99999]">
@@ -801,9 +801,9 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         </div>
       )}
 
-      <div className="table-container border border-slate-300 rounded-sm overflow-auto relative z-[1] flex-grow min-h-[600px]">
+      <div className="table-container border border-slate-300 rounded-sm overflow-auto relative z-[1]">
         <IDBadge id="table-main-ledger" />
-        <table id="table-main-ledger" ref={tableRef} className="w-full border-separate border-spacing-0 min-h-full">
+        <table id="table-main-ledger" ref={tableRef} className="w-full border-separate border-spacing-0">
           <colgroup><col className="w-[30px]" /><col className="w-[130px]" /><col className="w-[45px]" /><col className="w-[65px]" /><col className="w-[40px]" /><col className="w-[65px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /><col className="w-[50px]" /></colgroup>
       <thead>
             <tr className="h-[42px]">

@@ -43,7 +43,7 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
   const numTdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
 
   return (
-    <div id="qr-1-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans flex flex-col min-h-[calc(100vh-120px)]">
+    <div id="qr-1-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
       <IDBadge id="qr-1-container" />
       
       <div className="flex justify-end mb-4 no-print">
@@ -85,8 +85,8 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
       </div>
 
       {/* Table Section */}
-      <div className="table-container qr-table-container overflow-auto border border-slate-400 shadow-sm rounded-lg flex-grow min-h-[600px]">
-        <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto min-h-full">
+      <div className="table-container qr-table-container overflow-auto border border-slate-400 shadow-sm rounded-lg">
+        <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">
               <th rowSpan={2} className={`${thCls} w-[34px]`}>ক্রঃ নং</th>

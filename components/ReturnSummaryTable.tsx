@@ -129,7 +129,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[9px] bg-slate-100 z-[190] shadow-[inset_0_1px_0_#cbd5e1,inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
 
   return (
-    <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative flex flex-col min-h-[calc(100vh-120px)]">
+    <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative">
       <IDBadge id="section-report-summary" />
       {showFilters && (
         <div id="summary-header-controls" className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print relative">
@@ -249,8 +249,8 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
           </div>
         </div>
 
-        <div className="table-container qr-table-container border border-slate-300 overflow-auto relative rounded-lg flex-grow min-h-[600px]">
-          <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0 !table-auto min-h-full">
+        <div className="table-container qr-table-container border border-slate-300 overflow-auto relative rounded-lg">
+          <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0 !table-auto">
             <colgroup>
               <col className="w-[50px]" />
               <col className="w-[110px]" />

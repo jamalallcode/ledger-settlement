@@ -543,7 +543,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const hasChanges = Object.keys(pendingChanges).length > 0;
 
   return (
-    <div id="section-correspondence-register" className="w-full space-y-4 animate-premium-page relative flex flex-col min-h-[calc(100vh-120px)]">
+    <div id="section-correspondence-register" className="w-full space-y-4 animate-premium-page relative">
       
       {/* Header Controls */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 relative group transition-all duration-500 no-print z-[99999] hover:shadow-[0_0_30px_rgba(16,185,129,0.15)]">
@@ -876,8 +876,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
       )}
 
       {/* Table Container */}
-      <div className="table-container border border-slate-300 rounded-sm overflow-auto relative z-[1] shadow-xl bg-white max-w-full flex-grow min-h-[600px]">
-        <table className="w-full border-separate border-spacing-0 table-fixed min-h-full">
+      <div className="table-container border border-slate-300 rounded-sm overflow-auto relative z-[1] shadow-xl bg-white max-w-full">
+        <table className="w-full border-separate border-spacing-0 table-fixed">
           <colgroup>
             <col className="w-[30px]" />
             <col className="w-[110px]" />
