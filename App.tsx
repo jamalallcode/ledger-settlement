@@ -585,7 +585,7 @@ const App: React.FC = () => {
         </div>
 
         <main ref={mainScrollRef} className="flex-1 overflow-auto bg-white relative scroll-smooth">
-          <div className="p-4 md:p-8 max-w-full mx-auto w-full flex flex-col">
+          <div className="pt-6 pb-12 px-4 md:pt-10 md:pb-16 md:px-8 max-w-full mx-auto w-full flex flex-col gap-8">
             <div className="animate-in fade-in duration-500 flex-1">
               
               {activeTab === 'setup_receivers' && (

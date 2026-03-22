@@ -63,43 +63,45 @@ const LandingPage: React.FC<LandingPageProps> = ({
       )}
       
       {/* Hero Section */}
-      <div id="hero-section" className="relative overflow-hidden rounded-[2.5rem] bg-white p-10 text-slate-900 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-slate-200">
+      <div id="hero-section" className="relative overflow-hidden rounded-3xl md:rounded-[2.5rem] bg-white p-6 md:p-12 text-slate-900 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-slate-200">
         {/* Subtle background decoration */}
-        <div className="absolute top-0 right-0 p-8 text-slate-100 opacity-40">
-          <ShieldCheck size={200} />
+        <div className="absolute top-0 right-0 p-6 md:p-12 text-slate-100 opacity-40">
+          <ShieldCheck size={120} className="md:w-[200px] md:h-[200px]" />
         </div>
         
-        <div className="relative z-10 max-w-2xl">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-600/20">
-              <LayoutDashboard size={24} className="text-white" />
+        <div className="relative z-10 max-w-2xl text-center md:text-left">
+          <div className="flex flex-col md:flex-row items-center gap-4 mb-8">
+            <div className="p-3 bg-blue-600 rounded-2xl shadow-lg shadow-blue-600/20">
+              <LayoutDashboard size={28} className="text-white" />
             </div>
-            <span className="text-sm font-black tracking-widest text-blue-600 uppercase">Settlement Register</span>
-            
-            {isAdmin && isLockedMode && (
-              <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black border border-emerald-200 flex items-center gap-1.5 ml-auto shadow-sm">
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                LOCKED MODE
-              </span>
-            )}
+            <div className="flex flex-col md:flex-row items-center gap-3">
+              <span className="text-xs font-black tracking-[0.2em] text-blue-600 uppercase">Settlement Register</span>
+              
+              {isAdmin && isLockedMode && (
+                <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black border border-emerald-200 flex items-center gap-1.5 shadow-sm">
+                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                  LOCKED MODE
+                </span>
+              )}
+            </div>
           </div>
           
-          <h1 className="text-5xl font-black mb-6 leading-tight text-slate-900 tracking-tight">
+          <h1 className="text-4xl md:text-6xl font-black mb-6 leading-tight text-slate-900 tracking-tight">
             মীমাংসা রেজিস্টার <span className="text-blue-600">মডিউল</span>
           </h1>
-          <p className="text-slate-500 text-lg font-medium mb-10 leading-relaxed">
+          <p className="text-slate-500 text-base md:text-xl font-medium mb-10 leading-relaxed">
             বাণিজ্যিক অডিট অধিদপ্তর, খুলনা আঞ্চলিক কার্যালয়ের জন্য তৈরি একটি ডিজিটাল নিষ্পত্তি রেজিস্টার এবং রিপোর্টিং সিস্টেম।
           </p>
           
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
             <button 
               id="btn-start-work"
               onClick={() => setActiveTab('entry')}
-              className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-base flex items-center gap-3 transition-all shadow-xl shadow-blue-600/30 active:scale-95 relative"
+              className="w-full sm:w-auto px-10 py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all shadow-xl shadow-blue-600/30 active:scale-95 relative"
             >
-              কাজ শুরু করুন <ArrowRight size={20} />
+              কাজ শুরু করুন <ArrowRight size={24} />
             </button>
-            <div id="cycle-badge-hero" className="px-6 py-4 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 shadow-sm hover:shadow-md transition-all duration-300 relative group">
+            <div id="cycle-badge-hero" className="w-full sm:w-auto px-8 py-5 bg-white border border-slate-200 rounded-2xl flex items-center justify-center gap-3 shadow-sm hover:shadow-md transition-all duration-300 relative group">
                <div className="relative flex h-2.5 w-2.5">
                  <div className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></div>
                  <div className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
