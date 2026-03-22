@@ -318,16 +318,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                            >
                              <Eye size={24} />
                            </button>
-                           <button 
-                             onClick={() => {
-                               const id = extractCleanId(doc.archiveId);
-                               window.open(`https://archive.org/download/${id}/${id}.pdf`, '_blank');
-                             }} 
-                             className="p-4 bg-blue-600 text-white rounded-2xl shadow-2xl hover:scale-110 active:scale-95 transition-all"
-                             title="সরাসরি ডাউনলোড"
-                           >
-                             <Download size={24} />
-                           </button>
+                           <a href={`https://archive.org/download/${extractCleanId(doc.archiveId)}`} target="_blank" className="p-4 bg-blue-600 text-white rounded-2xl shadow-2xl hover:scale-110 active:scale-95 transition-all"><Download size={24} /></a>
                         </div>
                      </div>
                      <div className="space-y-2 px-2">
@@ -403,16 +394,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                              <Eye size={16} />
                            </button>
                            <button onClick={() => copyCitation(doc)} className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-amber-500 hover:text-white transition-all border border-slate-200" title="রেফারেন্স কপি করুন"><FileText size={16} /></button>
-                           <button 
-                             onClick={() => {
-                               const id = extractCleanId(doc.archiveId);
-                               window.open(`https://archive.org/download/${id}/${id}.pdf`, '_blank');
-                             }} 
-                             className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all border border-slate-200" 
-                             title="সরাসরি ডাউনলোড"
-                           >
-                             <Download size={16} />
-                           </button>
+                           <a href={`https://archive.org/download/${extractCleanId(doc.archiveId)}`} target="_blank" className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all border border-slate-200" title="ডাউনলোড"><Download size={16} /></a>
                            {isAdmin && (
                              <button onClick={() => handleDelete(doc.id)} className="p-2.5 bg-slate-50 text-slate-300 hover:bg-red-600 hover:text-white transition-all border border-slate-200"><Trash2 size={16} /></button>
                            )}
