@@ -318,11 +318,15 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               </button>
               
               <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-                 <div className="flex-[3] bg-slate-50 relative min-h-[400px]">
+                 <div className="flex-[3] bg-slate-900 relative min-h-[400px] flex items-center justify-center">
+                    <div className="absolute inset-0 flex items-center justify-center z-0">
+                       <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+                    </div>
                     <iframe 
-                       src={`https://archive.org/embed/${extractCleanId(selectedDoc.archiveId)}`} 
-                       className="w-full h-full border-none"
+                       src={`https://archive.org/embed/${extractCleanId(selectedDoc.archiveId)}?ui=slim`} 
+                       className="w-full h-full border-none relative z-10"
                        allowFullScreen
+                       loading="eager"
                     ></iframe>
                  </div>
                  <div className="flex-1 p-10 space-y-8 overflow-y-auto bg-white border-l border-slate-100 no-scrollbar">
@@ -412,7 +416,14 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
                  <div className="space-y-3 bg-blue-50 p-6 rounded-[2rem] border border-blue-100">
                     <div className="flex items-center gap-2 text-blue-700 font-black text-xs uppercase tracking-widest"><AlertCircle size={14} /> গুরুত্বপূর্ণ নির্দেশিকা</div>
-                    <p className="text-[11px] font-bold text-blue-600 leading-relaxed">ডকুমেন্টটি প্রথমে Archive.org এ আপলোড করুন। আপলোড সম্পন্ন হলে URL বা Archive ID নিচে দিন। <br/>সঠিক ফরম্যাট: <span className="bg-blue-200 px-1 rounded text-blue-900 font-black tracking-tight">https://archive.org/details/20260214_20260214_2027</span></p>
+                    <p className="text-[11px] font-bold text-blue-600 leading-relaxed">
+                      ডকুমেন্টটি প্রথমে <button 
+                        type="button"
+                        onClick={() => window.open('https://archive.org/upload/', 'archive_upload', 'width=1000,height=800,menubar=no,toolbar=no,location=no,status=no')}
+                        className="underline font-black hover:text-blue-800 transition-colors cursor-pointer"
+                      >Archive.org</button> এ আপলোড করুন। আপলোড সম্পন্ন হলে URL বা Archive ID নিচে দিন। <br/>
+                      সঠিক ফরম্যাট: <span className="bg-blue-200 px-1 rounded text-blue-900 font-black tracking-tight">https://archive.org/details/20260214_20260214_2027</span>
+                    </p>
                     <input 
                       type="text" 
                       required
