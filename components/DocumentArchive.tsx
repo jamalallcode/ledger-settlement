@@ -311,7 +311,13 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                            <span className="px-4 py-1.5 bg-white/90 backdrop-blur-md text-slate-900 text-[10px] font-black rounded-full uppercase tracking-widest border border-white/50 shadow-sm">{doc.category}</span>
                         </div>
                         <div className="absolute inset-0 bg-blue-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                           <button onClick={() => setSelectedDoc(doc)} className="p-4 bg-white text-blue-600 rounded-2xl shadow-2xl hover:scale-110 active:scale-95 transition-all"><Eye size={24} /></button>
+                           <button 
+                             onClick={() => window.open(`https://archive.org/details/${extractCleanId(doc.archiveId)}`, '_blank')} 
+                             className="p-4 bg-white text-blue-600 rounded-2xl shadow-2xl hover:scale-110 active:scale-95 transition-all"
+                             title="সরাসরি ওপেন করুন"
+                           >
+                             <Eye size={24} />
+                           </button>
                            <a href={`https://archive.org/details/${extractCleanId(doc.archiveId)}`} target="_blank" className="p-4 bg-blue-600 text-white rounded-2xl shadow-2xl hover:scale-110 active:scale-95 transition-all"><Download size={24} /></a>
                         </div>
                      </div>
@@ -325,7 +331,12 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                      </div>
                   </div>
                   <div className="p-4 mt-auto border-t border-slate-50 flex items-center justify-between bg-slate-50/50 rounded-b-[2.5rem]">
-                     <button onClick={() => setSelectedDoc(doc)} className="text-xs font-black text-blue-600 flex items-center gap-2 hover:underline">বিস্তারিত দেখুন <ChevronRight size={14} /></button>
+                     <button 
+                       onClick={() => window.open(`https://archive.org/details/${extractCleanId(doc.archiveId)}`, '_blank')} 
+                       className="text-xs font-black text-blue-600 flex items-center gap-2 hover:underline"
+                     >
+                       সরাসরি ওপেন করুন <ChevronRight size={14} />
+                     </button>
                      {isAdmin && (
                        <button onClick={() => handleDelete(doc.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
                      )}
@@ -375,7 +386,13 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                       </td>
                       <td className="p-5 text-right">
                         <div className="flex items-center justify-end gap-2">
-                           <button onClick={() => setSelectedDoc(doc)} className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all border border-slate-200" title="বিস্তারিত"><Eye size={16} /></button>
+                           <button 
+                             onClick={() => window.open(`https://archive.org/details/${extractCleanId(doc.archiveId)}`, '_blank')} 
+                             className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all border border-slate-200" 
+                             title="সরাসরি ওপেন করুন"
+                           >
+                             <Eye size={16} />
+                           </button>
                            <button onClick={() => copyCitation(doc)} className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-amber-500 hover:text-white transition-all border border-slate-200" title="রেফারেন্স কপি করুন"><FileText size={16} /></button>
                            <a href={`https://archive.org/details/${extractCleanId(doc.archiveId)}`} target="_blank" className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all border border-slate-200" title="ডাউনলোড"><Download size={16} /></a>
                            {isAdmin && (
