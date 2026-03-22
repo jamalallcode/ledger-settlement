@@ -396,7 +396,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
         </div>
       )}
 
-      <div className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-6 relative animate-table-entrance">
+      <div className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-6 relative animate-table-entrance flex flex-col min-h-[calc(100vh-120px)]">
         <div className="text-center mb-8 pt-4">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-4">
             চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)
@@ -415,8 +415,8 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           </div>
         </div>
 
-        <div className="table-container relative overflow-auto border border-slate-300 rounded-lg">
-          <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
+        <div className="table-container relative overflow-auto border border-slate-300 rounded-lg flex-grow min-h-[600px]">
+          <table className="w-full border-separate table-fixed border-spacing-0 !table-auto min-h-full">
             <colgroup>
               <col className="w-[40px]" />
               <col className="w-[150px]" />
