@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOption } from '../types.ts';
 import SearchableSelect from './SearchableSelect.tsx';
 import { MINISTRIES_LIST, MINISTRY_ENTITY_MAP, ENTITY_BRANCH_MAP, AUDIT_YEARS_OPTIONS } from '../constants.ts';
-import { Trash2, Globe, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus, Hash, ShieldAlert, CheckCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Trash2, Globe, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus, Hash } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils.ts';
 import { getCycleForDate, isEntryLate } from '../utils/cycleHelper.ts';
 import { getDateError } from '../utils/dateValidation';
@@ -36,12 +35,11 @@ const IDBadge = ({ id }: { id: string }) => (
 const SegmentedInput = ({ 
   id, icon: Icon, label, color, noValue, dayValue, monthValue, yearValue, 
   noSetter, daySetter, monthSetter, yearSetter, dayRef, monthRef, yearRef, 
-  isFocused, focusSetter, extra, error, warning, disabled 
+  isFocused, focusSetter, extra, error, warning 
 }: any) => {
   const datePickerRef = useRef<HTMLInputElement>(null);
   
   const handleSegmentChange = (val: string, type: 'day'|'month'|'year', setter: (v: string) => void, nextRef?: React.RefObject<HTMLInputElement>) => {
-    if (disabled) return;
     const cleaned = toEnglishDigits(val).replace(/[^0-9]/g, '');
     if (type === 'day') {
       if (cleaned.length <= 2) {
@@ -61,7 +59,6 @@ const SegmentedInput = ({
   };
 
   const handleSegmentBlur = (val: string, type: 'day'|'month'|'year', setter: (v: string) => void) => {
-    if (disabled) return;
     const eng = toEnglishDigits(val);
     if (type === 'year' && eng.length === 2) setter(toBengaliDigits('20' + eng));
     else if (eng.length === 1 && eng !== '') setter(toBengaliDigits('0' + eng));
@@ -70,9 +67,9 @@ const SegmentedInput = ({
   const isFilled = [noValue, dayValue, monthValue, yearValue].every(v => v && v.toString().trim() !== '' && v !== '০' && v !== '0');
 
   return (
-    <div id={id} className={colWrapperCls + ` ${error ? 'bg-red-50 border-red-200' : (warning ? 'bg-amber-50 border-amber-200' : `bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`)} ${disabled ? 'opacity-60 cursor-not-allowed grayscale-[0.5]' : ''}`}>
+    <div id={id} className={colWrapperCls + ` ${error ? 'bg-red-50 border-red-200' : (warning ? 'bg-amber-50 border-amber-200' : `bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`)}`}>
       <label className={labelCls + " truncate"}><span className={numBadge}>{toBengaliDigits(id.split('-')[1].replace(/[ab]/g, ''))}</span> <Icon size={14} className={`${error ? 'text-red-600' : (warning ? 'text-amber-600' : `text-${color}-600`)} shrink-0`} /> <span className="truncate">{label}</span></label>
-      <div className={`relative w-full h-[55px] flex items-center border-2 rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : (warning ? 'border-amber-400 ring-4 ring-amber-50' : (isFilled ? 'border-emerald-500 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50' : 'border-red-500 focus-within:border-red-400 focus-within:ring-4 focus-within:ring-red-50'))} ${disabled ? 'bg-slate-100' : ''}`}>
+      <div className={`relative w-full h-[55px] flex items-center border-2 rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : (warning ? 'border-amber-400 ring-4 ring-amber-50' : (isFilled ? 'border-emerald-500 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50' : 'border-red-500 focus-within:border-red-400 focus-within:ring-4 focus-within:ring-red-50'))}`}>
         {extra}
         <div className="flex items-center w-full px-2 sm:px-4 h-full">
           {noValue !== 'DATE_ONLY' && (
@@ -81,19 +78,17 @@ const SegmentedInput = ({
                 {(!isFocused && !noValue) && <span className="text-[9px] sm:text-[11px] font-black text-slate-400 select-none absolute left-0 pointer-events-none">নং-</span>}
                 <input 
                   type="text" 
-                  className={`w-full bg-transparent border-none outline-none font-black text-slate-800 text-[10px] sm:text-[12px] p-0 transition-all ${(!isFocused && !noValue) ? 'pl-5 sm:pl-6' : 'pl-0'} disabled:cursor-not-allowed`}
+                  className={`w-full bg-transparent border-none outline-none font-black text-slate-800 text-[10px] sm:text-[12px] p-0 transition-all ${(!isFocused && !noValue) ? 'pl-5 sm:pl-6' : 'pl-0'}`}
                   value={noValue}
                   onFocus={() => focusSetter(true)}
                   onBlur={() => focusSetter(false)}
                   onChange={e => {
-                    if (disabled) return;
                     const raw = e.target.value;
                     noSetter(toBengaliDigits(raw));
                   }}
                   onKeyDown={e => {
                     if (e.key === 'Enter') dayRef.current?.focus();
                   }}
-                  disabled={disabled}
                 />
               </div>
               <div className="h-6 w-[1px] sm:w-[1.5px] bg-slate-200 mx-1 sm:mx-2 shrink-0"></div>
@@ -103,43 +98,39 @@ const SegmentedInput = ({
             <input 
               ref={dayRef}
               type="text" 
-              className="w-5 sm:w-7 bg-transparent border-none outline-none font-black text-slate-800 text-[10px] sm:text-[12px] p-0 text-center placeholder-slate-300 disabled:cursor-not-allowed"
+              className="w-5 sm:w-7 bg-transparent border-none outline-none font-black text-slate-800 text-[10px] sm:text-[12px] p-0 text-center placeholder-slate-300"
               value={dayValue}
               onChange={e => handleSegmentChange(e.target.value, 'day', daySetter, monthRef)}
               onBlur={(e) => handleSegmentBlur(e.target.value, 'day', daySetter)}
               placeholder="..."
-              disabled={disabled}
             />
             <span className="text-slate-300 font-black text-[10px] sm:text-[12px]">/</span>
             <input 
               ref={monthRef}
               type="text" 
-              className="w-5 sm:w-7 bg-transparent border-none outline-none font-black text-slate-800 text-[10px] sm:text-[12px] p-0 text-center placeholder-slate-300 disabled:cursor-not-allowed"
+              className="w-5 sm:w-7 bg-transparent border-none outline-none font-black text-slate-800 text-[10px] sm:text-[12px] p-0 text-center placeholder-slate-300"
               value={monthValue}
               onChange={e => handleSegmentChange(e.target.value, 'month', monthSetter, yearRef)}
               onBlur={(e) => handleSegmentBlur(e.target.value, 'month', monthSetter)}
               placeholder="..."
-              disabled={disabled}
             />
             <span className="text-slate-300 font-black text-[10px] sm:text-[12px]">/</span>
             <input 
               ref={yearRef}
               type="text" 
-              className="w-9 sm:w-12 bg-transparent border-none outline-none font-black text-slate-800 text-[10px] sm:text-[12px] p-0 text-center placeholder-slate-300 disabled:cursor-not-allowed"
+              className="w-9 sm:w-12 bg-transparent border-none outline-none font-black text-slate-800 text-[10px] sm:text-[12px] p-0 text-center placeholder-slate-300"
               value={yearValue}
               onChange={e => handleSegmentChange(e.target.value, 'year', yearSetter)}
               onBlur={(e) => handleSegmentBlur(e.target.value, 'year', yearSetter)}
               placeholder="...."
-              disabled={disabled}
             />
           </div>
           <div className="relative flex items-center justify-center ml-2 mr-4 h-8 shrink-0">
             <input 
               type="date" 
               ref={datePickerRef}
-              className="absolute inset-0 opacity-0 cursor-pointer z-20 w-full h-full disabled:cursor-not-allowed"
+              className="absolute inset-0 opacity-0 cursor-pointer z-20 w-full h-full"
               onChange={(e) => {
-                if (disabled) return;
                 const val = e.target.value;
                 if (val) {
                   const [y, m, d] = val.split('-');
@@ -149,14 +140,12 @@ const SegmentedInput = ({
                 }
               }}
               onClick={(e) => {
-                if (disabled) return;
                 try {
                   (e.target as any).showPicker();
                 } catch (err) {
                   // Fallback for older browsers
                 }
               }}
-              disabled={disabled}
             />
             <Calendar size={18} className="text-slate-400" />
           </div>
@@ -170,11 +159,6 @@ const SegmentedInput = ({
       {warning && (
         <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center gap-1">
           <AlertCircle size={10} /> {warning}
-        </div>
-      )}
-      {disabled && (
-        <div className="mt-2 text-[9px] font-bold text-slate-500 flex items-center gap-1">
-          <ShieldAlert size={10} /> শুধুমাত্র এডমিন পরিবর্তন করতে পারবেন
         </div>
       )}
     </div>
@@ -858,7 +842,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             </div>
             <SegmentedInput id="field-8b" icon={Calendar} label="ডায়েরি তারিখ" color="emerald" noValue="DATE_ONLY" dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryYear} noSetter={()=>{}} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} error={diaryDateError} />
 
-            <div id="field-9a" className={`${colWrapperCls} ${duplicates.issueNo ? 'bg-amber-50 border-amber-200' : 'bg-amber-50/70 border-amber-100'} ${!isAdmin ? 'opacity-70 grayscale-[0.3]' : ''}`}>
+            <div id="field-9a" className={`${colWrapperCls} ${duplicates.issueNo ? 'bg-amber-50 border-amber-200' : 'bg-amber-50/70 border-amber-100'}`}>
               <label className={labelCls}><span className={numBadge}>{toBengaliDigits('৯.ক')}</span> <Hash size={14} className="text-amber-600 shrink-0" /> জারিপত্র নং:</label>
               <input 
                 type="text" 
@@ -866,13 +850,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                 value={issueNoPart} 
                 onChange={e => setIssueNoPart(toBengaliDigits(e.target.value))} 
                 placeholder="নং লিখুন"
-                disabled={!isAdmin}
               />
-              {!isAdmin && (
-                <div className="mt-2 text-[9px] font-bold text-slate-500 flex items-center gap-1">
-                  <ShieldAlert size={10} /> শুধুমাত্র এডমিন পরিবর্তন করতে পারবেন
-                </div>
-              )}
               {duplicates.issueNo && (
                 <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center justify-between gap-1">
                   <div className="flex items-center gap-1">
@@ -895,7 +873,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               dayRef={issueDayRef} monthRef={issueMonthRef} yearRef={issueYearRef} 
               isFocused={isIssueFocused} focusSetter={setIsIssueFocused}
               error={issueDateError}
-              disabled={!isAdmin}
               extra={formData.issueDateISO && (
                 <div className="absolute -right-2 -top-2 z-[310] flex items-center justify-center w-6 h-6 bg-emerald-500 text-white rounded-full shadow-lg border-2 border-white animate-in zoom-in duration-500">
                   <Check size={14} strokeWidth={4} />
@@ -947,89 +924,23 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
             {formData.meetingType !== 'বিএসআর' && (
               <>
-                <div id="field-18" className={`${col1Style} ${!isAdmin ? 'opacity-70 grayscale-[0.3]' : ''}`}>
+                <div id="field-18" className={col1Style}>
                   <label className={labelCls}><span className={numBadge}>১৮</span> <Calendar size={14} className="text-amber-600 shrink-0" /> সভার তারিখ</label>
-                  <input 
-                    type="date" 
-                    className={getDynamicInputCls(formData.meetingDate)} 
-                    value={formData.meetingDate} 
-                    onChange={e => {
-                      if (!isAdmin) return;
-                      setFormData({...formData, meetingDate: e.target.value});
-                    }} 
-                    disabled={!isAdmin}
-                  />
-                  {!isAdmin && (
-                    <div className="mt-2 text-[9px] font-bold text-slate-500 flex items-center gap-1">
-                      <ShieldAlert size={10} /> শুধুমাত্র এডমিন পরিবর্তন করতে পারবেন
-                    </div>
-                  )}
+                  <input type="date" className={getDynamicInputCls(formData.meetingDate)} value={formData.meetingDate} onChange={e => setFormData({...formData, meetingDate: e.target.value})} />
                 </div>
-                <div id="field-19" className={`${col2Style} ${!isAdmin ? 'opacity-70 grayscale-[0.3]' : ''}`}>
-                  <label className={labelCls}><span className={numBadge}>১৯</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> আলোচিত অনুচ্ছেদ সংখ্যা</label>
-                  <input 
-                    type="text" 
-                    className={getDynamicInputCls(rawInputs['direct-meetingDiscussedParaCount'] || formData.meetingDiscussedParaCount)} 
-                    value={rawInputs['direct-meetingDiscussedParaCount'] || (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount))} 
-                    onChange={e => {
-                      if (!isAdmin) return;
-                      handleNumericInput('direct', 'meetingDiscussedParaCount', e.target.value);
-                    }} 
-                    placeholder="০" 
-                    disabled={!isAdmin}
-                  />
-                  {!isAdmin && (
-                    <div className="mt-2 text-[9px] font-bold text-slate-500 flex items-center gap-1">
-                      <ShieldAlert size={10} /> শুধুমাত্র এডমিন পরিবর্তন করতে পারবেন
-                    </div>
-                  )}
-                </div>
-                <div id="field-20" className={`${col3Style} ${!isAdmin ? 'opacity-70 grayscale-[0.3]' : ''}`}>
-                  <label className={labelCls}><span className={numBadge}>২০</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা</label>
-                  <input 
-                    type="text" 
-                    className={getDynamicInputCls(rawInputs['direct-meetingRecommendedParaCount'] || formData.meetingRecommendedParaCount)} 
-                    value={rawInputs['direct-meetingRecommendedParaCount'] || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount))} 
-                    onChange={e => {
-                      if (!isAdmin) return;
-                      handleNumericInput('direct', 'meetingRecommendedParaCount', e.target.value);
-                    }} 
-                    placeholder="০" 
-                    disabled={!isAdmin}
-                  />
-                  {!isAdmin && (
-                    <div className="mt-2 text-[9px] font-bold text-slate-500 flex items-center gap-1">
-                      <ShieldAlert size={10} /> শুধুমাত্র এডমিন পরিবর্তন করতে পারবেন
-                    </div>
-                  )}
-                </div>
-                <div id="field-21a" className={`${colWrapperCls} bg-purple-50/70 border-purple-100 hover:border-purple-300 ${!isAdmin ? 'opacity-70 grayscale-[0.3]' : ''}`}>
+                <div id="field-19" className={col2Style}><label className={labelCls}><span className={numBadge}>১৯</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> আলোচিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingDiscussedParaCount'] || formData.meetingDiscussedParaCount)} value={rawInputs['direct-meetingDiscussedParaCount'] || (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount))} onChange={e => handleNumericInput('direct', 'meetingDiscussedParaCount', e.target.value)} placeholder="০" /></div>
+                <div id="field-20" className={col3Style}><label className={labelCls}><span className={numBadge}>২০</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingRecommendedParaCount'] || formData.meetingRecommendedParaCount)} value={rawInputs['direct-meetingRecommendedParaCount'] || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount))} onChange={e => handleNumericInput('direct', 'meetingRecommendedParaCount', e.target.value)} placeholder="০" /></div>
+                <div id="field-21a" className={`${colWrapperCls} bg-purple-50/70 border-purple-100 hover:border-purple-300`}>
                   <label className={labelCls}><span className={numBadge}>{toBengaliDigits('২১.ক')}</span> <Hash size={14} className="text-purple-600 shrink-0" /> কার্যপত্র নং:</label>
                   <input 
                     type="text" 
                     className={getDynamicInputCls(wpNoPart)} 
                     value={wpNoPart} 
-                    onChange={e => {
-                      if (!isAdmin) return;
-                      setWpNoPart(toBengaliDigits(e.target.value));
-                    }} 
+                    onChange={e => setWpNoPart(toBengaliDigits(e.target.value))} 
                     placeholder="নং লিখুন"
-                    disabled={!isAdmin}
                   />
-                  {!isAdmin && (
-                    <div className="mt-2 text-[9px] font-bold text-slate-500 flex items-center gap-1">
-                      <ShieldAlert size={10} /> শুধুমাত্র এডমিন পরিবর্তন করতে পারবেন
-                    </div>
-                  )}
                 </div>
-                <SegmentedInput 
-                  id="field-21b" icon={FileEdit} num="২১.খ" label="কার্যপত্র তারিখ" color="purple" 
-                  noValue="DATE_ONLY" dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} 
-                  noSetter={()=>{}} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} 
-                  dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} 
-                  isFocused={isWpFocused} focusSetter={setIsWpFocused} 
-                  disabled={!isAdmin}
-                />
+                <SegmentedInput id="field-21b" icon={FileEdit} num="২১.খ" label="কার্যপত্র তারিখ" color="purple" noValue="DATE_ONLY" dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} noSetter={()=>{}} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} isFocused={isWpFocused} focusSetter={setIsWpFocused} />
               </>
             )}
           </div>
