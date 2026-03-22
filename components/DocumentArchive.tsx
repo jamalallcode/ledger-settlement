@@ -372,8 +372,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
       {/* View Modal */}
       {selectedDoc && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-8 bg-slate-950/90 backdrop-blur-xl animate-in fade-in duration-300">
-           <div className="w-full max-w-6xl h-full bg-white rounded-[3rem] overflow-hidden flex flex-col shadow-2xl relative">
+        <div className="fixed inset-0 z-[1000] flex items-start justify-center p-4 md:p-8 bg-slate-950/90 backdrop-blur-xl animate-in fade-in duration-300 overflow-y-auto">
+           <div className="w-full max-w-6xl bg-white rounded-[3rem] overflow-hidden flex flex-col shadow-2xl relative my-4 md:my-8">
               <button 
                 onClick={() => setSelectedDoc(null)}
                 className="absolute top-6 right-6 z-[1010] p-4 bg-slate-900 text-white rounded-2xl hover:bg-red-600 transition-all shadow-xl active:scale-95"
@@ -382,17 +382,24 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               </button>
               
               <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-                 <div className="flex-[3] bg-slate-900 relative min-h-[400px] flex items-center justify-center">
-                     <div className="absolute inset-0 flex items-center justify-center z-0">
-                        <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+                  <div className="flex-[3] bg-slate-900 relative min-h-[400px] flex flex-col items-center justify-center p-12 text-center space-y-6">
+                     <div className="w-32 h-32 bg-blue-600/20 rounded-[2.5rem] flex items-center justify-center text-blue-500 mb-4 animate-pulse">
+                        <BookOpen size={64} />
                      </div>
-                     <iframe 
-                        src={`https://archive.org/embed/${extractCleanId(selectedDoc.archiveId)}?ui=slim`} 
-                        className="w-full h-full border-none relative z-10"
-                        allowFullScreen
-                        loading="eager"
-                     ></iframe>
-                 </div>
+                     <div className="space-y-3 max-w-md">
+                        <h3 className="text-2xl font-black text-white">ডকুমেন্টটি পড়ার জন্য প্রস্তুত</h3>
+                        <p className="text-slate-400 font-bold text-sm leading-relaxed">নিরাপত্তা ও দ্রুত লোডিং নিশ্চিত করতে আমরা ডকুমেন্টটি সরাসরি নতুন ট্যাবে ওপেন করার পরামর্শ দিচ্ছি।</p>
+                     </div>
+                     <a 
+                        href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-10 py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-lg flex items-center gap-4 shadow-2xl shadow-blue-900/50 hover:scale-105 active:scale-95 transition-all group"
+                     >
+                        <Eye size={24} className="group-hover:animate-bounce" /> ডকুমেন্টটি ওপেন করুন
+                     </a>
+                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Powered by Archive.org Digital Library</p>
+                  </div>
                  <div className="flex-1 p-10 space-y-8 overflow-y-auto bg-white border-l border-slate-100 no-scrollbar">
                     <div className="space-y-4">
                        <span className="px-5 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-black rounded-full uppercase tracking-widest border border-blue-100">{selectedDoc.category}</span>
@@ -431,19 +438,20 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     )}
                     
                     <div className="pt-6 space-y-3">
+                       <a 
+                         href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-3 shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all"
+                       >
+                          <Eye size={18} /> ডকুমেন্টটি পড়ুন
+                       </a>
                        <button 
                          onClick={() => copyCitation(selectedDoc)}
                          className="w-full py-4 bg-amber-500 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-3 shadow-xl shadow-amber-100 hover:bg-amber-600 transition-all"
                        >
                           <FileText size={18} /> রেফারেন্স কপি করুন
                        </button>
-                       <a 
-                         href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
-                         target="_blank"
-                         className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-3 shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all"
-                       >
-                          <Download size={18} /> ফাইল ডাউনলোড করুন
-                       </a>
                        <button 
                          onClick={() => setSelectedDoc(null)}
                          className="w-full py-4 bg-slate-50 text-slate-600 rounded-2xl font-black text-sm border border-slate-200 hover:bg-slate-100 transition-all"
@@ -459,8 +467,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
-           <div className="w-full max-w-3xl bg-white rounded-[2.5rem] p-10 shadow-2xl space-y-8 animate-in zoom-in-95 duration-300 overflow-y-auto max-h-[90vh] no-scrollbar">
+        <div className="fixed inset-0 z-[1000] flex items-start justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
+           <div className="w-full max-w-3xl bg-white rounded-[2.5rem] p-10 shadow-2xl space-y-8 animate-in zoom-in-95 duration-300 my-8 no-scrollbar">
               <div className="flex items-center justify-between border-b border-slate-100 pb-6">
                  <div className="flex items-center gap-4">
                     <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><Plus size={24} /></div>
@@ -542,7 +550,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                  <div className="space-y-3 bg-blue-50 p-6 rounded-[2rem] border border-blue-100">
                     <div className="flex items-center gap-2 text-blue-700 font-black text-xs uppercase tracking-widest"><AlertCircle size={14} /> গুরুত্বপূর্ণ নির্দেশিকা</div>
                     <p className="text-[11px] font-bold text-blue-600 leading-relaxed">
-                      ডকুমেন্টটি প্রথমে <button 
+                      ডকুমেন্টটি স্থায়ীভাবে সংরক্ষণের জন্য <button 
                         type="button"
                         onClick={() => {
                           const w = 800;
@@ -552,7 +560,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                           window.open('https://archive.org/upload/', 'archive_upload', `width=${w},height=${h},top=${top},left=${left},menubar=no,toolbar=no,location=no,status=no`);
                         }}
                         className="underline font-black hover:text-blue-800 transition-colors cursor-pointer"
-                      >Archive.org</button> এ আপলোড করুন। আপলোড সম্পন্ন হলে URL বা Archive ID নিচে দিন।
+                      >Archive.org</button> এ আপলোড করুন। আপলোড শেষে ওই পেজের লিঙ্কটি নিচে দিন।
                     </p>
                     <input 
                       type="text" 
