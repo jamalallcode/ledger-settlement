@@ -399,7 +399,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       <div className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-6 relative animate-table-entrance">
         <div className="text-center mb-8 pt-4">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-4">
-            চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)
+            চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)।
           </h1>
           
           <div className="mb-6 flex justify-center">
