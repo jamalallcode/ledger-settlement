@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { toBengaliDigits } from '../../utils/numberUtils';
+import { toBengaliDigits, parseBengaliNumber } from '../../utils/numberUtils';
 import { 
   BarChart3, Calendar, Users, FileText, 
   ArrowRight, Search, Download, Filter,
@@ -22,9 +22,11 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
 
   const filteredData = useMemo(() => {
     return correspondenceEntries.filter(entry => {
-      if (!entry.createdAt) return false;
-      const entryDate = parseISO(entry.createdAt);
+      const dateToUse = entry.receivedDate || entry.diaryDate || entry.createdAt;
+      if (!dateToUse) return false;
+      
       try {
+        const entryDate = parseISO(dateToUse);
         return isWithinInterval(entryDate, {
           start: parseISO(startDate),
           end: parseISO(endDate + 'T23:59:59')
@@ -47,7 +49,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       stats[name].letterCount += 1;
       
       // Count paragraphs from correspondence entries
-      stats[name].paraCount += parseInt(entry.totalParas || '0') || 0;
+      stats[name].paraCount += parseBengaliNumber(entry.totalParas || '0');
     });
 
     return Object.values(stats).sort((a, b) => b.letterCount - a.letterCount);
