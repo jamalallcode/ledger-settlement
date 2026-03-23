@@ -232,7 +232,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
 
       {/* Main Report Table/Grid */}
       <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100">
-        <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between sticky top-0 bg-white/95 backdrop-blur-md z-40 gap-4 transition-all duration-300 shadow-sm rounded-t-[2.5rem]">
+        <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
               <div className="w-1.5 h-6 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.4)]"></div>
@@ -270,12 +270,12 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           {viewMode === 'table' ? (
             <div className="overflow-x-auto rounded-3xl border border-slate-100 bg-white">
               <table className="w-full text-left border-collapse">
-                <thead className="sticky top-[100px] md:top-[88px] z-30 bg-slate-50 shadow-sm">
+                <thead>
                   <tr className="border-b border-slate-100">
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">অডিটরের নাম</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">মোট চিঠি</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">মোট অনুচ্ছেদ</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">অ্যাকশন</th>
+                    <th className="sticky top-0 bg-slate-50 px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest z-40 first:rounded-tl-3xl shadow-sm">অডিটরের নাম</th>
+                    <th className="sticky top-0 bg-slate-50 px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center z-40 shadow-sm">মোট চিঠি</th>
+                    <th className="sticky top-0 bg-slate-50 px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center z-40 shadow-sm">মোট অনুচ্ছেদ</th>
+                    <th className="sticky top-0 bg-slate-50 px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right z-40 last:rounded-tr-3xl shadow-sm">অ্যাকশন</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
