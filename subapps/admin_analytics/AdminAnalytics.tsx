@@ -21,7 +21,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
   const allData = useMemo(() => [...entries, ...correspondenceEntries], [entries, correspondenceEntries]);
 
   const filteredData = useMemo(() => {
-    return allData.filter(entry => {
+    return correspondenceEntries.filter(entry => {
       if (!entry.createdAt) return false;
       const entryDate = parseISO(entry.createdAt);
       try {
@@ -33,25 +33,21 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
         return false;
       }
     });
-  }, [allData, startDate, endDate]);
+  }, [correspondenceEntries, startDate, endDate]);
 
   const auditorStats = useMemo(() => {
-    const stats: Record<string, { email: string, letterCount: number, paraCount: number }> = {};
+    const stats: Record<string, { name: string, letterCount: number, paraCount: number }> = {};
 
     filteredData.forEach(entry => {
-      const email = entry.userEmail || 'অজানা (Unknown)';
-      if (!stats[email]) {
-        stats[email] = { email, letterCount: 0, paraCount: 0 };
+      const name = entry.receiverName || 'অনির্ধারিত (Unassigned)';
+      if (!stats[name]) {
+        stats[name] = { name, letterCount: 0, paraCount: 0 };
       }
       
-      stats[email].letterCount += 1;
+      stats[name].letterCount += 1;
       
-      // Count paragraphs
-      if (entry.type === 'correspondence') {
-        stats[email].paraCount += parseInt(entry.totalParas || '0') || 0;
-      } else {
-        stats[email].paraCount += (entry.paragraphs?.length || 0);
-      }
+      // Count paragraphs from correspondence entries
+      stats[name].paraCount += parseInt(entry.totalParas || '0') || 0;
     });
 
     return Object.values(stats).sort((a, b) => b.letterCount - a.letterCount);
@@ -214,7 +210,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-100">
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">অডিটর ইমেইল</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">অডিটরের নাম</th>
                     <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">মোট চিঠি</th>
                     <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">মোট অনুচ্ছেদ</th>
                     <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">অ্যাকশন</th>
@@ -228,7 +224,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                           <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
                             <Users size={18} />
                           </div>
-                          <span className="text-sm font-black text-slate-700">{stat.email}</span>
+                          <span className="text-sm font-black text-slate-700">{stat.name}</span>
                         </div>
                       </td>
                       <td className="px-8 py-6 text-center">
@@ -278,7 +274,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                   </div>
                   
                   <div className="space-y-4">
-                    <h4 className="text-lg font-black text-slate-800 truncate">{stat.email}</h4>
+                    <h4 className="text-lg font-black text-slate-800 truncate">{stat.name}</h4>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-4 bg-white rounded-2xl border border-slate-100">
