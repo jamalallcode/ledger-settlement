@@ -271,8 +271,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
           </div>
         </div>
 
-        {/* Controls Bar - Sticky, height reduced (p-6 to p-5, input h-55 to h-50) */}
-        <div className="sticky top-4 z-40 bg-white/80 backdrop-blur-xl border border-white/20 p-4 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col lg:flex-row items-center gap-4 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)]">
+        {/* Controls Bar - Sticky, fixed z-index and positioning */}
+        <div className="sticky top-0 md:top-0 z-[999] bg-white border-b border-slate-200/60 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.05)] flex flex-col lg:flex-row items-center gap-4 transition-all duration-500 mb-8 -mx-4 md:mx-0 px-8 md:px-4">
            <div className="relative flex-1 w-full flex items-center gap-3">
               <div className="relative flex-1 group">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
