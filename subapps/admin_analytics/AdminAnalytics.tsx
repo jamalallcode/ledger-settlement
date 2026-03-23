@@ -100,13 +100,19 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-500/5 blur-3xl rounded-full group-hover:bg-blue-500/10 transition-colors"></div>
         </div>
         
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="flex items-center gap-6">
-            <div>
-              <h1 className="text-3xl font-black text-slate-800 tracking-tight">পারফরম্যান্স রিপোর্ট</h1>
-              <p className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em]">Productivity Analytics</p>
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-start gap-8">
+          <div className="flex items-center gap-4 shrink-0">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-blue-500/20 border border-white/10 group-hover:scale-105 transition-transform duration-500">
+              <BarChart3 size={28} className="text-white" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em] mb-1">Analytics</span>
+              <h1 className="text-2xl font-black text-slate-800 tracking-tighter leading-none">Performance Report</h1>
             </div>
           </div>
+
+          {/* Vertical Divider */}
+          <div className="hidden lg:block w-[1.5px] h-10 bg-slate-200/80 rounded-full"></div>
 
           <div className="flex flex-wrap items-center gap-4">
             {/* Premium Date Range Picker in Header */}
