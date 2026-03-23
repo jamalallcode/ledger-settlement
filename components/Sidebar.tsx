@@ -435,17 +435,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <span className="text-[10px]">ড্যাশবোর্ড</span>
                   </div>
                 </button>
-
-                <button 
-                  id="side-nav-analytics" 
-                  onClick={() => setActiveTab('admin_analytics')} 
-                  className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group mt-1 ${activeTab === 'admin_analytics' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
-                >
-                  <IDBadge id="side-nav-analytics" />
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px]">অডিটর পারফরম্যান্স</span>
-                  </div>
-                </button>
               </div>
             )}
           </nav>

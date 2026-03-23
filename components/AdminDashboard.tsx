@@ -62,13 +62,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   ];
 
   const quickActions = [
+    { id: 'admin_analytics', label: 'অডিটর পারফরম্যান্স', icon: BarChart3, color: 'indigo', desc: 'অডিটরদের কাজের রিপোর্ট ও পরিসংখ্যান' },
     { id: 'entry', label: 'নতুন এন্ট্রি', icon: PlusCircle, color: 'blue', desc: 'নতুন তথ্য যোগ করুন' },
     { id: 'register', label: 'রেজিস্টার দেখুন', icon: FileText, color: 'emerald', desc: 'সকল রেজিস্টার ব্রাউজ করুন' },
     { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, color: 'purple', desc: 'ভোট প্রদান ও ফলাফল' },
     { id: 'setup_receivers', label: 'প্রাপক ব্যবস্থাপনা', icon: Users, color: 'amber', desc: 'প্রাপক তালিকা আপডেট করুন' },
     { id: 'initial_balance', label: 'জের সেটআপ', icon: ShieldCheck, color: 'blue', desc: 'প্রারম্ভিক জের সেটআপ করুন' },
     { id: 'change_pass', label: 'পাসওয়ার্ড পরিবর্তন', icon: KeyRound, color: 'indigo', desc: 'সিকিউরিটি সেটিংস আপডেট করুন' },
-    { id: 'admin_analytics', label: 'অডিটর পারফরম্যান্স', icon: BarChart3, color: 'indigo', desc: 'অডিটরদের কাজের রিপোর্ট ও পরিসংখ্যান' },
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, color: 'rose', desc: 'সংরক্ষিত ফাইলসমূহ' },
     { id: 'return', label: 'রিপোর্ট ও সারাংশ', icon: PieChart, color: 'indigo', desc: 'মাসিক ও বাৎসরিক রিটার্ন' }
   ];
