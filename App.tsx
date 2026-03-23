@@ -191,7 +191,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleAdminSync = (email?: string) => {
       setUserEmail(email || null);
-      const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com', 'emailaddress3424@gmail.com'];
+      const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com'];
       if (email && adminEmails.includes(email)) {
         setIsAdmin(true);
         setIsLockedMode(false); // Auto-unlock for admin

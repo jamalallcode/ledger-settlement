@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3, Settings, ArrowRight, Chrome } from 'lucide-react';
+import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3, Settings, ArrowRight } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
-import { signInWithGoogle } from '../lib/supabase';
 
 interface SidebarProps {
   activeTab: string;
@@ -517,24 +516,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                       পাসওয়ার্ড ভুলে গেছেন? উদ্ধার করুন
                     </button>
                   </div>
-
-                  <div className="relative py-2">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-white/10"></span>
-                    </div>
-                    <div className="relative flex justify-center text-[8px] uppercase font-black tracking-[0.3em]">
-                      <span className="bg-slate-900 px-3 text-slate-500">অথবা</span>
-                    </div>
-                  </div>
-
-                  <button 
-                    type="button"
-                    onClick={() => signInWithGoogle()}
-                    className="w-full flex items-center justify-center gap-3 py-3.5 bg-white text-slate-900 rounded-2xl font-black text-xs hover:bg-slate-100 transition-all active:scale-95 shadow-xl shadow-white/5"
-                  >
-                    <Chrome size={18} className="text-blue-600" />
-                    গুগল দিয়ে লগইন করুন
-                  </button>
 
                   <div className="flex gap-4">
                     <button 

@@ -80,27 +80,6 @@ const createMockClient = () => {
   return new Proxy({}, handler);
 };
 
-export const signInWithGoogle = async () => {
-  if (!isSupabaseConfigured) {
-    alert('সুপাবেজ (Supabase) কনফিগারেশন পাওয়া যায়নি। দয়া করে VITE_SUPABASE_URL এবং VITE_SUPABASE_ANON_KEY সেট করুন।');
-    return;
-  }
-  
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: window.location.origin,
-    },
-  });
-
-  if (error) {
-    console.error('গুগল লগইন ত্রুটি:', error.message);
-    alert('গুগল লগইন ব্যর্থ হয়েছে: ' + error.message);
-  }
-  
-  return { data, error };
-};
-
 export const supabase = isSupabaseConfigured 
   ? createClient(supabaseUrl, supabaseAnonKey) 
   : createMockClient() as any;
