@@ -13,7 +13,6 @@ import DocumentArchive from './components/DocumentArchive';
 import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
-import NewFeatureApp from './subapps/new_feature/NewFeatureApp';
 import AdminAnalytics from './subapps/admin_analytics/AdminAnalytics';
 import { SettlementEntry, GroupOption, CumulativeStats } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';

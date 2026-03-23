@@ -10,15 +10,12 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@google/genai": "^1.46.0",
     "@supabase/supabase-js": "^2.39.7",
     "cookie-parser": "^1.4.7",
     "date-fns": "^2.30.0",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "framer-motion": "^12.38.0",
-    "google-auth-library": "^10.6.2",
-    "googleapis": "^171.4.0",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.6.0",
     "lucide-react": "^0.284.0",

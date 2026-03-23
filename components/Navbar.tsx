@@ -158,16 +158,6 @@ const Navbar: React.FC<NavbarProps> = ({
                   </div>
                 )}
 
-                {item.id === 'register' && (
-                  <button 
-                    onClick={() => navigate('/new-feature')}
-                    className="hidden lg:flex items-center gap-1 px-[11px] py-[5px] bg-white text-slate-900 rounded-lg font-bold text-[11px] shadow-lg hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all relative ml-1"
-                  >
-                    <Sparkles size={14} className="text-blue-600" /> 
-                    অন্যান্য
-                  </button>
-                )}
-
                 {item.id === 'landing' && (
                   <div 
                     className="relative mx-1"
