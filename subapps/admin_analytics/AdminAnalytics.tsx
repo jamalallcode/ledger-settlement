@@ -4,9 +4,10 @@ import {
   BarChart3, Calendar, Users, FileText, 
   ArrowRight, Search, Download, Filter,
   ChevronLeft, ChevronRight, LayoutGrid, List,
-  CalendarRange
+  CalendarRange, X, Sparkles, XCircle, Inbox, CheckCircle2
 } from 'lucide-react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface AdminAnalyticsProps {
   entries: any[];
@@ -19,6 +20,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
   const [endDate, setEndDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showStats, setShowStats] = useState(false);
 
   const receiverProfiles = useMemo(() => {
     const sfi = JSON.parse(localStorage.getItem('ledger_correspondence_receivers_sfi') || '[]');
@@ -92,139 +94,159 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 space-y-8 animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 relative overflow-hidden group">
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-500/5 blur-3xl rounded-full group-hover:bg-blue-500/10 transition-colors"></div>
+      <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 relative z-50 group">
+        {/* Decorative Blur Circle - Wrapped in a clipping container */}
+        <div className="absolute inset-0 overflow-hidden rounded-[2.5rem] pointer-events-none">
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-500/5 blur-3xl rounded-full group-hover:bg-blue-500/10 transition-colors"></div>
+        </div>
         
-        <div className="relative z-10 flex items-center gap-4">
-          <button 
-            onClick={onBack}
-            className="w-12 h-12 bg-slate-100 text-slate-600 rounded-2xl flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95"
-          >
-            <ChevronLeft size={24} />
-          </button>
-          <div className="flex flex-col md:flex-row md:items-center gap-4">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
             <div>
-              <h1 className="text-3xl font-black text-slate-800 tracking-tight">অডিটর পারফরম্যান্স রিপোর্ট</h1>
-              <p className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em]">Auditor Productivity Analytics</p>
-            </div>
-            
-            {/* Top Header Date Range Display */}
-            <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-blue-50/50 border border-blue-100/50 rounded-2xl">
-              <CalendarRange size={16} className="text-blue-600" />
-              <div className="flex items-center gap-2 text-[11px] font-black text-slate-600">
-                <span>{formatDateBN(startDate)}</span>
-                <div className="w-3 h-[1px] bg-blue-200"></div>
-                <span>{formatDateBN(endDate)}</span>
-              </div>
+              <h1 className="text-3xl font-black text-slate-800 tracking-tight">পারফরম্যান্স রিপোর্ট</h1>
+              <p className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em]">Productivity Analytics</p>
             </div>
           </div>
-        </div>
 
-        <div className="relative z-10 flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
-            <button 
-              onClick={() => setViewMode('table')}
-              className={`p-2 rounded-xl transition-all ${viewMode === 'table' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-              <List size={18} />
-            </button>
-            <button 
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-              <LayoutGrid size={18} />
-            </button>
-          </div>
-          <button className="px-6 py-3 bg-slate-900 text-white rounded-2xl font-black text-xs flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl active:scale-95">
-            <Download size={16} /> এক্সপোর্ট রিপোর্ট
-          </button>
-        </div>
-      </div>
-
-      {/* Filters & Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Filter Card */}
-        <div className="lg:col-span-1 bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 space-y-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
-            <h2 className="text-lg font-black text-slate-800">ফিল্টার</h2>
-          </div>
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">শুরুর তারিখ</label>
-              <div className="relative">
-                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Premium Date Range Picker in Header */}
+            <div className="flex items-center gap-1 p-1.5 bg-slate-50 border border-slate-200 rounded-2xl shadow-inner group/date">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-100 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                <Calendar size={14} className="text-blue-500" />
                 <input 
                   type="date" 
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none"
+                  className="bg-transparent border-none outline-none text-[11px] font-black text-slate-700 w-28 cursor-pointer"
                 />
               </div>
-            </div>
+              
+              <div className="px-1">
+                <div className="w-4 h-[2px] bg-slate-300 rounded-full"></div>
+              </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">শেষ তারিখ</label>
-              <div className="relative">
-                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-100 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                <Calendar size={14} className="text-indigo-500" />
                 <input 
                   type="date" 
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none"
+                  className="bg-transparent border-none outline-none text-[11px] font-black text-slate-700 w-28 cursor-pointer"
                 />
               </div>
             </div>
-          </div>
 
-          <div className="pt-6 border-t border-slate-100">
-            <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
-              <p className="text-[11px] font-bold text-blue-800 leading-relaxed">
-                নির্বাচিত সময়ের মধ্যে মোট <span className="font-black underline">{toBengaliDigits(filteredData.length.toString())}টি</span> এন্ট্রি পাওয়া গেছে।
-              </p>
+            {/* Search in Header */}
+            <div className="relative group/search">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/search:text-blue-500 transition-colors" size={16} />
+              <input 
+                type="text" 
+                placeholder="অডিটর খুঁজুন..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none transition-all w-48 shadow-sm"
+              />
             </div>
-          </div>
-        </div>
 
-        {/* Summary Stats */}
-        <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 rounded-[2.5rem] shadow-xl shadow-blue-500/20 text-white relative overflow-hidden group">
-            <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 blur-3xl rounded-full group-hover:scale-150 transition-transform duration-700"></div>
-            <div className="relative z-10 space-y-4">
-              <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
-                <Users size={24} />
-              </div>
-              <div>
-                <p className="text-blue-100/60 text-[10px] font-black uppercase tracking-widest">মোট অডিটর</p>
-                <h3 className="text-5xl font-black">{toBengaliDigits(auditorStats.length.toString())}</h3>
-              </div>
-            </div>
-          </div>
+            {/* Stats Toggle Button */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowStats(!showStats)}
+                className={`px-6 py-3 rounded-2xl font-black text-xs flex items-center gap-2 transition-all shadow-lg active:scale-95 ${showStats ? 'bg-blue-700 text-white shadow-blue-500/40' : 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-700'}`}
+              >
+                <Sparkles size={16} className={showStats ? 'text-blue-100' : 'text-white'} /> পরিসংখ্যান
+              </button>
 
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 relative overflow-hidden group">
-            <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full group-hover:scale-150 transition-transform duration-700"></div>
-            <div className="relative z-10 space-y-4">
-              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
-                <FileText size={24} />
-              </div>
-              <div>
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">মোট চিঠি</p>
-                <h3 className="text-5xl font-black text-slate-800">{toBengaliDigits(totalLetters.toString())}</h3>
-              </div>
-            </div>
-          </div>
+              <AnimatePresence>
+                {showStats && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{ 
+                      duration: 0.25,
+                      ease: [0.23, 1, 0.32, 1]
+                    }}
+                    style={{ 
+                      position: 'absolute', 
+                      top: 'calc(100% + 12px)', 
+                      right: 0, 
+                      width: '450px', 
+                      zIndex: 9999999 
+                    }}
+                    className="bg-white rounded-[2rem] shadow-[0_40px_100px_-15px_rgba(0,0,0,0.4)] border border-slate-200 overflow-hidden text-left"
+                  >
+                    {/* Modal Header - Blue Gradient */}
+                    <div className="bg-gradient-to-r from-blue-700 to-indigo-700 p-6 flex items-center justify-between">
+                      <div className="flex items-center gap-3 text-white">
+                        <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center shadow-inner">
+                          <Sparkles size={22} className="text-white" />
+                        </div>
+                        <div>
+                          <h4 className="text-base font-black tracking-tight">পরিসংখ্যান</h4>
+                          <p className="text-[10px] font-bold opacity-70 uppercase tracking-[0.2em]">STATISTICS OVERVIEW</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => setShowStats(false)}
+                        className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full text-white transition-all duration-300"
+                      >
+                        <XCircle size={20} />
+                      </button>
+                    </div>
 
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 relative overflow-hidden group">
-            <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full group-hover:scale-150 transition-transform duration-700"></div>
-            <div className="relative z-10 space-y-4">
-              <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600">
-                <BarChart3 size={24} />
-              </div>
-              <div>
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">মোট অনুচ্ছেদ</p>
-                <h3 className="text-5xl font-black text-slate-800">{toBengaliDigits(totalParas.toString())}</h3>
-              </div>
+                    {/* Modal Body */}
+                    <div className="p-6 space-y-6">
+                      {/* Top Large Card - Total Correspondence */}
+                      <div className="relative overflow-hidden bg-slate-50 rounded-2xl p-5 border border-slate-200 group">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-700"></div>
+                        <div className="relative flex items-center justify-between">
+                          <div>
+                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">সর্বমোট চিঠিপত্র</p>
+                            <h2 className="text-3xl font-black text-slate-900 tracking-tighter">
+                              {toBengaliDigits(totalLetters.toString())} <span className="text-sm font-bold text-slate-500">টি</span>
+                            </h2>
+                          </div>
+                          <Inbox className="text-blue-200" size={40} />
+                        </div>
+                      </div>
+
+                      {/* Auditor & Paragraph Section */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-[2px] flex-1 bg-emerald-100"></div>
+                          <h5 className="text-[11px] font-black text-emerald-700 uppercase tracking-[0.15em] flex items-center gap-2">
+                            <CheckCircle2 size={14} /> অডিটর ও অনুচ্ছেদ
+                          </h5>
+                          <div className="h-[2px] flex-1 bg-emerald-100"></div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-4 hover:bg-emerald-50 transition-colors">
+                            <p className="text-[10px] font-bold text-emerald-600/70 uppercase mb-1 tracking-wider">মোট অডিটর</p>
+                            <p className="text-xl font-black text-slate-800">{toBengaliDigits(auditorStats.length.toString())} জন</p>
+                          </div>
+                          <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-4 hover:bg-emerald-50 transition-colors">
+                            <p className="text-[10px] font-bold text-emerald-600/70 uppercase mb-1 tracking-wider">মোট অনুচ্ছেদ</p>
+                            <p className="text-xl font-black text-slate-800">{toBengaliDigits(totalParas.toString())} টি</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Green Summary Bar */}
+                      <div className="bg-[#00a65a] p-4 rounded-xl text-center shadow-lg shadow-emerald-500/20">
+                        <p className="text-white font-black text-xs tracking-wide">
+                          মোট পারফরম্যান্স: {toBengaliDigits(totalLetters.toString())} টি
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-900 p-4 text-center">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Ledger Management System</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
@@ -232,40 +254,6 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
 
       {/* Main Report Table/Grid */}
       <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100">
-        <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-1.5 h-6 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.4)]"></div>
-              <h2 className="text-xl font-black text-slate-800 tracking-tight">বিস্তারিত রিপোর্ট</h2>
-            </div>
-            
-            {/* Date Range Display - Enhanced Beautiful Pill Design */}
-            <div className="flex items-center gap-3 px-4 py-2 bg-slate-900 text-white rounded-2xl shadow-xl shadow-slate-200 animate-in slide-in-from-left duration-700">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">সময়কাল:</span>
-              </div>
-              <div className="flex items-center gap-3 text-[11px] font-black">
-                <span className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/5">{formatDateBN(startDate)}</span>
-                <ArrowRight size={12} className="text-slate-500" />
-                <span className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/5">{formatDateBN(endDate)}</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-              <input 
-                type="text" 
-                placeholder="অডিটর খুঁজুন..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:border-blue-500 outline-none transition-all w-64"
-              />
-            </div>
-          </div>
-        </div>
-
         <div className="p-8">
           {viewMode === 'table' ? (
             <div className="overflow-x-auto rounded-3xl border border-slate-100 bg-white">
