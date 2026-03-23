@@ -440,7 +440,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const rcdRef = useRef<HTMLInputElement>(null), rcmRef = useRef<HTMLInputElement>(null), rcyRef = useRef<HTMLInputElement>(null);
 
   const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
-  const [receiverSuggestions, setReceiverSuggestions] = useState<string[]>([]);
+  const [receiverSuggestions, setReceiverSuggestions] = useState<any[]>([]);
   const [descriptionSuggestions, setDescriptionSuggestions] = useState<string[]>([]);
   const [showReceiverDropdown, setShowReceiverDropdown] = useState(false);
   const [showDescriptionDropdown, setShowDescriptionDropdown] = useState(false);
@@ -450,6 +450,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const [isManagingReceivers, setIsManagingReceivers] = useState(false);
   const [editingReceiverIdx, setEditingReceiverIdx] = useState<number | null>(null);
   const [tempReceiverName, setTempReceiverName] = useState('');
+  const [tempReceiverDesignation, setTempReceiverDesignation] = useState('');
+  const [tempReceiverImage, setTempReceiverImage] = useState<string | null>(null);
   
   const bottomRef = useRef<HTMLDivElement>(null);
   const receiverRef = useRef<HTMLDivElement>(null);
@@ -463,10 +465,18 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       const savedNames = localStorage.getItem(key);
       if (savedNames) {
         const parsed = JSON.parse(savedNames);
-        setReceiverSuggestions(parsed);
+        // Migration logic for profiles
+        if (parsed.length > 0 && typeof parsed[0] === 'string') {
+          const migrated = parsed.map((name: string) => ({ name }));
+          setReceiverSuggestions(migrated);
+          localStorage.setItem(key, JSON.stringify(migrated));
+        } else {
+          setReceiverSuggestions(parsed);
+        }
       } else {
-        setReceiverSuggestions(initialList);
-        localStorage.setItem(key, JSON.stringify(initialList));
+        const initialProfiles = initialList.map(name => ({ name }));
+        setReceiverSuggestions(initialProfiles);
+        localStorage.setItem(key, JSON.stringify(initialProfiles));
       }
     };
 
@@ -644,10 +654,15 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     if (!isReceiverAdmin) return;
     if (tempReceiverName.trim()) {
       const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
-      const updated = [...receiverSuggestions, tempReceiverName.trim()];
+      const newProfile = {
+        name: tempReceiverName.trim(),
+        designation: tempReceiverDesignation.trim() || undefined,
+        image: tempReceiverImage || undefined
+      };
+      const updated = [...receiverSuggestions, newProfile];
       setReceiverSuggestions(updated);
       localStorage.setItem(key, JSON.stringify(updated));
-      setTempReceiverName('');
+      resetReceiverForm();
       setIsManagingReceivers(false);
     }
   };
@@ -657,11 +672,37 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     if (tempReceiverName.trim()) {
       const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
       const updated = [...receiverSuggestions];
-      updated[idx] = tempReceiverName.trim();
+      updated[idx] = {
+        name: tempReceiverName.trim(),
+        designation: tempReceiverDesignation.trim() || undefined,
+        image: tempReceiverImage || undefined
+      };
       setReceiverSuggestions(updated);
       localStorage.setItem(key, JSON.stringify(updated));
       setEditingReceiverIdx(null);
-      setTempReceiverName('');
+      resetReceiverForm();
+      setIsManagingReceivers(false);
+    }
+  };
+
+  const resetReceiverForm = () => {
+    setTempReceiverName('');
+    setTempReceiverDesignation('');
+    setTempReceiverImage(null);
+  };
+
+  const handleReceiverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) {
+        alert("ছবির সাইজ ১ মেগাবাইটের কম হতে হবে।");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTempReceiverImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -669,10 +710,11 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     e.stopPropagation();
     if (!isReceiverAdmin) return;
     const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+    const profileToDelete = receiverSuggestions[idx];
     const updated = receiverSuggestions.filter((_, i) => i !== idx);
     setReceiverSuggestions(updated);
     localStorage.setItem(key, JSON.stringify(updated));
-    if (formData.receiverName === receiverSuggestions[idx]) {
+    if (formData.receiverName === profileToDelete.name) {
       setFormData(prev => ({ ...prev, receiverName: '' }));
     }
   };
@@ -1138,16 +1180,30 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                           কোন নাম পাওয়া যায়নি। প্লাস (+) বাটনে ক্লিক করে যোগ করুন।
                         </div>
                       ) : (
-                        receiverSuggestions.map((name, idx) => (
+                        receiverSuggestions.map((profile, idx) => (
                           <div 
                             key={idx}
                             onClick={() => {
-                              setFormData({...formData, receiverName: name});
+                              setFormData({...formData, receiverName: profile.name});
                               setShowReceiverDropdown(false);
                             }}
-                            className={`px-5 py-3 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.receiverName === name ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-blue-50 text-slate-700 font-bold'}`}
+                            className={`px-5 py-3 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.receiverName === profile.name ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-blue-50 text-slate-700 font-bold'}`}
                           >
-                            <span className="text-[13px]">{name}</span>
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden group-hover:border-blue-200 transition-colors">
+                                {profile.image ? (
+                                  <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <User size={14} className="text-slate-300" />
+                                )}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[13px]">{profile.name}</span>
+                                {profile.designation && (
+                                  <span className={`text-[9px] font-bold uppercase tracking-wider ${formData.receiverName === profile.name ? 'text-blue-100' : 'text-slate-400'}`}>{profile.designation}</span>
+                                )}
+                              </div>
+                            </div>
                             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                               {isReceiverAdmin && (
                                 <>
@@ -1156,24 +1212,26 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setEditingReceiverIdx(idx);
-                                      setTempReceiverName(name);
+                                      setTempReceiverName(profile.name);
+                                      setTempReceiverDesignation(profile.designation || '');
+                                      setTempReceiverImage(profile.image || null);
                                       setIsManagingReceivers(true);
                                       setShowReceiverDropdown(false);
                                     }}
-                                    className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === name ? 'hover:bg-blue-500 text-white' : 'hover:bg-blue-100 text-blue-600'}`}
+                                    className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === profile.name ? 'hover:bg-blue-500 text-white' : 'hover:bg-blue-100 text-blue-600'}`}
                                   >
                                     <FileEdit size={14} />
                                   </button>
                                   <button 
                                     type="button"
                                     onClick={(e) => handleDeleteReceiver(idx, e)}
-                                    className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === name ? 'hover:bg-red-500 text-white' : 'hover:bg-red-100 text-red-600'}`}
+                                    className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === profile.name ? 'hover:bg-red-500 text-white' : 'hover:bg-red-100 text-red-600'}`}
                                   >
                                     <Trash2 size={14} />
                                   </button>
                                 </>
                               )}
-                              {formData.receiverName === name && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                              {formData.receiverName === profile.name && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
                             </div>
                           </div>
                         ))
@@ -1207,6 +1265,27 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                       </div>
 
                       <div className="space-y-6">
+                        <div className="flex justify-center mb-4">
+                          <div className="relative group">
+                            <div className="w-24 h-24 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl flex items-center justify-center overflow-hidden group-hover:border-blue-400 transition-all">
+                              {tempReceiverImage ? (
+                                <img src={tempReceiverImage} alt="Preview" className="w-full h-full object-cover" />
+                              ) : (
+                                <User size={32} className="text-slate-300" />
+                              )}
+                              <input 
+                                type="file" 
+                                accept="image/*"
+                                onChange={handleReceiverImageUpload}
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                              />
+                            </div>
+                            <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg pointer-events-none">
+                              <Plus size={16} />
+                            </div>
+                          </div>
+                        </div>
+
                         <div>
                           <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">গ্রহীতার নাম</label>
                           <input 
@@ -1219,9 +1298,23 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                           />
                         </div>
 
+                        <div>
+                          <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">পদবি</label>
+                          <input 
+                            type="text"
+                            className={inputCls}
+                            value={tempReceiverDesignation}
+                            onChange={(e) => setTempReceiverDesignation(e.target.value)}
+                            placeholder="পদবি লিখুন..."
+                          />
+                        </div>
+
                         <div className="flex gap-3 pt-2">
                           <button 
-                            onClick={() => setIsManagingReceivers(false)}
+                            onClick={() => {
+                              setIsManagingReceivers(false);
+                              resetReceiverForm();
+                            }}
                             className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all"
                           >বাতিল</button>
                           <button 
