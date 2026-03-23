@@ -239,60 +239,48 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   }, [documents, searchTerm, activeCategory]);
 
   return (
-    <div className="w-full pb-20 relative [transform:translateZ(0)]">
-      {/* Main Content Wrapper */}
-      <div className={`max-w-7xl mx-auto space-y-8 animate-landing-premium transition-all duration-700 ${showAddModal || selectedDoc ? 'opacity-60 scale-[0.98] pointer-events-none' : 'opacity-100 scale-100'}`}>
-        {/* Header Section - Height Reduced (p-10 to p-8) */}
-        <div className="bg-slate-900 rounded-[3rem] p-8 text-white relative overflow-hidden shadow-2xl border border-white/5">
-          <div className="absolute top-0 right-0 p-12 text-white/5 pointer-events-none"><Library size={240} /></div>
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-600/20 blur-[100px] rounded-full pointer-events-none"></div>
-          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-600/10 blur-[100px] rounded-full pointer-events-none"></div>
-          
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-             <div className="space-y-3">
-                <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-900/40 border border-white/10">
-                     <Library size={24} className="text-white" />
-                   </div>
-                   <h2 className="text-2xl md:text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/70">
-                     অডিট রেফারেন্স ও ডকুমেন্ট লাইব্রেরি
-                   </h2>
-                </div>
-                <p className="text-slate-400 font-medium max-w-xl text-sm md:text-base leading-relaxed tracking-tight">
-                  সরকারি বিধি-বিধান, সার্কুলার এবং অডিট ক্রাইটেরিয়া এখন এক জায়গায়। দ্রুত রেফারেন্স খুঁজে পেতে স্মারক নম্বর বা বিষয় দিয়ে সার্চ করুন।
-                </p>
-             </div>
-             <button 
-               onClick={() => setShowAddModal(true)} 
-               className="px-8 py-4 bg-white text-slate-900 hover:bg-blue-50 rounded-2xl font-black flex items-center gap-3 shadow-2xl active:scale-95 transition-all shrink-0 group"
-             >
-                <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" /> নতুন রেফারেন্স যুক্ত করুন
-             </button>
-          </div>
-        </div>
-
-        {/* Controls Bar - Sticky, height reduced (p-6 to p-5, input h-55 to h-50) */}
-        <div className="sticky top-4 z-40 bg-white/80 backdrop-blur-xl border border-white/20 p-4 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col lg:flex-row items-center gap-4 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)]">
-           <div className="relative flex-1 w-full flex items-center gap-3">
-              <div className="relative flex-1 group">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
-                <input 
-                  type="text" 
-                  placeholder="স্মারক নং, শিরোনাম বা বিষয় দিয়ে খুঁজুন..." 
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-14 pr-6 h-[56px] bg-slate-50/50 border border-slate-100 rounded-[1.5rem] font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500/30 focus:ring-[6px] focus:ring-blue-500/5 transition-all text-sm placeholder:text-slate-400 shadow-inner"
-                />
+    <div className="max-w-7xl mx-auto space-y-8 animate-landing-premium pb-20">
+      {/* Header Section - Height Reduced (p-10 to p-8) */}
+      <div className="bg-slate-900 rounded-[3rem] p-8 text-white relative overflow-hidden shadow-2xl">
+        <div className="absolute top-0 right-0 p-12 text-white/5"><Library size={240} /></div>
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+           <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg"><Library size={20} /></div>
+                 <h2 className="text-2xl md:text-3xl font-black tracking-tight">ডকুমেন্ট আর্কাইভ ও লাইব্রেরি</h2>
               </div>
-              
-              <button 
-                onClick={() => setShowAddModal(true)}
-                className="h-[56px] w-[56px] shrink-0 bg-slate-900 text-white rounded-[1.5rem] flex items-center justify-center shadow-lg hover:bg-black active:scale-95 transition-all duration-300 group"
-                title="দ্রুত আপলোড"
-              >
-                <Plus size={24} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-500" />
-              </button>
+              <p className="text-slate-400 font-bold max-w-xl text-sm md:text-base leading-relaxed">সরকারি অর্ডার, সার্কুলার এবং গুরুত্বপূর্ণ সকল ডকুমেন্ট এখন এক জায়গার। Archive.org ইন্টিগ্রেশনের মাধ্যমে আপনার ফাইলগুলো থাকছে নিরাপদ।</p>
            </div>
+           {/* Work: Removed {isAdmin && (...)} wrapper to allow all users to upload */}
+           <button onClick={() => setShowAddModal(true)} className="px-7 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black flex items-center gap-3 shadow-xl shadow-blue-900/40 active:scale-95 transition-all shrink-0">
+              <Plus size={18} /> নতুন ডকুমেন্ট যুক্ত করুন
+           </button>
+        </div>
+      </div>
+
+      {/* Controls Bar - Sticky, height reduced (p-6 to p-5, input h-55 to h-50) */}
+      <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border border-slate-200 p-5 rounded-3xl shadow-lg flex flex-col lg:flex-row items-center gap-5 transition-all duration-300">
+         <div className="relative flex-1 w-full flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input 
+                type="text" 
+                placeholder="শিরোনাম বা কী-ওয়ার্ড দিয়ে খুঁজুন..." 
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-11 pr-4 h-[50px] bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-sm"
+              />
+            </div>
+            
+            {/* Work: Added Premium Quick Upload Plus Button */}
+            <button 
+              onClick={() => setShowAddModal(true)}
+              className="h-[50px] w-[50px] shrink-0 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 hover:scale-110 active:scale-95 transition-all duration-300 group"
+              title="দ্রুত আপলোড"
+            >
+              <Plus size={24} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-500" />
+            </button>
+         </div>
 
            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0 justify-center">
               <div className="flex flex-wrap gap-1.5 p-1.5 bg-slate-50 rounded-[1.5rem] border border-slate-100">
@@ -314,188 +302,98 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
            </div>
         </div>
 
-        {/* Content Area */}
-        {isLoading ? (
-          <div className="py-40 flex flex-col items-center justify-center gap-4">
-             <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-             <p className="font-black text-slate-500 tracking-widest uppercase text-xs">ডকুমেন্টগুলো লোড হচ্ছে...</p>
-          </div>
-        ) : filteredDocs.length > 0 ? (
-          viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                   {filteredDocs.map((doc) => (
-                     <div 
-                       key={doc.id}
-                       className="group bg-white border border-slate-100 transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 rounded-[2.5rem] flex flex-col h-full relative overflow-hidden"
-                     >
-                        <div className="p-4 flex-1 space-y-5">
-                           <div className="aspect-[4/5] bg-slate-50 rounded-[2rem] overflow-hidden relative border border-slate-100 group-hover:border-blue-100 transition-all duration-500">
-                              <img 
-                                src={`https://archive.org/services/img/${extractCleanId(doc.archiveId)}`} 
-                                alt={doc.title}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
-                                onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
-                              />
-                              <div className="absolute top-4 left-4 z-20">
-                                 <span className="px-4 py-2 bg-white/90 backdrop-blur-md text-slate-900 text-[9px] font-black rounded-full uppercase tracking-[0.15em] border border-white/50 shadow-sm">{doc.category}</span>
-                              </div>
-                              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end justify-center p-6 gap-3">
-                                 <button 
-                                   onClick={() => window.open(`https://archive.org/details/${extractCleanId(doc.archiveId)}`, '_blank')} 
-                                   className="flex-1 py-3 bg-white text-slate-900 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-xl hover:bg-blue-50 transition-all active:scale-95"
-                                 >
-                                   ওপেন করুন
-                                 </button>
-                                 <button 
-                                   onClick={() => {
-                                     const id = extractCleanId(doc.archiveId);
-                                     window.open(`https://archive.org/download/${id}/${id}.pdf`, '_blank');
-                                   }} 
-                                   className="p-3 bg-blue-600 text-white rounded-xl shadow-xl hover:bg-blue-700 active:scale-95 transition-all"
-                                 >
-                                   <Download size={18} />
-                                 </button>
-                              </div>
-                           </div>
-                           <div className="space-y-3 px-2">
-                              <h4 className="text-lg font-black text-slate-900 leading-[1.2] line-clamp-2 group-hover:text-blue-600 transition-colors tracking-tight">{doc.title}</h4>
-                              {doc.memoNo && (
-                                <div className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg uppercase tracking-wider border border-blue-100/50">
-                                  স্মারক: {doc.memoNo}
-                                </div>
-                              )}
-                              <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-tight pt-2 border-t border-slate-50">
-                                 <div className="flex items-center gap-1.5"><Calendar size={12} className="text-slate-300" /> {formatDateBN(doc.docDate)}</div>
-                                 <div className="flex items-center gap-1.5"><Clock size={12} className="text-slate-300" /> {formatDateBN(doc.createdAt)}</div>
-                              </div>
-                           </div>
-                        </div>
-                        <div className="p-4 mt-auto flex items-center justify-between bg-slate-50/30 rounded-b-[2.5rem] border-t border-slate-50">
-                           <button 
-                             onClick={() => setSelectedDoc(doc)} 
-                             className="text-[11px] font-black text-slate-500 hover:text-blue-600 flex items-center gap-2 transition-colors uppercase tracking-widest"
-                           >
-                             বিস্তারিত দেখুন <ChevronRight size={14} />
-                           </button>
-                           <div className="flex items-center gap-1">
-                              {isAdmin && (
-                                <button 
-                                  onClick={() => setEditingDoc(doc)} 
-                                  className="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                >
-                                  <Edit2 size={16} />
-                                </button>
-                              )}
-                              {isAdmin && (
-                                <button 
-                                  onClick={() => handleDelete(doc.id)} 
-                                  className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              )}
-                           </div>
-                        </div>
-                     </div>
-                   ))}
-                </div>
-          ) : (
-            <div className="bg-white rounded-[3rem] border border-slate-100 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-900 text-white">
-                      <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">ডকুমেন্ট শিরোনাম ও স্মারক</th>
-                      <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">ক্যাটাগরি</th>
-                      <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">ইস্যুকারী কর্তৃপক্ষ</th>
-                      <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">তারিখ</th>
-                      <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5 text-right">অ্যাকশন</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {filteredDocs.map((doc) => (
-                      <tr key={doc.id} className="hover:bg-slate-50/80 transition-all duration-300 group">
-                        <td className="p-6">
-                          <div className="flex items-center gap-5">
-                            <div className="w-12 h-12 bg-slate-50 rounded-xl overflow-hidden shrink-0 border border-slate-100 group-hover:border-blue-200 transition-colors">
-                              <img 
-                                 src={`https://archive.org/services/img/${extractCleanId(doc.archiveId)}`} 
-                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                 onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <h4 className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors tracking-tight">{doc.title}</h4>
-                              <p className="text-[11px] font-bold text-slate-400">স্মারক: {doc.memoNo || 'N/A'}</p>
-                            </div>
+      {/* Content Area */}
+      {isLoading ? (
+        <div className="py-40 flex flex-col items-center justify-center gap-4">
+           <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+           <p className="font-black text-slate-500 tracking-widest uppercase text-xs">ডকুমেন্টগুলো লোড হচ্ছে...</p>
+        </div>
+      ) : filteredDocs.length > 0 ? (
+        <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" : "space-y-4"}>
+           {filteredDocs.map((doc) => (
+             <div 
+               key={doc.id}
+               className={`group bg-white border border-slate-200 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1.5 ${viewMode === 'grid' ? 'rounded-[2.5rem] flex flex-col h-full' : 'rounded-2xl p-5 flex items-center justify-between'}`}
+             >
+                {viewMode === 'grid' ? (
+                  <>
+                    <div className="p-4 flex-1 space-y-4">
+                       <div className="aspect-[4/5] bg-slate-100 rounded-[2rem] overflow-hidden relative border border-slate-100 group-hover:border-blue-200 transition-colors">
+                          <img 
+                            src={`https://archive.org/services/img/${extractCleanId(doc.archiveId)}`} 
+                            alt={doc.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                            onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
+                          />
+                          <div className="absolute top-4 left-4">
+                             <span className="px-4 py-1.5 bg-white/90 backdrop-blur-md text-slate-900 text-[10px] font-black rounded-full uppercase tracking-widest border border-white/50 shadow-sm">{doc.category}</span>
                           </div>
-                        </td>
-                        <td className="p-6">
-                          <span className="px-4 py-1.5 bg-slate-50 text-slate-600 text-[10px] font-black rounded-full uppercase tracking-wider border border-slate-100">{doc.category}</span>
-                        </td>
-                        <td className="p-6">
-                          <span className="text-[11px] font-bold text-slate-600">{doc.authority || 'অনির্ধারিত'}</span>
-                        </td>
-                        <td className="p-6">
-                          <span className="text-[11px] font-bold text-slate-500">{formatDateBN(doc.docDate)}</span>
-                        </td>
-                        <td className="p-6 text-right">
-                          <div className="flex items-center justify-end gap-2.5">
-                             <button 
-                               onClick={() => setSelectedDoc(doc)} 
-                               className="p-3 bg-white text-slate-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all border border-slate-100 shadow-sm" 
-                               title="বিস্তারিত দেখুন"
-                             >
-                               <Eye size={18} />
-                             </button>
-                             <button onClick={() => copyCitation(doc)} className="p-3 bg-white text-slate-600 rounded-xl hover:bg-amber-500 hover:text-white transition-all border border-slate-100 shadow-sm" title="রেফারেন্স কপি করুন"><FileText size={18} /></button>
-                             <button 
-                               onClick={() => {
-                                 const id = extractCleanId(doc.archiveId);
-                                 window.open(`https://archive.org/download/${id}/${id}.pdf`, '_blank');
-                               }} 
-                               className="p-3 bg-white text-slate-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all border border-slate-100 shadow-sm" 
-                               title="সরাসরি ডাউনলোড"
-                             >
-                               <Download size={18} />
-                             </button>
-                             {isAdmin && (
-                               <>
-                                 <button 
-                                   onClick={() => setEditingDoc(doc)} 
-                                   className="p-3 bg-white text-slate-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all border border-slate-100 shadow-sm"
-                                   title="এডিট করুন"
-                                 >
-                                   <Edit2 size={18} />
-                                 </button>
-                                 <button onClick={() => handleDelete(doc.id)} className="p-3 bg-white text-slate-300 hover:bg-red-600 hover:text-white transition-all border border-slate-100 shadow-sm"><Trash2 size={18} /></button>
-                               </>
-                             )}
+                          <div className="absolute inset-0 bg-blue-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                             <button onClick={() => setSelectedDoc(doc)} className="p-4 bg-white text-blue-600 rounded-2xl shadow-2xl hover:scale-110 active:scale-95 transition-all"><Eye size={24} /></button>
+                             <a href={`https://archive.org/details/${extractCleanId(doc.archiveId)}`} target="_blank" className="p-4 bg-blue-600 text-white rounded-2xl shadow-2xl hover:scale-110 active:scale-95 transition-all"><Download size={24} /></a>
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )
-        ) : (
-          <div className="py-40 bg-white rounded-[3rem] border-2 border-dashed border-slate-200 text-center space-y-4">
-             <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-300"><Search size={40} /></div>
-             <div className="space-y-1">
-                <h3 className="text-xl font-black text-slate-800">কোনো রেফারেন্স পাওয়া যায়নি</h3>
-                <p className="text-slate-500 font-bold text-sm">আপনার অনুসন্ধানের সাথে মেলে এমন কোনো ফাইল এই মুহূর্তে নেই।</p>
+                       </div>
+                       <div className="space-y-2 px-2">
+                          <h4 className="text-lg font-black text-slate-900 leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">{doc.title}</h4>
+                          <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-tighter">
+                             <div className="flex items-center gap-1.5"><Calendar size={12} /> {formatDateBN(doc.docDate)}</div>
+                             <div className="flex items-center gap-1.5"><Clock size={12} /> {formatDateBN(doc.createdAt)}</div>
+                          </div>
+                       </div>
+                    </div>
+                    <div className="p-4 mt-auto border-t border-slate-50 flex items-center justify-between bg-slate-50/50 rounded-b-[2.5rem]">
+                       <button onClick={() => setSelectedDoc(doc)} className="text-xs font-black text-blue-600 flex items-center gap-2 hover:underline">বিস্তারিত দেখুন <ChevronRight size={14} /></button>
+                       {isAdmin && (
+                         <button onClick={() => handleDelete(doc.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                       )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-6 flex-1 min-w-0">
+                       <div className="w-14 h-14 bg-slate-100 rounded-xl overflow-hidden shrink-0 border border-slate-200">
+                          <img 
+                             src={`https://archive.org/services/img/${extractCleanId(doc.archiveId)}`} 
+                             className="w-full h-full object-cover"
+                             onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
+                          />
+                       </div>
+                       <div className="min-w-0">
+                          <h4 className="text-[15px] font-black text-slate-900 truncate">{doc.title}</h4>
+                          <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 mt-1 uppercase">
+                             <span className="text-blue-600">{doc.category}</span>
+                             <span>•</span>
+                             <span>{formatDateBN(doc.docDate)}</span>
+                          </div>
+                       </div>
+                    </div>
+                    <div className="flex items-center gap-3 ml-4">
+                       <button onClick={() => setSelectedDoc(doc)} className="p-3 bg-slate-50 text-slate-600 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all border border-slate-100"><Eye size={18} /></button>
+                       <a href={`https://archive.org/details/${extractCleanId(doc.archiveId)}`} target="_blank" className="p-3 bg-slate-50 text-slate-600 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 transition-all border border-slate-100"><Download size={18} /></a>
+                       {isAdmin && (
+                         <button onClick={() => handleDelete(doc.id)} className="p-3 bg-slate-50 text-slate-300 hover:text-red-500 transition-all border border-slate-100"><Trash2 size={18} /></button>
+                       )}
+                    </div>
+                  </>
+                )}
              </div>
-             {searchTerm && <button onClick={() => setSearchTerm('')} className="text-blue-600 font-black text-xs hover:underline uppercase tracking-widest">সকল রেজাল্ট দেখুন</button>}
-          </div>
-        )}
-      </div>
+           ))}
+        </div>
+      ) : (
+        <div className="py-40 bg-white rounded-[3rem] border-2 border-dashed border-slate-200 text-center space-y-4">
+           <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-300"><Search size={40} /></div>
+           <div className="space-y-1">
+              <h3 className="text-xl font-black text-slate-800">কোনো ডকুমেন্ট পাওয়া যায়নি</h3>
+              <p className="text-slate-500 font-bold text-sm">আপনার অনুসন্ধানের সাথে মেলে এমন কোনো ফাইল এই মুহূর্তে নেই।</p>
+           </div>
+           {searchTerm && <button onClick={() => setSearchTerm('')} className="text-blue-600 font-black text-xs hover:underline uppercase tracking-widest">সকল রেজাল্ট দেখুন</button>}
+        </div>
+      )}
 
       {/* View Modal */}
       {selectedDoc && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-400/10 backdrop-blur-md animate-in fade-in duration-500 overflow-y-auto">
-           <div className="w-full max-w-6xl bg-white rounded-[3rem] overflow-hidden flex flex-col shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white/40 relative animate-in slide-in-from-bottom-8 zoom-in-95 duration-500">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-8 bg-slate-950/90 backdrop-blur-xl animate-in fade-in duration-300">
+           <div className="w-full max-w-6xl h-full bg-white rounded-[3rem] overflow-hidden flex flex-col shadow-2xl relative">
               <button 
                 onClick={() => setSelectedDoc(null)}
                 className="absolute top-8 right-8 z-[1010] p-3.5 bg-white/80 backdrop-blur-md text-slate-400 hover:text-slate-900 rounded-2xl hover:bg-white transition-all shadow-sm border border-slate-100 group"
@@ -503,47 +401,20 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                 <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
               </button>
               
-              <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-[550px]">
-                  <div className="flex-[3] bg-slate-900 relative flex flex-col items-center justify-center p-12 text-center space-y-8 overflow-hidden">
-                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500/20 via-transparent to-transparent pointer-events-none"></div>
-                     <div className="w-36 h-36 bg-white/5 rounded-[2.5rem] flex items-center justify-center text-blue-400 mb-2 relative z-10 border border-white/10 shadow-inner">
-                        <BookOpen size={72} strokeWidth={1.2} />
-                     </div>
-                     <div className="space-y-4 max-w-md relative z-10">
-                        <h3 className="text-3xl font-black text-white tracking-tight leading-none">ডকুমেন্টটি পড়ার জন্য প্রস্তুত</h3>
-                        <p className="text-slate-400 font-medium text-base leading-relaxed opacity-80">নিরাপত্তা ও দ্রুত লোডিং নিশ্চিত করতে আমরা ডকুমেন্টটি সরাসরি নতুন ট্যাবে ওপেন করার পরামর্শ দিচ্ছি।</p>
-                     </div>
-                     <a 
-                        href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-12 py-6 bg-white text-slate-900 rounded-[2rem] font-black text-lg flex items-center gap-4 shadow-2xl hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all group relative z-10"
-                     >
-                        <Eye size={28} className="group-hover:animate-bounce" /> ডকুমেন্টটি ওপেন করুন
-                     </a>
-                  </div>
-                 <div className="flex-[2] p-12 space-y-10 overflow-y-auto bg-white no-scrollbar border-l border-slate-100">
-                    <div className="space-y-6">
-                       <span className="px-6 py-2 bg-slate-50 text-slate-500 text-[11px] font-black rounded-full uppercase tracking-[0.2em] border border-slate-100 inline-block">{selectedDoc.category}</span>
-                       <h3 className="text-3xl font-black text-slate-900 leading-[1.1] tracking-tight">{selectedDoc.title}</h3>
-                       
-                       <div className="space-y-4 pt-4">
-                          <div className="flex items-center gap-5 text-slate-600 font-bold text-base bg-slate-50/50 p-5 rounded-[1.5rem] border border-slate-100/50">
-                             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600 border border-slate-50"><Calendar size={22} /></div>
-                             <span>তারিখ: {formatDateBN(selectedDoc.docDate)}</span>
-                          </div>
-                          {selectedDoc.memoNo && (
-                            <div className="flex items-center gap-5 text-slate-600 font-bold text-base bg-slate-50/50 p-5 rounded-[1.5rem] border border-slate-100/50">
-                               <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600 border border-slate-50"><FileText size={22} /></div>
-                               <span>স্মারক নং: {selectedDoc.memoNo}</span>
-                            </div>
-                          )}
-                          {selectedDoc.authority && (
-                            <div className="flex items-center gap-5 text-slate-600 font-bold text-base bg-slate-50/50 p-5 rounded-[1.5rem] border border-slate-100/50">
-                               <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600 border border-slate-50"><Library size={22} /></div>
-                               <span>কর্তৃপক্ষ: {selectedDoc.authority}</span>
-                            </div>
-                          )}
+              <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+                 <div className="flex-[3] bg-slate-50 relative min-h-[400px]">
+                    <iframe 
+                       src={`https://archive.org/embed/${extractCleanId(selectedDoc.archiveId)}`} 
+                       className="w-full h-full border-none"
+                       allowFullScreen
+                    ></iframe>
+                 </div>
+                 <div className="flex-1 p-10 space-y-8 overflow-y-auto bg-white border-l border-slate-100 no-scrollbar">
+                    <div className="space-y-4">
+                       <span className="px-5 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-black rounded-full uppercase tracking-widest border border-blue-100">{selectedDoc.category}</span>
+                       <h3 className="text-2xl font-black text-slate-900 leading-tight">{selectedDoc.title}</h3>
+                       <div className="flex items-center gap-3 text-slate-400 font-bold text-sm">
+                          <Calendar size={16} /> <span>{formatDateBN(selectedDoc.docDate)}</span>
                        </div>
                     </div>
                     
@@ -553,22 +424,15 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                        <h5 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">বিবরণ (Description)</h5>
                        <p className="text-slate-600 font-medium leading-relaxed text-base whitespace-pre-wrap">{selectedDoc.description || 'কোনো বিবরণ দেওয়া নেই।'}</p>
                     </div>
-
-                    {selectedDoc.tags && (
-                      <div className="flex flex-wrap gap-2.5">
-                         {selectedDoc.tags.split(',').map(tag => (
-                           <span key={tag} className="px-4 py-2 bg-slate-50 text-slate-500 text-[11px] font-black rounded-xl border border-slate-100 hover:bg-white hover:shadow-sm transition-all cursor-default">#{tag.trim()}</span>
-                         ))}
-                      </div>
-                    )}
                     
-                    <div className="pt-10 grid grid-cols-1 gap-4">
-                       <button 
-                         onClick={() => copyCitation(selectedDoc)}
-                         className="w-full py-5 bg-amber-500 text-white rounded-[1.5rem] font-black text-base flex items-center justify-center gap-3 shadow-xl shadow-amber-100 hover:bg-amber-600 transition-all active:scale-[0.98]"
+                    <div className="pt-6 space-y-3">
+                       <a 
+                         href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
+                         target="_blank"
+                         className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-3 shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all"
                        >
-                          <FileText size={22} /> রেফারেন্স কপি করুন
-                       </button>
+                          <Download size={18} /> ফাইল ডাউনলোড করুন
+                       </a>
                        <button 
                          onClick={() => setSelectedDoc(null)}
                          className="w-full py-5 bg-slate-900 text-white rounded-[1.5rem] font-black text-base hover:bg-black transition-all active:scale-[0.98]"
@@ -584,39 +448,14 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
       {/* Add/Edit Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-400/10 backdrop-blur-md animate-in fade-in duration-500 overflow-y-auto">
-           <div className="w-full max-w-3xl bg-white rounded-[3rem] p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white/40 space-y-10 animate-in slide-in-from-bottom-8 zoom-in-95 duration-500 no-scrollbar">
-              <div className="flex items-center justify-between border-b border-slate-50 pb-8">
-                 <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-[1.5rem] flex items-center justify-center shadow-inner border border-blue-100/50">
-                      {editingDoc ? <Edit2 size={32} /> : <Plus size={32} />}
-                    </div>
-                    <div className="space-y-1">
-                      <h3 className="text-3xl font-black text-slate-900 tracking-tight">
-                        {editingDoc ? 'রেফারেন্স এডিট করুন' : 'নতুন রেফারেন্স এন্ট্রি'}
-                      </h3>
-                      <p className="text-slate-400 font-bold text-sm">লাইব্রেরিতে নতুন তথ্য যুক্ত করুন</p>
-                    </div>
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
+           <div className="w-full max-w-2xl bg-white rounded-[2.5rem] p-10 shadow-2xl space-y-8 animate-in zoom-in-95 duration-300">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-6">
+                 <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><Plus size={24} /></div>
+                    <h3 className="text-2xl font-black text-slate-900">নতুন আর্কাইভ এন্ট্রি</h3>
                  </div>
-                 <button 
-                   onClick={() => {
-                     setShowAddModal(false);
-                     setEditingDoc(null);
-                     setNewDoc({ 
-                       title: '', 
-                       category: 'সার্কুলার', 
-                       archiveId: '', 
-                       docDate: new Date().toISOString().split('T')[0], 
-                       description: '',
-                       memoNo: '',
-                       authority: '',
-                       tags: ''
-                     });
-                   }} 
-                   className="w-12 h-12 flex items-center justify-center text-slate-300 hover:text-slate-900 hover:bg-slate-50 rounded-2xl transition-all group"
-                 >
-                   <X size={28} className="group-hover:rotate-90 transition-transform duration-300" />
-                 </button>
+                 <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
               </div>
 
               <form onSubmit={handleAddDocument} className="space-y-6">
