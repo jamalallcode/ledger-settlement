@@ -21,6 +21,11 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [searchQuery, setSearchQuery] = useState('');
   const [showStats, setShowStats] = useState(false);
+  const [selectedAuditorDetails, setSelectedAuditorDetails] = useState<{
+    name: string;
+    type: 'letters' | 'paragraphs';
+    data: any[];
+  } | null>(null);
 
   const receiverProfiles = useMemo(() => {
     const sfi = JSON.parse(localStorage.getItem('ledger_correspondence_receivers_sfi') || '[]');
@@ -90,6 +95,11 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
 
   const totalLetters = filteredAuditorStats.reduce((sum, s) => sum + s.letterCount, 0);
   const totalParas = filteredAuditorStats.reduce((sum, s) => sum + s.paraCount, 0);
+
+  const handleShowDetails = (auditorName: string, type: 'letters' | 'paragraphs') => {
+    const data = filteredData.filter(entry => (entry.receiverName || 'অনির্ধারিত (Unassigned)') === auditorName);
+    setSelectedAuditorDetails({ name: auditorName, type, data });
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 space-y-8 animate-in fade-in duration-700">
@@ -293,14 +303,20 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                         </div>
                       </td>
                       <td className="px-8 py-6 text-center">
-                        <span className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-sm font-black">
+                        <button 
+                          onClick={() => handleShowDetails(stat.name, 'letters')}
+                          className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-sm font-black hover:bg-blue-100 transition-colors cursor-pointer"
+                        >
                           {toBengaliDigits(stat.letterCount.toString())}
-                        </span>
+                        </button>
                       </td>
                       <td className="px-8 py-6 text-center">
-                        <span className="px-4 py-1.5 bg-purple-50 text-purple-600 rounded-full text-sm font-black">
+                        <button 
+                          onClick={() => handleShowDetails(stat.name, 'paragraphs')}
+                          className="px-4 py-1.5 bg-purple-50 text-purple-600 rounded-full text-sm font-black hover:bg-purple-100 transition-colors cursor-pointer"
+                        >
                           {toBengaliDigits(stat.paraCount.toString())}
-                        </span>
+                        </button>
                       </td>
                       <td className="px-8 py-6 text-right">
                         <button className="p-2 text-slate-300 hover:text-blue-600 transition-colors">
@@ -351,14 +367,20 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-white rounded-2xl border border-slate-100">
+                      <button 
+                        onClick={() => handleShowDetails(stat.name, 'letters')}
+                        className="p-4 bg-white rounded-2xl border border-slate-100 hover:border-blue-300 transition-all text-left"
+                      >
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">চিঠি</p>
                         <p className="text-2xl font-black text-slate-800">{toBengaliDigits(stat.letterCount.toString())}</p>
-                      </div>
-                      <div className="p-4 bg-white rounded-2xl border border-slate-100">
+                      </button>
+                      <button 
+                        onClick={() => handleShowDetails(stat.name, 'paragraphs')}
+                        className="p-4 bg-white rounded-2xl border border-slate-100 hover:border-purple-300 transition-all text-left"
+                      >
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">অনুচ্ছেদ</p>
                         <p className="text-2xl font-black text-slate-800">{toBengaliDigits(stat.paraCount.toString())}</p>
-                      </div>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -367,6 +389,108 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           )}
         </div>
       </div>
+      {/* Detail Modal */}
+      <AnimatePresence>
+        {selectedAuditorDetails && (
+          <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 md:p-8">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedAuditorDetails(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-5xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-6 md:p-8 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-white">
+                    <FileText size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-white tracking-tight">
+                      {selectedAuditorDetails.name} - এর বিস্তারিত তথ্য
+                    </h3>
+                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                      {selectedAuditorDetails.type === 'letters' ? 'চিঠিপত্রের তালিকা' : 'অনুচ্ছেদের বিস্তারিত তালিকা'}
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setSelectedAuditorDetails(null)}
+                  className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-all"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-6 md:p-8">
+                <div className="overflow-x-auto rounded-2xl border border-slate-100">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-100">
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">ডায়েরি নম্বর</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">তারিখ</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">বিষয়</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">অনুচ্ছেদ</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">উৎস</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {selectedAuditorDetails.data.map((item, i) => (
+                        <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
+                          <td className="px-6 py-4">
+                            <span className="text-xs font-black text-slate-700">{toBengaliDigits(item.diaryNo || '---')}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-[11px] font-bold text-slate-500">
+                              {formatDateBN(item.receivedDate || item.diaryDate || item.createdAt)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <p className="text-xs font-bold text-slate-600 max-w-md line-clamp-2">{item.subject || '---'}</p>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
+                              selectedAuditorDetails.type === 'paragraphs' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {toBengaliDigits(item.totalParas || '০')} টি
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                              {item.senderName || '---'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between shrink-0">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  মোট: {toBengaliDigits(selectedAuditorDetails.data.length.toString())} টি চিঠি
+                </p>
+                <button 
+                  onClick={() => setSelectedAuditorDetails(null)}
+                  className="px-6 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition-all active:scale-95"
+                >
+                  বন্ধ করুন
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
