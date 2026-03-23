@@ -1,4 +1,102 @@
-@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@300;400;500;600;700;800;900&display=swap');
+/* Hind Siliguri - Local Fonts */
+@font-face {
+  font-family: 'Hind Siliguri';
+  src: url('./assets/fonts/HindSiliguri-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Hind Siliguri';
+  src: url('./assets/fonts/HindSiliguri-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Hind Siliguri';
+  src: url('./assets/fonts/HindSiliguri-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Hind Siliguri';
+  src: url('./assets/fonts/HindSiliguri-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Hind Siliguri';
+  src: url('./assets/fonts/HindSiliguri-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* Noto Sans Bengali - Local Fonts */
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-Thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-ExtraLight.ttf') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+}
 
 :root {
   --font-bengali: 'Hind Siliguri', 'Noto Sans Bengali', sans-serif;
@@ -15,32 +113,14 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Ensure all input, button, select, textarea use the same font */
 input, button, select, textarea, optgroup, option {
   font-family: var(--font-bengali) !important;
 }
 
-/* Specific weights for Bengali text to match the "Premium" look */
-.font-black {
-  font-weight: 900 !important;
-}
-
-.font-bold {
-  font-weight: 700 !important;
-}
-
-.font-semibold {
-  font-weight: 600 !important;
-}
-
-.font-medium {
-  font-weight: 500 !important;
-}
-
-.font-normal {
-  font-weight: 400 !important;
-}
-
-.font-light {
-  font-weight: 300 !important;
-}
+/* Specific weights for Bengali text */
+.font-black { font-weight: 900 !important; }
+.font-bold { font-weight: 700 !important; }
+.font-semibold { font-weight: 600 !important; }
+.font-medium { font-weight: 500 !important; }
+.font-normal { font-weight: 400 !important; }
+.font-light { font-weight: 300 !important; }
