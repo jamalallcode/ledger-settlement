@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { toBengaliDigits, parseBengaliNumber } from '../../utils/numberUtils';
+import { toBengaliDigits, parseBengaliNumber, formatDateBN } from '../../utils/numberUtils';
 import { 
   BarChart3, Calendar, Users, FileText, 
   ArrowRight, Search, Download, Filter,
-  ChevronLeft, ChevronRight, LayoutGrid, List
+  ChevronLeft, ChevronRight, LayoutGrid, List,
+  CalendarRange
 } from 'lucide-react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 
@@ -101,9 +102,21 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           >
             <ChevronLeft size={24} />
           </button>
-          <div>
-            <h1 className="text-3xl font-black text-slate-800 tracking-tight">অডিটর পারফরম্যান্স রিপোর্ট</h1>
-            <p className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em]">Auditor Productivity Analytics</p>
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-black text-slate-800 tracking-tight">অডিটর পারফরম্যান্স রিপোর্ট</h1>
+              <p className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em]">Auditor Productivity Analytics</p>
+            </div>
+            
+            {/* Top Header Date Range Display */}
+            <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-blue-50/50 border border-blue-100/50 rounded-2xl">
+              <CalendarRange size={16} className="text-blue-600" />
+              <div className="flex items-center gap-2 text-[11px] font-black text-slate-600">
+                <span>{formatDateBN(startDate)}</span>
+                <div className="w-3 h-[1px] bg-blue-200"></div>
+                <span>{formatDateBN(endDate)}</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -218,11 +231,26 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       </div>
 
       {/* Main Report Table/Grid */}
-      <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden">
-        <div className="p-8 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
-            <h2 className="text-xl font-black text-slate-800 tracking-tight">বিস্তারিত রিপোর্ট</h2>
+      <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100">
+        <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between sticky top-0 bg-white/95 backdrop-blur-md z-40 gap-4 transition-all duration-300 shadow-sm rounded-t-[2.5rem]">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-6 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.4)]"></div>
+              <h2 className="text-xl font-black text-slate-800 tracking-tight">বিস্তারিত রিপোর্ট</h2>
+            </div>
+            
+            {/* Date Range Display - Enhanced Beautiful Pill Design */}
+            <div className="flex items-center gap-3 px-4 py-2 bg-slate-900 text-white rounded-2xl shadow-xl shadow-slate-200 animate-in slide-in-from-left duration-700">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">সময়কাল:</span>
+              </div>
+              <div className="flex items-center gap-3 text-[11px] font-black">
+                <span className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/5">{formatDateBN(startDate)}</span>
+                <ArrowRight size={12} className="text-slate-500" />
+                <span className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/5">{formatDateBN(endDate)}</span>
+              </div>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative">
@@ -240,10 +268,10 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
 
         <div className="p-8">
           {viewMode === 'table' ? (
-            <div className="overflow-x-auto rounded-3xl border border-slate-100">
+            <div className="overflow-x-auto rounded-3xl border border-slate-100 bg-white">
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
+                <thead className="sticky top-[100px] md:top-[88px] z-30 bg-slate-50 shadow-sm">
+                  <tr className="border-b border-slate-100">
                     <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">অডিটরের নাম</th>
                     <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">মোট চিঠি</th>
                     <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">মোট অনুচ্ছেদ</th>
