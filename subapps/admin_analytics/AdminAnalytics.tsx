@@ -17,6 +17,20 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
   const [startDate, setStartDate] = useState<string>(format(new Date(new Date().getFullYear(), 0, 1), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const receiverProfiles = useMemo(() => {
+    const sfi = JSON.parse(localStorage.getItem('ledger_correspondence_receivers_sfi') || '[]');
+    const nonSfi = JSON.parse(localStorage.getItem('ledger_correspondence_receivers_nonsfi') || '[]');
+    const all = [...sfi, ...nonSfi];
+    const map: Record<string, { designation?: string, image?: string }> = {};
+    all.forEach((p: any) => {
+      if (typeof p === 'object' && p.name) {
+        map[p.name] = { designation: p.designation, image: p.image };
+      }
+    });
+    return map;
+  }, []);
 
   const allData = useMemo(() => [...entries, ...correspondenceEntries], [entries, correspondenceEntries]);
 
@@ -38,12 +52,19 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
   }, [correspondenceEntries, startDate, endDate]);
 
   const auditorStats = useMemo(() => {
-    const stats: Record<string, { name: string, letterCount: number, paraCount: number }> = {};
+    const stats: Record<string, { name: string, letterCount: number, paraCount: number, designation?: string, image?: string }> = {};
 
     filteredData.forEach(entry => {
       const name = entry.receiverName || 'অনির্ধারিত (Unassigned)';
       if (!stats[name]) {
-        stats[name] = { name, letterCount: 0, paraCount: 0 };
+        const profile = receiverProfiles[name] || {};
+        stats[name] = { 
+          name, 
+          letterCount: 0, 
+          paraCount: 0,
+          designation: profile.designation,
+          image: profile.image
+        };
       }
       
       stats[name].letterCount += 1;
@@ -53,10 +74,19 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     });
 
     return Object.values(stats).sort((a, b) => b.letterCount - a.letterCount);
-  }, [filteredData]);
+  }, [filteredData, receiverProfiles]);
 
-  const totalLetters = auditorStats.reduce((sum, s) => sum + s.letterCount, 0);
-  const totalParas = auditorStats.reduce((sum, s) => sum + s.paraCount, 0);
+  const filteredAuditorStats = useMemo(() => {
+    if (!searchQuery.trim()) return auditorStats;
+    const query = searchQuery.toLowerCase();
+    return auditorStats.filter(s => 
+      s.name.toLowerCase().includes(query) || 
+      (s.designation && s.designation.toLowerCase().includes(query))
+    );
+  }, [auditorStats, searchQuery]);
+
+  const totalLetters = filteredAuditorStats.reduce((sum, s) => sum + s.letterCount, 0);
+  const totalParas = filteredAuditorStats.reduce((sum, s) => sum + s.paraCount, 0);
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 space-y-8 animate-in fade-in duration-700">
@@ -200,6 +230,8 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
               <input 
                 type="text" 
                 placeholder="অডিটর খুঁজুন..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:border-blue-500 outline-none transition-all w-64"
               />
             </div>
@@ -219,14 +251,23 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {auditorStats.map((stat, idx) => (
+                  {filteredAuditorStats.map((stat, idx) => (
                     <tr key={idx} className="hover:bg-blue-50/30 transition-colors group">
                       <td className="px-8 py-6">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                            <Users size={18} />
+                          <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm">
+                            {stat.image ? (
+                              <img src={stat.image} alt={stat.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <Users size={20} className="text-slate-400 group-hover:text-white" />
+                            )}
                           </div>
-                          <span className="text-sm font-black text-slate-700">{stat.name}</span>
+                          <div>
+                            <span className="text-sm font-black text-slate-700 block">{stat.name}</span>
+                            {stat.designation && (
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{stat.designation}</span>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-8 py-6 text-center">
@@ -246,7 +287,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                       </td>
                     </tr>
                   ))}
-                  {auditorStats.length === 0 && (
+                  {filteredAuditorStats.length === 0 && (
                     <tr>
                       <td colSpan={4} className="px-8 py-20 text-center">
                         <div className="flex flex-col items-center gap-4">
@@ -263,11 +304,15 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {auditorStats.map((stat, idx) => (
+              {filteredAuditorStats.map((stat, idx) => (
                 <div key={idx} className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-xl transition-all duration-500 group">
                   <div className="flex items-center justify-between mb-6">
-                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-                      <Users size={24} />
+                    <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm">
+                      {stat.image ? (
+                        <img src={stat.image} alt={stat.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Users size={28} className="text-slate-300 group-hover:text-white" />
+                      )}
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">র‍্যাঙ্ক</span>
@@ -276,7 +321,12 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                   </div>
                   
                   <div className="space-y-4">
-                    <h4 className="text-lg font-black text-slate-800 truncate">{stat.name}</h4>
+                    <div>
+                      <h4 className="text-lg font-black text-slate-800 truncate">{stat.name}</h4>
+                      {stat.designation && (
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{stat.designation}</p>
+                      )}
+                    </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-4 bg-white rounded-2xl border border-slate-100">
