@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, Camera,
   ChevronDown, Sparkles, Lock, Unlock, CheckCircle2, Download, 
@@ -63,6 +64,7 @@ const Navbar: React.FC<NavbarProps> = ({
   const notifRef = useRef<HTMLDivElement>(null);
   const entryDropdownRef = useRef<HTMLDivElement>(null);
   const registerDropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -83,7 +85,7 @@ const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <nav className="sticky top-0 z-[9991] bg-slate-900 border-b border-slate-800 h-[45px] shadow-lg no-print relative">
+    <nav className="sticky top-0 z-[9991] bg-slate-900 border-b border-slate-800 h-[45px] shadow-2xl no-print relative">
       <div className="max-w-[1600px] mx-auto h-full px-4 md:px-5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button onClick={onToggleSidebar} className={`p-1 hover:bg-slate-800 rounded-lg transition-all text-slate-400 hover:text-white ${isSidebarOpen ? 'hidden lg:hidden' : 'flex'}`}><Menu size={16} /></button>
@@ -154,6 +156,16 @@ const Navbar: React.FC<NavbarProps> = ({
                       </div>
                     )}
                   </div>
+                )}
+
+                {item.id === 'register' && (
+                  <button 
+                    onClick={() => navigate('/new-feature')}
+                    className="hidden lg:flex items-center gap-1 px-[11px] py-[5px] bg-white text-slate-900 rounded-lg font-bold text-[11px] shadow-lg hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all relative ml-1"
+                  >
+                    <Sparkles size={14} className="text-blue-600" /> 
+                    অন্যান্য
+                  </button>
                 )}
 
                 {item.id === 'landing' && (

@@ -112,8 +112,8 @@ const QR_4: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
   const numTdCls = "border-r border-b border-slate-400 p-1 text-[9px] text-slate-700 text-center align-middle font-bold";
   
   // Footer-specific classes without borders to avoid double borders with inset box-shadow
-  const footerTdCls = "p-1 text-[10px] text-slate-700 align-middle";
-  const footerNumTdCls = "p-1 text-[10px] text-slate-700 text-center align-middle font-bold";
+  const footerTdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-white align-middle bg-black";
+  const footerNumTdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-bold bg-black";
 
   const renderTable = (data: any[], tableId: string) => {
     let globalIdx = 1;

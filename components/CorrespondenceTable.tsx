@@ -331,6 +331,22 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
     return getCycleForDate(selectedCycleDate);
   }, [selectedCycleDate]);
 
+  const IDBadge = ({ id }: { id: string }) => {
+    const [copied, setCopied] = useState(false);
+    if (!isLayoutEditable) return null;
+    const handleCopy = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    };
+    return (
+      <span onClick={handleCopy} className={`absolute -top-3 left-2 bg-black text-white text-[9px] font-black px-2 py-0.5 rounded border border-white/30 z-[300] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'ring-2 ring-emerald-500 bg-emerald-600' : ''}`}>
+        {copied ? 'COPIED!' : `#${id}`}
+      </span>
+    );
+  };
+
   const filteredEntries = useMemo(() => {
     return entries.filter(entry => {
       const normalizedSearch = toEnglishDigits(searchTerm.toLowerCase().trim());
@@ -535,84 +551,84 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   };
 
   // Header font-black
-  const thCls = "sticky top-0 border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[10px] bg-slate-200 z-[110] shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
+  const thCls = "sticky top-0 border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[8px] bg-slate-200 z-[110] shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
   // Data cells reverted to font-bold
-  const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-slate-800 font-bold leading-tight align-top transition-colors group-hover:bg-blue-50/50 break-words relative";
+  const tdCls = "border border-slate-300 px-1.5 py-1.5 text-[9px] text-slate-800 font-bold leading-tight align-top transition-colors group-hover:bg-blue-50/50 break-words relative";
   const labelCls = "text-[10px] font-bold text-emerald-700 shrink-0";
-  const valCls = "text-[10px] font-black text-slate-900";
+  const valCls = "text-[9px] font-black text-slate-900";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[48px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
 
   const hasChanges = Object.keys(pendingChanges).length > 0;
 
   return (
-    <div id="section-correspondence-register" className="w-full space-y-4 animate-premium-page relative">
+    <div id="section-correspondence-register" className="w-full relative animate-premium-page">
       
       {/* Header Controls */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 relative group transition-all duration-500 no-print z-[99999] hover:shadow-[0_0_30px_rgba(16,185,129,0.15)]">
-        
-        <div className="flex items-center gap-4 relative z-10">
-          <div className="w-14 h-14 bg-emerald-50 rounded-[1.2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100/50 group-hover:scale-105 transition-transform duration-500">
-            <Mail size={28} strokeWidth={2} />
-          </div>
-          <div className="space-y-1">
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টার</h2>
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-500 text-white rounded-full font-bold text-[10px] shadow-lg shadow-blue-200 border border-blue-400/30">
-                <CalendarRange size={12} />
-                <span>সাইকেল: {toBengaliDigits(cycleInfo.label)}</span>
+      <div className="relative mb-6 no-print z-[99999]">
+        <IDBadge id="section-correspondence-top-header" />
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 relative group transition-all duration-500 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)]">
+          
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-14 h-14 bg-emerald-50 rounded-[1.2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100/50 group-hover:scale-105 transition-transform duration-500">
+              <Mail size={28} strokeWidth={2} />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টার</h2>
+              <div className="flex items-center gap-3">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-500 text-white rounded-full font-bold text-[10px] shadow-lg shadow-blue-200 border border-blue-400/30">
+                  <CalendarRange size={12} />
+                  <span>সাইকেল: {toBengaliDigits(cycleInfo.label)}</span>
+                </div>
+                <p className="text-slate-400 font-bold text-[9px] uppercase tracking-[0.2em]">Correspondence Ledger</p>
               </div>
-              <p className="text-slate-400 font-bold text-[9px] uppercase tracking-[0.2em]">Correspondence Ledger</p>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-3 relative z-10">
-          <div className="relative">
-            <button 
-              onClick={() => setShowSummary(!showSummary)} 
-              className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-2xl ${showSummary ? 'bg-blue-600 text-white shadow-blue-200' : 'bg-[#f0f7ff] text-blue-700 border border-blue-100/50 hover:bg-blue-100 shadow-blue-500/10'}`}
-            >
-              <Sparkles size={16} className={showSummary ? 'text-blue-100' : 'text-blue-500'} /> রেজিস্টার সারসংক্ষেপ
-            </button>
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="relative">
+              <button 
+                onClick={() => setShowSummary(!showSummary)} 
+                className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-2xl ${showSummary ? 'bg-blue-600 text-white shadow-blue-200' : 'bg-[#f0f7ff] text-blue-700 border border-blue-100/50 hover:bg-blue-100 shadow-blue-500/10'}`}
+              >
+                <Sparkles size={16} className={showSummary ? 'text-blue-100' : 'text-blue-500'} /> রেজিস্টার সারসংক্ষেপ
+              </button>
 
-           <AnimatePresence>
-             {showSummary && (
-               <motion.div 
-                 initial={{ opacity: 0, y: -15, scale: 0.98 }}
-                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                 exit={{ opacity: 0, y: -15, scale: 0.98 }}
-                 transition={{ 
-                   type: "spring", 
-                   stiffness: 260, 
-                   damping: 25,
-                   opacity: { duration: 0.3 }
-                 }}
-                 style={{ 
-                   position: 'absolute', 
-                   top: 'calc(100% + 12px)', 
-                   right: 0, 
-                   width: '450px', 
-                   zIndex: 9999999 
-                 }}
-                 className="bg-white rounded-[2rem] shadow-[0_40px_100px_-15px_rgba(0,0,0,0.4)] border border-slate-200 overflow-hidden no-print"
-               >
-                 <div className="bg-gradient-to-r from-blue-700 to-indigo-700 p-6 flex items-center justify-between">
-                   <div className="flex items-center gap-3 text-white">
-                     <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center shadow-inner">
-                       <Sparkles size={22} className="text-white" />
-                     </div>
-                     <div>
-                       <h4 className="text-base font-black tracking-tight">রেজিস্টার সারসংক্ষেপ</h4>
-                       <p className="text-[10px] font-bold opacity-70 uppercase tracking-[0.2em]">Register Summary Overview</p>
-                     </div>
-                   </div>
-                   <button 
-                     onClick={() => setShowSummary(false)}
-                     className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full text-white transition-all duration-300"
-                   >
-                     <XCircle size={20} />
-                   </button>
-                 </div>
+              <AnimatePresence>
+                {showSummary && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ 
+                      duration: 0.25,
+                      ease: [0.23, 1, 0.32, 1]
+                    }}
+                    style={{ 
+                      position: 'absolute', 
+                      top: 'calc(100% + 12px)', 
+                      right: 0, 
+                      width: '450px', 
+                      zIndex: 9999999 
+                    }}
+                    className="bg-white rounded-[2rem] shadow-[0_40px_100px_-15px_rgba(0,0,0,0.4)] border border-slate-200 overflow-hidden no-print text-left"
+                  >
+                    <div className="bg-gradient-to-r from-blue-700 to-indigo-700 p-6 flex items-center justify-between">
+                      <div className="flex items-center gap-3 text-white">
+                        <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center shadow-inner">
+                          <Sparkles size={22} className="text-white" />
+                        </div>
+                        <div>
+                          <h4 className="text-base font-black tracking-tight">রেজিস্টার সারসংক্ষেপ</h4>
+                          <p className="text-[10px] font-bold opacity-70 uppercase tracking-[0.2em]">Register Summary Overview</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => setShowSummary(false)}
+                        className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full text-white transition-all duration-300"
+                      >
+                        <XCircle size={20} />
+                      </button>
+                    </div>
 
                  <div className="p-6 space-y-6">
                    {/* Total Letters Card */}
@@ -716,6 +732,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
            )}
         </div>
       </div>
+    </div>
 
       {/* Filter UI for Correspondence */}
       {showFilters && (
@@ -1287,10 +1304,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             </tbody>
           )}
           <tfoot className="sticky bottom-0 z-[110]">
-            <tr className="bg-slate-900 text-white font-black text-[12px] h-10 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]">
-              <td colSpan={2} className="px-4 text-left border-t border-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">সর্বমোট (ফিল্টার ডাটা):</td>
-              <td colSpan={1} className="px-2 text-center border-t border-slate-700 text-amber-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">{toBengaliDigits(filteredEntries.length)} টি</td>
-              <td colSpan={4} className="border-t border-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"></td>
+            <tr className="bg-black text-white font-black text-[12px] h-10 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]">
+              <td colSpan={2} className="px-4 text-left border-t border-slate-400 bg-black shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">সর্বমোট (ফিল্টার ডাটা):</td>
+              <td colSpan={1} className="px-2 text-center border-t border-slate-400 bg-black text-amber-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">{toBengaliDigits(filteredEntries.length)} টি</td>
+              <td colSpan={4} className="border-t border-slate-400 bg-black shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"></td>
             </tr>
           </tfoot>
         </table>

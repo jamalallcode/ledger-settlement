@@ -399,7 +399,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       <div className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-6 relative animate-table-entrance">
         <div className="text-center mb-8 pt-4">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-4">
-            চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)
+            চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)।
           </h1>
           
           <div className="mb-6 flex justify-center">
@@ -478,10 +478,10 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               )}
             </tbody>
             <tfoot className="z-[120]">
-              <tr className="bg-slate-50 text-slate-900 font-black text-[12px] h-11 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] border-t-2 border-slate-300">
-                <td colSpan={2} className="px-4 text-left border-t border-slate-300 bg-slate-50">সর্বমোট চিঠিপত্র (ফিল্টারকৃত):</td>
-                <td colSpan={2} className="px-4 text-center border-t border-slate-300 bg-slate-50 text-emerald-600">{toBengaliDigits(filteredData.length)} টি</td>
-                <td colSpan={9} className="border-t border-slate-300 bg-slate-50"></td>
+              <tr className="bg-black text-white font-black text-[12px] h-11 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] border-t-2 border-slate-400">
+                <td colSpan={2} className="px-4 text-left border-t border-slate-400 bg-black text-white">সর্বমোট চিঠিপত্র (ফিল্টারকৃত):</td>
+                <td colSpan={2} className="px-4 text-center border-t border-slate-400 bg-black text-emerald-400">{toBengaliDigits(filteredData.length)} টি</td>
+                <td colSpan={9} className="border-t border-slate-400 bg-black"></td>
               </tr>
             </tfoot>
           </table>

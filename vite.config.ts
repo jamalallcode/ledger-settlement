@@ -10,7 +10,10 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0',
       },
-      plugins: [react(), tailwindcss()],
+      plugins: [
+        react(),
+        tailwindcss()
+      ],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
@@ -20,8 +23,9 @@ export default defineConfig(({ mode }) => {
           '@': path.resolve(__dirname, '.'),
         }
       },
+      // এখানে নতুন অংশটুকু যুক্ত করা হয়েছে যা হলুদ ওয়ার্নিং দূর করবে
       build: {
-        chunkSizeWarningLimit: 2000,
+        chunkSizeWarningLimit: 1000,
       }
     };
 });

@@ -97,6 +97,7 @@ export interface SettlementEntry {
   presentedToName?: string; // New field for the person to whom it's presented
   remarks?: string;
   approvalStatus?: 'approved' | 'pending';
+  userEmail?: string | null;
 }
 
 export interface GroupOption {

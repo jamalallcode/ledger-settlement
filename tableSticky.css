@@ -66,9 +66,9 @@
   position: sticky !important;
   bottom: 0 !important;
   z-index: 240 !important;
-  background-color: #0f172a !important;
+  background-color: #000000 !important;
   color: white !important;
-  box-shadow: inset 0 1px 0 #334155, inset -1px 0 0 #334155 !important;
+  box-shadow: inset 0 1px 0 #1e293b, inset -1px 0 0 #1e293b !important;
 }
 
 /* QR Specific Sticky Footer (for rows inside tbody) */
@@ -87,7 +87,7 @@
   background-color: #000000 !important; /* Black background */
   color: #ffffff !important; /* White text */
   /* Add a distinct top border for the grand total row */
-  box-shadow: inset 0 2px 0 #ffffff, inset 0 -1px 0 #ffffff, inset -1px 0 0 rgba(255, 255, 255, 0.1) !important;
+  box-shadow: inset 0 1px 0 #1e293b, inset 0 -1px 0 #1e293b, inset -1px 0 0 #1e293b !important;
 }
 
 /* Offset sticky footer (for the 'Total' row when it sits above 'Grand Total') */
@@ -96,7 +96,7 @@
   z-index: 210 !important; /* Higher than regular rows, lower than bottom footer */
   background-color: #000000 !important; /* Black background */
   color: #ffffff !important; /* White text */
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(255, 255, 255, 0.2), inset -1px 0 0 rgba(255, 255, 255, 0.1) !important;
+  box-shadow: inset 0 1px 0 #1e293b, inset 0 -1px 0 #1e293b, inset -1px 0 0 #1e293b !important;
 }
 
 /* Disable hover background changes for Total/Grand Total rows */
