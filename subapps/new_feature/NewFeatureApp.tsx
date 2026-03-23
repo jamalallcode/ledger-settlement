@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import './style.css';
 import { useNavigate } from 'react-router-dom';
-import { Home, Sparkles, Rocket, Shield, Zap, Upload, FileText, Copy, Check, Loader2, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { Home, Sparkles, Rocket, Shield, Zap, Upload, FileText, Copy, Check, Loader2, Image as ImageIcon, Trash2, XCircle } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 
 const NewFeatureApp: React.FC = () => {
@@ -10,8 +10,43 @@ const NewFeatureApp: React.FC = () => {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [ocrResult, setOcrResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [ocrEngine, setOcrEngine] = useState<'gemini' | 'google'>('gemini');
+  const [isGoogleAuth, setIsGoogleAuth] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    checkGoogleAuth();
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
+        setIsGoogleAuth(true);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  const checkGoogleAuth = async () => {
+    try {
+      const res = await fetch('/api/auth/google/status');
+      const data = await res.json();
+      setIsGoogleAuth(data.isAuthenticated);
+    } catch (err) {
+      console.error("Auth check failed:", err);
+    }
+  };
+
+  const handleGoogleConnect = async () => {
+    try {
+      const res = await fetch('/api/auth/google/url');
+      const { url } = await res.json();
+      window.open(url, 'google_auth', 'width=600,height=700');
+    } catch (err) {
+      console.error("Failed to get auth URL:", err);
+      setError("গুগল কানেক্ট করতে সমস্যা হয়েছে।");
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files: File[] = Array.from(e.target.files || []);
@@ -22,6 +57,7 @@ const NewFeatureApp: React.FC = () => {
       const newUrls = files.map((file: File) => URL.createObjectURL(file));
       setPreviewUrls([...previewUrls, ...newUrls]);
       setOcrResult(null);
+      setError(null);
     }
   };
 
@@ -36,6 +72,7 @@ const NewFeatureApp: React.FC = () => {
       const newUrls = files.map((file: File) => URL.createObjectURL(file));
       setPreviewUrls([...previewUrls, ...newUrls]);
       setOcrResult(null);
+      setError(null);
     }
   };
 
@@ -49,7 +86,10 @@ const NewFeatureApp: React.FC = () => {
     newUrls.splice(index, 1);
     setPreviewUrls(newUrls);
     
-    if (newFiles.length === 0) setOcrResult(null);
+    if (newFiles.length === 0) {
+      setOcrResult(null);
+      setError(null);
+    }
   };
 
   const clearFiles = () => {
@@ -57,6 +97,7 @@ const NewFeatureApp: React.FC = () => {
     setSelectedFiles([]);
     setPreviewUrls([]);
     setOcrResult(null);
+    setError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -64,53 +105,62 @@ const NewFeatureApp: React.FC = () => {
     if (selectedFiles.length === 0) return;
 
     setIsProcessing(true);
+    setError(null);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       let combinedResult = "";
 
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
-        
-        // Convert file to base64
-        const reader = new FileReader();
-        const base64Promise = new Promise<string>((resolve) => {
-          reader.onload = () => {
-            const base64 = (reader.result as string).split(',')[1];
-            resolve(base64);
-          };
-          reader.readAsDataURL(file);
-        });
-
-        const base64Data = await base64Promise;
-
-        const response = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: [
-            {
+      if (ocrEngine === 'gemini') {
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        for (let i = 0; i < selectedFiles.length; i++) {
+          const file = selectedFiles[i];
+          const base64Data = await fileToBase64(file);
+          const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: [{
               parts: [
                 { text: `Please extract all text from this image accurately. This is document ${i + 1} of ${selectedFiles.length}. Maintain the original formatting.` },
-                {
-                  inlineData: {
-                    mimeType: file.type,
-                    data: base64Data,
-                  },
-                },
+                { inlineData: { mimeType: file.type, data: base64Data } },
               ],
-            },
-          ],
-        });
-
-        const text = response.text || "No text found.";
-        combinedResult += `--- ডকুমেন্ট ${i + 1} ---\n\n${text}\n\n`;
+            }],
+          });
+          const text = response.text || "No text found.";
+          combinedResult += `--- ডকুমেন্ট ${i + 1} ---\n\n${text}\n\n`;
+        }
+      } else {
+        if (!isGoogleAuth) {
+          handleGoogleConnect();
+          setIsProcessing(false);
+          return;
+        }
+        for (let i = 0; i < selectedFiles.length; i++) {
+          const file = selectedFiles[i];
+          const base64Data = await fileToBase64(file);
+          const res = await fetch('/api/ocr/google-docs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64Data, mimeType: file.type })
+          });
+          if (!res.ok) throw new Error("Google OCR failed");
+          const data = await res.json();
+          combinedResult += `--- ডকুমেন্ট ${i + 1} ---\n\n${data.text}\n\n`;
+        }
       }
 
       setOcrResult(combinedResult.trim());
-    } catch (error) {
-      console.error("OCR Error:", error);
-      alert("OCR প্রক্রিয়াকরণে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
+    } catch (err) {
+      console.error("OCR Error:", err);
+      setError("OCR প্রক্রিয়াকরণে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string).split(',')[1]);
+      reader.readAsDataURL(file);
+    });
   };
 
   const copyToClipboard = () => {
@@ -142,15 +192,28 @@ const NewFeatureApp: React.FC = () => {
             </div>
 
             {/* Center Title Section */}
-            <div className="text-center space-y-1">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-600/10 text-blue-400 rounded-full border border-blue-500/20 text-[9px] font-black uppercase tracking-widest">
-                <Zap size={10} /> Powered by Gemini AI
+            <div className="text-center space-y-2">
+              <div className="flex items-center justify-center gap-2">
+                <button 
+                  onClick={() => setOcrEngine('gemini')}
+                  className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all
+                    ${ocrEngine === 'gemini' ? 'bg-blue-600 text-white border-blue-500' : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'}`}
+                >
+                  Gemini AI
+                </button>
+                <button 
+                  onClick={() => setOcrEngine('google')}
+                  className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all flex items-center gap-1.5
+                    ${ocrEngine === 'google' ? 'bg-blue-600 text-white border-blue-500' : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'}`}
+                >
+                  Google Docs {isGoogleAuth && <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />}
+                </button>
               </div>
               <h1 className="text-2xl md:text-3xl font-black tracking-tighter leading-tight">
                 স্মার্ট ডকুমেন্ট <span className="text-blue-500">OCR</span>
               </h1>
               <p className="text-slate-400 text-[11px] font-medium max-w-xl mx-auto">
-                যেকোনো ছবি আপলোড করুন এবং মুহূর্তেই সেটিকে এডিটেবল টেক্সটে রূপান্তর করুন।
+                {ocrEngine === 'gemini' ? 'Gemini AI ব্যবহার করে নির্ভুল টেক্সট এক্সট্রাকশন।' : 'গুগল ডক্স ব্যবহার করে নির্ভরযোগ্য টেক্সট এক্সট্রাকশন।'}
               </p>
             </div>
 
@@ -267,7 +330,25 @@ const NewFeatureApp: React.FC = () => {
                 </div>
                 
                 <div className="flex-1 p-5 overflow-y-auto no-scrollbar">
-                  {ocrResult ? (
+                  {error ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in zoom-in duration-300">
+                      <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center border border-red-500/20">
+                        <XCircle size={32} />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-black text-red-500">প্রসেসিং ব্যর্থ হয়েছে</h3>
+                        <p className="text-slate-400 text-[11px] font-medium max-w-[200px] mx-auto">
+                          {error}
+                        </p>
+                      </div>
+                      <button 
+                        onClick={performOCR}
+                        className="px-4 py-1.5 bg-red-600 text-white rounded-lg font-black text-[10px] shadow-lg shadow-red-900/20 hover:bg-red-700 transition-all active:scale-95"
+                      >
+                        আবার চেষ্টা করুন
+                      </button>
+                    </div>
+                  ) : ocrResult ? (
                     <div className="text-slate-200 font-medium leading-relaxed whitespace-pre-wrap text-[13px]">
                       {ocrResult}
                     </div>
