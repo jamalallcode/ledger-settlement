@@ -99,6 +99,13 @@ const LandingPage: React.FC<LandingPageProps> = ({
             >
               কাজ শুরু করুন <ArrowRight size={20} />
             </button>
+            <button 
+              id="btn-ocr-feature"
+              onClick={() => window.location.href = '/new-feature'}
+              className="px-8 py-4 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 rounded-2xl font-black text-base flex items-center gap-3 transition-all shadow-lg active:scale-95 relative"
+            >
+              ডকুমেন্ট OCR <Sparkles size={20} className="text-blue-600" />
+            </button>
             <div id="cycle-badge-hero" className="px-6 py-4 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 shadow-sm hover:shadow-md transition-all duration-300 relative group">
                <div className="relative flex h-2.5 w-2.5">
                  <div className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></div>
