@@ -355,6 +355,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         meetingUnsettledAmount: initialEntry.meetingUnsettledAmount || 0,
         totalInvolvedAmount: initialEntry.totalInvolvedAmount || 0,
         isMeeting: initialEntry.isMeeting || false,
+        isOnline: (initialEntry as any).isOnline || initialEntry.isSentOnline || 'না',
         remarks: initialEntry.remarks || '',
         meetingDate: initialEntry.meetingDate || '',
         manualRaisedCount: initialEntry.manualRaisedCount || null,
@@ -392,13 +393,13 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     }
   }, [initialEntry]);
 
-  const buildCombinedString = (no: string, d: string, m: string, y: string, noPrefix: string, datePrefix: string) => {
+  const buildCombinedString = (no: string, d: string, m: string, y: string) => {
     const day = d ? (toEnglishDigits(d).length === 1 ? '0' + toEnglishDigits(d) : toEnglishDigits(d)) : '';
     const month = m ? (toEnglishDigits(m).length === 1 ? '0' + toEnglishDigits(m) : toEnglishDigits(m)) : '';
     let year = toEnglishDigits(y);
     if (year.length === 2) year = '20' + year;
     const formattedDate = (day && month && year.length === 4) ? `${toBengaliDigits(day)}/${toBengaliDigits(month)}/${toBengaliDigits(year)}` : '';
-    return `${noPrefix} ${no}${formattedDate ? `, ${datePrefix} ${formattedDate}` : ''}`;
+    return `নং- ${no}${formattedDate ? `, তারিখ- ${formattedDate}` : ''}`;
   };
 
   const getIsoFromSegments = (d: string, m: string, y: string) => {
@@ -414,11 +415,11 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   };
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, letterNoDate: buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear, 'পত্র নং-', 'পত্রের তারিখ-') }));
+    setFormData(prev => ({ ...prev, letterNoDate: buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear) }));
   }, [letterNoPart, letterDay, letterMonth, letterYear]);
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, meetingWorkpaper: buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-') }));
+    setFormData(prev => ({ ...prev, meetingWorkpaper: buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear) }));
   }, [wpNoPart, wpDay, wpMonth, wpYear]);
 
   /* useMemo added to track values for validation */
@@ -427,11 +428,11 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const currentIssueISO = useMemo(() => getIsoFromSegments(dayPart, monthPart, yearPart), [dayPart, monthPart, yearPart]);
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, workpaperNoDate: buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear, 'ডায়েরি নং-', 'ডায়েরির তারিখ-') }));
+    setFormData(prev => ({ ...prev, workpaperNoDate: buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear) }));
   }, [diaryNoPart, diaryDay, diaryMonth, diaryYear]);
 
   useEffect(() => {
-    const combined = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
+    const combined = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart);
     setFormData(prev => ({ ...prev, issueLetterNoDate: combined, issueDateISO: currentIssueISO }));
   }, [issueNoPart, dayPart, monthPart, yearPart, currentIssueISO]);
 
@@ -535,15 +536,26 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       const totalSettledAmount = paragraphs.reduce((s, p) => s + p.recoveredAmount + p.adjustedAmount, 0);
       const calculatedUnsettledAmount = (formData.totalInvolvedAmount || 0) - totalSettledAmount;
       
+      const combinedLetter = buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear);
+      const combinedDiary = buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear);
+      const combinedIssue = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart);
+      const combinedWp = buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear);
+
       const finalData = {
         ...formData, 
+        letterNoDate: combinedLetter,
+        diaryNoDate: combinedDiary,
+        issueLetterNoDate: combinedIssue,
+        workpaperNoDate: combinedWp,
+        meetingWorkpaper: combinedWp,
         meetingFullSettledParaCount: Math.round(summaryData.fullInvolved).toString(),
         meetingPartialSettledParaCount: Math.round(summaryData.partialInvolved).toString(),
         isMeeting: formData.meetingType !== 'বিএসআর', 
         paragraphs, cycleLabel, isLate, actualEntryDate: now.toISOString(), involvedAmount: paraInvTotal + (formData.meetingUnsettledAmount || 0),
         meetingUnsettledAmount: calculatedUnsettledAmount,
         totalUnsettledAmount: calculatedUnsettledAmount,
-        vatRec: totals.vR, vatAdj: totals.vA, itRec: totals.iR, itAdj: totals.iA, othersRec: totals.oR, othersAdj: totals.oA, totalRec: totals.vR + totals.iR + totals.oR, totalAdj: totals.vA + totals.iA + totals.oA 
+        vatRec: totals.vR, vatAdj: totals.vA, itRec: totals.iR, itAdj: totals.iA, othersRec: totals.oR, othersAdj: totals.oA, totalRec: totals.vR + totals.iR + totals.oR, totalAdj: totals.vA + totals.iA + totals.oA,
+        isSentOnline: (formData as any).isOnline
       };
 
       onAdd(finalData);
@@ -900,7 +912,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             {/* Field: Online/Offline Status */}
             <div className={`${colWrapperCls} border-emerald-100`}>
               <IDBadge id="settlement-field-online" />
-              <label className={labelCls}><span className={numBadge}>১৬</span> <Globe size={14} className="text-emerald-600" /> অনলাইন এন্ট্রি:</label>
+              <label className={labelCls}><span className={numBadge}>১৬</span> <Globe size={14} className="text-emerald-600" /> অনলাইন/অফলাইন স্ট্যাটাস:</label>
               <div className="flex gap-2 h-[52px] p-1 bg-slate-100 rounded-2xl border-2 border-slate-200">
                 <button 
                   type="button" onClick={() => setFormData({...formData, isOnline: 'হ্যাঁ'})}
@@ -917,7 +929,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               </div>
             </div>
 
-            <div id="field-17" className={col4Style}>
+            <div id="field-17" className={col3Style}>
               <label className={labelCls}><span className={numBadge}>১৭</span> <MessageSquare size={14} className="text-purple-600" /> মন্তব্য</label>
               <input type="text" className={getDynamicInputCls(formData.remarks)} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
             </div>
@@ -928,8 +940,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                   <label className={labelCls}><span className={numBadge}>১৮</span> <Calendar size={14} className="text-amber-600 shrink-0" /> সভার তারিখ</label>
                   <input type="date" className={getDynamicInputCls(formData.meetingDate)} value={formData.meetingDate} onChange={e => setFormData({...formData, meetingDate: e.target.value})} />
                 </div>
-                <div id="field-19" className={col2Style}><label className={labelCls}><span className={numBadge}>১৯</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> আলোচিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingDiscussedParaCount'] || formData.meetingDiscussedParaCount)} value={rawInputs['direct-meetingDiscussedParaCount'] || (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount))} onChange={e => handleNumericInput('direct', 'meetingDiscussedParaCount', e.target.value)} placeholder="০" /></div>
-                <div id="field-20" className={col3Style}><label className={labelCls}><span className={numBadge}>২০</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingRecommendedParaCount'] || formData.meetingRecommendedParaCount)} value={rawInputs['direct-meetingRecommendedParaCount'] || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount))} onChange={e => handleNumericInput('direct', 'meetingRecommendedParaCount', e.target.value)} placeholder="০" /></div>
+                <div id="field-19" className={col3Style}><label className={labelCls}><span className={numBadge}>১৯</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> আলোচিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingDiscussedParaCount'] || formData.meetingDiscussedParaCount)} value={rawInputs['direct-meetingDiscussedParaCount'] || (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount))} onChange={e => handleNumericInput('direct', 'meetingDiscussedParaCount', e.target.value)} placeholder="০" /></div>
+                <div id="field-20" className={col1Style}><label className={labelCls}><span className={numBadge}>২০</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingRecommendedParaCount'] || formData.meetingRecommendedParaCount)} value={rawInputs['direct-meetingRecommendedParaCount'] || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount))} onChange={e => handleNumericInput('direct', 'meetingRecommendedParaCount', e.target.value)} placeholder="০" /></div>
                 <div id="field-21a" className={`${colWrapperCls} bg-purple-50/70 border-purple-100 hover:border-purple-300`}>
                   <label className={labelCls}><span className={numBadge}>{toBengaliDigits('২১.ক')}</span> <Hash size={14} className="text-purple-600 shrink-0" /> কার্যপত্র নং:</label>
                   <input 

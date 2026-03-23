@@ -7,12 +7,20 @@ interface ReceiverManagementProps {
   isAdmin: boolean;
 }
 
+interface ReceiverProfile {
+  name: string;
+  designation?: string;
+  image?: string;
+}
+
 const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
   const [paraType, setParaType] = useState<'এসএফআই' | 'নন-এসএফআই'>('এসএফআই');
-  const [receivers, setReceivers] = useState<string[]>([]);
+  const [receivers, setReceivers] = useState<ReceiverProfile[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [tempName, setTempName] = useState('');
+  const [tempDesignation, setTempDesignation] = useState('');
+  const [tempImage, setTempImage] = useState<string | null>(null);
 
   useEffect(() => {
     const key = paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
@@ -20,14 +28,23 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
     
     const saved = localStorage.getItem(key);
     if (saved) {
-      setReceivers(JSON.parse(saved));
+      const parsed = JSON.parse(saved);
+      // Migrate from string[] to ReceiverProfile[] if needed
+      if (parsed.length > 0 && typeof parsed[0] === 'string') {
+        const migrated = parsed.map((name: string) => ({ name }));
+        setReceivers(migrated);
+        localStorage.setItem(key, JSON.stringify(migrated));
+      } else {
+        setReceivers(parsed);
+      }
     } else {
-      setReceivers(initialList);
-      localStorage.setItem(key, JSON.stringify(initialList));
+      const initialProfiles = initialList.map(name => ({ name }));
+      setReceivers(initialProfiles);
+      localStorage.setItem(key, JSON.stringify(initialProfiles));
     }
   }, [paraType]);
 
-  const saveToStorage = (newList: string[]) => {
+  const saveToStorage = (newList: ReceiverProfile[]) => {
     const key = paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
     setReceivers(newList);
     localStorage.setItem(key, JSON.stringify(newList));
@@ -38,15 +55,42 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
   const handleAddOrEdit = () => {
     if (!tempName.trim()) return;
     let newList = [...receivers];
+    const newProfile: ReceiverProfile = {
+      name: tempName.trim(),
+      designation: tempDesignation.trim() || undefined,
+      image: tempImage || undefined
+    };
+
     if (editingIdx !== null) {
-      newList[editingIdx] = tempName.trim();
+      newList[editingIdx] = newProfile;
     } else {
-      newList.push(tempName.trim());
+      newList.push(newProfile);
     }
     saveToStorage(newList);
     setIsModalOpen(false);
+    resetForm();
+  };
+
+  const resetForm = () => {
     setTempName('');
+    setTempDesignation('');
+    setTempImage(null);
     setEditingIdx(null);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) { // 1MB limit
+        alert("ছবির সাইজ ১ মেগাবাইটের কম হতে হবে।");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTempImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleDelete = (index: number) => {
@@ -79,8 +123,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
         </div>
         <button 
           onClick={() => {
-            setEditingIdx(null);
-            setTempName('');
+            resetForm();
             setIsModalOpen(true);
           }}
           className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white font-black rounded-2xl hover:bg-black transition-all shadow-lg active:scale-95"
@@ -107,19 +150,30 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
 
         <div className="p-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {receivers.map((name, idx) => (
+            {receivers.map((profile, idx) => (
               <div key={idx} className="group flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl hover:border-blue-300 hover:bg-blue-50/30 transition-all">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center text-[12px] font-black text-slate-400 group-hover:text-blue-600 group-hover:border-blue-200 transition-colors">
-                    {idx + 1}
+                  <div className="w-12 h-12 bg-white border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden group-hover:border-blue-200 transition-colors">
+                    {profile.image ? (
+                      <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <User size={20} className="text-slate-300" />
+                    )}
                   </div>
-                  <span className="font-bold text-slate-700">{name}</span>
+                  <div>
+                    <span className="font-bold text-slate-700 block">{profile.name}</span>
+                    {profile.designation && (
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{profile.designation}</span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button 
                     onClick={() => {
                       setEditingIdx(idx);
-                      setTempName(name);
+                      setTempName(profile.name);
+                      setTempDesignation(profile.designation || '');
+                      setTempImage(profile.image || null);
                       setIsModalOpen(true);
                     }}
                     className="p-2 bg-white text-blue-600 border border-blue-100 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
@@ -169,6 +223,27 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
               </div>
 
               <div className="space-y-6">
+                <div className="flex justify-center mb-4">
+                  <div className="relative group">
+                    <div className="w-24 h-24 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl flex items-center justify-center overflow-hidden group-hover:border-blue-400 transition-all">
+                      {tempImage ? (
+                        <img src={tempImage} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <User size={32} className="text-slate-300" />
+                      )}
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg pointer-events-none">
+                      <Plus size={16} />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">প্রাপকের নাম</label>
                   <input 
@@ -178,6 +253,17 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
                     value={tempName}
                     onChange={(e) => setTempName(e.target.value)}
                     placeholder="নাম লিখুন..."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">পদবি</label>
+                  <input 
+                    type="text"
+                    className="w-full h-[58px] px-6 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all text-lg"
+                    value={tempDesignation}
+                    onChange={(e) => setTempDesignation(e.target.value)}
+                    placeholder="পদবি লিখুন..."
                     onKeyDown={(e) => e.key === 'Enter' && handleAddOrEdit()}
                   />
                 </div>

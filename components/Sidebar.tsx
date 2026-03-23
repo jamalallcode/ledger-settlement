@@ -467,7 +467,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
       </div>
       {showAdminModal && (
-        <div className="fixed inset-0 z-[1000] flex items-start justify-center p-4 pt-32 bg-black/40 backdrop-blur-md animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[20000] flex items-start justify-center p-4 pt-32 bg-black/80 backdrop-blur-md animate-in fade-in duration-500">
           <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 space-y-6 animate-in zoom-in-95 duration-500 relative overflow-y-auto max-h-[90vh] group no-scrollbar">
             {/* Decorative Glows */}
             <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/20 blur-[80px] rounded-full group-hover:bg-blue-600/30 transition-colors duration-700"></div>
@@ -550,7 +550,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Recovery Modal */}
       {showRecoveryModal && (
-        <div className="fixed inset-0 z-[1001] flex items-start justify-center p-4 pt-32 bg-black/60 backdrop-blur-md animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[20001] flex items-start justify-center p-4 pt-32 bg-black/80 backdrop-blur-md animate-in fade-in duration-500">
           <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2.5rem] p-8 space-y-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-500 relative overflow-hidden group">
             {/* Decorative Glow */}
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-600/20 blur-[80px] rounded-full group-hover:bg-amber-600/30 transition-colors duration-700"></div>

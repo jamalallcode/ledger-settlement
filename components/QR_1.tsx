@@ -41,6 +41,8 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
   const thCls = "border-r border-b border-slate-400 p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
   const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle";
   const numTdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
+  const footerTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-white align-middle bg-black";
+  const footerNumTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-white text-center align-middle font-bold bg-black";
 
   return (
     <div id="qr-1-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
@@ -137,32 +139,32 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
               </tr>
             ))}
           </tbody>
-          <tfoot>
-            <tr className="bg-slate-200 font-bold">
-              <td className={numTdCls} colSpan={2}>মোট</td>
-              <td className={`${numTdCls} w-[62px]`}>
+          <tfoot className="font-black h-[32px] qr-sticky-footer qr-sticky-footer-bottom">
+            <tr className="bg-black text-white">
+              <td className={footerNumTdCls} colSpan={2}>মোট</td>
+              <td className={`${footerNumTdCls} w-[62px]`}>
                 {toBengaliDigits(filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length.toString())}
               </td>
-              <td className={numTdCls}></td>
-              <td className={`${numTdCls} w-[62px]`}>
+              <td className={footerNumTdCls}></td>
+              <td className={`${footerNumTdCls} w-[62px]`}>
                 {toBengaliDigits((filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length * 30).toString())}
               </td>
-              <td className={numTdCls}>
+              <td className={footerNumTdCls}>
                 {toBengaliDigits((filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length * 26).toString())}
               </td>
-              <td className={numTdCls}></td>
-              <td className={numTdCls}></td>
-              <td className={numTdCls}>
+              <td className={footerNumTdCls}></td>
+              <td className={footerNumTdCls}></td>
+              <td className={footerNumTdCls}>
                 {toBengaliDigits((filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length * 140432661).toString())}
               </td>
-              <td className={numTdCls}>
+              <td className={footerNumTdCls}>
                 {toBengaliDigits((filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length * 2557743).toString())}
               </td>
-              <td className={numTdCls}>
+              <td className={footerNumTdCls}>
                 {toBengaliDigits((filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length * 137874818).toString())}
               </td>
-              <td className={numTdCls}></td>
-              <td className={tdCls.replace('p-2', 'p-1') + " w-[42px]"}></td>
+              <td className={footerNumTdCls}></td>
+              <td className={footerTdCls + " w-[42px]"}></td>
             </tr>
           </tfoot>
         </table>

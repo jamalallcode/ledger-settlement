@@ -1,7 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, sans-serif;
+}
 
 body {
   -webkit-font-smoothing: antialiased;
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
 }
 
 /* GLOBAL TABLE BASE STYLES */

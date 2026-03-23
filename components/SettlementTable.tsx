@@ -423,7 +423,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
 
   let lastRenderedCycle = "";
   // Footer text font-black
-  const footerTdCls = "p-1 text-center font-black text-[10px] bg-slate-900 border border-slate-700";
+  const footerTdCls = "p-1 text-center font-black text-[10px] bg-black text-white border border-slate-400";
   const filterInputCls = "w-full pl-7 pr-1.5 h-[38px] bg-white border border-slate-300 rounded-lg font-bold text-slate-900 text-[11px] outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-1.5 px-2 h-[38px] bg-white border rounded-lg cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-400'}`;
 
@@ -463,14 +463,12 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                 <AnimatePresence>
                   {showSummary && (
                     <motion.div 
-                      initial={{ opacity: 0, y: -15, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -15, scale: 0.98 }}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
                       transition={{ 
-                        type: "spring", 
-                        stiffness: 260, 
-                        damping: 25,
-                        opacity: { duration: 0.3 }
+                        duration: 0.25,
+                        ease: [0.23, 1, 0.32, 1]
                       }}
                       style={{ 
                         position: 'absolute', 

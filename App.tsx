@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import SettlementForm from './components/SettlementForm';
@@ -12,6 +13,8 @@ import DocumentArchive from './components/DocumentArchive';
 import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
+import NewFeatureApp from './subapps/new_feature/NewFeatureApp';
+import AdminAnalytics from './subapps/admin_analytics/AdminAnalytics';
 import { SettlementEntry, GroupOption, CumulativeStats } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
@@ -30,6 +33,7 @@ const generateId = () => {
 };
 
 const App: React.FC = () => {
+  const navigate = useNavigate();
   const [entries, setEntries] = useState<SettlementEntry[]>([]);
   const [correspondenceEntries, setCorrespondenceEntries] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('landing'); 
@@ -362,6 +366,7 @@ const App: React.FC = () => {
       entryToSync = { 
         ...data, 
         id: newId, 
+        userEmail: userEmail,
         type: isCorrespondence ? 'correspondence' : 'settlement',
         sl: isCorrespondence ? correspondenceEntries.length + 1 : entries.length + 1, 
         createdAt: new Date().toISOString(),
@@ -584,7 +589,7 @@ const App: React.FC = () => {
           />
         </div>
 
-        <main ref={mainScrollRef} className="flex-1 overflow-auto bg-white relative scroll-smooth">
+        <main ref={mainScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-white relative scroll-smooth" style={{ scrollbarGutter: 'stable' }}>
           <div className="p-4 md:p-8 max-w-full mx-auto w-full flex flex-col">
             <div className="animate-in fade-in duration-500 flex-1">
               
@@ -698,18 +703,23 @@ const App: React.FC = () => {
                           />
                         </div>
                       ) : (
-                        <CorrespondenceTable 
-                          entries={approvedCorrespondence} 
-                          onBack={() => setActiveTab('landing')} 
-                          isAdmin={isAdmin}
-                          onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
-                          onInlineUpdate={handleInlineUpdateEntry}
-                          onDelete={handleDelete}
-                          showFilters={showRegisterFilters}
-                          setShowFilters={setShowRegisterFilters}
-                          highlightSearch={highlightSearch}
-                          onClearHighlight={() => setHighlightSearch(null)}
-                        />
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-4 no-print mb-2">
+                          </div>
+
+                          <CorrespondenceTable 
+                            entries={approvedCorrespondence} 
+                            onBack={() => setActiveTab('landing')} 
+                            isAdmin={isAdmin}
+                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
+                            onInlineUpdate={handleInlineUpdateEntry}
+                            onDelete={handleDelete}
+                            showFilters={showRegisterFilters}
+                            setShowFilters={setShowRegisterFilters}
+                            highlightSearch={highlightSearch}
+                            onClearHighlight={() => setHighlightSearch(null)}
+                          />
+                        </div>
                       )}
                     </div>
                   )}
@@ -735,6 +745,14 @@ const App: React.FC = () => {
               {activeTab === 'archive' && <DocumentArchive isAdmin={isAdmin} />}
 
               {activeTab === 'voting' && <VotingSystem isAdmin={isAdmin} />}
+
+              {activeTab === 'admin_analytics' && isAdmin && (
+                <AdminAnalytics 
+                  entries={entries} 
+                  correspondenceEntries={correspondenceEntries} 
+                  onBack={() => setActiveTab('dashboard')} 
+                />
+              )}
 
               {activeTab === 'dashboard' && (
                 <AdminDashboard 

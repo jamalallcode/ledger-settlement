@@ -62,6 +62,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   ];
 
   const quickActions = [
+    { id: 'admin_analytics', label: 'অডিটর পারফরম্যান্স', icon: BarChart3, color: 'indigo', desc: 'অডিটরদের কাজের রিপোর্ট ও পরিসংখ্যান' },
     { id: 'entry', label: 'নতুন এন্ট্রি', icon: PlusCircle, color: 'blue', desc: 'নতুন তথ্য যোগ করুন' },
     { id: 'register', label: 'রেজিস্টার দেখুন', icon: FileText, color: 'emerald', desc: 'সকল রেজিস্টার ব্রাউজ করুন' },
     { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, color: 'purple', desc: 'ভোট প্রদান ও ফলাফল' },

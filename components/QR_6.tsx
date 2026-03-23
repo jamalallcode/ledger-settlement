@@ -48,6 +48,8 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
   const thCls = "border-r border-b border-slate-400 p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
   const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle";
   const numTdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
+  const footerTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-white align-middle bg-black";
+  const footerNumTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-white text-center align-middle font-bold bg-black";
 
   return (
     <div id="qr-6-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
@@ -135,15 +137,15 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
               );
             })}
             <tr className="font-black h-[28px] qr-sticky-footer qr-sticky-footer-bottom">
-              <td colSpan={2} className={tdCls + " text-center font-black"}>মোট</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.involved.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.taxRec.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.taxAdj.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.otherRec.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits(totals.otherAdj.toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits((totals.taxRec + totals.otherRec).toString())}</td>
-              <td className={numTdCls}>{toBengaliDigits((totals.taxAdj + totals.otherAdj).toString())}</td>
-              <td className={tdCls}></td>
+              <td colSpan={2} className={footerTdCls + " text-center font-black"}>মোট</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.involved.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.taxRec.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.taxAdj.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.otherRec.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.otherAdj.toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits((totals.taxRec + totals.otherRec).toString())}</td>
+              <td className={footerNumTdCls}>{toBengaliDigits((totals.taxAdj + totals.otherAdj).toString())}</td>
+              <td className={footerTdCls}></td>
             </tr>
           </tbody>
         </table>
