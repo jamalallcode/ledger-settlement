@@ -14,10 +14,6 @@ export default defineConfig(({ mode }) => {
         react(),
         tailwindcss()
       ],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
@@ -33,7 +29,6 @@ export default defineConfig(({ mode }) => {
                 if (id.includes('react')) return 'vendor-react';
                 if (id.includes('lucide-react') || id.includes('framer-motion') || id.includes('date-fns')) return 'vendor-utils';
                 if (id.includes('jspdf')) return 'vendor-pdf';
-                if (id.includes('@google/genai')) return 'vendor-ai';
                 return 'vendor';
               }
             }

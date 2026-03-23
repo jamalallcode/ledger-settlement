@@ -13,7 +13,6 @@ import DocumentArchive from './components/DocumentArchive';
 import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
-import NewFeatureApp from './subapps/new_feature/NewFeatureApp';
 import AdminAnalytics from './subapps/admin_analytics/AdminAnalytics';
 import { SettlementEntry, GroupOption, CumulativeStats } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
@@ -191,7 +190,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleAdminSync = (email?: string) => {
       setUserEmail(email || null);
-      const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com'];
+      const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com', 'emailaddress3424@gmail.com'];
       if (email && adminEmails.includes(email)) {
         setIsAdmin(true);
         setIsLockedMode(false); // Auto-unlock for admin
