@@ -1003,9 +1003,27 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
           <div id="section-para-entry-area" className="pt-10 border-t border-slate-100 relative">
             <div id="section-para-bulk" className="bg-slate-50 p-6 rounded-3xl border border-slate-200 mb-8 relative">
               <div className="flex flex-col md:flex-row gap-4 items-end">
-                <div className="flex-1 w-full">
+                <div className="flex-1 w-full relative">
                   <label className="block text-sm font-black text-slate-500 mb-2 ml-1 uppercase">বিস্তারিত অনুচ্ছেদ যোগ করুন (মীমাংসিতদের জন্য)</label>
-                  <input type="text" className={`w-full h-[55px] px-6 border rounded-2xl font-black text-slate-900 bg-white outline-none shadow-sm text-lg transition-all ${bulkParaInput ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={bulkParaInput} onChange={e => setBulkParaInput(toBengaliDigits(e.target.value))} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleBulkGenerate())} placeholder="অনুচ্ছেদ নং (যেমন: ৫, ১০, ১৫)" />
+                  <div className="relative group">
+                    <input 
+                      type="text" 
+                      className={`w-full h-[55px] pl-6 pr-48 border rounded-2xl font-black text-slate-900 bg-white outline-none shadow-sm text-lg transition-all ${bulkParaInput ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} 
+                      value={bulkParaInput} 
+                      onChange={e => setBulkParaInput(toBengaliDigits(e.target.value))} 
+                      onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleBulkGenerate())} 
+                      placeholder="অনুচ্ছেদ নং (যেমন: ৫, ১০, ১৫)" 
+                    />
+                    {bulkParaInput.trim() && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-slate-900/95 backdrop-blur-sm text-white px-4 py-2 rounded-xl shadow-xl border border-slate-700 animate-in slide-in-from-right-2 duration-300">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-700 pr-2">মোট অনুচ্ছেদ সংখ্যা=</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-lg font-black text-emerald-400 leading-none">{toBengaliDigits(bulkParaInput.split(/[,，\s]+/).filter(s => s.trim()).length)}</span>
+                          <span className="text-[10px] font-black text-slate-300 uppercase">টি</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <button id="btn-add-paras" type="button" onClick={handleBulkGenerate} className="w-full md:w-auto px-8 h-[55px] bg-slate-900 text-white font-black rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-3 shadow-lg relative">
                   <Sparkles size={20} className="text-blue-400" /> অনুচ্ছেদ যোগ
