@@ -151,17 +151,19 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         // More robust cleaning for search matching
         const cleanNumber = (str: string) => {
           return toEnglishDigits(str.toLowerCase())
-            .replace(/(জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)-?\s*[:\-]?\s*/g, '')
+            .replace(/(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g, '')
             .trim();
         };
 
         const engIssue = cleanNumber(entry.issueLetterNoDate || '');
         const engLetter = cleanNumber(entry.letterNoDate || '');
         const engDiary = cleanNumber(entry.workpaperNoDate || '');
+        const engWp = cleanNumber(entry.meetingWorkpaper || '');
         
         const isNumberMatch = engIssue.includes(normalizedSearch) || 
                               engLetter.includes(normalizedSearch) || 
-                              engDiary.includes(normalizedSearch);
+                              engDiary.includes(normalizedSearch) ||
+                              engWp.includes(normalizedSearch);
 
         if (isNumericSearch) return isNumberMatch;
 
@@ -343,18 +345,26 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
 
   const formatIssueInfoForDisplay = (info: string) => {
     if (!info) return "";
-    // More robust cleaning of redundant prefixes
-    return info.replace(/(জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)-?\s*[:\-]?\s*/g, '').trim() + " খ্রি:";
+    const cleaned = info.replace(/(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g, '').trim();
+    return cleaned ? cleaned + " খ্রি:" : "";
   };
 
   const formatDiaryInfoForDisplay = (info: string) => {
     if (!info) return "";
-    return info.replace(/(জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)-?\s*[:\-]?\s*/g, '').trim() + " খ্রি:";
+    const cleaned = info.replace(/(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g, '').trim();
+    return cleaned ? cleaned + " খ্রি:" : "";
   };
 
   const formatLetterInfoForDisplay = (info: string) => {
     if (!info) return "";
-    return info.replace(/(জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)-?\s*[:\-]?\s*/g, '').trim() + " খ্রি:";
+    const cleaned = info.replace(/(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g, '').trim();
+    return cleaned ? cleaned + " খ্রি:" : "";
+  };
+
+  const formatWorkpaperInfoForDisplay = (info: string) => {
+    if (!info) return "";
+    const cleaned = info.replace(/(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g, '').trim();
+    return cleaned ? cleaned + " খ্রি:" : "";
   };
 
   // Headers reverted to font-black
@@ -394,10 +404,10 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             { label: '৪. সংস্থা', value: entry.entityName, icon: FileText, col: 'purple' },
             { label: '৫. বিস্তারিত শাখা', value: entry.branchName, icon: MapPin, col: 'sky' },
             { label: '৬. নিরীক্ষা সাল', value: toBengaliDigits(entry.auditYear), icon: Calendar, col: 'emerald' },
-            { label: '৭. পত্র নং ও তারিখ', value: entry.letterNoDate, icon: FileText, col: 'amber' },
-            { label: '৮. কার্যপত্র নং', value: entry.meetingWorkpaper || 'N/A', icon: FileText, col: 'purple' },
+            { label: '৭. পত্র নং ও তারিখ', value: formatLetterInfoForDisplay(entry.letterNoDate), icon: FileText, col: 'amber' },
+            { label: '৮. কার্যপত্র নং', value: formatWorkpaperInfoForDisplay(entry.meetingWorkpaper), icon: FileText, col: 'purple' },
             { label: '৯. আলোচিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSentParaCount || '০'), icon: ListOrdered, col: 'sky' },
-            { label: '১০. ডায়েরি নং ও তারিখ', value: entry.workpaperNoDate, icon: FileText, col: 'emerald' },
+            { label: '১০. ডায়েরি নং ও তারিখ', value: formatDiaryInfoForDisplay(entry.workpaperNoDate), icon: FileText, col: 'emerald' },
             { label: '১১. জারিপত্র নং', value: formatIssueInfoForDisplay(entry.issueLetterNoDate), icon: FileText, col: 'amber' },
             { label: '১২. আর্কাইভ নং', value: entry.archiveNo || 'N/A', icon: Archive, col: 'purple' },
             { label: '১৩. প্রেরিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSentParaCount || '০'), icon: ListOrdered, col: 'sky' },

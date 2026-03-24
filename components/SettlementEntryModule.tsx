@@ -311,17 +311,20 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const issueYearRef = useRef<HTMLInputElement>(null);
 
   const extractSegments = (combined: string, noPrefix: string, datePrefix: string) => {
-    if (!combined) return { no: '', d: '', m: '', y: '' };
+    if (!combined || !combined.trim()) return { no: '', d: '', m: '', y: '' };
     const parts = combined.split(',');
     let no = '';
     let d = '', m = '', y = '';
     
     if (parts.length >= 1) {
-      const cleanRegex = new RegExp(`(${noPrefix}|নং[:\\-]?)\\s*`, 'g');
+      // Clean all possible number prefixes globally to handle corrupted data
+      const cleanRegex = /(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g;
       no = parts[0].replace(cleanRegex, '').trim();
     }
     if (parts.length >= 2) {
-      const dateStr = parts[1].replace(new RegExp(`${datePrefix}\\s*`), '').trim();
+      // Clean all possible date prefixes globally
+      const cleanDateRegex = /(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g;
+      const dateStr = parts[1].replace(cleanDateRegex, '').trim();
       const dateParts = toEnglishDigits(dateStr).split(/[\/\-]/);
       if (dateParts.length === 3) {
         d = toBengaliDigits(dateParts[0]);
@@ -401,7 +404,17 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     let year = toEnglishDigits(y);
     if (year.length === 2) year = '20' + year;
     const formattedDate = (day && month && year.length === 4) ? `${toBengaliDigits(day)}/${toBengaliDigits(month)}/${toBengaliDigits(year)}` : '';
-    return `${noPrefix} ${no}${formattedDate ? `, ${datePrefix} ${formattedDate}` : ''}`;
+    
+    // Strip any existing prefix from 'no' globally before adding the desired one
+    const cleanNo = no.trim().replace(/(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g, '').trim();
+    
+    if (!cleanNo && !formattedDate) return '';
+
+    const noPart = cleanNo ? `${noPrefix} ${cleanNo}` : '';
+    const datePart = formattedDate ? `${datePrefix} ${formattedDate}` : '';
+    
+    if (noPart && datePart) return `${noPart}, ${datePart}`;
+    return noPart || datePart;
   };
 
   const getIsoFromSegments = (d: string, m: string, y: string) => {
