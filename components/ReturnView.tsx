@@ -55,7 +55,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ministryDropdownRef = useRef<HTMLDivElement>(null);
 
-  const ministryGroups = useMemo(() => ['আর্থিক প্রতিষ্ঠান বিভাগ', 'পাট মন্ত্রণালয়', 'বস্ত্র মন্ত্রণালয়', 'শিল্প মন্ত্রণালয়', 'বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয়', 'বাণিজ্য মন্ত্রণালয়'], []);
+  const ministryGroups = useMemo(() => ['আর্থিক প্রতিষ্ঠান বিভাগ', 'পাট মন্ত্রণালয়', 'বস্ত্র মন্ত্রণালয়', 'শিল্প মন্ত্রণালয়', 'বিমান ও পর্যটন মন্ত্রণালয়', 'বাণিজ্য মন্ত্রণালয়'], []);
 
   useEffect(() => {
     if (resetKey && resetKey > 0) {

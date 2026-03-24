@@ -126,6 +126,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
 
   const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] text-center font-bold leading-tight group-hover:bg-blue-100/80 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
+  const subTotalTdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] text-center font-bold leading-tight text-slate-900 h-[38px] whitespace-normal break-words relative";
   const grandStyle = "px-0.5 py-2 text-center font-black text-white text-[10px] bg-black z-[190] shadow-[inset_0_1px_0_#1e293b,inset_0_0_0_1px_#1e293b] h-[45px] align-middle whitespace-nowrap transition-all relative";
 
   return (
@@ -313,8 +314,12 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                       return (
                         <tr key={row.entity} className="group hover:bg-blue-100/40 bg-white transition-colors">
                           {rIdx === 0 && (
-                            <td rowSpan={m.entityRows.length + 1} className={tdStyle + " bg-slate-50 border-l border-r border-slate-300 font-black"}>
-                              <HighlightText text={m.ministry} searchTerm={searchTerm} />
+                            <td rowSpan={m.entityRows.length + 1} className={tdStyle + " bg-slate-50 border-l border-r border-slate-300 font-black align-middle"}>
+                              <div className="flex items-center justify-center h-full py-4">
+                                <div className="[writing-mode:vertical-rl] rotate-180 whitespace-nowrap text-[11px] tracking-widest">
+                                  <HighlightText text={m.ministry} searchTerm={searchTerm} />
+                                </div>
+                              </div>
                             </td>
                           )}
                           <td className={tdStyle + " text-left border-r border-slate-300 font-bold"}>
@@ -322,23 +327,23 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                           </td>
                           <td className={tdStyle}>{toBengaliDigits(row.prev.unsettledCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.prev.unsettledAmount))}</td>
                           <td className={tdStyle}>{toBengaliDigits(row.currentRaisedCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.currentRaisedAmount))}</td>
-                          <td className={tdStyle + " bg-slate-100/50 font-bold"}>{toBengaliDigits(totalUC)}</td><td className={tdStyle + " text-center bg-slate-100/50 border-r border-slate-300 font-bold"}>{toBengaliDigits(Math.round(totalUA))}</td>
+                          <td className={tdStyle + " bg-slate-200 font-bold"}>{toBengaliDigits(totalUC)}</td><td className={tdStyle + " text-center bg-slate-200 border-r border-slate-300 font-bold"}>{toBengaliDigits(Math.round(totalUA))}</td>
                           <td className={tdStyle}>{toBengaliDigits(row.prev.settledCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.prev.settledAmount))}</td>
                           <td className={tdStyle}>{toBengaliDigits(row.currentSettledCount)}</td><td className={tdStyle + " text-center border-r border-slate-300"}>{toBengaliDigits(Math.round(row.currentSettledAmount))}</td>
-                          <td className={tdStyle + " bg-emerald-50/50 font-bold"}>{toBengaliDigits(totalSC)}</td><td className={tdStyle + " text-center bg-emerald-50/50 border-r border-slate-300 font-bold"}>{toBengaliDigits(Math.round(totalSA))}</td>
+                          <td className={tdStyle + " bg-slate-200 font-bold"}>{toBengaliDigits(totalSC)}</td><td className={tdStyle + " text-center bg-slate-200 border-r border-slate-300 font-bold"}>{toBengaliDigits(Math.round(totalSA))}</td>
                           <td className={tdStyle + " bg-amber-50 text-blue-700 font-bold"}>{toBengaliDigits(closingUC)}</td><td className={tdStyle + " text-center bg-amber-50 text-blue-700 font-bold"}>{toBengaliDigits(Math.round(closingUA))}</td>
                         </tr>
                       );
                     })}
-                    <tr className="bg-sky-100 font-black text-blue-950 h-[42px] border-y-2 border-slate-200">
-                      <td className={tdStyle + " text-right italic pr-3 border-l border-r border-slate-300 text-[10px] bg-sky-100 font-black"}>উপ-মোট: {m.ministry}</td>
-                      <td className={tdStyle + " font-black bg-sky-100"}>{toBengaliDigits(mTotals.pUC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black bg-sky-100"}>{toBengaliDigits(Math.round(mTotals.pUA))}</td>
-                      <td className={tdStyle + " font-black bg-sky-100"}>{toBengaliDigits(mTotals.cRC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black bg-sky-100"}>{toBengaliDigits(Math.round(mTotals.cRA))}</td>
-                      <td className={tdStyle + " bg-sky-100 font-black"}>{toBengaliDigits(mTotals.pUC + mTotals.cRC)}</td><td className={tdStyle + " text-center bg-sky-100 border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pUA + mTotals.cRA))}</td>
-                      <td className={tdStyle + " font-black bg-sky-100"}>{toBengaliDigits(mTotals.pSC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black bg-sky-100"}>{toBengaliDigits(Math.round(mTotals.pSA))}</td>
-                      <td className={tdStyle + " font-black bg-sky-100"}>{toBengaliDigits(mTotals.cSC)}</td><td className={tdStyle + " text-center border-r border-slate-300 font-black bg-sky-100"}>{toBengaliDigits(Math.round(mTotals.cSA))}</td>
-                      <td className={tdStyle + " bg-sky-100 font-black"}>{toBengaliDigits(mTotals.pSC + mTotals.cSC)}</td><td className={tdStyle + " text-center bg-sky-100 border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pSA + mTotals.cSA))}</td>
-                      <td className={tdStyle + " bg-sky-100 font-black"}>{toBengaliDigits((mTotals.pUC + mTotals.cRC) - (mTotals.pSC + mTotals.cSC))}</td><td className={tdStyle + " text-center bg-sky-100 font-black"}>{toBengaliDigits(Math.round((mTotals.pUA + mTotals.cRA) - (mTotals.pSA + mTotals.cSA)))}</td>
+                    <tr className="bg-sky-100 font-black text-blue-950 h-[42px] border-y-2 border-slate-200 no-hover-row">
+                      <td className={subTotalTdStyle + " text-right italic pr-3 border-l border-r border-slate-300 text-[10px] bg-sky-100 font-black"}>উপ-মোট: {m.ministry}</td>
+                      <td className={subTotalTdStyle + " font-black bg-sky-100"}>{toBengaliDigits(mTotals.pUC)}</td><td className={subTotalTdStyle + " text-center border-r border-slate-300 font-black bg-sky-100"}>{toBengaliDigits(Math.round(mTotals.pUA))}</td>
+                      <td className={subTotalTdStyle + " font-black bg-sky-100"}>{toBengaliDigits(mTotals.cRC)}</td><td className={subTotalTdStyle + " text-center border-r border-slate-300 font-black bg-sky-100"}>{toBengaliDigits(Math.round(mTotals.cRA))}</td>
+                      <td className={subTotalTdStyle + " bg-sky-100 font-black"}>{toBengaliDigits(mTotals.pUC + mTotals.cRC)}</td><td className={subTotalTdStyle + " text-center bg-sky-100 border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pUA + mTotals.cRA))}</td>
+                      <td className={subTotalTdStyle + " font-black bg-sky-100"}>{toBengaliDigits(mTotals.pSC)}</td><td className={subTotalTdStyle + " text-center border-r border-slate-300 font-black bg-sky-100"}>{toBengaliDigits(Math.round(mTotals.pSA))}</td>
+                      <td className={subTotalTdStyle + " font-black bg-sky-100"}>{toBengaliDigits(mTotals.cSC)}</td><td className={subTotalTdStyle + " text-center border-r border-slate-300 font-black bg-sky-100"}>{toBengaliDigits(Math.round(mTotals.cSA))}</td>
+                      <td className={subTotalTdStyle + " bg-sky-100 font-black"}>{toBengaliDigits(mTotals.pSC + mTotals.cSC)}</td><td className={subTotalTdStyle + " text-center bg-sky-100 border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pSA + mTotals.cSA))}</td>
+                      <td className={subTotalTdStyle + " bg-sky-100 font-black"}>{toBengaliDigits((mTotals.pUC + mTotals.cRC) - (mTotals.pSC + mTotals.cSC))}</td><td className={subTotalTdStyle + " text-center bg-sky-100 font-black"}>{toBengaliDigits(Math.round((mTotals.pUA + mTotals.cRA) - (mTotals.pSA + mTotals.cSA)))}</td>
                     </tr>
                   </React.Fragment>
                 );
