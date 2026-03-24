@@ -259,8 +259,9 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       // Extract the number part more reliably
       // The format is "Prefix Number, DatePrefix Date"
       const firstPart = combinedStr.split(',')[0];
-      // Remove the prefix and any leading/trailing whitespace using regex
-      const extractedNo = firstPart.replace(prefixRegex, '').replace(/\s+/g, '');
+      // Handle cases where the prefix might be missing or just "নং-"
+      const cleanRegex = new RegExp(`(${prefixRegex.source}|নং[:\\-]?\\s*)`, 'g');
+      const extractedNo = firstPart.replace(cleanRegex, '').replace(/\s+/g, '');
       
       const engExtracted = toEnglishDigits(extractedNo);
       const engSearch = toEnglishDigits(searchNo.replace(/\s+/g, ''));
@@ -270,17 +271,17 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
     const letterDuplicate = letterNoPart ? existingEntries.find(e => {
       if (initialEntry && e.id === initialEntry.id) return false;
-      return findDuplicate(e.letterNoDate, /পত্র নং-?\s*/g, letterNoPart);
+      return findDuplicate(e.letterNoDate, /পত্র\s+নং[:\-]?\s*/g, letterNoPart);
     }) : null;
 
     const diaryDuplicate = diaryNoPart ? existingEntries.find(e => {
       if (initialEntry && e.id === initialEntry.id) return false;
-      return findDuplicate(e.workpaperNoDate, /ডায়েরি নং-?\s*/g, diaryNoPart);
+      return findDuplicate(e.workpaperNoDate, /ডায়েরি\s+নং[:\-]?\s*/g, diaryNoPart);
     }) : null;
 
     const issueDuplicate = issueNoPart ? existingEntries.find(e => {
       if (initialEntry && e.id === initialEntry.id) return false;
-      return findDuplicate(e.issueLetterNoDate, /জারিপত্র নং-?\s*/g, issueNoPart);
+      return findDuplicate(e.issueLetterNoDate, /জারিপত্র\s+নং[:\-]?\s*/g, issueNoPart);
     }) : null;
 
     return {
@@ -316,7 +317,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     let d = '', m = '', y = '';
     
     if (parts.length >= 1) {
-      no = parts[0].replace(new RegExp(`${noPrefix}\\s*`), '').trim();
+      const cleanRegex = new RegExp(`(${noPrefix}|নং[:\\-]?)\\s*`, 'g');
+      no = parts[0].replace(cleanRegex, '').trim();
     }
     if (parts.length >= 2) {
       const dateStr = parts[1].replace(new RegExp(`${datePrefix}\\s*`), '').trim();
@@ -393,13 +395,13 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     }
   }, [initialEntry]);
 
-  const buildCombinedString = (no: string, d: string, m: string, y: string) => {
+  const buildCombinedString = (no: string, d: string, m: string, y: string, noPrefix: string = 'নং-', datePrefix: string = 'তারিখ-') => {
     const day = d ? (toEnglishDigits(d).length === 1 ? '0' + toEnglishDigits(d) : toEnglishDigits(d)) : '';
     const month = m ? (toEnglishDigits(m).length === 1 ? '0' + toEnglishDigits(m) : toEnglishDigits(m)) : '';
     let year = toEnglishDigits(y);
     if (year.length === 2) year = '20' + year;
     const formattedDate = (day && month && year.length === 4) ? `${toBengaliDigits(day)}/${toBengaliDigits(month)}/${toBengaliDigits(year)}` : '';
-    return `নং- ${no}${formattedDate ? `, তারিখ- ${formattedDate}` : ''}`;
+    return `${noPrefix} ${no}${formattedDate ? `, ${datePrefix} ${formattedDate}` : ''}`;
   };
 
   const getIsoFromSegments = (d: string, m: string, y: string) => {
@@ -415,11 +417,11 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   };
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, letterNoDate: buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear) }));
+    setFormData(prev => ({ ...prev, letterNoDate: buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear, 'পত্র নং-', 'পত্রের তারিখ-') }));
   }, [letterNoPart, letterDay, letterMonth, letterYear]);
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, meetingWorkpaper: buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear) }));
+    setFormData(prev => ({ ...prev, meetingWorkpaper: buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-') }));
   }, [wpNoPart, wpDay, wpMonth, wpYear]);
 
   /* useMemo added to track values for validation */
@@ -428,11 +430,11 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const currentIssueISO = useMemo(() => getIsoFromSegments(dayPart, monthPart, yearPart), [dayPart, monthPart, yearPart]);
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, workpaperNoDate: buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear) }));
+    setFormData(prev => ({ ...prev, workpaperNoDate: buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear, 'ডায়েরি নং-', 'ডায়েরির তারিখ-') }));
   }, [diaryNoPart, diaryDay, diaryMonth, diaryYear]);
 
   useEffect(() => {
-    const combined = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart);
+    const combined = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
     setFormData(prev => ({ ...prev, issueLetterNoDate: combined, issueDateISO: currentIssueISO }));
   }, [issueNoPart, dayPart, monthPart, yearPart, currentIssueISO]);
 
@@ -536,17 +538,16 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       const totalSettledAmount = paragraphs.reduce((s, p) => s + p.recoveredAmount + p.adjustedAmount, 0);
       const calculatedUnsettledAmount = (formData.totalInvolvedAmount || 0) - totalSettledAmount;
       
-      const combinedLetter = buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear);
-      const combinedDiary = buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear);
-      const combinedIssue = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart);
-      const combinedWp = buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear);
+      const combinedLetter = buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear, 'পত্র নং-', 'পত্রের তারিখ-');
+      const combinedDiary = buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear, 'ডায়েরি নং-', 'ডায়েরির তারিখ-');
+      const combinedIssue = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
+      const combinedWp = buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-');
 
       const finalData = {
         ...formData, 
         letterNoDate: combinedLetter,
-        diaryNoDate: combinedDiary,
         issueLetterNoDate: combinedIssue,
-        workpaperNoDate: combinedWp,
+        workpaperNoDate: combinedDiary,
         meetingWorkpaper: combinedWp,
         meetingFullSettledParaCount: Math.round(summaryData.fullInvolved).toString(),
         meetingPartialSettledParaCount: Math.round(summaryData.partialInvolved).toString(),
