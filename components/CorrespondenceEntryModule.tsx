@@ -2,11 +2,13 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   Mail, X, FileText, Calendar, Hash, Banknote, BookOpen, 
   Inbox, Computer, User, CheckCircle2, Layout, Sparkles, 
-  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send, FileEdit, ClipboardCheck
+  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash2, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send, FileEdit, ClipboardCheck, Globe
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { getCycleForDate } from '../utils/cycleHelper';
 import { getDateError } from '../utils/dateValidation';
+import { SFI_RECEIVERS } from '../utils/sfi';
+import { NONSFI_RECEIVERS } from '../utils/nonsfi';
 
 /**
  * @security-protocol LOCKED_MODE
@@ -179,6 +181,90 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
 };
 
 /**
+ * Premium Dropdown for Branch Type (Para Type)
+ */
+const PremiumParaTypeSelect = ({ value, onChange, IDBadge }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const options = [
+    { id: 'sfi', label: 'এসএফআই (SFI)', value: 'এসএফআই', icon: ShieldCheck, color: 'blue', desc: 'Special Audit Branch' },
+    { id: 'nonsfi', label: 'নন এসএফআই (NON-SFI)', value: 'নন এসএফআই', icon: Layout, color: 'indigo', desc: 'General Audit Branch' },
+  ];
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOpt = options.find(opt => opt.value === value) || options[0];
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <IDBadge id="corr-field-para-type-custom" />
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`${inputCls} flex items-center justify-between cursor-pointer group hover:border-blue-400 hover:ring-4 hover:ring-blue-50 transition-all duration-300 ${isOpen ? 'border-blue-500 ring-4 ring-blue-50 bg-white shadow-md' : 'border-emerald-500 shadow-sm'}`}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-8 h-8 bg-${selectedOpt.color}-100 text-${selectedOpt.color}-600 rounded-lg flex items-center justify-center shadow-sm`}>
+            <selectedOpt.icon size={16} />
+          </div>
+          <span className="text-slate-900 font-black">{selectedOpt.label}</span>
+        </div>
+        <ChevronDown size={18} className={`text-slate-400 transition-transform duration-500 ${isOpen ? 'rotate-180 text-blue-600' : 'group-hover:text-blue-500'}`} />
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-[calc(100%+12px)] left-0 w-full bg-white border border-slate-200 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.15)] z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 border-t-4 border-t-blue-600">
+          <div className="p-3 space-y-1">
+            <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Sparkles size={12} className="text-blue-500" /> শাখা নির্বাচন করুন
+              </span>
+            </div>
+            {options.map((opt) => (
+              <div 
+                key={opt.id}
+                onClick={() => {
+                  onChange(opt.value);
+                  setIsOpen(false);
+                }}
+                className={`px-4 py-3.5 mx-1 rounded-2xl cursor-pointer flex items-center justify-between transition-all group relative ${
+                  value === opt.value ? `bg-${opt.color}-50 text-${opt.color}-700 shadow-sm` : 'hover:bg-slate-50 text-slate-600'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                    value === opt.value ? `bg-${opt.color}-600 text-white shadow-lg shadow-${opt.color}-200` : 'bg-slate-100 text-slate-400 group-hover:bg-white group-hover:shadow-md'
+                  }`}>
+                    <opt.icon size={20} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className={`text-[14px] font-black transition-colors ${value === opt.value ? `text-${opt.color}-700` : 'text-slate-700'}`}>{opt.label}</span>
+                    <span className="text-[10px] font-bold text-slate-400">{opt.desc}</span>
+                  </div>
+                </div>
+                {value === opt.value && (
+                  <div className={`w-6 h-6 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-md animate-in zoom-in duration-300`}>
+                    <Check size={14} strokeWidth={3} />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
  * Segmented Date Input Component (Mirrored from Settlement Module Logic)
  * Handles auto-padding, max limits, smart year expansion, and auto-focus jump.
  */
@@ -296,7 +382,9 @@ interface CorrespondenceEntryModuleProps {
   isLayoutEditable?: boolean;
   initialEntry?: any;
   isAdmin?: boolean;
+  userEmail?: string | null;
   existingEntries?: any[];
+  navigateToEntry?: (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => void;
 }
 
 const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({ 
@@ -306,8 +394,14 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   isLayoutEditable, 
   initialEntry, 
   isAdmin = false,
-  existingEntries = []
+  userEmail,
+  existingEntries = [],
+  navigateToEntry
 }) => {
+  // Admin check for receiver management
+  const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com'];
+  const isReceiverAdmin = isAdmin || (userEmail && adminEmails.includes(userEmail));
+
   const [isSuccess, setIsSuccess] = useState(false);
   const [calculatedCycle, setCalculatedCycle] = useState<string>('');
   
@@ -329,6 +423,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     receiverName: '',
     receivedDate: '',
     isOnline: 'না',
+    archiveNo: '',
     remarks: ''
   });
 
@@ -345,7 +440,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const rcdRef = useRef<HTMLInputElement>(null), rcmRef = useRef<HTMLInputElement>(null), rcyRef = useRef<HTMLInputElement>(null);
 
   const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
-  const [receiverSuggestions, setReceiverSuggestions] = useState<string[]>([]);
+  const [receiverSuggestions, setReceiverSuggestions] = useState<any[]>([]);
   const [descriptionSuggestions, setDescriptionSuggestions] = useState<string[]>([]);
   const [showReceiverDropdown, setShowReceiverDropdown] = useState(false);
   const [showDescriptionDropdown, setShowDescriptionDropdown] = useState(false);
@@ -355,18 +450,49 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const [isManagingReceivers, setIsManagingReceivers] = useState(false);
   const [editingReceiverIdx, setEditingReceiverIdx] = useState<number | null>(null);
   const [tempReceiverName, setTempReceiverName] = useState('');
+  const [tempReceiverDesignation, setTempReceiverDesignation] = useState('');
+  const [tempReceiverImage, setTempReceiverImage] = useState<string | null>(null);
   
   const bottomRef = useRef<HTMLDivElement>(null);
   const receiverRef = useRef<HTMLDivElement>(null);
   const descriptionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const savedNames = localStorage.getItem('ledger_correspondence_receivers');
-    if (savedNames) setReceiverSuggestions(JSON.parse(savedNames));
+    const loadReceivers = () => {
+      const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+      const initialList = formData.paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
+      
+      const savedNames = localStorage.getItem(key);
+      if (savedNames) {
+        const parsed = JSON.parse(savedNames);
+        // Migration logic for profiles
+        if (parsed.length > 0 && typeof parsed[0] === 'string') {
+          const migrated = parsed.map((name: string) => ({ name }));
+          setReceiverSuggestions(migrated);
+          localStorage.setItem(key, JSON.stringify(migrated));
+        } else {
+          setReceiverSuggestions(parsed);
+        }
+      } else {
+        const initialProfiles = initialList.map(name => ({ name }));
+        setReceiverSuggestions(initialProfiles);
+        localStorage.setItem(key, JSON.stringify(initialProfiles));
+      }
+    };
+
+    loadReceivers();
+
+    const handleStorageChange = () => {
+      loadReceivers();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
 
     const savedDescriptions = localStorage.getItem('ledger_correspondence_descriptions');
     if (savedDescriptions) setDescriptionSuggestions(JSON.parse(savedDescriptions));
-  }, []);
+
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [formData.paraType]);
 
   const formatDateSegments = (d: string, m: string, y: string) => {
     if (!d || !m || !y || y.length < 4) return '';
@@ -383,27 +509,40 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     }
   };
 
+  const handleDeleteDescription = (e: React.MouseEvent, descToDelete: string) => {
+    e.stopPropagation();
+    if (!window.confirm(`আপনি কি নিশ্চিতভাবে "${descToDelete}" বিবরণটি তালিকা থেকে মুছে ফেলতে চান?`)) return;
+    
+    const updated = descriptionSuggestions.filter(d => d !== descToDelete);
+    setDescriptionSuggestions(updated);
+    localStorage.setItem('ledger_correspondence_descriptions', JSON.stringify(updated));
+  };
+
   /**
    * Duplicate Check Logic
    */
   const duplicates = useMemo(() => {
-    const normalizedDiary = toEnglishDigits(formData.diaryNo).trim();
-    const normalizedLetter = toEnglishDigits(formData.letterNo).trim();
-
-    const diaryExists = normalizedDiary ? existingEntries.some(entry => {
+    const normalizedDiary = toEnglishDigits(formData.diaryNo.replace(/\s+/g, ''));
+    const normalizedLetter = toEnglishDigits(formData.letterNo.replace(/\s+/g, ''));
+    
+    const diaryDuplicate = normalizedDiary ? existingEntries.find(entry => {
       if (initialEntry && entry.id === initialEntry.id) return false;
-      return toEnglishDigits(entry.diaryNo || '').trim() === normalizedDiary;
-    }) : false;
+      const entryDiary = toEnglishDigits((entry.diaryNo || '').replace(/\s+/g, ''));
+      return entryDiary === normalizedDiary;
+    }) : null;
 
-    const letterExists = normalizedLetter ? existingEntries.some(entry => {
+    const letterDuplicate = normalizedLetter ? existingEntries.find(entry => {
       if (initialEntry && entry.id === initialEntry.id) return false;
-      return toEnglishDigits(entry.letterNo || '').trim() === normalizedLetter;
-    }) : false;
+      const entryLetter = toEnglishDigits((entry.letterNo || '').replace(/\s+/g, ''));
+      return entryLetter === normalizedLetter;
+    }) : null;
 
     return {
-      diaryNo: diaryExists,
-      letterNo: letterExists,
-      any: diaryExists || letterExists
+      diaryNo: !!diaryDuplicate,
+      letterNo: !!letterDuplicate,
+      diaryEntryId: diaryDuplicate?.id,
+      letterEntryId: letterDuplicate?.id,
+      any: !!diaryDuplicate || !!letterDuplicate
     };
   }, [formData.diaryNo, formData.letterNo, existingEntries, initialEntry]);
 
@@ -429,6 +568,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         receiverName: initialEntry.receiverName || '',
         receivedDate: initialEntry.receivedDate || '',
         isOnline: initialEntry.isOnline || 'না',
+        archiveNo: initialEntry.archiveNo || '',
         remarks: initialEntry.remarks || ''
       });
       
@@ -460,6 +600,14 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   useEffect(() => { setFormData(prev => ({ ...prev, receiptDate: formatDateSegments(rd, rm, ry) })); }, [rd, rm, ry]);
   useEffect(() => { setFormData(prev => ({ ...prev, receivedDate: formatDateSegments(rcd, rcm, rcy) })); }, [rcd, rcm, rcy]);
 
+  useEffect(() => {
+    if (formData.archiveNo) {
+      const prefix = formData.paraType === 'এসএফআই' ? 'ka- ' : 'kg- ';
+      const rawValue = formData.archiveNo.replace(/^ka-\s*/, '').replace(/^kg-\s*/, '');
+      setFormData(prev => ({ ...prev, archiveNo: prefix + rawValue }));
+    }
+  }, [formData.paraType]);
+
   const handleManualDateSelect = (iso: string, type: string) => {
     if (!iso) return;
     if (type === 'letter') setSegmentsFromDate(iso, setLd, setLm, setLy);
@@ -487,33 +635,86 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     setFormData(prev => ({ ...prev, [field]: val }));
   };
 
+  const handleArchiveNoChange = (val: string) => {
+    const prefix = formData.paraType === 'এসএফআই' ? 'ka- ' : 'kg- ';
+    let rawValue = val.replace(/^ka-\s*/, '').replace(/^kg-\s*/, '');
+    
+    if (val === '') {
+      setFormData(prev => ({ ...prev, archiveNo: '' }));
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      archiveNo: prefix + toBengaliDigits(rawValue)
+    }));
+  };
+
   const handleAddReceiver = () => {
+    if (!isReceiverAdmin) return;
     if (tempReceiverName.trim()) {
-      const updated = [...receiverSuggestions, tempReceiverName.trim()];
+      const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+      const newProfile = {
+        name: tempReceiverName.trim(),
+        designation: tempReceiverDesignation.trim() || undefined,
+        image: tempReceiverImage || undefined
+      };
+      const updated = [...receiverSuggestions, newProfile];
       setReceiverSuggestions(updated);
-      localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updated));
-      setTempReceiverName('');
+      localStorage.setItem(key, JSON.stringify(updated));
+      resetReceiverForm();
       setIsManagingReceivers(false);
     }
   };
 
   const handleEditReceiver = (idx: number) => {
+    if (!isReceiverAdmin) return;
     if (tempReceiverName.trim()) {
+      const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
       const updated = [...receiverSuggestions];
-      updated[idx] = tempReceiverName.trim();
+      updated[idx] = {
+        name: tempReceiverName.trim(),
+        designation: tempReceiverDesignation.trim() || undefined,
+        image: tempReceiverImage || undefined
+      };
       setReceiverSuggestions(updated);
-      localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updated));
+      localStorage.setItem(key, JSON.stringify(updated));
       setEditingReceiverIdx(null);
-      setTempReceiverName('');
+      resetReceiverForm();
+      setIsManagingReceivers(false);
+    }
+  };
+
+  const resetReceiverForm = () => {
+    setTempReceiverName('');
+    setTempReceiverDesignation('');
+    setTempReceiverImage(null);
+  };
+
+  const handleReceiverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) {
+        alert("ছবির সাইজ ১ মেগাবাইটের কম হতে হবে।");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTempReceiverImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleDeleteReceiver = (idx: number, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isReceiverAdmin) return;
+    const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+    const profileToDelete = receiverSuggestions[idx];
     const updated = receiverSuggestions.filter((_, i) => i !== idx);
     setReceiverSuggestions(updated);
-    localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updated));
-    if (formData.receiverName === receiverSuggestions[idx]) {
+    localStorage.setItem(key, JSON.stringify(updated));
+    if (formData.receiverName === profileToDelete.name) {
       setFormData(prev => ({ ...prev, receiverName: '' }));
     }
   };
@@ -553,6 +754,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       receiverName: '',
       receivedDate: '',
       isOnline: 'না',
+      archiveNo: '',
       remarks: ''
     });
     setLd(''); setLm(''); setLy('');
@@ -565,13 +767,35 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check if form is empty
+    const isEmpty = !formData.description && 
+                    !formData.letterNo && 
+                    !formData.diaryNo && 
+                    !formData.digitalFileNo && 
+                    !formData.archiveNo && 
+                    !ld && !lm && !ly && 
+                    !dd && !dm && !dy && 
+                    !rd && !rm && !ry && 
+                    !rcd && !rcm && !rcy;
+
+    if (isEmpty) {
+      const container = document.getElementById('form-container-correspondence');
+      if (container) {
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      return;
+    }
     
     // Defer heavy work to next tick to avoid blocking UI (INP fix)
     setTimeout(() => {
-      if (formData.receiverName.trim()) {
+      if (isReceiverAdmin && formData.receiverName.trim()) {
+        const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
         const updatedNames = Array.from(new Set([formData.receiverName.trim(), ...receiverSuggestions]));
         setReceiverSuggestions(updatedNames);
-        localStorage.setItem('ledger_correspondence_receivers', JSON.stringify(updatedNames));
+        localStorage.setItem(key, JSON.stringify(updatedNames));
       }
       
       if (formData.description.trim()) {
@@ -651,13 +875,22 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   <span>পত্র নং: <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.letterNo)}</span> </span>
                 )}
                 ইতোমধ্যেই ডাটাবেজে বিদ্যমান। অনুগ্রহ করে তথ্য যাচাই করুন।
+                {(duplicates.diaryEntryId || duplicates.letterEntryId) && navigateToEntry && (
+                  <button
+                    type="button"
+                    onClick={() => navigateToEntry(duplicates.diaryEntryId || duplicates.letterEntryId || '', 'correspondence', formData.diaryNo || formData.letterNo)}
+                    className="ml-3 px-3 py-1 bg-amber-200 text-amber-900 rounded-lg hover:bg-amber-300 transition-colors font-black text-xs flex inline-flex items-center gap-1.5 shadow-sm border border-amber-300"
+                  >
+                    <Search size={12} /> দেখুন
+                  </button>
+                )}
               </p>
            </div>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        <fieldset disabled={isSuccess} className="space-y-8 border-none p-0 m-0">
+        <fieldset className="space-y-8 border-none p-0 m-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             
             {/* Field 1 - Full Width Description with Suggestions */}
@@ -716,8 +949,19 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                           }}
                           className={`px-5 py-3.5 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.description === desc ? 'bg-emerald-600 text-white shadow-lg' : 'hover:bg-emerald-50 text-slate-700 font-bold'}`}
                         >
-                          <span className="text-[13px] leading-relaxed">{desc}</span>
-                          {formData.description === desc && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                          <div className="flex items-center gap-3">
+                            <span className="text-[13px] leading-relaxed flex-1">{desc}</span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {formData.description === desc && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                              <button 
+                                type="button"
+                                onClick={(e) => handleDeleteDescription(e, desc)}
+                                className={`p-1.5 rounded-lg transition-all ${formData.description === desc ? 'bg-white/20 hover:bg-white/40 text-white' : 'bg-red-50 hover:bg-red-100 text-red-500 opacity-0 group-hover:opacity-100'}`}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -734,15 +978,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
             {/* Field 2 */}
             <div className={`${colWrapper} border-blue-100`}>
-              <IDBadge id="corr-field-2" />
               <label className={labelCls}><span className={numBadge}>২</span> <ShieldCheck size={14} className="text-blue-600" /> শাখার ধরণ:</label>
-              <select 
-                className={`${inputCls} ${formData.paraType ? 'border-emerald-500' : 'border-red-500'}`} value={formData.paraType}
-                onChange={e => setFormData({...formData, paraType: e.target.value})}
-              >
-                <option value="এসএফআই">এসএফআই (SFI)</option>
-                <option value="নন এসএফআই">নন এসএফআই (NON-SFI)</option>
-              </select>
+              <PremiumParaTypeSelect 
+                value={formData.paraType}
+                onChange={(val: string) => setFormData({...formData, paraType: val})}
+                IDBadge={IDBadge}
+              />
             </div>
 
             {/* Field 3 */}
@@ -766,8 +1007,19 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 placeholder="নং লিখুন"
               />
               {duplicates.letterNo && (
-                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center gap-1">
-                  <AlertCircle size={10} /> এই পত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                <div className="mt-2 flex items-center gap-2 animate-in slide-in-from-top-1">
+                  <div className="text-[10px] font-black text-amber-600 flex items-center gap-1">
+                    <AlertCircle size={10} /> এই পত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                  </div>
+                  {duplicates.letterEntryId && navigateToEntry && (
+                    <button
+                      type="button"
+                      onClick={() => navigateToEntry(duplicates.letterEntryId || '', 'correspondence', formData.letterNo)}
+                      className="px-2 py-0.5 bg-amber-600 text-white text-[9px] font-black rounded shadow-sm hover:bg-amber-700 transition-all flex items-center gap-1"
+                    >
+                      <Search size={10} /> দেখুন
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -820,8 +1072,19 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 placeholder="নং লিখুন"
               />
               {duplicates.diaryNo && (
-                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center gap-1">
-                  <AlertCircle size={10} /> এই ডায়েরি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                <div className="mt-2 flex items-center gap-2 animate-in slide-in-from-top-1">
+                  <div className="text-[10px] font-black text-amber-600 flex items-center gap-1">
+                    <AlertCircle size={10} /> এই ডায়েরি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                  </div>
+                  {duplicates.diaryEntryId && navigateToEntry && (
+                    <button
+                      type="button"
+                      onClick={() => navigateToEntry(duplicates.diaryEntryId || '', 'correspondence', formData.diaryNo)}
+                      className="px-2 py-0.5 bg-amber-600 text-white text-[9px] font-black rounded shadow-sm hover:bg-amber-700 transition-all flex items-center gap-1"
+                    >
+                      <Search size={10} /> দেখুন
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -870,7 +1133,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             {/* Field 10 */}
             <div className={`${colWrapper} border-slate-200`} ref={receiverRef}>
               <IDBadge id="corr-field-10" />
-              <label className={labelCls}><span className={numBadge}>১০</span> <User size={14} className="text-slate-600" /> গৃহীতার নাম:</label>
+              <label className={labelCls}><span className={numBadge}>১০</span> <User size={14} className="text-slate-600" /> গ্রহীতার নাম:</label>
               <div className="relative group flex gap-2">
                 <div className="relative flex-1">
                   <input 
@@ -891,18 +1154,20 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   </button>
                 </div>
                 
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setEditingReceiverIdx(null);
-                    setTempReceiverName('');
-                    setIsManagingReceivers(true);
-                  }}
-                  className="w-[52px] h-[52px] bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 shrink-0"
-                  title="নতুন গ্রহীতা যোগ করুন"
-                >
-                  <Plus size={24} />
-                </button>
+                {isReceiverAdmin && (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setEditingReceiverIdx(null);
+                      setTempReceiverName('');
+                      setIsManagingReceivers(true);
+                    }}
+                    className="w-[52px] h-[52px] bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 shrink-0"
+                    title="নতুন গ্রহীতা যোগ করুন"
+                  >
+                    <Plus size={24} />
+                  </button>
+                )}
 
                 {showReceiverDropdown && (
                   <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600">
@@ -915,38 +1180,58 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                           কোন নাম পাওয়া যায়নি। প্লাস (+) বাটনে ক্লিক করে যোগ করুন।
                         </div>
                       ) : (
-                        receiverSuggestions.map((name, idx) => (
+                        receiverSuggestions.map((profile, idx) => (
                           <div 
                             key={idx}
                             onClick={() => {
-                              setFormData({...formData, receiverName: name});
+                              setFormData({...formData, receiverName: profile.name});
                               setShowReceiverDropdown(false);
                             }}
-                            className={`px-5 py-3 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.receiverName === name ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-blue-50 text-slate-700 font-bold'}`}
+                            className={`px-5 py-3 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.receiverName === profile.name ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-blue-50 text-slate-700 font-bold'}`}
                           >
-                            <span className="text-[13px]">{name}</span>
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden group-hover:border-blue-200 transition-colors">
+                                {profile.image ? (
+                                  <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <User size={14} className="text-slate-300" />
+                                )}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[13px]">{profile.name}</span>
+                                {profile.designation && (
+                                  <span className={`text-[9px] font-bold uppercase tracking-wider ${formData.receiverName === profile.name ? 'text-blue-100' : 'text-slate-400'}`}>{profile.designation}</span>
+                                )}
+                              </div>
+                            </div>
                             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button 
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingReceiverIdx(idx);
-                                  setTempReceiverName(name);
-                                  setIsManagingReceivers(true);
-                                  setShowReceiverDropdown(false);
-                                }}
-                                className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === name ? 'hover:bg-blue-500 text-white' : 'hover:bg-blue-100 text-blue-600'}`}
-                              >
-                                <FileEdit size={14} />
-                              </button>
-                              <button 
-                                type="button"
-                                onClick={(e) => handleDeleteReceiver(idx, e)}
-                                className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === name ? 'hover:bg-red-500 text-white' : 'hover:bg-red-100 text-red-600'}`}
-                              >
-                                <Trash size={14} />
-                              </button>
-                              {formData.receiverName === name && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                              {isReceiverAdmin && (
+                                <>
+                                  <button 
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingReceiverIdx(idx);
+                                      setTempReceiverName(profile.name);
+                                      setTempReceiverDesignation(profile.designation || '');
+                                      setTempReceiverImage(profile.image || null);
+                                      setIsManagingReceivers(true);
+                                      setShowReceiverDropdown(false);
+                                    }}
+                                    className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === profile.name ? 'hover:bg-blue-500 text-white' : 'hover:bg-blue-100 text-blue-600'}`}
+                                  >
+                                    <FileEdit size={14} />
+                                  </button>
+                                  <button 
+                                    type="button"
+                                    onClick={(e) => handleDeleteReceiver(idx, e)}
+                                    className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === profile.name ? 'hover:bg-red-500 text-white' : 'hover:bg-red-100 text-red-600'}`}
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </>
+                              )}
+                              {formData.receiverName === profile.name && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
                             </div>
                           </div>
                         ))
@@ -980,6 +1265,27 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                       </div>
 
                       <div className="space-y-6">
+                        <div className="flex justify-center mb-4">
+                          <div className="relative group">
+                            <div className="w-24 h-24 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl flex items-center justify-center overflow-hidden group-hover:border-blue-400 transition-all">
+                              {tempReceiverImage ? (
+                                <img src={tempReceiverImage} alt="Preview" className="w-full h-full object-cover" />
+                              ) : (
+                                <User size={32} className="text-slate-300" />
+                              )}
+                              <input 
+                                type="file" 
+                                accept="image/*"
+                                onChange={handleReceiverImageUpload}
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                              />
+                            </div>
+                            <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg pointer-events-none">
+                              <Plus size={16} />
+                            </div>
+                          </div>
+                        </div>
+
                         <div>
                           <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">গ্রহীতার নাম</label>
                           <input 
@@ -992,9 +1298,23 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                           />
                         </div>
 
+                        <div>
+                          <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">পদবি</label>
+                          <input 
+                            type="text"
+                            className={inputCls}
+                            value={tempReceiverDesignation}
+                            onChange={(e) => setTempReceiverDesignation(e.target.value)}
+                            placeholder="পদবি লিখুন..."
+                          />
+                        </div>
+
                         <div className="flex gap-3 pt-2">
                           <button 
-                            onClick={() => setIsManagingReceivers(false)}
+                            onClick={() => {
+                              setIsManagingReceivers(false);
+                              resetReceiverForm();
+                            }}
                             className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all"
                           >বাতিল</button>
                           <button 
@@ -1039,10 +1359,23 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               </div>
             </div>
 
-            {/* Field 13 - Remarks */}
+            {/* Field 13 - আর্কাইভ নং */}
+            <div className={`${colWrapper} border-amber-100`}>
+              <IDBadge id="corr-field-archive-no" />
+              <label className={labelCls}><span className={numBadge}>১৩</span> <Hash size={14} className="text-amber-600" /> আর্কাইভ নং:</label>
+              <input 
+                type="text" 
+                className={`${inputCls} ${formData.archiveNo ? 'border-emerald-500' : 'border-red-500'}`} 
+                value={formData.archiveNo} 
+                onChange={e => handleArchiveNoChange(e.target.value)}
+                placeholder="নং লিখুন"
+              />
+            </div>
+
+            {/* Field 14 - Remarks */}
             <div className={`${colWrapper} border-slate-200 col-span-full`}>
-              <IDBadge id="corr-field-13" />
-              <label className={labelCls}><span className={numBadge}>১৩</span> <FileText size={14} className="text-slate-600" /> মন্তব্য:</label>
+              <IDBadge id="corr-field-14" />
+              <label className={labelCls}><span className={numBadge}>১৪</span> <FileText size={14} className="text-slate-600" /> মন্তব্য:</label>
               <textarea 
                 className={`${inputCls} ${formData.remarks ? 'border-emerald-500' : 'border-red-500'} h-24 py-3 resize-none`}
                 value={formData.remarks}
@@ -1124,14 +1457,14 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           100% { width: 100%; }
         }
         .animate-progress-loading-premium {
-          animation: progress-loading-premium 4s linear forwards;
+          animation: progress-loading-premium 0.6s linear forwards;
         }
         @keyframes fade-in-complete {
           0%, 95% { opacity: 0; transform: translateY(10px); }
           100% { opacity: 1; transform: translateY(0); }
         }
         .animate-complete-text {
-          animation: fade-in-complete 4.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          animation: fade-in-complete 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}} />
     </div>

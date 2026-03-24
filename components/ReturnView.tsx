@@ -3,7 +3,7 @@ import React from 'react';
 import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP } from '../constants';
-import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2 } from 'lucide-react';
+import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles } from 'lucide-react';
 import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
 import { getCycleForDate } from '../utils/cycleHelper';
 import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
@@ -32,12 +32,15 @@ interface ReturnViewProps {
   isAdmin?: boolean;
   selectedReportType: string | null;
   setSelectedReportType: (type: string | null) => void;
+  showFilters: boolean;
+  setShowFilters: (val: boolean) => void;
 }
 
 const ReturnView: React.FC<ReturnViewProps> = ({ 
   entries, correspondenceEntries = [], cycleLabel, prevStats, setPrevStats, 
   isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister, isAdmin,
-  selectedReportType, setSelectedReportType
+  selectedReportType, setSelectedReportType,
+  showFilters, setShowFilters
 }) => {
   const [isSetupMode, setIsSetupMode] = useState(false);
   const [isEditingSetup, setIsEditingSetup] = useState(false);
@@ -46,7 +49,11 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
+  const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterMinistry, setFilterMinistry] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const ministryDropdownRef = useRef<HTMLDivElement>(null);
 
   const ministryGroups = useMemo(() => ['আর্থিক প্রতিষ্ঠান বিভাগ', 'পাট মন্ত্রণালয়', 'বস্ত্র মন্ত্রণালয়', 'শিল্প মন্ত্রণালয়', 'বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয়', 'বাণিজ্য মন্ত্রণালয়'], []);
 
@@ -70,6 +77,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsCycleDropdownOpen(false);
+      }
+      if (ministryDropdownRef.current && !ministryDropdownRef.current.contains(event.target as Node)) {
+        setIsMinistryDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -123,7 +133,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
             pastRC += parseBengaliNumber(rCountRaw);
         }
-        if (entry.manualRaisedAmount) pastRA += (Number(entry.manualRaisedAmount) || 0);
+        if (entry.manualRaisedAmount) pastRA += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
 
         if (entry.paragraphs) {
           entry.paragraphs.forEach(p => {
@@ -132,7 +142,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             if (p.id && !processedParaIds.has(p.id) && hasDigit) {
               processedParaIds.add(p.id);
               const status = robustNormalize(p.status || '');
-              const settledAmt = (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
+              const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
               if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                   pastSC++; 
               }
@@ -186,9 +196,17 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
             return entryDate >= cycleStartStr && entryDate <= cycleEndStr;
           });
-          let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0;
+          let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0, curSFIC = 0, curNonSFIC = 0, sfiSA = 0, nonSfiSA = 0;
+          let sfiBSR = 0, sfiTriWork = 0, sfiTriMin = 0, sfiRecon = 0;
+          let nonSfiBSR = 0, nonSfiBiWork = 0, nonSfiBiMin = 0, nonSfiRecon = 0;
+
           const processedParaIds = new Set<string>();
           matchingEntries.forEach(entry => {
+            const isSFI = robustNormalize(entry.paraType || '') === robustNormalize('এসএফআই');
+            // Support both Settlement Register (meetingType) and Correspondence Register (letterType)
+            const rawLT = entry.meetingType || entry.letterType || '';
+            const normLT = robustNormalize(rawLT);
+
             if (entry.paragraphs && entry.paragraphs.length > 0) {
               entry.paragraphs.forEach(p => { 
                 const cleanParaNo = String(p.paraNo || '').trim();
@@ -196,25 +214,62 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                 if (p.id && !processedParaIds.has(p.id) && hasDigit) {
                   processedParaIds.add(p.id);
                   const status = robustNormalize(p.status || '');
-                  const settledAmt = (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
+                  const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
+                  
                   if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                     curFC++; curSC++; 
+                    
+                    if (isSFI) {
+                      curSFIC++;
+                      if (normLT.includes(robustNormalize('বিএসআর'))) {
+                        sfiBSR++;
+                      } else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়'))) {
+                        // If it contains "বিবরণী", "(বি)", or "সভা", or is from Settlement Register, it's Minutes.
+                        if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !!entry.meetingType) {
+                          sfiTriMin++;
+                        } else {
+                          sfiTriWork++;
+                        }
+                      } else if (normLT.includes(robustNormalize('মিলিকরণ'))) {
+                        sfiRecon++;
+                      }
+                      sfiSA += settledAmt;
+                    } else {
+                      curNonSFIC++;
+                      if (normLT.includes(robustNormalize('বিএসআর'))) {
+                        nonSfiBSR++;
+                      } else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়'))) {
+                        // If it contains "বিবরণী", "(বি)", or "সভা", or is from Settlement Register, it's Minutes.
+                        if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !!entry.meetingType) {
+                          nonSfiBiMin++;
+                        } else {
+                          nonSfiBiWork++;
+                        }
+                      } else if (normLT.includes(robustNormalize('মিলিকরণ'))) {
+                        nonSfiRecon++;
+                      }
+                      nonSfiSA += settledAmt;
+                    }
+                    curSA += settledAmt;
                   } else if (status === robustNormalize('আংশিক')) {
                     curPC++;
                   }
-                  curSA += settledAmt;
                 }
               });
             }
             const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
             if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") curRC += parseBengaliNumber(rCountRaw);
-            if (entry.manualRaisedAmount) curRA += (Number(entry.manualRaisedAmount) || 0);
+            if (entry.manualRaisedAmount) curRA += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
           });
           return { 
             entity: entityName, 
             currentRaisedCount: curRC, currentRaisedAmount: curRA,
             currentSettledCount: curSC, currentSettledAmount: curSA,
             currentFullCount: curFC, currentPartialCount: curPC,
+            currentSFICount: curSFIC, currentNonSFICount: curNonSFIC,
+            currentSFIAmount: sfiSA, currentNonSFIAmount: nonSfiSA,
+            sfiBreakdown: { bsr: sfiBSR, triWork: sfiTriWork, triMin: sfiTriMin, recon: sfiRecon },
+            nonSfiBreakdown: { bsr: nonSfiBSR, biWork: nonSfiBiWork, biMin: nonSfiBiMin, recon: nonSfiRecon },
             prev: ePrev 
           };
         })
@@ -233,9 +288,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     if (selectedMonthStart.getTime() > currentMonthStart.getTime()) {
       // Next month selected: show up to today (Current Status)
       reportingLimitDate = today;
+    } else if (selectedMonthStart.getTime() === currentMonthStart.getTime()) {
+      // Current month selected: show up to today
+      reportingLimitDate = today;
     } else {
-      // Current or Past month selected: show up to the end of the month BEFORE the selected month
-      reportingLimitDate = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth(), 0, 23, 59, 59);
+      // Past month selected: show up to the end of that month
+      reportingLimitDate = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0, 23, 59, 59);
     }
 
     return (correspondenceEntries || []).filter(e => {
@@ -266,7 +324,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }, [correspondenceEntries, selectedReportType, activeCycle]);
 
   const grandTotals = useMemo(() => {
-    if (!reportData || reportData.length === 0) return { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0 };
+    const initial = { 
+      pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0, 
+      cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0,
+      sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0,
+      nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0
+    };
+    if (!reportData || reportData.length === 0) return initial;
     return reportData.reduce((acc, mGroup) => {
       mGroup.entityRows.forEach((row: any) => {
         acc.pUC += (row.prev.unsettledCount || 0); acc.pUA += (row.prev.unsettledAmount || 0); 
@@ -274,9 +338,21 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         acc.pSC += (row.prev.settledCount || 0); acc.pSA += (row.prev.settledAmount || 0); 
         acc.cSC += (row.currentSettledCount || 0); acc.cSA += (row.currentSettledAmount || 0);
         acc.cFC += (row.currentFullCount || 0); acc.cPC += (row.currentPartialCount || 0);
+        acc.cSFIC += (row.currentSFICount || 0); acc.cNonSFIC += (row.currentNonSFICount || 0);
+        acc.cSFIA += (row.currentSFIAmount || 0); acc.cNonSFIA += (row.currentNonSFIAmount || 0);
+        
+        acc.sfiBSR += (row.sfiBreakdown?.bsr || 0);
+        acc.sfiTriWork += (row.sfiBreakdown?.triWork || 0);
+        acc.sfiTriMin += (row.sfiBreakdown?.triMin || 0);
+        acc.sfiRecon += (row.sfiBreakdown?.recon || 0);
+        
+        acc.nonSfiBSR += (row.nonSfiBreakdown?.bsr || 0);
+        acc.nonSfiBiWork += (row.nonSfiBreakdown?.biWork || 0);
+        acc.nonSfiBiMin += (row.nonSfiBreakdown?.biMin || 0);
+        acc.nonSfiRecon += (row.nonSfiBreakdown?.recon || 0);
       });
       return acc;
-    }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0 });
+    }, initial);
   }, [reportData]);
 
   const handleSaveSetup = () => {
@@ -331,27 +407,103 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   };
 
   const HistoricalFilter = () => (
-    <div className="relative no-print" ref={dropdownRef}>
-      <div className="flex items-center gap-3">
-        <div onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} className={`flex items-center gap-3 px-5 h-[48px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isCycleDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}>
-           <CalendarDays size={20} className="text-blue-600" />
-           <span className="font-black text-[13.5px] text-slate-800 tracking-tight">
-             {cycleOptions.find(o => o.cycleLabel === activeCycle.label)?.label || toBengaliDigits(activeCycle.label)}
-           </span>
-           <ChevronDown size={18} className={`text-slate-400 ml-2 transition-transform duration-300 ${isCycleDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
-        </div>
-      </div>
-      {isCycleDropdownOpen && (
-        <div className="absolute top-[55px] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="p-2 max-h-[350px] overflow-y-auto no-scrollbar">
-            <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between"><span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2"><CalendarSearch size={12} /> মাস ও বছর নির্বাচন</span></div>
-            {cycleOptions.map((opt, idx) => (
-              <div key={idx} onClick={() => { setSelectedCycleDate(opt.date); setIsCycleDropdownOpen(false); }} className={`flex items-center justify-between px-4 py-2.5 mb-1 rounded-xl cursor-pointer transition-all ${opt.cycleLabel === activeCycle.label ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-slate-50 text-slate-700 font-bold'}`}>
-                <span className="text-[13px]">{opt.label}</span>
-                {opt.cycleLabel === activeCycle.label && <Check size={16} strokeWidth={3} />}
-              </div>
-            ))}
+    <div className="flex items-center gap-3 no-print">
+      {showFilters && (
+        <div className="relative" ref={dropdownRef}>
+          <div className="flex items-center gap-3">
+            <div onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} className={`flex items-center gap-3 px-5 h-[48px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isCycleDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}>
+               <CalendarDays size={20} className="text-blue-600" />
+               <span className="font-black text-[13.5px] text-slate-800 tracking-tight">
+                 {cycleOptions.find(o => o.cycleLabel === activeCycle.label)?.label || toBengaliDigits(activeCycle.label)}
+               </span>
+               <ChevronDown size={18} className={`text-slate-400 ml-2 transition-transform duration-300 ${isCycleDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+            </div>
           </div>
+          {isCycleDropdownOpen && (
+            <div className="absolute top-[55px] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="p-2 max-h-[350px] overflow-y-auto no-scrollbar">
+                <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between"><span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2"><CalendarSearch size={12} /> মাস ও বছর নির্বাচন</span></div>
+                {cycleOptions.map((opt, idx) => (
+                  <div key={idx} onClick={() => { setSelectedCycleDate(opt.date); setIsCycleDropdownOpen(false); }} className={`flex items-center justify-between px-4 py-2.5 mb-1 rounded-xl cursor-pointer transition-all ${opt.cycleLabel === activeCycle.label ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-slate-50 text-slate-700 font-bold'}`}>
+                    <span className="text-[13px]">{opt.label}</span>
+                    {opt.cycleLabel === activeCycle.label && <Check size={16} strokeWidth={3} />}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {showFilters && (
+        <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-4 duration-500">
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Search size={18} className="text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+            </div>
+            <input
+              type="text"
+              placeholder="সার্চ করুন..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-11 pr-4 h-[48px] w-[260px] bg-white border-2 border-slate-200 rounded-xl text-[13.5px] font-bold text-slate-800 placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all outline-none shadow-sm"
+            />
+            {searchTerm && (
+              <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-red-500 transition-colors">
+                <X size={16} />
+              </button>
+            )}
+          </div>
+
+          <div className="relative" ref={ministryDropdownRef}>
+            <div 
+              onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
+              className={`flex items-center gap-3 px-5 h-[48px] min-w-[220px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isMinistryDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}
+            >
+              <LayoutGrid size={18} className="text-blue-600" />
+              <span className="font-black text-[13.5px] text-slate-800 tracking-tight flex-1">
+                {filterMinistry || 'সকল মন্ত্রণালয়'}
+              </span>
+              <ChevronDown size={18} className={`text-slate-400 transition-transform duration-300 ${isMinistryDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+            </div>
+
+            {isMinistryDropdownOpen && (
+              <div className="absolute top-[55px] right-0 w-[280px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="p-2 max-h-[350px] overflow-y-auto no-scrollbar">
+                  <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                      <LayoutGrid size={12} /> মন্ত্রণালয় নির্বাচন
+                    </span>
+                  </div>
+                  <div 
+                    onClick={() => { setFilterMinistry(''); setIsMinistryDropdownOpen(false); }}
+                    className={`flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${filterMinistry === '' ? 'bg-blue-50 text-blue-700' : 'hover:bg-slate-50 text-slate-600'}`}
+                  >
+                    <span className="text-[13px] font-black">সকল মন্ত্রণালয়</span>
+                    {filterMinistry === '' && <Check size={14} />}
+                  </div>
+                  {ministryGroups.map((m, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={() => { setFilterMinistry(m); setIsMinistryDropdownOpen(false); }}
+                      className={`flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${filterMinistry === m ? 'bg-blue-50 text-blue-700' : 'hover:bg-slate-50 text-slate-600'}`}
+                    >
+                      <span className="text-[13px] font-black">{m}</span>
+                      {filterMinistry === m && <Check size={14} />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button 
+            onClick={() => { setSearchTerm(''); setFilterMinistry(''); }}
+            className="flex items-center justify-center w-[48px] h-[48px] bg-slate-100 text-slate-500 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all duration-300 shadow-sm border border-slate-200"
+            title="ফিল্টার রিসেট করুন"
+          >
+            <X size={20} />
+          </button>
         </div>
       )}
     </div>
@@ -359,37 +511,77 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
   if (!selectedReportType && !isSetupMode) {
     return (
-      <div id="section-report-selector" className="max-w-4xl py-20 animate-report-page relative pt-0 text-center">
+      <div id="section-report-selector" className="min-h-[70vh] flex items-center justify-center animate-in fade-in zoom-in duration-700 relative py-4">
         <IDBadge id="section-report-selector" />
-        <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-16 rounded-[3rem] space-y-6">
-           <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto shadow-xl"><PieChart size={40} /></div>
-           <div className="space-y-2"><h3 className="text-3xl font-black text-slate-800">রিটার্ণ মডিউলে স্বাগতম</h3><p className="text-slate-500 font-bold max-w-sm mx-auto">অনুগ্রহ করে বাম পাশের সাইডবার মেনু থেকে কাঙ্ক্ষিত রিটার্ণ বা সারাংশের ধরনটি নির্বাচন করুন।</p></div>
-           <div className="flex justify-center items-center gap-4 text-slate-400 font-black text-sm uppercase tracking-widest pt-4"><ArrowRightCircle size={20} className="text-blue-500 animate-pulse" /> সাইডবার থেকে সিলেক্ট করুন</div>
+        
+        {/* Background Decorative Elements */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full overflow-hidden pointer-events-none opacity-20">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-400 rounded-full blur-[120px] translate-x-1/2 translate-y-1/2"></div>
+        </div>
+
+        <div className="relative z-10 w-full max-w-4xl bg-white/40 backdrop-blur-xl border border-white/60 p-8 md:p-12 rounded-[3.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] space-y-6 text-center group transition-all duration-500 hover:shadow-[0_48px_80px_-16px_rgba(0,0,0,0.12)]">
+           <div className="relative inline-block">
+             <div className="absolute inset-0 bg-blue-600 blur-3xl opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
+             <div className="relative w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl shadow-blue-500/30 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+               <PieChart size={40} strokeWidth={1.5} />
+             </div>
+             <div className="absolute -bottom-1 -right-1 w-9 h-9 bg-amber-400 text-slate-900 rounded-xl flex items-center justify-center shadow-lg border-4 border-white animate-bounce">
+               <Sparkles size={18} fill="currentColor" />
+             </div>
+           </div>
+
+           <div className="space-y-3">
+             <h3 className="text-4xl font-black text-slate-900 tracking-tight leading-tight">
+               রিটার্ন মডিউলে <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">স্বাগতম</span>
+             </h3>
+             <p className="text-slate-600 font-bold text-base max-w-lg mx-auto leading-relaxed">
+               আপনার কাঙ্ক্ষিত রিটার্ন বা সারাংশের ধরনটি নির্বাচন করে কাজ শুরু করুন। আমরা আপনার তথ্যের সঠিকতা ও নিরাপত্তা নিশ্চিত করি।
+             </p>
+           </div>
+
+           <div className="pt-4">
+             <div className="inline-flex items-center gap-3 px-7 py-3.5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.15em] shadow-2xl shadow-slate-900/20 hover:bg-blue-600 hover:shadow-blue-500/30 transition-all duration-300 cursor-default group/btn">
+               <ArrowRightCircle size={20} className="text-blue-400 group-hover/btn:translate-x-1 transition-transform" />
+               বাম পাশের সাইডবার থেকে সিলেক্ট করুন
+             </div>
+           </div>
+
+           {/* Bottom Stats or Decorative Line */}
+           <div className="flex items-center justify-center gap-6 pt-6 opacity-40">
+             <div className="h-px w-24 bg-gradient-to-r from-transparent to-slate-400"></div>
+             <div className="flex gap-2">
+               <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+               <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
+               <div className="w-2 h-2 rounded-full bg-slate-400"></div>
+             </div>
+             <div className="h-px w-24 bg-gradient-to-l from-transparent to-slate-400"></div>
+           </div>
         </div>
       </div>
     );
   }
 
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
-    return <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} />;
+    return <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
   }
 
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
-    return <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} />;
+    return <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} showFilters={showFilters} />;
   }
 
   if (isSetupMode) {
     return <OpeningBalanceSetup ministryGroups={ministryGroups} tempPrevStats={tempPrevStats} setTempPrevStats={setTempPrevStats} isEditingSetup={isEditingSetup} setIsEditingSetup={setIsEditingSetup} handleSaveSetup={handleSaveSetup} handleSetupPaste={handleSetupPaste} setIsSetupMode={setIsSetupMode} setSelectedReportType={setSelectedReportType} IDBadge={IDBadge} setupType={selectedReportType || ''} />;
   }
 
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') return <QR_1 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') return <QR_2 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') return <QR_3 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') return <QR_4 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') return <QR_5 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') return <QR_6 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') return <QR_1 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') return <QR_2 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') return <QR_3 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') return <QR_4 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') return <QR_5 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') return <QR_6 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
 
-  return <ReturnSummaryTable reportData={reportData} grandTotals={grandTotals} activeCycle={activeCycle} selectedReportType={selectedReportType} setSelectedReportType={setSelectedReportType} isAdmin={isAdmin || false} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} />;
+  return <ReturnSummaryTable reportData={reportData} grandTotals={grandTotals} activeCycle={activeCycle} selectedReportType={selectedReportType} setSelectedReportType={setSelectedReportType} isAdmin={isAdmin || false} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} showFilters={showFilters} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
 };
 
 export default ReturnView;

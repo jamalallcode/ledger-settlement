@@ -5,7 +5,7 @@
 .table-container {
   width: 100%;
   max-width: 100%;
-  max-height: 75vh !important; /* Reduced for better visibility of footer */
+  max-height: 75vh !important; 
   overflow-y: auto !important;
   overflow-x: auto !important;
   position: relative;
@@ -19,26 +19,39 @@
   position: sticky !important;
   top: 0 !important;
   z-index: 250 !important;
-  background-color: #e2e8f0 !important;
+}
+
+.table-container thead tr {
+  position: sticky !important;
+  top: 0 !important;
 }
 
 .table-container thead th {
   position: sticky !important;
   top: 0 !important;
-  background-color: #e2e8f0 !important;
+  background-color: #f1f5f9 !important; 
   z-index: 240 !important;
   background-clip: padding-box !important;
   box-shadow: inset 0 -1px 0 #cbd5e1, inset -1px 0 0 #cbd5e1 !important;
   vertical-align: middle !important;
 }
 
-/* Row-specific offsets for multi-row headers if needed */
-/* SettlementTable uses these specific heights */
+/* Row-specific offsets for multi-row headers */
+/* Most tables have a first row height of 42px */
 .table-container thead tr:nth-child(2) th {
   top: 42px !important; 
 }
+/* If there's a third row, it usually follows a 38px second row (42+38=80) */
 .table-container thead tr:nth-child(3) th {
   top: 80px !important; 
+}
+
+/* Special handling for QR tables if they differ, but currently they match 42px */
+.qr-table-container thead tr:nth-child(2) th {
+  top: 42px !important;
+}
+.qr-table-container thead tr:nth-child(3) th {
+  top: 80px !important;
 }
 
 /* Sticky Footer (General) */
@@ -53,9 +66,54 @@
   position: sticky !important;
   bottom: 0 !important;
   z-index: 240 !important;
-  background-color: #0f172a !important;
+  background-color: #000000 !important;
   color: white !important;
-  box-shadow: inset 0 1px 0 #334155, inset -1px 0 0 #334155 !important;
+  box-shadow: inset 0 1px 0 #1e293b, inset -1px 0 0 #1e293b !important;
+}
+
+/* QR Specific Sticky Footer (for rows inside tbody) */
+.qr-sticky-footer td {
+  position: sticky !important;
+  background-clip: padding-box !important;
+  background-color: white; /* Default solid background */
+  /* Normal 1px borders using inset shadow to survive stickiness without looking thick */
+  box-shadow: inset 0 1px 0 #94a3b8, inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8 !important;
+}
+
+/* Base sticky footer (usually for the bottom-most row like 'Grand Total') */
+.qr-sticky-footer-bottom td {
+  bottom: 0 !important;
+  z-index: 220 !important; /* Higher than regular rows, lower than thead (250) */
+  background-color: #000000 !important; /* Black background */
+  color: #ffffff !important; /* White text */
+  /* Add a distinct top border for the grand total row */
+  box-shadow: inset 0 1px 0 #1e293b, inset 0 -1px 0 #1e293b, inset -1px 0 0 #1e293b !important;
+}
+
+/* Offset sticky footer (for the 'Total' row when it sits above 'Grand Total') */
+.qr-sticky-footer-offset td {
+  bottom: 28px !important; /* Matches the h-[28px] of the row below it */
+  z-index: 210 !important; /* Higher than regular rows, lower than bottom footer */
+  background-color: #000000 !important; /* Black background */
+  color: #ffffff !important; /* White text */
+  box-shadow: inset 0 1px 0 #1e293b, inset 0 -1px 0 #1e293b, inset -1px 0 0 #1e293b !important;
+}
+
+/* Disable hover background changes for Total/Grand Total rows */
+.qr-sticky-footer-bottom:hover td,
+.qr-sticky-footer-offset:hover td {
+  background-color: #000000 !important; /* Keep original black background */
+  color: #ffffff !important;
+}
+
+/* Fallback background for generic sticky footers if not specified */
+.qr-sticky-footer:not(.qr-sticky-footer-bottom):not(.qr-sticky-footer-offset) td {
+  background-color: #f1f5f9 !important;
+}
+
+/* Ensure z-index for stacked footers */
+.qr-sticky-footer.z-20 td {
+  z-index: 211 !important;
 }
 
 /* --- MULTI-TABLE VIEW SPECIFIC OVERRIDES --- */
@@ -81,9 +139,10 @@
   }
 }
 
-/* Premium Scrollbar Styling */
+/* Premium Scrollbar Styling (Generic) */
 .table-container::-webkit-scrollbar {
-  height: 10px;
+  width: 6px;
+  height: 6px;
 }
 
 .table-container::-webkit-scrollbar-track {
@@ -91,18 +150,64 @@
 }
 
 .table-container::-webkit-scrollbar-thumb {
-  background: rgba(203, 213, 225, 0.4);
+  background: #cbd5e1;
   border-radius: 10px;
-  border: 3px solid transparent;
-  background-clip: padding-box;
   transition: all 0.3s ease;
 }
 
 .table-container:hover::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.8);
-  border: 2px solid transparent;
+  background: #94a3b8;
 }
 
 .table-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 1) !important;
+  background: #64748b !important;
+}
+
+/* --- QR TABLE SPECIFIC SCROLLBAR (Must come last or have higher specificity) --- */
+
+.qr-table-container.table-container::-webkit-scrollbar {
+  width: 14px !important;
+  display: block !important;
+}
+
+.qr-table-container.table-container::-webkit-scrollbar-track {
+  background-color: #f8fafc !important;
+  /* Standard borders are the most robust against zoom scaling issues */
+  border-left: 1px solid #475569 !important;
+  border-right: 1px solid #475569 !important;
+}
+
+.qr-table-container.table-container::-webkit-scrollbar-thumb {
+  background-color: #94a3b8 !important;
+  border-radius: 20px !important;
+  border: 3px solid #f8fafc !important; /* Slightly thicker border for better thumb definition */
+}
+
+.qr-table-container.table-container::-webkit-scrollbar-thumb:hover {
+  background-color: #64748b !important;
+}
+
+/* Scrollbar Arrows (Buttons) for QR Tables */
+.qr-table-container.table-container::-webkit-scrollbar-button:single-button {
+  background-color: #f8fafc !important;
+  display: block !important;
+  /* Standard borders for consistency across zoom levels */
+  border-left: 1px solid #475569 !important;
+  border-right: 1px solid #475569 !important;
+  height: 14px !important;
+  width: 14px !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+.qr-table-container.table-container::-webkit-scrollbar-button:single-button:vertical:decrement {
+  background-image: 
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%23475569'><polygon points='50,20 20,80 80,80'/></svg>") !important;
+  background-size: 8px !important;
+}
+
+.qr-table-container.table-container::-webkit-scrollbar-button:single-button:vertical:increment {
+  background-image: 
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%23475569'><polygon points='50,80 20,20 80,20'/></svg>") !important;
+  background-size: 8px !important;
 }

@@ -1,22 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
-  LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, 
+  LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, Camera,
   ChevronDown, Sparkles, Lock, Unlock, CheckCircle2, Download, 
   Upload, ShieldCheck, LogOut, X, KeyRound, Settings, 
   Calendar, ShieldAlert, Filter, Printer, Menu, Fingerprint, 
-  Bell, Check, XCircle, UserCheck, BellRing, ArrowRight, Library, Plus
+  Bell, Check, XCircle, UserCheck, BellRing, ArrowRight, Library, Plus,
+  Mail, ClipboardList
 } from 'lucide-react';
 import { SettlementEntry } from '../types';
 import { toBengaliDigits } from '../utils/numberUtils';
 
 interface NavbarProps {
   activeTab: string;
-  setActiveTab: (tab: string) => void;
+  setActiveTab: (tab: string, subModule?: 'settlement' | 'correspondence', rType?: string) => void;
   onDemoLoad: () => void;
   isLockedMode: boolean;
   setIsLockedMode: (val: boolean) => void;
-  isLayoutEditable: boolean;
-  setIsLayoutEditable: (val: boolean) => void;
   onExportSystem: () => void;
   onImportSystem: (file: File) => void;
   isAdmin: boolean;
@@ -38,8 +38,6 @@ const Navbar: React.FC<NavbarProps> = ({
   onDemoLoad,
   isLockedMode,
   setIsLockedMode,
-  isLayoutEditable,
-  setIsLayoutEditable,
   onExportSystem,
   onImportSystem,
   isAdmin,
@@ -59,9 +57,14 @@ const Navbar: React.FC<NavbarProps> = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showToolsDropdown, setShowToolsDropdown] = useState(false);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+  const [showEntryDropdown, setShowEntryDropdown] = useState(false);
+  const [showRegisterDropdown, setShowRegisterDropdown] = useState(false);
   
   const toolsRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+  const entryDropdownRef = useRef<HTMLDivElement>(null);
+  const registerDropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -81,47 +84,115 @@ const Navbar: React.FC<NavbarProps> = ({
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter },
   ];
 
-  const IDBadge = ({ id }: { id: string }) => {
-    const [copied, setCopied] = useState(false);
-    if (!isLayoutEditable) return null;
-    const handleCopy = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      navigator.clipboard.writeText(id);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    };
-    return (
-      <span onClick={handleCopy} className={`absolute -top-3 left-2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 z-[9999] cursor-pointer no-print shadow-xl transition-all duration-200 hover:scale-150 hover:bg-blue-600 active:scale-95 flex items-center gap-1 origin-left ${copied ? 'bg-emerald-600' : ''}`}>
-        {copied ? 'COPIED!' : `#${id}`}
-      </span>
-    );
-  };
-
   return (
-    <nav className="sticky top-0 z-[5000] bg-slate-900 border-b border-slate-800 h-20 shadow-2xl no-print relative">
-      <IDBadge id="premium-navbar-main" />
-      <div className="max-w-[1600px] mx-auto h-full px-4 md:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={onToggleSidebar} className={`p-2 hover:bg-slate-800 rounded-xl transition-all text-slate-400 hover:text-white ${isSidebarOpen ? 'hidden lg:hidden' : 'flex'}`}><Menu size={24} /></button>
+    <nav className="sticky top-0 z-[9991] bg-slate-900 border-b border-slate-800 h-[45px] shadow-2xl no-print relative">
+      <div className="max-w-[1600px] mx-auto h-full px-4 md:px-5 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button onClick={onToggleSidebar} className={`p-1 hover:bg-slate-800 rounded-lg transition-all text-slate-400 hover:text-white ${isSidebarOpen ? 'hidden lg:hidden' : 'flex'}`}><Menu size={16} /></button>
           <div className="hidden lg:flex items-center gap-2">
             {navItems.map((item) => (
               <React.Fragment key={item.id}>
-                <button 
-                  onClick={() => setActiveTab(item.id)} 
-                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-black text-sm transition-all relative ${activeTab === item.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-900/40 translate-y-[-1px]' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                >
-                  <item.icon size={18} /> {item.label}
-                </button>
+                {item.id === 'landing' ? (
+                  <button 
+                    onClick={() => setActiveTab(item.id)} 
+                    className={`group relative flex items-center justify-center w-8 h-8 rounded-full transition-all duration-500 overflow-hidden
+                      ${activeTab === item.id 
+                        ? 'scale-110 z-10 shadow-[0_5px_15px_rgba(0,0,0,0.4)]' 
+                        : 'opacity-90 hover:opacity-100 hover:scale-105 active:scale-95 shadow-[0_2px_8px_rgba(0,0,0,0.3)]'}
+                    `}
+                    title={item.label}
+                  >
+                    {/* The Multi-color Glass Sphere Base - Refined to match image */}
+                    <div className="absolute inset-0 bg-[conic-gradient(from_225deg,#2dd4bf,#3b82f6,#ef4444,#f97316,#2dd4bf)]" />
+                    
+                    {/* Inner Shadow for depth */}
+                    <div className="absolute inset-0 rounded-full shadow-[inset_0_-3px_8px_rgba(0,0,0,0.5),inset_0_3px_8px_rgba(255,255,255,0.4)]" />
+                    
+                    {/* Top Glossy Highlight (The white arc at the top) */}
+                    <div className="absolute top-[4%] left-[12%] w-[76%] h-[48%] bg-gradient-to-b from-white/90 to-transparent rounded-[100%] pointer-events-none" />
+                    
+                    {/* Bottom Reflection */}
+                    <div className="absolute bottom-[6%] left-[22%] w-[56%] h-[18%] bg-white/30 blur-[1px] rounded-[100%] pointer-events-none" />
+                    
+                    {/* Active State Glow */}
+                    <div className={`absolute inset-0 rounded-full transition-opacity duration-500 ${activeTab === item.id ? 'bg-white/10' : 'opacity-0'}`} />
+                    
+                    <div className="relative z-10 flex items-center justify-center">
+                      <item.icon size={14} className="text-slate-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)]" />
+                    </div>
+                  </button>
+                ) : (
+                  <div 
+                    className="relative"
+                    onMouseEnter={() => item.id === 'register' && setShowRegisterDropdown(true)}
+                    onMouseLeave={() => item.id === 'register' && setShowRegisterDropdown(false)}
+                  >
+                    <button 
+                      onClick={() => setActiveTab(item.id)} 
+                      className={`flex items-center gap-1 px-[11px] py-[5px] bg-white text-slate-900 rounded-lg font-bold text-[11px] shadow-lg hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all relative ${activeTab === item.id ? 'ring-1 ring-blue-500' : ''}`}
+                    >
+                      <item.icon size={13} className="text-blue-600" /> {item.label}
+                      {item.id === 'register' && <ChevronDown size={11} className={`ml-0.5 transition-transform ${showRegisterDropdown ? 'rotate-180' : ''}`} />}
+                    </button>
+
+                    {item.id === 'register' && showRegisterDropdown && (
+                      <div className="absolute top-full left-0 pt-2 w-64 z-[5010] animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2">
+                          <button 
+                            onClick={() => { setActiveTab('register', 'correspondence'); setShowRegisterDropdown(false); }}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all text-left font-bold text-sm"
+                          >
+                            <Mail size={16} className="text-emerald-500" />
+                            ১. চিঠিপত্র রেজিস্টার
+                          </button>
+                          <button 
+                            onClick={() => { setActiveTab('register', 'settlement'); setShowRegisterDropdown(false); }}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all text-left font-bold text-sm"
+                          >
+                            <ClipboardList size={16} className="text-blue-500" />
+                            ২. মীমাংসা রেজিস্টার
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {item.id === 'landing' && (
-                  <div className="relative group mx-2">
+                  <div 
+                    className="relative mx-1"
+                    onMouseEnter={() => setShowEntryDropdown(true)}
+                    onMouseLeave={() => setShowEntryDropdown(false)}
+                  >
                     <button 
                       onClick={() => setActiveTab('entry')} 
-                      className={`hidden lg:flex items-center gap-2.5 px-5 py-2.5 bg-white text-slate-900 rounded-xl font-black text-sm shadow-xl hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all relative ${activeTab === 'entry' ? 'ring-2 ring-blue-500' : ''}`}
+                      className={`hidden lg:flex items-center gap-1 px-[11px] py-[5px] bg-white text-slate-900 rounded-lg font-bold text-[11px] shadow-lg hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all relative ${activeTab === 'entry' ? 'ring-1 ring-blue-500' : ''}`}
                     >
-                      <IDBadge id="nav-quick-entry" /> 
-                      <FilePlus2 size={20} className="text-blue-600" /> 
+                      <FilePlus2 size={14} className="text-blue-600" /> 
                       নতুন এন্ট্রি
+                      <ChevronDown size={11} className={`ml-0.5 transition-transform ${showEntryDropdown ? 'rotate-180' : ''}`} />
                     </button>
+
+                    {showEntryDropdown && (
+                      <div className="absolute top-full left-0 pt-2 w-64 z-[5010] animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2">
+                          <button 
+                            onClick={() => { setActiveTab('entry', 'correspondence'); setShowEntryDropdown(false); }}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all text-left font-bold text-sm"
+                          >
+                            <Mail size={16} className="text-emerald-500" />
+                            ১. চিঠিপত্র এন্ট্রি
+                          </button>
+                          <button 
+                            onClick={() => { setActiveTab('entry', 'settlement'); setShowEntryDropdown(false); }}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all text-left font-bold text-sm"
+                          >
+                            <ClipboardList size={16} className="text-blue-500" />
+                            ২. মীমাংসা এন্ট্রি
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </React.Fragment>
@@ -129,16 +200,16 @@ const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {isAdmin && (
             <div className="relative" ref={notifRef}>
               <button 
                 onClick={() => setShowNotifDropdown(!showNotifDropdown)}
-                className={`p-2.5 rounded-xl border transition-all relative flex items-center justify-center ${showNotifDropdown || pendingEntries.length > 0 ? 'bg-amber-500 text-white border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.3)]' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'}`}
+                className={`p-1 rounded-lg border transition-all relative flex items-center justify-center ${showNotifDropdown || pendingEntries.length > 0 ? 'bg-amber-500 text-white border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'}`}
               >
-                {pendingEntries.length > 0 ? <BellRing size={20} className="animate-pulse" /> : <Bell size={20} />}
+                {pendingEntries.length > 0 ? <BellRing size={16} className="animate-pulse" /> : <Bell size={16} />}
                 {pendingEntries.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-slate-900 shadow-sm animate-notif-scale">
+                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center border border-slate-900 shadow-sm animate-notif-scale">
                     {toBengaliDigits(pendingEntries.length)}
                   </span>
                 )}
@@ -208,24 +279,24 @@ const Navbar: React.FC<NavbarProps> = ({
           
           {isAdmin && (
             <div className="hidden sm:flex items-center gap-2">
-              <div className={`flex items-center gap-2 px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-xl relative`}>
-                <IDBadge id="nav-locked-status" /> <div className={`w-2 h-2 rounded-full ${isLockedMode ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 animate-pulse'}`}></div> <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{isLockedMode ? 'Locked' : 'Edit'}</span>
+              <div className={`flex items-center gap-1.5 px-2 py-1 bg-slate-800/80 border border-slate-700 rounded-xl relative`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${isLockedMode ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 animate-pulse'}`}></div> <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{isLockedMode ? 'Locked' : 'Edit'}</span>
               </div>
             </div>
           )}
 
-          <div className="flex items-center gap-3">
-            {(activeTab === 'register' || activeTab === 'return') && <button onClick={() => setShowRegisterFilters(!showRegisterFilters)} className={`p-2.5 rounded-xl border transition-all ${showRegisterFilters ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}><Filter size={20} /></button>}
+          <div className="flex items-center gap-2">
+            {(activeTab === 'register' || activeTab === 'return') && <button onClick={() => setShowRegisterFilters(!showRegisterFilters)} className={`p-1 rounded-lg border transition-all ${showRegisterFilters ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}><Filter size={16} /></button>}
             
             {isAdmin && (
               <div className="relative" ref={toolsRef}>
-                <button onClick={() => setShowToolsDropdown(!showToolsDropdown)} className={`p-2.5 rounded-xl border transition-all ${showToolsDropdown ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}><Settings size={22} /></button>
+                <button onClick={() => setShowToolsDropdown(!showToolsDropdown)} className={`p-1 rounded-lg border transition-all ${showToolsDropdown ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}><Settings size={16} /></button>
                 {showToolsDropdown && (
                   <div className="absolute top-[calc(100%+12px)] right-0 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 z-[5010]">
                     <div className="space-y-3 animate-in fade-in duration-500">
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">লেআউট টুলস</span>
-                      <button onClick={() => setIsLayoutEditable(!isLayoutEditable)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-black text-[11px] transition-all border relative ${isLayoutEditable ? 'bg-amber-500/10 border-amber-400/50 text-amber-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'}`}>
-                        <IDBadge id="dropdown-layout-toggle" /> {isLayoutEditable ? <Unlock size={14} /> : <Lock size={14} />} লেআউট এডিট (ID ব্যাজ)
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">সিস্টেম টুলস</span>
+                      <button onClick={onExportSystem} className="w-full flex items-center gap-3 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl font-black text-[11px] text-slate-400 hover:text-white transition-all">
+                        <Download size={14} /> এক্সপোর্ট ডাটাবেস
                       </button>
                     </div>
                   </div>
@@ -233,7 +304,7 @@ const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
             
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden p-2.5 bg-slate-800 text-white rounded-xl border border-slate-700"><Menu size={24} /></button>
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden p-1.5 bg-slate-800 text-white rounded-xl border border-slate-700"><Menu size={20} /></button>
           </div>
         </div>
       </div>

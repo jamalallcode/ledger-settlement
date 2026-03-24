@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import SettlementForm from './components/SettlementForm';
@@ -9,6 +10,10 @@ import ReturnView from './components/ReturnView';
 import LandingPage from './components/LandingPage';
 import VotingSystem from './components/VotingSystem';
 import DocumentArchive from './components/DocumentArchive';
+import ReceiverManagement from './components/ReceiverManagement';
+import AdminDashboard from './components/AdminDashboard';
+import ChangePasswordModal from './components/ChangePasswordModal';
+import AdminAnalytics from './subapps/admin_analytics/AdminAnalytics';
 import { SettlementEntry, GroupOption, CumulativeStats } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
@@ -27,19 +32,21 @@ const generateId = () => {
 };
 
 const App: React.FC = () => {
+  const navigate = useNavigate();
   const [entries, setEntries] = useState<SettlementEntry[]>([]);
   const [correspondenceEntries, setCorrespondenceEntries] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('landing'); 
   const [resetKey, setResetKey] = useState(0); 
   const [editingEntry, setEditingEntry] = useState<any | null>(null);
-  const [isLayoutEditable, setIsLayoutEditable] = useState(false);
   const [isLockedMode, setIsLockedMode] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showRegisterFilters, setShowRegisterFilters] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   
   // State for direct module entry from sidebar
   const [entryModule, setEntryModule] = useState<'settlement' | 'correspondence' | null>(null);
@@ -49,6 +56,12 @@ const App: React.FC = () => {
 
   // New state for direct report selection from sidebar
   const [reportType, setReportType] = useState<string | null>(null);
+  const [showAdminAlert, setShowAdminAlert] = useState(false);
+  const [hasShownAlert, setHasShownAlert] = useState(false);
+
+  const pendingEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'pending'), [entries]);
+  const pendingCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'pending'), [correspondenceEntries]);
+  const totalPendingCount = pendingEntries.length + pendingCorrespondence.length;
   
   const [allPrevStats, setAllPrevStats] = useState<Record<string, CumulativeStats>>({
     monthly: { inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, entitiesSFI: {}, entitiesNonSFI: {} },
@@ -81,16 +94,16 @@ const App: React.FC = () => {
     }
     
     // Handle Direct Entry Modules
-    if (tab === 'entry' && subModule) {
-      setEntryModule(subModule);
-    } else if (tab !== 'entry') {
+    if (tab === 'entry') {
+      setEntryModule(subModule || 'correspondence');
+    } else {
       setEntryModule(null);
     }
 
     // Handle Direct Register Modules
-    if (tab === 'register' && subModule) {
-      setRegisterSubModule(subModule);
-    } else if (tab === 'register' && !subModule) {
+    if (tab === 'register') {
+      setRegisterSubModule(subModule || 'correspondence');
+    } else {
       setRegisterSubModule(null);
     }
 
@@ -102,6 +115,28 @@ const App: React.FC = () => {
     }
 
     setShowPendingOnly(false);
+  };
+
+  const [highlightSearch, setHighlightSearch] = useState<string | null>(null);
+
+  const navigateToEntry = (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => {
+    setActiveTab('register');
+    setRegisterSubModule(type);
+    
+    // Determine if the entry is pending or approved to set the correct view
+    const isPending = entries.some(e => e.id === id && e.approvalStatus === 'pending') || 
+                      correspondenceEntries.some(e => e.id === id && e.approvalStatus === 'pending');
+    
+    setShowPendingOnly(isPending);
+
+    if (searchNo) {
+      setHighlightSearch(searchNo);
+      setShowRegisterFilters(true);
+    }
+    // Scroll to top first to ensure the table is visible
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   // --- AUTO SYNC LOGIC ---
@@ -154,8 +189,11 @@ const App: React.FC = () => {
   // STRICT AUTO-ADMIN DETECTION
   useEffect(() => {
     const handleAdminSync = (email?: string) => {
-      if (email === 'websitetogather@gmail.com') {
+      setUserEmail(email || null);
+      const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com', 'emailaddress3424@gmail.com'];
+      if (email && adminEmails.includes(email)) {
         setIsAdmin(true);
+        setIsLockedMode(false); // Auto-unlock for admin
         localStorage.setItem(ADMIN_MODE_KEY, 'true');
       }
     };
@@ -170,6 +208,14 @@ const App: React.FC = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Proactive Admin Notification Effect
+  useEffect(() => {
+    if (userEmail === 'websitetogather@gmail.com' && totalPendingCount > 0 && !hasShownAlert && !isLoading) {
+      setShowAdminAlert(true);
+      setHasShownAlert(true);
+    }
+  }, [userEmail, totalPendingCount, hasShownAlert, isLoading]);
 
   useEffect(() => {
     if (mainScrollRef.current) mainScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -319,6 +365,7 @@ const App: React.FC = () => {
       entryToSync = { 
         ...data, 
         id: newId, 
+        userEmail: userEmail,
         type: isCorrespondence ? 'correspondence' : 'settlement',
         sl: isCorrespondence ? correspondenceEntries.length + 1 : entries.length + 1, 
         createdAt: new Date().toISOString(),
@@ -461,45 +508,62 @@ const App: React.FC = () => {
     return sortedBranches.length > 0 ? [{ label: 'পূর্বের শাখা তালিকা', options: sortedBranches }] : [];
   }, [entries, correspondenceEntries]);
 
-  const pendingEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'pending'), [entries]);
-  const pendingCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'pending'), [correspondenceEntries]);
-  
-  const totalPendingCount = pendingEntries.length + pendingCorrespondence.length;
-
-  const IDBadge = ({ id }: { id: string }) => {
-    const [copied, setCopied] = useState(false);
-    if (!isLayoutEditable) return null;
-    const handleCopy = (e: React.MouseEvent) => {
-      e.preventDefault(); e.stopPropagation();
-      navigator.clipboard.writeText(id);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    };
-    return (
-      <div onClick={handleCopy} className="absolute top-0 left-0 -translate-y-full z-[9995] pointer-events-auto no-print">
-        <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md font-black text-[9px] bg-black text-white border border-white/30 shadow-2xl transition-all duration-300 hover:scale-150 hover:bg-blue-600 hover:z-[99999] active:scale-95 cursor-copy origin-bottom-left ${copied ? 'bg-emerald-600 border-emerald-400 ring-4 ring-emerald-500/30 !scale-125' : ''}`}>
-          {copied ? <><CheckCircle2 size={10} /> COPIED</> : `#${id}`}
-        </span>
-      </div>
-    );
+  const handleLogout = async () => {
+    if (window.confirm("আপনি কি এডমিন একাউন্ট থেকে লগআউট করতে চান?")) {
+      setIsAdmin(false);
+      localStorage.removeItem(ADMIN_MODE_KEY);
+      await supabase.auth.signOut();
+      setActiveTab('landing');
+      setEntryModule(null);
+      setRegisterSubModule(null);
+      setReportType(null);
+    }
   };
 
-  return (
-    <div className="h-screen bg-white flex overflow-hidden font-['Hind_Siliguri'] animate-in fade-in duration-1000">
-      {isLoading && (
-        <div className="fixed inset-0 bg-white/60 backdrop-blur-md z-[9999] flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="font-black text-slate-700 text-sm animate-pulse tracking-widest">সিস্টেম লোড হচ্ছে...</p>
-        </div>
-      )}
+  const viewMode = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('mode');
+  }, []);
 
+  const isDirectMode = viewMode === 'vote' || viewMode === 'poll';
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <div className="relative">
+          <div className="w-20 h-20 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Sparkles className="text-blue-600 animate-pulse" size={32} />
+          </div>
+        </div>
+        <h2 className="mt-6 text-2xl font-bold text-slate-800 animate-pulse">সিস্টেম লোড হচ্ছে...</h2>
+        <p className="mt-2 text-slate-500">অনুগ্রহ করে অপেক্ষা করুন</p>
+      </div>
+    );
+  }
+
+  // Direct Mode: Show only the VotingSystem without any other UI elements
+  if (isDirectMode) {
+    return (
+      <div className="min-h-screen bg-slate-50 p-4 md:p-8 flex items-center justify-center font-bengali">
+        <div className="w-full max-w-6xl">
+          <VotingSystem isAdmin={false} initialTab={viewMode === 'poll' ? 'poll' : 'vote'} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-bengali">
       {isSidebarOpen && (
-        <div className="no-print h-full">
+        <div className="no-print h-full relative z-[10000]">
           <Sidebar 
             activeTab={activeTab} setActiveTab={handleTabChange} 
             onToggleVisibility={() => setIsSidebarOpen(false)}
             isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
-            isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} setIsAdmin={setIsAdmin}
+            isAdmin={isAdmin} setIsAdmin={setIsAdmin}
+            onLogout={handleLogout}
+            onOpenChangePassword={() => setShowChangePassword(true)}
             pendingCount={totalPendingCount}
             entryModule={entryModule}
             registerSubModule={registerSubModule}
@@ -508,12 +572,11 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <div className="flex-1 flex flex-col min-w-0">
         <div className="no-print">
           <Navbar 
             activeTab={activeTab} setActiveTab={handleTabChange} onDemoLoad={() => {}}
             isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
-            isLayoutEditable={isLayoutEditable} setIsLayoutEditable={setIsLayoutEditable}
             onExportSystem={() => {}} onImportSystem={() => {}}
             isAdmin={isAdmin} setIsAdmin={setIsAdmin} cycleLabel={cycleLabelBengali}
             showRegisterFilters={showRegisterFilters} setShowRegisterFilters={setShowRegisterFilters}
@@ -525,36 +588,33 @@ const App: React.FC = () => {
           />
         </div>
 
-        <main ref={mainScrollRef} className="flex-1 overflow-auto bg-white relative scroll-smooth">
+        <main ref={mainScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-white relative scroll-smooth" style={{ scrollbarGutter: 'stable' }}>
           <div className="p-4 md:p-8 max-w-full mx-auto w-full flex flex-col">
             <div className="animate-in fade-in duration-500 flex-1">
               
-              {activeTab === 'landing' && (
+              {activeTab === 'setup_receivers' && (
+            <ReceiverManagement isAdmin={isAdmin} />
+          )}
+
+          {activeTab === 'landing' && (
                 <LandingPage 
                   entries={approvedEntries} 
                   setActiveTab={handleTabChange} 
                   cycleLabel={cycleLabelBengali} 
                   isLockedMode={isLockedMode} 
-                  isLayoutEditable={isLayoutEditable} 
                   isAdmin={isAdmin}
                   pendingCount={totalPendingCount}
                   onShowPending={() => { setActiveTab('register'); setShowPendingOnly(true); }}
                 />
               )}
               
-              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} />}
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} />}
               
               {activeTab === 'register' && (
                 <div className="space-y-6 relative">
                   {showPendingOnly ? (
                     <div className="space-y-8 animate-in fade-in duration-700">
                       <div className="flex items-center justify-between no-print mb-4">
-                        <button 
-                          onClick={() => setShowPendingOnly(false)}
-                          className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all flex items-center gap-2 font-black text-[11px] border border-slate-200"
-                        >
-                          <ChevronLeft size={16} /> মূল রেজিস্টারে ফিরুন
-                        </button>
                       </div>
 
                       {(pendingEntries.length > 0 || pendingCorrespondence.length > 0) ? (
@@ -591,7 +651,6 @@ const App: React.FC = () => {
                             entries={pendingCorrespondence} 
                             onBack={() => {}}
                             isAdmin={isAdmin}
-                            isLayoutEditable={isLayoutEditable}
                             onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
                             onInlineUpdate={handleInlineUpdateEntry}
                             onDelete={handleDelete}
@@ -613,7 +672,6 @@ const App: React.FC = () => {
                             entries={pendingEntries} 
                             onDelete={handleDelete} 
                             onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
-                            isLayoutEditable={isLayoutEditable} 
                             showFilters={false} 
                             setShowFilters={setShowRegisterFilters}
                             isAdminView={true}
@@ -624,102 +682,137 @@ const App: React.FC = () => {
                         </div>
                       )}
                     </div>
-                  ) : !registerSubModule ? (
-                    <div id="section-register-choice" className="w-full py-2 animate-in slide-in-from-left-10 duration-700 relative">
-                      <IDBadge id="section-register-choice" />
-                      <div className="space-y-5 max-w-4xl text-left">
-                        {/* Option 1: Incoming Correspondence Register */}
-                        <div 
-                          onClick={() => setRegisterSubModule('correspondence')}
-                          className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards"
-                        >
-                          <IDBadge id="reg-opt-correspondence" />
-                          <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.4)]"></div>
-                          <div className="flex items-center justify-center pl-7">
-                            <div className="w-12 h-12 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-600 transition-all duration-500">
-                              <Mail size={24} className="text-emerald-500 group-hover:text-white" />
-                            </div>
-                          </div>
-                          <div className="flex flex-col justify-center pl-8 flex-1">
-                            <h3 className="text-[20px] font-black text-white tracking-tight leading-tight group-hover:text-emerald-400 transition-colors">১. প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টার</h3>
-                            <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider mt-0.5 group-hover:text-slate-300 transition-colors">প্রাপ্ত সকল চিঠিপত্র এবং ডায়েরি এন্ট্রির পরিসংখ্যান দেখুন।</p>
-                          </div>
-                          <div className="pr-10 opacity-30 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-                            <ArrowRightCircle size={22} className="text-white" />
-                          </div>
-                        </div>
-
-                        {/* Option 2: Settlement Register */}
-                        <div 
-                          onClick={() => setRegisterSubModule('settlement')}
-                          className="group relative flex items-center h-[82px] w-full bg-slate-900 rounded-[1.25rem] shadow-lg hover:shadow-2xl hover:translate-x-1.5 transition-all duration-500 cursor-pointer overflow-hidden border border-white/10 animate-in slide-in-from-left-4 fill-mode-forwards delay-100"
-                        >
-                          <IDBadge id="reg-opt-settlement" />
-                          <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]"></div>
-                          <div className="flex items-center justify-center pl-7">
-                            <div className="w-12 h-12 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-600 transition-all duration-500">
-                              <ClipboardList size={24} className="text-blue-500 group-hover:text-white" />
-                            </div>
-                          </div>
-                          <div className="flex flex-col justify-center pl-8 flex-1">
-                            <h3 className="text-[20px] font-black text-white tracking-tight leading-tight group-hover:text-blue-400 transition-colors">২. মীমাংসা রেজিস্টার</h3>
-                            <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider mt-0.5 group-hover:text-slate-300 transition-colors">অডিট আপত্তি নিষ্পত্তি সংক্রান্ত বিস্তারিত রিপোর্ট এবং তথ্য।</p>
-                          </div>
-                          <div className="pr-10 opacity-30 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-                            <ArrowRightCircle size={22} className="text-white" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : registerSubModule === 'settlement' ? (
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-4 no-print mb-2">
-                        <button 
-                          onClick={() => setRegisterSubModule(null)}
-                          className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all flex items-center gap-2 font-black text-[11px] border border-slate-200"
-                        >
-                          <ChevronLeft size={16} /> মেনুতে ফিরুন
-                        </button>
-                      </div>
-
-                      <SettlementTable 
-                        key={`register-reset-${resetKey}`} 
-                        entries={approvedEntries} 
-                        onDelete={handleDelete} 
-                        onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
-                        isLayoutEditable={isLayoutEditable} 
-                        showFilters={showRegisterFilters} 
-                        setShowFilters={setShowRegisterFilters} 
-                        isAdmin={isAdmin}
-                      />
-                    </div>
                   ) : (
                     <div className="animate-in fade-in duration-700">
-                      <CorrespondenceTable 
-                        entries={approvedCorrespondence} 
-                        onBack={() => setRegisterSubModule(null)} 
-                        isLayoutEditable={isLayoutEditable}
-                        isAdmin={isAdmin}
-                        onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
-                        onInlineUpdate={handleInlineUpdateEntry}
-                        onDelete={handleDelete}
-                        showFilters={showRegisterFilters}
-                        setShowFilters={setShowRegisterFilters}
-                      />
+                      {(registerSubModule === 'settlement') ? (
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-4 no-print mb-2">
+                          </div>
+
+                          <SettlementTable 
+                            key={`register-reset-${resetKey}`} 
+                            entries={approvedEntries} 
+                            onDelete={handleDelete} 
+                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
+                            showFilters={showRegisterFilters} 
+                            setShowFilters={setShowRegisterFilters} 
+                            isAdmin={isAdmin}
+                            highlightSearch={highlightSearch}
+                            onClearHighlight={() => setHighlightSearch(null)}
+                          />
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-4 no-print mb-2">
+                          </div>
+
+                          <CorrespondenceTable 
+                            entries={approvedCorrespondence} 
+                            onBack={() => setActiveTab('landing')} 
+                            isAdmin={isAdmin}
+                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
+                            onInlineUpdate={handleInlineUpdateEntry}
+                            onDelete={handleDelete}
+                            showFilters={showRegisterFilters}
+                            setShowFilters={setShowRegisterFilters}
+                            highlightSearch={highlightSearch}
+                            onClearHighlight={() => setHighlightSearch(null)}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               )}
               
-              {activeTab === 'return' && <ReturnView key={`return-reset-${resetKey}`} entries={approvedEntries} correspondenceEntries={approvedCorrespondence} cycleLabel={cycleLabelBengali} prevStats={currentPrevStats} setPrevStats={handleSetCurrentPrevStats} isLayoutEditable={isLayoutEditable} isAdmin={isAdmin} selectedReportType={reportType} setSelectedReportType={setReportType} />}
+              {activeTab === 'return' && (
+                <ReturnView 
+                  key={`return-reset-${resetKey}`} 
+                  entries={approvedEntries} 
+                  correspondenceEntries={approvedCorrespondence} 
+                  cycleLabel={cycleLabelBengali} 
+                  prevStats={currentPrevStats} 
+                  setPrevStats={handleSetCurrentPrevStats} 
+                  isAdmin={isAdmin} 
+                  selectedReportType={reportType} 
+                  setSelectedReportType={setReportType}
+                  showFilters={showRegisterFilters}
+                  setShowFilters={setShowRegisterFilters}
+                />
+              )}
               
               {activeTab === 'archive' && <DocumentArchive isAdmin={isAdmin} />}
 
               {activeTab === 'voting' && <VotingSystem isAdmin={isAdmin} />}
+
+              {activeTab === 'admin_analytics' && isAdmin && (
+                <AdminAnalytics 
+                  entries={entries} 
+                  correspondenceEntries={correspondenceEntries} 
+                  onBack={() => setActiveTab('dashboard')} 
+                />
+              )}
+
+              {activeTab === 'dashboard' && (
+                <AdminDashboard 
+                  isAdmin={isAdmin}
+                  entries={entries}
+                  correspondenceEntries={correspondenceEntries}
+                  pendingCount={totalPendingCount}
+                  setActiveTab={handleTabChange}
+                  onOpenChangePassword={() => setShowChangePassword(true)}
+                />
+              )}
             </div>
           </div>
         </main>
       </div>
+
+      <ChangePasswordModal 
+        isOpen={showChangePassword} 
+        onClose={() => setShowChangePassword(false)} 
+      />
+
+      {/* Admin Proactive Notification */}
+      {showAdminAlert && (
+        <div className="fixed top-24 right-6 z-[11000] animate-in slide-in-from-right-10 duration-500 no-print">
+          <div className="bg-slate-900 border-2 border-amber-500 rounded-[2rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] max-w-sm relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-24 h-24 bg-amber-500/10 blur-2xl rounded-full"></div>
+            <div className="relative z-10 space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20 animate-bounce">
+                  <BellRing size={24} />
+                </div>
+                <div>
+                  <h4 className="text-white font-black text-lg tracking-tight">নতুন এন্ট্রি পাওয়া গেছে!</h4>
+                  <p className="text-amber-400/60 text-[9px] font-black uppercase tracking-[0.2em]">Pending Moderation</p>
+                </div>
+              </div>
+              <p className="text-slate-300 text-sm font-bold leading-relaxed">
+                সম্মানিত এডমিন, সিস্টেমে <span className="text-amber-400 text-lg">{toBengaliDigits(totalPendingCount.toString())}টি</span> নতুন এন্ট্রি অনুমোদনের অপেক্ষায় আছে। দয়া করে যাচাই করুন।
+              </p>
+              <div className="flex gap-3 pt-2">
+                <button 
+                  onClick={() => setShowAdminAlert(false)}
+                  className="flex-1 py-3 bg-white/5 text-slate-400 rounded-xl font-black text-xs hover:bg-white/10 transition-all border border-white/5"
+                >
+                  পরে দেখব
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowAdminAlert(false);
+                    setActiveTab('register');
+                    setShowPendingOnly(true);
+                  }}
+                  className="flex-1 py-3 bg-amber-500 text-slate-900 rounded-xl font-black text-xs hover:bg-amber-600 transition-all shadow-xl shadow-amber-500/20 active:scale-95"
+                >
+                  এখনই দেখুন
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -4,7 +4,7 @@ import { EMPLOYEES, VOTE_POSITIONS } from '../constants';
 import { BallotVote, PositionResult, VoterToken } from '../types';
 import { 
   CheckCircle2, AlertCircle, BarChart3, Fingerprint, 
-  Send, Trophy, UserCheck, Loader2, Key, RefreshCw, Copy, Check, Trash2, ShieldCheck, Ticket, Database, HelpCircle, ArrowRight, RotateCcw, MessageSquare, Plus, Settings2, Vote, Lock, Unlock, UserPlus, UserMinus, Eye, EyeOff, LayoutGrid, Trash, Pencil, X, ChevronDown, Search, KeyRound
+  Send, Trophy, UserCheck, Loader2, Key, RefreshCw, Copy, Check, Trash2, ShieldCheck, Ticket, Database, HelpCircle, ArrowRight, RotateCcw, MessageSquare, Plus, Settings2, Vote, Lock, Unlock, UserPlus, UserMinus, Eye, EyeOff, LayoutGrid, Trash, Pencil, X, ChevronDown, Search, KeyRound, Link, ExternalLink
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 
@@ -88,8 +88,8 @@ const PremiumVoterSelect: React.FC<{
   );
 };
 
-const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'vote' | 'results' | 'admin' | 'poll'>('vote');
+const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' | 'results' | 'admin' }> = ({ isAdmin, initialTab }) => {
+  const [activeSubTab, setActiveSubTab] = useState<'vote' | 'results' | 'admin' | 'poll'>(initialTab || 'vote');
   const [voterTokenInput, setVoterTokenInput] = useState('');
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [pollSelection, setPollSelection] = useState<string>('');
@@ -122,6 +122,9 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const [pollQuestion, setPollQuestion] = useState('আপনারা কি এ বছর বার্ষিক পিকনিকে যেতে ইচ্ছুক?');
   const [pollOptions, setPollOptions] = useState(['হ্যাঁ', 'না', 'ব বলা যাচ্ছে না']);
   const [isResultsLocked, setIsResultsLocked] = useState(false);
+  const [showVoteLink, setShowVoteLink] = useState(false);
+  const [generatedVoteLink, setGeneratedVoteLink] = useState('');
+  const [linkType, setLinkType] = useState<'vote' | 'poll'>('vote');
 
   // --- PERSISTENCE HELPERS ---
   const syncConfigToDB = async (updates: any) => {
@@ -442,6 +445,15 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     setMessage({ type: 'success', text: nextState ? 'ফলাফল লক করা হয়েছে।' : 'ফলাফল আনলক করা হয়েছে।' });
   };
 
+  const handleGenerateVoteLink = (type: 'vote' | 'poll') => {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const voteUrl = `${baseUrl}?mode=${type}`;
+    setGeneratedVoteLink(voteUrl);
+    setLinkType(type);
+    setShowVoteLink(true);
+    setMessage({ type: 'success', text: `${type === 'vote' ? 'ভোটিং' : 'পাবলিক পোল'} লিংক সফলভাবে তৈরি করা হয়েছে।` });
+  };
+
   const clearOnlyVotes = async () => {
     if (!window.confirm("সাবধান! এটি শুধুমাত্র সকল 'ভোটের ফলাফল' মুছে ফেলবে। ভোটার টোকেনগুলো আগের মতোই থাকবে।")) return;
     try {
@@ -549,6 +561,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
         
         setMessage({ type: 'success', text: 'অফলাইন ভোট গ্রহণ করা হয়েছে। ইন্টারনেট সংযোগ পেলে তা স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।' });
         setSelections({}); setPollSelection(''); setVoterTokenInput('');
+        setTimeout(() => setMessage(null), 5000);
       } else {
         const { error: voteError } = await supabase.from('settlement_entries').upsert({ id: entryId, content: voteData });
 
@@ -561,6 +574,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
           setMessage({ type: 'success', text: 'আপনার ভোট সফলভাবে সম্পন্ন হয়েছে।' });
           setSelections({}); setPollSelection(''); setVoterTokenInput('');
           fetchTokens();
+          setTimeout(() => setMessage(null), 5000);
         }
       }
     } catch (err: any) {
@@ -613,10 +627,10 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-landing-premium px-4 md:px-0">
-      <div className="sticky top-0 z-[100] flex flex-col md:flex-row items-stretch justify-between bg-white/95 backdrop-blur-xl rounded-none border border-slate-200 shadow-xl overflow-hidden transition-all duration-500 md:min-h-[100px]">
-        <div className="flex items-center gap-4 pl-6 md:pl-10 py-4 md:py-2 shrink-0">
-          <div className="w-12 h-12 md:w-14 md:h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-blue-600/30"><Ticket size={24} className="md:size-[28px]" /></div>
-          <div><h2 className="text-xl md:text-2xl font-black text-slate-900 leading-tight">ডিজিটাল ব্যালট বক্স</h2><p className="text-slate-500 font-bold text-[10px] md:text-xs uppercase tracking-widest">Election & Poll System</p></div>
+      <div className="sticky top-0 z-[100] flex flex-col md:flex-row items-stretch justify-between bg-white/95 backdrop-blur-xl rounded-none border border-slate-200 shadow-xl overflow-hidden transition-all duration-500 md:min-h-[70px]">
+        <div className="flex items-center gap-4 pl-6 md:pl-10 py-4 md:py-1 shrink-0">
+          <div className="w-12 h-12 md:w-12 md:h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-blue-600/30"><Ticket size={24} className="md:size-[24px]" /></div>
+          <div><h2 className="text-xl md:text-xl font-black text-slate-900 leading-tight">ডিজিটাল ব্যালট বক্স</h2><p className="text-slate-500 font-bold text-[10px] md:text-[10px] uppercase tracking-widest">Election & Poll System</p></div>
         </div>
         
         <div className="flex flex-row items-stretch border-t md:border-t-0 md:border-l border-slate-100 rounded-none bg-white overflow-x-auto no-scrollbar shrink-0">
@@ -642,7 +656,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
            <div className="bg-slate-900 text-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl space-y-8 relative overflow-hidden h-fit">
               <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-4"><div className="w-1.5 h-6 bg-blue-500 rounded-full"></div><h3 className="text-xl font-black tracking-tight text-white">সিক্রেট টোকেন</h3></div>
-                <input type="text" placeholder="যেমন: VOTE-XXXXX" value={voterTokenInput} onChange={(e) => setVoterTokenInput(e.target.value.toUpperCase())} className="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl px-6 py-5 text-white font-black text-2xl tracking-widest outline-none focus:border-blue-500 transition-all placeholder:text-slate-700" />
+                <input type="text" placeholder="যেমন: VOTE-XXXXX" value={voterTokenInput} onChange={(e) => { setVoterTokenInput(e.target.value.toUpperCase()); if (message) setMessage(null); }} className="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl px-6 py-5 text-white font-black text-2xl tracking-widest outline-none focus:border-blue-500 transition-all placeholder:text-slate-700" />
                 <p className="mt-4 text-slate-400 text-sm">টোকেনটি শুধুমাত্র একবার ব্যবহারযোগ্য। ভোট দেওয়ার সাথে সাথে এটি নিষ্ক্রিয় হয়ে যাবে।</p>
               </div>
            </div>
@@ -675,7 +689,10 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                 )}
                 
                 {message?.type === 'success' ? (
-                  <div className="w-full py-5 bg-emerald-100 text-emerald-700 rounded-2xl font-black text-lg flex items-center justify-center gap-3 border-2 border-emerald-200 animate-in zoom-in duration-500">
+                  <div 
+                    onClick={() => setMessage(null)}
+                    className="w-full py-5 bg-emerald-100 text-emerald-700 rounded-2xl font-black text-lg flex items-center justify-center gap-3 border-2 border-emerald-200 animate-in zoom-in duration-500 cursor-pointer hover:bg-emerald-200 transition-all"
+                  >
                     <CheckCircle2 size={24} /> {message.text}
                   </div>
                 ) : (
@@ -732,7 +749,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               </div>
               <div className="space-y-4">
                 <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">সিক্রেট টোকেন</label>
-                <input type="text" placeholder="VOTE-XXXXX" value={voterTokenInput} onChange={(e) => setVoterTokenInput(e.target.value.toUpperCase())} className="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl px-6 py-4 text-white font-black text-xl tracking-widest outline-none focus:border-emerald-500" />
+                <input type="text" placeholder="VOTE-XXXXX" value={voterTokenInput} onChange={(e) => { setVoterTokenInput(e.target.value.toUpperCase()); if (message) setMessage(null); }} className="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl px-6 py-4 text-white font-black text-xl tracking-widest outline-none focus:border-emerald-500" />
               </div>
 
               <div className="space-y-4 pt-4">
@@ -744,7 +761,10 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                 )}
                 
                 {message?.type === 'success' ? (
-                  <div className="w-full py-5 bg-emerald-100 text-emerald-700 rounded-2xl font-black text-lg flex items-center justify-center gap-3 border-2 border-emerald-200 animate-in zoom-in duration-500">
+                  <div 
+                    onClick={() => setMessage(null)}
+                    className="w-full py-5 bg-emerald-100 text-emerald-700 rounded-2xl font-black text-lg flex items-center justify-center gap-3 border-2 border-emerald-200 animate-in zoom-in duration-500 cursor-pointer hover:bg-emerald-200 transition-all"
+                  >
                     <CheckCircle2 size={24} /> {message.text}
                   </div>
                 ) : (
@@ -810,18 +830,53 @@ const VotingSystem: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
           )}
           
           <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-slate-200 shadow-xl space-y-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-slate-100">
-              <div className="flex items-center gap-4 w-full md:w-auto"><div className="p-4 bg-purple-50 text-purple-600 rounded-2xl"><ShieldCheck size={32} /></div><div><h3 className="text-2xl font-black text-slate-900">এডমিন কন্ট্রোল প্যানেল</h3><p className="text-slate-500 font-bold">সিস্টেম ম্যানেজমেন্ট ও রিসেট অপশন।</p></div></div>
-              <div className="flex flex-wrap gap-4 justify-center md:justify-end">
+            <div className="flex flex-col md:flex-row items-center justify-start gap-6 pb-6 border-b border-slate-100">
+              <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                 <button onClick={toggleResultsLock} className={`px-5 py-2.5 rounded-xl font-black text-xs flex items-center gap-2 border transition-all shadow-sm ${isResultsLocked ? 'bg-amber-600 text-white border-amber-700' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}>
                   {isResultsLocked ? <Unlock size={16} /> : <Lock size={16} />} 
                   {isResultsLocked ? 'ফলাফল আনলক করুন' : 'ফলাফল লক করুন'}
                 </button>
                 <button onClick={clearOnlyVotes} className="px-5 py-2.5 bg-amber-50 text-amber-600 rounded-xl font-black text-xs flex items-center gap-2 border border-amber-100 hover:bg-amber-600 hover:text-white transition-all shadow-sm"><RotateCcw size={16} /> ফলাফল রিসেট</button>
                 <button onClick={clearAllTokens} className="px-5 py-2.5 bg-red-50 text-red-600 rounded-xl font-black text-xs flex items-center gap-2 border border-red-100 hover:bg-red-600 hover:text-white transition-all shadow-sm"><Trash2 size={16} /> ফ্যাক্টরি রিসেট</button>
+                <button onClick={() => handleGenerateVoteLink('vote')} className="px-5 py-2.5 bg-blue-50 text-blue-600 rounded-xl font-black text-xs flex items-center gap-2 border border-blue-100 hover:bg-blue-600 hover:text-white transition-all shadow-sm"><Link size={16} /> ভোটিং লিংক তৈরি</button>
+                <button onClick={() => handleGenerateVoteLink('poll')} className="px-5 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl font-black text-xs flex items-center gap-2 border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"><MessageSquare size={16} /> পোল লিংক তৈরি</button>
                 <button onClick={generateTokens} className="px-6 py-2.5 bg-purple-600 text-white rounded-xl font-black text-xs flex items-center gap-2 shadow-xl hover:bg-purple-700 transition-all"><Plus size={16} /> {toBengaliDigits(voterList.length)}টি টোকেন তৈরি</button>
               </div>
             </div>
+
+            {showVoteLink && (
+              <div className={`p-6 text-white rounded-[2rem] shadow-2xl animate-in slide-in-from-top-4 duration-500 relative overflow-hidden group ${linkType === 'vote' ? 'bg-blue-600' : 'bg-emerald-600'}`}>
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-xl">
+                      {linkType === 'vote' ? <ExternalLink size={28} /> : <MessageSquare size={28} />}
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-black tracking-tight">শেয়ারযোগ্য {linkType === 'vote' ? 'ভোটিং' : 'পাবলিক পোল'} লিংক</h4>
+                      <p className={`${linkType === 'vote' ? 'text-blue-100' : 'text-emerald-100'} font-bold text-sm`}>এই লিংকটি কপি করে ভোটারদের পাঠিয়ে দিন।</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 w-full md:w-auto">
+                    <div className="flex-1 md:w-80 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 font-mono text-xs truncate select-all">
+                      {generatedVoteLink}
+                    </div>
+                    <button 
+                      onClick={() => copyToClipboard(generatedVoteLink)}
+                      className={`p-3 bg-white rounded-xl font-black shadow-xl transition-all active:scale-95 shrink-0 ${linkType === 'vote' ? 'text-blue-600 hover:bg-blue-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
+                    >
+                      {copiedToken === generatedVoteLink ? <Check size={20} strokeWidth={3} /> : <Copy size={20} />}
+                    </button>
+                    <button 
+                      onClick={() => setShowVoteLink(false)}
+                      className={`p-3 text-white rounded-xl transition-all shrink-0 ${linkType === 'vote' ? 'bg-blue-700 hover:bg-blue-800' : 'bg-emerald-700 hover:bg-emerald-800'}`}
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
               {/* Election Positions Management */}
