@@ -574,12 +574,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     return <OpeningBalanceSetup ministryGroups={ministryGroups} tempPrevStats={tempPrevStats} setTempPrevStats={setTempPrevStats} isEditingSetup={isEditingSetup} setIsEditingSetup={setIsEditingSetup} handleSaveSetup={handleSaveSetup} handleSetupPaste={handleSetupPaste} setIsSetupMode={setIsSetupMode} setSelectedReportType={setSelectedReportType} IDBadge={IDBadge} setupType={selectedReportType || ''} />;
   }
 
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') return <QR_1 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') return <QR_2 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') return <QR_3 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') return <QR_4 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') return <QR_5 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') return <QR_6 activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') return <QR_1 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') return <QR_2 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') return <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') return <QR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') return <QR_5 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') return <QR_6 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
 
   return <ReturnSummaryTable reportData={reportData} grandTotals={grandTotals} activeCycle={activeCycle} selectedReportType={selectedReportType} setSelectedReportType={setSelectedReportType} isAdmin={isAdmin || false} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} showFilters={showFilters} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
 };
