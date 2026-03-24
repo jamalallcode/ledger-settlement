@@ -148,22 +148,24 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       const isNumericSearch = /^\d+$/.test(normalizedSearch);
 
       const matchSearch = searchTerm === '' || (() => {
-        // Check all three number fields for an exact match
-        const issueNo = (entry.issueLetterNoDate || '').split(',')[0].replace(/জারিপত্র নং-?\s*/g, '').trim();
-        const letterNo = (entry.letterNoDate || '').split(',')[0].replace(/পত্র নং-?\s*/g, '').trim();
-        const diaryNo = (entry.workpaperNoDate || '').split(',')[0].replace(/ডায়েরি নং-?\s*/g, '').trim();
-        
-        const engIssue = toEnglishDigits(issueNo.toLowerCase()).trim();
-        const engLetter = toEnglishDigits(letterNo.toLowerCase()).trim();
-        const engDiary = toEnglishDigits(diaryNo.toLowerCase()).trim();
-        
-        const isExactNumberMatch = engIssue === normalizedSearch || 
-                                   engLetter === normalizedSearch || 
-                                   engDiary === normalizedSearch;
+        // More robust cleaning for search matching
+        const cleanNumber = (str: string) => {
+          return toEnglishDigits(str.toLowerCase())
+            .replace(/(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g, '')
+            .trim();
+        };
 
-        // If it's a numeric search (like "1"), we only want exact matches in the number fields
-        // This prevents "1" from matching "Branch 1" or "Year 2021" in text fields
-        if (isNumericSearch) return isExactNumberMatch;
+        const engIssue = cleanNumber(entry.issueLetterNoDate || '');
+        const engLetter = cleanNumber(entry.letterNoDate || '');
+        const engDiary = cleanNumber(entry.workpaperNoDate || '');
+        const engWp = cleanNumber(entry.meetingWorkpaper || '');
+        
+        const isNumberMatch = engIssue.includes(normalizedSearch) || 
+                              engLetter.includes(normalizedSearch) || 
+                              engDiary.includes(normalizedSearch) ||
+                              engWp.includes(normalizedSearch);
+
+        if (isNumericSearch) return isNumberMatch;
 
         // Also allow partial match on other fields for general search
         const descMatch = toEnglishDigits((entry.remarks || '').toLowerCase()).includes(normalizedSearch);
@@ -171,7 +173,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         const ministryMatch = toEnglishDigits((entry.ministryName || '').toLowerCase()).includes(normalizedSearch);
         const entityMatch = toEnglishDigits((entry.entityName || '').toLowerCase()).includes(normalizedSearch);
 
-        return isExactNumberMatch || 
+        return isNumberMatch || 
                descMatch ||
                branchMatch ||
                ministryMatch ||
@@ -186,7 +188,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       const hasUnsettled = entry.paragraphs?.some(p => p.status === 'আংশিক');
       const matchStatus = filterStatus === '' || 
         (filterStatus === 'settled' && hasSettled) || 
-        (filterStatus === 'unsettled' && hasUnsettled);
+        (filterStatus === 'unsettled' && hasUnsettled) ||
+        (filterStatus === 'no-paras' && (!entry.paragraphs || entry.paragraphs.length === 0));
 
       const hasRaisedCount = entry.manualRaisedCount !== null && entry.manualRaisedCount !== "" && entry.manualRaisedCount !== "0" && entry.manualRaisedCount !== "০";
       const hasRaisedAmount = entry.manualRaisedAmount !== null && entry.manualRaisedAmount !== 0;
@@ -195,6 +198,9 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       // If we have a search term and it matches, we should show it regardless of "meaningful content"
       if (searchTerm !== '' && matchSearch) return matchDate && matchType && matchParaType && matchStatus;
       
+      // If filtering for no paragraphs, show even if it doesn't have "meaningful content"
+      if (filterStatus === 'no-paras' && matchStatus) return matchDate && matchType && matchParaType;
+
       if (!hasMeaningfulContent) return false;
       
       return matchDate && matchSearch && matchType && matchParaType && matchStatus;
@@ -204,7 +210,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       if (timeB !== timeA) return timeB - timeA;
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  }, [entries, searchTerm, filterParaType, filterType, activeCycle]);
+  }, [entries, searchTerm, filterParaType, filterType, filterStatus, activeCycle]);
 
   const { cycleStats, groupedEntries } = useMemo(() => {
     const groupsMap: Record<string, SettlementEntry[]> = {};
@@ -343,17 +349,26 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
 
   const formatIssueInfoForDisplay = (info: string) => {
     if (!info) return "";
-    return info.replace(/জারিপত্র নং-/g, '').replace(/জারিপত্রের তারিখ-/g, '').trim() + " খ্রি:";
+    const cleaned = info.replace(/(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g, '').trim();
+    return cleaned ? cleaned + " খ্রি:" : "";
   };
 
   const formatDiaryInfoForDisplay = (info: string) => {
     if (!info) return "";
-    return info.replace(/ডায়েরি নং-/g, '').replace(/ডায়েরির তারিখ-/g, '').trim() + " খ্রি:";
+    const cleaned = info.replace(/(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g, '').trim();
+    return cleaned ? cleaned + " খ্রি:" : "";
   };
 
   const formatLetterInfoForDisplay = (info: string) => {
     if (!info) return "";
-    return info.replace(/পত্র নং-/g, '').replace(/পত্রের তারিখ-/g, '').trim() + " খ্রি:";
+    const cleaned = info.replace(/(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g, '').trim();
+    return cleaned ? cleaned + " খ্রি:" : "";
+  };
+
+  const formatWorkpaperInfoForDisplay = (info: string) => {
+    if (!info) return "";
+    const cleaned = info.replace(/(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g, '').trim();
+    return cleaned ? cleaned + " খ্রি:" : "";
   };
 
   // Headers reverted to font-black
@@ -393,10 +408,10 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             { label: '৪. সংস্থা', value: entry.entityName, icon: FileText, col: 'purple' },
             { label: '৫. বিস্তারিত শাখা', value: entry.branchName, icon: MapPin, col: 'sky' },
             { label: '৬. নিরীক্ষা সাল', value: toBengaliDigits(entry.auditYear), icon: Calendar, col: 'emerald' },
-            { label: '৭. পত্র নং ও তারিখ', value: entry.letterNoDate, icon: FileText, col: 'amber' },
-            { label: '৮. কার্যপত্র নং', value: entry.meetingWorkpaper || 'N/A', icon: FileText, col: 'purple' },
+            { label: '৭. পত্র নং ও তারিখ', value: formatLetterInfoForDisplay(entry.letterNoDate), icon: FileText, col: 'amber' },
+            { label: '৮. কার্যপত্র নং', value: formatWorkpaperInfoForDisplay(entry.meetingWorkpaper), icon: FileText, col: 'purple' },
             { label: '৯. আলোচিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSentParaCount || '০'), icon: ListOrdered, col: 'sky' },
-            { label: '১০. ডায়েরি নং ও তারিখ', value: entry.workpaperNoDate, icon: FileText, col: 'emerald' },
+            { label: '১০. ডায়েরি নং ও তারিখ', value: formatDiaryInfoForDisplay(entry.workpaperNoDate), icon: FileText, col: 'emerald' },
             { label: '১১. জারিপত্র নং', value: formatIssueInfoForDisplay(entry.issueLetterNoDate), icon: FileText, col: 'amber' },
             { label: '১২. আর্কাইভ নং', value: entry.archiveNo || 'N/A', icon: Archive, col: 'purple' },
             { label: '১৩. প্রেরিত অনুচ্ছেদ', value: toBengaliDigits(entry.meetingSentParaCount || '০'), icon: ListOrdered, col: 'sky' },
@@ -750,7 +765,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
               >
                 <CheckCircle2 className="text-blue-600 shrink-0" size={14} />
                 <span className="font-bold text-[11px] text-slate-900 truncate">
-                  {filterStatus === '' ? 'সকল অবস্থা' : (filterStatus === 'settled' ? 'পূর্ণাঙ্গ' : 'আংশিক')}
+                  {filterStatus === '' ? 'সকল অবস্থা' : (filterStatus === 'settled' ? 'পূর্ণাঙ্গ' : (filterStatus === 'no-paras' ? 'উত্থাপিত (অনুচ্ছেদ নেই)' : 'আংশিক'))}
                 </span>
                 <ChevronDown size={12} className={`text-slate-400 ml-auto transition-transform duration-300 shrink-0 ${isStatusDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
                 
@@ -766,7 +781,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                         {[
                           { val: '', label: 'সকল অবস্থা' },
                           { val: 'settled', label: 'পূর্ণাঙ্গ নিষ্পত্তি' },
-                          { val: 'unsettled', label: 'আংশিক/অনিষ্পত্তি' }
+                          { val: 'unsettled', label: 'আংশিক/অনিষ্পত্তি' },
+                          { val: 'no-paras', label: 'উত্থাপিত (অনুচ্ছেদ নেই)' }
                         ].map((opt, idx) => (
                           <div 
                             key={idx} 

@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Printer } from 'lucide-react';
-import { toBengaliDigits } from '../utils/numberUtils';
-import { format } from 'date-fns';
+import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
+import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
+import { SettlementEntry } from '../types';
 
 interface QRProps {
+  entries: SettlementEntry[];
   activeCycle: any;
   IDBadge: React.FC<{ id: string }>;
   onBack?: () => void;
@@ -12,9 +14,9 @@ interface QRProps {
   filterMinistry?: string;
 }
 
-const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
-  const startDate = activeCycle.start;
-  const endDate = activeCycle.end;
+const QR_6: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
+  const startDate = setDate(subMonths(activeCycle.start, 1), 16);
+  const endDate = setDate(addMonths(activeCycle.start, 2), 15);
 
   const getMonthNameBN = (date: Date) => {
     const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
@@ -23,27 +25,58 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
 
   const formatYearBN = (date: Date) => toBengaliDigits(format(date, 'yyyy'));
 
-  const sampleData = [
-    { name: "বস্ত্র ও পাট মন্ত্রণালয়", involved: 28000, taxRec: 0, taxAdj: 0, otherRec: 15000, otherAdj: 0, remarks: "০" },
-    { name: "শিল্প মন্ত্রণালয়", involved: 0, taxRec: 0, taxAdj: 0, otherRec: 0, otherAdj: 0, remarks: "০" },
-    { name: "বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয়", involved: 0, taxRec: 0, taxAdj: 0, otherRec: 0, otherAdj: 0, remarks: "০" },
-    { name: "বাণিজ্য মন্ত্রণালয়", involved: 0, taxRec: 0, taxAdj: 0, otherRec: 0, otherAdj: 0, remarks: "০" },
-    { name: "আর্থিক প্রতিষ্ঠান বিভাগ", involved: 3307905, taxRec: 0, taxAdj: 0, otherRec: 3307905, otherAdj: 0, remarks: "০" },
-  ];
+  const robustNormalize = (str: string = '') => {
+    return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+  };
 
-  const filteredData = sampleData.filter(row => {
-    const matchMinistry = filterMinistry === '' || row.name.includes(filterMinistry);
-    const matchSearch = searchTerm === '' || row.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchMinistry && matchSearch;
-  });
+  const filteredData = useMemo(() => {
+    const ministryMap = new Map<string, any>();
 
-  const totals = filteredData.reduce((acc, curr) => ({
+    entries.forEach(e => {
+      // Filter by SFI
+      if (robustNormalize(e.paraType) !== robustNormalize('এসএফআই')) return;
+
+      // Filter by Date Range (Issue Date)
+      const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+      if (!issueDateStr) return;
+      const issueDate = new Date(issueDateStr);
+      if (issueDate < startDate || issueDate > endDate) return;
+
+      const mName = e.ministryName;
+      if (!ministryMap.has(mName)) {
+        ministryMap.set(mName, {
+          name: mName,
+          involved: 0,
+          taxRec: 0,
+          taxAdj: 0,
+          otherRec: 0,
+          otherAdj: 0,
+          remarks: "০"
+        });
+      }
+
+      const data = ministryMap.get(mName);
+      data.involved += (e.involvedAmount || 0);
+      data.taxRec += (e.vatRec || 0) + (e.itRec || 0);
+      data.taxAdj += (e.vatAdj || 0) + (e.itAdj || 0);
+      data.otherRec += (e.othersRec || 0);
+      data.otherAdj += (e.othersAdj || 0);
+    });
+
+    return Array.from(ministryMap.values()).filter(row => {
+      const matchMinistry = filterMinistry === '' || robustNormalize(row.name).includes(robustNormalize(filterMinistry));
+      const matchSearch = searchTerm === '' || robustNormalize(row.name).toLowerCase().includes(searchTerm.toLowerCase());
+      return matchMinistry && matchSearch;
+    });
+  }, [entries, startDate, endDate, filterMinistry, searchTerm]);
+
+  const totals = useMemo(() => filteredData.reduce((acc, curr) => ({
     involved: acc.involved + curr.involved,
     taxRec: acc.taxRec + curr.taxRec,
     taxAdj: acc.taxAdj + curr.taxAdj,
     otherRec: acc.otherRec + curr.otherRec,
     otherAdj: acc.otherAdj + curr.otherAdj,
-  }), { involved: 0, taxRec: 0, taxAdj: 0, otherRec: 0, otherAdj: 0 });
+  }), { involved: 0, taxRec: 0, taxAdj: 0, otherRec: 0, otherAdj: 0 }), [filteredData]);
 
   const thCls = "border-r border-b border-slate-400 p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
   const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle";
@@ -84,7 +117,7 @@ const QR_6: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
 
       <div className="flex justify-between items-start mb-4 text-[11px] font-bold text-slate-800">
         <p className="max-w-[70%]">মন্ত্রণালয়/সংস্থাভিত্তিক অডিট আপত্তির {getMonthNameBN(startDate)}/{formatYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatYearBN(endDate)} পর্যন্ত মাসের বিবরণ:</p>
-        <p>শাখার নামঃ নন এসএফআই শাখা</p>
+        <p>শাখার নামঃ এসএফআই শাখা</p>
       </div>
 
       <div className="table-container qr-table-container overflow-auto border border-slate-400 shadow-sm rounded-lg">
