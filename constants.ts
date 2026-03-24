@@ -46,6 +46,10 @@ export const AUDIT_YEARS_OPTIONS: GroupOption[] = [{
 export const PARA_TYPES = ['এসএফআই', 'নন এসএফআই'];
 export const SETTLEMENT_TYPES = ['পূর্ণাঙ্গ', 'আংশিক'];
 
+// Baseline configuration for dynamic opening balance calculation
+export const BASELINE_DATE = '2024-10-15'; // October 2024 baseline end date
+export const ENTRY_START_DATE = '2024-10-16'; // November 2024 entry start date (start of cycle)
+
 // --- Voting System Constants ---
 export const EMPLOYEES = [
   "জনাব আকবর আলী খান (এসএএস সুপার)", "জনাব শামীমা রহমান (এএন্ডএও)", "জনাব মো: রিয়াজুল ইসলাম (এএন্ডএও)",

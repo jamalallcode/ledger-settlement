@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { Printer } from 'lucide-react';
-import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
-import { format, subMonths, addMonths, setDate } from 'date-fns';
+import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
+import { format, subMonths, addMonths, setDate, format as dateFnsFormat } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
+import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants';
 
 interface QRProps {
   entries: SettlementEntry[];
@@ -39,48 +40,74 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
   const processData = (isFI: boolean) => {
     const map = new Map<string, any>();
+    const paraType = 'নন এসএফআই';
+    const cycleStartStr = dateFnsFormat(startDate, 'yyyy-MM-dd');
 
-    // Initialize with prevStats
-    if (prevStats && prevStats.ministries) {
-      Object.entries(prevStats.ministries).forEach(([mKey, mData]: [string, any]) => {
-        if (isFI !== isFinancialInstitution(mKey)) return;
+    // Initialize with all entities from MINISTRY_ENTITY_MAP
+    Object.entries(MINISTRY_ENTITY_MAP).forEach(([mName, entities]) => {
+      if (isFI !== isFinancialInstitution(mName)) return;
 
-        if (mData.entities) {
-          Object.entries(mData.entities).forEach(([eKey, eData]: [string, any]) => {
-            const key = `${mKey}|${eKey}`;
-            map.set(key, {
-              ministryName: mKey,
-              entityName: eKey,
-              pCount: eData.count || 0,
-              pAmount: eData.amount || 0,
-              cCount: 0,
-              cAmount: 0,
-              sCount: 0,
-              sAmount: 0,
+      entities.forEach(entityName => {
+        const key = `${mName}|${entityName}`;
+        
+        // Calculate recursive opening for this entity
+        const baseMap = prevStats.entitiesNonSFI || {};
+        const base = baseMap[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+        
+        const pastEntries = entries.filter(e => {
+          if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
+          if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
+          const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+          return entryDate !== '' && entryDate < cycleStartStr && entryDate >= ENTRY_START_DATE;
+        });
+
+        let pastRC = 0, pastRA = 0, pastSC = 0, pastSA = 0;
+        const processedParaIds = new Set<string>();
+
+        pastEntries.forEach(entry => {
+          const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
+          if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
+            pastRC += parseBengaliNumber(rCountRaw);
+          }
+          if (entry.manualRaisedAmount) pastRA += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
+
+          if (entry.paragraphs) {
+            entry.paragraphs.forEach(p => {
+              const cleanParaNo = String(p.paraNo || '').trim();
+              const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
+              if (p.id && !processedParaIds.has(p.id) && hasDigit) {
+                processedParaIds.add(p.id);
+                const status = robustNormalize(p.status || '');
+                const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
+                if (status === robustNormalize('পূর্ণাঙ্গ')) { 
+                  pastSC++; 
+                }
+                pastSA += settledAmt;
+              }
             });
-          });
-        }
-      });
-    }
+          }
+        });
 
-    // Process entries
-    entries.forEach(e => {
-      if (robustNormalize(e.paraType) !== robustNormalize('নন এসএফআই')) return;
-      if (isFI !== isFinancialInstitution(e.ministryName)) return;
-
-      const key = `${e.ministryName}|${e.entityName}`;
-      if (!map.has(key)) {
         map.set(key, {
-          ministryName: e.ministryName,
-          entityName: e.entityName,
-          pCount: 0,
-          pAmount: 0,
+          ministryName: mName,
+          entityName: entityName,
+          pCount: Math.max(0, base.unsettledCount + pastRC),
+          pAmount: Math.max(0, base.unsettledAmount + Math.round(pastRA)),
           cCount: 0,
           cAmount: 0,
           sCount: 0,
           sAmount: 0,
         });
-      }
+      });
+    });
+
+    // Process entries for the current range
+    entries.forEach(e => {
+      if (robustNormalize(e.paraType) !== robustNormalize(paraType)) return;
+      if (isFI !== isFinancialInstitution(e.ministryName)) return;
+
+      const key = `${e.ministryName}|${e.entityName}`;
+      if (!map.has(key)) return; // Should already be in the map if it's in MINISTRY_ENTITY_MAP
 
       const data = map.get(key);
       const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
@@ -88,10 +115,28 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       const issueDate = new Date(issueDateStr);
 
       if (issueDate >= startDate && issueDate <= endDate) {
-        data.cCount += (parseInt(toEnglishDigits(e.manualRaisedCount || '0')) || 0);
-        data.cAmount += (e.manualRaisedAmount || 0);
-        data.sCount += (parseInt(toEnglishDigits(e.meetingSettledParaCount || '0')) || 0);
-        data.sAmount += (e.involvedAmount || 0);
+        const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
+        if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
+          data.cCount += parseBengaliNumber(rCountRaw);
+        }
+        if (e.manualRaisedAmount) data.cAmount += parseBengaliNumber(String(e.manualRaisedAmount || '0'));
+        
+        if (e.paragraphs) {
+          const processedParaIds = new Set<string>();
+          e.paragraphs.forEach(p => {
+            const cleanParaNo = String(p.paraNo || '').trim();
+            const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
+            if (p.id && !processedParaIds.has(p.id) && hasDigit) {
+              processedParaIds.add(p.id);
+              const status = robustNormalize(p.status || '');
+              const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
+              if (status === robustNormalize('পূর্ণাঙ্গ')) { 
+                data.sCount++; 
+                data.sAmount += settledAmt;
+              }
+            }
+          });
+        }
       }
     });
 
