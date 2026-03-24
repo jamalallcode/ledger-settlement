@@ -606,7 +606,46 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const handleNewEntry = () => {
     setIsSuccess(false);
     setWizardStep('details');
+    // Scroll to top
+    const container = document.getElementById('form-container-settlement');
+    if (container) {
+      container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
+
+  // Reset success state if user starts typing again
+  useEffect(() => {
+    if (isSuccess && !isDeletingPara) {
+      const isDirty = 
+        formData.ministryName !== '' || 
+        formData.entityName !== '' || 
+        formData.branchName !== '' || 
+        formData.auditYear !== '' ||
+        letterNoPart !== '' ||
+        wpNoPart !== '' ||
+        diaryNoPart !== '' ||
+        issueNoPart !== '' ||
+        paragraphs.length > 0;
+      
+      if (isDirty) {
+        setIsSuccess(false);
+      }
+    }
+  }, [
+    isSuccess,
+    isDeletingPara,
+    formData.ministryName, 
+    formData.entityName, 
+    formData.branchName, 
+    formData.auditYear,
+    letterNoPart,
+    wpNoPart,
+    diaryNoPart,
+    issueNoPart,
+    paragraphs.length
+  ]);
 
   const formatSummaryNum = (val: number) => {
     if (val === 0) return '০';
