@@ -1170,7 +1170,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 )}
 
                 {showReceiverDropdown && (
-                  <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600">
+                  <div className="absolute top-[calc(100%+8px)] left-0 w-[420px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600">
                     <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2"><Sparkles size={12} /> গ্রহীতার তালিকা</span>
                     </div>
