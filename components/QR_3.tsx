@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Printer } from 'lucide-react';
-import { toBengaliDigits } from '../utils/numberUtils';
-import { format, subMonths } from 'date-fns';
+import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
+import { format, subMonths, addMonths, setDate, format as dateFnsFormat } from 'date-fns';
 import HighlightText from './HighlightText';
+import { SettlementEntry } from '../types';
+import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants';
 
 interface QRProps {
+  entries: SettlementEntry[];
+  prevStats: any;
   activeCycle: any;
   IDBadge: React.FC<{ id: string }>;
   onBack?: () => void;
@@ -12,9 +16,9 @@ interface QRProps {
   filterMinistry?: string;
 }
 
-const QR_3: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
-  const startDate = activeCycle.start;
-  const endDate = activeCycle.end;
+const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
+  const startDate = setDate(subMonths(activeCycle.start, 1), 16);
+  const endDate = setDate(addMonths(activeCycle.start, 2), 15);
   const prevMonthDate = subMonths(startDate, 1);
 
   const getMonthNameBN = (date: Date) => {
@@ -25,88 +29,151 @@ const QR_3: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
   const formatYearBN = (date: Date) => toBengaliDigits(format(date, 'yyyy'));
   const formatShortYearBN = (date: Date) => toBengaliDigits(format(date, 'yy'));
 
-  const table1Data = [
-    {
-      ministry: "শিল্প মন্ত্রণালয়",
-      entities: [
-        { name: "চিনি ও খাদ্য সংস্থা", pCount: 621, pAmount: 17330266370, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "ক্ষুদ্র ও কুটির শিল্প", pCount: 85, pAmount: 166675293, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "বিটাক", pCount: 0, pAmount: 0, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "রসায়ন শিল্প সংস্থা", pCount: 2, pAmount: 553176, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-      ]
-    },
-    {
-      ministry: "বস্ত্র ও পাট মন্ত্রণালয়",
-      entities: [
-        { name: "পাটকল সংস্থা", pCount: 1778, pAmount: 21918286207, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "পাট সংস্থা", pCount: 3, pAmount: 32016629, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "বস্ত্রকল সংস্থা", pCount: 160, pAmount: 16231079081, cCount: 0, cAmount: 0, sCount: 1, sAmount: 15000 },
-        { name: "রেশম বোর্ড", pCount: 7, pAmount: 2751732, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-      ]
-    },
-    {
-      ministry: "বাণিজ্য মন্ত্রণালয়",
-      entities: [
-        { name: "টিসিবি", pCount: 57, pAmount: 230832525, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "আমদানি ও রপ্তানি", pCount: 3, pAmount: 1577323, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-      ]
-    },
-    {
-      ministry: "বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয়",
-      entities: [
-        { name: "বাংলাদেশ বিমান", pCount: 60, pAmount: 460866121, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "পর্যটন কর্পোরেশন", pCount: 53, pAmount: 3355279, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-      ]
-    }
-  ];
-
-  const table2Data = [
-    {
-      ministry: "আর্থিক প্রতিষ্ঠান বিভাগ",
-      entities: [
-        { name: "সোনালী ব্যাংক পিএলসি", pCount: 2680, pAmount: 39827509886, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "জনতা ব্যাংক পিএলসি", pCount: 1818, pAmount: 17363929591, cCount: 0, cAmount: 0, sCount: 29, sAmount: 141343683 },
-        { name: "অগ্রণী ব্যাংক পিএলসি", pCount: 1954, pAmount: 16238136822, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "বাংলাদেশ কৃষি ব্যাংক", pCount: 2018, pAmount: 1830197716, cCount: 0, cAmount: 0, sCount: 1, sAmount: 2410046 },
-        { name: "রূপালী ব্যাংক পিএলসি", pCount: 1109, pAmount: 34816801304, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "বাংলাদেশ ব্যাংক", pCount: 318, pAmount: 5278296389, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "বাংলাদেশ ডেভেলপমেন্ট ব্যাংক লিঃ", pCount: 117, pAmount: 1673007818, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "গৃহনির্মাণ ঋণদান সংস্থা", pCount: 52, pAmount: 220803333, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "কর্মসংস্থান ব্যাংক", pCount: 111, pAmount: 72967576, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "বেসিক ব্যাংক লিঃ", pCount: 195, pAmount: 3021693705, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "আনসার ভিডিপি উন্নয়ন ব্যাংক লিঃ", pCount: 53, pAmount: 44416195, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "ইনভেস্টমেন্ট কর্পোরেশন অব বাংলাদেশ", pCount: 29, pAmount: 220711456, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "সাধারণ বীমা কর্পোরেশন", pCount: 44, pAmount: 669179270, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "জীবন বীমা কর্পোরেশন", pCount: 131, pAmount: 1588032223, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-        { name: "প্রবাসী কল্যাণ ব্যাংক", pCount: 1, pAmount: 1011000, cCount: 0, cAmount: 0, sCount: 0, sAmount: 0 },
-      ]
-    }
-  ];
-
-  const filterData = (data: any[]) => {
-    return data.filter(mGroup => {
-      const matchMinistry = filterMinistry === '' || mGroup.ministry.includes(filterMinistry);
-      const matchSearch = searchTerm === '' || mGroup.ministry.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      if (matchMinistry && matchSearch) return true;
-      
-      // If ministry doesn't match, check if any entity matches search
-      if (searchTerm !== '') {
-        return mGroup.entities.some((ent: any) => ent.name.toLowerCase().includes(searchTerm.toLowerCase()));
-      }
-      
-      return false;
-    }).map(mGroup => ({
-      ...mGroup,
-      entities: mGroup.entities.filter((ent: any) => {
-        if (searchTerm === '') return true;
-        return ent.name.toLowerCase().includes(searchTerm.toLowerCase()) || mGroup.ministry.toLowerCase().includes(searchTerm.toLowerCase());
-      })
-    })).filter(mGroup => mGroup.entities.length > 0);
+  const robustNormalize = (str: string = '') => {
+    return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
   };
 
-  const filteredTable1Data = filterData(table1Data);
-  const filteredTable2Data = filterData(table2Data);
+  // Categorization helper
+  const isFinancialInstitution = (ministryName: string) => {
+    return robustNormalize(ministryName).includes(robustNormalize('আর্থিক প্রতিষ্ঠান বিভাগ'));
+  };
+
+  const processData = (isFI: boolean) => {
+    const map = new Map<string, any>();
+    const paraType = 'নন এসএফআই';
+    const cycleStartStr = dateFnsFormat(startDate, 'yyyy-MM-dd');
+
+    // Initialize with all entities from MINISTRY_ENTITY_MAP
+    Object.entries(MINISTRY_ENTITY_MAP).forEach(([mName, entities]) => {
+      if (isFI !== isFinancialInstitution(mName)) return;
+
+      entities.forEach(entityName => {
+        const key = `${mName}|${entityName}`;
+        
+        // Calculate recursive opening for this entity
+        const baseMap = prevStats.entitiesNonSFI || {};
+        const base = baseMap[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+        
+        const pastEntries = entries.filter(e => {
+          if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
+          if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
+          const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+          return entryDate !== '' && entryDate < cycleStartStr && entryDate >= ENTRY_START_DATE;
+        });
+
+        let pastRC = 0, pastRA = 0, pastSC = 0, pastSA = 0;
+        const processedParaIds = new Set<string>();
+
+        pastEntries.forEach(entry => {
+          const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
+          if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
+            pastRC += parseBengaliNumber(rCountRaw);
+          }
+          if (entry.manualRaisedAmount) pastRA += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
+
+          if (entry.paragraphs) {
+            entry.paragraphs.forEach(p => {
+              const cleanParaNo = String(p.paraNo || '').trim();
+              const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
+              if (p.id && !processedParaIds.has(p.id) && hasDigit) {
+                processedParaIds.add(p.id);
+                const status = robustNormalize(p.status || '');
+                const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
+                if (status === robustNormalize('পূর্ণাঙ্গ')) { 
+                  pastSC++; 
+                }
+                pastSA += settledAmt;
+              }
+            });
+          }
+        });
+
+        map.set(key, {
+          ministryName: mName,
+          entityName: entityName,
+          pCount: Math.max(0, base.unsettledCount + pastRC),
+          pAmount: Math.max(0, base.unsettledAmount + Math.round(pastRA)),
+          cCount: 0,
+          cAmount: 0,
+          sCount: 0,
+          sAmount: 0,
+        });
+      });
+    });
+
+    // Process entries for the current range
+    entries.forEach(e => {
+      if (robustNormalize(e.paraType) !== robustNormalize(paraType)) return;
+      if (isFI !== isFinancialInstitution(e.ministryName)) return;
+
+      const key = `${e.ministryName}|${e.entityName}`;
+      if (!map.has(key)) return; // Should already be in the map if it's in MINISTRY_ENTITY_MAP
+
+      const data = map.get(key);
+      const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+      if (!issueDateStr) return;
+      const issueDate = new Date(issueDateStr);
+
+      if (issueDate >= startDate && issueDate <= endDate) {
+        const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
+        if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
+          data.cCount += parseBengaliNumber(rCountRaw);
+        }
+        if (e.manualRaisedAmount) data.cAmount += parseBengaliNumber(String(e.manualRaisedAmount || '0'));
+        
+        if (e.paragraphs) {
+          const processedParaIds = new Set<string>();
+          e.paragraphs.forEach(p => {
+            const cleanParaNo = String(p.paraNo || '').trim();
+            const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
+            if (p.id && !processedParaIds.has(p.id) && hasDigit) {
+              processedParaIds.add(p.id);
+              const status = robustNormalize(p.status || '');
+              const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
+              if (status === robustNormalize('পূর্ণাঙ্গ')) { 
+                data.sCount++; 
+                data.sAmount += settledAmt;
+              }
+            }
+          });
+        }
+      }
+    });
+
+    // Group by Ministry for the two-level display
+    const ministryGroups: any[] = [];
+    const ministryMap = new Map<string, any[]>();
+
+    Array.from(map.values()).forEach(item => {
+      if (!ministryMap.has(item.ministryName)) {
+        ministryMap.set(item.ministryName, []);
+      }
+      ministryMap.get(item.ministryName)?.push(item);
+    });
+
+    ministryMap.forEach((entities, ministry) => {
+      const matchMinistry = filterMinistry === '' || robustNormalize(ministry).includes(robustNormalize(filterMinistry));
+      const matchSearch = searchTerm === '' || 
+        robustNormalize(ministry).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entities.some(ent => robustNormalize(ent.entityName).toLowerCase().includes(searchTerm.toLowerCase()));
+
+      if (matchMinistry && matchSearch) {
+        ministryGroups.push({
+          ministry,
+          entities: entities.filter(ent => {
+            if (searchTerm === '') return true;
+            return robustNormalize(ent.entityName).toLowerCase().includes(searchTerm.toLowerCase()) || 
+                   robustNormalize(ministry).toLowerCase().includes(searchTerm.toLowerCase());
+          })
+        });
+      }
+    });
+
+    return ministryGroups;
+  };
+
+  const filteredTable1Data = useMemo(() => processData(false), [entries, prevStats, searchTerm, filterMinistry]);
+  const filteredTable2Data = useMemo(() => processData(true), [entries, prevStats, searchTerm, filterMinistry]);
 
   const thCls = "border-r border-b border-slate-400 p-1 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
   const tdCls = "border-r border-b border-slate-400 p-1 text-[9px] text-slate-700 align-middle";

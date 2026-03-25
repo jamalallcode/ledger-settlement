@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Printer } from 'lucide-react';
-import { toBengaliDigits } from '../utils/numberUtils';
-import { format } from 'date-fns';
+import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
+import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
+import { SettlementEntry } from '../types';
 
 interface QRProps {
+  entries: SettlementEntry[];
   activeCycle: any;
   IDBadge: React.FC<{ id: string }>;
   onBack?: () => void;
@@ -12,9 +14,9 @@ interface QRProps {
   filterMinistry?: string;
 }
 
-const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
-  const startDate = activeCycle.start;
-  const endDate = activeCycle.end;
+const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
+  const startDate = setDate(subMonths(activeCycle.start, 1), 16);
+  const endDate = setDate(addMonths(activeCycle.start, 2), 15);
 
   const getMonthNameBN = (date: Date) => {
     const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
@@ -23,21 +25,60 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
 
   const formatYearBN = (date: Date) => toBengaliDigits(format(date, 'yyyy'));
 
-  const sampleData = [
-    { name: "বস্ত্র ও পাট মন্ত্রণালয়", amount: 0, auditRec: 0, auditAdj: 0, currentRec: 0, currentAdj: 0, oldRec: 15000, oldAdj: 0, totalRec: 15000, totalAdj: 0, remarks: "০" },
-    { name: "শিল্প মন্ত্রণালয়", amount: 0, auditRec: 0, auditAdj: 0, currentRec: 0, currentAdj: 0, oldRec: 0, oldAdj: 0, totalRec: 0, totalAdj: 0, remarks: "০" },
-    { name: "বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয়", amount: 0, auditRec: 0, auditAdj: 0, currentRec: 0, currentAdj: 0, oldRec: 0, oldAdj: 0, totalRec: 0, totalAdj: 0, remarks: "০" },
-    { name: "বাণিজ্য মন্ত্রণালয়", amount: 0, auditRec: 0, auditAdj: 0, currentRec: 0, currentAdj: 0, oldRec: 0, oldAdj: 0, totalRec: 0, totalAdj: 0, remarks: "০" },
-    { name: "আর্থিক প্রতিষ্ঠান বিভাগ", amount: 0, auditRec: 0, auditAdj: 0, currentRec: 0, currentAdj: 0, oldRec: 3307905, oldAdj: 0, totalRec: 3307905, totalAdj: 0, remarks: "০" },
-  ];
+  const robustNormalize = (str: string = '') => {
+    return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+  };
 
-  const filteredData = sampleData.filter(row => {
-    const matchMinistry = filterMinistry === '' || row.name.includes(filterMinistry);
-    const matchSearch = searchTerm === '' || row.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchMinistry && matchSearch;
-  });
+  const filteredData = useMemo(() => {
+    const ministryMap = new Map<string, any>();
 
-  const totals = filteredData.reduce((acc, curr) => ({
+    entries.forEach(e => {
+      // Filter by SFI
+      if (robustNormalize(e.paraType) !== robustNormalize('এসএফআই')) return;
+
+      // Filter by Date Range (Issue Date)
+      const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+      if (!issueDateStr) return;
+      const issueDate = new Date(issueDateStr);
+      if (issueDate < startDate || issueDate > endDate) return;
+
+      const mName = e.ministryName;
+      if (!ministryMap.has(mName)) {
+        ministryMap.set(mName, {
+          name: mName,
+          amount: 0,
+          auditRec: 0,
+          auditAdj: 0,
+          currentRec: 0,
+          currentAdj: 0,
+          oldRec: 0,
+          oldAdj: 0,
+          totalRec: 0,
+          totalAdj: 0,
+          remarks: "০"
+        });
+      }
+
+      const data = ministryMap.get(mName);
+      data.amount += (e.involvedAmount || 0);
+      data.auditRec += (e.vatRec || 0);
+      data.auditAdj += (e.vatAdj || 0);
+      data.currentRec += (e.itRec || 0);
+      data.currentAdj += (e.itAdj || 0);
+      data.oldRec += (e.othersRec || 0);
+      data.oldAdj += (e.othersAdj || 0);
+      data.totalRec += (e.totalRec || 0);
+      data.totalAdj += (e.totalAdj || 0);
+    });
+
+    return Array.from(ministryMap.values()).filter(row => {
+      const matchMinistry = filterMinistry === '' || robustNormalize(row.name).includes(robustNormalize(filterMinistry));
+      const matchSearch = searchTerm === '' || robustNormalize(row.name).toLowerCase().includes(searchTerm.toLowerCase());
+      return matchMinistry && matchSearch;
+    });
+  }, [entries, startDate, endDate, filterMinistry, searchTerm]);
+
+  const totals = useMemo(() => filteredData.reduce((acc, curr) => ({
     amount: acc.amount + curr.amount,
     auditRec: acc.auditRec + curr.auditRec,
     auditAdj: acc.auditAdj + curr.auditAdj,
@@ -47,7 +88,7 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
     oldAdj: acc.oldAdj + curr.oldAdj,
     totalRec: acc.totalRec + curr.totalRec,
     totalAdj: acc.totalAdj + curr.totalAdj,
-  }), { amount: 0, auditRec: 0, auditAdj: 0, currentRec: 0, currentAdj: 0, oldRec: 0, oldAdj: 0, totalRec: 0, totalAdj: 0 });
+  }), { amount: 0, auditRec: 0, auditAdj: 0, currentRec: 0, currentAdj: 0, oldRec: 0, oldAdj: 0, totalRec: 0, totalAdj: 0 }), [filteredData]);
 
   const thCls = "border-r border-b border-slate-400 p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
   const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle";
@@ -88,7 +129,7 @@ const QR_5: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
 
       <div className="flex justify-between items-start mb-4 text-[11px] font-bold text-slate-800">
         <p className="max-w-[70%]">বিষয়ঃ অডিট আপত্তির ফলে আদায়কৃত/সমন্বয়কৃত অর্থের ত্রৈমাসিক প্রতিবেদন {getMonthNameBN(startDate)}/{formatYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatYearBN(endDate)} পর্যন্ত</p>
-        <p>শাখার নামঃ নন এসএফআই শাখা।</p>
+        <p>শাখার নামঃ এসএফআই শাখা।</p>
       </div>
 
       <div className="table-container qr-table-container overflow-auto border border-slate-400 shadow-sm rounded-lg">

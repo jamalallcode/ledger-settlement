@@ -1,10 +1,12 @@
 import React from 'react';
 import { Printer } from 'lucide-react';
-import { toBengaliDigits } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
+import { SettlementEntry } from '../types';
 
 interface QRProps {
+  entries: SettlementEntry[];
   activeCycle: any;
   IDBadge: React.FC<{ id: string }>;
   onBack?: () => void;
@@ -12,31 +14,54 @@ interface QRProps {
   filterMinistry?: string;
 }
 
-const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
+const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
   // Date calculation based on user's logic: 
   // "তিন মাস বলতে পূর্ববর্তী মাসের ১৬ তারিখ হতে ৩য় মাসের ১৫ তারিখ পযন্ত"
-  // If activeCycle.start is the beginning of the quarter (e.g., Oct 1st)
   const startDate = setDate(subMonths(activeCycle.start, 1), 16);
   const endDate = setDate(addMonths(activeCycle.start, 2), 15);
 
   const formatDateBangla = (date: Date) => {
-    const d = toBengaliDigits(format(date, 'dd/MM/yyyy'));
-    return d;
+    return toBengaliDigits(format(date, 'dd/MM/yyyy'));
   };
 
-  const ministries = [
-    "বস্ত্র ও পাট মন্ত্রণালয়",
-    "শিল্প মন্ত্রণালয়",
-    "বেসামরিক বিমান ও পর্যটন মন্ত্রণালয়",
-    "বাণিজ্য মন্ত্রণালয়",
-    "আর্থিক প্রতিষ্ঠান বিভাগ, জনতা ব্যাংক পিএলসি, বিভাগীয় কার্যালয়, খুলনা ও এর আওতাধীন শাখাসমূহ (২০০৫-০৬ ও ২-১৬-১৭)"
-  ];
+  const robustNormalize = (str: string = '') => {
+    return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+  };
 
-  const filteredMinistries = ministries.filter(m => {
-    const matchMinistry = filterMinistry === '' || m.includes(filterMinistry);
-    const matchSearch = searchTerm === '' || m.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredData = entries.filter(e => {
+    // Filter by Non-SFI
+    if (robustNormalize(e.paraType) !== robustNormalize('নন এসএফআই')) return false;
+    
+    // Filter by Bi-partite meeting
+    const mType = robustNormalize(e.meetingType || '');
+    if (!mType.includes(robustNormalize('দ্বিপক্ষীয়'))) return false;
+
+    // Filter by Date Range (Issue Date)
+    const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+    if (!issueDateStr) return false;
+    const issueDate = new Date(issueDateStr);
+    if (issueDate < startDate || issueDate > endDate) return false;
+
+    // Filter by Ministry
+    const matchMinistry = filterMinistry === '' || robustNormalize(e.ministryName).includes(robustNormalize(filterMinistry));
+    
+    // Filter by Search Term
+    const matchSearch = searchTerm === '' || 
+      robustNormalize(e.ministryName).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      robustNormalize(e.entityName).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      robustNormalize(e.remarks || '').toLowerCase().includes(searchTerm.toLowerCase());
+      
     return matchMinistry && matchSearch;
   });
+
+  const totals = filteredData.reduce((acc, curr) => ({
+    sentPara: acc.sentPara + (parseInt(toEnglishDigits(curr.meetingSentParaCount || '0')) || 0),
+    settledPara: acc.settledPara + (parseInt(toEnglishDigits(curr.meetingSettledParaCount || '0')) || 0),
+    amount: acc.amount + (curr.involvedAmount || 0),
+    recovery: acc.recovery + (curr.totalRec || 0),
+    adjustment: acc.adjustment + (curr.totalAdj || 0),
+    others: acc.others + 0, // Placeholder for others if needed
+  }), { sentPara: 0, settledPara: 0, amount: 0, recovery: 0, adjustment: 0, others: 0 });
 
   const thCls = "border-r border-b border-slate-400 p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
   const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle";
@@ -119,23 +144,31 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
             </tr>
           </thead>
           <tbody>
-            {filteredMinistries.map((m, idx) => (
+            {filteredData.map((row, idx) => (
               <tr key={idx} className="hover:bg-slate-50 transition-colors">
                 <td className={numTdCls}>{toBengaliDigits((idx + 1).toString())}</td>
                 <td className={tdCls}>
-                  <HighlightText text={m} searchTerm={searchTerm} />
+                  <HighlightText text={`${row.ministryName}, ${row.entityName} (${toBengaliDigits(row.auditYear)})`} searchTerm={searchTerm} />
                 </td>
-                <td className={`${numTdCls} w-[62px]`}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("১") : ""}</td>
-                <td className={numTdCls}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("১৬-০৭-২৫") : ""}</td>
-                <td className={`${numTdCls} w-[62px]`}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("৩০") : ""}</td>
-                <td className={numTdCls}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("২৬") : ""}</td>
-                <td className={numTdCls}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("১৮-০৮-২৫") : ""}</td>
-                <td className={numTdCls}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("০৭-১০-২৫") : ""}</td>
-                <td className={numTdCls}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("১৪০৪৩২৬৬১") : ""}</td>
-                <td className={numTdCls}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("২৫৫৭৭৪৩") : ""}</td>
-                <td className={numTdCls}>{m.includes('আর্থিক প্রতিষ্ঠান বিভাগ') ? toBengaliDigits("১৩৭৮৭৪৮১৮") : ""}</td>
+                <td className={`${numTdCls} w-[62px]`}>{toBengaliDigits("১")}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.meetingDate || '')}</td>
+                <td className={`${numTdCls} w-[62px]`}>{toBengaliDigits(row.meetingSentParaCount || '০')}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.meetingSettledParaCount || '০')}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.meetingResponseDate || '')}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.issueLetterNoDate || '')}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.involvedAmount?.toString() || '০')}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.totalRec?.toString() || '০')}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.totalAdj?.toString() || '০')}</td>
                 <td className={numTdCls}></td>
-                <td className={tdCls.replace('p-2', 'p-1') + " w-[42px]"}></td>
+                <td className={tdCls.replace('p-2', 'p-1') + " w-[42px]"}>{row.remarks}</td>
+              </tr>
+            ))}
+            {/* Empty rows if data is sparse */}
+            {filteredData.length < 5 && Array.from({ length: 5 - filteredData.length }).map((_, i) => (
+              <tr key={`empty-${i}`} className="h-10">
+                {Array.from({ length: 13 }).map((_, j) => (
+                  <td key={j} className="border-r border-b border-slate-400"></td>
+                ))}
               </tr>
             ))}
           </tbody>
@@ -143,25 +176,25 @@ const QR_1: React.FC<QRProps> = ({ activeCycle, IDBadge, searchTerm = '', filter
             <tr className="bg-black text-white">
               <td className={footerNumTdCls} colSpan={2}>মোট</td>
               <td className={`${footerNumTdCls} w-[62px]`}>
-                {toBengaliDigits(filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length.toString())}
+                {toBengaliDigits(filteredData.length.toString())}
               </td>
               <td className={footerNumTdCls}></td>
               <td className={`${footerNumTdCls} w-[62px]`}>
-                {toBengaliDigits((filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length * 30).toString())}
+                {toBengaliDigits(totals.sentPara.toString())}
               </td>
               <td className={footerNumTdCls}>
-                {toBengaliDigits((filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length * 26).toString())}
+                {toBengaliDigits(totals.settledPara.toString())}
               </td>
               <td className={footerNumTdCls}></td>
               <td className={footerNumTdCls}></td>
               <td className={footerNumTdCls}>
-                {toBengaliDigits((filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length * 140432661).toString())}
+                {toBengaliDigits(totals.amount.toString())}
               </td>
               <td className={footerNumTdCls}>
-                {toBengaliDigits((filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length * 2557743).toString())}
+                {toBengaliDigits(totals.recovery.toString())}
               </td>
               <td className={footerNumTdCls}>
-                {toBengaliDigits((filteredMinistries.filter(m => m.includes('আর্থিক প্রতিষ্ঠান বিভাগ')).length * 137874818).toString())}
+                {toBengaliDigits(totals.adjustment.toString())}
               </td>
               <td className={footerNumTdCls}></td>
               <td className={footerTdCls + " w-[42px]"}></td>

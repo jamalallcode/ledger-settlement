@@ -251,6 +251,10 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [isWpFocused, setIsWpFocused] = useState(false);
   const [isDiaryFocused, setIsDiaryFocused] = useState(false);
 
+  const missingNumbersWarning = useMemo(() => {
+    return !letterNoPart.trim() && !diaryNoPart.trim() && !issueNoPart.trim();
+  }, [letterNoPart, diaryNoPart, issueNoPart]);
+
   const duplicates = useMemo(() => {
     if (!existingEntries || existingEntries.length === 0) return { letterNo: false, diaryNo: false, issueNo: false, any: false };
     
@@ -259,8 +263,9 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       // Extract the number part more reliably
       // The format is "Prefix Number, DatePrefix Date"
       const firstPart = combinedStr.split(',')[0];
-      // Remove the prefix and any leading/trailing whitespace using regex
-      const extractedNo = firstPart.replace(prefixRegex, '').replace(/\s+/g, '');
+      // Handle cases where the prefix might be missing or just "নং-"
+      const cleanRegex = new RegExp(`(${prefixRegex.source}|নং[:\\-]?\\s*)`, 'g');
+      const extractedNo = firstPart.replace(cleanRegex, '').replace(/\s+/g, '');
       
       const engExtracted = toEnglishDigits(extractedNo);
       const engSearch = toEnglishDigits(searchNo.replace(/\s+/g, ''));
@@ -270,17 +275,17 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
     const letterDuplicate = letterNoPart ? existingEntries.find(e => {
       if (initialEntry && e.id === initialEntry.id) return false;
-      return findDuplicate(e.letterNoDate, /পত্র নং-?\s*/g, letterNoPart);
+      return findDuplicate(e.letterNoDate, /পত্র\s+নং[:\-]?\s*/g, letterNoPart);
     }) : null;
 
     const diaryDuplicate = diaryNoPart ? existingEntries.find(e => {
       if (initialEntry && e.id === initialEntry.id) return false;
-      return findDuplicate(e.workpaperNoDate, /ডায়েরি নং-?\s*/g, diaryNoPart);
+      return findDuplicate(e.workpaperNoDate, /ডায়েরি\s+নং[:\-]?\s*/g, diaryNoPart);
     }) : null;
 
     const issueDuplicate = issueNoPart ? existingEntries.find(e => {
       if (initialEntry && e.id === initialEntry.id) return false;
-      return findDuplicate(e.issueLetterNoDate, /জারিপত্র নং-?\s*/g, issueNoPart);
+      return findDuplicate(e.issueLetterNoDate, /জারিপত্র\s+নং[:\-]?\s*/g, issueNoPart);
     }) : null;
 
     return {
@@ -310,16 +315,20 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const issueYearRef = useRef<HTMLInputElement>(null);
 
   const extractSegments = (combined: string, noPrefix: string, datePrefix: string) => {
-    if (!combined) return { no: '', d: '', m: '', y: '' };
+    if (!combined || !combined.trim()) return { no: '', d: '', m: '', y: '' };
     const parts = combined.split(',');
     let no = '';
     let d = '', m = '', y = '';
     
     if (parts.length >= 1) {
-      no = parts[0].replace(new RegExp(`${noPrefix}\\s*`), '').trim();
+      // Clean all possible number prefixes globally to handle corrupted data
+      const cleanRegex = /(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g;
+      no = parts[0].replace(cleanRegex, '').trim();
     }
     if (parts.length >= 2) {
-      const dateStr = parts[1].replace(new RegExp(`${datePrefix}\\s*`), '').trim();
+      // Clean all possible date prefixes globally
+      const cleanDateRegex = /(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g;
+      const dateStr = parts[1].replace(cleanDateRegex, '').trim();
       const dateParts = toEnglishDigits(dateStr).split(/[\/\-]/);
       if (dateParts.length === 3) {
         d = toBengaliDigits(dateParts[0]);
@@ -393,13 +402,23 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     }
   }, [initialEntry]);
 
-  const buildCombinedString = (no: string, d: string, m: string, y: string) => {
+  const buildCombinedString = (no: string, d: string, m: string, y: string, noPrefix: string = 'নং-', datePrefix: string = 'তারিখ-') => {
     const day = d ? (toEnglishDigits(d).length === 1 ? '0' + toEnglishDigits(d) : toEnglishDigits(d)) : '';
     const month = m ? (toEnglishDigits(m).length === 1 ? '0' + toEnglishDigits(m) : toEnglishDigits(m)) : '';
     let year = toEnglishDigits(y);
     if (year.length === 2) year = '20' + year;
     const formattedDate = (day && month && year.length === 4) ? `${toBengaliDigits(day)}/${toBengaliDigits(month)}/${toBengaliDigits(year)}` : '';
-    return `নং- ${no}${formattedDate ? `, তারিখ- ${formattedDate}` : ''}`;
+    
+    // Strip any existing prefix from 'no' globally before adding the desired one
+    const cleanNo = no.trim().replace(/(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g, '').trim();
+    
+    if (!cleanNo && !formattedDate) return '';
+
+    const noPart = cleanNo ? `${noPrefix} ${cleanNo}` : '';
+    const datePart = formattedDate ? `${datePrefix} ${formattedDate}` : '';
+    
+    if (noPart && datePart) return `${noPart}, ${datePart}`;
+    return noPart || datePart;
   };
 
   const getIsoFromSegments = (d: string, m: string, y: string) => {
@@ -415,11 +434,11 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   };
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, letterNoDate: buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear) }));
+    setFormData(prev => ({ ...prev, letterNoDate: buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear, 'পত্র নং-', 'পত্রের তারিখ-') }));
   }, [letterNoPart, letterDay, letterMonth, letterYear]);
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, meetingWorkpaper: buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear) }));
+    setFormData(prev => ({ ...prev, meetingWorkpaper: buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-') }));
   }, [wpNoPart, wpDay, wpMonth, wpYear]);
 
   /* useMemo added to track values for validation */
@@ -428,11 +447,11 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const currentIssueISO = useMemo(() => getIsoFromSegments(dayPart, monthPart, yearPart), [dayPart, monthPart, yearPart]);
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, workpaperNoDate: buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear) }));
+    setFormData(prev => ({ ...prev, workpaperNoDate: buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear, 'ডায়েরি নং-', 'ডায়েরির তারিখ-') }));
   }, [diaryNoPart, diaryDay, diaryMonth, diaryYear]);
 
   useEffect(() => {
-    const combined = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart);
+    const combined = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
     setFormData(prev => ({ ...prev, issueLetterNoDate: combined, issueDateISO: currentIssueISO }));
   }, [issueNoPart, dayPart, monthPart, yearPart, currentIssueISO]);
 
@@ -536,17 +555,16 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       const totalSettledAmount = paragraphs.reduce((s, p) => s + p.recoveredAmount + p.adjustedAmount, 0);
       const calculatedUnsettledAmount = (formData.totalInvolvedAmount || 0) - totalSettledAmount;
       
-      const combinedLetter = buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear);
-      const combinedDiary = buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear);
-      const combinedIssue = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart);
-      const combinedWp = buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear);
+      const combinedLetter = buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear, 'পত্র নং-', 'পত্রের তারিখ-');
+      const combinedDiary = buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear, 'ডায়েরি নং-', 'ডায়েরির তারিখ-');
+      const combinedIssue = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
+      const combinedWp = buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-');
 
       const finalData = {
         ...formData, 
         letterNoDate: combinedLetter,
-        diaryNoDate: combinedDiary,
         issueLetterNoDate: combinedIssue,
-        workpaperNoDate: combinedWp,
+        workpaperNoDate: combinedDiary,
         meetingWorkpaper: combinedWp,
         meetingFullSettledParaCount: Math.round(summaryData.fullInvolved).toString(),
         meetingPartialSettledParaCount: Math.round(summaryData.partialInvolved).toString(),
@@ -605,7 +623,46 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const handleNewEntry = () => {
     setIsSuccess(false);
     setWizardStep('details');
+    // Scroll to top
+    const container = document.getElementById('form-container-settlement');
+    if (container) {
+      container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
+
+  // Reset success state if user starts typing again
+  useEffect(() => {
+    if (isSuccess && !isDeletingPara) {
+      const isDirty = 
+        formData.ministryName !== '' || 
+        formData.entityName !== '' || 
+        formData.branchName !== '' || 
+        formData.auditYear !== '' ||
+        letterNoPart !== '' ||
+        wpNoPart !== '' ||
+        diaryNoPart !== '' ||
+        issueNoPart !== '' ||
+        paragraphs.length > 0;
+      
+      if (isDirty) {
+        setIsSuccess(false);
+      }
+    }
+  }, [
+    isSuccess,
+    isDeletingPara,
+    formData.ministryName, 
+    formData.entityName, 
+    formData.branchName, 
+    formData.auditYear,
+    letterNoPart,
+    wpNoPart,
+    diaryNoPart,
+    issueNoPart,
+    paragraphs.length
+  ]);
 
   const formatSummaryNum = (val: number) => {
     if (val === 0) return '০';
@@ -963,9 +1020,27 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
           <div id="section-para-entry-area" className="pt-10 border-t border-slate-100 relative">
             <div id="section-para-bulk" className="bg-slate-50 p-6 rounded-3xl border border-slate-200 mb-8 relative">
               <div className="flex flex-col md:flex-row gap-4 items-end">
-                <div className="flex-1 w-full">
+                <div className="flex-1 w-full relative">
                   <label className="block text-sm font-black text-slate-500 mb-2 ml-1 uppercase">বিস্তারিত অনুচ্ছেদ যোগ করুন (মীমাংসিতদের জন্য)</label>
-                  <input type="text" className={`w-full h-[55px] px-6 border rounded-2xl font-black text-slate-900 bg-white outline-none shadow-sm text-lg transition-all ${bulkParaInput ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={bulkParaInput} onChange={e => setBulkParaInput(toBengaliDigits(e.target.value))} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleBulkGenerate())} placeholder="অনুচ্ছেদ নং (যেমন: ৫, ১০, ১৫)" />
+                  <div className="relative group">
+                    <input 
+                      type="text" 
+                      className={`w-full h-[55px] pl-6 pr-48 border rounded-2xl font-black text-slate-900 bg-white outline-none shadow-sm text-lg transition-all ${bulkParaInput ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} 
+                      value={bulkParaInput} 
+                      onChange={e => setBulkParaInput(toBengaliDigits(e.target.value))} 
+                      onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleBulkGenerate())} 
+                      placeholder="অনুচ্ছেদ নং (যেমন: ৫, ১০, ১৫)" 
+                    />
+                    {bulkParaInput.trim() && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-slate-900/95 backdrop-blur-sm text-white px-4 py-2 rounded-xl shadow-xl border border-slate-700 animate-in slide-in-from-right-2 duration-300">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-700 pr-2">মোট অনুচ্ছেদ সংখ্যা=</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-lg font-black text-emerald-400 leading-none">{toBengaliDigits(bulkParaInput.split(/[,，\s]+/).filter(s => s.trim()).length)}</span>
+                          <span className="text-[10px] font-black text-slate-300 uppercase">টি</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <button id="btn-add-paras" type="button" onClick={handleBulkGenerate} className="w-full md:w-auto px-8 h-[55px] bg-slate-900 text-white font-black rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-3 shadow-lg relative">
                   <Sparkles size={20} className="text-blue-400" /> অনুচ্ছেদ যোগ
@@ -1081,6 +1156,20 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         </fieldset>
 
         <div className="pt-6 relative" ref={bottomRef}>
+          {missingNumbersWarning && !isSuccess && (
+            <div className="mb-6 p-4 bg-amber-50 border-2 border-dashed border-amber-200 rounded-2xl flex items-center gap-4 animate-in slide-in-from-bottom-2 duration-500 shadow-sm">
+              <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center shrink-0">
+                <AlertCircle size={20} />
+              </div>
+              <div className="space-y-0.5">
+                <h4 className="text-sm font-black text-amber-900 tracking-tight">সতর্কবার্তা: প্রয়োজনীয় নম্বর অনুপস্থিত</h4>
+                <p className="text-[11px] font-bold text-amber-700/80">
+                  ডায়েরি নং, পত্র নং অথবা জারিপত্র নং - এর মধ্যে কমপক্ষে একটি নম্বর থাকা প্রয়োজন। তবে আপনি চাইলে এন্ট্রি সম্পন্ন করতে পারেন।
+                </p>
+              </div>
+            </div>
+          )}
+
           {isSuccess ? (
             <div className="w-full py-10 bg-gradient-to-br from-emerald-50 via-white to-teal-50 border-2 border-emerald-200/60 rounded-[3rem] flex flex-col items-center justify-center gap-6 animate-in zoom-in-95 duration-500 shadow-[0_25px_60px_rgba(16,185,129,0.2)] backdrop-blur-md relative overflow-hidden group">
                <div className="relative">
