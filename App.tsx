@@ -47,6 +47,8 @@ const App: React.FC = () => {
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showReturnSummary, setShowReturnSummary] = useState(true);
+  const [showAuditDetails, setShowAuditDetails] = useState(true);
   
   // State for direct module entry from sidebar
   const [entryModule, setEntryModule] = useState<'settlement' | 'correspondence' | null>(null);
@@ -206,7 +208,52 @@ const App: React.FC = () => {
       handleAdminSync(session?.user?.email);
     });
 
-    return () => subscription.unsubscribe();
+    // Sync Global Settings (Visibility)
+    const fetchSettings = async () => {
+      const { data: summaryData, error: summaryError } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'show_return_summary')
+        .maybeSingle();
+      
+      if (!summaryError && summaryData) {
+        setShowReturnSummary(summaryData.value);
+      }
+
+      const { data: auditData, error: auditError } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'show_audit_details')
+        .maybeSingle();
+      
+      if (!auditError && auditData) {
+        setShowAuditDetails(auditData.value);
+      }
+    };
+
+    fetchSettings();
+
+    const settingsSubscription = supabase
+      .channel('app_settings_changes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'app_settings'
+      }, (payload: any) => {
+        if (payload.new) {
+          if (payload.new.key === 'show_return_summary') {
+            setShowReturnSummary(payload.new.value);
+          } else if (payload.new.key === 'show_audit_details') {
+            setShowAuditDetails(payload.new.value);
+          }
+        }
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+      settingsSubscription.unsubscribe();
+    };
   }, []);
 
   // Proactive Admin Notification Effect
@@ -568,6 +615,7 @@ const App: React.FC = () => {
             entryModule={entryModule}
             registerSubModule={registerSubModule}
             reportType={reportType}
+            showReturnSummary={showReturnSummary}
           />
         </div>
       )}
@@ -608,7 +656,7 @@ const App: React.FC = () => {
                 />
               )}
               
-              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} />}
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} showAuditDetails={showAuditDetails} />}
               
               {activeTab === 'register' && (
                 <div className="space-y-6 relative">
@@ -761,6 +809,10 @@ const App: React.FC = () => {
                   pendingCount={totalPendingCount}
                   setActiveTab={handleTabChange}
                   onOpenChangePassword={() => setShowChangePassword(true)}
+                  showReturnSummary={showReturnSummary}
+                  setShowReturnSummary={setShowReturnSummary}
+                  showAuditDetails={showAuditDetails}
+                  setShowAuditDetails={setShowAuditDetails}
                 />
               )}
             </div>

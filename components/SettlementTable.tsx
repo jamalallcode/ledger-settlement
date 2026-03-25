@@ -24,11 +24,11 @@ interface SettlementTableProps {
   onClearHighlight?: () => void;
 }
 
-const SettlementTable: React.FC<SettlementTableProps> = ({ 
+const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(({ 
   entries, onDelete, onEdit, isLayoutEditable, showFilters, setShowFilters,
   isAdminView = false, onApprove, onReject, isAdmin = false,
   highlightSearch = null, onClearHighlight
-}) => {
+}, ref) => {
   const [showCycleStats, setShowCycleStats] = useState<Record<string, boolean>>({});
   const [showSummary, setShowSummary] = useState(false);
   const lastActiveLabel = useRef<string>("");
@@ -1144,6 +1144,6 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default SettlementTable;

@@ -63,6 +63,43 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     setFilterLetterType('সকল');
   }, [filterParaType]);
 
+  const [showAuditorStatsModal, setShowAuditorStatsModal] = useState(false);
+
+  const normalizeName = (name: string | null | undefined) => {
+    if (!name) return 'অনির্ধারিত';
+    return name
+      .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .normalize('NFC');
+  };
+
+  const auditorWiseStats = useMemo(() => {
+    const stats: Record<string, { total: number; auditor: number; aao: number; dd: number; others: number }> = {};
+    
+    correspondenceEntries.forEach(entry => {
+      const auditor = normalizeName(entry.receiverName || entry.presentedToName);
+      if (!stats[auditor]) {
+        stats[auditor] = { total: 0, auditor: 0, aao: 0, dd: 0, others: 0 };
+      }
+      
+      stats[auditor].total++;
+      const pos = (entry.presentedToName || 'অডিটর');
+      
+      if (pos.includes('অডিটর')) {
+        stats[auditor].auditor++;
+      } else if (pos.includes('এএন্ডএও')) {
+        stats[auditor].aao++;
+      } else if (pos.includes('উপপরিচালক')) {
+        stats[auditor].dd++;
+      } else {
+        stats[auditor].others++;
+      }
+    });
+    
+    return Object.entries(stats).map(([name, data]) => ({ name, ...data }));
+  }, [correspondenceEntries]);
+
   const branchOptions = useMemo(() => ['সকল', 'এসএফআই', 'নন এসএফআই'], []);
 
   const typeOptions = useMemo(() => {
@@ -397,7 +434,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       )}
 
       <div className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-6 relative animate-table-entrance">
-        <div className="text-center mb-8 pt-4">
+        <div className="text-center mb-8 pt-4 relative">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-4">
             চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)।
           </h1>
@@ -412,6 +449,17 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
             <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
             <div className="w-2 h-2 rounded-full bg-blue-600"></div>
             <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-slate-400"></div>
+          </div>
+
+          {/* New Statistics Button */}
+          <div className="absolute top-1/2 right-0 -translate-y-1/2 no-print">
+            <button 
+              onClick={() => setShowAuditorStatsModal(true)}
+              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[13px] font-black transition-all shadow-lg hover:shadow-blue-200/50 hover:-translate-y-0.5"
+            >
+              <BarChart3 size={16} />
+              পরিসংখ্যান
+            </button>
           </div>
         </div>
 
@@ -487,6 +535,78 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           </table>
         </div>
       </div>
+      {/* Auditor Statistics Modal */}
+      {showAuditorStatsModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[3000] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-600/20 rounded-xl flex items-center justify-center">
+                  <BarChart3 size={20} className="text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-[16px]">অডিটর ভিত্তিক পরিসংখ্যান</h3>
+                  <p className="text-slate-400 text-[11px] font-bold">কার কাছে কয়টি চিঠি আছে তার বিস্তারিত হিসাব</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowAuditorStatsModal(false)}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 max-h-[70vh] overflow-y-auto no-scrollbar">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-slate-100">
+                    <th className="border border-slate-200 p-2 text-left text-[12px] font-black text-slate-700">অডিটর</th>
+                    <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">অডিটরের কাছে</th>
+                    <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">এএন্ডএও</th>
+                    <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">উপপরিচালক</th>
+                    <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">মোট</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditorWiseStats.map((stat, idx) => (
+                    <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
+                      <td className="border border-slate-200 p-2 text-[12px] font-bold text-slate-900">{stat.name}</td>
+                      <td className="border border-slate-200 p-2 text-center text-[12px] font-black text-red-600 bg-red-50/30">
+                        {toBengaliDigits(stat.auditor)} টি
+                      </td>
+                      <td className="border border-slate-200 p-2 text-center text-[12px] font-black text-blue-600 bg-blue-50/30">
+                        {toBengaliDigits(stat.aao)} টি
+                      </td>
+                      <td className="border border-slate-200 p-2 text-center text-[12px] font-black text-green-600 bg-green-50/30">
+                        {toBengaliDigits(stat.dd)} টি
+                      </td>
+                      <td className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-900 bg-slate-50">
+                        {toBengaliDigits(stat.total)} টি
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {auditorWiseStats.length === 0 && (
+                <div className="py-10 text-center text-slate-400 font-bold italic">
+                  কোনো তথ্য পাওয়া যায়নি।
+                </div>
+              )}
+            </div>
+            
+            <div className="bg-slate-50 px-6 py-4 flex justify-end">
+              <button 
+                onClick={() => setShowAuditorStatsModal(false)}
+                className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-[12px] hover:bg-slate-800 transition-all shadow-md"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -3,9 +3,10 @@ import {
   LayoutDashboard, Users, ShieldCheck, BarChart3, 
   PieChart, FileText, Mail, PlusCircle, ArrowRight,
   Settings, KeyRound, Fingerprint, Library, BellRing,
-  Sparkles, CheckCircle2, AlertCircle, Clock
+  Sparkles, CheckCircle2, AlertCircle, Clock, Eye, EyeOff
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
+import { supabase } from '../lib/supabase';
 
 interface AdminDashboardProps {
   isAdmin: boolean;
@@ -14,7 +15,20 @@ interface AdminDashboardProps {
   pendingCount: number;
   setActiveTab: (tab: string, subModule?: any, reportType?: string) => void;
   onOpenChangePassword: () => void;
+  showReturnSummary?: boolean;
+  setShowReturnSummary?: (val: boolean) => void;
+  showAuditDetails?: boolean;
+  setShowAuditDetails?: (val: boolean) => void;
 }
+
+const colorClasses: Record<string, any> = {
+  blue: { bg: 'bg-blue-50', text: 'text-blue-600', hoverBg: 'group-hover:bg-blue-600', border: 'hover:border-blue-500/30', shadow: 'hover:shadow-blue-500/5', lightBg: 'bg-blue-500/5', accent: 'text-blue-600' },
+  indigo: { bg: 'bg-indigo-50', text: 'text-indigo-600', hoverBg: 'group-hover:bg-indigo-600', border: 'hover:border-indigo-500/30', shadow: 'hover:shadow-indigo-500/5', lightBg: 'bg-indigo-500/5', accent: 'text-indigo-600' },
+  emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', hoverBg: 'group-hover:bg-emerald-600', border: 'hover:border-emerald-500/30', shadow: 'hover:shadow-emerald-500/5', lightBg: 'bg-emerald-500/5', accent: 'text-emerald-600' },
+  purple: { bg: 'bg-purple-50', text: 'text-purple-600', hoverBg: 'group-hover:bg-purple-600', border: 'hover:border-purple-500/30', shadow: 'hover:shadow-purple-500/5', lightBg: 'bg-purple-500/5', accent: 'text-purple-600' },
+  amber: { bg: 'bg-amber-50', text: 'text-amber-600', hoverBg: 'group-hover:bg-amber-600', border: 'hover:border-amber-500/30', shadow: 'hover:shadow-amber-500/5', lightBg: 'bg-amber-500/5', accent: 'text-amber-600' },
+  rose: { bg: 'bg-rose-50', text: 'text-rose-600', hoverBg: 'group-hover:bg-rose-600', border: 'hover:border-rose-500/30', shadow: 'hover:shadow-rose-500/5', lightBg: 'bg-rose-500/5', accent: 'text-rose-600' },
+};
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({
   isAdmin,
@@ -22,9 +36,47 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   correspondenceEntries,
   pendingCount,
   setActiveTab,
-  onOpenChangePassword
+  onOpenChangePassword,
+  showReturnSummary = true,
+  setShowReturnSummary,
+  showAuditDetails = true,
+  setShowAuditDetails
 }) => {
   if (!isAdmin) return null;
+
+  const handleToggleVisibility = async () => {
+    const newValue = !showReturnSummary;
+    if (setShowReturnSummary) setShowReturnSummary(newValue);
+    
+    try {
+      const { error } = await supabase
+        .from('app_settings')
+        .upsert({ key: 'show_return_summary', value: newValue }, { onConflict: 'key' });
+      
+      if (error) {
+        console.error('Error updating settings:', error);
+      }
+    } catch (err) {
+      console.error('Failed to update visibility:', err);
+    }
+  };
+
+  const handleToggleAuditDetails = async () => {
+    const newValue = !showAuditDetails;
+    if (setShowAuditDetails) setShowAuditDetails(newValue);
+    
+    try {
+      const { error } = await supabase
+        .from('app_settings')
+        .upsert({ key: 'show_audit_details', value: newValue }, { onConflict: 'key' });
+      
+      if (error) {
+        console.error('Error updating audit details visibility:', error);
+      }
+    } catch (err) {
+      console.error('Failed to update audit details visibility:', err);
+    }
+  };
 
   const totalSettlement = entries.length;
   const totalCorrespondence = correspondenceEntries.length;
@@ -110,24 +162,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, idx) => (
-          <div key={idx} className="relative p-6 rounded-[2rem] bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all duration-500 group overflow-hidden">
-            <div className={`absolute -right-8 -bottom-8 w-24 h-24 bg-${stat.color}-500/5 blur-3xl rounded-full group-hover:scale-150 transition-transform duration-700`}></div>
-            <div className="relative z-10 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className={`w-10 h-10 bg-${stat.color}-50 rounded-xl flex items-center justify-center text-${stat.color}-600 group-hover:scale-110 transition-transform`}>
-                  <stat.icon size={20} />
+        {stats.map((stat, idx) => {
+          const colors = colorClasses[stat.color] || colorClasses.blue;
+          return (
+            <div key={idx} className="relative p-6 rounded-[2rem] bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all duration-500 group overflow-hidden">
+              <div className={`absolute -right-8 -bottom-8 w-24 h-24 ${colors.lightBg} blur-3xl rounded-full group-hover:scale-150 transition-transform duration-700`}></div>
+              <div className="relative z-10 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className={`w-10 h-10 ${colors.bg} rounded-xl flex items-center justify-center ${colors.text} group-hover:scale-110 transition-transform`}>
+                    <stat.icon size={20} />
+                  </div>
+                  <Sparkles size={14} className="text-slate-300 group-hover:text-amber-400 transition-colors" />
                 </div>
-                <Sparkles size={14} className="text-slate-300 group-hover:text-amber-400 transition-colors" />
+                <div>
+                  <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{stat.label}</p>
+                  <h3 className={`text-4xl font-black ${colors.accent}`}>{stat.value}</h3>
+                </div>
+                <p className="text-slate-400 text-[10px] font-bold">{stat.desc}</p>
               </div>
-              <div>
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{stat.label}</p>
-                <h3 className={`text-4xl font-black text-${stat.color}-600`}>{stat.value}</h3>
-              </div>
-              <p className="text-slate-400 text-[10px] font-bold">{stat.desc}</p>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Main Content Grid */}
@@ -143,33 +198,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {quickActions.map((action, idx) => (
-              <button 
-                key={idx}
-                onClick={() => {
-                  if (action.id === 'change_pass') {
-                    onOpenChangePassword();
-                  } else if (action.id === 'initial_balance') {
-                    setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক');
-                  } else {
-                    setActiveTab(action.id);
-                  }
-                }}
-                className="group relative p-5 rounded-2xl bg-white border border-slate-200 hover:border-blue-500/30 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 text-left overflow-hidden"
-              >
-                <div className={`absolute top-0 right-0 w-24 h-24 bg-${action.color}-500/5 blur-2xl rounded-full translate-x-12 -translate-y-12 group-hover:scale-150 transition-transform`}></div>
-                <div className="relative z-10 flex items-center gap-4">
-                  <div className={`w-12 h-12 bg-${action.color}-50 rounded-xl flex items-center justify-center text-${action.color}-600 group-hover:bg-${action.color}-600 group-hover:text-white transition-all duration-500`}>
-                    <action.icon size={24} />
+            {quickActions.map((action, idx) => {
+              const colors = colorClasses[action.color] || colorClasses.blue;
+              return (
+                <button 
+                  key={idx}
+                  onClick={() => {
+                    if (action.id === 'change_pass') {
+                      onOpenChangePassword();
+                    } else if (action.id === 'initial_balance') {
+                      setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক');
+                    } else {
+                      setActiveTab(action.id);
+                    }
+                  }}
+                  className={`group relative p-5 rounded-2xl bg-white border border-slate-200 ${colors.border} ${colors.shadow} transition-all duration-300 text-left overflow-hidden`}
+                >
+                  <div className={`absolute top-0 right-0 w-24 h-24 ${colors.lightBg} blur-2xl rounded-full translate-x-12 -translate-y-12 group-hover:scale-150 transition-transform`}></div>
+                  <div className="relative z-10 flex items-center gap-4">
+                    <div className={`w-12 h-12 ${colors.bg} rounded-xl flex items-center justify-center ${colors.text} ${colors.hoverBg} group-hover:text-white transition-all duration-500`}>
+                      <action.icon size={24} />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-black text-slate-800 group-hover:text-blue-600 transition-colors">{action.label}</h4>
+                      <p className="text-[10px] font-bold text-slate-500">{action.desc}</p>
+                    </div>
+                    <ArrowRight size={16} className="text-slate-300 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-black text-slate-800 group-hover:text-blue-600 transition-colors">{action.label}</h4>
-                    <p className="text-[10px] font-bold text-slate-500">{action.desc}</p>
-                  </div>
-                  <ArrowRight size={16} className="text-slate-300 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -198,6 +256,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <span className="text-xs font-bold text-slate-700">ডাটাবেজ সিঙ্ক</span>
                 </div>
                 <span className="px-2 py-1 bg-blue-500/10 text-blue-600 rounded-md text-[9px] font-black uppercase tracking-widest">Active</span>
+              </div>
+
+              {/* Return & Summary Visibility Control */}
+              <div className="flex items-center justify-between p-4 bg-blue-600/5 rounded-2xl border border-blue-200/50 group/toggle">
+                <div className="flex items-center gap-3">
+                  {showReturnSummary ? <Eye size={18} className="text-blue-600" /> : <EyeOff size={18} className="text-slate-400" />}
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-slate-800">রিটার্ণ ও সারাংশ</span>
+                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter">Visibility Control</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={handleToggleVisibility}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 focus:outline-none ring-offset-2 focus:ring-2 focus:ring-blue-500 ${showReturnSummary ? 'bg-blue-600 shadow-lg shadow-blue-500/30' : 'bg-slate-300'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${showReturnSummary ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </div>
+
+              {/* Audit Details Visibility Control */}
+              <div className="flex items-center justify-between p-4 bg-purple-600/5 rounded-2xl border border-purple-200/50 group/toggle">
+                <div className="flex items-center gap-3">
+                  {showAuditDetails ? <Eye size={18} className="text-purple-600" /> : <EyeOff size={18} className="text-slate-400" />}
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-slate-800">অডিট ডিটেইলস (ফিল্ড ১০-১৫)</span>
+                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter">Entry Form Control</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={handleToggleAuditDetails}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 focus:outline-none ring-offset-2 focus:ring-2 focus:ring-purple-500 ${showAuditDetails ? 'bg-purple-600 shadow-lg shadow-purple-500/30' : 'bg-slate-300'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${showAuditDetails ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
               </div>
 
               <div className="flex items-center justify-between p-4 bg-slate-900/5 rounded-2xl border border-slate-200/50">
