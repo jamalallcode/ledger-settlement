@@ -206,7 +206,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                             <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(filteredGrandTotals.cSFIC)} টি</span>
                           </div>
                           <div className="text-slate-500 font-bold text-[11px] leading-relaxed bg-blue-50/50 p-2 rounded-lg border border-blue-100/50">
-                            (বিএসআর: {toBengaliDigits(filteredGrandTotals.sfiBSR)}, ত্রিপক্ষীয় (প): {toBengaliDigits(filteredGrandTotals.sfiTriWork)}, ত্রিপক্ষীয় (বি): {toBengaliDigits(filteredGrandTotals.sfiTriMin)}, মিলিকরণ: {toBengaliDigits(filteredGrandTotals.sfiRecon)})
+                            বিএসআর: {toBengaliDigits(filteredGrandTotals.sfiBSR)} টি, ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(filteredGrandTotals.sfiTriMin)} টি
                           </div>
                         </div>
 
@@ -216,7 +216,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                             <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(filteredGrandTotals.cNonSFIC)} টি</span>
                           </div>
                           <div className="text-slate-500 font-bold text-[11px] leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100">
-                            (বিএসআর: {toBengaliDigits(filteredGrandTotals.nonSfiBSR)}, দ্বিপক্ষীয় (প): {toBengaliDigits(filteredGrandTotals.nonSfiBiWork)}, দ্বিপক্ষীয় (বি): {toBengaliDigits(filteredGrandTotals.nonSfiBiMin)}, মিলিকরণ: {toBengaliDigits(filteredGrandTotals.nonSfiRecon)})
+                            বিএসআর: {toBengaliDigits(filteredGrandTotals.nonSfiBSR)} টি, দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(filteredGrandTotals.nonSfiBiMin)} টি
                           </div>
                         </div>
                       </div>

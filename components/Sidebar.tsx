@@ -21,6 +21,7 @@ interface SidebarProps {
   registerSubModule?: 'settlement' | 'correspondence' | null;
   reportType?: string | null;
   onOpenChangePassword?: () => void;
+  showReturnSummary?: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -40,7 +41,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   pendingCount = 0,
   entryModule,
   registerSubModule,
-  reportType
+  reportType,
+  showReturnSummary = true
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -193,38 +195,40 @@ const Sidebar: React.FC<SidebarProps> = ({
                 key={item.id}
                 className="relative"
               >
-                <button 
-                  id={item.badgeId} 
-                  onClick={() => {
-                    if (item.id === 'entry') {
-                      setIsEntryExpanded(!isEntryExpanded);
-                      setActiveTab('entry');
-                    } else if (item.id === 'register') {
-                      setIsRegisterExpanded(!isRegisterExpanded);
-                      setActiveTab('register');
-                    } else if (item.id === 'return') {
-                      setIsReturnExpanded(!isReturnExpanded);
-                      setActiveTab('return');
-                    } else if (item.id === 'change_pass') {
-                      if (onOpenChangePassword) onOpenChangePassword();
-                    } else {
-                      setActiveTab(item.id);
-                    }
-                  }} 
-                  className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group ${activeTab === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
-                >
-                  <IDBadge id={item.badgeId} />
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px]">{item.label}</span>
-                  </div>
-                  {item.isDropdown && (
-                    <ChevronDown size={10} className={`transition-transform duration-300 ${
-                      (item.id === 'entry' && isEntryExpanded) || 
-                      (item.id === 'register' && isRegisterExpanded) || 
-                      (item.id === 'return' && isReturnExpanded) ? 'rotate-180' : ''
-                    }`} />
-                  )}
-                </button>
+                {item.id === 'return' && !(isAdmin || showReturnSummary) ? null : (
+                  <button 
+                    id={item.badgeId} 
+                    onClick={() => {
+                      if (item.id === 'entry') {
+                        setIsEntryExpanded(!isEntryExpanded);
+                        setActiveTab('entry');
+                      } else if (item.id === 'register') {
+                        setIsRegisterExpanded(!isRegisterExpanded);
+                        setActiveTab('register');
+                      } else if (item.id === 'return') {
+                        setIsReturnExpanded(!isReturnExpanded);
+                        setActiveTab('return');
+                      } else if (item.id === 'change_pass') {
+                        if (onOpenChangePassword) onOpenChangePassword();
+                      } else {
+                        setActiveTab(item.id);
+                      }
+                    }} 
+                    className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group ${activeTab === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
+                  >
+                    <IDBadge id={item.badgeId} />
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px]">{item.label}</span>
+                    </div>
+                    {item.isDropdown && (
+                      <ChevronDown size={10} className={`transition-transform duration-300 ${
+                        (item.id === 'entry' && isEntryExpanded) || 
+                        (item.id === 'register' && isRegisterExpanded) || 
+                        (item.id === 'return' && isReturnExpanded) ? 'rotate-180' : ''
+                      }`} />
+                    )}
+                  </button>
+                )}
 
                 {/* Nested Sub-menu for Entry */}
                 {item.id === 'entry' && isEntryExpanded && (
@@ -263,7 +267,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 )}
 
                 {/* Nested Sub-menu for Return & Summary */}
-                {item.id === 'return' && isReturnExpanded && (
+                {item.id === 'return' && (isAdmin || showReturnSummary) && isReturnExpanded && (
                   <div className="pl-3 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
                     {/* ১. মাসিক (Toggle) */}
                     <button 

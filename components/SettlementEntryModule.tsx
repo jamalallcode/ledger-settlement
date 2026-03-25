@@ -176,6 +176,7 @@ interface SettlementEntryModuleProps {
   isAdmin?: boolean;
   existingEntries?: SettlementEntry[];
   navigateToEntry?: (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => void;
+  showAuditDetails?: boolean;
 }
 
 const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ 
@@ -188,7 +189,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   onBackToMenu, 
   isAdmin = false,
   existingEntries = [],
-  navigateToEntry
+  navigateToEntry,
+  showAuditDetails = true
 }) => {
   const [formData, setFormData] = useState({
     paraType: 'এসএফআই' as ParaType, 
@@ -949,23 +951,28 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               )}
             />
 
-            <div id="field-10" className={col4Style}><label className={labelCls}><span className={numBadge}>১০</span> <Archive size={14} className="text-purple-600 shrink-0" /> আর্কাইভ নং</label><input type="text" className={getDynamicInputCls(formData.archiveNo)} value={formData.archiveNo} onChange={e => { const val = e.target.value; const raw = val.startsWith('kg-') ? val.slice(3).trim() : val; const formatted = raw ? `kg- ${toBengaliDigits(raw)}` : ''; setFormData({...formData, archiveNo: formatted}); }} placeholder="আর্কাইভ নং" /></div>
-            <div id="field-11" className={col1Style}><label className={labelCls}><span className={numBadge}>১১</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> প্রেরিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingSentParaCount'] || formData.meetingSentParaCount)} value={rawInputs['direct-meetingSentParaCount'] || (formData.meetingSentParaCount === '0' || formData.meetingSentParaCount === '' ? '' : toBengaliDigits(formData.meetingSentParaCount))} onChange={e => handleNumericInput('direct', 'meetingSentParaCount', e.target.value)} placeholder="০" /></div>
-            <div id="field-12" className={col3Style}><label className={labelCls}><span className={numBadge}>১২</span> <Banknote size={14} className="text-amber-600 shrink-0" /> মোট জড়িত টাকা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-totalInvolvedAmount'] || formData.totalInvolvedAmount)} value={rawInputs['direct-totalInvolvedAmount'] || (formData.totalInvolvedAmount === 0 ? '' : toBengaliDigits(formData.totalInvolvedAmount))} onChange={e => handleNumericInput('direct', 'totalInvolvedAmount', e.target.value)} placeholder="০" /></div>
-            <div id="field-13" className={col4Style}><label className={labelCls}><span className={numBadge}>১৩</span> <AlertCircle size={14} className="text-purple-600 shrink-0" /> অমীমাংসিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingUnsettledParas'] || formData.meetingUnsettledParas)} value={rawInputs['direct-meetingUnsettledParas'] || (formData.meetingUnsettledParas === '0' || formData.meetingUnsettledParas === '' ? '' : toBengaliDigits(formData.meetingUnsettledParas))} onChange={e => handleNumericInput('direct', 'meetingUnsettledParas', e.target.value)} placeholder="০" /></div>
-            
-            <div id="field-14" className={col1Style}>
-              <label className={labelCls}><span className={numBadge}>১৪</span> <Banknote size={14} className="text-sky-600 shrink-0" /> অমীমাংসিত জড়িত টাকা</label>
-              <div className="w-full h-[48px] px-4 border border-slate-200 rounded-xl font-black bg-slate-50 text-blue-700 flex items-center shadow-inner text-[16px]">
-                {toBengaliDigits(Math.round((formData.totalInvolvedAmount || 0) - paragraphs.reduce((s, p) => s + p.recoveredAmount + p.adjustedAmount, 0)))}
-              </div>
-            </div>
-            <div id="field-15" className={col2Style}>
-              <label className={labelCls}><span className={numBadge}>১৫</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> মীমাংসিত অনুচ্ছেদ সংখ্যা</label>
-              <div className="w-full h-[48px] px-4 border border-slate-200 rounded-xl font-black bg-slate-50 text-emerald-700 flex items-center shadow-inner text-[16px]">
-                {toBengaliDigits(paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ').length)} টি
-              </div>
-            </div>
+            {/* Fields 10-15 (Audit Details) - Conditionally Rendered */}
+            {showAuditDetails && (
+              <>
+                <div id="field-10" className={col4Style}><label className={labelCls}><span className={numBadge}>১০</span> <Archive size={14} className="text-purple-600 shrink-0" /> আর্কাইভ নং</label><input type="text" className={getDynamicInputCls(formData.archiveNo)} value={formData.archiveNo} onChange={e => { const val = e.target.value; const raw = val.startsWith('kg-') ? val.slice(3).trim() : val; const formatted = raw ? `kg- ${toBengaliDigits(raw)}` : ''; setFormData({...formData, archiveNo: formatted}); }} placeholder="আর্কাইভ নং" /></div>
+                <div id="field-11" className={col1Style}><label className={labelCls}><span className={numBadge}>১১</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> প্রেরিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingSentParaCount'] || formData.meetingSentParaCount)} value={rawInputs['direct-meetingSentParaCount'] || (formData.meetingSentParaCount === '0' || formData.meetingSentParaCount === '' ? '' : toBengaliDigits(formData.meetingSentParaCount))} onChange={e => handleNumericInput('direct', 'meetingSentParaCount', e.target.value)} placeholder="০" /></div>
+                <div id="field-12" className={col3Style}><label className={labelCls}><span className={numBadge}>১২</span> <Banknote size={14} className="text-amber-600 shrink-0" /> মোট জড়িত টাকা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-totalInvolvedAmount'] || formData.totalInvolvedAmount)} value={rawInputs['direct-totalInvolvedAmount'] || (formData.totalInvolvedAmount === 0 ? '' : toBengaliDigits(formData.totalInvolvedAmount))} onChange={e => handleNumericInput('direct', 'totalInvolvedAmount', e.target.value)} placeholder="০" /></div>
+                <div id="field-13" className={col4Style}><label className={labelCls}><span className={numBadge}>১৩</span> <AlertCircle size={14} className="text-purple-600 shrink-0" /> অমীমাংসিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingUnsettledParas'] || formData.meetingUnsettledParas)} value={rawInputs['direct-meetingUnsettledParas'] || (formData.meetingUnsettledParas === '0' || formData.meetingUnsettledParas === '' ? '' : toBengaliDigits(formData.meetingUnsettledParas))} onChange={e => handleNumericInput('direct', 'meetingUnsettledParas', e.target.value)} placeholder="০" /></div>
+                
+                <div id="field-14" className={col1Style}>
+                  <label className={labelCls}><span className={numBadge}>১৪</span> <Banknote size={14} className="text-sky-600 shrink-0" /> অমীমাংসিত জড়িত টাকা</label>
+                  <div className="w-full h-[48px] px-4 border border-slate-200 rounded-xl font-black bg-slate-50 text-blue-700 flex items-center shadow-inner text-[16px]">
+                    {toBengaliDigits(Math.round((formData.totalInvolvedAmount || 0) - paragraphs.reduce((s, p) => s + p.recoveredAmount + p.adjustedAmount, 0)))}
+                  </div>
+                </div>
+                <div id="field-15" className={col2Style}>
+                  <label className={labelCls}><span className={numBadge}>১৫</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> মীমাংসিত অনুচ্ছেদ সংখ্যা</label>
+                  <div className="w-full h-[48px] px-4 border border-slate-200 rounded-xl font-black bg-slate-50 text-emerald-700 flex items-center shadow-inner text-[16px]">
+                    {toBengaliDigits(paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ').length)} টি
+                  </div>
+                </div>
+              </>
+            )}
             {/* Field: Online/Offline Status */}
             <div className={`${colWrapperCls} border-emerald-100`}>
               <IDBadge id="settlement-field-online" />

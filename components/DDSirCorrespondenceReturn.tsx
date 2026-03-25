@@ -137,6 +137,34 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     return data;
   }, [entries, filterAuditor, filterBranch, selectedReportingDate]);
 
+  const [showAuditorStatsModal, setShowAuditorStatsModal] = useState(false);
+
+  const auditorWiseStats = useMemo(() => {
+    const stats: Record<string, { total: number; auditor: number; aao: number; dd: number; others: number }> = {};
+    
+    filteredEntries.forEach(entry => {
+      const auditor = normalizeName(entry.receiverName || entry.presentedToName);
+      if (!stats[auditor]) {
+        stats[auditor] = { total: 0, auditor: 0, aao: 0, dd: 0, others: 0 };
+      }
+      
+      stats[auditor].total++;
+      const pos = (entry.presentedToName || 'অডিটর');
+      
+      if (pos.includes('অডিটর')) {
+        stats[auditor].auditor++;
+      } else if (pos.includes('এএন্ডএও')) {
+        stats[auditor].aao++;
+      } else if (pos.includes('উপপরিচালক')) {
+        stats[auditor].dd++;
+      } else {
+        stats[auditor].others++;
+      }
+    });
+    
+    return Object.entries(stats).map(([name, data]) => ({ name, ...data }));
+  }, [filteredEntries]);
+
   const reportingDate = new Date(selectedReportingDate);
 
   const reportingDateBN = toBengaliDigits(format(reportingDate, 'dd/MM/yyyy'));
@@ -459,7 +487,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               </colgroup>
               <thead>
                 <tr className="bg-white">
-                  <th colSpan={2} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">অনিষ্পন্ন কাজের তালিকা (ফিল্টারকৃত)</th>
+                  <th colSpan={2} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">অনিষ্পন্ন কাজের তালিকা</th>
                   <th colSpan={4} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">শাখা: {filterBranch === 'সকল' ? 'সকল' : filterBranch}</th>
                   <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">মাস: {reportingMonthBN}</th>
                   <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">তারিখ: {reportingDateBN} খ্রি:</th>
@@ -519,21 +547,33 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               <tfoot className="no-print">
                 <tr className="bg-slate-900 text-white">
                   <td colSpan={4} className="border border-slate-700 p-2">
-                    <div className="flex justify-between items-center px-1">
-                      <span className="font-bold text-[10px] text-white/80">১ মাসের কম:</span>
-                      <span className="font-black text-[12px] text-white">{toBengaliDigits(grandTotalLess)} টি</span>
+                    <div className="grid grid-cols-2 items-center">
+                      <div className="text-right pr-2">
+                        <span className="font-bold text-[11px] text-white/80">১ মাসের কম:</span>
+                      </div>
+                      <div className="text-center">
+                        <span className="font-black text-[13px] text-white bg-white/10 px-3 py-1 rounded shadow-inner">{toBengaliDigits(grandTotalLess)} টি</span>
+                      </div>
                     </div>
                   </td>
                   <td colSpan={4} className="border border-slate-700 p-2">
-                    <div className="flex justify-between items-center px-1">
-                      <span className="font-bold text-[10px] text-white/80">১ মাসের বেশি:</span>
-                      <span className="font-black text-[12px] text-white">{toBengaliDigits(grandTotalMore)} টি</span>
+                    <div className="grid grid-cols-2 items-center">
+                      <div className="text-right pr-2">
+                        <span className="font-bold text-[11px] text-white/80">১ মাসের বেশি:</span>
+                      </div>
+                      <div className="text-center">
+                        <span className="font-black text-[13px] text-white bg-white/10 px-3 py-1 rounded shadow-inner">{toBengaliDigits(grandTotalMore)} টি</span>
+                      </div>
                     </div>
                   </td>
                   <td colSpan={4} className="border border-slate-700 p-2">
-                    <div className="flex justify-between items-center px-1">
-                      <span className="font-bold text-[10px] text-white/80">মোট কাজ:</span>
-                      <span className="font-black text-[12px] text-white">{toBengaliDigits(grandTotalLess + grandTotalMore)} টি</span>
+                    <div className="grid grid-cols-2 items-center">
+                      <div className="text-right pr-2">
+                        <span className="font-bold text-[11px] text-white/80">মোট কাজ:</span>
+                      </div>
+                      <div className="text-center">
+                        <span className="font-black text-[13px] text-white bg-white/10 px-3 py-1 rounded shadow-inner">{toBengaliDigits(grandTotalLess + grandTotalMore)} টি</span>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -547,7 +587,16 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           <div className="text-center mb-6 w-full">
              <div className="inline-block px-10 py-1 bg-black text-white text-[15px] font-bold tracking-widest uppercase mb-4">ছক</div>
              <div className="flex justify-between items-end border-b border-slate-300 pb-1">
-                <span className="font-bold text-[14px]">বকেয়া চিঠিপত্রের তালিকা ({filterBranch === 'সকল' ? 'সকল' : filterBranch} শাখা)</span>
+                <div className="flex items-center gap-4">
+                  <span className="font-bold text-[14px]">বকেয়া চিঠিপত্রের তালিকা ({filterBranch === 'সকল' ? 'সকল' : filterBranch} শাখা)</span>
+                  <button 
+                    onClick={() => setShowAuditorStatsModal(true)}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[11px] font-bold transition-all shadow-sm no-print"
+                  >
+                    <BarChart3 size={12} />
+                    পরিসংখ্যান
+                  </button>
+                </div>
                 <span className="font-bold text-[14px]">তাং- {reportingDateBN} খ্রি:</span>
              </div>
           </div>
@@ -588,8 +637,11 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         <td className={stickyTdStyle}>{toBengaliDigits(globalIdx)}</td>
                         {rowIdx === 0 && (
                           <td rowSpan={group.rows.length} className={stickyTdStyle + " bg-slate-50/50 group-hover:bg-blue-200/40 transition-colors"}>
-                            {/* Auditor Name Weight set to 700 (font-bold) */}
-                            <div className="font-bold text-slate-900 text-[10.5px] leading-tight">{group.auditor}</div>
+                            <div className="flex items-center justify-center h-full">
+                              <div className="font-bold text-slate-900 text-[11px] leading-tight [writing-mode:vertical-rl] rotate-180 whitespace-nowrap py-2">
+                                {group.auditor}
+                              </div>
+                            </div>
                           </td>
                         )}
                         <td className={stickyTdStyle + " text-left px-2 font-bold text-[10.5px] group-hover:bg-blue-50/30"}>{row.description}</td>
@@ -631,7 +683,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               </tbody>
               <tfoot>
                 <tr className="bg-black text-white font-bold text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] border-t border-slate-700">
-                  <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-black">সর্বমোট চিঠিপত্র (ফিল্টারকৃত):</td>
+                  <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-black">সর্বমোট চিঠিপত্র:</td>
                   <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-black text-white font-bold">{toBengaliDigits(filteredEntries.length)} টি</td>
                   <td colSpan={6} className="border-t border-slate-700 bg-black"></td>
                 </tr>
@@ -641,6 +693,78 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         </div>
         
       </div>
+      {/* Auditor Statistics Modal */}
+      {showAuditorStatsModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[3000] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-600/20 rounded-xl flex items-center justify-center">
+                  <BarChart3 size={20} className="text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-[16px]">অডিটর ভিত্তিক পরিসংখ্যান</h3>
+                  <p className="text-slate-400 text-[11px] font-bold">কার কাছে কয়টি চিঠি আছে তার বিস্তারিত হিসাব</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowAuditorStatsModal(false)}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 max-h-[70vh] overflow-y-auto no-scrollbar">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-slate-100">
+                    <th className="border border-slate-200 p-2 text-left text-[12px] font-black text-slate-700">অডিটর</th>
+                    <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">অডিটরের কাছে</th>
+                    <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">এএন্ডএও</th>
+                    <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">উপপরিচালক</th>
+                    <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">মোট</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditorWiseStats.map((stat, idx) => (
+                    <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
+                      <td className="border border-slate-200 p-2 text-[12px] font-bold text-slate-900">{stat.name}</td>
+                      <td className="border border-slate-200 p-2 text-center text-[12px] font-black text-red-600 bg-red-50/30">
+                        {toBengaliDigits(stat.auditor)} টি
+                      </td>
+                      <td className="border border-slate-200 p-2 text-center text-[12px] font-black text-blue-600 bg-blue-50/30">
+                        {toBengaliDigits(stat.aao)} টি
+                      </td>
+                      <td className="border border-slate-200 p-2 text-center text-[12px] font-black text-green-600 bg-green-50/30">
+                        {toBengaliDigits(stat.dd)} টি
+                      </td>
+                      <td className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-900 bg-slate-50">
+                        {toBengaliDigits(stat.total)} টি
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {auditorWiseStats.length === 0 && (
+                <div className="py-10 text-center text-slate-400 font-bold italic">
+                  কোনো তথ্য পাওয়া যায়নি।
+                </div>
+              )}
+            </div>
+            
+            <div className="bg-slate-50 px-6 py-4 flex justify-end">
+              <button 
+                onClick={() => setShowAuditorStatsModal(false)}
+                className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-[12px] hover:bg-slate-800 transition-all shadow-md"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

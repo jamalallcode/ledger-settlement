@@ -225,6 +225,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   const status = robustNormalize(p.status || '');
                   const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
                   
+                  // Always add to settled amounts regardless of status (Full or Partial)
+                  if (settledAmt > 0) {
+                    curSA += settledAmt;
+                    if (isSFI) sfiSA += settledAmt;
+                    else nonSfiSA += settledAmt;
+                  }
+
                   if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                     curFC++; curSC++; 
                     
@@ -242,7 +249,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                       } else if (normLT.includes(robustNormalize('মিলিকরণ'))) {
                         sfiRecon++;
                       }
-                      sfiSA += settledAmt;
                     } else {
                       curNonSFIC++;
                       if (normLT.includes(robustNormalize('বিএসআর'))) {
@@ -257,9 +263,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                       } else if (normLT.includes(robustNormalize('মিলিকরণ'))) {
                         nonSfiRecon++;
                       }
-                      nonSfiSA += settledAmt;
                     }
-                    curSA += settledAmt;
                   } else if (status === robustNormalize('আংশিক')) {
                     curPC++;
                   }
