@@ -251,6 +251,10 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [isWpFocused, setIsWpFocused] = useState(false);
   const [isDiaryFocused, setIsDiaryFocused] = useState(false);
 
+  const missingNumbersWarning = useMemo(() => {
+    return !letterNoPart.trim() && !diaryNoPart.trim() && !issueNoPart.trim();
+  }, [letterNoPart, diaryNoPart, issueNoPart]);
+
   const duplicates = useMemo(() => {
     if (!existingEntries || existingEntries.length === 0) return { letterNo: false, diaryNo: false, issueNo: false, any: false };
     
@@ -1152,6 +1156,20 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         </fieldset>
 
         <div className="pt-6 relative" ref={bottomRef}>
+          {missingNumbersWarning && !isSuccess && (
+            <div className="mb-6 p-4 bg-amber-50 border-2 border-dashed border-amber-200 rounded-2xl flex items-center gap-4 animate-in slide-in-from-bottom-2 duration-500 shadow-sm">
+              <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center shrink-0">
+                <AlertCircle size={20} />
+              </div>
+              <div className="space-y-0.5">
+                <h4 className="text-sm font-black text-amber-900 tracking-tight">সতর্কবার্তা: প্রয়োজনীয় নম্বর অনুপস্থিত</h4>
+                <p className="text-[11px] font-bold text-amber-700/80">
+                  ডায়েরি নং, পত্র নং অথবা জারিপত্র নং - এর মধ্যে কমপক্ষে একটি নম্বর থাকা প্রয়োজন। তবে আপনি চাইলে এন্ট্রি সম্পন্ন করতে পারেন।
+                </p>
+              </div>
+            </div>
+          )}
+
           {isSuccess ? (
             <div className="w-full py-10 bg-gradient-to-br from-emerald-50 via-white to-teal-50 border-2 border-emerald-200/60 rounded-[3rem] flex flex-col items-center justify-center gap-6 animate-in zoom-in-95 duration-500 shadow-[0_25px_60px_rgba(16,185,129,0.2)] backdrop-blur-md relative overflow-hidden group">
                <div className="relative">

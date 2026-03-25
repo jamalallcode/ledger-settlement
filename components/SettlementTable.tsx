@@ -40,6 +40,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const summaryButtonRef = useRef<HTMLButtonElement>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterParaType, setFilterParaType] = useState(''); 
@@ -77,6 +79,9 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
         if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) setIsBranchDropdownOpen(false);
         if (typeDropdownRef.current && !typeDropdownRef.current.contains(e.target as Node)) setIsTypeDropdownOpen(false);
         if (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target as Node)) setIsStatusDropdownOpen(false);
+        if (summaryRef.current && !summaryRef.current.contains(e.target as Node) && summaryButtonRef.current && !summaryButtonRef.current.contains(e.target as Node)) {
+            setShowSummary(false);
+        }
     };
     document.addEventListener('mousedown', handleGlobalClick);
     return () => document.removeEventListener('mousedown', handleGlobalClick);
@@ -188,7 +193,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       const hasUnsettled = entry.paragraphs?.some(p => p.status === 'আংশিক');
       const matchStatus = filterStatus === '' || 
         (filterStatus === 'settled' && hasSettled) || 
-        (filterStatus === 'unsettled' && hasUnsettled);
+        (filterStatus === 'unsettled' && hasUnsettled) ||
+        (filterStatus === 'no-paras' && (!entry.paragraphs || entry.paragraphs.length === 0));
 
       const hasRaisedCount = entry.manualRaisedCount !== null && entry.manualRaisedCount !== "" && entry.manualRaisedCount !== "0" && entry.manualRaisedCount !== "০";
       const hasRaisedAmount = entry.manualRaisedAmount !== null && entry.manualRaisedAmount !== 0;
@@ -197,6 +203,9 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       // If we have a search term and it matches, we should show it regardless of "meaningful content"
       if (searchTerm !== '' && matchSearch) return matchDate && matchType && matchParaType && matchStatus;
       
+      // If filtering for no paragraphs, show even if it doesn't have "meaningful content"
+      if (filterStatus === 'no-paras' && matchStatus) return matchDate && matchType && matchParaType;
+
       if (!hasMeaningfulContent) return false;
       
       return matchDate && matchSearch && matchType && matchParaType && matchStatus;
@@ -206,7 +215,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       if (timeB !== timeA) return timeB - timeA;
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  }, [entries, searchTerm, filterParaType, filterType, activeCycle]);
+  }, [entries, searchTerm, filterParaType, filterType, filterStatus, activeCycle]);
 
   const { cycleStats, groupedEntries } = useMemo(() => {
     const groupsMap: Record<string, SettlementEntry[]> = {};
@@ -465,6 +474,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
             <div className="flex items-center gap-3 relative z-10">
               <div className="relative">
                 <button 
+                  ref={summaryButtonRef}
                   onClick={() => setShowSummary(!showSummary)} 
                   className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-2xl ${showSummary ? 'bg-blue-600 text-white shadow-blue-200' : 'bg-[#f0f7ff] text-blue-700 border border-blue-100/50 hover:bg-blue-100 shadow-blue-500/10'}`}
                 >
@@ -473,24 +483,21 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
 
                 <AnimatePresence>
                   {showSummary && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ 
-                        duration: 0.25,
-                        ease: [0.23, 1, 0.32, 1]
-                      }}
-                      style={{ 
-                        position: 'absolute', 
-                        top: 'calc(100% + 12px)', 
-                        right: 0, 
-                        width: '450px', 
-                        zIndex: 9999999 
-                      }}
-                      className="bg-white rounded-[2rem] shadow-[0_40px_100px_-15px_rgba(0,0,0,0.4)] border border-slate-200 overflow-hidden no-print text-left"
-                    >
-                      <div className="bg-gradient-to-r from-emerald-700 to-teal-700 p-6 flex items-center justify-between">
+                    <div ref={summaryRef} className="absolute top-[calc(100%+12px)] right-0 z-[9999999]">
+                      <motion.div 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ 
+                          duration: 0.25,
+                          ease: [0.23, 1, 0.32, 1]
+                        }}
+                        style={{ 
+                          width: '450px'
+                        }}
+                        className="bg-white rounded-[2rem] shadow-[0_40px_100px_-15px_rgba(0,0,0,0.4)] border border-slate-200 overflow-hidden no-print text-left"
+                      >
+                        <div className="bg-gradient-to-r from-emerald-700 to-teal-700 p-6 flex items-center justify-between">
                         <div className="flex items-center gap-3 text-white">
                           <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center shadow-inner">
                             <Sparkles size={22} className="text-white" />
@@ -590,8 +597,9 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Ledger Management System</p>
                       </div>
                     </motion.div>
-                  )}
-                </AnimatePresence>
+                  </div>
+                )}
+              </AnimatePresence>
               </div>
             </div>
           </div>
@@ -601,7 +609,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
       {showFilters && !isAdminView && (
         <div id="register-filters" className="!bg-white p-2.5 md:p-3 rounded-xl border border-slate-200 shadow-lg space-y-3 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate">
           <IDBadge id="register-filters" />
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-2">
             
             {/* Cycle Selection */}
             <div className="space-y-1" ref={cycleDropdownRef}>
@@ -737,21 +745,6 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
               </div>
             </div>
             
-            {/* Search Input */}
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">অনুসন্ধান</label>
-              <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-blue-600" size={12} />
-                <input 
-                  type="text" 
-                  value={searchTerm} 
-                  onChange={e => setSearchTerm(e.target.value)} 
-                  placeholder="জারিপত্র নং..." 
-                  className={filterInputCls} 
-                />
-              </div>
-            </div>
-
             {/* Status Selection */}
             <div className="space-y-1" ref={statusDropdownRef}>
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">অবস্থা</label>
@@ -761,7 +754,7 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
               >
                 <CheckCircle2 className="text-blue-600 shrink-0" size={14} />
                 <span className="font-bold text-[11px] text-slate-900 truncate">
-                  {filterStatus === '' ? 'সকল অবস্থা' : (filterStatus === 'settled' ? 'পূর্ণাঙ্গ' : 'আংশিক')}
+                  {filterStatus === '' ? 'সকল অবস্থা' : (filterStatus === 'settled' ? 'পূর্ণাঙ্গ' : (filterStatus === 'no-paras' ? 'উত্থাপিত (অনুচ্ছেদ নেই)' : 'আংশিক'))}
                 </span>
                 <ChevronDown size={12} className={`text-slate-400 ml-auto transition-transform duration-300 shrink-0 ${isStatusDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
                 
@@ -777,7 +770,8 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                         {[
                           { val: '', label: 'সকল অবস্থা' },
                           { val: 'settled', label: 'পূর্ণাঙ্গ নিষ্পত্তি' },
-                          { val: 'unsettled', label: 'আংশিক/অনিষ্পত্তি' }
+                          { val: 'unsettled', label: 'আংশিক/অনিষ্পত্তি' },
+                          { val: 'no-paras', label: 'উত্থাপিত (অনুচ্ছেদ নেই)' }
                         ].map((opt, idx) => (
                           <div 
                             key={idx} 
@@ -794,16 +788,20 @@ const SettlementTable: React.FC<SettlementTableProps> = ({
                 )}
               </div>
             </div>
-
-            {/* Clear Filters Button */}
-            <div className="flex items-end">
-              <button 
-                onClick={resetFilters}
-                className="w-full h-[38px] bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-lg font-black text-[11px] transition-all flex items-center justify-center gap-1.5 border border-slate-200 hover:border-red-200 group"
-              >
-                <X size={14} className="group-hover:rotate-90 transition-transform duration-300" />
-                মুছুন
-              </button>
+            
+            {/* Search Input */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">অনুসন্ধান</label>
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-blue-600" size={12} />
+                <input 
+                  type="text" 
+                  value={searchTerm} 
+                  onChange={e => setSearchTerm(e.target.value)} 
+                  placeholder="জারিপত্র নং..." 
+                  className={filterInputCls} 
+                />
+              </div>
             </div>
 
           </div>
