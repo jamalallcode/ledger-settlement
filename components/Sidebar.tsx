@@ -195,7 +195,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 key={item.id}
                 className="relative"
               >
-                {item.id === 'return' && !(isAdmin || showReturnSummary) ? null : (
+                {item.id === 'return' && !showReturnSummary ? null : (
                   <button 
                     id={item.badgeId} 
                     onClick={() => {
@@ -267,7 +267,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 )}
 
                 {/* Nested Sub-menu for Return & Summary */}
-                {item.id === 'return' && (isAdmin || showReturnSummary) && isReturnExpanded && (
+                {item.id === 'return' && showReturnSummary && isReturnExpanded && (
                   <div className="pl-3 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
                     {/* ১. মাসিক (Toggle) */}
                     <button 

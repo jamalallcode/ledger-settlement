@@ -4,6 +4,7 @@ import React from 'react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 import { format, startOfMonth, addDays, isBefore, subMonths, parseISO } from 'date-fns';
+import LetterDetailsModal from './LetterDetailsModal';
 
 interface DDSirCorrespondenceReturnProps {
   entries: any[];
@@ -92,38 +93,78 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     setSelectedReportingDate(format(reportingLimitDate, 'yyyy-MM-dd'));
   }, [reportingLimitDate]);
 
+  const parseDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return null;
+    const cleanStr = toEnglishDigits(dateStr).trim();
+    // Support DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY AND YYYY-MM-DD
+    const parts = cleanStr.split(/[-/.]/);
+    if (parts.length === 3) {
+      let d, m, y;
+      if (parts[0].length === 4) {
+        // YYYY-MM-DD
+        y = parseInt(parts[0]);
+        m = parseInt(parts[1]) - 1;
+        d = parseInt(parts[2]);
+      } else {
+        // DD/MM/YYYY
+        d = parseInt(parts[0]);
+        m = parseInt(parts[1]) - 1;
+        y = parseInt(parts[2]);
+      }
+      const fullY = y < 100 ? 2000 + y : y;
+      const date = new Date(fullY, m, d);
+      if (!isNaN(date.getTime())) {
+        // Return date normalized to midnight
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      }
+    }
+    const fallback = new Date(cleanStr);
+    if (!isNaN(fallback.getTime())) {
+      return new Date(fallback.getFullYear(), fallback.getMonth(), fallback.getDate());
+    }
+    return null;
+  };
+
   const filteredEntries = useMemo(() => {
     let data = entries || [];
     
-    const reportingDateObj = new Date(selectedReportingDate);
-    if (isNaN(reportingDateObj.getTime())) return data;
+    const reportingDateObj = parseDate(selectedReportingDate);
+    if (!reportingDateObj) return data;
 
     data = data.filter(e => {
-      if (!e.diaryDate) return false;
-      const dDateStr = toEnglishDigits(e.diaryDate);
-      const dDate = new Date(dDateStr);
-      if (isNaN(dDate.getTime())) return false;
+      // 1. Check if it's settled (has valid issue no AND date)
+      const issueNo = (e.issueLetterNo || '').trim();
+      const hasValidIssueNo = issueNo !== '' && 
+                              issueNo !== '০' && 
+                              issueNo !== '0' && 
+                              issueNo !== 'নং' && 
+                              issueNo !== 'নং-' && 
+                              issueNo !== 'নং -' &&
+                              !/^নং\s*$/.test(issueNo);
+
+      const hasValidIssueDate = e.issueLetterDate && 
+                                e.issueLetterDate.trim() !== '' && 
+                                e.issueLetterDate !== '০' && 
+                                e.issueLetterDate !== '0';
+
+      if (hasValidIssueNo && hasValidIssueDate) {
+        const iDate = parseDate(e.issueLetterDate);
+        if (iDate) {
+          // If issued on or before reporting date, it's SETTLED (not pending)
+          if (iDate.getTime() <= reportingDateObj.getTime()) {
+            return false; 
+          }
+        }
+      }
+
+      // 2. If not settled, it must have a diary date to be considered
+      const dDate = parseDate(e.diaryDate);
+      if (!dDate) return false;
       
-      // Must be received ON OR BEFORE reportingDateObj
+      // 3. Must be received ON OR BEFORE reportingDateObj
       if (dDate.getTime() > reportingDateObj.getTime()) return false;
       
-      // If it was issued AFTER reportingDateObj, it was still pending AT THAT TIME
-      const issueDateStr = e.issueLetterDate ? toEnglishDigits(e.issueLetterDate) : null;
-      const issueDate = issueDateStr ? new Date(issueDateStr) : null;
-      
-      const hasIssueNo = e.issueLetterNo && 
-                         e.issueLetterNo !== '০' && 
-                         e.issueLetterNo !== '0' && 
-                         !e.issueLetterNo.includes('নং-');
-
-      if (hasIssueNo && issueDate && !isNaN(issueDate.getTime())) {
-        if (issueDate.getTime() > reportingDateObj.getTime()) {
-          return true; // Still pending at reporting time
-        }
-        return false; // Already issued by reporting time
-      }
-      
-      return true; // Not issued yet
+      return true; // Still Pending
     });
 
     if (filterAuditor !== 'সকল') {
@@ -138,27 +179,48 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   }, [entries, filterAuditor, filterBranch, selectedReportingDate]);
 
   const [showAuditorStatsModal, setShowAuditorStatsModal] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [detailsModalTitle, setDetailsModalTitle] = useState('');
+  const [detailsModalLetters, setDetailsModalLetters] = useState<any[]>([]);
+
+  const handleCountClick = (title: string, letters: any[]) => {
+    if (letters.length === 0) return;
+    setDetailsModalTitle(title);
+    setDetailsModalLetters(letters);
+    setIsDetailsModalOpen(true);
+  };
 
   const auditorWiseStats = useMemo(() => {
-    const stats: Record<string, { total: number; auditor: number; aao: number; dd: number; others: number }> = {};
+    const stats: Record<string, { 
+      total: number; auditor: number; aao: number; dd: number; others: number;
+      auditorLetters: any[]; aaoLetters: any[]; ddLetters: any[]; othersLetters: any[]; totalLetters: any[]
+    }> = {};
     
     filteredEntries.forEach(entry => {
       const auditor = normalizeName(entry.receiverName || entry.presentedToName);
       if (!stats[auditor]) {
-        stats[auditor] = { total: 0, auditor: 0, aao: 0, dd: 0, others: 0 };
+        stats[auditor] = { 
+          total: 0, auditor: 0, aao: 0, dd: 0, others: 0,
+          auditorLetters: [], aaoLetters: [], ddLetters: [], othersLetters: [], totalLetters: []
+        };
       }
       
       stats[auditor].total++;
+      stats[auditor].totalLetters.push(entry);
       const pos = (entry.presentedToName || 'অডিটর');
       
       if (pos.includes('অডিটর')) {
         stats[auditor].auditor++;
+        stats[auditor].auditorLetters.push(entry);
       } else if (pos.includes('এএন্ডএও')) {
         stats[auditor].aao++;
+        stats[auditor].aaoLetters.push(entry);
       } else if (pos.includes('উপপরিচালক')) {
         stats[auditor].dd++;
+        stats[auditor].ddLetters.push(entry);
       } else {
         stats[auditor].others++;
+        stats[auditor].othersLetters.push(entry);
       }
     });
     
@@ -186,17 +248,18 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       if (!grouped[auditor]) {
         grouped[auditor] = {
           name: auditor,
-          karyapatra: { less: 0, more: 0 },
-          karyabibarani: { less: 0, more: 0 },
-          broadsheet: { less: 0, more: 0 },
-          reconciliation: { less: 0, more: 0 },
-          others: { less: 0, more: 0 }
+          karyapatra: { less: 0, more: 0, lessLetters: [], moreLetters: [] },
+          karyabibarani: { less: 0, more: 0, lessLetters: [], moreLetters: [] },
+          broadsheet: { less: 0, more: 0, lessLetters: [], moreLetters: [] },
+          reconciliation: { less: 0, more: 0, lessLetters: [], moreLetters: [] },
+          others: { less: 0, more: 0, lessLetters: [], moreLetters: [] }
         };
       }
 
       const diaryDate = new Date(entry.diaryDate);
       const isMoreThanMonth = isBefore(diaryDate, thresholdDate);
       const durationKey = isMoreThanMonth ? 'more' : 'less';
+      const lettersKey = isMoreThanMonth ? 'moreLetters' : 'lessLetters';
 
       const lType = entry.letterType || '';
       const desc = (entry.description || '').toLowerCase();
@@ -204,14 +267,19 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       // UPDATED LOGIC: Categorize based on Workpaper (কার্যপত্র) or Minutes (কার্যবিবরণী)
       if (lType.includes('কার্যপত্র')) {
         grouped[auditor].karyapatra[durationKey]++;
+        grouped[auditor].karyapatra[lettersKey].push(entry);
       } else if (lType.includes('কার্যবিবরণী')) {
         grouped[auditor].karyabibarani[durationKey]++;
+        grouped[auditor].karyabibarani[lettersKey].push(entry);
       } else if (lType === 'বিএসআর') {
         grouped[auditor].broadsheet[durationKey]++;
+        grouped[auditor].broadsheet[lettersKey].push(entry);
       } else if (lType === 'মিলিকরণ' || desc.includes('মিলিকরণ') || desc.includes('সমন্বয়')) {
         grouped[auditor].reconciliation[durationKey]++;
+        grouped[auditor].reconciliation[lettersKey].push(entry);
       } else {
         grouped[auditor].others[durationKey]++;
+        grouped[auditor].others[lettersKey].push(entry);
       }
     });
 
@@ -524,19 +592,69 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               </thead>
               <tbody>
                 {reportTableData.length > 0 ? reportTableData.map((row, idx) => (
-                  <tr key={idx} className="group bg-white hover:bg-blue-100/50 transition-all duration-200">
+                  <tr key={idx} className="no-hover-row group bg-white hover:bg-blue-100/50 transition-all duration-200">
                     <td className={tdStyle}>{toBengaliDigits(idx + 1)}</td>
                     <td className={tdStyle + " text-left text-[11px] font-bold group-hover:bg-blue-50/30"}>{row.name}</td>
-                    <td className={tdStyle}>{row.karyapatra.less > 0 ? `${toBengaliDigits(row.karyapatra.less)} টি` : '-'}</td>
-                    <td className={tdStyle}>{row.karyapatra.more > 0 ? `${toBengaliDigits(row.karyapatra.more)} টি` : '-'}</td>
-                    <td className={tdStyle}>{row.karyabibarani.less > 0 ? `${toBengaliDigits(row.karyabibarani.less)} টি` : '-'}</td>
-                    <td className={tdStyle}>{row.karyabibarani.more > 0 ? `${toBengaliDigits(row.karyabibarani.more)} টি` : '-'}</td>
-                    <td className={tdStyle}>{row.broadsheet.less > 0 ? `${toBengaliDigits(row.broadsheet.less)} টি` : '-'}</td>
-                    <td className={tdStyle}>{row.broadsheet.more > 0 ? `${toBengaliDigits(row.broadsheet.more)} টি` : '-'}</td>
-                    <td className={tdStyle}>{row.reconciliation.less > 0 ? `${toBengaliDigits(row.reconciliation.less)} টি` : '-'}</td>
-                    <td className={tdStyle}>{row.reconciliation.more > 0 ? `${toBengaliDigits(row.reconciliation.more)} টি` : '-'}</td>
-                    <td className={tdStyle}>{row.others.less > 0 ? `${toBengaliDigits(row.others.less)} টি` : '-'}</td>
-                    <td className={tdStyle}>{row.others.more > 0 ? `${toBengaliDigits(row.others.more)} টি` : '-'}</td>
+                    <td 
+                      className={`${tdStyle} ${row.karyapatra.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''}`}
+                      onClick={() => handleCountClick(`${row.name} - কার্যপত্র (১ মাস-)`, row.karyapatra.lessLetters)}
+                    >
+                      {row.karyapatra.less > 0 ? `${toBengaliDigits(row.karyapatra.less)} টি` : '-'}
+                    </td>
+                    <td 
+                      className={`${tdStyle} ${row.karyapatra.more > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''}`}
+                      onClick={() => handleCountClick(`${row.name} - কার্যপত্র (১ মাস+)`, row.karyapatra.moreLetters)}
+                    >
+                      {row.karyapatra.more > 0 ? `${toBengaliDigits(row.karyapatra.more)} টি` : '-'}
+                    </td>
+                    <td 
+                      className={`${tdStyle} ${row.karyabibarani.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''}`}
+                      onClick={() => handleCountClick(`${row.name} - কার্যবিবরণী (১ মাস-)`, row.karyabibarani.lessLetters)}
+                    >
+                      {row.karyabibarani.less > 0 ? `${toBengaliDigits(row.karyabibarani.less)} টি` : '-'}
+                    </td>
+                    <td 
+                      className={`${tdStyle} ${row.karyabibarani.more > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''}`}
+                      onClick={() => handleCountClick(`${row.name} - কার্যবিবরণী (১ মাস+)`, row.karyabibarani.moreLetters)}
+                    >
+                      {row.karyabibarani.more > 0 ? `${toBengaliDigits(row.karyabibarani.more)} টি` : '-'}
+                    </td>
+                    <td 
+                      className={`${tdStyle} ${row.broadsheet.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''}`}
+                      onClick={() => handleCountClick(`${row.name} - ব্রডশীট (১ মাস-)`, row.broadsheet.lessLetters)}
+                    >
+                      {row.broadsheet.less > 0 ? `${toBengaliDigits(row.broadsheet.less)} টি` : '-'}
+                    </td>
+                    <td 
+                      className={`${tdStyle} ${row.broadsheet.more > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''}`}
+                      onClick={() => handleCountClick(`${row.name} - ব্রডশীট (১ মাস+)`, row.broadsheet.moreLetters)}
+                    >
+                      {row.broadsheet.more > 0 ? `${toBengaliDigits(row.broadsheet.more)} টি` : '-'}
+                    </td>
+                    <td 
+                      className={`${tdStyle} ${row.reconciliation.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''}`}
+                      onClick={() => handleCountClick(`${row.name} - মিলিকরণ (১ মাস-)`, row.reconciliation.lessLetters)}
+                    >
+                      {row.reconciliation.less > 0 ? `${toBengaliDigits(row.reconciliation.less)} টি` : '-'}
+                    </td>
+                    <td 
+                      className={`${tdStyle} ${row.reconciliation.more > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''}`}
+                      onClick={() => handleCountClick(`${row.name} - মিলিকরণ (১ মাস+)`, row.reconciliation.moreLetters)}
+                    >
+                      {row.reconciliation.more > 0 ? `${toBengaliDigits(row.reconciliation.more)} টি` : '-'}
+                    </td>
+                    <td 
+                      className={`${tdStyle} ${row.others.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''}`}
+                      onClick={() => handleCountClick(`${row.name} - অন্যান্য (১ মাস-)`, row.others.lessLetters)}
+                    >
+                      {row.others.less > 0 ? `${toBengaliDigits(row.others.less)} টি` : '-'}
+                    </td>
+                    <td 
+                      className={`${tdStyle} ${row.others.more > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''}`}
+                      onClick={() => handleCountClick(`${row.name} - অন্যান্য (১ মাস+)`, row.others.moreLetters)}
+                    >
+                      {row.others.more > 0 ? `${toBengaliDigits(row.others.more)} টি` : '-'}
+                    </td>
                   </tr>
                 )) : (
                   <tr>
@@ -633,7 +751,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   return detailedListData.map((group) => group.rows.map((row, rowIdx) => {
                     globalIdx++;
                     return (
-                      <tr key={row.id} className="group bg-white hover:bg-blue-100/70 transition-all duration-200 cursor-default">
+                      <tr key={row.id} className="no-hover-row group bg-white hover:bg-blue-100/70 transition-all duration-200 cursor-default">
                         <td className={stickyTdStyle}>{toBengaliDigits(globalIdx)}</td>
                         {rowIdx === 0 && (
                           <td rowSpan={group.rows.length} className={stickyTdStyle + " bg-slate-50/50 group-hover:bg-blue-200/40 transition-colors"}>
@@ -730,16 +848,28 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   {auditorWiseStats.map((stat, idx) => (
                     <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
                       <td className="border border-slate-200 p-2 text-[12px] font-bold text-slate-900">{stat.name}</td>
-                      <td className="border border-slate-200 p-2 text-center text-[12px] font-black text-red-600 bg-red-50/30">
+                      <td 
+                        className="border border-slate-200 p-2 text-center text-[12px] font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all"
+                        onClick={() => handleCountClick(`${stat.name} - অডিটরের কাছে`, stat.auditorLetters)}
+                      >
                         {toBengaliDigits(stat.auditor)} টি
                       </td>
-                      <td className="border border-slate-200 p-2 text-center text-[12px] font-black text-blue-600 bg-blue-50/30">
+                      <td 
+                        className="border border-slate-200 p-2 text-center text-[12px] font-black text-blue-600 bg-blue-50/30 cursor-pointer hover:bg-blue-100/50 transition-all"
+                        onClick={() => handleCountClick(`${stat.name} - এএন্ডএও`, stat.aaoLetters)}
+                      >
                         {toBengaliDigits(stat.aao)} টি
                       </td>
-                      <td className="border border-slate-200 p-2 text-center text-[12px] font-black text-green-600 bg-green-50/30">
+                      <td 
+                        className="border border-slate-200 p-2 text-center text-[12px] font-black text-green-600 bg-green-50/30 cursor-pointer hover:bg-green-100/50 transition-all"
+                        onClick={() => handleCountClick(`${stat.name} - উপপরিচালক`, stat.ddLetters)}
+                      >
                         {toBengaliDigits(stat.dd)} টি
                       </td>
-                      <td className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-900 bg-slate-50">
+                      <td 
+                        className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-900 bg-slate-50 cursor-pointer hover:bg-slate-200/50 transition-all"
+                        onClick={() => handleCountClick(`${stat.name} - মোট`, stat.totalLetters)}
+                      >
                         {toBengaliDigits(stat.total)} টি
                       </td>
                     </tr>
@@ -765,6 +895,13 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           </div>
         </div>
       )}
+      {/* Letter Details Modal */}
+      <LetterDetailsModal 
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        title={detailsModalTitle}
+        letters={detailsModalLetters}
+      />
     </div>
   );
 };

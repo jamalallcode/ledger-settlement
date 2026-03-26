@@ -55,9 +55,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       
       if (error) {
         console.error('Error updating settings:', error);
+        alert('সেটিংস আপডেট করতে সমস্যা হয়েছে। দয়া করে আপনার ইন্টারনেট সংযোগ এবং ডাটাবেজ কনফিগারেশন চেক করুন।');
+        // Revert local state on error
+        if (setShowReturnSummary) setShowReturnSummary(!newValue);
       }
     } catch (err) {
       console.error('Failed to update visibility:', err);
+      alert('সেটিংস আপডেট করতে সমস্যা হয়েছে।');
+      if (setShowReturnSummary) setShowReturnSummary(!newValue);
     }
   };
 
@@ -72,9 +77,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       
       if (error) {
         console.error('Error updating audit details visibility:', error);
+        alert('অডিট ডিটেইলস সেটিংস আপডেট করতে সমস্যা হয়েছে।');
+        // Revert local state on error
+        if (setShowAuditDetails) setShowAuditDetails(!newValue);
       }
     } catch (err) {
       console.error('Failed to update audit details visibility:', err);
+      alert('অডিট ডিটেইলস সেটিংস আপডেট করতে সমস্যা হয়েছে।');
+      if (setShowAuditDetails) setShowAuditDetails(!newValue);
     }
   };
 

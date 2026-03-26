@@ -119,6 +119,13 @@ const App: React.FC = () => {
     setShowPendingOnly(false);
   };
 
+  useEffect(() => {
+    if (userEmail) {
+      console.log("Current User:", userEmail, "Is Admin:", isAdmin);
+    }
+    console.log("Visibility State Updated - Return Summary:", showReturnSummary, "Audit Details:", showAuditDetails);
+  }, [showReturnSummary, showAuditDetails, userEmail, isAdmin]);
+
   const [highlightSearch, setHighlightSearch] = useState<string | null>(null);
 
   const navigateToEntry = (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => {
@@ -202,6 +209,8 @@ const App: React.FC = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       handleAdminSync(session?.user?.email);
+      fetchSettings(); // Re-fetch settings on auth change
+      console.log("Auth State Changed:", _event, session?.user?.email);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -210,24 +219,43 @@ const App: React.FC = () => {
 
     // Sync Global Settings (Visibility)
     const fetchSettings = async () => {
-      const { data: summaryData, error: summaryError } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'show_return_summary')
-        .maybeSingle();
-      
-      if (!summaryError && summaryData) {
-        setShowReturnSummary(summaryData.value);
+      if (!supabase || typeof supabase.from !== 'function') {
+        console.warn("সুপাবেজ (Supabase) কনফিগার করা নেই। সেটিংস সিঙ্ক্রোনাইজেশন কাজ করবে না।");
+        return;
       }
 
-      const { data: auditData, error: auditError } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'show_audit_details')
-        .maybeSingle();
-      
-      if (!auditError && auditData) {
-        setShowAuditDetails(auditData.value);
+      try {
+        const { data: summaryData, error: summaryError } = await supabase
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'show_return_summary')
+          .maybeSingle();
+        
+        if (!summaryError && summaryData) {
+          console.log("Fetched show_return_summary:", summaryData.value);
+          setShowReturnSummary(summaryData.value);
+        } else if (summaryError) {
+          console.error("Error fetching show_return_summary:", summaryError);
+        } else {
+          console.log("show_return_summary key not found in app_settings, using default (true)");
+        }
+
+        const { data: auditData, error: auditError } = await supabase
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'show_audit_details')
+          .maybeSingle();
+        
+        if (!auditError && auditData) {
+          console.log("Fetched show_audit_details:", auditData.value);
+          setShowAuditDetails(auditData.value);
+        } else if (auditError) {
+          console.error("Error fetching show_audit_details:", auditError);
+        } else {
+          console.log("show_audit_details key not found in app_settings, using default (true)");
+        }
+      } catch (err) {
+        console.error("সেটিংস লোড করতে সমস্যা হয়েছে:", err);
       }
     };
 
