@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   LayoutDashboard, ArrowRight, ShieldCheck, CheckCircle2, CalendarRange, Bell, ShieldAlert, Sparkles, UserCheck, AlertTriangle, ArrowRightCircle
 } from 'lucide-react';
-import { SettlementEntry } from '../types.ts';
+import { SettlementEntry, ModuleVisibility } from '../types.ts';
 import { toBengaliDigits } from '../utils/numberUtils.ts';
 
 interface LandingPageProps {
@@ -13,6 +13,7 @@ interface LandingPageProps {
   isAdmin?: boolean;
   pendingCount?: number;
   onShowPending?: () => void;
+  moduleVisibility?: ModuleVisibility;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ 
@@ -22,7 +23,19 @@ const LandingPage: React.FC<LandingPageProps> = ({
   isLockedMode = true,
   isAdmin = false,
   pendingCount = 0,
-  onShowPending
+  onShowPending,
+  moduleVisibility = {
+    entry: true,
+    register: true,
+    return: true,
+    archive: true,
+    voting: true,
+    setup_receivers: true,
+    initial_balance: true,
+    change_pass: true,
+    admin_analytics: true,
+    audit_details: true,
+  }
 }) => {
   return (
     <div className="animate-landing-premium relative space-y-8 pb-20">
@@ -92,13 +105,15 @@ const LandingPage: React.FC<LandingPageProps> = ({
           </p>
           
           <div className="flex flex-wrap gap-4">
-            <button 
-              id="btn-start-work"
-              onClick={() => setActiveTab('entry')}
-              className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-base flex items-center gap-3 transition-all shadow-xl shadow-blue-600/30 active:scale-95 relative"
-            >
-              কাজ শুরু করুন <ArrowRight size={20} />
-            </button>
+            {(isAdmin || moduleVisibility.entry) && (
+              <button 
+                id="btn-start-work"
+                onClick={() => setActiveTab('entry')}
+                className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-base flex items-center gap-3 transition-all shadow-xl shadow-blue-600/30 active:scale-95 relative"
+              >
+                কাজ শুরু করুন <ArrowRight size={20} />
+              </button>
+            )}
             <div id="cycle-badge-hero" className="px-6 py-4 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 shadow-sm hover:shadow-md transition-all duration-300 relative group">
                <div className="relative flex h-2.5 w-2.5">
                  <div className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></div>

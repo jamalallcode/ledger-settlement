@@ -131,3 +131,16 @@ export interface VoterToken {
   is_used: boolean;
   created_at: string;
 }
+
+export interface ModuleVisibility {
+  entry: boolean;
+  register: boolean;
+  return: boolean;
+  archive: boolean;
+  voting: boolean;
+  setup_receivers: boolean;
+  initial_balance: boolean;
+  change_pass: boolean;
+  admin_analytics: boolean;
+  audit_details: boolean;
+}

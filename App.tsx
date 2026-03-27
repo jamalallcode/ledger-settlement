@@ -14,7 +14,7 @@ import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import AdminAnalytics from './subapps/admin_analytics/AdminAnalytics';
-import { SettlementEntry, GroupOption, CumulativeStats } from './types';
+import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
 import { supabase } from './lib/supabase';
@@ -47,8 +47,18 @@ const App: React.FC = () => {
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showChangePassword, setShowChangePassword] = useState(false);
-  const [showReturnSummary, setShowReturnSummary] = useState(true);
-  const [showAuditDetails, setShowAuditDetails] = useState(true);
+  const [moduleVisibility, setModuleVisibility] = useState<ModuleVisibility>({
+    entry: true,
+    register: true,
+    return: true,
+    archive: true,
+    voting: true,
+    setup_receivers: true,
+    initial_balance: true,
+    change_pass: true,
+    admin_analytics: true,
+    audit_details: true,
+  });
   
   // State for direct module entry from sidebar
   const [entryModule, setEntryModule] = useState<'settlement' | 'correspondence' | null>(null);
@@ -202,6 +212,8 @@ const App: React.FC = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       handleAdminSync(session?.user?.email);
+      fetchSettings(); // Re-fetch settings on auth change
+      console.log("Auth State Changed:", _event, session?.user?.email);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -210,24 +222,32 @@ const App: React.FC = () => {
 
     // Sync Global Settings (Visibility)
     const fetchSettings = async () => {
-      const { data: summaryData, error: summaryError } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'show_return_summary')
-        .maybeSingle();
-      
-      if (!summaryError && summaryData) {
-        setShowReturnSummary(summaryData.value);
+      if (!supabase || typeof supabase.from !== 'function') {
+        console.warn("সুপাবেজ (Supabase) কনফিগার করা নেই। সেটিংস সিঙ্ক্রোনাইজেশন কাজ করবে না।");
+        return;
       }
 
-      const { data: auditData, error: auditError } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'show_audit_details')
-        .maybeSingle();
-      
-      if (!auditError && auditData) {
-        setShowAuditDetails(auditData.value);
+      try {
+        const { data, error } = await supabase
+          .from('app_settings')
+          .select('key, value');
+        
+        if (!error && data) {
+          const newVisibility = { ...moduleVisibility };
+          data.forEach((setting: any) => {
+            const key = setting.key.replace('show_', '');
+            if (key in newVisibility) {
+              (newVisibility as any)[key] = setting.value;
+            }
+          });
+          // Special case for legacy keys if needed, but we'll stick to the mapping
+          setModuleVisibility(newVisibility);
+          console.log("Fetched module visibility settings:", newVisibility);
+        } else if (error) {
+          console.error("Error fetching app_settings:", error);
+        }
+      } catch (err) {
+        console.error("সেটিংস লোড করতে সমস্যা হয়েছে:", err);
       }
     };
 
@@ -241,11 +261,13 @@ const App: React.FC = () => {
         table: 'app_settings'
       }, (payload: any) => {
         if (payload.new) {
-          if (payload.new.key === 'show_return_summary') {
-            setShowReturnSummary(payload.new.value);
-          } else if (payload.new.key === 'show_audit_details') {
-            setShowAuditDetails(payload.new.value);
-          }
+          const key = payload.new.key.replace('show_', '');
+          setModuleVisibility(prev => {
+            if (key in prev) {
+              return { ...prev, [key]: payload.new.value };
+            }
+            return prev;
+          });
         }
       })
       .subscribe();
@@ -615,7 +637,7 @@ const App: React.FC = () => {
             entryModule={entryModule}
             registerSubModule={registerSubModule}
             reportType={reportType}
-            showReturnSummary={showReturnSummary}
+            moduleVisibility={moduleVisibility}
           />
         </div>
       )}
@@ -653,10 +675,11 @@ const App: React.FC = () => {
                   isAdmin={isAdmin}
                   pendingCount={totalPendingCount}
                   onShowPending={() => { setActiveTab('register'); setShowPendingOnly(true); }}
+                  moduleVisibility={moduleVisibility}
                 />
               )}
               
-              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} showAuditDetails={showAuditDetails} />}
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} moduleVisibility={moduleVisibility} />}
               
               {activeTab === 'register' && (
                 <div className="space-y-6 relative">
@@ -809,10 +832,8 @@ const App: React.FC = () => {
                   pendingCount={totalPendingCount}
                   setActiveTab={handleTabChange}
                   onOpenChangePassword={() => setShowChangePassword(true)}
-                  showReturnSummary={showReturnSummary}
-                  setShowReturnSummary={setShowReturnSummary}
-                  showAuditDetails={showAuditDetails}
-                  setShowAuditDetails={setShowAuditDetails}
+                  moduleVisibility={moduleVisibility}
+                  setModuleVisibility={setModuleVisibility}
                 />
               )}
             </div>

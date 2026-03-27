@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { supabase } from '../lib/supabase';
+import { ModuleVisibility } from '../types';
 
 interface AdminDashboardProps {
   isAdmin: boolean;
@@ -15,10 +16,8 @@ interface AdminDashboardProps {
   pendingCount: number;
   setActiveTab: (tab: string, subModule?: any, reportType?: string) => void;
   onOpenChangePassword: () => void;
-  showReturnSummary?: boolean;
-  setShowReturnSummary?: (val: boolean) => void;
-  showAuditDetails?: boolean;
-  setShowAuditDetails?: (val: boolean) => void;
+  moduleVisibility: ModuleVisibility;
+  setModuleVisibility: (val: ModuleVisibility) => void;
 }
 
 const colorClasses: Record<string, any> = {
@@ -37,44 +36,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   pendingCount,
   setActiveTab,
   onOpenChangePassword,
-  showReturnSummary = true,
-  setShowReturnSummary,
-  showAuditDetails = true,
-  setShowAuditDetails
+  moduleVisibility,
+  setModuleVisibility
 }) => {
   if (!isAdmin) return null;
 
-  const handleToggleVisibility = async () => {
-    const newValue = !showReturnSummary;
-    if (setShowReturnSummary) setShowReturnSummary(newValue);
+  const handleToggleModule = async (moduleKey: keyof ModuleVisibility) => {
+    const newValue = !moduleVisibility[moduleKey];
+    const newVisibility = { ...moduleVisibility, [moduleKey]: newValue };
+    setModuleVisibility(newVisibility);
     
     try {
       const { error } = await supabase
         .from('app_settings')
-        .upsert({ key: 'show_return_summary', value: newValue }, { onConflict: 'key' });
+        .upsert({ key: `show_${moduleKey}`, value: newValue }, { onConflict: 'key' });
       
       if (error) {
-        console.error('Error updating settings:', error);
+        console.error(`Error updating ${moduleKey} visibility:`, error);
+        alert('সেটিংস আপডেট করতে সমস্যা হয়েছে।');
+        // Revert local state on error
+        setModuleVisibility(moduleVisibility);
       }
     } catch (err) {
-      console.error('Failed to update visibility:', err);
-    }
-  };
-
-  const handleToggleAuditDetails = async () => {
-    const newValue = !showAuditDetails;
-    if (setShowAuditDetails) setShowAuditDetails(newValue);
-    
-    try {
-      const { error } = await supabase
-        .from('app_settings')
-        .upsert({ key: 'show_audit_details', value: newValue }, { onConflict: 'key' });
-      
-      if (error) {
-        console.error('Error updating audit details visibility:', error);
-      }
-    } catch (err) {
-      console.error('Failed to update audit details visibility:', err);
+      console.error(`Failed to update ${moduleKey} visibility:`, err);
+      alert('সেটিংস আপডেট করতে সমস্যা হয়েছে।');
+      setModuleVisibility(moduleVisibility);
     }
   };
 
@@ -258,38 +244,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <span className="px-2 py-1 bg-blue-500/10 text-blue-600 rounded-md text-[9px] font-black uppercase tracking-widest">Active</span>
               </div>
 
-              {/* Return & Summary Visibility Control */}
-              <div className="flex items-center justify-between p-4 bg-blue-600/5 rounded-2xl border border-blue-200/50 group/toggle">
-                <div className="flex items-center gap-3">
-                  {showReturnSummary ? <Eye size={18} className="text-blue-600" /> : <EyeOff size={18} className="text-slate-400" />}
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black text-slate-800">রিটার্ণ ও সারাংশ</span>
-                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter">Visibility Control</span>
-                  </div>
+              {/* Module Visibility Controls */}
+              <div className="pt-2 pb-1">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">মডিউল ভিজিবিলিটি কন্ট্রোল</h3>
+                <div className="space-y-2">
+                  {[
+                    { key: 'entry', label: 'নতুন এন্ট্রি', icon: PlusCircle, color: 'blue' },
+                    { key: 'register', label: 'রেজিস্টার দেখুন', icon: FileText, color: 'emerald' },
+                    { key: 'return', label: 'রিপোর্ট ও সারাংশ', icon: PieChart, color: 'indigo' },
+                    { key: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, color: 'rose' },
+                    { key: 'audit_details', label: 'অডিট ডিটেইলস (ফিল্ড ১০-১৫)', icon: Settings, color: 'purple' },
+                  ].map((module) => (
+                    <div key={module.key} className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${moduleVisibility[module.key as keyof ModuleVisibility] ? `bg-${module.color}-600/5 border-${module.color}-200/50` : 'bg-slate-50 border-slate-200 opacity-60'}`}>
+                      <div className="flex items-center gap-3">
+                        {moduleVisibility[module.key as keyof ModuleVisibility] ? <Eye size={16} className={`text-${module.color}-600`} /> : <EyeOff size={16} className="text-slate-400" />}
+                        <div className="flex flex-col">
+                          <span className="text-[11px] font-black text-slate-800">{module.label}</span>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => handleToggleModule(module.key as keyof ModuleVisibility)}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-300 focus:outline-none ${moduleVisibility[module.key as keyof ModuleVisibility] ? `bg-${module.color}-600 shadow-lg shadow-${module.color}-500/30` : 'bg-slate-300'}`}
+                      >
+                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-300 ${moduleVisibility[module.key as keyof ModuleVisibility] ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <button 
-                  onClick={handleToggleVisibility}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 focus:outline-none ring-offset-2 focus:ring-2 focus:ring-blue-500 ${showReturnSummary ? 'bg-blue-600 shadow-lg shadow-blue-500/30' : 'bg-slate-300'}`}
-                >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${showReturnSummary ? 'translate-x-6' : 'translate-x-1'}`} />
-                </button>
-              </div>
-
-              {/* Audit Details Visibility Control */}
-              <div className="flex items-center justify-between p-4 bg-purple-600/5 rounded-2xl border border-purple-200/50 group/toggle">
-                <div className="flex items-center gap-3">
-                  {showAuditDetails ? <Eye size={18} className="text-purple-600" /> : <EyeOff size={18} className="text-slate-400" />}
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black text-slate-800">অডিট ডিটেইলস (ফিল্ড ১০-১৫)</span>
-                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter">Entry Form Control</span>
-                  </div>
-                </div>
-                <button 
-                  onClick={handleToggleAuditDetails}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 focus:outline-none ring-offset-2 focus:ring-2 focus:ring-purple-500 ${showAuditDetails ? 'bg-purple-600 shadow-lg shadow-purple-500/30' : 'bg-slate-300'}`}
-                >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${showAuditDetails ? 'translate-x-6' : 'translate-x-1'}`} />
-                </button>
               </div>
 
               <div className="flex items-center justify-between p-4 bg-slate-900/5 rounded-2xl border border-slate-200/50">
