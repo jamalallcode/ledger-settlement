@@ -39,7 +39,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
         const { data: dbReceivers, error: dbError } = await supabase
           .from('receivers')
           .select('*')
-          .eq('para_type', paraType)
+          .in('para_type', [paraType, paraType.replace(' ', '-'), paraType.replace('-', ' ')])
           .order('name', { ascending: true });
 
         if (dbError) throw dbError;
@@ -117,7 +117,11 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
       ];
 
       userMentionedNames.forEach(item => {
-        if (item.para === paraType.replace('-', ' ') && !existingNames.has(item.name)) {
+        // Normalize both for comparison
+        const itemPara = item.para.replace('-', ' ');
+        const currentPara = paraType.replace('-', ' ');
+        
+        if (itemPara === currentPara && !existingNames.has(item.name)) {
           // Check if already added via correspondenceNames
           if (!finalReceivers.find(r => r.name === item.name)) {
             finalReceivers.push({ 
@@ -320,7 +324,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
           </button>
           <button 
             onClick={() => setParaType('নন এসএফআই')}
-            className={`flex-1 py-5 font-black text-sm transition-all ${paraType === 'নন এসএফআই' ? 'text-blue-600 border-b-4 border-blue-600 bg-blue-50/30' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+            className={`flex-1 py-5 font-black text-sm transition-all ${paraType.replace('-', ' ') === 'নন এসএফআই' ? 'text-blue-600 border-b-4 border-blue-600 bg-blue-50/30' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
           >
             নন-এসএফআই তালিকা
           </button>

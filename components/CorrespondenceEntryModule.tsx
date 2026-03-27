@@ -468,7 +468,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           const { data, error } = await supabase
             .from('receivers')
             .select('*')
-            .eq('para_type', formData.paraType)
+            .in('para_type', [formData.paraType, formData.paraType.replace(' ', '-'), formData.paraType.replace('-', ' ')])
             .order('name', { ascending: true });
 
           if (error) throw error;
@@ -549,8 +549,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         ];
 
         userMentionedNames.forEach(item => {
+          const itemPara = item.para.replace('-', ' ');
           const currentPara = formData.paraType.replace('-', ' ');
-          if (item.para === currentPara && !existingNames.has(item.name)) {
+          
+          if (itemPara === currentPara && !existingNames.has(item.name)) {
             if (!finalReceivers.find(r => r.name === item.name)) {
               finalReceivers.push({ name: item.name, designation: 'অডিটর' });
             }
