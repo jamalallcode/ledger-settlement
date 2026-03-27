@@ -126,42 +126,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
         }
       });
 
-      // 4. Ensure the 4 specific names mentioned by the user are included if they match the paraType
-      const userMentionedNames = [
-        { name: 'জামাল উদ্দিন', para: 'নন এসএফআই' },
-        { name: 'মো: উজ্জ্বল হোসেন', para: 'নন এসএফআই' },
-        { name: 'শামীমা শাহরিন', para: 'নন এসএফআই' },
-        { name: 'মোঃ আব্দুর রাজ্জাক', para: 'এসএফআই' }
-      ];
-
-      userMentionedNames.forEach(item => {
-        // Normalize both for comparison
-        const itemPara = item.para.replace('-', ' ');
-        const currentPara = paraType.replace('-', ' ');
-        
-        if (itemPara === currentPara && !existingNames.has(item.name)) {
-          // Check if already added via correspondenceNames
-          if (!finalReceivers.find(r => r.name === item.name)) {
-            finalReceivers.push({ 
-              name: item.name, 
-              para_type: paraType,
-              designation: 'অডিটর' 
-            });
-          }
-        }
-      });
-
-      // If still empty, use initial defaults
-      if (finalReceivers.length === 0) {
-        const initialList = paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
-        finalReceivers = initialList.map(name => ({ 
-          name, 
-          para_type: paraType,
-          designation: 'অডিটর'
-        }));
-      }
-
-      // Sort final list
+      // 4. Sort final list
       finalReceivers.sort((a, b) => a.name.localeCompare(b.name));
       setReceivers(finalReceivers);
 
