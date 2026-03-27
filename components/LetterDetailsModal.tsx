@@ -29,7 +29,7 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
           </div>
           <button 
             onClick={onClose}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white text-slate-400 border border-slate-200 hover:bg-red-50 hover:text-white hover:border-red-500 transition-all duration-200 shadow-sm"
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white text-slate-400 border border-slate-200 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-200 shadow-sm"
           >
             <X size={20} />
           </button>

@@ -723,7 +723,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
               <colgroup>
                 <col className="w-[30px]" />
-                <col className="w-[80px]" />
+                <col className="w-[50px]" />
                 <col className="w-[160px]" />
                 <col className="w-[95px]" />
                 <col className="w-[95px]" />
@@ -801,8 +801,10 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               </tbody>
               <tfoot>
                 <tr className="bg-black text-white font-bold text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] border-t border-slate-700">
-                  <td colSpan={2} className="px-6 text-left border-t border-slate-700 bg-black">সর্বমোট চিঠিপত্র:</td>
-                  <td colSpan={1} className="px-4 text-center border-t border-slate-700 bg-black text-white font-bold">{toBengaliDigits(filteredEntries.length)} টি</td>
+                  <td colSpan={3} className="px-6 text-left border-t border-slate-700 bg-black">
+                    <span className="mr-4">সর্বমোট চিঠিপত্র:</span>
+                    <span className="text-white font-bold">{toBengaliDigits(filteredEntries.length)} টি</span>
+                  </td>
                   <td colSpan={6} className="border-t border-slate-700 bg-black"></td>
                 </tr>
               </tfoot>
