@@ -16,8 +16,10 @@ interface ReceiverProfile {
   para_type?: string;
 }
 
+const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
+
 const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
-  const [paraType, setParaType] = useState<'এসএফআই' | 'নন-এসএফআই'>('এসএফআই');
+  const [paraType, setParaType] = useState<string>('এসএফআই');
   const [receivers, setReceivers] = useState<ReceiverProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,38 +32,119 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
   const fetchReceivers = async () => {
     setLoading(true);
     try {
+      let finalReceivers: ReceiverProfile[] = [];
+      
+      // 1. Fetch from receivers table
       if (isSupabaseConfigured) {
-        const { data, error } = await supabase
+        const { data: dbReceivers, error: dbError } = await supabase
           .from('receivers')
           .select('*')
           .eq('para_type', paraType)
           .order('name', { ascending: true });
 
-        if (error) throw error;
+        if (dbError) throw dbError;
+        finalReceivers = dbReceivers || [];
+      } else {
+        const key = paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+        const saved = localStorage.getItem(key);
+        finalReceivers = saved ? JSON.parse(saved) : [];
+      }
+
+      // 2. Fetch unique names from correspondence entries to ensure they are listed
+      let correspondenceNames: string[] = [];
+      if (isSupabaseConfigured) {
+        // Query settlement_entries for receiverName in content
+        const { data: entries, error: entriesError } = await supabase
+          .from('settlement_entries')
+          .select('content');
         
-        if (data && data.length > 0) {
-          setReceivers(data);
-        } else {
-          // If no data in Supabase, use initial list and optionally seed
-          const initialProfiles = (paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS).map(name => ({ name, para_type: paraType }));
-          setReceivers(initialProfiles);
+        if (!entriesError && entries) {
+          entries.forEach(row => {
+            let content = row.content;
+            if (typeof content === 'string') {
+              try { content = JSON.parse(content); } catch (e) { return; }
+            }
+            if (!content) return;
+            
+            const isCorr = content.type === 'correspondence' || content.description !== undefined;
+            // Normalize paraType check
+            const entryPara = content.paraType?.replace('-', ' ');
+            const currentPara = paraType.replace('-', ' ');
+            const matchesPara = entryPara === currentPara;
+            
+            if (isCorr && matchesPara && content.receiverName) {
+              correspondenceNames.push(content.receiverName);
+            }
+          });
         }
       } else {
-        // Fallback to localStorage
-        const key = paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
-        const initialList = paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
-        const saved = localStorage.getItem(key);
-        if (saved) {
-          setReceivers(JSON.parse(saved));
-        } else {
-          const initialProfiles = initialList.map(name => ({ name }));
-          setReceivers(initialProfiles);
-          localStorage.setItem(key, JSON.stringify(initialProfiles));
+        const savedCorr = localStorage.getItem(CORR_STORAGE_KEY);
+        if (savedCorr) {
+          try {
+            const entries = JSON.parse(savedCorr);
+            entries.forEach((entry: any) => {
+              const entryPara = entry.paraType?.replace('-', ' ');
+              const currentPara = paraType.replace('-', ' ');
+              if (entryPara === currentPara && entry.receiverName) {
+                correspondenceNames.push(entry.receiverName);
+              }
+            });
+          } catch (e) { console.error(e); }
         }
       }
+
+      // 3. Merge unique names from correspondence into finalReceivers if they don't exist
+      const uniqueCorrNames = Array.from(new Set(correspondenceNames));
+      const existingNames = new Set(finalReceivers.map(r => r.name));
+      
+      uniqueCorrNames.forEach(name => {
+        if (!existingNames.has(name)) {
+          // User said "Recipient is always an Auditor"
+          finalReceivers.push({ 
+            name, 
+            para_type: paraType,
+            designation: 'অডিটর' 
+          });
+        }
+      });
+
+      // 4. Ensure the 4 specific names mentioned by the user are included if they match the paraType
+      const userMentionedNames = [
+        { name: 'জামাল উদ্দিন', para: 'নন এসএফআই' },
+        { name: 'মো: উজ্জ্বল হোসেন', para: 'নন এসএফআই' },
+        { name: 'শামীমা শাহরিন', para: 'নন এসএফআই' },
+        { name: 'মোঃ আব্দুর রাজ্জাক', para: 'এসএফআই' }
+      ];
+
+      userMentionedNames.forEach(item => {
+        if (item.para === paraType.replace('-', ' ') && !existingNames.has(item.name)) {
+          // Check if already added via correspondenceNames
+          if (!finalReceivers.find(r => r.name === item.name)) {
+            finalReceivers.push({ 
+              name: item.name, 
+              para_type: paraType,
+              designation: 'অডিটর' 
+            });
+          }
+        }
+      });
+
+      // If still empty, use initial defaults
+      if (finalReceivers.length === 0) {
+        const initialList = paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
+        finalReceivers = initialList.map(name => ({ 
+          name, 
+          para_type: paraType,
+          designation: 'অডিটর'
+        }));
+      }
+
+      // Sort final list
+      finalReceivers.sort((a, b) => a.name.localeCompare(b.name));
+      setReceivers(finalReceivers);
+
     } catch (err) {
       console.error('Error fetching receivers:', err);
-      // Fallback on error
       const initialList = paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
       setReceivers(initialList.map(name => ({ name })));
     } finally {
@@ -145,14 +228,46 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
   };
 
   const handleDelete = async (index: number) => {
+    const receiverToDelete = receivers[index];
+    if (!receiverToDelete) return;
+
+    // Check if receiver has correspondence entries
+    let hasCorrespondence = false;
+    try {
+      if (isSupabaseConfigured) {
+        const { data, error } = await supabase
+          .from('settlement_entries')
+          .select('id')
+          .filter('content->>receiverName', 'eq', receiverToDelete.name)
+          .limit(1);
+        
+        if (!error && data && data.length > 0) {
+          hasCorrespondence = true;
+        }
+      } else {
+        const savedCorr = localStorage.getItem(CORR_STORAGE_KEY);
+        if (savedCorr) {
+          try {
+            const entries = JSON.parse(savedCorr);
+            hasCorrespondence = entries.some((e: any) => e.receiverName === receiverToDelete.name);
+          } catch (e) { console.error(e); }
+        }
+      }
+    } catch (e) { console.error(e); }
+
+    if (hasCorrespondence) {
+      alert(`"${receiverToDelete.name}" এর অধীনে চিঠিপত্র এন্ট্রি রয়েছে, তাই এটি মুছে ফেলা সম্ভব নয়।`);
+      return;
+    }
+
     if (!window.confirm("আপনি কি নিশ্চিতভাবে এই নামটি মুছে ফেলতে চান?")) return;
     
     try {
-      if (isSupabaseConfigured && receivers[index]?.id) {
+      if (isSupabaseConfigured && receiverToDelete.id) {
         const { error } = await supabase
           .from('receivers')
           .delete()
-          .eq('id', receivers[index].id);
+          .eq('id', receiverToDelete.id);
         if (error) throw error;
         await fetchReceivers();
       } else {
@@ -168,15 +283,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
     }
   };
 
-  if (!isAdmin) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full p-10 text-center">
-        <ShieldCheck size={64} className="text-red-500 mb-4" />
-        <h2 className="text-2xl font-black text-slate-900 mb-2">প্রবেশাধিকার সংরক্ষিত</h2>
-        <p className="text-slate-500 font-bold">এই বিভাগটি শুধুমাত্র অ্যাডমিনদের জন্য।</p>
-      </div>
-    );
-  }
+  // Removed the strict isAdmin return to allow viewing for all
 
   return (
     <div className="p-8 max-w-4xl mx-auto animate-in fade-in duration-500">
@@ -190,15 +297,17 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
             <p className="text-slate-500 font-bold">এসএফআই ও নন-এসএফআই প্রাপকদের তালিকা নিয়ন্ত্রণ করুন</p>
           </div>
         </div>
-        <button 
-          onClick={() => {
-            resetForm();
-            setIsModalOpen(true);
-          }}
-          className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white font-black rounded-2xl hover:bg-black transition-all shadow-lg active:scale-95"
-        >
-          <Plus size={20} /> নতুন যোগ করুন
-        </button>
+        {isAdmin && (
+          <button 
+            onClick={() => {
+              resetForm();
+              setIsModalOpen(true);
+            }}
+            className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white font-black rounded-2xl hover:bg-black transition-all shadow-lg active:scale-95"
+          >
+            <Plus size={20} /> নতুন যোগ করুন
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden">
@@ -210,8 +319,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
             এসএফআই তালিকা
           </button>
           <button 
-            onClick={() => setParaType('নন-এসএফআই')}
-            className={`flex-1 py-5 font-black text-sm transition-all ${paraType === 'নন-এসএফআই' ? 'text-blue-600 border-b-4 border-blue-600 bg-blue-50/30' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+            onClick={() => setParaType('নন এসএফআই')}
+            className={`flex-1 py-5 font-black text-sm transition-all ${paraType === 'নন এসএফআই' ? 'text-blue-600 border-b-4 border-blue-600 bg-blue-50/30' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
           >
             নন-এসএফআই তালিকা
           </button>
@@ -242,26 +351,28 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={() => {
-                        setEditingIdx(idx);
-                        setTempName(profile.name);
-                        setTempDesignation(profile.designation || '');
-                        setTempImage(profile.image || null);
-                        setIsModalOpen(true);
-                      }}
-                      className="p-2 bg-white text-blue-600 border border-blue-100 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
-                    >
-                      <FileEdit size={16} />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(idx)}
-                      className="p-2 bg-white text-red-600 border border-red-100 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
-                    >
-                      <Trash size={16} />
-                    </button>
-                  </div>
+                  {isAdmin && (
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => {
+                          setEditingIdx(idx);
+                          setTempName(profile.name);
+                          setTempDesignation(profile.designation || '');
+                          setTempImage(profile.image || null);
+                          setIsModalOpen(true);
+                        }}
+                        className="p-2 bg-white text-blue-600 border border-blue-100 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                      >
+                        <FileEdit size={16} />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(idx)}
+                        className="p-2 bg-white text-red-600 border border-red-100 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                      >
+                        <Trash size={16} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

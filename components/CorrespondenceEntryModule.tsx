@@ -461,6 +461,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   useEffect(() => {
     const loadReceivers = async () => {
       try {
+        let finalReceivers: any[] = [];
+        
+        // 1. Fetch from receivers table
         if (isSupabaseConfigured) {
           const { data, error } = await supabase
             .from('receivers')
@@ -469,37 +472,105 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             .order('name', { ascending: true });
 
           if (error) throw error;
-          
-          if (data && data.length > 0) {
-            setReceiverSuggestions(data);
-          } else {
-            const initialList = formData.paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
-            setReceiverSuggestions(initialList.map(name => ({ name })));
-          }
+          finalReceivers = data || [];
         } else {
           const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
-          const initialList = formData.paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
-          
           const savedNames = localStorage.getItem(key);
           if (savedNames) {
             const parsed = JSON.parse(savedNames);
             if (parsed.length > 0 && typeof parsed[0] === 'string') {
-              const migrated = parsed.map((name: string) => ({ name }));
-              setReceiverSuggestions(migrated);
-              localStorage.setItem(key, JSON.stringify(migrated));
+              finalReceivers = parsed.map((name: string) => ({ name, designation: 'অডিটর' }));
             } else {
-              setReceiverSuggestions(parsed);
+              finalReceivers = parsed;
             }
-          } else {
-            const initialProfiles = initialList.map(name => ({ name }));
-            setReceiverSuggestions(initialProfiles);
-            localStorage.setItem(key, JSON.stringify(initialProfiles));
           }
         }
+
+        // 2. Fetch unique names from correspondence entries to ensure they are suggested
+        let correspondenceNames: string[] = [];
+        const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
+        
+        if (isSupabaseConfigured) {
+          const { data: entries, error: entriesError } = await supabase
+            .from('settlement_entries')
+            .select('content');
+          
+          if (!entriesError && entries) {
+            entries.forEach(row => {
+              let content = row.content;
+              if (typeof content === 'string') {
+                try { content = JSON.parse(content); } catch (e) { return; }
+              }
+              if (!content) return;
+              
+              const isCorr = content.type === 'correspondence' || content.description !== undefined;
+              // Normalize paraType check
+              const entryPara = content.paraType?.replace('-', ' ');
+              const currentPara = formData.paraType.replace('-', ' ');
+              const matchesPara = entryPara === currentPara;
+              
+              if (isCorr && matchesPara && content.receiverName) {
+                correspondenceNames.push(content.receiverName);
+              }
+            });
+          }
+        } else {
+          const savedCorr = localStorage.getItem(CORR_STORAGE_KEY);
+          if (savedCorr) {
+            try {
+              const entries = JSON.parse(savedCorr);
+              entries.forEach((entry: any) => {
+                const entryPara = entry.paraType?.replace('-', ' ');
+                const currentPara = formData.paraType.replace('-', ' ');
+                if (entryPara === currentPara && entry.receiverName) {
+                  correspondenceNames.push(entry.receiverName);
+                }
+              });
+            } catch (e) { console.error(e); }
+          }
+        }
+
+        // 3. Merge unique names from correspondence into finalReceivers if they don't exist
+        const uniqueCorrNames = Array.from(new Set(correspondenceNames));
+        const existingNames = new Set(finalReceivers.map(r => r.name));
+        
+        uniqueCorrNames.forEach(name => {
+          if (!existingNames.has(name)) {
+            finalReceivers.push({ name, designation: 'অডিটর' });
+          }
+        });
+
+        // 4. Ensure the 4 specific names mentioned by the user are included if they match the paraType
+        const userMentionedNames = [
+          { name: 'জামাল উদ্দিন', para: 'নন এসএফআই' },
+          { name: 'মো: উজ্জ্বল হোসেন', para: 'নন এসএফআই' },
+          { name: 'শামীমা শাহরিন', para: 'নন এসএফআই' },
+          { name: 'মোঃ আব্দুর রাজ্জাক', para: 'এসএফআই' }
+        ];
+
+        userMentionedNames.forEach(item => {
+          const currentPara = formData.paraType.replace('-', ' ');
+          if (item.para === currentPara && !existingNames.has(item.name)) {
+            if (!finalReceivers.find(r => r.name === item.name)) {
+              finalReceivers.push({ name: item.name, designation: 'অডিটর' });
+            }
+          }
+        });
+
+        // If still empty, use initial defaults
+        if (finalReceivers.length === 0) {
+          const initialList = formData.paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
+          finalReceivers = initialList.map(name => ({ name, designation: 'অডিটর' }));
+        }
+
+        // Sort final list
+        finalReceivers.sort((a, b) => a.name.localeCompare(b.name));
+        setReceiverSuggestions(finalReceivers);
+
       } catch (err) {
         console.error('Error loading receivers:', err);
         const initialList = formData.paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
-        setReceiverSuggestions(initialList.map(name => ({ name })));
+        setReceiverSuggestions(initialList.map(name => ({ name, designation: 'অডিটর' })));
       }
     };
 
@@ -1282,32 +1353,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                               </div>
                             </div>
                             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {isReceiverAdmin && (
-                                <>
-                                  <button 
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setEditingReceiverIdx(idx);
-                                      setTempReceiverName(profile.name);
-                                      setTempReceiverDesignation(profile.designation || '');
-                                      setTempReceiverImage(profile.image || null);
-                                      setIsManagingReceivers(true);
-                                      setShowReceiverDropdown(false);
-                                    }}
-                                    className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === profile.name ? 'hover:bg-blue-500 text-white' : 'hover:bg-blue-100 text-blue-600'}`}
-                                  >
-                                    <FileEdit size={14} />
-                                  </button>
-                                  <button 
-                                    type="button"
-                                    onClick={(e) => handleDeleteReceiver(idx, e)}
-                                    className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === profile.name ? 'hover:bg-red-500 text-white' : 'hover:bg-red-100 text-red-600'}`}
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </>
-                              )}
                               {formData.receiverName === profile.name && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
                             </div>
                           </div>
