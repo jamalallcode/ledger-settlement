@@ -9,6 +9,7 @@ import { getCycleForDate } from '../utils/cycleHelper';
 import { getDateError } from '../utils/dateValidation';
 import { SFI_RECEIVERS } from '../utils/sfi';
 import { NONSFI_RECEIVERS } from '../utils/nonsfi';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 /**
  * @security-protocol LOCKED_MODE
@@ -458,25 +459,111 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const descriptionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const loadReceivers = () => {
-      const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
-      const initialList = formData.paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
-      
-      const savedNames = localStorage.getItem(key);
-      if (savedNames) {
-        const parsed = JSON.parse(savedNames);
-        // Migration logic for profiles
-        if (parsed.length > 0 && typeof parsed[0] === 'string') {
-          const migrated = parsed.map((name: string) => ({ name }));
-          setReceiverSuggestions(migrated);
-          localStorage.setItem(key, JSON.stringify(migrated));
-        } else {
-          setReceiverSuggestions(parsed);
+    const loadReceivers = async () => {
+      try {
+        let finalReceivers: any[] = [];
+        let supabaseError = null;
+        
+        // 1. Fetch from receivers table
+        if (isSupabaseConfigured) {
+          const { data, error } = await supabase
+            .from('receivers')
+            .select('*')
+            .in('para_type', [formData.paraType, formData.paraType.replace(' ', '-'), formData.paraType.replace('-', ' ')])
+            .order('name', { ascending: true });
+
+          if (error) {
+            console.error('Supabase load error:', error);
+            supabaseError = error;
+          } else {
+            finalReceivers = data || [];
+          }
         }
-      } else {
-        const initialProfiles = initialList.map(name => ({ name }));
-        setReceiverSuggestions(initialProfiles);
-        localStorage.setItem(key, JSON.stringify(initialProfiles));
+
+        // If Supabase failed or is not configured, try LocalStorage
+        if (!isSupabaseConfigured || supabaseError || finalReceivers.length === 0) {
+          const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+          const savedNames = localStorage.getItem(key);
+          if (savedNames) {
+            try {
+              const parsed = JSON.parse(savedNames);
+              const localReceivers = (parsed.length > 0 && typeof parsed[0] === 'string')
+                ? parsed.map((name: string) => ({ name, designation: 'অডিটর' }))
+                : parsed;
+              
+              // Merge with what we might have got from Supabase
+              const existingNames = new Set(finalReceivers.map(r => r.name));
+              localReceivers.forEach((lr: any) => {
+                if (!existingNames.has(lr.name)) {
+                  finalReceivers.push(lr);
+                }
+              });
+            } catch (e) { console.error('Error parsing local receivers:', e); }
+          }
+        }
+
+        // 2. Fetch unique names from correspondence entries to ensure they are suggested
+        let correspondenceNames: string[] = [];
+        const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
+        
+        if (isSupabaseConfigured) {
+          const { data: entries, error: entriesError } = await supabase
+            .from('settlement_entries')
+            .select('content');
+          
+          if (!entriesError && entries) {
+            entries.forEach(row => {
+              let content = row.content;
+              if (typeof content === 'string') {
+                try { content = JSON.parse(content); } catch (e) { return; }
+              }
+              if (!content) return;
+              
+              const isCorr = content.type === 'correspondence' || content.description !== undefined;
+              // Normalize paraType check
+              const entryPara = content.paraType?.replace('-', ' ');
+              const currentPara = formData.paraType.replace('-', ' ');
+              const matchesPara = entryPara === currentPara;
+              
+              if (isCorr && matchesPara && content.receiverName) {
+                correspondenceNames.push(content.receiverName);
+              }
+            });
+          }
+        } else {
+          const savedCorr = localStorage.getItem(CORR_STORAGE_KEY);
+          if (savedCorr) {
+            try {
+              const entries = JSON.parse(savedCorr);
+              entries.forEach((entry: any) => {
+                const entryPara = entry.paraType?.replace('-', ' ');
+                const currentPara = formData.paraType.replace('-', ' ');
+                if (entryPara === currentPara && entry.receiverName) {
+                  correspondenceNames.push(entry.receiverName);
+                }
+              });
+            } catch (e) { console.error(e); }
+          }
+        }
+
+        // 3. Merge unique names from correspondence into finalReceivers if they don't exist
+        const uniqueCorrNames = Array.from(new Set(correspondenceNames));
+        const existingNames = new Set(finalReceivers.map(r => r.name));
+        
+        uniqueCorrNames.forEach(name => {
+          if (!existingNames.has(name)) {
+            finalReceivers.push({ name, designation: 'অডিটর' });
+          }
+        });
+
+        // 4. Sort final list
+        finalReceivers.sort((a, b) => a.name.localeCompare(b.name));
+        setReceiverSuggestions(finalReceivers);
+
+      } catch (err) {
+        console.error('Error loading receivers:', err);
+        const initialList = formData.paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
+        setReceiverSuggestions(initialList.map(name => ({ name, designation: 'অডিটর' })));
       }
     };
 
@@ -650,38 +737,72 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     }));
   };
 
-  const handleAddReceiver = () => {
+  const handleAddReceiver = async () => {
     if (!isReceiverAdmin) return;
     if (tempReceiverName.trim()) {
-      const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
-      const newProfile = {
+      const profileData = {
         name: tempReceiverName.trim(),
-        designation: tempReceiverDesignation.trim() || undefined,
-        image: tempReceiverImage || undefined
+        designation: tempReceiverDesignation.trim() || null,
+        image: tempReceiverImage || null,
+        para_type: formData.paraType
       };
-      const updated = [...receiverSuggestions, newProfile];
-      setReceiverSuggestions(updated);
-      localStorage.setItem(key, JSON.stringify(updated));
-      resetReceiverForm();
-      setIsManagingReceivers(false);
+
+      try {
+        if (isSupabaseConfigured) {
+          const { error } = await supabase.from('receivers').insert([profileData]);
+          if (error) throw error;
+        } else {
+          const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+          const updated = [...receiverSuggestions, profileData];
+          setReceiverSuggestions(updated);
+          localStorage.setItem(key, JSON.stringify(updated));
+        }
+        resetReceiverForm();
+        setIsManagingReceivers(false);
+        // Trigger reload
+        const event = new Event('storage');
+        window.dispatchEvent(event);
+      } catch (err) {
+        console.error('Error adding receiver:', err);
+        alert('তথ্য যোগ করতে সমস্যা হয়েছে।');
+      }
     }
   };
 
-  const handleEditReceiver = (idx: number) => {
+  const handleEditReceiver = async (idx: number) => {
     if (!isReceiverAdmin) return;
     if (tempReceiverName.trim()) {
-      const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
-      const updated = [...receiverSuggestions];
-      updated[idx] = {
+      const profileData = {
         name: tempReceiverName.trim(),
-        designation: tempReceiverDesignation.trim() || undefined,
-        image: tempReceiverImage || undefined
+        designation: tempReceiverDesignation.trim() || null,
+        image: tempReceiverImage || null,
+        para_type: formData.paraType
       };
-      setReceiverSuggestions(updated);
-      localStorage.setItem(key, JSON.stringify(updated));
-      setEditingReceiverIdx(null);
-      resetReceiverForm();
-      setIsManagingReceivers(false);
+
+      try {
+        if (isSupabaseConfigured && receiverSuggestions[idx]?.id) {
+          const { error } = await supabase
+            .from('receivers')
+            .update(profileData)
+            .eq('id', receiverSuggestions[idx].id);
+          if (error) throw error;
+        } else {
+          const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+          const updated = [...receiverSuggestions];
+          updated[idx] = profileData;
+          setReceiverSuggestions(updated);
+          localStorage.setItem(key, JSON.stringify(updated));
+        }
+        setEditingReceiverIdx(null);
+        resetReceiverForm();
+        setIsManagingReceivers(false);
+        // Trigger reload
+        const event = new Event('storage');
+        window.dispatchEvent(event);
+      } catch (err) {
+        console.error('Error editing receiver:', err);
+        alert('তথ্য পরিবর্তন করতে সমস্যা হয়েছে।');
+      }
     }
   };
 
@@ -706,16 +827,36 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     }
   };
 
-  const handleDeleteReceiver = (idx: number, e: React.MouseEvent) => {
+  const handleDeleteReceiver = async (idx: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isReceiverAdmin) return;
-    const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
-    const profileToDelete = receiverSuggestions[idx];
-    const updated = receiverSuggestions.filter((_, i) => i !== idx);
-    setReceiverSuggestions(updated);
-    localStorage.setItem(key, JSON.stringify(updated));
-    if (formData.receiverName === profileToDelete.name) {
-      setFormData(prev => ({ ...prev, receiverName: '' }));
+    if (!window.confirm("আপনি কি নিশ্চিতভাবে এই নামটি মুছে ফেলতে চান?")) return;
+
+    try {
+      const profileToDelete = receiverSuggestions[idx];
+      if (isSupabaseConfigured && profileToDelete?.id) {
+        const { error } = await supabase
+          .from('receivers')
+          .delete()
+          .eq('id', profileToDelete.id);
+        if (error) throw error;
+      } else {
+        const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+        const updated = receiverSuggestions.filter((_, i) => i !== idx);
+        setReceiverSuggestions(updated);
+        localStorage.setItem(key, JSON.stringify(updated));
+      }
+
+      if (formData.receiverName === profileToDelete.name) {
+        setFormData(prev => ({ ...prev, receiverName: '' }));
+      }
+      
+      // Trigger reload
+      const event = new Event('storage');
+      window.dispatchEvent(event);
+    } catch (err) {
+      console.error('Error deleting receiver:', err);
+      alert('তথ্য মুছতে সমস্যা হয়েছে।');
     }
   };
 
@@ -1205,32 +1346,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                               </div>
                             </div>
                             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {isReceiverAdmin && (
-                                <>
-                                  <button 
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setEditingReceiverIdx(idx);
-                                      setTempReceiverName(profile.name);
-                                      setTempReceiverDesignation(profile.designation || '');
-                                      setTempReceiverImage(profile.image || null);
-                                      setIsManagingReceivers(true);
-                                      setShowReceiverDropdown(false);
-                                    }}
-                                    className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === profile.name ? 'hover:bg-blue-500 text-white' : 'hover:bg-blue-100 text-blue-600'}`}
-                                  >
-                                    <FileEdit size={14} />
-                                  </button>
-                                  <button 
-                                    type="button"
-                                    onClick={(e) => handleDeleteReceiver(idx, e)}
-                                    className={`p-1.5 rounded-lg transition-colors ${formData.receiverName === profile.name ? 'hover:bg-red-500 text-white' : 'hover:bg-red-100 text-red-600'}`}
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </>
-                              )}
                               {formData.receiverName === profile.name && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
                             </div>
                           </div>

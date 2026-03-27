@@ -1,6 +1,1 @@
-export const NONSFI_RECEIVERS = [
-  'মোঃ কামরুল হাসান',
-  'মোছাঃ আয়েশা সিদ্দিকা',
-  'মোঃ হারুন অর রশিদ',
-  'মোছাঃ রোকসানা পারভীন'
-];
+export const NONSFI_RECEIVERS = [];

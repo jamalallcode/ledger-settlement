@@ -1,6 +1,1 @@
-export const SFI_RECEIVERS = [
-  'মোঃ আব্দুর রাজ্জাক',
-  'মোছাঃ ফাতেমা খাতুন',
-  'মোঃ জাহিদুল ইসলাম',
-  'মোছাঃ শামীমা নাসরিন'
-];
+export const SFI_RECEIVERS = [];
