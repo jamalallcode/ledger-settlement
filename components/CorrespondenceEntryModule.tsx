@@ -462,6 +462,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     const loadReceivers = async () => {
       try {
         let finalReceivers: any[] = [];
+        let supabaseError = null;
         
         // 1. Fetch from receivers table
         if (isSupabaseConfigured) {
@@ -471,18 +472,33 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             .in('para_type', [formData.paraType, formData.paraType.replace(' ', '-'), formData.paraType.replace('-', ' ')])
             .order('name', { ascending: true });
 
-          if (error) throw error;
-          finalReceivers = data || [];
-        } else {
+          if (error) {
+            console.error('Supabase load error:', error);
+            supabaseError = error;
+          } else {
+            finalReceivers = data || [];
+          }
+        }
+
+        // If Supabase failed or is not configured, try LocalStorage
+        if (!isSupabaseConfigured || supabaseError || finalReceivers.length === 0) {
           const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
           const savedNames = localStorage.getItem(key);
           if (savedNames) {
-            const parsed = JSON.parse(savedNames);
-            if (parsed.length > 0 && typeof parsed[0] === 'string') {
-              finalReceivers = parsed.map((name: string) => ({ name, designation: 'অডিটর' }));
-            } else {
-              finalReceivers = parsed;
-            }
+            try {
+              const parsed = JSON.parse(savedNames);
+              const localReceivers = (parsed.length > 0 && typeof parsed[0] === 'string')
+                ? parsed.map((name: string) => ({ name, designation: 'অডিটর' }))
+                : parsed;
+              
+              // Merge with what we might have got from Supabase
+              const existingNames = new Set(finalReceivers.map(r => r.name));
+              localReceivers.forEach((lr: any) => {
+                if (!existingNames.has(lr.name)) {
+                  finalReceivers.push(lr);
+                }
+              });
+            } catch (e) { console.error('Error parsing local receivers:', e); }
           }
         }
 

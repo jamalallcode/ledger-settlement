@@ -35,6 +35,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
       let finalReceivers: ReceiverProfile[] = [];
       
       // 1. Fetch from receivers table
+      let supabaseError = null;
       if (isSupabaseConfigured) {
         const { data: dbReceivers, error: dbError } = await supabase
           .from('receivers')
@@ -42,12 +43,29 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
           .in('para_type', [paraType, paraType.replace(' ', '-'), paraType.replace('-', ' ')])
           .order('name', { ascending: true });
 
-        if (dbError) throw dbError;
-        finalReceivers = dbReceivers || [];
-      } else {
-        const key = paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
-        const saved = localStorage.getItem(key);
-        finalReceivers = saved ? JSON.parse(saved) : [];
+        if (dbError) {
+          console.error('Supabase fetch error:', dbError);
+          supabaseError = dbError;
+        } else {
+          finalReceivers = dbReceivers || [];
+        }
+      }
+
+      // If Supabase failed or is not configured, or to merge local items
+      const key = paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        try {
+          const localItems = JSON.parse(saved);
+          const existingIds = new Set(finalReceivers.map(r => r.id));
+          const existingNames = new Set(finalReceivers.map(r => r.name));
+          
+          localItems.forEach((li: any) => {
+            if (!existingIds.has(li.id) && !existingNames.has(li.name)) {
+              finalReceivers.push(li);
+            }
+          });
+        } catch (e) { console.error('Error parsing local receivers:', e); }
       }
 
       // 2. Fetch unique names from correspondence entries to ensure they are listed
@@ -173,37 +191,60 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
 
     try {
       if (isSupabaseConfigured) {
+        let error;
         if (editingIdx !== null && receivers[editingIdx]?.id) {
-          const { error } = await supabase
+          const { error: updateError } = await supabase
             .from('receivers')
             .update(profileData)
             .eq('id', receivers[editingIdx].id);
-          if (error) throw error;
+          error = updateError;
         } else {
-          const { error } = await supabase
+          const { error: insertError } = await supabase
             .from('receivers')
             .insert([profileData]);
-          if (error) throw error;
+          error = insertError;
+        }
+        
+        if (error) {
+          console.error('Supabase save error:', error);
+          // If it's a "relation not found" error, it means the table is missing
+          if (error.code === 'PGRST116' || error.message?.includes('relation') || error.message?.includes('does not exist')) {
+            throw new Error('TABLE_MISSING');
+          }
+          throw error;
         }
         await fetchReceivers();
       } else {
-        // LocalStorage fallback
+        throw new Error('SUPABASE_NOT_CONFIGURED');
+      }
+      setIsModalOpen(false);
+      resetForm();
+    } catch (err: any) {
+      console.error('Error saving receiver:', err);
+      
+      // Fallback to LocalStorage if Supabase fails or is not configured
+      try {
         let newList = [...receivers];
         if (editingIdx !== null) {
-          newList[editingIdx] = profileData;
+          newList[editingIdx] = { ...profileData, id: receivers[editingIdx].id };
         } else {
-          newList.push(profileData);
+          newList.push({ ...profileData, id: 'local-' + Date.now() });
         }
         const key = paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
         localStorage.setItem(key, JSON.stringify(newList));
         setReceivers(newList);
         window.dispatchEvent(new Event('storage'));
+        
+        setIsModalOpen(false);
+        resetForm();
+        
+        if (isSupabaseConfigured) {
+          alert('সুপাবেজ (Supabase) এ তথ্য সংরক্ষণ করা যায়নি, তবে আপনার ব্রাউজারে (LocalStorage) এটি সংরক্ষিত হয়েছে।\n\nত্রুটি: ' + (err.message === 'TABLE_MISSING' ? 'receivers টেবিলটি ডাটাবেসে পাওয়া যায়নি।' : err.message));
+        }
+      } catch (localErr) {
+        console.error('LocalStorage fallback failed:', localErr);
+        alert('তথ্য সংরক্ষণ করতে সমস্যা হয়েছে। দয়া করে আপনার ইন্টারনেট সংযোগ বা ব্রাউজার স্টোরেজ চেক করুন।');
       }
-      setIsModalOpen(false);
-      resetForm();
-    } catch (err) {
-      console.error('Error saving receiver:', err);
-      alert('তথ্য সংরক্ষণ করতে সমস্যা হয়েছে।');
     } finally {
       setIsSaving(false);
     }
@@ -267,7 +308,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
     if (!window.confirm("আপনি কি নিশ্চিতভাবে এই নামটি মুছে ফেলতে চান?")) return;
     
     try {
-      if (isSupabaseConfigured && receiverToDelete.id) {
+      if (isSupabaseConfigured && receiverToDelete.id && !receiverToDelete.id.toString().startsWith('local-')) {
         const { error } = await supabase
           .from('receivers')
           .delete()
@@ -275,15 +316,26 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
         if (error) throw error;
         await fetchReceivers();
       } else {
+        // LocalStorage fallback or local-only item
         const newList = receivers.filter((_, i) => i !== index);
         const key = paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
         localStorage.setItem(key, JSON.stringify(newList));
         setReceivers(newList);
         window.dispatchEvent(new Event('storage'));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting receiver:', err);
-      alert('তথ্য মুছতে সমস্যা হয়েছে।');
+      
+      // Try local delete if Supabase fails
+      const newList = receivers.filter((_, i) => i !== index);
+      const key = paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+      localStorage.setItem(key, JSON.stringify(newList));
+      setReceivers(newList);
+      window.dispatchEvent(new Event('storage'));
+      
+      if (isSupabaseConfigured) {
+        alert('সুপাবেজ (Supabase) থেকে তথ্য মোছা যায়নি, তবে আপনার ব্রাউজার (LocalStorage) থেকে এটি মুছে ফেলা হয়েছে।');
+      }
     }
   };
 
