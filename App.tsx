@@ -14,7 +14,7 @@ import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import AdminAnalytics from './subapps/admin_analytics/AdminAnalytics';
-import { SettlementEntry, GroupOption, CumulativeStats } from './types';
+import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
 import { supabase } from './lib/supabase';
@@ -47,8 +47,18 @@ const App: React.FC = () => {
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showChangePassword, setShowChangePassword] = useState(false);
-  const [showReturnSummary, setShowReturnSummary] = useState(true);
-  const [showAuditDetails, setShowAuditDetails] = useState(true);
+  const [moduleVisibility, setModuleVisibility] = useState<ModuleVisibility>({
+    entry: true,
+    register: true,
+    return: true,
+    archive: true,
+    voting: true,
+    setup_receivers: true,
+    initial_balance: true,
+    change_pass: true,
+    admin_analytics: true,
+    audit_details: true,
+  });
   
   // State for direct module entry from sidebar
   const [entryModule, setEntryModule] = useState<'settlement' | 'correspondence' | null>(null);
@@ -118,13 +128,6 @@ const App: React.FC = () => {
 
     setShowPendingOnly(false);
   };
-
-  useEffect(() => {
-    if (userEmail) {
-      console.log("Current User:", userEmail, "Is Admin:", isAdmin);
-    }
-    console.log("Visibility State Updated - Return Summary:", showReturnSummary, "Audit Details:", showAuditDetails);
-  }, [showReturnSummary, showAuditDetails, userEmail, isAdmin]);
 
   const [highlightSearch, setHighlightSearch] = useState<string | null>(null);
 
@@ -225,34 +228,23 @@ const App: React.FC = () => {
       }
 
       try {
-        const { data: summaryData, error: summaryError } = await supabase
+        const { data, error } = await supabase
           .from('app_settings')
-          .select('value')
-          .eq('key', 'show_return_summary')
-          .maybeSingle();
+          .select('key, value');
         
-        if (!summaryError && summaryData) {
-          console.log("Fetched show_return_summary:", summaryData.value);
-          setShowReturnSummary(summaryData.value);
-        } else if (summaryError) {
-          console.error("Error fetching show_return_summary:", summaryError);
-        } else {
-          console.log("show_return_summary key not found in app_settings, using default (true)");
-        }
-
-        const { data: auditData, error: auditError } = await supabase
-          .from('app_settings')
-          .select('value')
-          .eq('key', 'show_audit_details')
-          .maybeSingle();
-        
-        if (!auditError && auditData) {
-          console.log("Fetched show_audit_details:", auditData.value);
-          setShowAuditDetails(auditData.value);
-        } else if (auditError) {
-          console.error("Error fetching show_audit_details:", auditError);
-        } else {
-          console.log("show_audit_details key not found in app_settings, using default (true)");
+        if (!error && data) {
+          const newVisibility = { ...moduleVisibility };
+          data.forEach((setting: any) => {
+            const key = setting.key.replace('show_', '');
+            if (key in newVisibility) {
+              (newVisibility as any)[key] = setting.value;
+            }
+          });
+          // Special case for legacy keys if needed, but we'll stick to the mapping
+          setModuleVisibility(newVisibility);
+          console.log("Fetched module visibility settings:", newVisibility);
+        } else if (error) {
+          console.error("Error fetching app_settings:", error);
         }
       } catch (err) {
         console.error("সেটিংস লোড করতে সমস্যা হয়েছে:", err);
@@ -269,11 +261,13 @@ const App: React.FC = () => {
         table: 'app_settings'
       }, (payload: any) => {
         if (payload.new) {
-          if (payload.new.key === 'show_return_summary') {
-            setShowReturnSummary(payload.new.value);
-          } else if (payload.new.key === 'show_audit_details') {
-            setShowAuditDetails(payload.new.value);
-          }
+          const key = payload.new.key.replace('show_', '');
+          setModuleVisibility(prev => {
+            if (key in prev) {
+              return { ...prev, [key]: payload.new.value };
+            }
+            return prev;
+          });
         }
       })
       .subscribe();
@@ -643,7 +637,7 @@ const App: React.FC = () => {
             entryModule={entryModule}
             registerSubModule={registerSubModule}
             reportType={reportType}
-            showReturnSummary={showReturnSummary}
+            moduleVisibility={moduleVisibility}
           />
         </div>
       )}
@@ -681,10 +675,11 @@ const App: React.FC = () => {
                   isAdmin={isAdmin}
                   pendingCount={totalPendingCount}
                   onShowPending={() => { setActiveTab('register'); setShowPendingOnly(true); }}
+                  moduleVisibility={moduleVisibility}
                 />
               )}
               
-              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} showAuditDetails={showAuditDetails} />}
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} moduleVisibility={moduleVisibility} />}
               
               {activeTab === 'register' && (
                 <div className="space-y-6 relative">
@@ -837,10 +832,8 @@ const App: React.FC = () => {
                   pendingCount={totalPendingCount}
                   setActiveTab={handleTabChange}
                   onOpenChangePassword={() => setShowChangePassword(true)}
-                  showReturnSummary={showReturnSummary}
-                  setShowReturnSummary={setShowReturnSummary}
-                  showAuditDetails={showAuditDetails}
-                  setShowAuditDetails={setShowAuditDetails}
+                  moduleVisibility={moduleVisibility}
+                  setModuleVisibility={setModuleVisibility}
                 />
               )}
             </div>

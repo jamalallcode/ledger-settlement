@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SettlementEntry, GroupOption } from '../types.ts';
+import { SettlementEntry, GroupOption, ModuleVisibility } from '../types.ts';
 import { Layout, ClipboardList, Mail, ArrowRightCircle, CheckCircle2, ChevronRight, LayoutGrid, FileText, ArrowRight } from 'lucide-react';
 import SettlementEntryModule from './SettlementEntryModule';
 import CorrespondenceEntryModule from './CorrespondenceEntryModule';
@@ -18,10 +18,10 @@ interface SettlementFormProps {
   correspondenceEntries?: any[];
   entries?: SettlementEntry[];
   navigateToEntry?: (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => void;
-  showAuditDetails?: boolean;
+  moduleVisibility?: ModuleVisibility;
 }
 
-const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, nextSl, branchSuggestions, initialEntry, onCancel, isLayoutEditable, isAdmin = false, userEmail, preSelectedModule = null, correspondenceEntries, entries, navigateToEntry, showAuditDetails = true }) => {
+const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, nextSl, branchSuggestions, initialEntry, onCancel, isLayoutEditable, isAdmin = false, userEmail, preSelectedModule = null, correspondenceEntries, entries, navigateToEntry, moduleVisibility }) => {
   const [mainModule, setMainModule] = useState<'settlement' | 'correspondence' | null>(() => {
     if (initialEntry) {
       return (initialEntry.type === 'correspondence' || !!initialEntry.description) ? 'correspondence' : 'settlement';
@@ -73,7 +73,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, 
         isAdmin={isAdmin}
         existingEntries={entries}
         navigateToEntry={navigateToEntry}
-        showAuditDetails={showAuditDetails}
+        showAuditDetails={moduleVisibility?.audit_details ?? true}
       />
     );
   }
