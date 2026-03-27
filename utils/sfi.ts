@@ -1,3 +1,1 @@
-export const SFI_RECEIVERS = [
-  'মোঃ আব্দুর রাজ্জাক'
-];
+export const SFI_RECEIVERS = [];
