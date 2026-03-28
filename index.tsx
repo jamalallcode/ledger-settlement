@@ -15,6 +15,13 @@ import App from './App';
 
 const rootElement = document.getElementById('root');
 
+window.onerror = function(message, source, lineno, colno, error) {
+  const errorMsg = `Error: ${message}\nSource: ${source}\nLine: ${lineno}\nColumn: ${colno}\nStack: ${error?.stack}`;
+  console.error(errorMsg);
+  window.alert(errorMsg);
+  return false;
+};
+
 if (rootElement) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(

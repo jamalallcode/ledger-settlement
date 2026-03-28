@@ -14,7 +14,7 @@ import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import AdminAnalytics from './subapps/admin_analytics/AdminAnalytics';
-import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility } from './types';
+import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, CorrespondenceEntry } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
 import { supabase } from './lib/supabase';
@@ -32,14 +32,19 @@ const generateId = () => {
 };
 
 const App: React.FC = () => {
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
+    console.log("App mounted, isAdmin:", isAdmin);
+  }, [isAdmin]);
+
   const navigate = useNavigate();
   const [entries, setEntries] = useState<SettlementEntry[]>([]);
-  const [correspondenceEntries, setCorrespondenceEntries] = useState<any[]>([]);
+  const [correspondenceEntries, setCorrespondenceEntries] = useState<CorrespondenceEntry[]>([]);
   const [activeTab, setActiveTab] = useState('landing'); 
   const [resetKey, setResetKey] = useState(0); 
   const [editingEntry, setEditingEntry] = useState<any | null>(null);
   const [isLockedMode, setIsLockedMode] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showRegisterFilters, setShowRegisterFilters] = useState(false);
@@ -99,6 +104,7 @@ const App: React.FC = () => {
   const mainScrollRef = useRef<HTMLElement>(null);
 
   const handleTabChange = (tab: string, subModule?: 'settlement' | 'correspondence', rType?: string) => {
+    console.log("handleTabChange called with tab:", tab, "subModule:", subModule, "rType:", rType);
     if (tab === activeTab && !subModule && !rType) setResetKey(prev => prev + 1);
     else { 
       setActiveTab(tab); 
@@ -201,12 +207,16 @@ const App: React.FC = () => {
   // STRICT AUTO-ADMIN DETECTION
   useEffect(() => {
     const handleAdminSync = (email?: string) => {
+      console.log("handleAdminSync called with email:", email);
       setUserEmail(email || null);
       const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com', 'emailaddress3424@gmail.com'];
       if (email && adminEmails.includes(email)) {
+        console.log("User is admin based on email");
         setIsAdmin(true);
         setIsLockedMode(false); // Auto-unlock for admin
         localStorage.setItem(ADMIN_MODE_KEY, 'true');
+      } else {
+        console.log("User is NOT admin based on email");
       }
     };
 
@@ -294,6 +304,7 @@ const App: React.FC = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        console.log("fetchData started");
         const savedPrev = localStorage.getItem(PREV_STATS_KEY);
         if (savedPrev) {
           const parsed = JSON.parse(savedPrev);
@@ -346,13 +357,14 @@ const App: React.FC = () => {
                 setAllPrevStats(migrated);
                 localStorage.setItem(PREV_STATS_KEY, JSON.stringify(migrated));
               }
-            } else if (row.id.startsWith('id-')) {
+            } else {
               // Distinguish between entry types - robust check
               const isCorrespondence = content.type === 'correspondence' || (content.description !== undefined && content.description !== null);
               
-              // Ensure type is set correctly in the content object for consistent handling
+              // Ensure type and ID are set correctly in the content object for consistent handling
               const normalizedContent = {
                 ...content,
+                id: row.id, // Ensure ID matches the database row ID
                 type: isCorrespondence ? 'correspondence' : 'settlement'
               };
 
@@ -364,11 +376,16 @@ const App: React.FC = () => {
             }
           });
           
+          console.log(`Fetched ${processedEntries.length} settlement and ${corrEntries.length} correspondence entries`);
+          
           setEntries(processedEntries);
           setCorrespondenceEntries(corrEntries);
         }
       } catch (e) { console.error('Data error:', e); } 
-      finally { setIsLoading(false); }
+      finally { 
+        console.log("fetchData finally called");
+        setIsLoading(false); 
+      }
     };
     fetchData();
   }, []);
@@ -551,10 +568,17 @@ const App: React.FC = () => {
         }
       }
     } else {
+      // For correspondence and other single-level entries
       setEntries(prev => prev.filter(e => e.id !== id));
       setCorrespondenceEntries(prev => prev.filter(e => e.id !== id));
+      
       if (navigator.onLine) {
-        await supabase.from('settlement_entries').delete().eq('id', id);
+        // Correspondence entries are also stored in 'settlement_entries' table
+        const { error } = await supabase.from('settlement_entries').delete().eq('id', id);
+        if (error) {
+          console.error("Error deleting entry:", error);
+          alert("তথ্যটি মুছে ফেলতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+        }
       } else {
         const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
         localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue.filter((e: any) => e.id !== id)));
