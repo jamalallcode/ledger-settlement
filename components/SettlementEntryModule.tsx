@@ -7,6 +7,7 @@ import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/n
 import { getCycleForDate, isEntryLate } from '../utils/cycleHelper.ts';
 import { getDateError } from '../utils/dateValidation';
 import { format } from 'date-fns';
+import { isSFI, isNonSFI, getBranchVariations } from '../utils/branchUtils';
 
 /**
  * @security-protocol LOCKED_MODE
@@ -704,20 +705,20 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         <div className="space-y-6 max-w-2xl mx-auto">
           <div 
             onClick={() => setFormData({...formData, paraType: 'এসএফআই'})}
-            className={`group relative flex items-center min-h-[100px] w-full rounded-[1.5rem] shadow-md border-2 transition-all duration-500 cursor-pointer overflow-hidden ${formData.paraType === 'এসএফআই' ? 'bg-slate-900 border-blue-600 ring-4 ring-blue-50' : 'bg-white border-slate-100 hover:border-blue-200'}`}
+            className={`group relative flex items-center min-h-[100px] w-full rounded-[1.5rem] shadow-md border-2 transition-all duration-500 cursor-pointer overflow-hidden ${isSFI(formData.paraType) ? 'bg-slate-900 border-blue-600 ring-4 ring-blue-50' : 'bg-white border-slate-100 hover:border-blue-200'}`}
           >
-            <div className={`absolute top-0 left-0 w-2 h-full ${formData.paraType === 'এসএফআই' ? 'bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-slate-200'}`}></div>
+            <div className={`absolute top-0 left-0 w-2 h-full ${isSFI(formData.paraType) ? 'bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-slate-200'}`}></div>
             <div className="flex items-center pl-8 gap-6 flex-1 pr-6 py-4">
-               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${formData.paraType === 'এসএফআই' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500'}`}>
+               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${isSFI(formData.paraType) ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500'}`}>
                   <Building2 size={30} />
                </div>
                <div className="flex-1 space-y-3">
-                  <h4 className={`text-xl font-black transition-colors ${formData.paraType === 'এসএফআই' ? 'text-white' : 'text-slate-800'}`}>এসএফআই (SFI)</h4>
+                  <h4 className={`text-xl font-black transition-colors ${isSFI(formData.paraType) ? 'text-white' : 'text-slate-800'}`}>এসএফআই (SFI)</h4>
                   <div onClick={(e) => e.stopPropagation()}>
                     <select 
-                      value={formData.paraType === 'এসএফআই' ? formData.meetingType : ''} 
+                      value={isSFI(formData.paraType) ? formData.meetingType : ''} 
                       onChange={(e) => { setFormData({...formData, meetingType: e.target.value, isMeeting: e.target.value !== 'বিএসআর', paraType: 'এসএফআই'}); }} 
-                      className={`w-full py-2 px-3 rounded-lg font-bold outline-none border transition-all ${formData.paraType === 'এসএফআই' ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}
+                      className={`w-full py-2 px-3 rounded-lg font-bold outline-none border transition-all ${isSFI(formData.paraType) ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}
                     >
                       <option value="" disabled>ধরন নির্বাচন করুন...</option>
                       <option value="বিএসআর">বিএসআর (BSR)</option>
@@ -726,7 +727,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                   </div>
                </div>
             </div>
-            {formData.paraType === 'এসএফআই' && (
+            {isSFI(formData.paraType) && (
               <div className="pr-8 animate-in slide-in-from-left-2 duration-300">
                 <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center shadow-lg"><Check size={18} className="text-white" strokeWidth={3} /></div>
               </div>
@@ -735,20 +736,20 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
           <div 
             onClick={() => setFormData({...formData, paraType: 'নন এসএফআই'})}
-            className={`group relative flex items-center min-h-[100px] w-full rounded-[1.5rem] shadow-md border-2 transition-all duration-500 cursor-pointer overflow-hidden ${formData.paraType === 'নন এসএফআই' ? 'bg-slate-900 border-indigo-600 ring-4 ring-indigo-50' : 'bg-white border-slate-100 hover:border-indigo-200'}`}
+            className={`group relative flex items-center min-h-[100px] w-full rounded-[1.5rem] shadow-md border-2 transition-all duration-500 cursor-pointer overflow-hidden ${isNonSFI(formData.paraType) ? 'bg-slate-900 border-indigo-600 ring-4 ring-indigo-50' : 'bg-white border-slate-100 hover:border-indigo-200'}`}
           >
-            <div className={`absolute top-0 left-0 w-2 h-full ${formData.paraType === 'নন এসএফআই' ? 'bg-indigo-600 shadow-[0_0_15px_rgba(79,70,229,0.4)]' : 'bg-slate-200'}`}></div>
+            <div className={`absolute top-0 left-0 w-2 h-full ${isNonSFI(formData.paraType) ? 'bg-indigo-600 shadow-[0_0_15px_rgba(79,70,229,0.4)]' : 'bg-slate-200'}`}></div>
             <div className="flex items-center pl-8 gap-6 flex-1 pr-6 py-4">
-               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${formData.paraType === 'নন এসএফআই' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500'}`}>
+               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${isNonSFI(formData.paraType) ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500'}`}>
                   <Building size={30} />
                </div>
                <div className="flex-1 space-y-3">
-                  <h4 className={`text-xl font-black transition-colors ${formData.paraType === 'নন এসএফআই' ? 'text-white' : 'text-slate-800'}`}>নন এসএফআই (Non-SFI)</h4>
+                  <h4 className={`text-xl font-black transition-colors ${isNonSFI(formData.paraType) ? 'text-white' : 'text-slate-800'}`}>নন এসএফআই (Non-SFI)</h4>
                   <div onClick={(e) => e.stopPropagation()}>
                     <select 
-                      value={formData.paraType === 'নন এসএফআই' ? formData.meetingType : ''} 
+                      value={isNonSFI(formData.paraType) ? formData.meetingType : ''} 
                       onChange={(e) => { setFormData({...formData, meetingType: e.target.value, isMeeting: e.target.value !== 'বিএসআর', paraType: 'নন এসএফআই'}); }} 
-                      className={`w-full py-2 px-3 rounded-lg font-bold outline-none border transition-all ${formData.paraType === 'নন এসএফআই' ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}
+                      className={`w-full py-2 px-3 rounded-lg font-bold outline-none border transition-all ${isNonSFI(formData.paraType) ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}
                     >
                       <option value="" disabled>ধরন নির্বাচন করুন...</option>
                       <option value="বিএসআর">বিএসআর (BSR)</option>
@@ -757,7 +758,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                   </div>
                </div>
             </div>
-            {formData.paraType === 'নন এসএফআই' && (
+            {isNonSFI(formData.paraType) && (
               <div className="pr-8 animate-in slide-in-from-left-2 duration-300">
                 <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg"><Check size={18} className="text-white" strokeWidth={3} /></div>
               </div>
@@ -855,7 +856,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         <fieldset className="space-y-10 border-none p-0 m-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-6">
             <div id="field-1" className={col1Style}><SearchableSelect label={<><span className={numBadge}>১</span> <Building2 size={14} className="text-blue-600 shrink-0" /> শাখা (SFI/Non-SFI)</>} groups={[{ label: 'শাখা ধরণ', options: ['এসএফআই', 'নন এসএফআই'] }]} value={formData.paraType} onChange={v => setFormData({ ...formData, paraType: v as ParaType })} required badgeId="select-para-type" /></div>
-            <div id="field-2" className={col2Style}><SearchableSelect label={<><span className={numBadge}>২</span> <Layout size={14} className="text-emerald-600 shrink-0" /> চিঠির ধরণ</>} groups={[{ label: 'চিঠি তালিকা', options: formData.paraType === 'এসএফআই' ? ['বিএসআর', 'ত্রিপক্ষীয় সভা'] : ['বিএসআর', 'দ্বিপক্ষীয় সভা'] }]} value={formData.meetingType} onChange={v => setFormData({...formData, meetingType: v, isMeeting: v !== 'বিএসআর'})} required badgeId="select-meeting-type" /></div>
+            <div id="field-2" className={col2Style}><SearchableSelect label={<><span className={numBadge}>২</span> <Layout size={14} className="text-emerald-600 shrink-0" /> চিঠির ধরণ</>} groups={[{ label: 'চিঠি তালিকা', options: isSFI(formData.paraType) ? ['বিএসআর', 'ত্রিপক্ষীয় সভা'] : ['বিএসআর', 'দ্বিপক্ষীয় সভা'] }]} value={formData.meetingType} onChange={v => setFormData({...formData, meetingType: v, isMeeting: v !== 'বিএসআর'})} required badgeId="select-meeting-type" /></div>
             <div id="field-3" className={col3Style}><SearchableSelect label={<><span className={numBadge}>৩</span> <Building size={14} className="text-amber-600 shrink-0" /> মন্ত্রণালয়</>} groups={MINISTRIES_LIST} value={formData.ministryName} onChange={v => setFormData(f=>({...f, ministryName: v}))} required badgeId="select-ministry" /></div>
             <div id="field-4" className={col4Style}><SearchableSelect label={<><span className={numBadge}>৪</span> <Building2 size={14} className="text-purple-600 shrink-0" /> এনটিটি / সংস্থা</>} groups={[{label: 'এনটিটি তালিকা', options: entityOpts}]} value={formData.entityName} onChange={v => setFormData(f=>({...f, entityName: v}))} required badgeId="select-entity" /></div>
             <div id="field-5" className={col1Style}><SearchableSelect label={<><span className={numBadge}>৫</span> <Building size={14} className="text-sky-600 shrink-0" /> শাখা (বিস্তারিত বিবরণ)</>} groups={branchOpts.length > 0 ? [{label: ' শাখা তালিকা', options: branchOpts}] : branchSuggestions} value={formData.branchName} onChange={v => setFormData(f=>({...f, branchName: v}))} required badgeId="select-branch" /></div>
