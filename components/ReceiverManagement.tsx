@@ -34,13 +34,18 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
     try {
       let finalReceivers: ReceiverProfile[] = [];
       
+      const variations = [paraType, paraType.replace(' ', '-'), paraType.replace('-', ' ')];
+      if (paraType === 'এসএফআই') variations.push('SFI', 'sfi');
+      else if (paraType.includes('নন')) variations.push('NON-SFI', 'non-sfi', 'Non-SFI');
+      const uniqueVariations = Array.from(new Set(variations));
+
       // 1. Fetch from receivers table
       let supabaseError = null;
       if (isSupabaseConfigured) {
         const { data: dbReceivers, error: dbError } = await supabase
           .from('receivers')
           .select('*')
-          .in('para_type', [paraType, paraType.replace(' ', '-'), paraType.replace('-', ' ')])
+          .in('para_type', uniqueVariations)
           .order('name', { ascending: true });
 
         if (dbError) {
@@ -71,10 +76,12 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
       // 2. Fetch unique names from correspondence entries to ensure they are listed
       let correspondenceNames: string[] = [];
       if (isSupabaseConfigured) {
-        // Query settlement_entries for receiverName in content
+        // Query settlement_entries for receiverName in content with server-side filtering
         const { data: entries, error: entriesError } = await supabase
           .from('settlement_entries')
-          .select('content');
+          .select('content')
+          .not('content->>receiverName', 'is', null)
+          .filter('content->>paraType', 'in', `(${uniqueVariations.map(v => `"${v}"`).join(',')})`);
         
         if (!entriesError && entries) {
           entries.forEach(row => {
@@ -84,13 +91,10 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
             }
             if (!content) return;
             
-            const isCorr = content.type === 'correspondence' || content.description !== undefined;
-            // Normalize paraType check
-            const entryPara = content.paraType?.replace('-', ' ');
-            const currentPara = paraType.replace('-', ' ');
-            const matchesPara = entryPara === currentPara;
+            // Only include if it's explicitly a correspondence entry
+            const isCorr = content.type === 'correspondence';
             
-            if (isCorr && matchesPara && content.receiverName) {
+            if (isCorr && content.receiverName) {
               correspondenceNames.push(content.receiverName);
             }
           });
@@ -245,10 +249,16 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin }) => {
     let hasCorrespondence = false;
     try {
       if (isSupabaseConfigured) {
+        const variations = [paraType, paraType.replace(' ', '-'), paraType.replace('-', ' ')];
+        if (paraType === 'এসএফআই') variations.push('SFI', 'sfi');
+        else if (paraType.includes('নন')) variations.push('NON-SFI', 'non-sfi', 'Non-SFI');
+        const uniqueVariations = Array.from(new Set(variations));
+
         const { data, error } = await supabase
           .from('settlement_entries')
           .select('id')
           .filter('content->>receiverName', 'eq', receiverToDelete.name)
+          .filter('content->>paraType', 'in', `(${uniqueVariations.map(v => `"${v}"`).join(',')})`)
           .limit(1);
         
         if (!error && data && data.length > 0) {
