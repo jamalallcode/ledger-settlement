@@ -100,6 +100,33 @@ export interface SettlementEntry {
   userEmail?: string | null;
 }
 
+export interface CorrespondenceEntry {
+  id: string;
+  description: string;
+  paraType: string;
+  letterType: string;
+  letterNo: string;
+  letterDate: string;
+  totalParas: string;
+  totalAmount: string;
+  diaryNo: string;
+  diaryDate: string;
+  receiptDate: string;
+  digitalFileNo: string;
+  presentationDate: string;
+  presentedToName?: string;
+  sentParaCount: string;
+  receiverName: string;
+  receivedDate: string;
+  isOnline: string;
+  issueLetterNo: string;
+  issueLetterDate: string;
+  remarks?: string;
+  createdAt: string;
+  approvalStatus?: 'approved' | 'pending';
+  type?: string;
+}
+
 export interface GroupOption {
   label: string;
   options: string[];

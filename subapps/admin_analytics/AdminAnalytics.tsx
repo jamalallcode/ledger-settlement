@@ -112,6 +112,13 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
         
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-start gap-8">
           <div className="flex items-center gap-4 shrink-0">
+            <button 
+              onClick={onBack}
+              className="group/back flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all active:scale-95 border border-slate-200 shadow-sm"
+            >
+              <ChevronLeft size={18} className="group-hover/back:-translate-x-0.5 transition-transform" />
+              <span className="text-xs font-black uppercase tracking-wider">ড্যাশবোর্ড</span>
+            </button>
             <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-blue-500/20 border border-white/10 group-hover:scale-105 transition-transform duration-500">
               <BarChart3 size={28} className="text-white" />
             </div>

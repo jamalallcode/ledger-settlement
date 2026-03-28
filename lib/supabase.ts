@@ -68,12 +68,17 @@ const createMockClient = () => {
         'from', 'select', 'eq', 'neq', 'gt', 'lt', 'gte', 'lte', 'like', 'ilike', 
         'is', 'in', 'contains', 'containedBy', 'range', 'textSearch', 'match', 
         'not', 'or', 'filter', 'order', 'limit', 'single', 'maybeSingle', 
-        'insert', 'update', 'upsert', 'delete', 'rpc'
+        'insert', 'update', 'upsert', 'delete', 'rpc', 'channel', 'on'
       ];
       
       if (chainableMethods.includes(prop as string)) {
         return chainable;
       }
+
+      if (prop === 'subscribe') {
+        return () => ({ unsubscribe: () => {} });
+      }
+      
       return target[prop];
     }
   };

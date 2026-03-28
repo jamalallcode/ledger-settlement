@@ -548,7 +548,11 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                   <button 
                     type="button"
-                    onClick={() => signInWithGoogle()}
+                    onClick={() => {
+                      console.log("Calling signInWithGoogle from Sidebar");
+                      window.alert("Calling signInWithGoogle from Sidebar");
+                      signInWithGoogle();
+                    }}
                     className="w-full flex items-center justify-center gap-3 py-3.5 bg-white text-slate-900 rounded-2xl font-black text-xs hover:bg-slate-100 transition-all active:scale-95 shadow-xl shadow-white/5"
                   >
                     <Chrome size={18} className="text-blue-600" />
