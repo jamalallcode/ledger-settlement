@@ -6,6 +6,7 @@ import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants';
 import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles } from 'lucide-react';
 import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
 import { getCycleForDate } from '../utils/cycleHelper';
+import { isSFI, isNonSFI } from '../utils/branchUtils';
 import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
 import CorrespondenceDhakaReturn from './CorrespondenceDhakaReturn';
 import OpeningBalanceSetup from './OpeningBalanceSetup';
@@ -114,7 +115,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   };
 
   const calculateRecursiveOpening = (entityName: string, cycleStart: Date, paraType: 'এসএফআই' | 'নন এসএফআই' = 'এসএফআই') => {
-    const baseMap = paraType === 'এসএফআই' ? prevStats.entitiesSFI : prevStats.entitiesNonSFI;
+    const baseMap = isSFI(paraType) ? prevStats.entitiesSFI : prevStats.entitiesNonSFI;
     const base = baseMap[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
     const cycleStartStr = dateFnsFormat(cycleStart, 'yyyy-MM-dd');
     const activeLabelCanon = toEnglishDigits(activeCycle.label).trim();

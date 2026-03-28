@@ -33,6 +33,7 @@ import {
   LayoutGrid,
   CalendarDays,
 } from "lucide-react";
+import { isSFI, isNonSFI } from "../utils/branchUtils";
 import {
   toBengaliDigits,
   parseBengaliNumber,
@@ -503,8 +504,22 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             );
           })();
 
-        const matchBranch =
-          !filterParaType || entry.paraType === filterParaType;
+        const matchBranch = (() => {
+          if (!filterParaType) return true;
+          if (!entry.paraType) return false;
+          
+          if (isSFI(filterParaType)) {
+            return isSFI(entry.paraType);
+          }
+          
+          if (isNonSFI(filterParaType)) {
+            return isNonSFI(entry.paraType);
+          }
+          
+          const variations = [filterParaType, filterParaType.replace(' ', '-'), filterParaType.replace('-', ' ')];
+          const normalizedEntryPara = entry.paraType.trim();
+          return variations.some(v => normalizedEntryPara === v);
+        })();
         const matchType = !filterType || entry.letterType === filterType;
 
         let matchCycle = true;
@@ -530,8 +545,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
   const stats = useMemo(() => {
     const total = filteredEntries.length;
-    const sfi = filteredEntries.filter((e) => e.paraType === "এসএফআই");
-    const nonSfi = filteredEntries.filter((e) => e.paraType === "নন এসএফআই");
+
+    const sfi = filteredEntries.filter((e) => isSFI(e.paraType));
+    const nonSfi = filteredEntries.filter((e) => isNonSFI(e.paraType));
 
     const getLetterTypeCount = (list: CorrespondenceEntry[], type: string) =>
       list.filter((e) => e.letterType === type).length;
@@ -579,8 +595,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
     const statsMap: Record<string, any> = {};
     groupsList.forEach((group) => {
-      const sfi = group.entries.filter((e) => e.paraType === "এসএফআই");
-      const nonSfi = group.entries.filter((e) => e.paraType === "নন এসএফআই");
+      const sfi = group.entries.filter((e) => isSFI(e.paraType));
+      const nonSfi = group.entries.filter((e) => isNonSFI(e.paraType));
       const getCount = (list: CorrespondenceEntry[], type: string) =>
         list.filter((e) => e.letterType === type).length;
 

@@ -57,6 +57,18 @@ interface SettlementTableProps {
   onClearHighlight?: () => void;
 }
 
+const isSFI = (type: string) => {
+  if (!type) return false;
+  const t = type.trim();
+  return t === 'এসএফআই' || t === 'SFI' || t === 'sfi' || t === 'এস-এফ-আই' || t === 'এস এফ আই';
+};
+
+const isNonSFI = (type: string) => {
+  if (!type) return false;
+  const t = type.trim();
+  return t.includes('নন') || t.toUpperCase().includes('NON-SFI');
+};
+
 const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
   (
     {
@@ -316,8 +328,17 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
 
           const entryType = entry.isMeeting ? entry.meetingType : "বিএসআর";
           const matchType = filterType === "" || entryType === filterType;
-          const matchParaType =
-            filterParaType === "" || entry.paraType === filterParaType;
+          const matchParaType = (() => {
+            if (filterParaType === "") return true;
+            if (!entry.paraType) return false;
+            
+            const variations = [filterParaType, filterParaType.replace(' ', '-'), filterParaType.replace('-', ' ')];
+            if (filterParaType === 'এসএফআই') variations.push('SFI', 'sfi', 'এস-এফ-আই', 'এস এফ আই');
+            else if (filterParaType.includes('নন')) variations.push('NON-SFI', 'non-sfi', 'Non-SFI', 'নন-এসএফআই', 'নন-এস-এফ-আই', 'নন এস এফ আই');
+            
+            const normalizedEntryPara = entry.paraType.trim();
+            return variations.some(v => normalizedEntryPara === v);
+          })();
 
           const hasSettled = entry.paragraphs?.some(
             (p) => p.status === "পূর্ণাঙ্গ",
@@ -414,9 +435,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
       const statsMap: Record<string, any> = {};
       groupsList.forEach((group) => {
         const totalLetters = group.entries.length;
-        const sfiEntries = group.entries.filter((e) => e.paraType === "এসএফআই");
+        const sfiEntries = group.entries.filter((e) => isSFI(e.paraType));
         const nonSfiEntries = group.entries.filter(
-          (e) => e.paraType === "নন এসএফআই",
+          (e) => isNonSFI(e.paraType),
         );
         const sfiBSR = sfiEntries.filter(
           (e) => !e.isMeeting || e.meetingType === "বিএসআর",

@@ -9,6 +9,7 @@ import { getCycleForDate } from '../utils/cycleHelper';
 import { getDateError } from '../utils/dateValidation';
 import { SFI_RECEIVERS } from '../utils/sfi';
 import { NONSFI_RECEIVERS } from '../utils/nonsfi';
+import { isSFI, isNonSFI, getBranchVariations } from '../utils/branchUtils';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 /**
@@ -462,6 +463,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     const loadReceivers = async () => {
       try {
         let finalReceivers: any[] = [];
+        
+        const uniqueVariations = getBranchVariations(formData.paraType);
+
         let supabaseError = null;
         
         // 1. Fetch from receivers table
@@ -469,7 +473,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           const { data, error } = await supabase
             .from('receivers')
             .select('*')
-            .in('para_type', [formData.paraType, formData.paraType.replace(' ', '-'), formData.paraType.replace('-', ' ')])
+            .in('para_type', uniqueVariations)
             .order('name', { ascending: true });
 
           if (error) {
@@ -482,7 +486,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
         // If Supabase failed or is not configured, try LocalStorage
         if (!isSupabaseConfigured || supabaseError || finalReceivers.length === 0) {
-          const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+          const key = isSFI(formData.paraType) ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
           const savedNames = localStorage.getItem(key);
           if (savedNames) {
             try {
@@ -507,9 +511,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
         
         if (isSupabaseConfigured) {
+          // Query settlement_entries for receiverName in content with server-side filtering
           const { data: entries, error: entriesError } = await supabase
             .from('settlement_entries')
-            .select('content');
+            .select('content')
+            .not('content->>receiverName', 'is', null)
+            .filter('content->>paraType', 'in', `(${uniqueVariations.map(v => `"${v}"`).join(',')})`);
           
           if (!entriesError && entries) {
             entries.forEach(row => {
@@ -519,14 +526,13 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               }
               if (!content) return;
               
-              const isCorr = content.type === 'correspondence' || content.description !== undefined;
-              // Normalize paraType check
-              const entryPara = content.paraType?.replace('-', ' ');
-              const currentPara = formData.paraType.replace('-', ' ');
-              const matchesPara = entryPara === currentPara;
+              // Robust check for correspondence: either has type 'correspondence' or has a description (which only letters have)
+              const isCorr = content.type === 'correspondence' || 
+                            (content.description !== undefined && content.description !== null && content.description !== '');
               
-              if (isCorr && matchesPara && content.receiverName) {
-                correspondenceNames.push(content.receiverName);
+              if (isCorr && content.receiverName) {
+                const trimmedName = content.receiverName.trim();
+                if (trimmedName) correspondenceNames.push(trimmedName);
               }
             });
           }
@@ -562,7 +568,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
       } catch (err) {
         console.error('Error loading receivers:', err);
-        const initialList = formData.paraType === 'এসএফআই' ? SFI_RECEIVERS : NONSFI_RECEIVERS;
+        const initialList = isSFI(formData.paraType) ? SFI_RECEIVERS : NONSFI_RECEIVERS;
         setReceiverSuggestions(initialList.map(name => ({ name, designation: 'অডিটর' })));
       }
     };
@@ -689,7 +695,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
   useEffect(() => {
     if (formData.archiveNo) {
-      const prefix = formData.paraType === 'এসএফআই' ? 'ka- ' : 'kg- ';
+      const prefix = isSFI(formData.paraType) ? 'ka- ' : 'kg- ';
       const rawValue = formData.archiveNo.replace(/^ka-\s*/, '').replace(/^kg-\s*/, '');
       setFormData(prev => ({ ...prev, archiveNo: prefix + rawValue }));
     }
@@ -752,7 +758,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           const { error } = await supabase.from('receivers').insert([profileData]);
           if (error) throw error;
         } else {
-          const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+          const key = isSFI(formData.paraType) ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
           const updated = [...receiverSuggestions, profileData];
           setReceiverSuggestions(updated);
           localStorage.setItem(key, JSON.stringify(updated));
@@ -787,7 +793,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             .eq('id', receiverSuggestions[idx].id);
           if (error) throw error;
         } else {
-          const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+          const key = isSFI(formData.paraType) ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
           const updated = [...receiverSuggestions];
           updated[idx] = profileData;
           setReceiverSuggestions(updated);
@@ -841,7 +847,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           .eq('id', profileToDelete.id);
         if (error) throw error;
       } else {
-        const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+        const key = isSFI(formData.paraType) ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
         const updated = receiverSuggestions.filter((_, i) => i !== idx);
         setReceiverSuggestions(updated);
         localStorage.setItem(key, JSON.stringify(updated));

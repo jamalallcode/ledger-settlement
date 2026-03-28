@@ -586,6 +586,13 @@ const App: React.FC = () => {
     }
   };
 
+  const handleViewEntries = (name: string, type: 'settlement' | 'correspondence') => {
+    setRegisterSubModule(type);
+    setActiveTab('register');
+    setHighlightSearch(name);
+    setShowRegisterFilters(true);
+  };
+
   const approvedEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'approved' || !e.approvalStatus), [entries]);
   const approvedCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'approved' || !e.approvalStatus), [correspondenceEntries]);
   
@@ -687,8 +694,11 @@ const App: React.FC = () => {
             <div className="animate-in fade-in duration-500 flex-1">
               
               {activeTab === 'setup_receivers' && (
-            <ReceiverManagement isAdmin={isAdmin} />
-          )}
+                <ReceiverManagement 
+                  isAdmin={isAdmin} 
+                  onViewEntries={handleViewEntries}
+                />
+              )}
 
           {activeTab === 'landing' && (
                 <LandingPage 
