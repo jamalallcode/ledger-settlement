@@ -165,23 +165,25 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
               const isCorr = entry.type === 'correspondence' || 
                             (entry.description !== undefined && entry.description !== null && entry.description !== '');
               
-              if (isCorr && entry.receiverName) {
+              if (isCorr && entry.receiverName && entryPara === currentPara) {
                 const originalName = entry.receiverName.trim();
                 const normalizedName = normalizeName(originalName);
-                if (!entryCounts[normalizedName]) {
-                  entryCounts[normalizedName] = 0;
-                  entryDetails[normalizedName] = [];
-                  if (!correspondenceNames.some(cn => normalizeName(cn) === normalizedName)) {
-                    correspondenceNames.push(originalName);
+                if (normalizedName) {
+                  if (!entryCounts[normalizedName]) {
+                    entryCounts[normalizedName] = 0;
+                    entryDetails[normalizedName] = [];
+                    if (!correspondenceNames.some(cn => normalizeName(cn) === normalizedName)) {
+                      correspondenceNames.push(originalName);
+                    }
                   }
+                  entryCounts[normalizedName]++;
+                  entryDetails[normalizedName].push({
+                    id: entry.id,
+                    diaryNo: entry.diaryNo,
+                    diaryDate: entry.diaryDate,
+                    letterNo: entry.letterNo
+                  });
                 }
-                entryCounts[normalizedName]++;
-                entryDetails[normalizedName].push({
-                  id: entry.id,
-                  diaryNo: entry.diaryNo,
-                  diaryDate: entry.diaryDate,
-                  letterNo: entry.letterNo
-                });
               }
             });
           } catch (e) { console.error(e); }
@@ -216,7 +218,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
         }
       });
 
-      // 4. Attach counts and sort final list
+      // 4. Attach counts and filter out those with 0 entries if they are local/correspondence
       const receiversWithCounts = finalReceivers.map(r => {
         const name = r.name || '';
         const normalizedName = normalizeName(name);
@@ -226,6 +228,13 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
           entryCount: entryCounts[normalizedName] || 0,
           entryDetails: entryDetails[normalizedName] || []
         };
+      }).filter(r => {
+        // Keep if it's from database (Saved in master list)
+        if (r.source === 'database') return true;
+        // Keep if it has entries
+        if (r.entryCount > 0) return true;
+        // Otherwise, filter out (for local and correspondence sources)
+        return false;
       });
 
       receiversWithCounts.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
