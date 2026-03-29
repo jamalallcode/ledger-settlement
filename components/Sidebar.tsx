@@ -62,7 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [adminPassword, setAdminPassword] = useState('');
   const [recoveryAnswer, setRecoveryAnswer] = useState('');
   const [recoveredPassword, setRecoveredPassword] = useState<string | null>(null);
-  const [storedPassword, setStoredPassword] = useState('123');
+  const [storedPassword, setStoredPassword] = useState('80093424LEdg@');
   const [storedRecoveryQuestion, setStoredRecoveryQuestion] = useState('আপনার প্রিয় রং কি?');
   const [storedRecoveryAnswer, setStoredRecoveryAnswer] = useState('সাদা');
   

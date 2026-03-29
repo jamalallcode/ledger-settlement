@@ -12,7 +12,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
   const [newQuestion, setNewQuestion] = useState('');
   const [newAnswer, setNewAnswer] = useState('');
   
-  const [storedPassword, setStoredPassword] = useState('123');
+  const [storedPassword, setStoredPassword] = useState('80093424LEdg@');
   const [storedRecoveryQuestion, setStoredRecoveryQuestion] = useState('আপনার প্রিয় রং কি?');
   const [storedRecoveryAnswer, setStoredRecoveryAnswer] = useState('সাদা');
 
