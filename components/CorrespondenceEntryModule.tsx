@@ -463,12 +463,20 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     const loadReceivers = async () => {
       try {
         let finalReceivers: any[] = [];
-        
         const uniqueVariations = getBranchVariations(formData.paraType);
-
         let supabaseError = null;
-        
-        // 1. Fetch from receivers table
+
+        const normalizeName = (name: string | null | undefined) => {
+          if (!name) return '';
+          return name
+            .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '') // Remove all possible invisible characters and non-breaking spaces
+            .trim()
+            .replace(/\s+/g, ' ')                  // Normalize internal whitespace to a single space
+            .replace(/[:ঃ।\.\-]/g, '')             // Remove punctuation for comparison
+            .normalize('NFC');                     // Normalize Unicode to canonical form
+        };
+
+        // 1. Fetch from receivers table (Current Branch)
         if (isSupabaseConfigured) {
           const { data, error } = await supabase
             .from('receivers')
@@ -481,6 +489,20 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             supabaseError = error;
           } else {
             finalReceivers = data || [];
+          }
+        }
+
+        // 2. Fetch ALL receivers to build a Global Master List of names
+        const globalSavedNames = new Map<string, any>();
+        if (isSupabaseConfigured) {
+          const { data: allData, error: allError } = await supabase
+            .from('receivers')
+            .select('*');
+          if (!allError && allData) {
+            allData.forEach(r => {
+              const norm = normalizeName(r.name);
+              if (norm) globalSavedNames.set(norm, { ...r, source: 'database' });
+            });
           }
         }
 
@@ -552,18 +574,25 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           }
         }
 
-        // 3. Merge unique names from correspondence into finalReceivers if they don't exist
-        const uniqueCorrNames = Array.from(new Set(correspondenceNames));
-        const existingNames = new Set(finalReceivers.map(r => r.name));
+        // 4. Merge unique names from correspondence into finalReceivers if they don't exist
+        const existingNormalizedNames = new Set(finalReceivers.map(r => normalizeName(r.name)));
         
-        uniqueCorrNames.forEach(name => {
-          if (!existingNames.has(name)) {
-            finalReceivers.push({ name, designation: 'অডিটর' });
+        correspondenceNames.forEach(name => {
+          const originalName = name.trim();
+          const normalizedName = normalizeName(originalName);
+          if (normalizedName && !existingNormalizedNames.has(normalizedName)) {
+            const globalMatch = globalSavedNames.get(normalizedName);
+            if (globalMatch) {
+              finalReceivers.push({ ...globalMatch, source: 'database' });
+            } else {
+              finalReceivers.push({ name: originalName, designation: 'অডিটর', source: 'correspondence' });
+            }
+            existingNormalizedNames.add(normalizedName);
           }
         });
 
         // 4. Sort final list
-        finalReceivers.sort((a, b) => a.name.localeCompare(b.name));
+        finalReceivers.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         setReceiverSuggestions(finalReceivers);
 
       } catch (err) {
