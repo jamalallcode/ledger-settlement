@@ -469,6 +469,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         const isNumericSearch = /^\d+$/.test(normalizedSearch);
         const matchSearch =
           !searchTerm ||
+          (searchTerm === "__UNASSIGNED__" ? !entry.receiverName || entry.receiverName.trim() === "" : 
           (() => {
             const engLetter = toEnglishDigits(
               entry.letterNo.toLowerCase(),
@@ -502,7 +503,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
               isReceiverMatch ||
               isRemarksMatch
             );
-          })();
+          })());
 
         const matchBranch = (() => {
           if (!filterParaType) return true;
@@ -1161,8 +1162,18 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
             {/* Search Input */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">
-                অনুসন্ধান
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center justify-between">
+                <span>অনুসন্ধান</span>
+                <button 
+                  onClick={() => setSearchTerm(searchTerm === "__UNASSIGNED__" ? "" : "__UNASSIGNED__")}
+                  className={`text-[9px] px-2 py-0.5 rounded-full border transition-all ${
+                    searchTerm === "__UNASSIGNED__" 
+                      ? "bg-red-100 text-red-700 border-red-200" 
+                      : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100"
+                  }`}
+                >
+                  {searchTerm === "__UNASSIGNED__" ? "অনির্ধারিত ফিল্টার বন্ধ করুন" : "অনির্ধারিত এন্ট্রি খুঁজুন"}
+                </button>
               </label>
               <div className="relative">
                 <Search
@@ -1171,10 +1182,14 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                 />
                 <input
                   type="text"
-                  value={searchTerm}
+                  value={searchTerm === "__UNASSIGNED__" ? "অনির্ধারিত এন্ট্রি" : searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="বিবরণ, জারিপত্র বা নং দিয়ে খুঁজুন..."
-                  className="w-full pl-9 pr-4 h-[48px] bg-white border border-slate-300 rounded-xl font-bold text-slate-900 text-[13px] outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold"
+                  className={`w-full pl-9 pr-4 h-[48px] bg-white border rounded-xl font-bold text-[13px] outline-none focus:ring-4 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold ${
+                    searchTerm === "__UNASSIGNED__"
+                      ? "border-red-300 text-red-700 focus:border-red-600 focus:ring-red-50"
+                      : "border-slate-300 text-slate-900 focus:border-blue-600 focus:ring-blue-50"
+                  }`}
                 />
               </div>
             </div>

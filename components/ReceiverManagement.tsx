@@ -18,7 +18,7 @@ interface ReceiverProfile {
   para_type?: string;
   entryCount?: number;
   entryDetails?: any[];
-  source?: 'database' | 'local' | 'correspondence';
+  source?: 'database' | 'local' | 'correspondence' | 'unassigned';
 }
 
 const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
@@ -110,13 +110,13 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
       let correspondenceNames: string[] = [];
       let entryCounts: Record<string, number> = {};
       let entryDetails: Record<string, any[]> = {};
+      let unassignedEntries: any[] = [];
 
       if (isSupabaseConfigured) {
         // Query settlement_entries for receiverName in content with server-side filtering
         const { data: entries, error: entriesError } = await supabase
           .from('settlement_entries')
           .select('id, content')
-          .not('content->>receiverName', 'is', null)
           .filter('content->>paraType', 'in', `(${uniqueVariations.map(v => `"${v}"`).join(',')})`);
         
         if (!entriesError && entries) {
@@ -131,20 +131,30 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
             const isCorr = content.type === 'correspondence' || 
                           (content.description !== undefined && content.description !== null && content.description !== '');
             
-            if (isCorr && content.receiverName) {
-              const originalName = content.receiverName.trim();
-              const normalizedName = normalizeName(originalName);
-              if (normalizedName) {
-                if (!entryCounts[normalizedName]) {
-                  entryCounts[normalizedName] = 0;
-                  entryDetails[normalizedName] = [];
-                  // Store original name for display if we need to create a new profile
-                  if (!correspondenceNames.some(cn => normalizeName(cn) === normalizedName)) {
-                    correspondenceNames.push(originalName);
+            if (isCorr) {
+              if (content.receiverName && content.receiverName.trim()) {
+                const originalName = content.receiverName.trim();
+                const normalizedName = normalizeName(originalName);
+                if (normalizedName) {
+                  if (!entryCounts[normalizedName]) {
+                    entryCounts[normalizedName] = 0;
+                    entryDetails[normalizedName] = [];
+                    // Store original name for display if we need to create a new profile
+                    if (!correspondenceNames.some(cn => normalizeName(cn) === normalizedName)) {
+                      correspondenceNames.push(originalName);
+                    }
                   }
+                  entryCounts[normalizedName]++;
+                  entryDetails[normalizedName].push({
+                    id: row.id,
+                    diaryNo: content.diaryNo,
+                    diaryDate: content.diaryDate,
+                    letterNo: content.letterNo
+                  });
                 }
-                entryCounts[normalizedName]++;
-                entryDetails[normalizedName].push({
+              } else {
+                // Unassigned entry
+                unassignedEntries.push({
                   id: row.id,
                   diaryNo: content.diaryNo,
                   diaryDate: content.diaryDate,
@@ -165,19 +175,29 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
               const isCorr = entry.type === 'correspondence' || 
                             (entry.description !== undefined && entry.description !== null && entry.description !== '');
               
-              if (isCorr && entry.receiverName && entryPara === currentPara) {
-                const originalName = entry.receiverName.trim();
-                const normalizedName = normalizeName(originalName);
-                if (normalizedName) {
-                  if (!entryCounts[normalizedName]) {
-                    entryCounts[normalizedName] = 0;
-                    entryDetails[normalizedName] = [];
-                    if (!correspondenceNames.some(cn => normalizeName(cn) === normalizedName)) {
-                      correspondenceNames.push(originalName);
+              if (isCorr && entryPara === currentPara) {
+                if (entry.receiverName && entry.receiverName.trim()) {
+                  const originalName = entry.receiverName.trim();
+                  const normalizedName = normalizeName(originalName);
+                  if (normalizedName) {
+                    if (!entryCounts[normalizedName]) {
+                      entryCounts[normalizedName] = 0;
+                      entryDetails[normalizedName] = [];
+                      if (!correspondenceNames.some(cn => normalizeName(cn) === normalizedName)) {
+                        correspondenceNames.push(originalName);
+                      }
                     }
+                    entryCounts[normalizedName]++;
+                    entryDetails[normalizedName].push({
+                      id: entry.id,
+                      diaryNo: entry.diaryNo,
+                      diaryDate: entry.diaryDate,
+                      letterNo: entry.letterNo
+                    });
                   }
-                  entryCounts[normalizedName]++;
-                  entryDetails[normalizedName].push({
+                } else {
+                  // Unassigned entry
+                  unassignedEntries.push({
                     id: entry.id,
                     diaryNo: entry.diaryNo,
                     diaryDate: entry.diaryDate,
@@ -238,6 +258,17 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
       });
 
       receiversWithCounts.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+      if (unassignedEntries.length > 0) {
+        receiversWithCounts.unshift({
+          name: 'অনির্ধারিত এন্ট্রি',
+          designation: 'প্রাপকের নাম নেই',
+          entryCount: unassignedEntries.length,
+          entryDetails: unassignedEntries,
+          source: 'unassigned'
+        });
+      }
+
       setReceivers(receiversWithCounts);
 
     } catch (err) {
@@ -522,10 +553,12 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
                         <span className={`px-2 py-0.5 text-[8px] font-black rounded-full border ${
                           profile.source === 'database' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                           profile.source === 'local' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                          profile.source === 'unassigned' ? 'bg-red-50 text-red-600 border-red-100' :
                           'bg-slate-100 text-slate-500 border-slate-200'
                         }`}>
                           {profile.source === 'database' ? 'সংরক্ষিত' : 
-                           profile.source === 'local' ? 'ব্রাউজারে' : 'চিঠিপত্র থেকে'}
+                           profile.source === 'local' ? 'ব্রাউজারে' : 
+                           profile.source === 'unassigned' ? 'অনির্ধারিত' : 'চিঠিপত্র থেকে'}
                         </span>
                         {profile.source === 'correspondence' && isAdmin && (
                           <button 
@@ -562,14 +595,14 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     {profile.entryCount !== undefined && profile.entryCount > 0 && onViewEntries && (
                       <button 
-                        onClick={() => onViewEntries(profile.name, 'correspondence')}
+                        onClick={() => onViewEntries(profile.name === 'অনির্ধারিত এন্ট্রি' ? '__UNASSIGNED__' : profile.name, 'correspondence')}
                         className="p-2 bg-white text-emerald-600 border border-emerald-100 rounded-xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
                         title="এন্ট্রিগুলো দেখুন"
                       >
                         <FileText size={16} />
                       </button>
                     )}
-                    {isAdmin && (
+                    {isAdmin && profile.source !== 'unassigned' && (
                       <>
                         <button 
                           onClick={() => {
