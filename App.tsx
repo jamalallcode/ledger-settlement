@@ -103,9 +103,9 @@ const App: React.FC = () => {
 
   const mainScrollRef = useRef<HTMLElement>(null);
 
-  const handleTabChange = (tab: string, subModule?: 'settlement' | 'correspondence', rType?: string) => {
-    console.log("handleTabChange called with tab:", tab, "subModule:", subModule, "rType:", rType);
-    if (tab === activeTab && !subModule && !rType) setResetKey(prev => prev + 1);
+  const handleTabChange = (tab: string, subModule?: 'settlement' | 'correspondence', rType?: string, searchTerm?: string) => {
+    console.log("handleTabChange called with tab:", tab, "subModule:", subModule, "rType:", rType, "searchTerm:", searchTerm);
+    if (tab === activeTab && !subModule && !rType && !searchTerm) setResetKey(prev => prev + 1);
     else { 
       setActiveTab(tab); 
       setResetKey(0); 
@@ -121,8 +121,15 @@ const App: React.FC = () => {
     // Handle Direct Register Modules
     if (tab === 'register') {
       setRegisterSubModule(subModule || 'correspondence');
+      if (searchTerm) {
+        setHighlightSearch(searchTerm);
+        setShowRegisterFilters(true);
+      } else {
+        setHighlightSearch(null);
+      }
     } else {
       setRegisterSubModule(null);
+      setHighlightSearch(null);
     }
 
     // Handle Direct Report Selection
@@ -668,6 +675,7 @@ const App: React.FC = () => {
             entryModule={entryModule}
             registerSubModule={registerSubModule}
             reportType={reportType}
+            highlightSearch={highlightSearch}
             moduleVisibility={moduleVisibility}
           />
         </div>

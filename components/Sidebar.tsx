@@ -6,7 +6,7 @@ import { ModuleVisibility } from '../types';
 
 interface SidebarProps {
   activeTab: string;
-  setActiveTab: (tab: string, subModule?: any, reportType?: string) => void;
+  setActiveTab: (tab: string, subModule?: any, reportType?: string, searchTerm?: string) => void;
   onToggleVisibility?: () => void;
   onDemoLoad?: () => void;
   isLockedMode: boolean;
@@ -21,6 +21,7 @@ interface SidebarProps {
   entryModule?: 'settlement' | 'correspondence' | null;
   registerSubModule?: 'settlement' | 'correspondence' | null;
   reportType?: string | null;
+  highlightSearch?: string | null;
   onOpenChangePassword?: () => void;
   moduleVisibility?: ModuleVisibility;
 }
@@ -43,6 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   entryModule,
   registerSubModule,
   reportType,
+  highlightSearch,
   moduleVisibility = {
     entry: true,
     register: true,
@@ -276,6 +278,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                         className={getSubItemCls(activeTab === 'register' && registerSubModule === 'settlement')}
                       >
                         <span>মীমাংসিত রেজি:</span>
+                      </button>
+                      <button 
+                        onClick={() => setActiveTab('register', 'correspondence', undefined, '__UNASSIGNED__')}
+                        className={getSubItemCls(activeTab === 'register' && registerSubModule === 'correspondence' && highlightSearch === '__UNASSIGNED__')}
+                      >
+                        <span>অনির্ধারিত এন্ট্রি</span>
                       </button>
                     </div>
                   )}
