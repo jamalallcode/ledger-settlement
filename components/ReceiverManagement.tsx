@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Plus, FileEdit, Trash, X, ShieldCheck, Sparkles, AlertCircle, Loader2, FileText } from 'lucide-react';
+import { User, Plus, FileEdit, Trash, X, ShieldCheck, Sparkles, AlertCircle, Loader2, FileText, Check } from 'lucide-react';
 import { SFI_RECEIVERS } from '../utils/sfi';
 import { NONSFI_RECEIVERS } from '../utils/nonsfi';
 import { isSFI, isNonSFI, getBranchVariations } from '../utils/branchUtils';
@@ -41,7 +41,17 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
       
       const uniqueVariations = getBranchVariations(paraType);
 
-      // 1. Fetch from receivers table
+      const normalizeName = (name: string | null | undefined) => {
+        if (!name) return '';
+        return name
+          .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '') // Remove all possible invisible characters and non-breaking spaces
+          .trim()
+          .replace(/\s+/g, ' ')                  // Normalize internal whitespace to a single space
+          .replace(/[:ঃ।\.\-]/g, '')             // Remove punctuation for comparison (colon, visarga, dari, dot, dash)
+          .normalize('NFC');                     // Normalize Unicode to canonical form
+      };
+
+      // 1. Fetch from receivers table (Current Branch)
       let supabaseError = null;
       if (isSupabaseConfigured) {
         const { data: dbReceivers, error: dbError } = await supabase
@@ -62,6 +72,21 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
         }
       }
 
+      // 2. Fetch ALL receivers to build a Global Master List of names
+      // This ensures that if a receiver is "Saved" in ANY branch, they show as "Saved" everywhere
+      const globalSavedNames = new Map<string, any>();
+      if (isSupabaseConfigured) {
+        const { data: allData, error: allError } = await supabase
+          .from('receivers')
+          .select('*');
+        if (!allError && allData) {
+          allData.forEach(r => {
+            const norm = normalizeName(r.name);
+            if (norm) globalSavedNames.set(norm, { ...r, source: 'database' });
+          });
+        }
+      }
+
       // If Supabase failed or is not configured, or to merge local items
       const key = isSFI(paraType) ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
       const saved = localStorage.getItem(key);
@@ -69,12 +94,13 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
         try {
           const localItems = JSON.parse(saved);
           const existingIds = new Set(finalReceivers.map(r => r.id));
-          const existingNames = new Set(finalReceivers.map(r => r.name));
+          const existingNormalizedNames = new Set(finalReceivers.map(r => normalizeName(r.name)));
           
           localItems.forEach((li: any) => {
-            const trimmedName = li.name ? li.name.trim() : '';
-            if (!existingIds.has(li.id) && !existingNames.has(trimmedName)) {
-              finalReceivers.push({ ...li, name: trimmedName, source: 'local' });
+            const normalizedName = normalizeName(li.name);
+            if (!existingIds.has(li.id) && !existingNormalizedNames.has(normalizedName)) {
+              finalReceivers.push({ ...li, source: 'local' });
+              existingNormalizedNames.add(normalizedName);
             }
           });
         } catch (e) { console.error('Error parsing local receivers:', e); }
@@ -106,17 +132,19 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
                           (content.description !== undefined && content.description !== null && content.description !== '');
             
             if (isCorr && content.receiverName) {
-              const trimmedName = content.receiverName.trim();
-              if (trimmedName) {
-                if (!entryCounts[trimmedName]) {
-                  entryCounts[trimmedName] = 0;
-                  entryDetails[trimmedName] = [];
-                  if (!correspondenceNames.includes(trimmedName)) {
-                    correspondenceNames.push(trimmedName);
+              const originalName = content.receiverName.trim();
+              const normalizedName = normalizeName(originalName);
+              if (normalizedName) {
+                if (!entryCounts[normalizedName]) {
+                  entryCounts[normalizedName] = 0;
+                  entryDetails[normalizedName] = [];
+                  // Store original name for display if we need to create a new profile
+                  if (!correspondenceNames.some(cn => normalizeName(cn) === normalizedName)) {
+                    correspondenceNames.push(originalName);
                   }
                 }
-                entryCounts[trimmedName]++;
-                entryDetails[trimmedName].push({
+                entryCounts[normalizedName]++;
+                entryDetails[normalizedName].push({
                   id: row.id,
                   diaryNo: content.diaryNo,
                   diaryDate: content.diaryDate,
@@ -134,17 +162,21 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
             entries.forEach((entry: any) => {
               const entryPara = entry.paraType?.replace('-', ' ');
               const currentPara = paraType.replace('-', ' ');
-              if (entryPara === currentPara && entry.receiverName) {
-                const trimmedName = entry.receiverName.trim();
-                if (!entryCounts[trimmedName]) {
-                  entryCounts[trimmedName] = 0;
-                  entryDetails[trimmedName] = [];
-                  if (!correspondenceNames.includes(trimmedName)) {
-                    correspondenceNames.push(trimmedName);
+              const isCorr = entry.type === 'correspondence' || 
+                            (entry.description !== undefined && entry.description !== null && entry.description !== '');
+              
+              if (isCorr && entry.receiverName) {
+                const originalName = entry.receiverName.trim();
+                const normalizedName = normalizeName(originalName);
+                if (!entryCounts[normalizedName]) {
+                  entryCounts[normalizedName] = 0;
+                  entryDetails[normalizedName] = [];
+                  if (!correspondenceNames.some(cn => normalizeName(cn) === normalizedName)) {
+                    correspondenceNames.push(originalName);
                   }
                 }
-                entryCounts[trimmedName]++;
-                entryDetails[trimmedName].push({
+                entryCounts[normalizedName]++;
+                entryDetails[normalizedName].push({
                   id: entry.id,
                   diaryNo: entry.diaryNo,
                   diaryDate: entry.diaryDate,
@@ -156,35 +188,47 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
         }
       }
 
-      // 3. Merge unique names from correspondence into finalReceivers if they don't exist
-      const uniqueCorrNames = Array.from(new Set(correspondenceNames));
-      const existingNames = new Set(finalReceivers.map(r => r.name));
+      // 4. Merge unique names from correspondence into finalReceivers if they don't exist
+      const existingNormalizedNames = new Set(finalReceivers.map(r => normalizeName(r.name)));
       
-      uniqueCorrNames.forEach(name => {
-        const trimmedName = name.trim();
-        if (!existingNames.has(trimmedName)) {
-          // User said "Recipient is always an Auditor"
-          finalReceivers.push({ 
-            name: trimmedName, 
-            para_type: paraType,
-            designation: 'অডিটর',
-            source: 'correspondence'
-          });
+      correspondenceNames.forEach(name => {
+        const originalName = name.trim();
+        const normalizedName = normalizeName(originalName);
+        if (normalizedName && !existingNormalizedNames.has(normalizedName)) {
+          // Check Global Master List for "Saved" status
+          const globalMatch = globalSavedNames.get(normalizedName);
+          if (globalMatch) {
+            finalReceivers.push({ 
+              ...globalMatch,
+              para_type: paraType, // Show them in this branch's list
+              source: 'database' 
+            });
+          } else {
+            // User said "Recipient is always an Auditor"
+            finalReceivers.push({ 
+              name: originalName, 
+              para_type: paraType,
+              designation: 'অডিটর',
+              source: 'correspondence'
+            });
+          }
+          existingNormalizedNames.add(normalizedName);
         }
       });
 
       // 4. Attach counts and sort final list
       const receiversWithCounts = finalReceivers.map(r => {
-        const trimmedName = r.name.trim();
+        const name = r.name || '';
+        const normalizedName = normalizeName(name);
         return {
           ...r,
-          name: trimmedName,
-          entryCount: entryCounts[trimmedName] || 0,
-          entryDetails: entryDetails[trimmedName] || []
+          name,
+          entryCount: entryCounts[normalizedName] || 0,
+          entryDetails: entryDetails[normalizedName] || []
         };
       });
 
-      receiversWithCounts.sort((a, b) => a.name.localeCompare(b.name));
+      receiversWithCounts.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
       setReceivers(receiversWithCounts);
 
     } catch (err) {
@@ -474,6 +518,32 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
                           {profile.source === 'database' ? 'সংরক্ষিত' : 
                            profile.source === 'local' ? 'ব্রাউজারে' : 'চিঠিপত্র থেকে'}
                         </span>
+                        {profile.source === 'correspondence' && isAdmin && (
+                          <button 
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                const { error } = await supabase
+                                  .from('receivers')
+                                  .insert([{ 
+                                    name: profile.name, 
+                                    designation: profile.designation || 'অডিটর', 
+                                    para_type: paraType 
+                                  }]);
+                                if (error) throw error;
+                                alert(`"${profile.name}" সফলভাবে মাস্টার লিস্টে সংরক্ষিত হয়েছে।`);
+                                fetchReceivers();
+                              } catch (err: any) {
+                                console.error('Error saving to master list:', err);
+                                alert('সংরক্ষণ করতে সমস্যা হয়েছে: ' + err.message);
+                              }
+                            }}
+                            className="p-1 bg-emerald-100 text-emerald-700 rounded-md hover:bg-emerald-200 transition-colors"
+                            title="মাস্টার লিস্টে সেভ করুন"
+                          >
+                            <Check size={10} />
+                          </button>
+                        )}
                       </div>
                       {profile.designation && (
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{profile.designation}</span>

@@ -37,6 +37,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '') // Remove all possible invisible characters and non-breaking spaces
       .trim()
       .replace(/\s+/g, ' ')                  // Normalize internal whitespace to a single space
+      .replace(/[:ঃ।\.\-]/g, '')             // Remove punctuation for comparison
       .normalize('NFC');                     // Normalize Unicode to canonical form
   };
 

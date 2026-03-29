@@ -209,7 +209,7 @@ const App: React.FC = () => {
     const handleAdminSync = (email?: string) => {
       console.log("handleAdminSync called with email:", email);
       setUserEmail(email || null);
-      const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com', 'emailaddress3424@gmail.com'];
+      const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com', 'emailaddress3424@gmail.com', 'commercialauditkhulna@gmail.com'];
       if (email && adminEmails.includes(email)) {
         console.log("User is admin based on email");
         setIsAdmin(true);
