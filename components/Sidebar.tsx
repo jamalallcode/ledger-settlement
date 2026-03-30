@@ -280,12 +280,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                       >
                         <span>মীমাংসিত রেজি:</span>
                       </button>
-                      <button 
-                        onClick={() => setActiveTab('register', 'correspondence', undefined, '__UNASSIGNED__')}
-                        className={getSubItemCls(activeTab === 'register' && registerSubModule === 'correspondence' && highlightSearch === '__UNASSIGNED__')}
-                      >
-                        <span>অনির্ধারিত এন্ট্রি</span>
-                      </button>
                     </div>
                   )}
 

@@ -14,7 +14,7 @@ interface AdminDashboardProps {
   entries: any[];
   correspondenceEntries: any[];
   pendingCount: number;
-  setActiveTab: (tab: string, subModule?: any, reportType?: string) => void;
+  setActiveTab: (tab: string, subModule?: any, reportType?: string, searchTerm?: string) => void;
   onOpenChangePassword: () => void;
   moduleVisibility: ModuleVisibility;
   setModuleVisibility: (val: ModuleVisibility) => void;
@@ -101,6 +101,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const quickActions = [
     { id: 'admin_analytics', label: 'অডিটর পারফরম্যান্স', icon: BarChart3, color: 'indigo', desc: 'অডিটরদের কাজের রিপোর্ট ও পরিসংখ্যান' },
+    { id: 'unassigned', label: 'অনির্ধারিত এন্ট্রি', icon: AlertCircle, color: 'rose', desc: 'প্রাপকহীন চিঠিপত্রসমূহ' },
     { id: 'entry', label: 'নতুন এন্ট্রি', icon: PlusCircle, color: 'blue', desc: 'নতুন তথ্য যোগ করুন' },
     { id: 'register', label: 'রেজিস্টার দেখুন', icon: FileText, color: 'emerald', desc: 'সকল রেজিস্টার ব্রাউজ করুন' },
     { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, color: 'purple', desc: 'ভোট প্রদান ও ফলাফল' },
@@ -194,6 +195,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       onOpenChangePassword();
                     } else if (action.id === 'initial_balance') {
                       setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক');
+                    } else if (action.id === 'unassigned') {
+                      setActiveTab('register', 'correspondence', undefined, '__UNASSIGNED__');
                     } else {
                       setActiveTab(action.id);
                     }

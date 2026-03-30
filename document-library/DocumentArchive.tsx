@@ -19,8 +19,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('সকল');
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingDoc, setEditingDoc] = useState<ExtendedArchiveDoc | null>(null);
@@ -66,7 +64,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       const { data, error } = await supabase
         .from('settlement_entries')
         .select('*')
-        .or('id.like.doc_%,content->>type.eq.document_library');
+        .like('id', 'doc_%');
       
       if (!error && data) {
         const mappedDocs: ExtendedArchiveDoc[] = [];
@@ -163,7 +161,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     const docData: ExtendedArchiveDoc = {
       id: docId,
       ...newDoc,
-      type: 'document_library',
       archiveId: cleanId,
       createdAt: editingDoc ? editingDoc.createdAt : new Date().toISOString()
     };
@@ -236,22 +233,10 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
           tags.includes(search);
 
         const matchesCat = activeCategory === 'সকল' || doc.category === activeCategory;
-        const matchesStartDate = !startDate || doc.docDate >= startDate;
-        const matchesEndDate = !endDate || doc.docDate <= endDate;
-
-        return matchesSearch && matchesCat && matchesStartDate && matchesEndDate;
+        return matchesSearch && matchesCat;
       })
       .sort((a, b) => new Date(b.docDate).getTime() - new Date(a.docDate).getTime());
-  }, [documents, searchTerm, activeCategory, startDate, endDate]);
-
-  const clearFilters = () => {
-    setSearchTerm('');
-    setActiveCategory('সকল');
-    setStartDate('');
-    setEndDate('');
-  };
-
-  const isFiltered = searchTerm !== '' || activeCategory !== 'সকল' || startDate !== '' || endDate !== '';
+  }, [documents, searchTerm, activeCategory]);
 
   return (
     <div className="w-full pb-20 relative [transform:translateZ(0)]">
