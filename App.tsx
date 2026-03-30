@@ -103,9 +103,9 @@ const App: React.FC = () => {
 
   const mainScrollRef = useRef<HTMLElement>(null);
 
-  const handleTabChange = (tab: string, subModule?: 'settlement' | 'correspondence', rType?: string) => {
-    console.log("handleTabChange called with tab:", tab, "subModule:", subModule, "rType:", rType);
-    if (tab === activeTab && !subModule && !rType) setResetKey(prev => prev + 1);
+  const handleTabChange = (tab: string, subModule?: 'settlement' | 'correspondence', rType?: string, searchTerm?: string) => {
+    console.log("handleTabChange called with tab:", tab, "subModule:", subModule, "rType:", rType, "searchTerm:", searchTerm);
+    if (tab === activeTab && !subModule && !rType && !searchTerm) setResetKey(prev => prev + 1);
     else { 
       setActiveTab(tab); 
       setResetKey(0); 
@@ -121,8 +121,15 @@ const App: React.FC = () => {
     // Handle Direct Register Modules
     if (tab === 'register') {
       setRegisterSubModule(subModule || 'correspondence');
+      if (searchTerm) {
+        setHighlightSearch(searchTerm);
+        setShowRegisterFilters(true);
+      } else {
+        setHighlightSearch(null);
+      }
     } else {
       setRegisterSubModule(null);
+      setHighlightSearch(null);
     }
 
     // Handle Direct Report Selection
@@ -209,7 +216,7 @@ const App: React.FC = () => {
     const handleAdminSync = (email?: string) => {
       console.log("handleAdminSync called with email:", email);
       setUserEmail(email || null);
-      const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com', 'emailaddress3424@gmail.com', 'commercialauditkhulna@gmail.com'];
+      const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com', 'emailaddress3424@gmail.com'];
       if (email && adminEmails.includes(email)) {
         console.log("User is admin based on email");
         setIsAdmin(true);
@@ -668,6 +675,7 @@ const App: React.FC = () => {
             entryModule={entryModule}
             registerSubModule={registerSubModule}
             reportType={reportType}
+            highlightSearch={highlightSearch}
             moduleVisibility={moduleVisibility}
           />
         </div>

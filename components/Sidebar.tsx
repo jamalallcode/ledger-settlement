@@ -6,7 +6,7 @@ import { ModuleVisibility } from '../types';
 
 interface SidebarProps {
   activeTab: string;
-  setActiveTab: (tab: string, subModule?: any, reportType?: string) => void;
+  setActiveTab: (tab: string, subModule?: any, reportType?: string, searchTerm?: string) => void;
   onToggleVisibility?: () => void;
   onDemoLoad?: () => void;
   isLockedMode: boolean;
@@ -21,6 +21,7 @@ interface SidebarProps {
   entryModule?: 'settlement' | 'correspondence' | null;
   registerSubModule?: 'settlement' | 'correspondence' | null;
   reportType?: string | null;
+  highlightSearch?: string | null;
   onOpenChangePassword?: () => void;
   moduleVisibility?: ModuleVisibility;
 }
@@ -43,6 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   entryModule,
   registerSubModule,
   reportType,
+  highlightSearch,
   moduleVisibility = {
     entry: true,
     register: true,
@@ -62,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [adminPassword, setAdminPassword] = useState('');
   const [recoveryAnswer, setRecoveryAnswer] = useState('');
   const [recoveredPassword, setRecoveredPassword] = useState<string | null>(null);
-  const [storedPassword, setStoredPassword] = useState('123');
+  const [storedPassword, setStoredPassword] = useState('80093424LEdg@');
   const [storedRecoveryQuestion, setStoredRecoveryQuestion] = useState('আপনার প্রিয় রং কি?');
   const [storedRecoveryAnswer, setStoredRecoveryAnswer] = useState('সাদা');
   
@@ -119,7 +121,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleAdminSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (adminPassword === storedPassword) {
+    const inputPassword = adminPassword.trim();
+    if (inputPassword === storedPassword.trim()) {
       setIsAdmin(true);
       localStorage.setItem('ledger_admin_access_v1', 'true');
       setShowAdminModal(false);
@@ -276,6 +279,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                         className={getSubItemCls(activeTab === 'register' && registerSubModule === 'settlement')}
                       >
                         <span>মীমাংসিত রেজি:</span>
+                      </button>
+                      <button 
+                        onClick={() => setActiveTab('register', 'correspondence', undefined, '__UNASSIGNED__')}
+                        className={getSubItemCls(activeTab === 'register' && registerSubModule === 'correspondence' && highlightSearch === '__UNASSIGNED__')}
+                      >
+                        <span>অনির্ধারিত এন্ট্রি</span>
                       </button>
                     </div>
                   )}

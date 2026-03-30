@@ -12,7 +12,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
   const [newQuestion, setNewQuestion] = useState('');
   const [newAnswer, setNewAnswer] = useState('');
   
-  const [storedPassword, setStoredPassword] = useState('123');
+  const [storedPassword, setStoredPassword] = useState('80093424LEdg@');
   const [storedRecoveryQuestion, setStoredRecoveryQuestion] = useState('আপনার প্রিয় রং কি?');
   const [storedRecoveryAnswer, setStoredRecoveryAnswer] = useState('সাদা');
 
@@ -44,11 +44,12 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
 
   const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 3) {
+    const trimmedPassword = newPassword.trim();
+    if (trimmedPassword.length < 3) {
       alert("পাসওয়ার্ড কমপক্ষে ৩ অক্ষরের হতে হবে।");
       return;
     }
-    if (newPassword !== confirmPassword) {
+    if (trimmedPassword !== confirmPassword.trim()) {
       alert("পাসওয়ার্ড দুটি মিলেনি!");
       return;
     }
@@ -58,7 +59,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
       return;
     }
     
-    saveAdminSettings(newPassword, newQuestion, newAnswer);
+    saveAdminSettings(trimmedPassword, newQuestion.trim(), newAnswer.trim());
     alert("পাসওয়ার্ড এবং নিরাপত্তা সেটিংস সফলভাবে পরিবর্তন করা হয়েছে।");
     onClose();
     setNewPassword('');
