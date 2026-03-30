@@ -121,7 +121,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleAdminSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (adminPassword === storedPassword) {
+    const inputPassword = adminPassword.trim();
+    if (inputPassword === storedPassword.trim()) {
       setIsAdmin(true);
       localStorage.setItem('ledger_admin_access_v1', 'true');
       setShowAdminModal(false);
