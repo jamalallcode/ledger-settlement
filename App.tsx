@@ -9,7 +9,7 @@ import CorrespondenceTable from './components/CorrespondenceTable';
 import ReturnView from './components/ReturnView';
 import LandingPage from './components/LandingPage';
 import VotingSystem from './components/VotingSystem';
-import DocumentArchive from './components/DocumentArchive';
+import DocumentArchive from './document-library/DocumentArchive';
 import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
@@ -364,7 +364,7 @@ const App: React.FC = () => {
                 setAllPrevStats(migrated);
                 localStorage.setItem(PREV_STATS_KEY, JSON.stringify(migrated));
               }
-            } else {
+            } else if (!row.id.startsWith('doc_')) {
               // Distinguish between entry types - robust check
               const isCorrespondence = content.type === 'correspondence' || (content.description !== undefined && content.description !== null);
               
