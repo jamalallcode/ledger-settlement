@@ -48,12 +48,28 @@ export const formatBengaliAmount = (num: number): string => {
  */
 export const formatDateBN = (iso: string | undefined | null): string => {
   if (!iso || iso === '0000-00-00' || iso.startsWith('0000')) return '';
+  
+  // If it's a full ISO string or contains time info
+  if (iso.includes('T') || iso.includes(':')) {
+    try {
+      const date = new Date(iso);
+      if (!isNaN(date.getTime())) {
+        const d = date.getDate().toString().padStart(2, '0');
+        const m = (date.getMonth() + 1).toString().padStart(2, '0');
+        const y = date.getFullYear().toString();
+        return toBengaliDigits(`${d}/${m}/${y}`);
+      }
+    } catch (e) {}
+  }
+
   // If it's already in DD/MM/YYYY format (contains /), just convert digits
   if (iso.includes('/')) return toBengaliDigits(iso);
+  
   // If it's ISO YYYY-MM-DD
   const parts = iso.split('-');
   if (parts.length === 3) {
-    return toBengaliDigits(`${parts[2]}/${parts[1]}/${parts[0]}`);
+    const day = parts[2].split('T')[0].split(' ')[0];
+    return toBengaliDigits(`${day}/${parts[1]}/${parts[0]}`);
   }
   return toBengaliDigits(iso);
 };

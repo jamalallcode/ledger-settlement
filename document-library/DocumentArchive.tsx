@@ -38,6 +38,38 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
   const categories = ['সকল', 'সার্কুলার', 'অফিস আদেশ', 'গেজেট', 'অন্যান্য'];
 
+  const formatPremiumDate = (iso: string | undefined | null) => {
+    if (!iso) return '';
+    try {
+      const date = new Date(iso);
+      if (isNaN(date.getTime())) return toBengaliDigits(iso);
+      const day = toBengaliDigits(date.getDate().toString().padStart(2, '0'));
+      const monthNames = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+      const month = monthNames[date.getMonth()];
+      const year = toBengaliDigits(date.getFullYear().toString());
+      return `${day} ${month} ${year}`;
+    } catch (e) {
+      return toBengaliDigits(iso);
+    }
+  };
+
+  const formatPremiumTime = (iso: string | undefined | null) => {
+    if (!iso) return '';
+    try {
+      const date = new Date(iso);
+      if (isNaN(date.getTime())) return '';
+      let hours = date.getHours();
+      const minutes = toBengaliDigits(date.getMinutes().toString().padStart(2, '0'));
+      const period = hours >= 12 ? 'বিকাল' : 'সকাল';
+      if (hours > 12) hours -= 12;
+      if (hours === 0) hours = 12;
+      const hourStr = toBengaliDigits(hours.toString());
+      return `${period} ${hourStr}:${minutes}`;
+    } catch (e) {
+      return '';
+    }
+  };
+
   useEffect(() => {
     fetchDocuments();
   }, []);
@@ -364,9 +396,15 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                                   স্মারক: {doc.memoNo}
                                 </div>
                               )}
-                              <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-tight pt-2 border-t border-slate-50">
-                                 <div className="flex items-center gap-1.5"><Calendar size={12} className="text-slate-300" /> {formatDateBN(doc.docDate)}</div>
-                                 <div className="flex items-center gap-1.5"><Clock size={12} className="text-slate-300" /> {formatDateBN(doc.createdAt)}</div>
+                              <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-tight pt-3 border-t border-slate-50/80">
+                                 <div className="flex items-center gap-1.5 group/meta">
+                                   <Calendar size={11} className="text-slate-300 group-hover/meta:text-blue-400 transition-colors" /> 
+                                   <span className="group-hover/meta:text-slate-600 transition-colors">{formatPremiumDate(doc.docDate)}</span>
+                                 </div>
+                                 <div className="flex items-center gap-1.5 group/meta">
+                                   <Clock size={11} className="text-slate-300 group-hover/meta:text-blue-400 transition-colors" /> 
+                                   <span className="group-hover/meta:text-slate-600 transition-colors">{formatPremiumTime(doc.createdAt)}</span>
+                                 </div>
                               </div>
                            </div>
                         </div>
@@ -437,7 +475,10 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                           <span className="text-[11px] font-bold text-slate-600">{doc.authority || 'অনির্ধারিত'}</span>
                         </td>
                         <td className="p-6">
-                          <span className="text-[11px] font-bold text-slate-500">{formatDateBN(doc.docDate)}</span>
+                          <div className="flex items-center gap-2">
+                            <Calendar size={14} className="text-slate-300" />
+                            <span className="text-[11px] font-bold text-slate-500">{formatPremiumDate(doc.docDate)}</span>
+                          </div>
                         </td>
                         <td className="p-6 text-right">
                           <div className="flex items-center justify-end gap-2.5">

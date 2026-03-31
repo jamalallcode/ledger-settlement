@@ -81,7 +81,6 @@ const Navbar: React.FC<NavbarProps> = ({
 
   const navItems = [
     { id: 'landing', label: 'হোম', icon: Home },
-    { id: 'register', label: 'রেজিস্টার', icon: ListFilter },
   ];
 
   return (
@@ -151,44 +150,6 @@ const Navbar: React.FC<NavbarProps> = ({
                           >
                             <ClipboardList size={16} className="text-blue-500" />
                             ২. মীমাংসা রেজিস্টার
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {item.id === 'landing' && (
-                  <div 
-                    className="relative mx-1"
-                    onMouseEnter={() => setShowEntryDropdown(true)}
-                    onMouseLeave={() => setShowEntryDropdown(false)}
-                  >
-                    <button 
-                      onClick={() => setActiveTab('entry')} 
-                      className={`hidden lg:flex items-center gap-1 px-[11px] py-[5px] bg-white text-slate-900 rounded-lg font-bold text-[11px] shadow-lg hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all relative ${activeTab === 'entry' ? 'ring-1 ring-blue-500' : ''}`}
-                    >
-                      <FilePlus2 size={14} className="text-blue-600" /> 
-                      নতুন এন্ট্রি
-                      <ChevronDown size={11} className={`ml-0.5 transition-transform ${showEntryDropdown ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {showEntryDropdown && (
-                      <div className="absolute top-full left-0 pt-2 w-64 z-[5010] animate-in fade-in slide-in-from-top-2 duration-200">
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2">
-                          <button 
-                            onClick={() => { setActiveTab('entry', 'correspondence'); setShowEntryDropdown(false); }}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all text-left font-bold text-sm"
-                          >
-                            <Mail size={16} className="text-emerald-500" />
-                            ১. চিঠিপত্র এন্ট্রি
-                          </button>
-                          <button 
-                            onClick={() => { setActiveTab('entry', 'settlement'); setShowEntryDropdown(false); }}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all text-left font-bold text-sm"
-                          >
-                            <ClipboardList size={16} className="text-blue-500" />
-                            ২. মীমাংসা এন্ট্রি
                           </button>
                         </div>
                       </div>

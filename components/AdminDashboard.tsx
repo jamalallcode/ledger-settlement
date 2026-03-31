@@ -3,7 +3,8 @@ import {
   LayoutDashboard, Users, ShieldCheck, BarChart3, 
   PieChart, FileText, Mail, PlusCircle, ArrowRight,
   Settings, KeyRound, Fingerprint, Library, BellRing,
-  Sparkles, CheckCircle2, AlertCircle, Clock, Eye, EyeOff
+  Sparkles, CheckCircle2, AlertCircle, Clock, Eye, EyeOff,
+  CalendarRange
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { supabase } from '../lib/supabase';
@@ -107,6 +108,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, color: 'purple', desc: 'ভোট প্রদান ও ফলাফল' },
     { id: 'setup_receivers', label: 'প্রাপক ব্যবস্থাপনা', icon: Users, color: 'amber', desc: 'প্রাপক তালিকা আপডেট করুন' },
     { id: 'initial_balance', label: 'জের সেটআপ', icon: ShieldCheck, color: 'blue', desc: 'প্রারম্ভিক জের সেটআপ করুন' },
+    { id: 'period_initial_balance', label: 'কাস্টম জের (সময়কাল ভিত্তিক)', icon: CalendarRange, color: 'emerald', desc: 'নির্দিষ্ট সময়ের জন্য প্রারম্ভিক জের সেটআপ' },
     { id: 'change_pass', label: 'পাসওয়ার্ড পরিবর্তন', icon: KeyRound, color: 'indigo', desc: 'সিকিউরিটি সেটিংস আপডেট করুন' },
     { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, color: 'rose', desc: 'সংরক্ষিত ফাইলসমূহ' },
     { id: 'return', label: 'রিপোর্ট ও সারাংশ', icon: PieChart, color: 'indigo', desc: 'মাসিক ও বাৎসরিক রিটার্ন' }
@@ -195,6 +197,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       onOpenChangePassword();
                     } else if (action.id === 'initial_balance') {
                       setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক');
+                    } else if (action.id === 'period_initial_balance') {
+                      setActiveTab('return', null, 'সময়কাল ভিত্তিক প্রারম্ভিক জের সেটআপ');
                     } else if (action.id === 'unassigned') {
                       setActiveTab('register', 'correspondence', undefined, '__UNASSIGNED__');
                     } else {

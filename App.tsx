@@ -14,7 +14,7 @@ import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import AdminAnalytics from './subapps/admin_analytics/AdminAnalytics';
-import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, CorrespondenceEntry } from './types';
+import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, CorrespondenceEntry, DynamicSetupConfig, PeriodOpeningBalance } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
 import { supabase } from './lib/supabase';
@@ -26,6 +26,8 @@ const PREV_STATS_KEY = 'ledger_prev_stats_v1';
 const LOCK_MODE_KEY = 'ledger_lock_mode_status';
 const ADMIN_MODE_KEY = 'ledger_admin_access_v1';
 const OFFLINE_QUEUE_KEY = 'ledger_offline_sync_queue_v1';
+const DYNAMIC_SETUP_KEY = 'ledger_dynamic_setup_config_v1';
+const PERIOD_OPENING_BALANCES_KEY = 'ledger_period_opening_balances_v1';
 
 const generateId = () => {
   return 'id-' + Math.random().toString(36).substring(2, 11) + '-' + Date.now().toString(36);
@@ -73,6 +75,12 @@ const App: React.FC = () => {
 
   // New state for direct report selection from sidebar
   const [reportType, setReportType] = useState<string | null>(null);
+  const [dynamicSetupConfig, setDynamicSetupConfig] = useState<DynamicSetupConfig>({
+    enabled: false,
+    startDate: '',
+    endDate: ''
+  });
+  const [periodOpeningBalances, setPeriodOpeningBalances] = useState<PeriodOpeningBalance[]>([]);
   const [showAdminAlert, setShowAdminAlert] = useState(false);
   const [hasShownAlert, setHasShownAlert] = useState(false);
 
@@ -99,6 +107,12 @@ const App: React.FC = () => {
                  reportType?.includes('ষাণ্মাসিক') ? 'halfYearly' :
                  reportType?.includes('বাৎসরিক') ? 'yearly' : 'monthly';
     setAllPrevStats(prev => ({ ...prev, [type]: stats }));
+  };
+
+  const handleSetDynamicSetupConfig = (config: DynamicSetupConfig) => {
+    console.log("App: Updating dynamic setup config:", config);
+    setDynamicSetupConfig(config);
+    localStorage.setItem(DYNAMIC_SETUP_KEY, JSON.stringify(config));
   };
 
   const mainScrollRef = useRef<HTMLElement>(null);
@@ -205,6 +219,26 @@ const App: React.FC = () => {
     // Initial check on load
     if (navigator.onLine) syncOfflineData();
 
+    // Load Dynamic Setup Config
+    const savedDynamicConfig = localStorage.getItem(DYNAMIC_SETUP_KEY);
+    if (savedDynamicConfig) {
+      try {
+        setDynamicSetupConfig(JSON.parse(savedDynamicConfig));
+      } catch (e) {
+        console.error("Error parsing dynamic setup config:", e);
+      }
+    }
+
+    // Load Period Opening Balances
+    const savedPeriodBalances = localStorage.getItem(PERIOD_OPENING_BALANCES_KEY);
+    if (savedPeriodBalances) {
+      try {
+        setPeriodOpeningBalances(JSON.parse(savedPeriodBalances));
+      } catch (e) {
+        console.error("Error parsing period opening balances:", e);
+      }
+    }
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
@@ -216,7 +250,7 @@ const App: React.FC = () => {
     const handleAdminSync = (email?: string) => {
       console.log("handleAdminSync called with email:", email);
       setUserEmail(email || null);
-      const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com', 'emailaddress3424@gmail.com'];
+      const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com', 'emailaddress3424@gmail.com', 'commercialauditkhulna@gmail.com'];
       if (email && adminEmails.includes(email)) {
         console.log("User is admin based on email");
         setIsAdmin(true);
@@ -364,6 +398,9 @@ const App: React.FC = () => {
                 setAllPrevStats(migrated);
                 localStorage.setItem(PREV_STATS_KEY, JSON.stringify(migrated));
               }
+            } else if (row.id === 'system_metadata_period_opening_balances') {
+              setPeriodOpeningBalances(content);
+              localStorage.setItem(PERIOD_OPENING_BALANCES_KEY, JSON.stringify(content));
             } else if (!row.id.startsWith('doc_')) {
               // Distinguish between entry types - robust check
               const isCorrespondence = content.type === 'correspondence' || (content.description !== undefined && content.description !== null);
@@ -412,8 +449,20 @@ const App: React.FC = () => {
         localStorage.setItem(PREV_STATS_KEY, JSON.stringify(allPrevStats));
       }
     };
+    const syncPeriodBalances = async () => {
+      if (periodOpeningBalances.length > 0) {
+        if (navigator.onLine) {
+          await supabase.from('settlement_entries').upsert({ 
+            id: 'system_metadata_period_opening_balances', 
+            content: periodOpeningBalances 
+          });
+        }
+        localStorage.setItem(PERIOD_OPENING_BALANCES_KEY, JSON.stringify(periodOpeningBalances));
+      }
+    };
     syncPrevStats();
-  }, [allPrevStats]);
+    syncPeriodBalances();
+  }, [allPrevStats, periodOpeningBalances]);
 
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
   const cycleLabelBengali = useMemo(() => toBengaliDigits(cycleInfo.label), [cycleInfo.label]);
@@ -851,6 +900,11 @@ const App: React.FC = () => {
                   setSelectedReportType={setReportType}
                   showFilters={showRegisterFilters}
                   setShowFilters={setShowRegisterFilters}
+                  dynamicSetupConfig={dynamicSetupConfig}
+                  onUpdateDynamicSetupConfig={handleSetDynamicSetupConfig}
+                  activeTab={activeTab}
+                  periodOpeningBalances={periodOpeningBalances}
+                  setPeriodOpeningBalances={setPeriodOpeningBalances}
                 />
               )}
               

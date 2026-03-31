@@ -171,3 +171,17 @@ export interface ModuleVisibility {
   admin_analytics: boolean;
   audit_details: boolean;
 }
+
+export interface DynamicSetupConfig {
+  enabled: boolean;
+  startDate: string;
+  endDate: string;
+}
+
+export interface PeriodOpeningBalance {
+  id: string;
+  startDate: string;
+  endDate: string;
+  stats: CumulativeStats;
+  createdAt: string;
+}
