@@ -171,3 +171,9 @@ export interface ModuleVisibility {
   admin_analytics: boolean;
   audit_details: boolean;
 }
+
+export interface DynamicSetupConfig {
+  enabled: boolean;
+  startDate: string;
+  endDate: string;
+}
