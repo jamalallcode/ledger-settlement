@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3, Settings, ArrowRight, Chrome } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { signInWithGoogle } from '../lib/supabase';
@@ -100,6 +101,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isSettlementExpanded, setIsSettlementExpanded] = useState(false);
   const [isOnlineExpanded, setIsOnlineExpanded] = useState(false);
   const [isQuarterlyExpanded, setIsQuarterlyExpanded] = useState(false);
+  const [isSetupExpanded, setIsSetupExpanded] = useState(false);
   
   // Auto-expand based on activeTab
   useEffect(() => {
@@ -248,199 +250,303 @@ const Sidebar: React.FC<SidebarProps> = ({
                   </button>
 
                   {/* Nested Sub-menu for Entry */}
-                  {item.id === 'entry' && isEntryExpanded && (
-                    <div className="pl-3 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
-                      <button 
-                        onClick={() => setActiveTab('entry', 'correspondence')}
-                        className={getSubItemCls(activeTab === 'entry' && entryModule === 'correspondence')}
+                  <AnimatePresence>
+                    {item.id === 'entry' && isEntryExpanded && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="pl-3 py-1 space-y-1 overflow-hidden"
                       >
-                        <span>চিঠিপত্র এন্ট্রি</span>
-                      </button>
-                      <button 
-                        onClick={() => setActiveTab('entry', 'settlement')}
-                        className={getSubItemCls(activeTab === 'entry' && entryModule === 'settlement')}
-                      >
-                        <span>মীমাংসা এন্ট্রি</span>
-                      </button>
-                    </div>
-                  )}
+                        <button 
+                          onClick={() => setActiveTab('entry', 'correspondence')}
+                          className={getSubItemCls(activeTab === 'entry' && entryModule === 'correspondence')}
+                        >
+                          <span>চিঠিপত্র এন্ট্রি</span>
+                        </button>
+                        <button 
+                          onClick={() => setActiveTab('entry', 'settlement')}
+                          className={getSubItemCls(activeTab === 'entry' && entryModule === 'settlement')}
+                        >
+                          <span>মীমাংসা এন্ট্রি</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* Nested Sub-menu for Register */}
-                  {item.id === 'register' && isRegisterExpanded && (
-                    <div className="pl-3 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
-                      <button 
-                        onClick={() => setActiveTab('register', 'correspondence')}
-                        className={getSubItemCls(activeTab === 'register' && registerSubModule === 'correspondence')}
+                  <AnimatePresence>
+                    {item.id === 'register' && isRegisterExpanded && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="pl-3 py-1 space-y-1 overflow-hidden"
                       >
-                        <span>চিঠিপত্র রেজি:</span>
-                      </button>
-                      <button 
-                        onClick={() => setActiveTab('register', 'settlement')}
-                        className={getSubItemCls(activeTab === 'register' && registerSubModule === 'settlement')}
-                      >
-                        <span>মীমাংসিত রেজি:</span>
-                      </button>
-                    </div>
-                  )}
+                        <button 
+                          onClick={() => setActiveTab('register', 'correspondence')}
+                          className={getSubItemCls(activeTab === 'register' && registerSubModule === 'correspondence')}
+                        >
+                          <span>চিঠিপত্র রেজি:</span>
+                        </button>
+                        <button 
+                          onClick={() => setActiveTab('register', 'settlement')}
+                          className={getSubItemCls(activeTab === 'register' && registerSubModule === 'settlement')}
+                        >
+                          <span>মীমাংসিত রেজি:</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* Nested Sub-menu for Return & Summary */}
-                  {item.id === 'return' && isReturnExpanded && (
-                    <div className="pl-3 py-1 space-y-1 animate-in slide-in-from-top-2 duration-300">
-                      {/* ১. মাসিক (Toggle) */}
-                      <button 
-                        onClick={() => setIsMonthlyExpanded(!isMonthlyExpanded)}
-                        className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-black transition-all ${isMonthlyExpanded ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                  <AnimatePresence>
+                    {item.id === 'return' && isReturnExpanded && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="pl-3 py-1 space-y-1 overflow-hidden"
                       >
-                        <div className="flex items-center gap-2">
-                          <span>মাসিক</span>
-                        </div>
-                        <ChevronDown size={6} className={`transition-transform duration-300 ${isMonthlyExpanded ? 'rotate-180' : ''}`} />
-                      </button>
+                        {/* ১. মাসিক (Toggle) */}
+                        <button 
+                          onClick={() => setIsMonthlyExpanded(!isMonthlyExpanded)}
+                          className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-black transition-all ${isMonthlyExpanded ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span>মাসিক</span>
+                          </div>
+                          <ChevronDown size={6} className={`transition-transform duration-300 ${isMonthlyExpanded ? 'rotate-180' : ''}`} />
+                        </button>
 
-                      {/* Monthly Sub-items */}
-                      {isMonthlyExpanded && (
-                        <div className="pl-3 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                          {/* ১. চিঠিপত্র (Toggle) */}
-                          <button 
-                            onClick={() => setIsMonthlyCorrExpanded(!isMonthlyCorrExpanded)}
-                            className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-[9px] font-black transition-all ${isMonthlyCorrExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
-                          >
-                            <div className="flex items-center gap-1.5">
-                              <span>চিঠিপত্র</span>
-                            </div>
-                            <ChevronDown size={6} className={`transition-transform duration-300 ${isMonthlyCorrExpanded ? 'rotate-180' : ''}`} />
-                          </button>
-
-                          {/* Corr Sub-items */}
-                          {isMonthlyCorrExpanded && (
-                            <div className="pl-3 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                              {/* ১. ঢাকা */}
-                              <button 
-                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')}
-                                className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
-                              >
-                                ঢাকা
-                              </button>
-
-                              {/* ২. নিষ্পত্তি (Toggle) */}
-                              <button 
-                                onClick={() => setIsSettlementExpanded(!isSettlementExpanded)}
-                                className={`w-full flex items-center justify-between px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${isSettlementExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
-                              >
-                                <div className="flex items-center gap-1.5">
-                                  <span>নিষ্পত্তি</span>
-                                </div>
-                                <ChevronDown size={6} className={`transition-transform duration-300 ${isSettlementExpanded ? 'rotate-180' : ''}`} />
-                              </button>
-
-                              {isSettlementExpanded && (
-                                <div className="pl-3 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                                  <button 
-                                    onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর')}
-                                    className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
-                                  >
-                                    বিএসআর
-                                  </button>
-                                  <button 
-                                    onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়')}
-                                    className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
-                                  >
-                                    দ্বিপক্ষীয়
-                                  </button>
-                                </div>
-                              )}
-
-                              {/* ৩. অনলাইন প্রাপ্তি (Toggle) */}
-                              <button 
-                                onClick={() => setIsOnlineExpanded(!isOnlineExpanded)}
-                                className={`w-full flex items-center justify-between px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${isOnlineExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
-                              >
-                                <div className="flex items-center gap-1.5">
-                                  <span>অনলাইন প্রাপ্তি</span>
-                                </div>
-                                <ChevronDown size={6} className={`transition-transform duration-300 ${isOnlineExpanded ? 'rotate-180' : ''}`} />
-                              </button>
-
-                              {isOnlineExpanded && (
-                                <div className="pl-3 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                                  <button 
-                                    onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর')}
-                                    className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
-                                  >
-                                    বিএসআর
-                                  </button>
-                                  <button 
-                                    onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়')}
-                                    className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
-                                  >
-                                    দ্বিপক্ষীয়
-                                  </button>
-                                </div>
-                              )}
-
-                              {/* ৪. ডিডি স্যার ফরমেট */}
-                              <button 
-                                onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।')}
-                                className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
-                              >
-                                ডিডি স্যার ফরমেট
-                              </button>
-                            </div>
-                          )}
-
-                          {/* ২. অনুচ্ছেদ */}
-                          <button 
-                            onClick={() => setActiveTab('return', null, 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
-                            className={`w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[9px] font-black transition-all ${reportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-blue-400'}`}
-                          >
-                            <span>অনুচ্ছেদ</span>
-                          </button>
-                        </div>
-                      )}
-
-                      {/* ২. ত্রৈমাসিক (Toggle) */}
-                      <button 
-                        onClick={() => setIsQuarterlyExpanded(!isQuarterlyExpanded)}
-                        className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-black transition-all ${isQuarterlyExpanded ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span>ত্রৈমাসিক</span>
-                        </div>
-                        <ChevronDown size={6} className={`transition-transform duration-300 ${isQuarterlyExpanded ? 'rotate-180' : ''}`} />
-                      </button>
-
-                      {/* Quarterly Sub-items */}
-                      {isQuarterlyExpanded && (
-                        <div className="pl-3 py-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                          {[1, 2, 3, 4, 5, 6].map(num => (
-                            <button 
-                              key={num}
-                              onClick={() => setActiveTab('return', null, `ত্রৈমাসিক রিটার্ন - ${toBengaliDigits(num.toString())}`)}
-                              className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === `ত্রৈমাসিক রিটার্ন - ${toBengaliDigits(num.toString())}` ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                        {/* Monthly Sub-items */}
+                        <AnimatePresence>
+                          {isMonthlyExpanded && (
+                            <motion.div 
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2, ease: "easeInOut" }}
+                              className="pl-3 py-1 space-y-1 overflow-hidden"
                             >
-                              রিটার্ন {toBengaliDigits(num.toString())}
+                              {/* ১. চিঠিপত্র (Toggle) */}
+                              <button 
+                                onClick={() => setIsMonthlyCorrExpanded(!isMonthlyCorrExpanded)}
+                                className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-[9px] font-black transition-all ${isMonthlyCorrExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                              >
+                                <div className="flex items-center gap-1.5">
+                                  <span>চিঠিপত্র</span>
+                                </div>
+                                <ChevronDown size={6} className={`transition-transform duration-300 ${isMonthlyCorrExpanded ? 'rotate-180' : ''}`} />
+                              </button>
+
+                              {/* Corr Sub-items */}
+                              <AnimatePresence>
+                                {isMonthlyCorrExpanded && (
+                                  <motion.div 
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                                    className="pl-3 py-1 space-y-1 overflow-hidden"
+                                  >
+                                    {/* ১. ঢাকা */}
+                                    <button 
+                                      onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')}
+                                      className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                    >
+                                      ঢাকা
+                                    </button>
+
+                                    {/* ২. নিষ্পত্তি (Toggle) */}
+                                    <button 
+                                      onClick={() => setIsSettlementExpanded(!isSettlementExpanded)}
+                                      className={`w-full flex items-center justify-between px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${isSettlementExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                                    >
+                                      <div className="flex items-center gap-1.5">
+                                        <span>নিষ্পত্তি</span>
+                                      </div>
+                                      <ChevronDown size={6} className={`transition-transform duration-300 ${isSettlementExpanded ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                      {isSettlementExpanded && (
+                                        <motion.div 
+                                          initial={{ height: 0, opacity: 0 }}
+                                          animate={{ height: 'auto', opacity: 1 }}
+                                          exit={{ height: 0, opacity: 0 }}
+                                          transition={{ duration: 0.2, ease: "easeInOut" }}
+                                          className="pl-3 py-1 space-y-1 overflow-hidden"
+                                        >
+                                          <button 
+                                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর')}
+                                            className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                          >
+                                            বিএসআর
+                                          </button>
+                                          <button 
+                                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়')}
+                                            className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                          >
+                                            দ্বিপক্ষীয়
+                                          </button>
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
+
+                                    {/* ৩. অনলাইন প্রাপ্তি (Toggle) */}
+                                    <button 
+                                      onClick={() => setIsOnlineExpanded(!isOnlineExpanded)}
+                                      className={`w-full flex items-center justify-between px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${isOnlineExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                                    >
+                                      <div className="flex items-center gap-1.5">
+                                        <span>অনলাইন প্রাপ্তি</span>
+                                      </div>
+                                      <ChevronDown size={6} className={`transition-transform duration-300 ${isOnlineExpanded ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                      {isOnlineExpanded && (
+                                        <motion.div 
+                                          initial={{ height: 0, opacity: 0 }}
+                                          animate={{ height: 'auto', opacity: 1 }}
+                                          exit={{ height: 0, opacity: 0 }}
+                                          transition={{ duration: 0.2, ease: "easeInOut" }}
+                                          className="pl-3 py-1 space-y-1 overflow-hidden"
+                                        >
+                                          <button 
+                                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর')}
+                                            className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                          >
+                                            বিএসআর
+                                          </button>
+                                          <button 
+                                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়')}
+                                            className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                          >
+                                            দ্বিপক্ষীয়
+                                          </button>
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
+
+                                    {/* ৪. ডিডি স্যার ফরমেট */}
+                                    <button 
+                                      onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।')}
+                                      className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                    >
+                                      ডিডি স্যার ফরমেট
+                                    </button>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+
+                              {/* ২. অনুচ্ছেদ */}
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                                className={`w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[9px] font-black transition-all ${reportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-blue-400'}`}
+                              >
+                                <span>অনুচ্ছেদ</span>
+                              </button>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {/* ২. ত্রৈমাসিক (Toggle) */}
+                        <button 
+                          onClick={() => setIsQuarterlyExpanded(!isQuarterlyExpanded)}
+                          className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-black transition-all ${isQuarterlyExpanded ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span>ত্রৈমাসিক</span>
+                          </div>
+                          <ChevronDown size={6} className={`transition-transform duration-300 ${isQuarterlyExpanded ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {/* Quarterly Sub-items */}
+                        <AnimatePresence>
+                          {isQuarterlyExpanded && (
+                            <motion.div 
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2, ease: "easeInOut" }}
+                              className="pl-3 py-1 space-y-1 overflow-hidden"
+                            >
+                              {[1, 2, 3, 4, 5, 6].map(num => (
+                                <button 
+                                  key={num}
+                                  onClick={() => setActiveTab('return', null, `ত্রৈমাসিক রিটার্ন - ${toBengaliDigits(num.toString())}`)}
+                                  className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === `ত্রৈমাসিক রিটার্ন - ${toBengaliDigits(num.toString())}` ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                >
+                                  রিটার্ন {toBengaliDigits(num.toString())}
+                                </button>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {/* ৩. ষাণ্মাসিক */}
+                        <button 
+                          onClick={() => setActiveTab('return', null, 'ষাণ্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                          className={getSubItemCls(reportType === 'ষাণ্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                        >
+                          <span>ষাণ্মাসিক</span>
+                        </button>
+
+                        {/* ৪. বাৎসরিক */}
+                        <button 
+                          onClick={() => setActiveTab('return', null, 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                          className={getSubItemCls(reportType === 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                        >
+                          <span>বাৎসরিক</span>
+                        </button>
+
+                        {/* ৫. সেটআপ (Toggle) */}
+                        {isAdmin && (
+                          <>
+                            <button 
+                              onClick={() => setIsSetupExpanded(!isSetupExpanded)}
+                              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-black transition-all ${isSetupExpanded ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span>সেটআপ</span>
+                              </div>
+                              <ChevronDown size={6} className={`transition-transform duration-300 ${isSetupExpanded ? 'rotate-180' : ''}`} />
                             </button>
-                          ))}
-                        </div>
-                      )}
 
-                      {/* ৩. ষাণ্মাসিক */}
-                      <button 
-                        onClick={() => setActiveTab('return', null, 'ষাণ্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
-                        className={getSubItemCls(reportType === 'ষাণ্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
-                      >
-                        <span>ষাণ্মাসিক</span>
-                      </button>
-
-                      {/* ৪. বাৎসরিক */}
-                      <button 
-                        onClick={() => setActiveTab('return', null, 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
-                        className={getSubItemCls(reportType === 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
-                      >
-                        <span>বাৎসরিক</span>
-                      </button>
-                    </div>
-                  )}
+                            <AnimatePresence>
+                              {isSetupExpanded && (
+                                <motion.div 
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                                  className="pl-3 py-1 space-y-1 overflow-hidden"
+                                >
+                                  <button 
+                                    onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক')}
+                                    className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: মাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                  >
+                                    মাসিক জের
+                                  </button>
+                                  <button 
+                                    onClick={() => setActiveTab('return', null, 'সময়কাল ভিত্তিক প্রারম্ভিক জের সেটআপ')}
+                                    className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'সময়কাল ভিত্তিক প্রারম্ভিক জের সেটআপ' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                  >
+                                    কাস্টম জের (সময়কাল ভিত্তিক)
+                                  </button>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               );
             })}

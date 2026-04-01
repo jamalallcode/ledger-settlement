@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import React from 'react';
-import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
+import { SettlementEntry, CumulativeStats, MinistryPrevStats, DynamicSetupConfig } from '../types';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants';
 import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles } from 'lucide-react';
@@ -10,6 +10,7 @@ import { isSFI, isNonSFI } from '../utils/branchUtils';
 import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
 import CorrespondenceDhakaReturn from './CorrespondenceDhakaReturn';
 import OpeningBalanceSetup from './OpeningBalanceSetup';
+import PeriodOpeningBalanceSetup from './PeriodOpeningBalanceSetup';
 import ReturnSummaryTable from './ReturnSummaryTable';
 import QR_1 from './QR_1';
 import QR_2 from './QR_2';
@@ -17,6 +18,8 @@ import QR_3 from './QR_3';
 import QR_4 from './QR_4';
 import QR_5 from './QR_5';
 import QR_6 from './QR_6';
+import DynamicSetupConfigPanel from '../dynamic-setup/DynamicSetupConfigPanel';
+import { calculateDynamicOpeningBalance } from '../dynamic-setup/dynamicSetupService';
 
 interface ReturnViewProps {
   entries: SettlementEntry[];
@@ -35,13 +38,20 @@ interface ReturnViewProps {
   setSelectedReportType: (type: string | null) => void;
   showFilters: boolean;
   setShowFilters: (val: boolean) => void;
+  dynamicSetupConfig: DynamicSetupConfig;
+  onUpdateDynamicSetupConfig: (config: DynamicSetupConfig) => void;
+  activeTab?: string;
+  periodOpeningBalances: any[];
+  setPeriodOpeningBalances: (balances: any[]) => void;
 }
 
 const ReturnView: React.FC<ReturnViewProps> = ({ 
   entries, correspondenceEntries = [], cycleLabel, prevStats, setPrevStats, 
   isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister, isAdmin,
   selectedReportType, setSelectedReportType,
-  showFilters, setShowFilters
+  showFilters, setShowFilters,
+  dynamicSetupConfig, onUpdateDynamicSetupConfig, activeTab,
+  periodOpeningBalances, setPeriodOpeningBalances
 }) => {
   const [isSetupMode, setIsSetupMode] = useState(false);
   const [isEditingSetup, setIsEditingSetup] = useState(false);
@@ -68,6 +78,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
   useEffect(() => {
     if (selectedReportType?.includes('প্রারম্ভিক জের সেটআপ')) {
+      setIsSetupMode(true);
+    } else if (selectedReportType?.startsWith('সময়কাল ভিত্তিক প্রারম্ভিক জের সেটআপ')) {
       setIsSetupMode(true);
     } else if (selectedReportType !== null) {
       setIsSetupMode(false);
@@ -114,18 +126,129 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
   };
 
-  const calculateRecursiveOpening = (entityName: string, cycleStart: Date, paraType: 'এসএফআই' | 'নন এসএফআই' = 'এসএফআই') => {
-    const baseMap = isSFI(paraType) ? prevStats.entitiesSFI : prevStats.entitiesNonSFI;
-    const base = baseMap[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+  const calculateRecursiveOpening = useCallback((entityName: string, cycleStart: Date, paraType: 'এসএফআই' | 'নন এসএফআই' = 'এসএফআই') => {
     const cycleStartStr = dateFnsFormat(cycleStart, 'yyyy-MM-dd');
     const activeLabelCanon = toEnglishDigits(activeCycle.label).trim();
     
-    const pastEntries = entries.filter(e => {
+    // 1. Check for EXACT period match (Start Date matches Cycle Start)
+    const exactMatch = periodOpeningBalances.find(pb => pb.startDate === cycleStartStr);
+    if (exactMatch) {
+      const stats = isSFI(paraType) ? exactMatch.stats.entitiesSFI[entityName] : exactMatch.stats.entitiesNonSFI[entityName];
+      // If an exact match for this period exists, we use it. 
+      // If this specific branch (SFI/Non-SFI) is missing, we treat it as 0, not "not found".
+      return stats || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+    }
+
+    let baseMap = isSFI(paraType) ? prevStats.entitiesSFI : prevStats.entitiesNonSFI;
+    let effectiveEntryStartDate = ENTRY_START_DATE;
+
+    // 2. Check for dynamic setup (Legacy/Alternative)
+    if (dynamicSetupConfig.enabled && dynamicSetupConfig.startDate && dynamicSetupConfig.endDate) {
+      const dynamicStats = calculateDynamicOpeningBalance(entries, dynamicSetupConfig);
+      baseMap = isSFI(paraType) ? dynamicStats.entitiesSFI : dynamicStats.entitiesNonSFI;
+      
+      try {
+        const endDateObj = new Date(dynamicSetupConfig.endDate);
+        if (!isNaN(endDateObj.getTime())) {
+          const nextDay = new Date(endDateObj);
+          nextDay.setDate(nextDay.getDate() + 1);
+          effectiveEntryStartDate = nextDay.toISOString().split('T')[0];
+        }
+      } catch (e) {
+        console.error("Error calculating effective start date:", e);
+      }
+    }
+
+    // 3. Check if there's a period balance in the past that we should start from
+    // This overrides the dynamic setup if a more recent period balance exists
+    const pastPeriodBalances = periodOpeningBalances
+      .filter(pb => new Date(pb.startDate) < cycleStart)
+      .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+    
+    if (pastPeriodBalances.length > 0) {
+      const latestPast = pastPeriodBalances[0];
+      const stats = isSFI(paraType) ? latestPast.stats.entitiesSFI[entityName] : latestPast.stats.entitiesNonSFI[entityName];
+      
+      // If this period balance is more recent than the dynamic setup end date (if any)
+      const periodEndDate = latestPast.endDate;
+      if (!dynamicSetupConfig.enabled || periodEndDate > dynamicSetupConfig.endDate) {
+        // If we found a past period balance, we use it as the base.
+        // If this specific branch is missing, we treat it as 0.
+        const base = stats || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+        const nextDay = new Date(latestPast.endDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        const periodEffectiveStart = nextDay.toISOString().split('T')[0];
+          
+          // Recalculate past entries from this point
+          const allPotentialEntries = [...entries, ...correspondenceEntries];
+          const pastEntries = allPotentialEntries.filter(e => {
+              if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
+              if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
+              
+              const labelMatch = e.cycleLabel && toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon;
+              if (labelMatch) return false;
+              
+              const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+              if (entryDate !== '' && entryDate >= cycleStartStr) return false;
+              
+              return entryDate !== '' && entryDate >= periodEffectiveStart;
+          });
+
+          let pastRC = 0, pastRA = 0, pastSC = 0, pastSA = 0;
+          const processedParaIds = new Set<string>();
+
+          pastEntries.forEach(entry => {
+              const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
+              if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
+                  pastRC += parseBengaliNumber(rCountRaw);
+              }
+              if (entry.manualRaisedAmount) pastRA += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
+
+              if (entry.paragraphs && entry.paragraphs.length > 0) {
+                entry.paragraphs.forEach(p => {
+                  const cleanParaNo = String(p.paraNo || '').trim();
+                  const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
+                  if (p.id && !processedParaIds.has(p.id) && hasDigit) {
+                    processedParaIds.add(p.id);
+                    const status = robustNormalize(p.status || '');
+                    const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
+                    if (status === robustNormalize('পূর্ণাঙ্গ')) { 
+                        pastSC++; 
+                    }
+                    pastSA += settledAmt;
+                  }
+                });
+              } else {
+                const settledAmt = parseBengaliNumber(entry.totalRec || '0') + parseBengaliNumber(entry.totalAdj || '0');
+                const sc = parseBengaliNumber(entry.meetingFullSettledParaCount || '0');
+                pastSC += sc;
+                pastSA += settledAmt;
+              }
+          });
+
+          return {
+              unsettledCount: Math.max(0, base.unsettledCount + pastRC),
+              unsettledAmount: Math.max(0, base.unsettledAmount + Math.round(pastRA)),
+              settledCount: base.settledCount + pastSC,
+              settledAmount: base.settledAmount + Math.round(pastSA)
+          };
+        }
+    }
+
+    const base = baseMap[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+    
+    const allPotentialEntries = [...entries, ...correspondenceEntries];
+    const pastEntries = allPotentialEntries.filter(e => {
         if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
         if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
-        if (e.cycleLabel && toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon) return false;
+        
+        const labelMatch = e.cycleLabel && toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon;
+        if (labelMatch) return false;
+        
         const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
-        return entryDate !== '' && entryDate < cycleStartStr && entryDate >= ENTRY_START_DATE;
+        if (entryDate !== '' && entryDate >= cycleStartStr) return false;
+        
+        return entryDate !== '' && entryDate >= effectiveEntryStartDate;
     });
 
     let pastRC = 0, pastRA = 0, pastSC = 0, pastSA = 0;
@@ -138,7 +261,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         }
         if (entry.manualRaisedAmount) pastRA += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
 
-        if (entry.paragraphs) {
+        if (entry.paragraphs && entry.paragraphs.length > 0) {
           entry.paragraphs.forEach(p => {
             const cleanParaNo = String(p.paraNo || '').trim();
             const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
@@ -152,6 +275,11 @@ const ReturnView: React.FC<ReturnViewProps> = ({
               pastSA += settledAmt;
             }
           });
+        } else {
+          const settledAmt = parseBengaliNumber(entry.totalRec || '0') + parseBengaliNumber(entry.totalAdj || '0');
+          const sc = parseBengaliNumber(entry.meetingFullSettledParaCount || '0');
+          pastSC += sc;
+          pastSA += settledAmt;
         }
     });
 
@@ -161,7 +289,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         settledCount: base.settledCount + pastSC,
         settledAmount: base.settledAmount + Math.round(pastSA)
     };
-  };
+  }, [entries, correspondenceEntries, activeCycle, prevStats, dynamicSetupConfig, periodOpeningBalances]);
 
   useEffect(() => {
     if (isSetupMode) {
@@ -198,13 +326,18 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             settledCount: ePrevSFI.settledCount + ePrevNonSFI.settledCount,
             settledAmount: ePrevSFI.settledAmount + ePrevNonSFI.settledAmount
           };
-          const matchingEntries = entries.filter(e => {
+          const allPotentialEntries = [...entries, ...correspondenceEntries];
+          const matchingEntries = allPotentialEntries.filter(e => {
             const eMin = robustNormalize(e.ministryName || '');
             const eEnt = robustNormalize(e.entityName || '');
             if (eMin !== normMinistry || eEnt !== normEntity) return false;
-            if (e.cycleLabel) return toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon;
-            const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
-            return entryDate >= cycleStartStr && entryDate <= cycleEndStr;
+            
+            const labelMatch = e.cycleLabel && toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon;
+            const entryDateRaw = e.issueDateISO || e.createdAt || '';
+            const entryDate = entryDateRaw.split('T')[0];
+            const dateMatch = entryDate >= cycleStartStr && entryDate <= cycleEndStr;
+            
+            return labelMatch || dateMatch;
           });
           let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0, curSFIC = 0, curNonSFIC = 0, sfiSA = 0, nonSfiSA = 0;
           let sfiBSR = 0, sfiTriWork = 0, sfiTriMin = 0, sfiRecon = 0;
@@ -213,20 +346,23 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           const processedParaIds = new Set<string>();
           matchingEntries.forEach(entry => {
             const isSFI = robustNormalize(entry.paraType || '') === robustNormalize('এসএফআই');
-            // Support both Settlement Register (meetingType) and Correspondence Register (letterType)
             const rawLT = entry.meetingType || entry.letterType || '';
             const normLT = robustNormalize(rawLT);
 
             if (entry.paragraphs && entry.paragraphs.length > 0) {
-              entry.paragraphs.forEach(p => { 
+              entry.paragraphs.forEach((p, pIdx) => { 
                 const cleanParaNo = String(p.paraNo || '').trim();
-                const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
-                if (p.id && !processedParaIds.has(p.id) && hasDigit) {
-                  processedParaIds.add(p.id);
+                // Use a more robust unique key for tracking processed paragraphs within this entity
+                const pUniqueKey = p.id ? `${entry.id}-${p.id}` : `${entry.id}-idx-${pIdx}`;
+                
+                if (!processedParaIds.has(pUniqueKey) && (/[১-৯1-9]/.test(cleanParaNo) || p.recoveredAmount > 0 || p.adjustedAmount > 0)) {
+                  processedParaIds.add(pUniqueKey);
                   const status = robustNormalize(p.status || '');
-                  const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
+                  const recovered = parseBengaliNumber(String(p.recoveredAmount || '0'));
+                  const adjusted = parseBengaliNumber(String(p.adjustedAmount || '0'));
+                  const settledAmt = recovered + adjusted;
                   
-                  // Always add to settled amounts regardless of status (Full or Partial)
+                  // CRITICAL: Add to total settled amount regardless of status (Full or Partial)
                   if (settledAmt > 0) {
                     curSA += settledAmt;
                     if (isSFI) sfiSA += settledAmt;
@@ -235,41 +371,40 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
                   if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                     curFC++; curSC++; 
-                    
                     if (isSFI) {
                       curSFIC++;
-                      if (normLT.includes(robustNormalize('বিএসআর'))) {
-                        sfiBSR++;
-                      } else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়'))) {
-                        // If it contains "বিবরণী", "(বি)", or "সভা", or is from Settlement Register, it's Minutes.
-                        if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !!entry.meetingType) {
-                          sfiTriMin++;
-                        } else {
-                          sfiTriWork++;
-                        }
-                      } else if (normLT.includes(robustNormalize('মিলিকরণ'))) {
-                        sfiRecon++;
-                      }
+                      if (normLT.includes(robustNormalize('বিএসআর'))) sfiBSR++;
+                      else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়'))) {
+                        if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !!entry.meetingType) sfiTriMin++;
+                        else sfiTriWork++;
+                      } else if (normLT.includes(robustNormalize('মিলিকরণ'))) sfiRecon++;
                     } else {
                       curNonSFIC++;
-                      if (normLT.includes(robustNormalize('বিএসআর'))) {
-                        nonSfiBSR++;
-                      } else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়'))) {
-                        // If it contains "বিবরণী", "(বি)", or "সভা", or is from Settlement Register, it's Minutes.
-                        if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !!entry.meetingType) {
-                          nonSfiBiMin++;
-                        } else {
-                          nonSfiBiWork++;
-                        }
-                      } else if (normLT.includes(robustNormalize('মিলিকরণ'))) {
-                        nonSfiRecon++;
-                      }
+                      if (normLT.includes(robustNormalize('বিএসআর'))) nonSfiBSR++;
+                      else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়'))) {
+                        if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !!entry.meetingType) nonSfiBiMin++;
+                        else nonSfiBiWork++;
+                      } else if (normLT.includes(robustNormalize('মিলিকরণ'))) nonSfiRecon++;
                     }
                   } else if (status === robustNormalize('আংশিক')) {
                     curPC++;
                   }
                 }
               });
+            } else {
+              const settledAmt = parseBengaliNumber(entry.totalRec || '0') + parseBengaliNumber(entry.totalAdj || '0');
+              const fc = parseBengaliNumber(entry.meetingFullSettledParaCount || '0');
+              const pc = parseBengaliNumber(entry.meetingPartialSettledParaCount || '0');
+              
+              // For entries without paragraphs, we still want to count them if they have settled amounts
+              if (fc > 0 || pc > 0 || settledAmt > 0) {
+                curFC += fc; curPC += pc; curSC += fc;
+                if (settledAmt > 0) {
+                  curSA += settledAmt;
+                  if (isSFI) sfiSA += settledAmt;
+                  else nonSfiSA += settledAmt;
+                }
+              }
             }
             const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
             if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") curRC += parseBengaliNumber(rCountRaw);
@@ -289,7 +424,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         })
       };
     });
-  }, [entries, selectedReportType, calculateRecursiveOpening, activeCycle, ministryGroups]);
+  }, [entries, correspondenceEntries, selectedReportType, calculateRecursiveOpening, activeCycle, ministryGroups]);
 
   const filteredCorrespondence = useMemo(() => {
     if (selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
@@ -368,6 +503,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       return acc;
     }, initial);
   }, [reportData]);
+
+  const isCustomBalanceActive = useMemo(() => {
+    const cycleStartStr = dateFnsFormat(activeCycle.start, 'yyyy-MM-dd');
+    const match = periodOpeningBalances.find(pb => pb.startDate === cycleStartStr);
+    return match || null;
+  }, [periodOpeningBalances, activeCycle]);
 
   const handleSaveSetup = () => {
     setPrevStats({ ...prevStats, entitiesSFI: tempPrevStats, entitiesNonSFI: {} });
@@ -584,8 +725,45 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     return <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} showFilters={showFilters} />;
   }
 
+  if (selectedReportType === 'dynamic_setup') {
+    return (
+      <div className="p-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <DynamicSetupConfigPanel 
+          config={dynamicSetupConfig} 
+          onSave={onUpdateDynamicSetupConfig} 
+          onBack={() => setSelectedReportType(null)}
+        />
+      </div>
+    );
+  }
+
+  if (selectedReportType?.startsWith('সময়কাল ভিত্তিক প্রারম্ভিক জের সেটআপ')) {
+    return <PeriodOpeningBalanceSetup 
+      ministryGroups={ministryGroups}
+      periodOpeningBalances={periodOpeningBalances}
+      setPeriodOpeningBalances={setPeriodOpeningBalances}
+      setIsSetupMode={setIsSetupMode}
+      setSelectedReportType={setSelectedReportType}
+      IDBadge={IDBadge}
+      startInCreateMode={selectedReportType === 'সময়কাল ভিত্তিক প্রারম্ভিক জের সেটআপ:নতুন'}
+    />;
+  }
+
   if (isSetupMode) {
-    return <OpeningBalanceSetup ministryGroups={ministryGroups} tempPrevStats={tempPrevStats} setTempPrevStats={setTempPrevStats} isEditingSetup={isEditingSetup} setIsEditingSetup={setIsEditingSetup} handleSaveSetup={handleSaveSetup} handleSetupPaste={handleSetupPaste} setIsSetupMode={setIsSetupMode} setSelectedReportType={setSelectedReportType} IDBadge={IDBadge} setupType={selectedReportType || ''} />;
+    return <OpeningBalanceSetup 
+      ministryGroups={ministryGroups} 
+      tempPrevStats={tempPrevStats} 
+      setTempPrevStats={setTempPrevStats} 
+      isEditingSetup={isEditingSetup} 
+      setIsEditingSetup={setIsEditingSetup} 
+      handleSaveSetup={handleSaveSetup} 
+      handleSetupPaste={handleSetupPaste} 
+      setIsSetupMode={setIsSetupMode} 
+      setSelectedReportType={setSelectedReportType} 
+      IDBadge={IDBadge} 
+      setupType={selectedReportType || ''} 
+      dynamicSetupConfig={dynamicSetupConfig}
+    />;
   }
 
   if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') return <QR_1 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
@@ -595,7 +773,21 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') return <QR_5 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
   if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') return <QR_6 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
 
-  return <ReturnSummaryTable reportData={reportData} grandTotals={grandTotals} activeCycle={activeCycle} selectedReportType={selectedReportType} setSelectedReportType={setSelectedReportType} isAdmin={isAdmin || false} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} showFilters={showFilters} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  return <ReturnSummaryTable 
+    reportData={reportData} 
+    grandTotals={grandTotals} 
+    activeCycle={activeCycle} 
+    selectedReportType={selectedReportType} 
+    setSelectedReportType={setSelectedReportType} 
+    isAdmin={isAdmin || false} 
+    HistoricalFilter={HistoricalFilter} 
+    IDBadge={IDBadge} 
+    showFilters={showFilters} 
+    searchTerm={searchTerm} 
+    filterMinistry={filterMinistry} 
+    dynamicSetupConfig={dynamicSetupConfig}
+    isCustomBalanceActive={isCustomBalanceActive}
+  />;
 };
 
 export default ReturnView;
