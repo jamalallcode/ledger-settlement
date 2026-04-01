@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { Settings2, ChevronLeft, Unlock, Pencil, LayoutGrid, Sparkles } from 'lucide-react';
+import { Settings2, ChevronLeft, Unlock, Pencil, LayoutGrid } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP } from '../constants';
 import { MinistryPrevStats } from '../types';
@@ -18,11 +18,6 @@ interface OpeningBalanceSetupProps {
   setSelectedReportType: (type: string | null) => void;
   IDBadge: React.FC<{ id: string }>;
   setupType: string;
-  dynamicSetupConfig?: {
-    enabled: boolean;
-    startDate: string;
-    endDate: string;
-  };
 }
 
 const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
@@ -36,8 +31,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
   setIsSetupMode,
   setSelectedReportType,
   IDBadge,
-  setupType,
-  dynamicSetupConfig
+  setupType
 }) => {
   const isQuarterly = setupType.includes('ত্রৈমাসিক');
   const displayFields: { key: keyof MinistryPrevStats, label: string, subLabel?: string }[] = isQuarterly ? [
@@ -76,17 +70,6 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
             <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">সমন্বিত (UNIFIED) ব্যালেন্স ইনপুট উইন্ডো</span>
           </div>
         </div>
-
-        <div className="flex-1 flex justify-center">
-          <button 
-            onClick={() => setSelectedReportType('dynamic_setup')}
-            className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl font-black text-[13px] transition-all border-2 shadow-sm hover:shadow-md active:scale-95 ${dynamicSetupConfig?.enabled ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'}`}
-          >
-            <Sparkles size={18} className={dynamicSetupConfig?.enabled ? 'text-amber-500 animate-pulse' : 'text-blue-600'} />
-            {dynamicSetupConfig?.enabled ? 'ডাইনামিক সেটআপ সক্রিয়' : 'ডাইনামিক সেটআপ সেট করুন'}
-          </button>
-        </div>
-
         <div className="flex items-center gap-4">
            <button 
              onClick={() => setIsEditingSetup(!isEditingSetup)} 
