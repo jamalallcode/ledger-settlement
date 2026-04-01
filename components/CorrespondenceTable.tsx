@@ -6,7 +6,6 @@ import {
   Hash,
   FileText,
   User,
-  Users,
   MapPin,
   Inbox,
   Computer,
@@ -354,7 +353,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [filterParaType, setFilterParaType] = useState("");
   const [filterType, setFilterType] = useState("");
-  const [filterReceiver, setFilterReceiver] = useState("");
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date | null>(null);
 
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
@@ -463,16 +461,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
     );
   };
 
-  const uniqueReceivers = useMemo(() => {
-    const receivers = new Set<string>();
-    entries.forEach(entry => {
-      if (entry.receiverName) {
-        receivers.add(entry.receiverName);
-      }
-    });
-    return Array.from(receivers).sort();
-  }, [entries]);
-
   const filteredEntries = useMemo(() => {
     return entries
       .filter((entry) => {
@@ -535,7 +523,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           return variations.some(v => normalizedEntryPara === v);
         })();
         const matchType = !filterType || entry.letterType === filterType;
-        const matchReceiver = !filterReceiver || entry.receiverName === filterReceiver;
 
         let matchCycle = true;
         if (activeCycle && entry.diaryDate) {
@@ -544,7 +531,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             entry.diaryDate <= format(activeCycle.end, "yyyy-MM-dd");
         }
 
-        return matchSearch && matchBranch && matchType && matchReceiver && matchCycle;
+        return matchSearch && matchBranch && matchType && matchCycle;
       })
       .sort((a, b) => {
         const dateA = a.diaryDate || "";
@@ -556,7 +543,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         }
         return dateB.localeCompare(dateA);
       });
-  }, [entries, searchTerm, filterParaType, filterType, filterReceiver, activeCycle]);
+  }, [entries, searchTerm, filterParaType, filterType, activeCycle]);
 
   const stats = useMemo(() => {
     const total = filteredEntries.length;
@@ -743,12 +730,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
     setSearchTerm("");
     setFilterParaType("");
     setFilterType("");
-    setFilterReceiver("");
     setSelectedCycleDate(null);
     onClearHighlight?.();
   };
 
-  const isFiltered = searchTerm || filterParaType || filterType || filterReceiver || selectedCycleDate;
+  const isFiltered = searchTerm || filterParaType || filterType || selectedCycleDate;
 
   return (
     <div
@@ -1209,29 +1195,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* Receiver Selection */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">
-                প্রাপক/গ্রহীতা
-              </label>
-              <div className="relative">
-                <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600" size={16} />
-                <select
-                  value={filterReceiver}
-                  onChange={(e) => setFilterReceiver(e.target.value)}
-                  className="w-full pl-9 pr-4 h-[48px] bg-white border border-slate-300 rounded-xl font-bold text-[13px] outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-600 transition-all shadow-sm appearance-none"
-                >
-                  <option value="">সকল প্রাপক</option>
-                  {uniqueReceivers.map((receiver) => (
-                    <option key={receiver} value={receiver}>
-                      {receiver}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               </div>
             </div>
 
