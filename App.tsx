@@ -14,7 +14,7 @@ import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import AdminAnalytics from './subapps/admin_analytics/AdminAnalytics';
-import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, CorrespondenceEntry } from './types';
+import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, CorrespondenceEntry, DynamicSetupConfig } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
 import { supabase } from './lib/supabase';
@@ -26,6 +26,7 @@ const PREV_STATS_KEY = 'ledger_prev_stats_v1';
 const LOCK_MODE_KEY = 'ledger_lock_mode_status';
 const ADMIN_MODE_KEY = 'ledger_admin_access_v1';
 const OFFLINE_QUEUE_KEY = 'ledger_offline_sync_queue_v1';
+const DYNAMIC_SETUP_KEY = 'ledger_dynamic_setup_config_v1';
 
 const generateId = () => {
   return 'id-' + Math.random().toString(36).substring(2, 11) + '-' + Date.now().toString(36);
@@ -73,6 +74,11 @@ const App: React.FC = () => {
 
   // New state for direct report selection from sidebar
   const [reportType, setReportType] = useState<string | null>(null);
+  const [dynamicSetupConfig, setDynamicSetupConfig] = useState<DynamicSetupConfig>({
+    enabled: false,
+    startDate: '',
+    endDate: ''
+  });
   const [showAdminAlert, setShowAdminAlert] = useState(false);
   const [hasShownAlert, setHasShownAlert] = useState(false);
 
@@ -99,6 +105,12 @@ const App: React.FC = () => {
                  reportType?.includes('ষাণ্মাসিক') ? 'halfYearly' :
                  reportType?.includes('বাৎসরিক') ? 'yearly' : 'monthly';
     setAllPrevStats(prev => ({ ...prev, [type]: stats }));
+  };
+
+  const handleSetDynamicSetupConfig = (config: DynamicSetupConfig) => {
+    console.log("App: Updating dynamic setup config:", config);
+    setDynamicSetupConfig(config);
+    localStorage.setItem(DYNAMIC_SETUP_KEY, JSON.stringify(config));
   };
 
   const mainScrollRef = useRef<HTMLElement>(null);
@@ -204,6 +216,16 @@ const App: React.FC = () => {
     
     // Initial check on load
     if (navigator.onLine) syncOfflineData();
+
+    // Load Dynamic Setup Config
+    const savedDynamicConfig = localStorage.getItem(DYNAMIC_SETUP_KEY);
+    if (savedDynamicConfig) {
+      try {
+        setDynamicSetupConfig(JSON.parse(savedDynamicConfig));
+      } catch (e) {
+        console.error("Error parsing dynamic setup config:", e);
+      }
+    }
 
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -851,6 +873,9 @@ const App: React.FC = () => {
                   setSelectedReportType={setReportType}
                   showFilters={showRegisterFilters}
                   setShowFilters={setShowRegisterFilters}
+                  dynamicSetupConfig={dynamicSetupConfig}
+                  onUpdateDynamicSetupConfig={handleSetDynamicSetupConfig}
+                  activeTab={activeTab}
                 />
               )}
               

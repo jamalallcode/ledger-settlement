@@ -237,6 +237,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   >
                     <IDBadge id={item.badgeId} />
                     <div className="flex items-center gap-1.5">
+                      <item.icon size={12} className={activeTab === item.id ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'} />
                       <span className="text-[10px]">{item.label}</span>
                     </div>
                     {item.isDropdown && (
@@ -520,6 +521,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <IDBadge id="side-nav-dashboard" />
                   <div className="flex items-center gap-1.5">
+                    <LayoutDashboard size={12} className={activeTab === 'dashboard' ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'} />
                     <span className="text-[10px]">ড্যাশবোর্ড</span>
                   </div>
                 </button>
