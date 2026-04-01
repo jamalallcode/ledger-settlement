@@ -11,6 +11,7 @@ import {
   Inbox,
   Computer,
   CheckCircle2,
+  AlertCircle,
   ChevronRight,
   ArrowRightCircle,
   ListOrdered,
@@ -779,12 +780,31 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           </div>
 
           <div className="flex items-center gap-3 relative z-10">
+            {(() => {
+              const unassignedCount = entries.filter(e => !e.receiverName || e.receiverName.trim() === "").length;
+              if (unassignedCount > 0) {
+                return (
+                  <button
+                    onClick={() => {
+                      setSearchTerm("__UNASSIGNED__");
+                      setShowFilters(true);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-full font-black text-[11px] shadow-lg shadow-red-200 border border-red-400/30 animate-pulse hover:scale-105 transition-transform"
+                  >
+                    <AlertCircle size={14} />
+                    <span>অনির্ধারিত এন্ট্রি: {toBengaliDigits(unassignedCount)} টি</span>
+                  </button>
+                );
+              }
+              return null;
+            })()}
             {isFiltered && (
               <button
                 onClick={clearFilters}
-                className="px-4 py-3 bg-red-50 text-red-600 rounded-xl font-black text-[12px] flex items-center gap-2 hover:bg-red-100 transition-all border border-red-100"
+                title="ফিল্টার মুছুন"
+                className="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center hover:bg-red-100 transition-all border border-red-100 shadow-sm"
               >
-                <XCircle size={16} /> ফিল্টার মুছুন
+                <Clock size={18} className="rotate-180" />
               </button>
             )}
             <div className="relative">
@@ -1219,16 +1239,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center justify-between">
                 <span>অনুসন্ধান</span>
-                <button 
-                  onClick={() => setSearchTerm(searchTerm === "__UNASSIGNED__" ? "" : "__UNASSIGNED__")}
-                  className={`text-[9px] px-2 py-0.5 rounded-full border transition-all ${
-                    searchTerm === "__UNASSIGNED__" 
-                      ? "bg-red-100 text-red-700 border-red-200" 
-                      : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100"
-                  }`}
-                >
-                  {searchTerm === "__UNASSIGNED__" ? "অনির্ধারিত ফিল্টার বন্ধ করুন" : "অনির্ধারিত এন্ট্রি খুঁজুন"}
-                </button>
               </label>
               <div className="relative">
                 <Search
