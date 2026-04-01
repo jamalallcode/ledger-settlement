@@ -255,7 +255,6 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
     };
 
     const filteredEntries = useMemo(() => {
-      const activeLabelCanon = activeCycle ? toEnglishDigits(activeCycle.label).trim() : "";
       return entries
         .filter((entry) => {
           let entryDate = entry.issueDateISO;
@@ -267,12 +266,8 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           }
           if (!entryDate) entryDate = "";
 
-          const labelMatch = activeLabelCanon && entry.cycleLabel && 
-            toEnglishDigits(entry.cycleLabel).trim() === activeLabelCanon;
-
           const matchDate =
             !activeCycle ||
-            labelMatch ||
             (entryDate !== "" &&
               entryDate >= format(activeCycle.start, "yyyy-MM-dd") &&
               entryDate <= format(activeCycle.end, "yyyy-MM-dd"));
@@ -531,14 +526,8 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
       return filteredEntries.reduce(
         (acc, entry) => {
           const paras = entry.paragraphs || [];
-          
-          // Count full settlements from paragraphs OR from meeting summary count
-          const pFullCount = paras.filter((p) => p.status === "পূর্ণাঙ্গ").length;
-          const mFullCount = parseBengaliNumber(entry.meetingFullSettledParaCount || "0");
-          acc.paraCount += Math.max(pFullCount, mFullCount);
-
-          // Use entry.involvedAmount if available as it includes meeting unsettled amounts
-          acc.inv += entry.involvedAmount || paras.reduce((sum, p) => sum + (p.involvedAmount || 0), 0);
+          acc.paraCount += paras.filter((p) => p.status === "পূর্ণাঙ্গ").length;
+          acc.inv += paras.reduce((sum, p) => sum + (p.involvedAmount || 0), 0);
 
           const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
           const rCount =

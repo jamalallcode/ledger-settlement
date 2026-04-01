@@ -101,7 +101,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isSettlementExpanded, setIsSettlementExpanded] = useState(false);
   const [isOnlineExpanded, setIsOnlineExpanded] = useState(false);
   const [isQuarterlyExpanded, setIsQuarterlyExpanded] = useState(false);
-  const [isSetupExpanded, setIsSetupExpanded] = useState(false);
   
   // Auto-expand based on activeTab
   useEffect(() => {
@@ -504,46 +503,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                         >
                           <span>বাৎসরিক</span>
                         </button>
-
-                        {/* ৫. সেটআপ (Toggle) */}
-                        {isAdmin && (
-                          <>
-                            <button 
-                              onClick={() => setIsSetupExpanded(!isSetupExpanded)}
-                              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-black transition-all ${isSetupExpanded ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <span>সেটআপ</span>
-                              </div>
-                              <ChevronDown size={6} className={`transition-transform duration-300 ${isSetupExpanded ? 'rotate-180' : ''}`} />
-                            </button>
-
-                            <AnimatePresence>
-                              {isSetupExpanded && (
-                                <motion.div 
-                                  initial={{ height: 0, opacity: 0 }}
-                                  animate={{ height: 'auto', opacity: 1 }}
-                                  exit={{ height: 0, opacity: 0 }}
-                                  transition={{ duration: 0.2, ease: "easeInOut" }}
-                                  className="pl-3 py-1 space-y-1 overflow-hidden"
-                                >
-                                  <button 
-                                    onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক')}
-                                    className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: মাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
-                                  >
-                                    মাসিক জের
-                                  </button>
-                                  <button 
-                                    onClick={() => setActiveTab('return', null, 'সময়কাল ভিত্তিক প্রারম্ভিক জের সেটআপ')}
-                                    className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'সময়কাল ভিত্তিক প্রারম্ভিক জের সেটআপ' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
-                                  >
-                                    কাস্টম জের (সময়কাল ভিত্তিক)
-                                  </button>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </>
-                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
