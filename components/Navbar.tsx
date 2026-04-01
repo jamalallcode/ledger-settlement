@@ -79,9 +79,7 @@ const Navbar: React.FC<NavbarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const navItems = [
-    { id: 'landing', label: 'হোম', icon: Home },
-  ];
+  const navItems: any[] = [];
 
   return (
     <nav className="sticky top-0 z-[9991] bg-slate-900 border-b border-slate-800 h-[45px] shadow-2xl no-print relative">

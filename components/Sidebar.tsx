@@ -110,6 +110,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, [activeTab]);
 
   const handleLogoClick = () => {
+    setActiveTab('landing');
     const now = Date.now();
     if (now - lastClickTime.current > 2000) clickCount.current = 0;
     clickCount.current += 1;
@@ -154,7 +155,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const menuItems = [
-    { id: 'landing', label: 'হোম', icon: Home, badgeId: 'side-nav-home' },
     { id: 'entry', label: 'নতুন এন্ট্রি', icon: FilePlus2, badgeId: 'side-nav-entry', isDropdown: true },
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter, badgeId: 'side-nav-register', isDropdown: true },
     { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return', isDropdown: true },
@@ -192,9 +192,33 @@ const Sidebar: React.FC<SidebarProps> = ({
         <IDBadge id="sidebar-container" />
         <div id="sidebar-header" className="p-1.5 border-b border-slate-800 flex items-center justify-between relative">
           <IDBadge id="sidebar-header" />
-          <div id="sidebar-logo" onClick={handleLogoClick} className="flex items-center gap-1 relative cursor-pointer select-none active:scale-95 transition-transform">
+          <div id="sidebar-logo" onClick={handleLogoClick} className="flex items-center gap-2 relative cursor-pointer select-none active:scale-95 transition-transform">
             <IDBadge id="sidebar-logo" />
-            <div className="w-4 h-4 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/40">
+            <div 
+              className={`group relative flex items-center justify-center w-6 h-6 rounded-full transition-all duration-500 overflow-hidden
+                ${activeTab === 'landing' 
+                  ? 'scale-110 z-10 shadow-[0_5px_15px_rgba(0,0,0,0.4)]' 
+                  : 'opacity-90 hover:opacity-100 hover:scale-105 active:scale-95 shadow-[0_2px_8px_rgba(0,0,0,0.3)]'}
+              `}
+            >
+              {/* The Multi-color Glass Sphere Base */}
+              <div className="absolute inset-0 bg-[conic-gradient(from_225deg,#2dd4bf,#3b82f6,#ef4444,#f97316,#2dd4bf)]" />
+              
+              {/* Inner Shadow for depth */}
+              <div className="absolute inset-0 rounded-full shadow-[inset_0_-2px_6px_rgba(0,0,0,0.5),inset_0_2px_6px_rgba(255,255,255,0.4)]" />
+              
+              {/* Top Glossy Highlight */}
+              <div className="absolute top-[4%] left-[12%] w-[76%] h-[48%] bg-gradient-to-b from-white/90 to-transparent rounded-[100%] pointer-events-none" />
+              
+              {/* Bottom Reflection */}
+              <div className="absolute bottom-[6%] left-[22%] w-[56%] h-[18%] bg-white/30 blur-[1px] rounded-[100%] pointer-events-none" />
+              
+              {/* Active State Glow */}
+              <div className={`absolute inset-0 rounded-full transition-opacity duration-500 ${activeTab === 'landing' ? 'bg-white/10' : 'opacity-0'}`} />
+              
+              <div className="relative z-10 flex items-center justify-center">
+                <Home size={10} className="text-slate-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)]" />
+              </div>
             </div>
             <span className="font-black text-white tracking-tight text-[11px]">অডিট রেজিস্টার</span>
           </div>
