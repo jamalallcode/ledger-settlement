@@ -29,6 +29,7 @@ import {
   XCircle,
   AlertCircle,
   MessageSquare,
+  User,
 } from "lucide-react";
 import {
   toBengaliDigits,
@@ -37,6 +38,7 @@ import {
   toEnglishDigits,
 } from "../utils/numberUtils.ts";
 import HighlightText from "./HighlightText";
+import ReceiverAvatar from "./ReceiverAvatar";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import { OFFICE_HEADER } from "../constants.ts";
 import { getCurrentCycle, getCycleForDate } from "../utils/cycleHelper.ts";
@@ -829,6 +831,17 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                 value: entry.remarks || "N/A",
                 icon: MessageSquare,
                 col: "purple",
+              },
+              {
+                label: "২১. গ্রহণকারী",
+                value: entry.receiverName ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <ReceiverAvatar name={entry.receiverName} size="sm" />
+                    <span className="text-[11px] font-bold text-slate-900">{entry.receiverName}</span>
+                  </div>
+                ) : "N/A",
+                icon: User,
+                col: "emerald",
               },
             ].map((item, i) => (
               <div
@@ -1764,6 +1777,12 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                                 />
                                               </span>
                                             </p>
+                                            {entry.receiverName && (
+                                              <div className="pt-1 mt-1 border-t border-slate-100 flex items-center gap-2">
+                                                <ReceiverAvatar name={entry.receiverName} size="sm" />
+                                                <span className="text-[10px] font-black text-slate-600">{entry.receiverName}</span>
+                                              </div>
+                                            )}
                                           </div>
                                           <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
                                             {isExpanded ? (

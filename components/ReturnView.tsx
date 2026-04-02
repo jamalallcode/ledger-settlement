@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import React from 'react';
-import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
+import { SettlementEntry, CumulativeStats, MinistryPrevStats, DynamicSetupConfig } from '../types';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants';
 import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles } from 'lucide-react';
@@ -17,6 +17,8 @@ import QR_3 from './QR_3';
 import QR_4 from './QR_4';
 import QR_5 from './QR_5';
 import QR_6 from './QR_6';
+// import DynamicSetupConfigPanel from '../dynamic-setup/DynamicSetupConfigPanel';
+// import { calculateDynamicOpeningBalance } from '../dynamic-setup/dynamicSetupService';
 
 interface ReturnViewProps {
   entries: SettlementEntry[];
@@ -35,13 +37,17 @@ interface ReturnViewProps {
   setSelectedReportType: (type: string | null) => void;
   showFilters: boolean;
   setShowFilters: (val: boolean) => void;
+  dynamicSetupConfig: DynamicSetupConfig;
+  onUpdateDynamicSetupConfig: (config: DynamicSetupConfig) => void;
+  activeTab?: string;
 }
 
 const ReturnView: React.FC<ReturnViewProps> = ({ 
   entries, correspondenceEntries = [], cycleLabel, prevStats, setPrevStats, 
   isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister, isAdmin,
   selectedReportType, setSelectedReportType,
-  showFilters, setShowFilters
+  showFilters, setShowFilters,
+  dynamicSetupConfig, onUpdateDynamicSetupConfig, activeTab
 }) => {
   const [isSetupMode, setIsSetupMode] = useState(false);
   const [isEditingSetup, setIsEditingSetup] = useState(false);
@@ -115,7 +121,27 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   };
 
   const calculateRecursiveOpening = (entityName: string, cycleStart: Date, paraType: 'এসএফআই' | 'নন এসএফআই' = 'এসএফআই') => {
-    const baseMap = isSFI(paraType) ? prevStats.entitiesSFI : prevStats.entitiesNonSFI;
+    let baseMap = isSFI(paraType) ? prevStats.entitiesSFI : prevStats.entitiesNonSFI;
+    let effectiveEntryStartDate = ENTRY_START_DATE;
+
+    if (dynamicSetupConfig.enabled && dynamicSetupConfig.startDate && dynamicSetupConfig.endDate) {
+      // const dynamicStats = calculateDynamicOpeningBalance(entries, dynamicSetupConfig);
+      const dynamicStats = { inv: 0, vRec: 0, vAdj: 0, iRec: 0, iAdj: 0, oRec: 0, oAdj: 0, entitiesSFI: {}, entitiesNonSFI: {} };
+      baseMap = isSFI(paraType) ? dynamicStats.entitiesSFI : dynamicStats.entitiesNonSFI;
+      
+      // If dynamic setup is enabled, we start counting "past entries" from the day after endDate
+      try {
+        const endDateObj = new Date(dynamicSetupConfig.endDate);
+        if (!isNaN(endDateObj.getTime())) {
+          const nextDay = new Date(endDateObj);
+          nextDay.setDate(nextDay.getDate() + 1);
+          effectiveEntryStartDate = nextDay.toISOString().split('T')[0];
+        }
+      } catch (e) {
+        console.error("Error calculating effective start date:", e);
+      }
+    }
+
     const base = baseMap[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
     const cycleStartStr = dateFnsFormat(cycleStart, 'yyyy-MM-dd');
     const activeLabelCanon = toEnglishDigits(activeCycle.label).trim();
@@ -125,7 +151,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
         if (e.cycleLabel && toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon) return false;
         const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
-        return entryDate !== '' && entryDate < cycleStartStr && entryDate >= ENTRY_START_DATE;
+        return entryDate !== '' && entryDate < cycleStartStr && entryDate >= effectiveEntryStartDate;
     });
 
     let pastRC = 0, pastRA = 0, pastSC = 0, pastSA = 0;
@@ -584,8 +610,37 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     return <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} showFilters={showFilters} />;
   }
 
+  if (selectedReportType === 'dynamic_setup') {
+    return (
+      <div className="p-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="p-12 text-center bg-white rounded-3xl border-2 border-dashed border-slate-200">
+          <p className="text-slate-500 font-bold">Dynamic Setup is currently unavailable.</p>
+          <button 
+            onClick={() => setSelectedReportType(null)}
+            className="mt-4 px-6 py-2 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
+          >
+            ফিরে যান
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (isSetupMode) {
-    return <OpeningBalanceSetup ministryGroups={ministryGroups} tempPrevStats={tempPrevStats} setTempPrevStats={setTempPrevStats} isEditingSetup={isEditingSetup} setIsEditingSetup={setIsEditingSetup} handleSaveSetup={handleSaveSetup} handleSetupPaste={handleSetupPaste} setIsSetupMode={setIsSetupMode} setSelectedReportType={setSelectedReportType} IDBadge={IDBadge} setupType={selectedReportType || ''} />;
+    return <OpeningBalanceSetup 
+      ministryGroups={ministryGroups} 
+      tempPrevStats={tempPrevStats} 
+      setTempPrevStats={setTempPrevStats} 
+      isEditingSetup={isEditingSetup} 
+      setIsEditingSetup={setIsEditingSetup} 
+      handleSaveSetup={handleSaveSetup} 
+      handleSetupPaste={handleSetupPaste} 
+      setIsSetupMode={setIsSetupMode} 
+      setSelectedReportType={setSelectedReportType} 
+      IDBadge={IDBadge} 
+      setupType={selectedReportType || ''} 
+      dynamicSetupConfig={dynamicSetupConfig}
+    />;
   }
 
   if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') return <QR_1 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
@@ -595,7 +650,20 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') return <QR_5 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
   if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') return <QR_6 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
 
-  return <ReturnSummaryTable reportData={reportData} grandTotals={grandTotals} activeCycle={activeCycle} selectedReportType={selectedReportType} setSelectedReportType={setSelectedReportType} isAdmin={isAdmin || false} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} showFilters={showFilters} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  return <ReturnSummaryTable 
+    reportData={reportData} 
+    grandTotals={grandTotals} 
+    activeCycle={activeCycle} 
+    selectedReportType={selectedReportType} 
+    setSelectedReportType={setSelectedReportType} 
+    isAdmin={isAdmin || false} 
+    HistoricalFilter={HistoricalFilter} 
+    IDBadge={IDBadge} 
+    showFilters={showFilters} 
+    searchTerm={searchTerm} 
+    filterMinistry={filterMinistry} 
+    dynamicSetupConfig={dynamicSetupConfig}
+  />;
 };
 
 export default ReturnView;

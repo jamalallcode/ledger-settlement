@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Plus, FileEdit, Trash, X, ShieldCheck, Sparkles, AlertCircle, Loader2, FileText, Check } from 'lucide-react';
+import ReceiverAvatar from './ReceiverAvatar';
 import { SFI_RECEIVERS } from '../utils/sfi';
 import { NONSFI_RECEIVERS } from '../utils/nonsfi';
 import { isSFI, isNonSFI, getBranchVariations } from '../utils/branchUtils';
@@ -535,13 +536,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
               {receivers.map((profile, idx) => (
                 <div key={idx} className="group flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl hover:border-blue-300 hover:bg-blue-50/30 transition-all">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-white border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden group-hover:border-blue-200 transition-colors">
-                      {profile.image ? (
-                        <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <User size={20} className="text-slate-300" />
-                      )}
-                    </div>
+                    <ReceiverAvatar name={profile.name} size="xl" />
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-slate-700 block">{profile.name}</span>

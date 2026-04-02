@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { toBengaliDigits, parseBengaliNumber, formatDateBN } from '../../utils/numberUtils';
 import { 
   BarChart3, Calendar, Users, FileText, 
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReceiverAvatar from '../../components/ReceiverAvatar';
 
 interface AdminAnalyticsProps {
   entries: any[];
@@ -27,6 +28,8 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     data: any[];
   } | null>(null);
 
+  const [storageTick, setStorageTick] = useState(0);
+
   const receiverProfiles = useMemo(() => {
     const sfi = JSON.parse(localStorage.getItem('ledger_correspondence_receivers_sfi') || '[]');
     const nonSfi = JSON.parse(localStorage.getItem('ledger_correspondence_receivers_nonsfi') || '[]');
@@ -34,10 +37,17 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     const map: Record<string, { designation?: string, image?: string }> = {};
     all.forEach((p: any) => {
       if (typeof p === 'object' && p.name) {
-        map[p.name] = { designation: p.designation, image: p.image };
+        const normalizedName = p.name.trim();
+        map[normalizedName] = { designation: p.designation, image: p.image };
       }
     });
     return map;
+  }, [correspondenceEntries, storageTick]);
+
+  useEffect(() => {
+    const handleStorage = () => setStorageTick(t => t + 1);
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
   const allData = useMemo(() => [...entries, ...correspondenceEntries], [entries, correspondenceEntries]);
@@ -59,17 +69,25 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     });
   }, [correspondenceEntries, startDate, endDate]);
 
+  const calculateParaCount = (entry: any) => {
+    const pNos = entry.paraNo ? entry.paraNo.split(',').map((p: string) => p.trim()).filter((p: string) => p) : [];
+    return pNos.length > 0 ? pNos.length : parseBengaliNumber(entry.totalParas || '0');
+  };
+
   const auditorStats = useMemo(() => {
-    const stats: Record<string, { name: string, letterCount: number, paraCount: number, designation?: string, image?: string }> = {};
+    const stats: Record<string, { name: string, letterCount: number, paraCount: number, paraNos: string[], designation?: string, image?: string }> = {};
 
     filteredData.forEach(entry => {
-      const name = entry.receiverName || 'অনির্ধারিত (Unassigned)';
+      const rawName = entry.receiverName || 'অনির্ধারিত (Unassigned)';
+      const name = rawName.trim();
+      
       if (!stats[name]) {
         const profile = receiverProfiles[name] || {};
         stats[name] = { 
           name, 
           letterCount: 0, 
           paraCount: 0,
+          paraNos: [],
           designation: profile.designation,
           image: profile.image
         };
@@ -78,7 +96,10 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       stats[name].letterCount += 1;
       
       // Count paragraphs from correspondence entries
-      stats[name].paraCount += parseBengaliNumber(entry.totalParas || '0');
+      stats[name].paraCount += calculateParaCount(entry);
+      if (entry.paraNo) {
+        stats[name].paraNos.push(entry.paraNo);
+      }
     });
 
     return Object.values(stats).sort((a, b) => b.letterCount - a.letterCount);
@@ -97,7 +118,10 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
   const totalParas = filteredAuditorStats.reduce((sum, s) => sum + s.paraCount, 0);
 
   const handleShowDetails = (auditorName: string, type: 'letters' | 'paragraphs') => {
-    const data = filteredData.filter(entry => (entry.receiverName || 'অনির্ধারিত (Unassigned)') === auditorName);
+    const data = filteredData.filter(entry => {
+      const entryName = (entry.receiverName || 'অনির্ধারিত (Unassigned)').trim();
+      return entryName === auditorName.trim();
+    });
     setSelectedAuditorDetails({ name: auditorName, type, data });
   };
 
@@ -112,13 +136,6 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
         
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-start gap-8">
           <div className="flex items-center gap-4 shrink-0">
-            <button 
-              onClick={onBack}
-              className="group/back flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all active:scale-95 border border-slate-200 shadow-sm"
-            >
-              <ChevronLeft size={18} className="group-hover/back:-translate-x-0.5 transition-transform" />
-              <span className="text-xs font-black uppercase tracking-wider">ড্যাশবোর্ড</span>
-            </button>
             <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-blue-500/20 border border-white/10 group-hover:scale-105 transition-transform duration-500">
               <BarChart3 size={28} className="text-white" />
             </div>
@@ -294,13 +311,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                     <tr key={idx} className="hover:bg-blue-50/30 transition-colors group">
                       <td className="px-8 py-6">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm">
-                            {stat.image ? (
-                              <img src={stat.image} alt={stat.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <Users size={20} className="text-slate-400 group-hover:text-white" />
-                            )}
-                          </div>
+                          <ReceiverAvatar name={stat.name} size="md" />
                           <div>
                             <span className="text-sm font-black text-slate-700 block">{stat.name}</span>
                             {stat.designation && (
@@ -318,12 +329,19 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                         </button>
                       </td>
                       <td className="px-8 py-6 text-center">
-                        <button 
-                          onClick={() => handleShowDetails(stat.name, 'paragraphs')}
-                          className="px-4 py-1.5 bg-purple-50 text-purple-600 rounded-full text-sm font-black hover:bg-purple-100 transition-colors cursor-pointer"
-                        >
-                          {toBengaliDigits(stat.paraCount.toString())}
-                        </button>
+                        <div className="flex flex-col items-center gap-1">
+                          <button 
+                            onClick={() => handleShowDetails(stat.name, 'paragraphs')}
+                            className="px-4 py-1.5 bg-purple-50 text-purple-600 rounded-full text-sm font-black hover:bg-purple-100 transition-all cursor-pointer relative group/para"
+                          >
+                            {toBengaliDigits(stat.paraCount.toString())}
+                          </button>
+                          {stat.paraNos.length > 0 && (
+                            <span className="text-[9px] font-bold text-slate-400 max-w-[120px] truncate" title={stat.paraNos.join(', ')}>
+                              ({stat.paraNos.join(', ')})
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-8 py-6 text-right">
                         <button className="p-2 text-slate-300 hover:text-blue-600 transition-colors">
@@ -352,13 +370,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
               {filteredAuditorStats.map((stat, idx) => (
                 <div key={idx} className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-xl transition-all duration-500 group">
                   <div className="flex items-center justify-between mb-6">
-                    <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm">
-                      {stat.image ? (
-                        <img src={stat.image} alt={stat.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <Users size={28} className="text-slate-300 group-hover:text-white" />
-                      )}
-                    </div>
+                    <ReceiverAvatar name={stat.name} size="lg" />
                     <div className="flex flex-col items-end">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">র‍্যাঙ্ক</span>
                       <span className="text-xl font-black text-blue-600">#{toBengaliDigits((idx + 1).toString())}</span>
@@ -416,9 +428,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
               {/* Modal Header */}
               <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-6 md:p-8 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-white">
-                    <FileText size={24} />
-                  </div>
+                  <ReceiverAvatar name={selectedAuditorDetails.name} size="md" />
                   <div>
                     <h3 className="text-xl font-black text-white tracking-tight">
                       {selectedAuditorDetails.name} - এর বিস্তারিত তথ্য
@@ -444,8 +454,9 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                       <tr className="bg-slate-50 border-b border-slate-100">
                         <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">ডায়েরি নম্বর</th>
                         <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">তারিখ</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">বিষয়</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">পত্রের বিবরণ</th>
                         <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">অনুচ্ছেদ</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">অনুচ্ছেদ নং</th>
                         <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">উৎস</th>
                       </tr>
                     </thead>
@@ -461,13 +472,18 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <p className="text-xs font-bold text-slate-600 max-w-md line-clamp-2">{item.subject || '---'}</p>
+                            <p className="text-xs font-bold text-slate-700 max-w-md line-clamp-2">{item.description || item.subject || '---'}</p>
                           </td>
                           <td className="px-6 py-4 text-center">
                             <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
                               selectedAuditorDetails.type === 'paragraphs' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
                             }`}>
-                              {toBengaliDigits(item.totalParas || '০')} টি
+                              {toBengaliDigits(calculateParaCount(item).toString())} টি
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className="text-[10px] font-black text-slate-600">
+                              {item.paraNo || '-'}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-right">

@@ -46,6 +46,7 @@ import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import { getCurrentCycle, getCycleForDate } from "../utils/cycleHelper";
 import { format, addMonths } from "date-fns";
 import { CorrespondenceEntry } from "../types";
+import ReceiverAvatar from "./ReceiverAvatar";
 
 interface CorrespondenceTableProps {
   entries: CorrespondenceEntry[];
@@ -1512,12 +1513,23 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               <span className={labelCls}>
                                 ৪. প্রেরিত অনু: সংখ্যা:
                               </span>
-                              <span className={valCls + " pl-3"}>
-                                <HighlightText
-                                  text={`${toBengaliDigits(entry.totalParas)} টি`}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
+                              <div className="flex flex-col pl-3">
+                                <span className={valCls}>
+                                  <HighlightText
+                                    text={`${(() => {
+                                      const pNos = entry.paraNo ? entry.paraNo.split(',').map(p => p.trim()).filter(p => p) : [];
+                                      const pCount = pNos.length > 0 ? pNos.length : parseBengaliNumber(entry.totalParas || '0');
+                                      return toBengaliDigits(pCount.toString());
+                                    })()} টি`}
+                                    searchTerm={searchTerm}
+                                  />
+                                </span>
+                                {entry.paraNo && (
+                                  <span className="text-[9px] font-bold text-slate-400">
+                                    (অনুচ্ছেদ নং: {entry.paraNo})
+                                  </span>
+                                )}
+                              </div>
                             </div>
                             <div className="flex flex-col">
                               <span className={labelCls}>
@@ -1597,14 +1609,19 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               <div className="text-[9px] font-bold text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1">
                                 <Inbox size={8} /> গ্রহণকারী
                               </div>
-                              <div className="font-bold text-slate-900 text-[12px] leading-tight break-words">
-                                <HighlightText
-                                  text={entry.receiverName || "-"}
-                                  searchTerm={searchTerm}
-                                />
-                              </div>
-                              <div className="text-[9px] text-slate-500 font-bold">
-                                {formatDateBN(entry.receivedDate)}
+                              <div className="flex items-center gap-2">
+                                <ReceiverAvatar name={entry.receiverName || ""} size="md" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-bold text-slate-900 text-[12px] leading-tight break-words">
+                                    <HighlightText
+                                      text={entry.receiverName || "-"}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </div>
+                                  <div className="text-[9px] text-slate-500 font-bold">
+                                    {formatDateBN(entry.receivedDate)}
+                                  </div>
+                                </div>
                               </div>
                             </div>
 
@@ -1776,6 +1793,22 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                           />
                                         </div>
                                       </div>
+                                    </div>
+                                  </div>
+
+                                  <div
+                                    className={`p-1.5 border rounded-lg space-y-1 transition-colors ${entry.archiveNo ? "bg-purple-600/10 border-purple-400 ring-2 ring-purple-50" : "bg-purple-50/50 border-purple-100"}`}
+                                  >
+                                    <div
+                                      className={`text-[9px] font-bold uppercase tracking-tighter flex items-center gap-1 ${entry.archiveNo ? "text-purple-700" : "text-slate-700"}`}
+                                    >
+                                      <Hash size={8} /> আর্কাইভ নং
+                                    </div>
+                                    <div className="text-[10px] font-bold text-slate-900 px-1.5 py-1 bg-white rounded-md border border-slate-200">
+                                      <HighlightText
+                                        text={entry.archiveNo || "-"}
+                                        searchTerm={searchTerm}
+                                      />
                                     </div>
                                   </div>
                                 </>

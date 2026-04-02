@@ -5,6 +5,7 @@ import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberU
 import { OFFICE_HEADER } from '../constants';
 import { format, startOfMonth, addDays, isBefore, subMonths, parseISO } from 'date-fns';
 import LetterDetailsModal from './LetterDetailsModal';
+import ReceiverAvatar from './ReceiverAvatar';
 
 interface DDSirCorrespondenceReturnProps {
   entries: any[];
@@ -756,7 +757,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         <td className={stickyTdStyle}>{toBengaliDigits(globalIdx)}</td>
                         {rowIdx === 0 && (
                           <td rowSpan={group.rows.length} className={stickyTdStyle + " bg-slate-50/50 group-hover:bg-blue-200/40 transition-colors"}>
-                            <div className="flex items-center justify-center h-full">
+                            <div className="flex flex-col items-center justify-center gap-2 h-full">
+                              <ReceiverAvatar name={group.auditor} size="sm" />
                               <div className="font-bold text-slate-900 text-[11px] leading-tight [writing-mode:vertical-rl] rotate-180 whitespace-nowrap py-2">
                                 {group.auditor}
                               </div>
@@ -850,7 +852,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <tbody>
                   {auditorWiseStats.map((stat, idx) => (
                     <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
-                      <td className="border border-slate-200 p-2 text-[12px] font-bold text-slate-900">{stat.name}</td>
+                      <td className="border border-slate-200 p-2 text-[12px] font-bold text-slate-900">
+                        <div className="flex items-center gap-2">
+                          <ReceiverAvatar name={stat.name} size="sm" />
+                          <span>{stat.name}</span>
+                        </div>
+                      </td>
                       <td 
                         className="border border-slate-200 p-2 text-center text-[12px] font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all"
                         onClick={() => handleCountClick(`${stat.name} - অডিটরের কাছে`, stat.auditorLetters)}

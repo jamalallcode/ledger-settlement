@@ -5,6 +5,7 @@ import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberU
 import { OFFICE_HEADER } from '../constants';
 import { format as dateFnsFormat } from 'date-fns';
 import LetterDetailsModal from './LetterDetailsModal';
+import ReceiverAvatar from './ReceiverAvatar';
 
 interface CorrespondenceDhakaReturnProps {
   correspondenceEntries: any[];
@@ -632,7 +633,12 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                 <tbody>
                   {auditorWiseStats.map((stat, idx) => (
                     <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
-                      <td className="border border-slate-200 p-2 text-[12px] font-bold text-slate-900">{stat.name}</td>
+                      <td className="border border-slate-200 p-2 text-[12px] font-bold text-slate-900">
+                        <div className="flex items-center gap-2">
+                          <ReceiverAvatar name={stat.name} size="sm" />
+                          <span>{stat.name}</span>
+                        </div>
+                      </td>
                       <td 
                         className="border border-slate-200 p-2 text-center text-[12px] font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all"
                         onClick={() => handleCountClick(`${stat.name} - অডিটরের কাছে`, stat.auditorLetters)}
