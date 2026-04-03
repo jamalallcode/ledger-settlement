@@ -73,3 +73,16 @@ export const formatDateBN = (iso: string | undefined | null): string => {
   }
   return toBengaliDigits(iso);
 };
+
+/**
+ * Normalizes a name by removing invisible characters, extra whitespace, and common punctuation.
+ */
+export const normalizeName = (name: string | null | undefined): string => {
+  if (!name) return '';
+  return name
+    .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '') // Remove all possible invisible characters and non-breaking spaces
+    .trim()
+    .replace(/\s+/g, ' ')                  // Normalize internal whitespace to a single space
+    .replace(/[:ঃ।\.\-]/g, '')             // Remove punctuation for comparison (colon, visarga, dari, dot, dash)
+    .normalize('NFC');                     // Normalize Unicode to canonical form
+};

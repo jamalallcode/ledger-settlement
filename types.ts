@@ -116,6 +116,7 @@ export interface CorrespondenceEntry {
   presentationDate: string;
   presentedToName?: string;
   sentParaCount: string;
+  paraNo?: string;
   receiverName: string;
   receivedDate: string;
   isOnline: string;
@@ -170,4 +171,12 @@ export interface ModuleVisibility {
   change_pass: boolean;
   admin_analytics: boolean;
   audit_details: boolean;
+}
+
+export interface DynamicSetupConfig {
+  id?: string;
+  name: string;
+  description?: string;
+  config: any;
+  createdAt?: string;
 }

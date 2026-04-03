@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { User, Plus, FileEdit, Trash, X, ShieldCheck, Sparkles, AlertCircle, Loader2, FileText, Check } from 'lucide-react';
+import { User, Plus, FileEdit, Trash, X, ShieldCheck, Sparkles, AlertCircle, Loader2, FileText, Check, CheckCircle2, ChevronLeft } from 'lucide-react';
+import ReceiverAvatar from './ReceiverAvatar';
 import { SFI_RECEIVERS } from '../utils/sfi';
 import { NONSFI_RECEIVERS } from '../utils/nonsfi';
 import { isSFI, isNonSFI, getBranchVariations } from '../utils/branchUtils';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { useReceivers } from '../src/contexts/ReceiverContext';
+import { normalizeName } from '../utils/numberUtils';
 
 interface ReceiverManagementProps {
   isAdmin: boolean;
   onViewEntries?: (name: string, type: 'settlement' | 'correspondence') => void;
+  onBack?: () => void;
 }
 
 interface ReceiverProfile {
@@ -23,7 +27,8 @@ interface ReceiverProfile {
 
 const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
 
-const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onViewEntries }) => {
+const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onViewEntries, onBack }) => {
+  const { refresh } = useReceivers();
   const [paraType, setParaType] = useState<string>('এসএফআই');
   const [receivers, setReceivers] = useState<ReceiverProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,6 +38,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
   const [tempDesignation, setTempDesignation] = useState('');
   const [tempImage, setTempImage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   const fetchReceivers = async () => {
     setLoading(true);
@@ -40,16 +46,6 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
       let finalReceivers: ReceiverProfile[] = [];
       
       const uniqueVariations = getBranchVariations(paraType);
-
-      const normalizeName = (name: string | null | undefined) => {
-        if (!name) return '';
-        return name
-          .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '') // Remove all possible invisible characters and non-breaking spaces
-          .trim()
-          .replace(/\s+/g, ' ')                  // Normalize internal whitespace to a single space
-          .replace(/[:ঃ।\.\-]/g, '')             // Remove punctuation for comparison (colon, visarga, dari, dot, dash)
-          .normalize('NFC');                     // Normalize Unicode to canonical form
-      };
 
       // 1. Fetch from receivers table (Current Branch)
       let supabaseError = null;
@@ -82,12 +78,34 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
         if (!allError && allData) {
           allData.forEach(r => {
             const norm = normalizeName(r.name);
-            if (norm) globalSavedNames.set(norm, { ...r, source: 'database' });
+            if (norm) {
+              // Prefer the entry with an image if multiple exist
+              if (!globalSavedNames.has(norm) || (!globalSavedNames.get(norm).image && r.image)) {
+                globalSavedNames.set(norm, { ...r, source: 'database' });
+              }
+            }
           });
         }
       }
 
-      // If Supabase failed or is not configured, or to merge local items
+      // Also include localStorage items in the global master list
+      const storageKeys = ['ledger_correspondence_receivers_sfi', 'ledger_correspondence_receivers_nonsfi'];
+      storageKeys.forEach(sKey => {
+        const saved = localStorage.getItem(sKey);
+        if (saved) {
+          try {
+            const items = JSON.parse(saved);
+            items.forEach((li: any) => {
+              const norm = normalizeName(li.name);
+              if (norm && !globalSavedNames.has(norm)) {
+                globalSavedNames.set(norm, { ...li, source: 'local' });
+              }
+            });
+          } catch (e) { console.error(e); }
+        }
+      });
+
+      // 3. Fetch current branch's receivers
       const key = isSFI(paraType) ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
       const saved = localStorage.getItem(key);
       if (saved) {
@@ -223,7 +241,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
             finalReceivers.push({ 
               ...globalMatch,
               para_type: paraType, // Show them in this branch's list
-              source: 'database' 
+              source: globalMatch.source || 'database' 
             });
           } else {
             // User said "Recipient is always an Auditor"
@@ -296,6 +314,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
     };
 
     try {
+      console.log('Saving profile data:', { ...profileData, image: profileData.image ? 'data:image/...' : null });
       if (isSupabaseConfigured) {
         let error;
         if (editingIdx !== null && receivers[editingIdx]?.id) {
@@ -319,12 +338,17 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
           }
           throw error;
         }
-        await fetchReceivers();
       } else {
         throw new Error('SUPABASE_NOT_CONFIGURED');
       }
+
+      // Close modal and reset form immediately after successful save
       setIsModalOpen(false);
       resetForm();
+      
+      // Refresh in background
+      await refresh();
+      await fetchReceivers();
     } catch (err: any) {
       console.error('Error saving receiver:', err);
       
@@ -339,17 +363,23 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
         const key = isSFI(paraType) ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
         localStorage.setItem(key, JSON.stringify(newList));
         setReceivers(newList);
-        window.dispatchEvent(new Event('storage'));
         
+        // Close modal and reset form immediately
         setIsModalOpen(false);
         resetForm();
         
+        // Refresh in background
+        await refresh();
+        window.dispatchEvent(new Event('storage'));
+        
         if (isSupabaseConfigured) {
-          alert('সুপাবেজ (Supabase) এ তথ্য সংরক্ষণ করা যায়নি, তবে আপনার ব্রাউজারে (LocalStorage) এটি সংরক্ষিত হয়েছে।\n\nত্রুটি: ' + (err.message === 'TABLE_MISSING' ? 'receivers টেবিলটি ডাটাবেসে পাওয়া যায়নি।' : err.message));
+          setMessage({ type: 'success', text: `"${profileData.name}" এর তথ্য লোকাল স্টোরেজে সংরক্ষণ করা হয়েছে (সুপাবেজ ত্রুটি: ${err.message === 'TABLE_MISSING' ? 'টেবিল পাওয়া যায়নি' : err.message})` });
+        } else {
+          setMessage({ type: 'success', text: `"${profileData.name}" এর তথ্য সফলভাবে সংরক্ষণ করা হয়েছে।` });
         }
       } catch (localErr) {
         console.error('LocalStorage fallback failed:', localErr);
-        alert('তথ্য সংরক্ষণ করতে সমস্যা হয়েছে। দয়া করে আপনার ইন্টারনেট সংযোগ বা ব্রাউজার স্টোরেজ চেক করুন।');
+        setMessage({ type: 'error', text: 'তথ্য সংরক্ষণ করতে সমস্যা হয়েছে।' });
       }
     } finally {
       setIsSaving(false);
@@ -366,8 +396,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1024 * 1024) { // 1MB limit
-        alert("ছবির সাইজ ১ মেগাবাইটের কম হতে হবে।");
+      if (file.size > 500 * 1024) { // 500KB limit
+        setMessage({ type: 'error', text: "ছবির সাইজ ৫০০ কিলোবাইটের কম হতে হবে।" });
         return;
       }
       const reader = new FileReader();
@@ -384,7 +414,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
 
     // If source is correspondence, it's not in the receivers table or local storage
     if (receiverToDelete.source === 'correspondence') {
-      alert(`"${receiverToDelete.name}" নামটি সরাসরি চিঠিপত্র এন্ট্রি থেকে আসছে। এটি মুছতে হলে আপনাকে সংশ্লিষ্ট চিঠিপত্র এন্ট্রিগুলো পরিবর্তন করতে হবে।`);
+      setMessage({ type: 'error', text: `"${receiverToDelete.name}" নামটি সরাসরি চিঠিপত্র এন্ট্রি থেকে আসছে। এটি মুছতে হলে আপনাকে সংশ্লিষ্ট চিঠিপত্র এন্ট্রিগুলো পরিবর্তন করতে হবে।` });
       return;
     }
 
@@ -443,7 +473,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
       
       const moreCount = blockingEntries.length > 5 ? `\n...এবং আরও ${blockingEntries.length - 5}টি এন্ট্রি` : '';
 
-      alert(`"${receiverToDelete.name}" এর অধীনে ${blockingEntries.length}টি চিঠিপত্র এন্ট্রি পাওয়া গেছে, তাই এটি মুছে ফেলা সম্ভব নয়।\n\nকিছু এন্ট্রি:\n${entryList}${moreCount}\n\nদয়া করে প্রথমে এই এন্ট্রিগুলো মুছে ফেলুন বা প্রাপকের নাম পরিবর্তন করুন।`);
+      setMessage({ type: 'error', text: `"${receiverToDelete.name}" এর অধীনে ${blockingEntries.length}টি চিঠিপত্র এন্ট্রি পাওয়া গেছে, তাই এটি মুছে ফেলা সম্ভব নয়।` });
       return;
     }
 
@@ -456,6 +486,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
           .delete()
           .eq('id', receiverToDelete.id);
         if (error) throw error;
+        await refresh();
         await fetchReceivers();
       } else {
         // LocalStorage fallback or local-only item
@@ -476,7 +507,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
       window.dispatchEvent(new Event('storage'));
       
       if (isSupabaseConfigured) {
-        alert('সুপাবেজ (Supabase) থেকে তথ্য মোছা যায়নি, তবে আপনার ব্রাউজার (LocalStorage) থেকে এটি মুছে ফেলা হয়েছে।');
+        setMessage({ type: 'success', text: 'সুপাবেজ (Supabase) থেকে তথ্য মোছা যায়নি, তবে আপনার ব্রাউজার (LocalStorage) থেকে এটি মুছে ফেলা হয়েছে।' });
       }
     }
   };
@@ -487,6 +518,15 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
     <div className="p-8 max-w-4xl mx-auto animate-in fade-in duration-500">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
+          {onBack && (
+            <button 
+              onClick={onBack}
+              className="p-3 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:bg-red-50 hover:text-red-600 transition-all shadow-sm active:scale-95 group"
+              title="ফিরে যান"
+            >
+              <X size={24} className="group-hover:scale-110 transition-transform" />
+            </button>
+          )}
           <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-100">
             <User size={32} className="text-white" />
           </div>
@@ -507,6 +547,14 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
           </button>
         )}
       </div>
+
+      {message && (
+        <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-2 duration-300 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'}`}>
+          {message.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
+          <span className="font-black text-sm">{message.text}</span>
+          <button onClick={() => setMessage(null)} className="ml-auto p-1 hover:bg-black/5 rounded-lg transition-colors"><X size={16} /></button>
+        </div>
+      )}
 
       <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden">
         <div className="flex border-b border-slate-100">
@@ -533,15 +581,15 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {receivers.map((profile, idx) => (
-                <div key={idx} className="group flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl hover:border-blue-300 hover:bg-blue-50/30 transition-all">
+                <div key={`${idx}-${profile.name}-${profile.image ? 'has-img' : 'no-img'}`} className="group flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl hover:border-blue-300 hover:bg-blue-50/30 transition-all">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-white border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden group-hover:border-blue-200 transition-colors">
-                      {profile.image ? (
-                        <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <User size={20} className="text-slate-300" />
-                      )}
-                    </div>
+                    <ReceiverAvatar 
+                      key={`avatar-${profile.name}-${profile.image ? 'has-img' : 'no-img'}`}
+                      name={profile.name} 
+                      image={profile.image} 
+                      designation={profile.designation} 
+                      size="xl" 
+                    />
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-slate-700 block">{profile.name}</span>
@@ -570,14 +618,16 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
                                   .insert([{ 
                                     name: profile.name, 
                                     designation: profile.designation || 'অডিটর', 
-                                    para_type: paraType 
+                                    para_type: paraType,
+                                    image: profile.image || null
                                   }]);
                                 if (error) throw error;
-                                alert(`"${profile.name}" সফলভাবে মাস্টার লিস্টে সংরক্ষিত হয়েছে।`);
-                                fetchReceivers();
+                                setMessage({ type: 'success', text: `"${profile.name}" সফলভাবে মাস্টার লিস্টে সংরক্ষিত হয়েছে।` });
+                                await refresh();
+                                await fetchReceivers();
                               } catch (err: any) {
                                 console.error('Error saving to master list:', err);
-                                alert('সংরক্ষণ করতে সমস্যা হয়েছে: ' + err.message);
+                                setMessage({ type: 'error', text: 'সংরক্ষণ করতে সমস্যা হয়েছে: ' + err.message });
                               }
                             }}
                             className="p-1 bg-emerald-100 text-emerald-700 rounded-md hover:bg-emerald-200 transition-colors"
@@ -592,7 +642,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     {profile.entryCount !== undefined && profile.entryCount > 0 && onViewEntries && (
                       <button 
                         onClick={() => onViewEntries(profile.name === 'অনির্ধারিত এন্ট্রি' ? '__UNASSIGNED__' : profile.name, 'correspondence')}

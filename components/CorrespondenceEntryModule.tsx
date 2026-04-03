@@ -2,10 +2,11 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   Mail, X, FileText, Calendar, Hash, Banknote, BookOpen, 
   Inbox, Computer, User, CheckCircle2, Layout, Sparkles, 
-  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash2, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send, FileEdit, ClipboardCheck, Globe
+  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash2, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send, FileEdit, ClipboardCheck, Globe, ChevronLeft
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { getCycleForDate } from '../utils/cycleHelper';
+import ReceiverAvatar from "./ReceiverAvatar";
 import { getDateError } from '../utils/dateValidation';
 import { SFI_RECEIVERS } from '../utils/sfi';
 import { NONSFI_RECEIVERS } from '../utils/nonsfi';
@@ -414,6 +415,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     letterNo: '',
     letterDate: '',
     totalParas: '',
+    paraNo: '',
     totalAmount: '',
     diaryNo: '',
     diaryDate: '',
@@ -687,6 +689,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         presentationDate: initialEntry.presentationDate || '',
         presentedToName: initialEntry.presentedToName || '',
         sentParaCount: initialEntry.sentParaCount || '',
+        paraNo: initialEntry.paraNo || '',
         receiverName: initialEntry.receiverName || '',
         receivedDate: initialEntry.receivedDate || '',
         isOnline: initialEntry.isOnline || 'না',
@@ -701,6 +704,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
       setRawInputs({
         totalParas: toBengaliDigits(initialEntry.totalParas),
+        paraNo: toBengaliDigits(initialEntry.paraNo || ''),
         totalAmount: toBengaliDigits(initialEntry.totalAmount),
         sentParaCount: toBengaliDigits(initialEntry.sentParaCount)
       });
@@ -919,6 +923,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       letterNo: '',
       letterDate: '',
       totalParas: '',
+      paraNo: '',
       totalAmount: '',
       diaryNo: '',
       diaryDate: '',
@@ -969,9 +974,22 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     setTimeout(() => {
       if (isReceiverAdmin && formData.receiverName.trim()) {
         const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
-        const updatedNames = Array.from(new Set([formData.receiverName.trim(), ...receiverSuggestions]));
-        setReceiverSuggestions(updatedNames);
-        localStorage.setItem(key, JSON.stringify(updatedNames));
+        
+        // Ensure we're working with objects
+        const currentReceivers = receiverSuggestions.map(r => 
+          typeof r === 'string' ? { name: r, designation: 'অডিটর' } : r
+        );
+
+        const exists = currentReceivers.some(r => r.name.trim() === formData.receiverName.trim());
+        
+        if (!exists) {
+          const newReceiver = { name: formData.receiverName.trim(), designation: 'অডিটর', source: 'local' };
+          const updatedReceivers = [newReceiver, ...currentReceivers];
+          setReceiverSuggestions(updatedReceivers);
+          localStorage.setItem(key, JSON.stringify(updatedReceivers));
+          // Dispatch storage event to notify other components
+          window.dispatchEvent(new Event('storage'));
+        }
       }
       
       if (formData.description.trim()) {
@@ -1020,7 +1038,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             onClick={onBackToMenu}
             className="p-3 bg-slate-100 hover:bg-slate-200 rounded-2xl text-slate-600 transition-all shadow-sm group"
           >
-            <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+            <X size={20} className="group-hover:scale-110 transition-transform duration-300" />
           </button>
           <div className="p-3 bg-emerald-600 rounded-2xl text-white shadow-lg shadow-emerald-200 shrink-0">
             <Mail size={24} />
@@ -1214,11 +1232,20 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             <div className={`${colWrapper} border-purple-100`}>
               <IDBadge id="corr-field-paras-count" />
               <label className={labelCls}><span className={numBadge}>৫</span> <ListOrdered size={14} className="text-purple-600" /> প্রেরিত অনু: সংখ্যা:</label>
-              <input 
-                type="text" className={`${inputCls} ${rawInputs.totalParas ? 'border-emerald-500' : 'border-red-500'}`} 
-                value={rawInputs.totalParas || ''} onChange={e => handleNumericInput('totalParas', e.target.value)}
-                placeholder="০"
-              />
+              <div className="flex gap-2">
+                <input 
+                  type="text" className={`${inputCls} ${rawInputs.totalParas ? 'border-emerald-500' : 'border-red-500'} flex-1`} 
+                  value={rawInputs.totalParas || ''} onChange={e => handleNumericInput('totalParas', e.target.value)}
+                  placeholder="০"
+                />
+                <div className="relative flex-[1.5]">
+                  <input 
+                    type="text" className={`${inputCls} ${formData.paraNo ? 'border-emerald-500' : 'border-slate-200'}`} 
+                    value={formData.paraNo} onChange={e => setFormData({...formData, paraNo: toBengaliDigits(e.target.value)})} 
+                    placeholder="অনুচ্ছেদ নং (যেমন: ১, ২, ৫)"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Field 6 */}
@@ -1366,13 +1393,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                             className={`px-5 py-3 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.receiverName === profile.name ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-blue-50 text-slate-700 font-bold'}`}
                           >
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden group-hover:border-blue-200 transition-colors">
-                                {profile.image ? (
-                                  <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" />
-                                ) : (
-                                  <User size={14} className="text-slate-300" />
-                                )}
-                              </div>
+                              <ReceiverAvatar name={profile.name} size="md" />
                               <div className="flex flex-col">
                                 <span className="text-[13px]">{profile.name}</span>
                                 {profile.designation && (

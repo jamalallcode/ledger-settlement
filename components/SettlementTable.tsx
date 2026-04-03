@@ -19,6 +19,7 @@ import {
   CalendarDays,
   Sparkles,
   ClipboardList,
+  Clock,
   Filter,
   X,
   Search,
@@ -29,6 +30,7 @@ import {
   XCircle,
   AlertCircle,
   MessageSquare,
+  User,
 } from "lucide-react";
 import {
   toBengaliDigits,
@@ -37,6 +39,7 @@ import {
   toEnglishDigits,
 } from "../utils/numberUtils.ts";
 import HighlightText from "./HighlightText";
+import ReceiverAvatar from "./ReceiverAvatar";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import { OFFICE_HEADER } from "../constants.ts";
 import { getCurrentCycle, getCycleForDate } from "../utils/cycleHelper.ts";
@@ -120,6 +123,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
     const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
     const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
     const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+    const [hideWarning, setHideWarning] = useState(false);
 
     const [expandedEntries, setExpandedEntries] = useState<Set<string>>(
       new Set(),
@@ -253,6 +257,10 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
         </span>
       );
     };
+
+    const noParaEntries = useMemo(() => {
+      return entries.filter(e => !e.paragraphs || e.paragraphs.length === 0);
+    }, [entries]);
 
     const filteredEntries = useMemo(() => {
       return entries
@@ -830,6 +838,17 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                 icon: MessageSquare,
                 col: "purple",
               },
+              {
+                label: "২১. গ্রহণকারী",
+                value: entry.receiverName ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <ReceiverAvatar name={entry.receiverName} size="sm" />
+                    <span className="text-[11px] font-bold text-slate-900">{entry.receiverName}</span>
+                  </div>
+                ) : "N/A",
+                icon: User,
+                col: "emerald",
+              },
             ].map((item, i) => (
               <div
                 key={i}
@@ -870,6 +889,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
         className="w-full relative animate-premium-page"
       >
         <IDBadge id="view-register-table" />
+
         {!isAdminView && (
           <div
             id="section-register-top-header"
@@ -898,6 +918,58 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
               </div>
 
               <div className="flex items-center gap-3 relative z-10">
+                {noParaEntries.length > 0 && !hideWarning && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      setFilterStatus("no-paras");
+                      // Scroll to table if needed
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-full font-black text-[11px] shadow-lg shadow-red-200 border border-red-400 animate-pulse hover:scale-105 transition-transform"
+                  >
+                    <AlertCircle size={14} />
+                    <span>অনুচ্ছেদহীন এন্ট্রি: {toBengaliDigits(noParaEntries.length)} টি</span>
+                    <div 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setHideWarning(true);
+                      }}
+                      className="ml-1 p-0.5 hover:bg-white/20 rounded-full transition-colors"
+                    >
+                      <X size={12} />
+                    </div>
+                  </motion.button>
+                )}
+                {(selectedCycleDate || filterParaType || filterType || filterStatus || searchTerm) && (
+                  <button
+                    onClick={resetFilters}
+                    title="ফিল্টার মুছুন"
+                    className="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center hover:bg-red-100 transition-all border border-red-100 shadow-sm"
+                  >
+                    <Clock size={18} className="rotate-180" />
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-2xl ${showFilters ? "bg-emerald-600 text-white shadow-emerald-200" : "bg-white text-emerald-700 border border-emerald-100 hover:bg-emerald-50 shadow-emerald-500/10"}`}
+                >
+                  <CalendarSearch
+                    size={16}
+                    className={showFilters ? "text-emerald-100" : "text-emerald-500"}
+                  />
+                  ফিল্টার করুন
+                  {(selectedCycleDate || filterParaType || filterType || filterStatus || searchTerm) && (
+                    <span className="flex items-center justify-center w-5 h-5 bg-amber-500 text-white rounded-full text-[10px] animate-pulse">
+                      {toBengaliDigits(
+                        [selectedCycleDate, filterParaType, filterType, filterStatus, searchTerm].filter(Boolean).length.toString()
+                      )}
+                    </span>
+                  )}
+                </button>
+
                 <div className="relative">
                   <button
                     ref={summaryButtonRef}
@@ -1087,13 +1159,37 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           </div>
         )}
 
-        {showFilters && !isAdminView && (
+        {showFilters && (
           <div
             id="register-filters"
-            className="!bg-white p-2.5 md:p-3 rounded-xl border border-slate-200 shadow-lg space-y-3 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate"
+            className="!bg-white p-4 md:p-6 rounded-[2rem] border border-slate-200 shadow-xl space-y-4 no-print mb-8 animate-in slide-in-from-top-4 duration-500 relative z-[1000] isolate overflow-hidden group"
           >
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-3xl rounded-full -mr-32 -mt-32 transition-transform group-hover:scale-110 duration-1000"></div>
+            
+            <div className="flex items-center justify-between relative z-10 mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center">
+                  <CalendarSearch size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 tracking-tight">সার্চ ও ফিল্টার</h3>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Search & Filter Ledger</p>
+                </div>
+              </div>
+              
+              {(selectedCycleDate || filterParaType || filterType || filterStatus || searchTerm) && (
+                <button 
+                  onClick={resetFilters}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-black text-[10px] hover:bg-red-100 transition-all border border-red-100 active:scale-95"
+                >
+                  <XCircle size={12} />
+                  সব মুছুন
+                </button>
+              )}
+            </div>
+
             <IDBadge id="register-filters" />
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4 relative z-10">
               {/* Cycle Selection */}
               <div className="space-y-1" ref={cycleDropdownRef}>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">
@@ -1764,6 +1860,12 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                                 />
                                               </span>
                                             </p>
+                                            {entry.receiverName && (
+                                              <div className="pt-1 mt-1 border-t border-slate-100 flex items-center gap-2">
+                                                <ReceiverAvatar name={entry.receiverName} size="sm" />
+                                                <span className="text-[10px] font-black text-slate-600">{entry.receiverName}</span>
+                                              </div>
+                                            )}
                                           </div>
                                           <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
                                             {isExpanded ? (

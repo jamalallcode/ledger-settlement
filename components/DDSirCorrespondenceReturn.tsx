@@ -5,6 +5,7 @@ import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberU
 import { OFFICE_HEADER } from '../constants';
 import { format, startOfMonth, addDays, isBefore, subMonths, parseISO } from 'date-fns';
 import LetterDetailsModal from './LetterDetailsModal';
+import ReceiverAvatar from './ReceiverAvatar';
 
 interface DDSirCorrespondenceReturnProps {
   entries: any[];
@@ -374,6 +375,15 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   return (
     <div id="dd-sir-report-container" className="space-y-6 py-2 w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view">
       <IDBadge id="dd-sir-report-container" />
+      <div className="flex items-center gap-4 no-print mb-4">
+        <button 
+          onClick={onBack}
+          className="p-3 bg-white border border-slate-200 rounded-2xl hover:bg-red-50 hover:text-red-600 text-slate-600 shadow-sm transition-all group"
+          title="ফিরে যান"
+        >
+          <X size={20} className="group-hover:scale-110 transition-transform" />
+        </button>
+      </div>
       {/* Control Bar (No Print) */}
       {showFilters && (
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
@@ -595,7 +605,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 {reportTableData.length > 0 ? reportTableData.map((row, idx) => (
                   <tr key={idx} className="no-hover-row group bg-white hover:bg-blue-100/50 transition-all duration-200">
                     <td className={tdStyle}>{toBengaliDigits(idx + 1)}</td>
-                    <td className={tdStyle + " text-left text-[11px] font-bold group-hover:bg-blue-50/30"}>{row.name}</td>
+                    <td className={tdStyle + " text-left text-[11px] font-bold group-hover:bg-blue-50/30"}>
+                      <div className="flex items-center gap-2">
+                        <ReceiverAvatar name={row.name} size="xs" />
+                        <span>{row.name}</span>
+                      </div>
+                    </td>
                     <td 
                       className={`${tdStyle} ${row.karyapatra.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''}`}
                       onClick={() => handleCountClick(`${row.name} - কার্যপত্র (১ মাস-)`, row.karyapatra.lessLetters)}
@@ -756,7 +771,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         <td className={stickyTdStyle}>{toBengaliDigits(globalIdx)}</td>
                         {rowIdx === 0 && (
                           <td rowSpan={group.rows.length} className={stickyTdStyle + " bg-slate-50/50 group-hover:bg-blue-200/40 transition-colors"}>
-                            <div className="flex items-center justify-center h-full">
+                            <div className="flex flex-col items-center justify-center gap-2 h-full">
+                              <ReceiverAvatar name={group.auditor} size="sm" />
                               <div className="font-bold text-slate-900 text-[11px] leading-tight [writing-mode:vertical-rl] rotate-180 whitespace-nowrap py-2">
                                 {group.auditor}
                               </div>
@@ -817,7 +833,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       {/* Auditor Statistics Modal */}
       {showAuditorStatsModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[3000] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-600/20 rounded-xl flex items-center justify-center">
@@ -840,7 +856,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-slate-100">
-                    <th className="border border-slate-200 p-2 text-left text-[12px] font-black text-slate-700">অডিটর</th>
+                    <th className="border border-slate-200 p-2 text-left text-[12px] font-black text-slate-700 w-[200px]">অডিটর</th>
                     <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">অডিটরের কাছে</th>
                     <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">এএন্ডএও</th>
                     <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">উপপরিচালক</th>
@@ -850,7 +866,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <tbody>
                   {auditorWiseStats.map((stat, idx) => (
                     <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
-                      <td className="border border-slate-200 p-2 text-[12px] font-bold text-slate-900">{stat.name}</td>
+                      <td className="border border-slate-200 p-2 text-[12px] font-bold text-slate-900">
+                        <div className="flex items-center gap-2">
+                          <ReceiverAvatar name={stat.name} size="sm" />
+                          <span>{stat.name}</span>
+                        </div>
+                      </td>
                       <td 
                         className="border border-slate-200 p-2 text-center text-[12px] font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all"
                         onClick={() => handleCountClick(`${stat.name} - অডিটরের কাছে`, stat.auditorLetters)}
