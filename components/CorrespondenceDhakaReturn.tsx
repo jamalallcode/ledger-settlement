@@ -330,6 +330,15 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   return (
     <div id="correspondence-dhaka-container" className="space-y-4 py-2 w-full animate-report-page relative">
       <IDBadge id="correspondence-dhaka-container" />
+      <div className="flex items-center gap-4 no-print mb-4">
+        <button 
+          onClick={() => setSelectedReportType(null)}
+          className="p-3 bg-white border border-slate-200 rounded-2xl hover:bg-red-50 hover:text-red-600 text-slate-600 shadow-sm transition-all group"
+          title="ফিরে যান"
+        >
+          <X size={20} className="group-hover:scale-110 transition-transform" />
+        </button>
+      </div>
       {showFilters && (
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
           <div className="flex items-center gap-3">

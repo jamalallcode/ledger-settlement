@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Plus, FileEdit, Trash, X, ShieldCheck, Sparkles, AlertCircle, Loader2, FileText, Check, CheckCircle2 } from 'lucide-react';
+import { User, Plus, FileEdit, Trash, X, ShieldCheck, Sparkles, AlertCircle, Loader2, FileText, Check, CheckCircle2, ChevronLeft } from 'lucide-react';
 import ReceiverAvatar from './ReceiverAvatar';
 import { SFI_RECEIVERS } from '../utils/sfi';
 import { NONSFI_RECEIVERS } from '../utils/nonsfi';
@@ -11,6 +11,7 @@ import { normalizeName } from '../utils/numberUtils';
 interface ReceiverManagementProps {
   isAdmin: boolean;
   onViewEntries?: (name: string, type: 'settlement' | 'correspondence') => void;
+  onBack?: () => void;
 }
 
 interface ReceiverProfile {
@@ -26,7 +27,7 @@ interface ReceiverProfile {
 
 const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
 
-const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onViewEntries }) => {
+const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onViewEntries, onBack }) => {
   const { refresh } = useReceivers();
   const [paraType, setParaType] = useState<string>('এসএফআই');
   const [receivers, setReceivers] = useState<ReceiverProfile[]>([]);
@@ -517,6 +518,15 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
     <div className="p-8 max-w-4xl mx-auto animate-in fade-in duration-500">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
+          {onBack && (
+            <button 
+              onClick={onBack}
+              className="p-3 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:bg-red-50 hover:text-red-600 transition-all shadow-sm active:scale-95 group"
+              title="ফিরে যান"
+            >
+              <X size={24} className="group-hover:scale-110 transition-transform" />
+            </button>
+          )}
           <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-100">
             <User size={32} className="text-white" />
           </div>

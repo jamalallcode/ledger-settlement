@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { Settings2, ChevronLeft, Unlock, Pencil, LayoutGrid, Sparkles } from 'lucide-react';
+import { Settings2, ChevronLeft, Unlock, Pencil, LayoutGrid, Sparkles, X } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP } from '../constants';
 import { MinistryPrevStats } from '../types';
@@ -70,7 +70,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
       <div id="container-setup-controls" className="flex flex-col md:flex-row items-center justify-between bg-white p-6 rounded-3xl border border-slate-200 shadow-xl gap-4 no-print relative">
         <IDBadge id="container-setup-controls" />
         <div className="flex items-center gap-4">
-          <button onClick={() => { setIsSetupMode(false); setSelectedReportType(null); }} className="p-3 bg-slate-100 border border-slate-200 rounded-2xl hover:bg-slate-200 text-slate-600 shadow-sm transition-all"><ChevronLeft size={22} /></button>
+          <button onClick={() => { setIsSetupMode(false); setSelectedReportType(null); }} className="p-3 bg-slate-100 border border-slate-200 rounded-2xl hover:bg-red-50 hover:text-red-600 text-slate-600 shadow-sm transition-all group"><X size={22} className="group-hover:scale-110 transition-transform" /></button>
           <div className="flex flex-col">
             <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3"><Settings2 size={28} className="text-blue-600" /> {setupType || 'প্রারম্ভিক জের সেটআপ'}</h2>
             <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">সমন্বিত (UNIFIED) ব্যালেন্স ইনপুট উইন্ডো</span>

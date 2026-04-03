@@ -44,6 +44,7 @@ const App: React.FC = () => {
   const [entries, setEntries] = useState<SettlementEntry[]>([]);
   const [correspondenceEntries, setCorrespondenceEntries] = useState<CorrespondenceEntry[]>([]);
   const [activeTab, setActiveTab] = useState('landing'); 
+  const [previousTab, setPreviousTab] = useState<string | null>(null);
   const [resetKey, setResetKey] = useState(0); 
   const [editingEntry, setEditingEntry] = useState<any | null>(null);
   const [isLockedMode, setIsLockedMode] = useState(true);
@@ -118,6 +119,11 @@ const App: React.FC = () => {
 
   const handleTabChange = (tab: string, subModule?: 'settlement' | 'correspondence', rType?: string, searchTerm?: string) => {
     console.log("handleTabChange called with tab:", tab, "subModule:", subModule, "rType:", rType, "searchTerm:", searchTerm);
+    
+    if (tab !== activeTab) {
+      setPreviousTab(activeTab);
+    }
+
     if (tab === activeTab && !subModule && !rType && !searchTerm) setResetKey(prev => prev + 1);
     else { 
       setActiveTab(tab); 
@@ -728,6 +734,7 @@ const App: React.FC = () => {
                 <ReceiverManagement 
                   isAdmin={isAdmin} 
                   onViewEntries={handleViewEntries}
+                  onBack={() => handleTabChange('dashboard')}
                 />
               )}
 
@@ -739,12 +746,32 @@ const App: React.FC = () => {
                   isLockedMode={isLockedMode} 
                   isAdmin={isAdmin}
                   pendingCount={totalPendingCount}
-                  onShowPending={() => { setActiveTab('register'); setShowPendingOnly(true); }}
+                  onShowPending={() => { handleTabChange('register'); setShowPendingOnly(true); }}
                   moduleVisibility={moduleVisibility}
                 />
               )}
               
-              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} moduleVisibility={moduleVisibility} />}
+              {activeTab === 'entry' && (
+                <SettlementForm 
+                  key={`entry-reset-${resetKey}`} 
+                  onAdd={handleAddOrUpdateEntry} 
+                  onViewRegister={handleViewRegister} 
+                  nextSl={entries.length + 1} 
+                  branchSuggestions={branchSuggestions} 
+                  initialEntry={editingEntry} 
+                  onCancel={() => { 
+                    setEditingEntry(null); 
+                    setActiveTab(previousTab === 'dashboard' ? 'dashboard' : 'register'); 
+                  }} 
+                  isAdmin={isAdmin} 
+                  userEmail={userEmail} 
+                  preSelectedModule={entryModule} 
+                  correspondenceEntries={correspondenceEntries} 
+                  entries={entries} 
+                  navigateToEntry={navigateToEntry} 
+                  moduleVisibility={moduleVisibility} 
+                />
+              )}
               
               {activeTab === 'register' && (
                 <div className="space-y-6 relative">
@@ -787,7 +814,7 @@ const App: React.FC = () => {
                             entries={pendingCorrespondence} 
                             onBack={() => {}}
                             isAdmin={isAdmin}
-                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
+                            onEdit={e => { setEditingEntry(e); handleTabChange('entry'); }}
                             onInlineUpdate={handleInlineUpdateEntry}
                             onDelete={handleDelete}
                             onApprove={handleApproveEntry}
@@ -807,7 +834,7 @@ const App: React.FC = () => {
                             key={`pending-list`} 
                             entries={pendingEntries} 
                             onDelete={handleDelete} 
-                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
+                            onEdit={e => { setEditingEntry(e); handleTabChange('entry'); }} 
                             showFilters={showRegisterFilters} 
                             setShowFilters={setShowRegisterFilters}
                             isAdminView={true}
@@ -829,7 +856,7 @@ const App: React.FC = () => {
                             key={`register-reset-${resetKey}`} 
                             entries={approvedEntries} 
                             onDelete={handleDelete} 
-                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
+                            onEdit={e => { setEditingEntry(e); handleTabChange('entry'); }} 
                             showFilters={showRegisterFilters} 
                             setShowFilters={setShowRegisterFilters} 
                             isAdmin={isAdmin}
@@ -844,9 +871,9 @@ const App: React.FC = () => {
 
                           <CorrespondenceTable 
                             entries={approvedCorrespondence} 
-                            onBack={() => setActiveTab('landing')} 
+                            onBack={() => handleTabChange('landing')} 
                             isAdmin={isAdmin}
-                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
+                            onEdit={e => { setEditingEntry(e); handleTabChange('entry'); }}
                             onInlineUpdate={handleInlineUpdateEntry}
                             onDelete={handleDelete}
                             showFilters={showRegisterFilters}
@@ -888,7 +915,7 @@ const App: React.FC = () => {
                 <AdminAnalytics 
                   entries={entries} 
                   correspondenceEntries={correspondenceEntries} 
-                  onBack={() => setActiveTab('dashboard')} 
+                  onBack={() => handleTabChange('dashboard')} 
                 />
               )}
 
@@ -942,7 +969,7 @@ const App: React.FC = () => {
                 <button 
                   onClick={() => {
                     setShowAdminAlert(false);
-                    setActiveTab('register');
+                    handleTabChange('register');
                     setShowPendingOnly(true);
                   }}
                   className="flex-1 py-3 bg-amber-500 text-slate-900 rounded-xl font-black text-xs hover:bg-amber-600 transition-all shadow-xl shadow-amber-500/20 active:scale-95"

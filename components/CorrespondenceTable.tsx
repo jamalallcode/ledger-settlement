@@ -33,6 +33,7 @@ import {
   CalendarSearch,
   LayoutGrid,
   CalendarDays,
+  X,
 } from "lucide-react";
 import { isSFI, isNonSFI } from "../utils/branchUtils";
 import {
@@ -359,6 +360,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
+  const [hideWarning, setHideWarning] = useState(false);
 
   useEffect(() => {
     if (highlightSearch) {
@@ -769,18 +771,31 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           <div className="flex items-center gap-3 relative z-10">
             {(() => {
               const unassignedCount = entries.filter(e => !e.receiverName || e.receiverName.trim() === "").length;
-              if (unassignedCount > 0) {
+              if (unassignedCount > 0 && !hideWarning) {
                 return (
-                  <button
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => {
                       setSearchTerm("__UNASSIGNED__");
                       setShowFilters(true);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-full font-black text-[11px] shadow-lg shadow-red-200 border border-red-400/30 animate-pulse hover:scale-105 transition-transform"
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-full font-black text-[11px] shadow-lg shadow-red-200 border border-red-400 animate-pulse hover:scale-105 transition-transform"
                   >
                     <AlertCircle size={14} />
                     <span>অনির্ধারিত এন্ট্রি: {toBengaliDigits(unassignedCount)} টি</span>
-                  </button>
+                    <div 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setHideWarning(true);
+                      }}
+                      className="ml-1 p-0.5 hover:bg-white/20 rounded-full transition-colors"
+                    >
+                      <X size={12} />
+                    </div>
+                  </motion.button>
                 );
               }
               return null;

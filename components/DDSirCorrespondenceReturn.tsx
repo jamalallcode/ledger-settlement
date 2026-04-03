@@ -375,6 +375,15 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   return (
     <div id="dd-sir-report-container" className="space-y-6 py-2 w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view">
       <IDBadge id="dd-sir-report-container" />
+      <div className="flex items-center gap-4 no-print mb-4">
+        <button 
+          onClick={onBack}
+          className="p-3 bg-white border border-slate-200 rounded-2xl hover:bg-red-50 hover:text-red-600 text-slate-600 shadow-sm transition-all group"
+          title="ফিরে যান"
+        >
+          <X size={20} className="group-hover:scale-110 transition-transform" />
+        </button>
+      </div>
       {/* Control Bar (No Print) */}
       {showFilters && (
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">

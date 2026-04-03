@@ -135,13 +135,22 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
         </div>
         
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-start gap-8">
-          <div className="flex items-center gap-4 shrink-0">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-blue-500/20 border border-white/10 group-hover:scale-105 transition-transform duration-500">
-              <BarChart3 size={28} className="text-white" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em] mb-1">Analytics</span>
-              <h1 className="text-2xl font-black text-slate-800 tracking-tighter leading-none">Performance Report</h1>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={onBack}
+              className="p-3 bg-slate-100 hover:bg-red-50 hover:text-red-600 rounded-2xl text-slate-600 transition-all shadow-sm group"
+              title="ফিরে যান"
+            >
+              <X size={20} className="group-hover:scale-110 transition-transform duration-300" />
+            </button>
+            <div className="flex items-center gap-4 shrink-0">
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-blue-500/20 border border-white/10 group-hover:scale-105 transition-transform duration-500">
+                <BarChart3 size={28} className="text-white" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em] mb-1">Analytics</span>
+                <h1 className="text-2xl font-black text-slate-800 tracking-tighter leading-none">Performance Report</h1>
+              </div>
             </div>
           </div>
 

@@ -138,6 +138,15 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   return (
     <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative">
       <IDBadge id="section-report-summary" />
+      <div className="flex items-center gap-4 no-print mb-4">
+        <button 
+          onClick={() => setSelectedReportType(null)}
+          className="p-3 bg-white border border-slate-200 rounded-2xl hover:bg-red-50 hover:text-red-600 text-slate-600 shadow-sm transition-all group"
+          title="ফিরে যান"
+        >
+          <X size={20} className="group-hover:scale-110 transition-transform" />
+        </button>
+      </div>
       {showFilters && (
         <div id="summary-header-controls" className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print relative">
           <IDBadge id="summary-header-controls" />
