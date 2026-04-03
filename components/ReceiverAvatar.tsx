@@ -2,17 +2,38 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { User } from 'lucide-react';
 import { useReceivers } from '../src/contexts/ReceiverContext';
+import { normalizeName } from '../utils/numberUtils';
 
 interface ReceiverAvatarProps {
   name: string;
+  image?: string | null;
+  designation?: string | null;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showName?: boolean;
   className?: string;
 }
 
-const ReceiverAvatar: React.FC<ReceiverAvatarProps> = ({ name, size = 'md', showName = false, className = '' }) => {
+const ReceiverAvatar: React.FC<ReceiverAvatarProps> = ({ 
+  name, 
+  image,
+  designation,
+  size = 'md', 
+  showName = false, 
+  className = '' 
+}) => {
   const { profiles } = useReceivers();
-  const profile = profiles[name.trim()];
+  
+  const profile = React.useMemo(() => {
+    const norm = normalizeName(name);
+    const contextProfile = profiles[norm];
+    
+    // Merge props with context data, prioritizing props if they exist
+    return {
+      ...contextProfile,
+      image: image !== undefined ? image : contextProfile?.image,
+      designation: designation !== undefined ? designation : contextProfile?.designation
+    };
+  }, [profiles, name, image, designation]);
 
   const sizeCls = {
     sm: 'w-6 h-6',

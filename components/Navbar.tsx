@@ -159,8 +159,129 @@ const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* All menu items removed as per request */}
+        <div className="flex items-center gap-2">
+          {/* Notifications */}
+          <div className="relative" ref={notifRef}>
+            <button 
+              onClick={() => setShowNotifDropdown(!showNotifDropdown)}
+              className="w-9 h-9 flex items-center justify-center bg-slate-800/50 text-slate-400 hover:text-white border border-slate-700/50 rounded-xl transition-all hover:bg-slate-800 active:scale-95 relative"
+            >
+              <Bell size={18} />
+              {pendingEntries.length > 0 && (
+                <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-slate-900 animate-pulse" />
+              )}
+            </button>
+
+            {showNotifDropdown && (
+              <div className="absolute top-full right-0 mt-2 w-80 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-[5020] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+                  <h4 className="font-black text-white text-sm flex items-center gap-2"><BellRing size={16} className="text-amber-400" /> নোটিফিকেশন</h4>
+                  <span className="px-2 py-0.5 bg-slate-800 text-slate-400 text-[10px] font-black rounded-full uppercase tracking-widest">{toBengaliDigits(pendingEntries.length)} নতুন</span>
+                </div>
+                <div className="max-h-[400px] overflow-y-auto">
+                  {pendingEntries.length > 0 ? (
+                    <div className="divide-y divide-slate-800/50">
+                      {pendingEntries.map((entry) => (
+                        <div key={entry.id} className="p-4 hover:bg-slate-800/50 transition-colors group">
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 bg-blue-500/10 text-blue-500 rounded-lg flex items-center justify-center shrink-0"><FilePlus2 size={14} /></div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-slate-300 leading-relaxed mb-2">
+                                <span className="text-blue-400">নতুন এন্ট্রি:</span> {entry.content?.subject || 'বিষয়হীন এন্ট্রি'}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <button 
+                                  onClick={() => onApprove?.(entry.id)}
+                                  className="flex-1 py-1.5 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1"
+                                >
+                                  <Check size={12} /> অনুমোদন
+                                </button>
+                                <button 
+                                  onClick={() => onReject?.(entry.id)}
+                                  className="flex-1 py-1.5 bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1"
+                                >
+                                  <X size={12} /> বাতিল
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-10 text-center">
+                      <div className="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-3 text-slate-600"><Bell size={20} /></div>
+                      <p className="text-xs font-bold text-slate-500">কোন নতুন নোটিফিকেশন নেই</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Locked Status */}
+          <button 
+            onClick={() => setIsLockedMode(!isLockedMode)}
+            className={`h-9 px-4 flex items-center gap-2 bg-slate-800/50 border border-slate-700/50 rounded-full transition-all hover:bg-slate-800 active:scale-95 group ${isLockedMode ? 'text-slate-400' : 'text-emerald-400'}`}
+          >
+            <div className={`w-2 h-2 rounded-full ${isLockedMode ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-600'}`} />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isLockedMode ? 'Locked' : 'Unlocked'}</span>
+          </button>
+
+          {/* Filter */}
+          <button 
+            onClick={() => setShowRegisterFilters(!showRegisterFilters)}
+            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all active:scale-95 border ${showRegisterFilters ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/20' : 'bg-slate-800/50 text-slate-400 border-slate-700/50 hover:text-white hover:bg-slate-800'}`}
+            title="ফিল্টার"
+          >
+            <Filter size={18} />
+          </button>
+
+          {/* Tools/Settings */}
+          <div className="relative" ref={toolsRef}>
+            <button 
+              onClick={() => setShowToolsDropdown(!showToolsDropdown)}
+              className="w-9 h-9 flex items-center justify-center bg-slate-800/50 text-slate-400 hover:text-white border border-slate-700/50 rounded-xl transition-all hover:bg-slate-800 active:scale-95"
+              title="সেটিংস"
+            >
+              <Settings size={18} className={showToolsDropdown ? 'rotate-90 transition-transform' : 'transition-transform'} />
+            </button>
+
+            {showToolsDropdown && (
+              <div className="absolute top-full right-0 mt-2 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-[5020] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="p-2">
+                  <div className="px-3 py-2 mb-1">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">সিস্টেম টুলস</p>
+                  </div>
+                  <button 
+                    onClick={() => { onDemoLoad(); setShowToolsDropdown(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-all text-left font-bold text-xs"
+                  >
+                    <Sparkles size={16} className="text-amber-400" /> ডেমো ডাটা লোড করুন
+                  </button>
+                  <button 
+                    onClick={() => { onExportSystem(); setShowToolsDropdown(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-all text-left font-bold text-xs"
+                  >
+                    <Download size={16} className="text-blue-400" /> ব্যাকআপ ডাউনলোড (JSON)
+                  </button>
+                  <label className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-all text-left font-bold text-xs cursor-pointer">
+                    <Upload size={16} className="text-emerald-400" /> ব্যাকআপ রিস্টোর করুন
+                    <input type="file" accept=".json" onChange={(e) => { if (e.target.files?.[0]) onImportSystem(e.target.files[0]); setShowToolsDropdown(false); }} className="hidden" />
+                  </label>
+                  <div className="h-px bg-slate-800 my-2 mx-2" />
+                  <button 
+                    onClick={() => { setIsAdmin(!isAdmin); setShowToolsDropdown(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-all text-left font-bold text-xs"
+                  >
+                    <ShieldCheck size={16} className={isAdmin ? "text-emerald-400" : "text-slate-500"} /> 
+                    {isAdmin ? "অ্যাডমিন মোড: চালু" : "অ্যাডমিন মোড: বন্ধ"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden p-1.5 bg-slate-800 text-white rounded-xl border border-slate-700"><Menu size={20} /></button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+import { normalizeName } from '../../utils/numberUtils';
 
 export interface ReceiverProfile {
   id?: string;
@@ -32,12 +33,17 @@ export const ReceiverProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       try {
         const { data, error } = await supabase
           .from('receivers')
-          .select('*');
+          .select('id, name, designation, image, para_type');
         
         if (!error && data) {
           data.forEach(r => {
-            const norm = r.name.trim();
-            profileMap[norm] = { ...r, source: 'database' };
+            const norm = normalizeName(r.name);
+            if (norm) {
+              // If multiple entries exist for the same normalized name, prefer the one with an image
+              if (!profileMap[norm] || (!profileMap[norm].image && r.image)) {
+                profileMap[norm] = { ...r, source: 'database' };
+              }
+            }
           });
         }
       } catch (err) {
@@ -55,17 +61,17 @@ export const ReceiverProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           items.forEach((li: any) => {
             const name = typeof li === 'string' ? li : li.name;
             if (name) {
-              const norm = name.trim();
-              if (!profileMap[norm]) {
-                profileMap[norm] = {
-                  name: norm,
-                  designation: li.designation || 'অডিটর',
-                  image: li.image || null,
-                  source: 'local'
-                };
-              } else if (li.image && !profileMap[norm].image) {
-                profileMap[norm].image = li.image;
-              }
+              const norm = normalizeName(name);
+                if (!profileMap[norm]) {
+                  profileMap[norm] = {
+                    name: name,
+                    designation: li.designation || 'অডিটর',
+                    image: li.image || null,
+                    source: 'local'
+                  };
+                } else if (li.image && !profileMap[norm].image) {
+                  profileMap[norm].image = li.image;
+                }
             }
           });
         } catch (e) {
@@ -89,7 +95,10 @@ export const ReceiverProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const value = useMemo(() => ({
     profiles,
     loading,
-    refresh: () => setTick(t => t + 1)
+    refresh: async () => {
+      await fetchAll();
+      setTick(t => t + 1);
+    }
   }), [profiles, loading]);
 
   return (

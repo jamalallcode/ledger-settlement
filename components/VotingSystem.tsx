@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { EMPLOYEES, VOTE_POSITIONS } from '../constants';
 import { BallotVote, PositionResult, VoterToken } from '../types';
 import ReceiverAvatar from './ReceiverAvatar';
@@ -8,7 +8,7 @@ import {
   CheckCircle2, AlertCircle, BarChart3, Fingerprint, 
   Send, Trophy, UserCheck, Loader2, Key, RefreshCw, Copy, Check, Trash2, ShieldCheck, Ticket, Database, HelpCircle, ArrowRight, RotateCcw, MessageSquare, Plus, Settings2, Vote, Lock, Unlock, UserPlus, UserMinus, Eye, EyeOff, LayoutGrid, Trash, Pencil, X, ChevronDown, Search, KeyRound, Link, ExternalLink, Camera, Image as ImageIcon, Upload
 } from 'lucide-react';
-import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
+import { toBengaliDigits, parseBengaliNumber, normalizeName } from '../utils/numberUtils';
 
 /**
  * Premium custom dropdown component for voter selection
@@ -583,21 +583,107 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
 
     try {
       setIsLoading(true);
-      const { data: existing } = await supabase.from('receivers').select('*').eq('name', name).maybeSingle();
+      const normalizedName = normalizeName(name);
+      console.log(`Updating photo for: "${normalizedName}"`, { urlLength: url?.length });
       
-      if (existing) {
-        await supabase.from('receivers').update({ image: url || null }).eq('name', name);
-      } else {
-        await supabase.from('receivers').insert({ name, image: url || null, designation: 'প্রার্থী' });
+      // Update Supabase if configured
+      if (isSupabaseConfigured) {
+        const existingProfile = profiles[normalizedName];
+        let result;
+        
+        if (existingProfile?.id && !existingProfile.id.startsWith('local-')) {
+          console.log(`Updating existing Supabase profile: ${existingProfile.id}`);
+          result = await supabase
+            .from('receivers')
+            .update({ image: url || null })
+            .eq('id', existingProfile.id);
+        } else {
+          // Check if it exists in DB by name
+          const { data: dbExisting } = await supabase
+            .from('receivers')
+            .select('id')
+            .eq('name', normalizedName)
+            .maybeSingle();
+          
+          if (dbExisting?.id) {
+            console.log(`Updating existing DB profile by name: ${dbExisting.id}`);
+            result = await supabase
+              .from('receivers')
+              .update({ image: url || null })
+              .eq('id', dbExisting.id);
+          } else {
+            console.log(`Inserting new profile for: "${normalizedName}"`);
+            result = await supabase
+              .from('receivers')
+              .insert({ 
+                name: normalizedName, 
+                image: url || null, 
+                designation: 'প্রার্থী' 
+              });
+          }
+        }
+        
+        if (result?.error) {
+          console.warn("Supabase update failed, but will continue with LocalStorage:", result.error);
+        }
+      }
+
+      // Update LocalStorage as a fallback/cache (Always do this)
+      const keys = ['ledger_correspondence_receivers_sfi', 'ledger_correspondence_receivers_nonsfi'];
+      let localStorageUpdated = false;
+      keys.forEach(key => {
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          try {
+            let items = JSON.parse(saved);
+            let found = false;
+            items = items.map((li: any) => {
+              if (li.name?.trim() === normalizedName) {
+                found = true;
+                return { ...li, image: url || null };
+              }
+              return li;
+            });
+            if (!found) {
+              items.push({ name: normalizedName, image: url || null, designation: 'প্রার্থী', id: 'local-' + Date.now() });
+            }
+            localStorage.setItem(key, JSON.stringify(items));
+            localStorageUpdated = true;
+          } catch (e) {
+            console.error("Error updating local storage:", e);
+          }
+        }
+      });
+
+      // If not found in existing lists, add to non-sfi as default
+      if (!localStorageUpdated) {
+        try {
+          const key = 'ledger_correspondence_receivers_nonsfi';
+          const saved = localStorage.getItem(key);
+          let items = saved ? JSON.parse(saved) : [];
+          items.push({ name: normalizedName, image: url || null, designation: 'প্রার্থী', id: 'local-' + Date.now() });
+          localStorage.setItem(key, JSON.stringify(items));
+        } catch (e) {
+          console.error("Error creating new local profile:", e);
+        }
       }
       
-      refreshProfiles();
+      // Close modal and clear inputs immediately
       setPhotoModal({ isOpen: false, voterName: '' });
       setPhotoUrlInput('');
       setSelectedFileBase64(null);
-      setMessage({ type: 'success', text: `"${name}" এর ছবি আপডেট করা হয়েছে।` });
+      setMessage({ type: 'success', text: `"${normalizedName}" এর ছবি সফলভাবে সংরক্ষণ করা হয়েছে।` });
+
+      // Force refresh profiles in background
+      console.log("Refreshing profiles...");
+      await refreshProfiles();
+      console.log("Profiles refreshed.");
+      
     } catch (err: any) {
-      alert("ছবি আপডেট ব্যর্থ হয়েছে: " + err.message);
+      console.error("Photo update error:", err);
+      setMessage({ type: 'error', text: "ছবি সংরক্ষণ ব্যর্থ হয়েছে: " + (err.message || "অজানা সমস্যা") });
+      // Close modal anyway to provide immediate feedback
+      setPhotoModal({ isOpen: false, voterName: '' });
     } finally {
       setIsLoading(false);
     }
@@ -1087,7 +1173,16 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
                             {toBengaliDigits(idx + 1)}
                           </div>
                           
-                          <ReceiverAvatar name={voter} size="md" />
+                          <button 
+                            onClick={() => {
+                              setPhotoModal({ isOpen: true, voterName: voter });
+                              setPhotoUrlInput(profiles[normalizeName(voter)]?.image || '');
+                            }}
+                            className="hover:scale-110 transition-transform active:scale-95"
+                            title="ছবি পরিবর্তন করুন"
+                          >
+                            <ReceiverAvatar name={voter} size="lg" />
+                          </button>
 
                           {editingVoterName === voter ? (
                             <div className="flex-1 flex gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
@@ -1129,12 +1224,12 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
                           <button 
                             onClick={() => {
                               setPhotoModal({ isOpen: true, voterName: voter });
-                              setPhotoUrlInput(profiles[voter]?.image || '');
+                              setPhotoUrlInput(profiles[normalizeName(voter)]?.image || '');
                             }}
                             className="p-2.5 bg-white text-slate-400 hover:text-blue-600 border border-slate-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-all shadow-sm"
                             title="ছবি পরিবর্তন করুন"
                           >
-                            <Camera size={14} />
+                            <Camera size={18} />
                           </button>
                           {!editingVoterName && (
                             <button 

@@ -794,17 +794,36 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                 <Clock size={18} className="rotate-180" />
               </button>
             )}
-            <div className="relative">
+            <div className="flex items-center gap-3 relative z-10">
               <button
-                onClick={() => setShowSummary(!showSummary)}
-                className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-2xl ${showSummary ? "bg-blue-600 text-white shadow-blue-200" : "bg-[#f0f7ff] text-blue-700 border border-blue-100/50 hover:bg-blue-100 shadow-blue-500/10"}`}
+                onClick={() => setShowFilters(!showFilters)}
+                className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-2xl ${showFilters ? "bg-blue-600 text-white shadow-blue-200" : "bg-white text-blue-700 border border-blue-100 hover:bg-blue-50 shadow-blue-500/10"}`}
               >
-                <Sparkles
+                <CalendarSearch
                   size={16}
-                  className={showSummary ? "text-blue-100" : "text-blue-500"}
-                />{" "}
-                রেজিস্টার সারসংক্ষেপ
+                  className={showFilters ? "text-blue-100" : "text-blue-500"}
+                />
+                ফিল্টার করুন
+                {(selectedCycleDate || filterParaType || filterType || searchTerm) && (
+                  <span className="flex items-center justify-center w-5 h-5 bg-amber-500 text-white rounded-full text-[10px] animate-pulse">
+                    {toBengaliDigits(
+                      [selectedCycleDate, filterParaType, filterType, searchTerm].filter(Boolean).length.toString()
+                    )}
+                  </span>
+                )}
               </button>
+
+              <div className="relative">
+                <button
+                  onClick={() => setShowSummary(!showSummary)}
+                  className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-2xl ${showSummary ? "bg-blue-600 text-white shadow-blue-200" : "bg-[#f0f7ff] text-blue-700 border border-blue-100/50 hover:bg-blue-100 shadow-blue-500/10"}`}
+                >
+                  <Sparkles
+                    size={16}
+                    className={showSummary ? "text-blue-100" : "text-blue-500"}
+                  />{" "}
+                  রেজিস্টার সারসংক্ষেপ
+                </button>
 
               <AnimatePresence>
                 {showSummary && (
@@ -999,14 +1018,39 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           </div>
         </div>
       </div>
+    </div>
 
       {/* Filter UI for Correspondence */}
       {showFilters && (
         <div
           id="correspondence-filters"
-          className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate"
+          className="!bg-white p-4 md:p-6 rounded-[2rem] border border-slate-200 shadow-xl space-y-4 no-print mb-8 animate-in slide-in-from-top-4 duration-500 relative z-[1000] isolate overflow-hidden group"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-3xl rounded-full -mr-32 -mt-32 transition-transform group-hover:scale-110 duration-1000"></div>
+          
+          <div className="flex items-center justify-between relative z-10 mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+                <CalendarSearch size={18} />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-slate-900 tracking-tight">সার্চ ও ফিল্টার</h3>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Search & Filter Correspondence</p>
+              </div>
+            </div>
+            
+            {(selectedCycleDate || filterParaType || filterType || searchTerm) && (
+              <button 
+                onClick={clearFilters}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-black text-[10px] hover:bg-red-100 transition-all border border-red-100 active:scale-95"
+              >
+                <XCircle size={12} />
+                সব মুছুন
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
             {/* Cycle Selection */}
             <div className="space-y-1.5" ref={cycleDropdownRef}>
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">

@@ -792,8 +792,8 @@ const App: React.FC = () => {
                             onDelete={handleDelete}
                             onApprove={handleApproveEntry}
                             onReject={handleRejectEntry}
-                            showFilters={false}
-                            setShowFilters={() => {}}
+                            showFilters={showRegisterFilters}
+                            setShowFilters={setShowRegisterFilters}
                           />
                         </div>
                       )}
@@ -808,7 +808,7 @@ const App: React.FC = () => {
                             entries={pendingEntries} 
                             onDelete={handleDelete} 
                             onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
-                            showFilters={false} 
+                            showFilters={showRegisterFilters} 
                             setShowFilters={setShowRegisterFilters}
                             isAdminView={true}
                             onApprove={handleApproveEntry}
