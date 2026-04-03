@@ -831,8 +831,8 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-landing-premium px-4 md:px-0">
-      <div className="sticky top-0 z-[100] flex flex-col md:flex-row items-stretch justify-between bg-white/95 backdrop-blur-xl rounded-none border border-slate-200 shadow-xl overflow-hidden transition-all duration-500 md:min-h-[70px]">
-        <div className="flex items-center gap-4 pl-6 md:pl-10 py-4 md:py-1 shrink-0">
+      <div className="sticky top-0 z-[1000] flex flex-col md:flex-row items-stretch justify-between bg-white/95 backdrop-blur-xl rounded-none border border-slate-200 shadow-xl overflow-hidden transition-all duration-500 md:min-h-[54px]">
+        <div className="flex items-center gap-4 pl-6 md:pl-10 py-3 md:py-0 shrink-0">
           <div className="w-12 h-12 md:w-12 md:h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-blue-600/30"><Ticket size={24} className="md:size-[24px]" /></div>
           <div><h2 className="text-xl md:text-xl font-black text-slate-900 leading-tight">ডিজিটাল ব্যালট বক্স</h2><p className="text-slate-500 font-bold text-[10px] md:text-[10px] uppercase tracking-widest">Election & Poll System</p></div>
         </div>

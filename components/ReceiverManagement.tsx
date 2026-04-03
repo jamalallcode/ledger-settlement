@@ -632,7 +632,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     {profile.entryCount !== undefined && profile.entryCount > 0 && onViewEntries && (
                       <button 
                         onClick={() => onViewEntries(profile.name === 'অনির্ধারিত এন্ট্রি' ? '__UNASSIGNED__' : profile.name, 'correspondence')}
