@@ -123,6 +123,8 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
     const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
     const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
     const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+    const [hideWarning, setHideWarning] = useState(false);
+    const [showNoParaList, setShowNoParaList] = useState(false);
 
     const [expandedEntries, setExpandedEntries] = useState<Set<string>>(
       new Set(),
@@ -256,6 +258,10 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
         </span>
       );
     };
+
+    const noParaEntries = useMemo(() => {
+      return entries.filter(e => !e.paragraphs || e.paragraphs.length === 0);
+    }, [entries]);
 
     const filteredEntries = useMemo(() => {
       return entries
@@ -884,6 +890,95 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
         className="w-full relative animate-premium-page"
       >
         <IDBadge id="view-register-table" />
+
+        {/* Warning Message for Entries with No Paragraphs */}
+        {!hideWarning && noParaEntries.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-amber-50 border-2 border-amber-200 rounded-[2rem] p-4 flex items-center justify-between shadow-lg shadow-amber-100/50 no-print"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center shadow-inner">
+                <AlertCircle size={24} />
+              </div>
+              <div>
+                <p className="text-slate-900 font-black text-sm">সতর্কতা: অনুচ্ছেদহীন এন্ট্রি পাওয়া গেছে!</p>
+                <p className="text-slate-600 font-bold text-[11px]">
+                  আপনার রেজিস্টারে মোট <button onClick={() => setShowNoParaList(true)} className="text-amber-600 hover:text-amber-700 underline decoration-2 underline-offset-4 decoration-amber-300 font-black px-1">{toBengaliDigits(noParaEntries.length)} টি</button> এন্ট্রি রয়েছে যেগুলোর কোনো অনুচ্ছেদ যুক্ত করা হয়নি।
+                </p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setHideWarning(true)}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-amber-100 text-amber-600 hover:bg-amber-200 transition-all shadow-sm"
+            >
+              <X size={18} />
+            </button>
+          </motion.div>
+        )}
+
+        {/* No Paragraph Entries List Modal */}
+        <AnimatePresence>
+          {showNoParaList && (
+            <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm no-print">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100"
+              >
+                <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center shadow-inner">
+                      <ClipboardList size={24} />
+                    </div>
+                    <div>
+                      <h3 className="text-slate-900 font-black text-xl tracking-tight">অনুচ্ছেদহীন এন্ট্রির তালিকা</h3>
+                      <p className="text-amber-600 font-black text-[10px] uppercase tracking-[0.2em]">Missing Paragraphs</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setShowNoParaList(false)}
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-white text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all shadow-sm border border-slate-100"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+                <div className="p-8 max-h-[60vh] overflow-y-auto no-scrollbar space-y-4">
+                  {noParaEntries.map((entry, idx) => (
+                    <div key={entry.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between group hover:bg-white hover:border-blue-200 transition-all duration-300 shadow-sm hover:shadow-md">
+                      <div className="flex items-center gap-4">
+                        <div className="w-8 h-8 bg-white text-slate-400 font-black text-xs rounded-xl flex items-center justify-center border border-slate-100 group-hover:text-blue-600 group-hover:border-blue-100 transition-colors">
+                          {toBengaliDigits(idx + 1)}
+                        </div>
+                        <div>
+                          <p className="text-slate-900 font-black text-[13px]">{entry.entityName}</p>
+                          <p className="text-slate-500 font-bold text-[10px]">{entry.branchName} • {toBengaliDigits(entry.auditYear)}</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          onEdit(entry);
+                          setShowNoParaList(false);
+                        }}
+                        className="px-4 py-2 bg-white text-blue-600 rounded-xl font-black text-[11px] border border-slate-100 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm"
+                      >
+                        এডিট করুন
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="p-6 bg-slate-50 border-t border-slate-100 text-center">
+                  <p className="text-[11px] font-bold text-slate-500 italic">
+                    * এই এন্ট্রিগুলোতে অনুচ্ছেদ যুক্ত করলে সতর্কবার্তাটি চলে যাবে।
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
         {!isAdminView && (
           <div
             id="section-register-top-header"

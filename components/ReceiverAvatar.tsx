@@ -8,7 +8,7 @@ interface ReceiverAvatarProps {
   name: string;
   image?: string | null;
   designation?: string | null;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   showName?: boolean;
   className?: string;
 }
@@ -36,6 +36,7 @@ const ReceiverAvatar: React.FC<ReceiverAvatarProps> = ({
   }, [profiles, name, image, designation]);
 
   const sizeCls = {
+    xs: 'w-5 h-5',
     sm: 'w-6 h-6',
     md: 'w-8 h-8',
     lg: 'w-10 h-10',
@@ -43,6 +44,7 @@ const ReceiverAvatar: React.FC<ReceiverAvatarProps> = ({
   }[size];
 
   const iconSize = {
+    xs: 10,
     sm: 12,
     md: 14,
     lg: 18,

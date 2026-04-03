@@ -134,6 +134,9 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
   const [allVotes, setAllVotes] = useState<BallotVote[]>([]);
   const [allTokens, setAllTokens] = useState<VoterToken[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUpdatingPoll, setIsUpdatingPoll] = useState(false);
+  const [isPollModified, setIsPollModified] = useState(false);
+  const [showPollSuccess, setShowPollSuccess] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
   // Dynamic Positions State
@@ -486,16 +489,35 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
     });
   };
 
-  const handlePollUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+  const handlePollUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
     const q = (form.elements.namedItem('q') as HTMLInputElement).value;
     const opts = (form.elements.namedItem('opts') as HTMLInputElement).value.split(',').map(o => o.trim()).filter(o => o);
     
-    setPollQuestion(q);
-    setPollOptions(opts);
-    syncConfigToDB({ pollQuestion: q, pollOptions: opts });
-    setMessage({ type: 'success', text: 'পোল প্রশ্ন সফলভাবে আপডেট করা হয়েছে।'});
+    try {
+      setIsUpdatingPoll(true);
+      // Simulate a small delay for professional feel
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      setPollQuestion(q);
+      setPollOptions(opts);
+      await syncConfigToDB({ pollQuestion: q, pollOptions: opts });
+      
+      setIsPollModified(false);
+      setShowPollSuccess(true);
+      
+      // Hide the success state after 3 seconds
+      setTimeout(() => {
+        setShowPollSuccess(false);
+      }, 3000);
+      
+      setMessage({ type: 'success', text: 'পাবলিক পোল সেটিংস সফলভাবে আপডেট করা হয়েছে।' });
+    } catch (err: any) {
+      setMessage({ type: 'error', text: 'পোল আপডেট করতে সমস্যা হয়েছে।' });
+    } finally {
+      setIsUpdatingPoll(false);
+    }
   };
 
   const toggleResultsLock = () => {
@@ -1266,9 +1288,50 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
                 <div className="space-y-6">
                   <h4 className="text-lg font-black text-slate-900 flex items-center gap-2"><MessageSquare size={20} className="text-indigo-600" /> পাবলিক পোল সেটিংস</h4>
                   <form onSubmit={handlePollUpdate} className="grid grid-cols-1 gap-6">
-                     <div className="space-y-2"><label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">পোলের প্রশ্ন</label><input name="q" defaultValue={pollQuestion} className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold outline-none focus:border-emerald-500" /></div>
-                     <div className="space-y-2"><label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">বিকল্পসমূহ (কমা দিয়ে লিখুন)</label><input name="opts" defaultValue={pollOptions.join(', ')} className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold outline-none focus:border-emerald-500" /></div>
-                     <div className="flex justify-end"><button type="submit" className="px-8 py-3 bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg hover:bg-emerald-700">পোল আপডেট করুন</button></div>
+                     <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">পোলের প্রশ্ন</label>
+                        <input 
+                          name="q" 
+                          defaultValue={pollQuestion} 
+                          onChange={() => setIsPollModified(true)}
+                          className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold outline-none focus:border-emerald-500" 
+                        />
+                     </div>
+                     <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">বিকল্পসমূহ (কমা দিয়ে লিখুন)</label>
+                        <input 
+                          name="opts" 
+                          defaultValue={pollOptions.join(', ')} 
+                          onChange={() => setIsPollModified(true)}
+                          className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold outline-none focus:border-emerald-500" 
+                        />
+                     </div>
+                      <div className="flex justify-end h-14">
+                        {(isPollModified || isUpdatingPoll || showPollSuccess) && (
+                          <button 
+                            type="submit" 
+                            disabled={isUpdatingPoll || showPollSuccess}
+                            className={`px-8 py-3.5 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 transition-all active:scale-95 flex items-center gap-3 animate-in fade-in zoom-in duration-300 ${isUpdatingPoll || showPollSuccess ? 'opacity-80 cursor-not-allowed' : ''}`}
+                          >
+                            {isUpdatingPoll ? (
+                              <>
+                                <Loader2 className="animate-spin" size={20} />
+                                আপডেট হচ্ছে...
+                              </>
+                            ) : showPollSuccess ? (
+                              <>
+                                <Check size={20} strokeWidth={3} className="animate-in zoom-in duration-500" />
+                                আপডেট সম্পন্ন
+                              </>
+                            ) : (
+                              <>
+                                <Check size={20} strokeWidth={3} />
+                                আপডেট করুন
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
                   </form>
                 </div>
 
@@ -1308,8 +1371,14 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
 
       {/* Confirmation Modal */}
       {confirmModal.isOpen && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100">
+        <div 
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+          onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        >
+          <div 
+            className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-8 text-center space-y-6">
               <div className={`w-20 h-20 mx-auto rounded-3xl flex items-center justify-center shadow-xl ${
                 confirmModal.type === 'danger' ? 'bg-red-50 text-red-600 shadow-red-100' : 
@@ -1349,8 +1418,14 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
 
       {/* Photo Manager Modal */}
       {photoModal.isOpen && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100">
+        <div 
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+          onClick={() => { setPhotoModal({ isOpen: false, voterName: '' }); setSelectedFileBase64(null); }}
+        >
+          <div 
+            className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-8 space-y-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">

@@ -596,7 +596,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 {reportTableData.length > 0 ? reportTableData.map((row, idx) => (
                   <tr key={idx} className="no-hover-row group bg-white hover:bg-blue-100/50 transition-all duration-200">
                     <td className={tdStyle}>{toBengaliDigits(idx + 1)}</td>
-                    <td className={tdStyle + " text-left text-[11px] font-bold group-hover:bg-blue-50/30"}>{row.name}</td>
+                    <td className={tdStyle + " text-left text-[11px] font-bold group-hover:bg-blue-50/30"}>
+                      <div className="flex items-center gap-2">
+                        <ReceiverAvatar name={row.name} size="xs" />
+                        <span>{row.name}</span>
+                      </div>
+                    </td>
                     <td 
                       className={`${tdStyle} ${row.karyapatra.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''}`}
                       onClick={() => handleCountClick(`${row.name} - কার্যপত্র (১ মাস-)`, row.karyapatra.lessLetters)}

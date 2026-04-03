@@ -19,8 +19,14 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[30000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="w-full max-w-md bg-white border-2 border-slate-200 rounded-[2.5rem] p-8 shadow-[0_30px_70px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-300 relative overflow-hidden">
+    <div 
+      className="fixed inset-0 z-[30000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+      onClick={onClose}
+    >
+      <div 
+        className="w-full max-w-md bg-white border-2 border-slate-200 rounded-[2.5rem] p-8 shadow-[0_30px_70px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-300 relative overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-rose-600/5 blur-[80px] rounded-full"></div>
         
         <div className="relative z-10 space-y-6">
