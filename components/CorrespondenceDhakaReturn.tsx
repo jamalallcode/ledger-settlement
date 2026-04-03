@@ -600,7 +600,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       {/* Auditor Statistics Modal */}
       {showAuditorStatsModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[3000] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-600/20 rounded-xl flex items-center justify-center">
@@ -623,7 +623,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-slate-100">
-                    <th className="border border-slate-200 p-2 text-left text-[12px] font-black text-slate-700">অডিটর</th>
+                    <th className="border border-slate-200 p-2 text-left text-[12px] font-black text-slate-700 w-[200px]">অডিটর</th>
                     <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">অডিটরের কাছে</th>
                     <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">এএন্ডএও</th>
                     <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">উপপরিচালক</th>
