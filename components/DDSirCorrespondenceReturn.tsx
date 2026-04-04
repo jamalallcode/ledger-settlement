@@ -375,15 +375,6 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   return (
     <div id="dd-sir-report-container" className="space-y-6 py-2 w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view">
       <IDBadge id="dd-sir-report-container" />
-      <div className="flex items-center gap-4 no-print mb-4">
-        <button 
-          onClick={onBack}
-          className="p-3 bg-white border border-slate-200 rounded-2xl hover:bg-red-50 hover:text-red-600 text-slate-600 shadow-sm transition-all group"
-          title="ফিরে যান"
-        >
-          <X size={20} className="group-hover:scale-110 transition-transform" />
-        </button>
-      </div>
       {/* Control Bar (No Print) */}
       {showFilters && (
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
@@ -530,7 +521,14 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
       {/* Summary Stats Panel (Removed as it's now in hover) */}
 
-      <div className="w-full bg-white p-2 md:p-6 relative">
+      <div className="bg-white border border-slate-300 shadow-2xl w-full overflow-x-auto p-6 relative animate-table-entrance">
+        <button 
+          onClick={onBack}
+          className="absolute top-4 left-4 p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-red-50 hover:text-red-600 text-slate-500 shadow-sm transition-all group z-[300] no-print"
+          title="ফিরে যান"
+        >
+          <X size={18} className="group-hover:scale-110 transition-transform" />
+        </button>
         {/* Office Header */}
         <div className="text-center mb-8 pt-4">
           <div className="inline-block relative">
