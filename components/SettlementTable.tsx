@@ -1162,7 +1162,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
         {showFilters && (
           <div
             id="register-filters"
-            className="!bg-white p-4 md:p-6 rounded-[2rem] border border-slate-200 shadow-xl space-y-4 no-print mb-8 animate-in slide-in-from-top-4 duration-500 relative z-[1000] isolate overflow-hidden group"
+            className="!bg-white p-4 md:p-6 rounded-[2rem] border border-slate-200 shadow-xl space-y-4 no-print mb-8 animate-in slide-in-from-top-4 duration-500 relative z-[1000] isolate group"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-3xl rounded-full -mr-32 -mt-32 transition-transform group-hover:scale-110 duration-1000"></div>
             

@@ -87,18 +87,13 @@ const QR_6: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, onBack, search
   return (
     <div id="qr-6-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
       <IDBadge id="qr-6-container" />
-      
-      <div className="flex justify-between items-center mb-4 no-print">
-        <button 
-          onClick={onBack}
-          className="p-3 bg-slate-100 border border-slate-200 rounded-2xl hover:bg-red-50 hover:text-red-600 text-slate-600 shadow-sm transition-all group"
-          title="ফিরে যান"
-        >
-          <X size={20} className="group-hover:scale-110 transition-transform" />
-        </button>
-        <div className="flex gap-2">
-        </div>
-      </div>
+      <button 
+        onClick={onBack}
+        className="absolute top-4 left-4 p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-red-50 hover:text-red-600 text-slate-500 shadow-sm transition-all group z-[300] no-print"
+        title="ফিরে যান"
+      >
+        <X size={18} className="group-hover:scale-110 transition-transform" />
+      </button>
 
       {/* Header Section */}
       <div className="text-center mb-8 pt-4">

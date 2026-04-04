@@ -138,15 +138,6 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   return (
     <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative">
       <IDBadge id="section-report-summary" />
-      <div className="flex items-center gap-4 no-print mb-4">
-        <button 
-          onClick={() => setSelectedReportType(null)}
-          className="p-3 bg-white border border-slate-200 rounded-2xl hover:bg-red-50 hover:text-red-600 text-slate-600 shadow-sm transition-all group"
-          title="ফিরে যান"
-        >
-          <X size={20} className="group-hover:scale-110 transition-transform" />
-        </button>
-      </div>
       {showFilters && (
         <div id="summary-header-controls" className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print relative">
           <IDBadge id="summary-header-controls" />
@@ -249,6 +240,13 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
       )}
 
       <div id="card-report-table-container" className="bg-white border border-slate-300 shadow-2xl w-full overflow-x-auto p-1 relative animate-table-entrance">
+        <button 
+          onClick={() => setSelectedReportType(null)}
+          className="absolute top-4 left-4 p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-red-50 hover:text-red-600 text-slate-500 shadow-sm transition-all group z-[300] no-print"
+          title="ফিরে যান"
+        >
+          <X size={18} className="group-hover:scale-110 transition-transform" />
+        </button>
         <div className="text-center mb-8 pt-4">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-4">
             {selectedReportType}

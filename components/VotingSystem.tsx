@@ -1372,7 +1372,11 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
       {/* Confirmation Modal */}
       {confirmModal.isOpen && (
         <div 
-          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+          className={`fixed inset-0 z-[1000] flex justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300 ${
+            confirmModal.title === 'টোকেন জেনারেট' ? 'items-start pt-24' : 
+            confirmModal.title === 'পদ মুছে ফেলুন' ? 'items-start pt-48' : 
+            'items-center'
+          }`}
           onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
         >
           <div 

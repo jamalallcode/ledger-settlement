@@ -330,15 +330,6 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   return (
     <div id="correspondence-dhaka-container" className="space-y-4 py-2 w-full animate-report-page relative">
       <IDBadge id="correspondence-dhaka-container" />
-      <div className="flex items-center gap-4 no-print mb-4">
-        <button 
-          onClick={() => setSelectedReportType(null)}
-          className="p-3 bg-white border border-slate-200 rounded-2xl hover:bg-red-50 hover:text-red-600 text-slate-600 shadow-sm transition-all group"
-          title="ফিরে যান"
-        >
-          <X size={20} className="group-hover:scale-110 transition-transform" />
-        </button>
-      </div>
       {showFilters && (
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
           <div className="flex items-center gap-3">
@@ -505,6 +496,13 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       )}
 
       <div className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-6 relative animate-table-entrance">
+        <button 
+          onClick={() => setSelectedReportType(null)}
+          className="absolute top-4 left-4 p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-red-50 hover:text-red-600 text-slate-500 shadow-sm transition-all group z-[300] no-print"
+          title="ফিরে যান"
+        >
+          <X size={18} className="group-hover:scale-110 transition-transform" />
+        </button>
         <div className="text-center mb-8 pt-4 relative">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-4">
             চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)।
