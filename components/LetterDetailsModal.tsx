@@ -2,7 +2,6 @@
 import React from 'react';
 import { X, FileText, Calendar, Hash, User } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
-import ReceiverAvatar from './ReceiverAvatar';
 
 interface LetterDetailsModalProps {
   isOpen: boolean;
@@ -101,7 +100,7 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
                     </td>
                     <td className="p-4 text-center text-[13px] font-bold text-slate-700">
                       <div className="flex items-center justify-center gap-2">
-                        <ReceiverAvatar name={letter.presentedToName || 'অডিটর'} size="xs" />
+                        <User size={14} className="text-slate-400" />
                         <span className={`px-3 py-1.5 rounded-lg text-[11px] font-black shadow-sm border ${
                           (letter.presentedToName || '').includes('অডিটর') ? 'bg-red-50 text-red-600 border-red-100' :
                           (letter.presentedToName || '').includes('এএন্ডএও') ? 'bg-blue-50 text-blue-600 border-blue-100' :

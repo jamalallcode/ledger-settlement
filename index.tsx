@@ -12,7 +12,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import App from './App';
-import { ReceiverProvider } from './src/contexts/ReceiverContext';
 
 const rootElement = document.getElementById('root');
 
@@ -27,13 +26,11 @@ if (rootElement) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <React.StrictMode>
-      <ReceiverProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<App />} />
-          </Routes>
-        </BrowserRouter>
-      </ReceiverProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<App />} />
+        </Routes>
+      </BrowserRouter>
     </React.StrictMode>
   );
 } else {

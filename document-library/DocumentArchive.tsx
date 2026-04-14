@@ -535,14 +535,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
       {/* View Modal */}
       {selectedDoc && (
-        <div 
-          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-400/10 backdrop-blur-md animate-in fade-in duration-500"
-          onClick={() => setSelectedDoc(null)}
-        >
-           <div 
-             className="w-full max-w-6xl bg-white rounded-[3rem] overflow-hidden flex flex-col shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white/40 relative animate-in slide-in-from-bottom-8 zoom-in-95 duration-500"
-             onClick={(e) => e.stopPropagation()}
-           >
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-400/10 backdrop-blur-md animate-in fade-in duration-500 overflow-y-auto">
+           <div className="w-full max-w-6xl bg-white rounded-[3rem] overflow-hidden flex flex-col shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white/40 relative animate-in slide-in-from-bottom-8 zoom-in-95 duration-500">
               <button 
                 onClick={() => setSelectedDoc(null)}
                 className="absolute top-8 right-8 z-[1010] p-3.5 bg-white/80 backdrop-blur-md text-slate-400 hover:text-slate-900 rounded-2xl hover:bg-white transition-all shadow-sm border border-slate-100 group"
@@ -631,14 +625,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
       {/* Add/Edit Modal */}
       {showAddModal && (
-        <div 
-          className="fixed inset-0 z-[1000] flex items-start justify-center p-4 bg-slate-400/10 backdrop-blur-md animate-in fade-in duration-500 pt-2 md:pt-4"
-          onClick={() => { setShowAddModal(false); setEditingDoc(null); }}
-        >
-           <div 
-             className="w-full max-w-3xl bg-white rounded-[3rem] p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white/40 space-y-10 animate-in slide-in-from-bottom-8 zoom-in-95 duration-500"
-             onClick={(e) => e.stopPropagation()}
-           >
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-400/10 backdrop-blur-md animate-in fade-in duration-500 overflow-y-auto">
+           <div className="w-full max-w-3xl bg-white rounded-[3rem] p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white/40 space-y-10 animate-in slide-in-from-bottom-8 zoom-in-95 duration-500 no-scrollbar">
               <div className="flex items-center justify-between border-b border-slate-50 pb-8">
                  <div className="flex items-center gap-6">
                     <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-[1.5rem] flex items-center justify-center shadow-inner border border-blue-100/50">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Printer, X } from 'lucide-react';
+import { Printer } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
@@ -14,7 +14,7 @@ interface QRProps {
   filterMinistry?: string;
 }
 
-const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, onBack, searchTerm = '', filterMinistry = '' }) => {
+const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
   // Date calculation based on user's logic: 
   // "তিন মাস বলতে পূর্ববর্তী মাসের ১৬ তারিখ হতে ৩য় মাসের ১৫ তারিখ পযন্ত"
   const startDate = setDate(subMonths(activeCycle.start, 1), 16);
@@ -72,13 +72,9 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, onBack, search
   return (
     <div id="qr-1-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
       <IDBadge id="qr-1-container" />
-      <button 
-        onClick={onBack}
-        className="absolute top-4 left-4 p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-red-50 hover:text-red-600 text-slate-500 shadow-sm transition-all group z-[300] no-print"
-        title="ফিরে যান"
-      >
-        <X size={18} className="group-hover:scale-110 transition-transform" />
-      </button>
+      
+      <div className="flex justify-end mb-4 no-print">
+      </div>
 
       {/* Header Section */}
       <div className="text-center mb-8 pt-4">

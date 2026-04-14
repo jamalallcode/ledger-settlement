@@ -25,6 +25,7 @@ interface SidebarProps {
   highlightSearch?: string | null;
   onOpenChangePassword?: () => void;
   moduleVisibility?: ModuleVisibility;
+  showPendingOnly?: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -46,6 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   registerSubModule,
   reportType,
   highlightSearch,
+  showPendingOnly = false,
   moduleVisibility = {
     entry: true,
     register: true,
@@ -101,6 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isSettlementExpanded, setIsSettlementExpanded] = useState(false);
   const [isOnlineExpanded, setIsOnlineExpanded] = useState(false);
   const [isQuarterlyExpanded, setIsQuarterlyExpanded] = useState(false);
+  const [isSetupExpanded, setIsSetupExpanded] = useState(false);
   
   // Auto-expand based on activeTab
   useEffect(() => {
@@ -110,7 +113,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, [activeTab]);
 
   const handleLogoClick = () => {
-    setActiveTab('landing');
     const now = Date.now();
     if (now - lastClickTime.current > 2000) clickCount.current = 0;
     clickCount.current += 1;
@@ -155,6 +157,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const menuItems = [
+    { id: 'landing', label: 'হোম', icon: Home, badgeId: 'side-nav-home' },
     { id: 'entry', label: 'নতুন এন্ট্রি', icon: FilePlus2, badgeId: 'side-nav-entry', isDropdown: true },
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter, badgeId: 'side-nav-register', isDropdown: true },
     { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return', isDropdown: true },
@@ -192,33 +195,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         <IDBadge id="sidebar-container" />
         <div id="sidebar-header" className="p-1.5 border-b border-slate-800 flex items-center justify-between relative">
           <IDBadge id="sidebar-header" />
-          <div id="sidebar-logo" onClick={handleLogoClick} className="flex items-center gap-2 relative cursor-pointer select-none active:scale-95 transition-transform">
+          <div id="sidebar-logo" onClick={handleLogoClick} className="flex items-center gap-1 relative cursor-pointer select-none active:scale-95 transition-transform">
             <IDBadge id="sidebar-logo" />
-            <div 
-              className={`group relative flex items-center justify-center w-6 h-6 rounded-full transition-all duration-500 overflow-hidden
-                ${activeTab === 'landing' 
-                  ? 'scale-110 z-10 shadow-[0_5px_15px_rgba(0,0,0,0.4)]' 
-                  : 'opacity-90 hover:opacity-100 hover:scale-105 active:scale-95 shadow-[0_2px_8px_rgba(0,0,0,0.3)]'}
-              `}
-            >
-              {/* The Multi-color Glass Sphere Base */}
-              <div className="absolute inset-0 bg-[conic-gradient(from_225deg,#2dd4bf,#3b82f6,#ef4444,#f97316,#2dd4bf)]" />
-              
-              {/* Inner Shadow for depth */}
-              <div className="absolute inset-0 rounded-full shadow-[inset_0_-2px_6px_rgba(0,0,0,0.5),inset_0_2px_6px_rgba(255,255,255,0.4)]" />
-              
-              {/* Top Glossy Highlight */}
-              <div className="absolute top-[4%] left-[12%] w-[76%] h-[48%] bg-gradient-to-b from-white/90 to-transparent rounded-[100%] pointer-events-none" />
-              
-              {/* Bottom Reflection */}
-              <div className="absolute bottom-[6%] left-[22%] w-[56%] h-[18%] bg-white/30 blur-[1px] rounded-[100%] pointer-events-none" />
-              
-              {/* Active State Glow */}
-              <div className={`absolute inset-0 rounded-full transition-opacity duration-500 ${activeTab === 'landing' ? 'bg-white/10' : 'opacity-0'}`} />
-              
-              <div className="relative z-10 flex items-center justify-center">
-                <Home size={10} className="text-slate-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)]" />
-              </div>
+            <div className="w-4 h-4 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/40">
             </div>
             <span className="font-black text-white tracking-tight text-[11px]">অডিট রেজিস্টার</span>
           </div>
@@ -231,8 +210,9 @@ const Sidebar: React.FC<SidebarProps> = ({
           <nav id="sidebar-nav" className="py-1 px-1.5 space-y-0.5 relative">
             <IDBadge id="sidebar-nav" />
             {menuItems.map((item) => {
-              const isVisible = isAdmin || (moduleVisibility as any)[item.id] !== false;
+              const isVisible = isAdmin || ((moduleVisibility as any)[item.id] !== false && !(item as any).adminOnly);
               if (!isVisible) return null;
+              if ((item as any).adminOnly && !isAdmin) return null;
 
               return (
                 <div 
@@ -257,12 +237,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                         setActiveTab(item.id);
                       }
                     }} 
-                    className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group ${activeTab === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
+                    className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group ${activeTab === item.id || (item.id === 'archive' && activeTab === 'register' && showPendingOnly) ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
                   >
                     <IDBadge id={item.badgeId} />
                     <div className="flex items-center gap-1.5">
-                      <item.icon size={12} className={activeTab === item.id ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'} />
                       <span className="text-[10px]">{item.label}</span>
+                      {item.id === 'archive' && isAdmin && pendingCount > 0 && (
+                        <span className="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full animate-pulse shadow-lg shadow-red-900/40">
+                          {toBengaliDigits(pendingCount.toString())}
+                        </span>
+                      )}
                     </div>
                     {item.isDropdown && (
                       <ChevronDown size={10} className={`transition-transform duration-300 ${
@@ -528,6 +512,40 @@ const Sidebar: React.FC<SidebarProps> = ({
                         >
                           <span>বাৎসরিক</span>
                         </button>
+
+                        {/* ৫. সেটআপ (Toggle) */}
+                        {isAdmin && (
+                          <>
+                            <button 
+                              onClick={() => setIsSetupExpanded(!isSetupExpanded)}
+                              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-black transition-all ${isSetupExpanded ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span>সেটআপ</span>
+                              </div>
+                              <ChevronDown size={6} className={`transition-transform duration-300 ${isSetupExpanded ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            <AnimatePresence>
+                              {isSetupExpanded && (
+                                <motion.div 
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                                  className="pl-3 py-1 space-y-1 overflow-hidden"
+                                >
+                                  <button 
+                                    onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক')}
+                                    className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: মাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                  >
+                                    মাসিক জের
+                                  </button>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -545,7 +563,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <IDBadge id="side-nav-dashboard" />
                   <div className="flex items-center gap-1.5">
-                    <LayoutDashboard size={12} className={activeTab === 'dashboard' ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'} />
                     <span className="text-[10px]">ড্যাশবোর্ড</span>
                   </div>
                 </button>
@@ -581,14 +598,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
       </div>
       {showAdminModal && (
-        <div 
-          className="fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-500"
-          onClick={() => { setShowAdminModal(false); setAdminPassword(''); }}
-        >
-          <div 
-            className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 space-y-6 animate-in zoom-in-95 duration-500 relative overflow-y-auto max-h-[90vh] group no-scrollbar"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 z-[20000] flex items-start justify-center p-4 pt-32 bg-black/80 backdrop-blur-md animate-in fade-in duration-500">
+          <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 space-y-6 animate-in zoom-in-95 duration-500 relative overflow-y-auto max-h-[90vh] group no-scrollbar">
             {/* Decorative Glows */}
             <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/20 blur-[80px] rounded-full group-hover:bg-blue-600/30 transition-colors duration-700"></div>
             <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-600/10 blur-[80px] rounded-full group-hover:bg-emerald-600/20 transition-colors duration-700"></div>
@@ -692,14 +703,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Recovery Modal */}
       {showRecoveryModal && (
-        <div 
-          className="fixed inset-0 z-[20001] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-500"
-          onClick={() => { setShowRecoveryModal(false); setRecoveryAnswer(''); setRecoveredPassword(null); }}
-        >
-          <div 
-            className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2.5rem] p-8 space-y-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-500 relative overflow-y-auto max-h-[90vh] group no-scrollbar"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 z-[20001] flex items-start justify-center p-4 pt-32 bg-black/80 backdrop-blur-md animate-in fade-in duration-500">
+          <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2.5rem] p-8 space-y-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-500 relative overflow-hidden group">
             {/* Decorative Glow */}
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-600/20 blur-[80px] rounded-full group-hover:bg-amber-600/30 transition-colors duration-700"></div>
             

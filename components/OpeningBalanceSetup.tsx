@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { Settings2, ChevronLeft, Unlock, Pencil, LayoutGrid, Sparkles, X } from 'lucide-react';
+import { Settings2, ChevronLeft, Unlock, Pencil, LayoutGrid, Sparkles } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP } from '../constants';
 import { MinistryPrevStats } from '../types';
@@ -70,7 +70,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
       <div id="container-setup-controls" className="flex flex-col md:flex-row items-center justify-between bg-white p-6 rounded-3xl border border-slate-200 shadow-xl gap-4 no-print relative">
         <IDBadge id="container-setup-controls" />
         <div className="flex items-center gap-4">
-          <button onClick={() => { setIsSetupMode(false); setSelectedReportType(null); }} className="p-3 bg-slate-100 border border-slate-200 rounded-2xl hover:bg-red-50 hover:text-red-600 text-slate-600 shadow-sm transition-all group"><X size={22} className="group-hover:scale-110 transition-transform" /></button>
+          <button onClick={() => { setIsSetupMode(false); setSelectedReportType(null); }} className="p-3 bg-slate-100 border border-slate-200 rounded-2xl hover:bg-slate-200 text-slate-600 shadow-sm transition-all"><ChevronLeft size={22} /></button>
           <div className="flex flex-col">
             <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3"><Settings2 size={28} className="text-blue-600" /> {setupType || 'প্রারম্ভিক জের সেটআপ'}</h2>
             <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">সমন্বিত (UNIFIED) ব্যালেন্স ইনপুট উইন্ডো</span>
@@ -79,11 +79,11 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
 
         <div className="flex-1 flex justify-center">
           <button 
-            onClick={() => setSelectedReportType('dynamic_setup')}
-            className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl font-black text-[13px] transition-all border-2 shadow-sm hover:shadow-md active:scale-95 ${dynamicSetupConfig?.enabled ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'}`}
+            onClick={() => setSelectedReportType('সময়কাল ভিত্তিক প্রারম্ভিক জের সেটআপ:নতুন')}
+            className="flex items-center gap-2.5 px-5 py-2.5 rounded-2xl font-black text-[13px] transition-all border-2 shadow-sm hover:shadow-md active:scale-95 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
           >
-            <Sparkles size={18} className={dynamicSetupConfig?.enabled ? 'text-amber-500 animate-pulse' : 'text-blue-600'} />
-            {dynamicSetupConfig?.enabled ? 'ডাইনামিক সেটআপ সক্রিয়' : 'ডাইনামিক সেটআপ সেট করুন'}
+            <Sparkles size={18} className="text-amber-500 animate-pulse" />
+            কাস্টম জের
           </button>
         </div>
 

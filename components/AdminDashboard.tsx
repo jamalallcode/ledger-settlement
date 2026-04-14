@@ -3,7 +3,8 @@ import {
   LayoutDashboard, Users, ShieldCheck, BarChart3, 
   PieChart, FileText, Mail, PlusCircle, ArrowRight,
   Settings, KeyRound, Fingerprint, Library, BellRing,
-  Sparkles, CheckCircle2, AlertCircle, Clock, Eye, EyeOff
+  Sparkles, CheckCircle2, AlertCircle, Clock, Eye, EyeOff,
+  CalendarRange
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { supabase } from '../lib/supabase';
@@ -74,33 +75,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       value: toBengaliDigits(totalEntries.toString()), 
       icon: BarChart3, 
       color: 'blue',
-      desc: 'সিস্টেমে সংরক্ষিত মোট তথ্য'
+      desc: 'সিস্টেমে সংরক্ষিত মোট তথ্য',
+      onClick: () => setActiveTab('register')
     },
     { 
       label: 'অপেক্ষমাণ', 
       value: toBengaliDigits(pendingCount.toString()), 
       icon: Clock, 
       color: 'amber',
-      desc: 'অনুমোদনের অপেক্ষায় থাকা এন্ট্রি'
+      desc: 'অনুমোদনের অপেক্ষায় থাকা এন্ট্রি',
+      onClick: () => {
+        // We need a way to tell App.tsx to show pending only
+        // For now, let's assume we can pass a special tab or parameter
+        setActiveTab('moderation');
+      }
     },
     { 
       label: 'চিঠিপত্র', 
       value: toBengaliDigits(totalCorrespondence.toString()), 
       icon: Mail, 
       color: 'emerald',
-      desc: 'প্রাপ্ত চিঠিপত্র ও ডায়েরি'
+      desc: 'প্রাপ্ত চিঠিপত্র ও ডায়েরি',
+      onClick: () => setActiveTab('register', 'correspondence')
     },
     { 
       label: 'নিষ্পত্তি', 
       value: toBengaliDigits(totalSettlement.toString()), 
       icon: CheckCircle2, 
       color: 'indigo',
-      desc: 'নিষ্পত্তি সংক্রান্ত এন্ট্রি'
+      desc: 'নিষ্পত্তি সংক্রান্ত এন্ট্রি',
+      onClick: () => setActiveTab('register', 'settlement')
     }
   ];
 
   const quickActions = [
+    { id: 'moderation', label: 'মডারেশন কিউ', icon: ShieldCheck, color: 'amber', desc: 'অপেক্ষমাণ এন্ট্রিগুলো যাচাই ও অনুমোদন করুন' },
     { id: 'admin_analytics', label: 'অডিটর পারফরম্যান্স', icon: BarChart3, color: 'indigo', desc: 'অডিটরদের কাজের রিপোর্ট ও পরিসংখ্যান' },
+    { id: 'unassigned', label: 'অনির্ধারিত এন্ট্রি', icon: AlertCircle, color: 'rose', desc: 'প্রাপকহীন চিঠিপত্রসমূহ' },
     { id: 'entry', label: 'নতুন এন্ট্রি', icon: PlusCircle, color: 'blue', desc: 'নতুন তথ্য যোগ করুন' },
     { id: 'register', label: 'রেজিস্টার দেখুন', icon: FileText, color: 'emerald', desc: 'সকল রেজিস্টার ব্রাউজ করুন' },
     { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, color: 'purple', desc: 'ভোট প্রদান ও ফলাফল' },
@@ -151,7 +162,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {stats.map((stat, idx) => {
           const colors = colorClasses[stat.color] || colorClasses.blue;
           return (
-            <div key={idx} className="relative p-6 rounded-[2rem] bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all duration-500 group overflow-hidden">
+            <div 
+              key={idx} 
+              onClick={stat.onClick}
+              className="relative p-6 rounded-[2rem] bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all duration-500 group overflow-hidden cursor-pointer active:scale-95"
+            >
               <div className={`absolute -right-8 -bottom-8 w-24 h-24 ${colors.lightBg} blur-3xl rounded-full group-hover:scale-150 transition-transform duration-700`}></div>
               <div className="relative z-10 space-y-4">
                 <div className="flex items-center justify-between">
@@ -196,6 +211,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক');
                     } else if (action.id === 'unassigned') {
                       setActiveTab('register', 'correspondence', undefined, '__UNASSIGNED__');
+                    } else if (action.id === 'moderation') {
+                      setActiveTab('moderation');
                     } else {
                       setActiveTab(action.id);
                     }
