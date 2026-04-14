@@ -14,8 +14,7 @@ import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import AdminAnalytics from './subapps/admin_analytics/AdminAnalytics';
-import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, CorrespondenceEntry, DynamicSetupConfig } from './types';
-import { ReceiverProvider } from './src/contexts/ReceiverContext';
+import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, CorrespondenceEntry } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
 import { supabase } from './lib/supabase';
@@ -27,7 +26,6 @@ const PREV_STATS_KEY = 'ledger_prev_stats_v1';
 const LOCK_MODE_KEY = 'ledger_lock_mode_status';
 const ADMIN_MODE_KEY = 'ledger_admin_access_v1';
 const OFFLINE_QUEUE_KEY = 'ledger_offline_sync_queue_v1';
-const DYNAMIC_SETUP_KEY = 'ledger_dynamic_setup_config_v1';
 
 const generateId = () => {
   return 'id-' + Math.random().toString(36).substring(2, 11) + '-' + Date.now().toString(36);
@@ -44,7 +42,6 @@ const App: React.FC = () => {
   const [entries, setEntries] = useState<SettlementEntry[]>([]);
   const [correspondenceEntries, setCorrespondenceEntries] = useState<CorrespondenceEntry[]>([]);
   const [activeTab, setActiveTab] = useState('landing'); 
-  const [previousTab, setPreviousTab] = useState<string | null>(null);
   const [resetKey, setResetKey] = useState(0); 
   const [editingEntry, setEditingEntry] = useState<any | null>(null);
   const [isLockedMode, setIsLockedMode] = useState(true);
@@ -76,11 +73,6 @@ const App: React.FC = () => {
 
   // New state for direct report selection from sidebar
   const [reportType, setReportType] = useState<string | null>(null);
-  const [dynamicSetupConfig, setDynamicSetupConfig] = useState<DynamicSetupConfig>({
-    enabled: false,
-    startDate: '',
-    endDate: ''
-  });
   const [showAdminAlert, setShowAdminAlert] = useState(false);
   const [hasShownAlert, setHasShownAlert] = useState(false);
 
@@ -109,25 +101,37 @@ const App: React.FC = () => {
     setAllPrevStats(prev => ({ ...prev, [type]: stats }));
   };
 
-  const handleSetDynamicSetupConfig = (config: DynamicSetupConfig) => {
-    console.log("App: Updating dynamic setup config:", config);
-    setDynamicSetupConfig(config);
-    localStorage.setItem(DYNAMIC_SETUP_KEY, JSON.stringify(config));
-  };
-
   const mainScrollRef = useRef<HTMLElement>(null);
 
   const handleTabChange = (tab: string, subModule?: 'settlement' | 'correspondence', rType?: string, searchTerm?: string) => {
     console.log("handleTabChange called with tab:", tab, "subModule:", subModule, "rType:", rType, "searchTerm:", searchTerm);
     
-    if (tab !== activeTab) {
-      setPreviousTab(activeTab);
+    // If clicking Document Library (archive) and there are pending items, go to moderation
+    if (tab === 'archive' && isAdmin && totalPendingCount > 0) {
+      setActiveTab('register');
+      setRegisterSubModule('correspondence');
+      setShowPendingOnly(true);
+      setResetKey(0);
+      return;
+    }
+
+    if (tab === 'moderation') {
+      setActiveTab('register');
+      setRegisterSubModule('correspondence');
+      setShowPendingOnly(true);
+      setResetKey(0);
+      return;
     }
 
     if (tab === activeTab && !subModule && !rType && !searchTerm) setResetKey(prev => prev + 1);
     else { 
       setActiveTab(tab); 
       setResetKey(0); 
+    }
+    
+    // Reset moderation view when switching tabs unless explicitly going to moderation
+    if (tab !== 'register') {
+      setShowPendingOnly(false);
     }
     
     // Handle Direct Entry Modules
@@ -223,16 +227,6 @@ const App: React.FC = () => {
     
     // Initial check on load
     if (navigator.onLine) syncOfflineData();
-
-    // Load Dynamic Setup Config
-    const savedDynamicConfig = localStorage.getItem(DYNAMIC_SETUP_KEY);
-    if (savedDynamicConfig) {
-      try {
-        setDynamicSetupConfig(JSON.parse(savedDynamicConfig));
-      } catch (e) {
-        console.error("Error parsing dynamic setup config:", e);
-      }
-    }
 
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -706,6 +700,7 @@ const App: React.FC = () => {
             reportType={reportType}
             highlightSearch={highlightSearch}
             moduleVisibility={moduleVisibility}
+            showPendingOnly={showPendingOnly}
           />
         </div>
       )}
@@ -734,7 +729,6 @@ const App: React.FC = () => {
                 <ReceiverManagement 
                   isAdmin={isAdmin} 
                   onViewEntries={handleViewEntries}
-                  onBack={() => handleTabChange('dashboard')}
                 />
               )}
 
@@ -746,32 +740,12 @@ const App: React.FC = () => {
                   isLockedMode={isLockedMode} 
                   isAdmin={isAdmin}
                   pendingCount={totalPendingCount}
-                  onShowPending={() => { handleTabChange('register'); setShowPendingOnly(true); }}
+                  onShowPending={() => handleTabChange('archive')}
                   moduleVisibility={moduleVisibility}
                 />
               )}
               
-              {activeTab === 'entry' && (
-                <SettlementForm 
-                  key={`entry-reset-${resetKey}`} 
-                  onAdd={handleAddOrUpdateEntry} 
-                  onViewRegister={handleViewRegister} 
-                  nextSl={entries.length + 1} 
-                  branchSuggestions={branchSuggestions} 
-                  initialEntry={editingEntry} 
-                  onCancel={() => { 
-                    setEditingEntry(null); 
-                    setActiveTab(previousTab === 'dashboard' ? 'dashboard' : 'register'); 
-                  }} 
-                  isAdmin={isAdmin} 
-                  userEmail={userEmail} 
-                  preSelectedModule={entryModule} 
-                  correspondenceEntries={correspondenceEntries} 
-                  entries={entries} 
-                  navigateToEntry={navigateToEntry} 
-                  moduleVisibility={moduleVisibility} 
-                />
-              )}
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} moduleVisibility={moduleVisibility} />}
               
               {activeTab === 'register' && (
                 <div className="space-y-6 relative">
@@ -814,13 +788,13 @@ const App: React.FC = () => {
                             entries={pendingCorrespondence} 
                             onBack={() => {}}
                             isAdmin={isAdmin}
-                            onEdit={e => { setEditingEntry(e); handleTabChange('entry'); }}
+                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
                             onInlineUpdate={handleInlineUpdateEntry}
                             onDelete={handleDelete}
                             onApprove={handleApproveEntry}
                             onReject={handleRejectEntry}
-                            showFilters={showRegisterFilters}
-                            setShowFilters={setShowRegisterFilters}
+                            showFilters={false}
+                            setShowFilters={() => {}}
                           />
                         </div>
                       )}
@@ -834,8 +808,8 @@ const App: React.FC = () => {
                             key={`pending-list`} 
                             entries={pendingEntries} 
                             onDelete={handleDelete} 
-                            onEdit={e => { setEditingEntry(e); handleTabChange('entry'); }} 
-                            showFilters={showRegisterFilters} 
+                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
+                            showFilters={false} 
                             setShowFilters={setShowRegisterFilters}
                             isAdminView={true}
                             onApprove={handleApproveEntry}
@@ -856,7 +830,7 @@ const App: React.FC = () => {
                             key={`register-reset-${resetKey}`} 
                             entries={approvedEntries} 
                             onDelete={handleDelete} 
-                            onEdit={e => { setEditingEntry(e); handleTabChange('entry'); }} 
+                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
                             showFilters={showRegisterFilters} 
                             setShowFilters={setShowRegisterFilters} 
                             isAdmin={isAdmin}
@@ -871,9 +845,9 @@ const App: React.FC = () => {
 
                           <CorrespondenceTable 
                             entries={approvedCorrespondence} 
-                            onBack={() => handleTabChange('landing')} 
+                            onBack={() => setActiveTab('landing')} 
                             isAdmin={isAdmin}
-                            onEdit={e => { setEditingEntry(e); handleTabChange('entry'); }}
+                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
                             onInlineUpdate={handleInlineUpdateEntry}
                             onDelete={handleDelete}
                             showFilters={showRegisterFilters}
@@ -901,9 +875,9 @@ const App: React.FC = () => {
                   setSelectedReportType={setReportType}
                   showFilters={showRegisterFilters}
                   setShowFilters={setShowRegisterFilters}
-                  dynamicSetupConfig={dynamicSetupConfig}
-                  onUpdateDynamicSetupConfig={handleSetDynamicSetupConfig}
                   activeTab={activeTab}
+                  periodOpeningBalances={[]}
+                  setPeriodOpeningBalances={() => {}}
                 />
               )}
               
@@ -915,7 +889,7 @@ const App: React.FC = () => {
                 <AdminAnalytics 
                   entries={entries} 
                   correspondenceEntries={correspondenceEntries} 
-                  onBack={() => handleTabChange('dashboard')} 
+                  onBack={() => setActiveTab('dashboard')} 
                 />
               )}
 
@@ -969,7 +943,7 @@ const App: React.FC = () => {
                 <button 
                   onClick={() => {
                     setShowAdminAlert(false);
-                    handleTabChange('register');
+                    setActiveTab('register');
                     setShowPendingOnly(true);
                   }}
                   className="flex-1 py-3 bg-amber-500 text-slate-900 rounded-xl font-black text-xs hover:bg-amber-600 transition-all shadow-xl shadow-amber-500/20 active:scale-95"

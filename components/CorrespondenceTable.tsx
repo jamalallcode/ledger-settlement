@@ -6,11 +6,11 @@ import {
   Hash,
   FileText,
   User,
+  Users,
   MapPin,
   Inbox,
   Computer,
   CheckCircle2,
-  AlertCircle,
   ChevronRight,
   ArrowRightCircle,
   ListOrdered,
@@ -33,7 +33,6 @@ import {
   CalendarSearch,
   LayoutGrid,
   CalendarDays,
-  X,
 } from "lucide-react";
 import { isSFI, isNonSFI } from "../utils/branchUtils";
 import {
@@ -47,7 +46,6 @@ import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import { getCurrentCycle, getCycleForDate } from "../utils/cycleHelper";
 import { format, addMonths } from "date-fns";
 import { CorrespondenceEntry } from "../types";
-import ReceiverAvatar from "./ReceiverAvatar";
 
 interface CorrespondenceTableProps {
   entries: CorrespondenceEntry[];
@@ -355,12 +353,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [filterParaType, setFilterParaType] = useState("");
   const [filterType, setFilterType] = useState("");
+  const [filterReceiver, setFilterReceiver] = useState("");
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date | null>(null);
 
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
-  const [hideWarning, setHideWarning] = useState(false);
 
   useEffect(() => {
     if (highlightSearch) {
@@ -464,6 +462,16 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
     );
   };
 
+  const uniqueReceivers = useMemo(() => {
+    const receivers = new Set<string>();
+    entries.forEach(entry => {
+      if (entry.receiverName) {
+        receivers.add(entry.receiverName);
+      }
+    });
+    return Array.from(receivers).sort();
+  }, [entries]);
+
   const filteredEntries = useMemo(() => {
     return entries
       .filter((entry) => {
@@ -526,6 +534,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           return variations.some(v => normalizedEntryPara === v);
         })();
         const matchType = !filterType || entry.letterType === filterType;
+        const matchReceiver = !filterReceiver || entry.receiverName === filterReceiver;
 
         let matchCycle = true;
         if (activeCycle && entry.diaryDate) {
@@ -534,7 +543,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             entry.diaryDate <= format(activeCycle.end, "yyyy-MM-dd");
         }
 
-        return matchSearch && matchBranch && matchType && matchCycle;
+        return matchSearch && matchBranch && matchType && matchReceiver && matchCycle;
       })
       .sort((a, b) => {
         const dateA = a.diaryDate || "";
@@ -546,7 +555,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         }
         return dateB.localeCompare(dateA);
       });
-  }, [entries, searchTerm, filterParaType, filterType, activeCycle]);
+  }, [entries, searchTerm, filterParaType, filterType, filterReceiver, activeCycle]);
 
   const stats = useMemo(() => {
     const total = filteredEntries.length;
@@ -733,11 +742,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
     setSearchTerm("");
     setFilterParaType("");
     setFilterType("");
+    setFilterReceiver("");
     setSelectedCycleDate(null);
     onClearHighlight?.();
   };
 
-  const isFiltered = searchTerm || filterParaType || filterType || selectedCycleDate;
+  const isFiltered = searchTerm || filterParaType || filterType || filterReceiver || selectedCycleDate;
 
   return (
     <div
@@ -769,76 +779,25 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           </div>
 
           <div className="flex items-center gap-3 relative z-10">
-            {(() => {
-              const unassignedCount = entries.filter(e => !e.receiverName || e.receiverName.trim() === "").length;
-              if (unassignedCount > 0 && !hideWarning) {
-                return (
-                  <motion.button
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setSearchTerm("__UNASSIGNED__");
-                      setShowFilters(true);
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-full font-black text-[11px] shadow-lg shadow-red-200 border border-red-400 animate-pulse hover:scale-105 transition-transform"
-                  >
-                    <AlertCircle size={14} />
-                    <span>অনির্ধারিত এন্ট্রি: {toBengaliDigits(unassignedCount)} টি</span>
-                    <div 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setHideWarning(true);
-                      }}
-                      className="ml-1 p-0.5 hover:bg-white/20 rounded-full transition-colors"
-                    >
-                      <X size={12} />
-                    </div>
-                  </motion.button>
-                );
-              }
-              return null;
-            })()}
             {isFiltered && (
               <button
                 onClick={clearFilters}
-                title="ফিল্টার মুছুন"
-                className="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center hover:bg-red-100 transition-all border border-red-100 shadow-sm"
+                className="px-4 py-3 bg-red-50 text-red-600 rounded-xl font-black text-[12px] flex items-center gap-2 hover:bg-red-100 transition-all border border-red-100"
               >
-                <Clock size={18} className="rotate-180" />
+                <XCircle size={16} /> ফিল্টার মুছুন
               </button>
             )}
-            <div className="flex items-center gap-3 relative z-10">
+            <div className="relative">
               <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-2xl ${showFilters ? "bg-blue-600 text-white shadow-blue-200" : "bg-white text-blue-700 border border-blue-100 hover:bg-blue-50 shadow-blue-500/10"}`}
+                onClick={() => setShowSummary(!showSummary)}
+                className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-2xl ${showSummary ? "bg-blue-600 text-white shadow-blue-200" : "bg-[#f0f7ff] text-blue-700 border border-blue-100/50 hover:bg-blue-100 shadow-blue-500/10"}`}
               >
-                <CalendarSearch
+                <Sparkles
                   size={16}
-                  className={showFilters ? "text-blue-100" : "text-blue-500"}
-                />
-                ফিল্টার করুন
-                {(selectedCycleDate || filterParaType || filterType || searchTerm) && (
-                  <span className="flex items-center justify-center w-5 h-5 bg-amber-500 text-white rounded-full text-[10px] animate-pulse">
-                    {toBengaliDigits(
-                      [selectedCycleDate, filterParaType, filterType, searchTerm].filter(Boolean).length.toString()
-                    )}
-                  </span>
-                )}
+                  className={showSummary ? "text-blue-100" : "text-blue-500"}
+                />{" "}
+                রেজিস্টার সারসংক্ষেপ
               </button>
-
-              <div className="relative">
-                <button
-                  onClick={() => setShowSummary(!showSummary)}
-                  className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-2xl ${showSummary ? "bg-blue-600 text-white shadow-blue-200" : "bg-[#f0f7ff] text-blue-700 border border-blue-100/50 hover:bg-blue-100 shadow-blue-500/10"}`}
-                >
-                  <Sparkles
-                    size={16}
-                    className={showSummary ? "text-blue-100" : "text-blue-500"}
-                  />{" "}
-                  রেজিস্টার সারসংক্ষেপ
-                </button>
 
               <AnimatePresence>
                 {showSummary && (
@@ -1033,39 +992,14 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           </div>
         </div>
       </div>
-    </div>
 
       {/* Filter UI for Correspondence */}
       {showFilters && (
         <div
           id="correspondence-filters"
-          className="!bg-white p-4 md:p-6 rounded-[2rem] border border-slate-200 shadow-xl space-y-4 no-print mb-8 animate-in slide-in-from-top-4 duration-500 relative z-[1000] isolate group"
+          className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate"
         >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-3xl rounded-full -mr-32 -mt-32 transition-transform group-hover:scale-110 duration-1000"></div>
-          
-          <div className="flex items-center justify-between relative z-10 mb-2">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
-                <CalendarSearch size={18} />
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-slate-900 tracking-tight">সার্চ ও ফিল্টার</h3>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Search & Filter Correspondence</p>
-              </div>
-            </div>
-            
-            {(selectedCycleDate || filterParaType || filterType || searchTerm) && (
-              <button 
-                onClick={clearFilters}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-black text-[10px] hover:bg-red-100 transition-all border border-red-100 active:scale-95"
-              >
-                <XCircle size={12} />
-                সব মুছুন
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Cycle Selection */}
             <div className="space-y-1.5" ref={cycleDropdownRef}>
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">
@@ -1258,10 +1192,43 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
               </div>
             </div>
 
+            {/* Receiver Selection */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">
+                প্রাপক/গ্রহীতা
+              </label>
+              <div className="relative">
+                <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600" size={16} />
+                <select
+                  value={filterReceiver}
+                  onChange={(e) => setFilterReceiver(e.target.value)}
+                  className="w-full pl-9 pr-4 h-[48px] bg-white border border-slate-300 rounded-xl font-bold text-[13px] outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-600 transition-all shadow-sm appearance-none"
+                >
+                  <option value="">সকল প্রাপক</option>
+                  {uniqueReceivers.map((receiver) => (
+                    <option key={receiver} value={receiver}>
+                      {receiver}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+
             {/* Search Input */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center justify-between">
                 <span>অনুসন্ধান</span>
+                <button 
+                  onClick={() => setSearchTerm(searchTerm === "__UNASSIGNED__" ? "" : "__UNASSIGNED__")}
+                  className={`text-[9px] px-2 py-0.5 rounded-full border transition-all ${
+                    searchTerm === "__UNASSIGNED__" 
+                      ? "bg-red-100 text-red-700 border-red-200" 
+                      : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100"
+                  }`}
+                >
+                  {searchTerm === "__UNASSIGNED__" ? "অনির্ধারিত ফিল্টার বন্ধ করুন" : "অনির্ধারিত এন্ট্রি খুঁজুন"}
+                </button>
               </label>
               <div className="relative">
                 <Search
@@ -1572,23 +1539,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               <span className={labelCls}>
                                 ৪. প্রেরিত অনু: সংখ্যা:
                               </span>
-                              <div className="flex flex-col pl-3">
-                                <span className={valCls}>
-                                  <HighlightText
-                                    text={`${(() => {
-                                      const pNos = entry.paraNo ? entry.paraNo.split(',').map(p => p.trim()).filter(p => p) : [];
-                                      const pCount = pNos.length > 0 ? pNos.length : parseBengaliNumber(entry.totalParas || '0');
-                                      return toBengaliDigits(pCount.toString());
-                                    })()} টি`}
-                                    searchTerm={searchTerm}
-                                  />
-                                </span>
-                                {entry.paraNo && (
-                                  <span className="text-[9px] font-bold text-slate-400">
-                                    (অনুচ্ছেদ নং: {entry.paraNo})
-                                  </span>
-                                )}
-                              </div>
+                              <span className={valCls + " pl-3"}>
+                                <HighlightText
+                                  text={`${toBengaliDigits(entry.totalParas)} টি`}
+                                  searchTerm={searchTerm}
+                                />
+                              </span>
                             </div>
                             <div className="flex flex-col">
                               <span className={labelCls}>
@@ -1668,19 +1624,14 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               <div className="text-[9px] font-bold text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1">
                                 <Inbox size={8} /> গ্রহণকারী
                               </div>
-                              <div className="flex items-center gap-2">
-                                <ReceiverAvatar name={entry.receiverName || ""} size="md" />
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-bold text-slate-900 text-[12px] leading-tight break-words">
-                                    <HighlightText
-                                      text={entry.receiverName || "-"}
-                                      searchTerm={searchTerm}
-                                    />
-                                  </div>
-                                  <div className="text-[9px] text-slate-500 font-bold">
-                                    {formatDateBN(entry.receivedDate)}
-                                  </div>
-                                </div>
+                              <div className="font-bold text-slate-900 text-[12px] leading-tight break-words">
+                                <HighlightText
+                                  text={entry.receiverName || "-"}
+                                  searchTerm={searchTerm}
+                                />
+                              </div>
+                              <div className="text-[9px] text-slate-500 font-bold">
+                                {formatDateBN(entry.receivedDate)}
                               </div>
                             </div>
 
@@ -1852,22 +1803,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                           />
                                         </div>
                                       </div>
-                                    </div>
-                                  </div>
-
-                                  <div
-                                    className={`p-1.5 border rounded-lg space-y-1 transition-colors ${entry.archiveNo ? "bg-purple-600/10 border-purple-400 ring-2 ring-purple-50" : "bg-purple-50/50 border-purple-100"}`}
-                                  >
-                                    <div
-                                      className={`text-[9px] font-bold uppercase tracking-tighter flex items-center gap-1 ${entry.archiveNo ? "text-purple-700" : "text-slate-700"}`}
-                                    >
-                                      <Hash size={8} /> আর্কাইভ নং
-                                    </div>
-                                    <div className="text-[10px] font-bold text-slate-900 px-1.5 py-1 bg-white rounded-md border border-slate-200">
-                                      <HighlightText
-                                        text={entry.archiveNo || "-"}
-                                        searchTerm={searchTerm}
-                                      />
                                     </div>
                                   </div>
                                 </>

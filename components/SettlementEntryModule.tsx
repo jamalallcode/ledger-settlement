@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOption } from '../types.ts';
 import SearchableSelect from './SearchableSelect.tsx';
 import { MINISTRIES_LIST, MINISTRY_ENTITY_MAP, ENTITY_BRANCH_MAP, AUDIT_YEARS_OPTIONS } from '../constants.ts';
-import { Trash2, Globe, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus, Hash, ChevronLeft } from 'lucide-react';
+import { Trash2, Globe, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus, Hash } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils.ts';
 import { getCycleForDate, isEntryLate } from '../utils/cycleHelper.ts';
 import { getDateError } from '../utils/dateValidation';
@@ -569,8 +569,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         issueLetterNoDate: combinedIssue,
         workpaperNoDate: combinedDiary,
         meetingWorkpaper: combinedWp,
-        meetingFullSettledParaCount: Math.round(summaryData.fullInvolved).toString(),
-        meetingPartialSettledParaCount: Math.round(summaryData.partialInvolved).toString(),
+        meetingFullSettledParaCount: summaryData.fullCount.toString(),
+        meetingPartialSettledParaCount: summaryData.partialCount.toString(),
         isMeeting: formData.meetingType !== 'বিএসআর', 
         paragraphs, cycleLabel, isLate, actualEntryDate: now.toISOString(), involvedAmount: paraInvTotal + (formData.meetingUnsettledAmount || 0),
         meetingUnsettledAmount: calculatedUnsettledAmount,
@@ -786,7 +786,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             onClick={onBackToMenu}
             className="p-3 bg-slate-100 hover:bg-slate-200 rounded-2xl text-slate-600 transition-all shadow-sm group"
           >
-            <X size={20} className="group-hover:scale-110 transition-transform duration-300" />
+            <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
           </button>
           <div className="p-3 bg-slate-900 rounded-2xl text-white shrink-0">
             <Layout size={24} />

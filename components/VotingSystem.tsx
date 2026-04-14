@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { EMPLOYEES, VOTE_POSITIONS } from '../constants';
 import { BallotVote, PositionResult, VoterToken } from '../types';
-import ReceiverAvatar from './ReceiverAvatar';
-import { useReceivers } from '../src/contexts/ReceiverContext';
 import { 
   CheckCircle2, AlertCircle, BarChart3, Fingerprint, 
-  Send, Trophy, UserCheck, Loader2, Key, RefreshCw, Copy, Check, Trash2, ShieldCheck, Ticket, Database, HelpCircle, ArrowRight, RotateCcw, MessageSquare, Plus, Settings2, Vote, Lock, Unlock, UserPlus, UserMinus, Eye, EyeOff, LayoutGrid, Trash, Pencil, X, ChevronDown, Search, KeyRound, Link, ExternalLink, Camera, Image as ImageIcon, Upload
+  Send, Trophy, UserCheck, Loader2, Key, RefreshCw, Copy, Check, Trash2, ShieldCheck, Ticket, Database, HelpCircle, ArrowRight, RotateCcw, MessageSquare, Plus, Settings2, Vote, Lock, Unlock, UserPlus, UserMinus, Eye, EyeOff, LayoutGrid, Trash, Pencil, X, ChevronDown, Search, KeyRound, Link, ExternalLink
 } from 'lucide-react';
-import { toBengaliDigits, parseBengaliNumber, normalizeName } from '../utils/numberUtils';
+import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 
 /**
  * Premium custom dropdown component for voter selection
@@ -40,20 +38,17 @@ const PremiumVoterSelect: React.FC<{
 
   return (
     <div className="space-y-2 relative" ref={dropdownRef}>
-      <label className="text-[13px] font-black text-slate-700 ml-1">
-        {label}
+      <label className="flex items-center gap-2 text-[13px] font-black text-slate-700 ml-1">
+        <UserCheck size={14} className="text-blue-600" /> {label}
       </label>
       
       <div 
         onClick={() => { setIsOpen(!isOpen); if (!isOpen) setSearchTerm(''); }}
         className={`w-full h-[58px] px-5 bg-slate-50 border-2 rounded-2xl flex items-center justify-between cursor-pointer transition-all duration-300 shadow-sm ${isOpen ? 'border-blue-500 bg-white ring-4 ring-blue-50' : 'border-slate-100 hover:border-slate-200'}`}
       >
-        <div className="flex items-center gap-3 truncate">
-          {value && <ReceiverAvatar name={value} size="sm" />}
-          <span className={`font-bold text-[15px] truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>
-            {value || placeholder}
-          </span>
-        </div>
+        <span className={`font-bold text-[15px] truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>
+          {value || placeholder}
+        </span>
         <ChevronDown size={20} className={`text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-blue-600' : ''}`} />
       </div>
 
@@ -80,10 +75,7 @@ const PremiumVoterSelect: React.FC<{
                 onClick={() => { onChange(opt); setIsOpen(false); }}
                 className={`px-5 py-3.5 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${value === opt ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-blue-50 text-slate-700 font-bold'}`}
               >
-                <div className="flex items-center gap-3">
-                  <ReceiverAvatar name={opt} size="sm" />
-                  <span className="text-[14px]">{opt}</span>
-                </div>
+                <span className="text-[14px]">{opt}</span>
                 {value === opt && <Check size={18} strokeWidth={3} className="animate-in zoom-in duration-300" />}
               </div>
             )) : (
@@ -97,35 +89,7 @@ const PremiumVoterSelect: React.FC<{
 };
 
 const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' | 'results' | 'admin' }> = ({ isAdmin, initialTab }) => {
-  const { profiles, refresh: refreshProfiles } = useReceivers();
   const [activeSubTab, setActiveSubTab] = useState<'vote' | 'results' | 'admin' | 'poll'>(initialTab || 'vote');
-  
-  // Confirmation Modal State
-  const [confirmModal, setConfirmModal] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    onConfirm: () => void;
-    type: 'danger' | 'warning' | 'info';
-  }>({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => {},
-    type: 'info'
-  });
-
-  // Photo Manager State
-  const [photoModal, setPhotoModal] = useState<{
-    isOpen: boolean;
-    voterName: string;
-  }>({
-    isOpen: false,
-    voterName: ''
-  });
-  const [photoUrlInput, setPhotoUrlInput] = useState('');
-  const [selectedFileBase64, setSelectedFileBase64] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [voterTokenInput, setVoterTokenInput] = useState('');
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [pollSelection, setPollSelection] = useState<string>('');
@@ -134,9 +98,6 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
   const [allVotes, setAllVotes] = useState<BallotVote[]>([]);
   const [allTokens, setAllTokens] = useState<VoterToken[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isUpdatingPoll, setIsUpdatingPoll] = useState(false);
-  const [isPollModified, setIsPollModified] = useState(false);
-  const [showPollSuccess, setShowPollSuccess] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
   // Dynamic Positions State
@@ -411,38 +372,22 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
   };
 
   const handleRemovePosition = (id: string) => {
-    setConfirmModal({
-      isOpen: true,
-      title: 'পদ মুছে ফেলুন',
-      message: 'আপনি কি নিশ্চিতভাবে এই পদটি মুছে ফেলতে চান?',
-      type: 'danger',
-      onConfirm: () => {
-        const next = activePositions.filter(p => p.id !== id);
-        setActivePositions(next);
-        syncConfigToDB({ activePositions: next });
-        setConfirmModal(prev => ({ ...prev, isOpen: false }));
-      }
-    });
+    if (!window.confirm("আপনি কি নিশ্চিতভাবে এই পদটি মুছে ফেলতে চান?")) return;
+    const next = activePositions.filter(p => p.id !== id);
+    setActivePositions(next);
+    syncConfigToDB({ activePositions: next });
   };
 
   const handleRemoveVoter = (name: string) => {
-    setConfirmModal({
-      isOpen: true,
-      title: 'ভোটার বাদ দিন',
-      message: `আপনি কি নিশ্চিতভাবে "${name}" কে তালিকা থেকে বাদ দিতে চান?`,
-      type: 'danger',
-      onConfirm: () => {
-        const nextVoters = voterList.filter(v => v !== name);
-        const nextViewers = authorizedViewers.filter(v => {
-          if (typeof v === 'object') return v.name !== name;
-          return v !== name;
-        });
-        setVoterList(nextVoters);
-        setAuthorizedViewers(nextViewers);
-        syncConfigToDB({ voterList: nextVoters, authorizedViewers: nextViewers });
-        setConfirmModal(prev => ({ ...prev, isOpen: false }));
-      }
+    if (!window.confirm(`আপনি কি নিশ্চিতভাবে "${name}" কে তালিকা থেকে বাদ দিতে চান?`)) return;
+    const nextVoters = voterList.filter(v => v !== name);
+    const nextViewers = authorizedViewers.filter(v => {
+      if (typeof v === 'object') return v.name !== name;
+      return v !== name;
     });
+    setVoterList(nextVoters);
+    setAuthorizedViewers(nextViewers);
+    syncConfigToDB({ voterList: nextVoters, authorizedViewers: nextViewers });
   };
 
   const toggleViewerPermission = (name: string) => {
@@ -462,62 +407,35 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
 
   const generateTokens = async () => {
     const count = voterList.length;
-    setConfirmModal({
-      isOpen: true,
-      title: 'টোকেন জেনারেট',
-      message: `আপনি কি নতুন ${toBengaliDigits(count)}টি টোকেন জেনারেট করতে চান?`,
-      type: 'info',
-      onConfirm: async () => {
-        setConfirmModal(prev => ({ ...prev, isOpen: false }));
-        try {
-          setIsLoading(true);
-          const newTokens = Array.from({ length: count }).map(() => ({
-            token: `VOTE-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
-            is_used: false
-          }));
-          const { error } = await supabase.from('voter_tokens').insert(newTokens);
-          if (error) throw error;
-          await fetchTokens();
-          setActiveSubTab('admin');
-          setMessage({ type: 'success', text: `${toBengaliDigits(count)}টি নতুন টোকেন জেনারেট করা হয়েছে।` });
-        } catch (err: any) {
-          alert("টোকেন জেনারেশন ব্যর্থ হয়েছে: " + err.message);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    });
+    if (!window.confirm(`আপনি কি নতুন ${toBengaliDigits(count)}টি টোকেন জেনারেট করতে চান?`)) return;
+    try {
+      setIsLoading(true);
+      const newTokens = Array.from({ length: count }).map(() => ({
+        token: `VOTE-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
+        is_used: false
+      }));
+      const { error } = await supabase.from('voter_tokens').insert(newTokens);
+      if (error) throw error;
+      await fetchTokens();
+      setActiveSubTab('admin');
+      setMessage({ type: 'success', text: `${toBengaliDigits(count)}টি নতুন টোকেন জেনারেট করা হয়েছে।` });
+    } catch (err: any) {
+      alert("টোকেন জেনারেশন ব্যর্থ হয়েছে: " + err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handlePollUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handlePollUpdate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
     const q = (form.elements.namedItem('q') as HTMLInputElement).value;
     const opts = (form.elements.namedItem('opts') as HTMLInputElement).value.split(',').map(o => o.trim()).filter(o => o);
     
-    try {
-      setIsUpdatingPoll(true);
-      // Simulate a small delay for professional feel
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      setPollQuestion(q);
-      setPollOptions(opts);
-      await syncConfigToDB({ pollQuestion: q, pollOptions: opts });
-      
-      setIsPollModified(false);
-      setShowPollSuccess(true);
-      
-      // Hide the success state after 3 seconds
-      setTimeout(() => {
-        setShowPollSuccess(false);
-      }, 3000);
-      
-      setMessage({ type: 'success', text: 'পাবলিক পোল সেটিংস সফলভাবে আপডেট করা হয়েছে।' });
-    } catch (err: any) {
-      setMessage({ type: 'error', text: 'পোল আপডেট করতে সমস্যা হয়েছে।' });
-    } finally {
-      setIsUpdatingPoll(false);
-    }
+    setPollQuestion(q);
+    setPollOptions(opts);
+    syncConfigToDB({ pollQuestion: q, pollOptions: opts });
+    setMessage({ type: 'success', text: 'পোল প্রশ্ন সফলভাবে আপডেট করা হয়েছে।'});
   };
 
   const toggleResultsLock = () => {
@@ -537,175 +455,31 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
   };
 
   const clearOnlyVotes = async () => {
-    setConfirmModal({
-      isOpen: true,
-      title: 'ফলাফল রিসেট',
-      message: "সাবধান! এটি শুধুমাত্র সকল 'ভোটের ফলাফল' মুছে ফেলবে। ভোটার টোকেনগুলো আগের মতোই থাকবে।",
-      type: 'warning',
-      onConfirm: async () => {
-        setConfirmModal(prev => ({ ...prev, isOpen: false }));
-        try {
-          setIsLoading(true);
-          const { error } = await supabase.from('settlement_entries').delete().like('id', 'vote_%');
-          if (error) throw error;
-          setAllVotes([]);
-          setMessage({ type: 'success', text: 'ভোটের ফলাফল সফলভাবে মুছে ফেলা হয়েছে।' });
-        } catch (err: any) {
-          alert("ফলাফল মুছতে সমস্যা হয়েছে: " + err.message);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    });
-  };
-
-  const clearAllTokens = async () => {
-    setConfirmModal({
-      isOpen: true,
-      title: 'ফ্যাক্টরি রিসেট',
-      message: "সাবধান! এটি সকল টোকেন এবং ভোট স্থায়ীভাবে মুছে ফেলবে।",
-      type: 'danger',
-      onConfirm: async () => {
-        setConfirmModal(prev => ({ ...prev, isOpen: false }));
-        try {
-          setIsLoading(true);
-          await supabase.from('settlement_entries').delete().like('id', 'vote_%');
-          await supabase.from('voter_tokens').delete().not('id', 'is', null);
-          setAllVotes([]);
-          setAllTokens([]);
-          setMessage({ type: 'success', text: 'সিস্টেমের সকল তথ্য মুছে ফেলা হয়েছে।' });
-        } catch (err: any) {
-          alert("তথ্য মুছতে সমস্যা হয়েছে: " + err.message);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    });
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit for base64
-        alert("ছবির সাইজ ২ মেগাবাইটের বেশি হওয়া যাবে না।");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedFileBase64(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!window.confirm("সাবধান! এটি শুধুমাত্র সকল 'ভোটের ফলাফল' মুছে ফেলবে। ভোটার টোকেনগুলো আগের মতোই থাকবে।")) return;
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.from('settlement_entries').delete().like('id', 'vote_%');
+      if (error) throw error;
+      setAllVotes([]);
+      setMessage({ type: 'success', text: 'ভোটের ফলাফল সফলভাবে মুছে ফেলা হয়েছে।' });
+    } catch (err: any) {
+      alert("ফলাফল মুছতে সমস্যা হয়েছে: " + err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleUpdateVoterPhoto = async () => {
-    const name = photoModal.voterName;
-    const url = selectedFileBase64 || photoUrlInput.trim();
-    if (!name) return;
-
+  const clearAllTokens = async () => {
+    if (!window.confirm("সাবধান! এটি সকল টোকেন এবং ভোট স্থায়ীভাবে মুছে ফেলবে।")) return;
     try {
       setIsLoading(true);
-      const normalizedName = normalizeName(name);
-      console.log(`Updating photo for: "${normalizedName}"`, { urlLength: url?.length });
-      
-      // Update Supabase if configured
-      if (isSupabaseConfigured) {
-        const existingProfile = profiles[normalizedName];
-        let result;
-        
-        if (existingProfile?.id && !existingProfile.id.startsWith('local-')) {
-          console.log(`Updating existing Supabase profile: ${existingProfile.id}`);
-          result = await supabase
-            .from('receivers')
-            .update({ image: url || null })
-            .eq('id', existingProfile.id);
-        } else {
-          // Check if it exists in DB by name
-          const { data: dbExisting } = await supabase
-            .from('receivers')
-            .select('id')
-            .eq('name', normalizedName)
-            .maybeSingle();
-          
-          if (dbExisting?.id) {
-            console.log(`Updating existing DB profile by name: ${dbExisting.id}`);
-            result = await supabase
-              .from('receivers')
-              .update({ image: url || null })
-              .eq('id', dbExisting.id);
-          } else {
-            console.log(`Inserting new profile for: "${normalizedName}"`);
-            result = await supabase
-              .from('receivers')
-              .insert({ 
-                name: normalizedName, 
-                image: url || null, 
-                designation: 'প্রার্থী' 
-              });
-          }
-        }
-        
-        if (result?.error) {
-          console.warn("Supabase update failed, but will continue with LocalStorage:", result.error);
-        }
-      }
-
-      // Update LocalStorage as a fallback/cache (Always do this)
-      const keys = ['ledger_correspondence_receivers_sfi', 'ledger_correspondence_receivers_nonsfi'];
-      let localStorageUpdated = false;
-      keys.forEach(key => {
-        const saved = localStorage.getItem(key);
-        if (saved) {
-          try {
-            let items = JSON.parse(saved);
-            let found = false;
-            items = items.map((li: any) => {
-              if (li.name?.trim() === normalizedName) {
-                found = true;
-                return { ...li, image: url || null };
-              }
-              return li;
-            });
-            if (!found) {
-              items.push({ name: normalizedName, image: url || null, designation: 'প্রার্থী', id: 'local-' + Date.now() });
-            }
-            localStorage.setItem(key, JSON.stringify(items));
-            localStorageUpdated = true;
-          } catch (e) {
-            console.error("Error updating local storage:", e);
-          }
-        }
-      });
-
-      // If not found in existing lists, add to non-sfi as default
-      if (!localStorageUpdated) {
-        try {
-          const key = 'ledger_correspondence_receivers_nonsfi';
-          const saved = localStorage.getItem(key);
-          let items = saved ? JSON.parse(saved) : [];
-          items.push({ name: normalizedName, image: url || null, designation: 'প্রার্থী', id: 'local-' + Date.now() });
-          localStorage.setItem(key, JSON.stringify(items));
-        } catch (e) {
-          console.error("Error creating new local profile:", e);
-        }
-      }
-      
-      // Close modal and clear inputs immediately
-      setPhotoModal({ isOpen: false, voterName: '' });
-      setPhotoUrlInput('');
-      setSelectedFileBase64(null);
-      setMessage({ type: 'success', text: `"${normalizedName}" এর ছবি সফলভাবে সংরক্ষণ করা হয়েছে।` });
-
-      // Force refresh profiles in background
-      console.log("Refreshing profiles...");
-      await refreshProfiles();
-      console.log("Profiles refreshed.");
-      
+      await supabase.from('settlement_entries').delete().like('id', 'vote_%');
+      await supabase.from('voter_tokens').delete().not('id', 'is', null);
+      setAllVotes([]);
+      setAllTokens([]);
+      setMessage({ type: 'success', text: 'সিস্টেমের সকল তথ্য মুছে ফেলা হয়েছে।' });
     } catch (err: any) {
-      console.error("Photo update error:", err);
-      setMessage({ type: 'error', text: "ছবি সংরক্ষণ ব্যর্থ হয়েছে: " + (err.message || "অজানা সমস্যা") });
-      // Close modal anyway to provide immediate feedback
-      setPhotoModal({ isOpen: false, voterName: '' });
+      alert("তথ্য মুছতে সমস্যা হয়েছে: " + err.message);
     } finally {
       setIsLoading(false);
     }
@@ -853,8 +627,8 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-landing-premium px-4 md:px-0">
-      <div className="sticky top-0 z-[1000] flex flex-col md:flex-row items-stretch justify-between bg-white/95 backdrop-blur-xl rounded-none border border-slate-200 shadow-xl overflow-hidden transition-all duration-500 md:min-h-[54px]">
-        <div className="flex items-center gap-4 pl-6 md:pl-10 py-3 md:py-0 shrink-0">
+      <div className="sticky top-0 z-[100] flex flex-col md:flex-row items-stretch justify-between bg-white/95 backdrop-blur-xl rounded-none border border-slate-200 shadow-xl overflow-hidden transition-all duration-500 md:min-h-[70px]">
+        <div className="flex items-center gap-4 pl-6 md:pl-10 py-4 md:py-1 shrink-0">
           <div className="w-12 h-12 md:w-12 md:h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-blue-600/30"><Ticket size={24} className="md:size-[24px]" /></div>
           <div><h2 className="text-xl md:text-xl font-black text-slate-900 leading-tight">ডিজিটাল ব্যালট বক্স</h2><p className="text-slate-500 font-bold text-[10px] md:text-[10px] uppercase tracking-widest">Election & Poll System</p></div>
         </div>
@@ -951,10 +725,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
                     const pct = total > 0 ? Math.round((res.value / total) * 100) : 0;
                     return (
                       <div key={i} className="space-y-2">
-                        <div className="flex justify-between text-sm font-black text-slate-700">
-                          <span>{res.label}</span>
-                          <span>{toBengaliDigits(res.value)} ভোট ({toBengaliDigits(pct)}%)</span>
-                        </div>
+                        <div className="flex justify-between text-sm font-black text-slate-700"><span>{res.label}</span><span>{toBengaliDigits(res.value)} ভোট ({toBengaliDigits(pct)}%)</span></div>
                         <div className="h-4 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner"><div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${pct}%` }}></div></div>
                       </div>
                     );
@@ -1018,17 +789,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
                   <div className="bg-slate-900 p-6 flex items-center justify-between"><h3 className="text-white font-black text-lg">{pos.title}</h3><div className="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest">{toBengaliDigits(allVotes.filter(v => voterList.includes(String((v as any)[pos.id]))).length)} ভোট</div></div>
                   <div className="p-6 space-y-4 flex-1">
                     {pos.results.length > 0 ? pos.results.map((res, idx) => (
-                      <div key={idx} className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${idx === 0 ? 'bg-emerald-50 border-emerald-100 scale-[1.02]' : 'bg-slate-50 border-slate-100'}`}>
-                        <div className="flex items-center gap-3">
-                          {idx === 0 && <Trophy size={20} className="text-amber-500 animate-bounce" />}
-                          <ReceiverAvatar name={res.name} size="sm" />
-                          <span className={`text-sm font-black ${idx === 0 ? 'text-emerald-900' : 'text-slate-700'}`}>{res.name}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-black">{toBengaliDigits(res.votes)}</span>
-                          <span className="text-[10px] font-black text-slate-400 uppercase">ভোট</span>
-                        </div>
-                      </div>
+                      <div key={idx} className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${idx === 0 ? 'bg-emerald-50 border-emerald-100 scale-[1.02]' : 'bg-slate-50 border-slate-100'}`}><div className="flex items-center gap-3">{idx === 0 && <Trophy size={20} className="text-amber-500 animate-bounce" />}<span className={`text-sm font-black ${idx === 0 ? 'text-emerald-900' : 'text-slate-700'}`}>{res.name}</span></div><div className="flex items-center gap-2"><span className="text-lg font-black">{toBengaliDigits(res.votes)}</span><span className="text-[10px] font-black text-slate-400 uppercase">ভোট</span></div></div>
                     )) : <div className="py-12 text-center text-slate-400 font-bold">কোনো ডাটা নেই</div>}
                   </div>
                 </div>
@@ -1195,17 +956,6 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
                             {toBengaliDigits(idx + 1)}
                           </div>
                           
-                          <button 
-                            onClick={() => {
-                              setPhotoModal({ isOpen: true, voterName: voter });
-                              setPhotoUrlInput(profiles[normalizeName(voter)]?.image || '');
-                            }}
-                            className="hover:scale-110 transition-transform active:scale-95"
-                            title="ছবি পরিবর্তন করুন"
-                          >
-                            <ReceiverAvatar name={voter} size="lg" />
-                          </button>
-
                           {editingVoterName === voter ? (
                             <div className="flex-1 flex gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
                               <input 
@@ -1243,16 +993,6 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
                         </div>
                         
                         <div className="flex items-center gap-2 mt-4 md:mt-0 ml-auto">
-                          <button 
-                            onClick={() => {
-                              setPhotoModal({ isOpen: true, voterName: voter });
-                              setPhotoUrlInput(profiles[normalizeName(voter)]?.image || '');
-                            }}
-                            className="p-2.5 bg-white text-slate-400 hover:text-blue-600 border border-slate-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-all shadow-sm"
-                            title="ছবি পরিবর্তন করুন"
-                          >
-                            <Camera size={18} />
-                          </button>
                           {!editingVoterName && (
                             <button 
                               onClick={() => { setEditingVoterName(voter); setNewVoterEditValue(voter); }} 
@@ -1288,50 +1028,9 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
                 <div className="space-y-6">
                   <h4 className="text-lg font-black text-slate-900 flex items-center gap-2"><MessageSquare size={20} className="text-indigo-600" /> পাবলিক পোল সেটিংস</h4>
                   <form onSubmit={handlePollUpdate} className="grid grid-cols-1 gap-6">
-                     <div className="space-y-2">
-                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">পোলের প্রশ্ন</label>
-                        <input 
-                          name="q" 
-                          defaultValue={pollQuestion} 
-                          onChange={() => setIsPollModified(true)}
-                          className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold outline-none focus:border-emerald-500" 
-                        />
-                     </div>
-                     <div className="space-y-2">
-                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">বিকল্পসমূহ (কমা দিয়ে লিখুন)</label>
-                        <input 
-                          name="opts" 
-                          defaultValue={pollOptions.join(', ')} 
-                          onChange={() => setIsPollModified(true)}
-                          className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold outline-none focus:border-emerald-500" 
-                        />
-                     </div>
-                      <div className="flex justify-end h-14">
-                        {(isPollModified || isUpdatingPoll || showPollSuccess) && (
-                          <button 
-                            type="submit" 
-                            disabled={isUpdatingPoll || showPollSuccess}
-                            className={`px-8 py-3.5 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 transition-all active:scale-95 flex items-center gap-3 animate-in fade-in zoom-in duration-300 ${isUpdatingPoll || showPollSuccess ? 'opacity-80 cursor-not-allowed' : ''}`}
-                          >
-                            {isUpdatingPoll ? (
-                              <>
-                                <Loader2 className="animate-spin" size={20} />
-                                আপডেট হচ্ছে...
-                              </>
-                            ) : showPollSuccess ? (
-                              <>
-                                <Check size={20} strokeWidth={3} className="animate-in zoom-in duration-500" />
-                                আপডেট সম্পন্ন
-                              </>
-                            ) : (
-                              <>
-                                <Check size={20} strokeWidth={3} />
-                                আপডেট করুন
-                              </>
-                            )}
-                          </button>
-                        )}
-                      </div>
+                     <div className="space-y-2"><label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">পোলের প্রশ্ন</label><input name="q" defaultValue={pollQuestion} className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold outline-none focus:border-emerald-500" /></div>
+                     <div className="space-y-2"><label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">বিকল্পসমূহ (কমা দিয়ে লিখুন)</label><input name="opts" defaultValue={pollOptions.join(', ')} className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold outline-none focus:border-emerald-500" /></div>
+                     <div className="flex justify-end"><button type="submit" className="px-8 py-3 bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg hover:bg-emerald-700">পোল আপডেট করুন</button></div>
                   </form>
                 </div>
 
@@ -1364,150 +1063,6 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
                   {t.is_used && <div className="absolute inset-0 bg-slate-50/60 rounded-2xl flex items-center justify-center"><CheckCircle2 className="text-emerald-500" size={24} /></div>}
                 </div>
               ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Confirmation Modal */}
-      {confirmModal.isOpen && (
-        <div 
-          className={`fixed inset-0 z-[1000] flex justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300 ${
-            confirmModal.title === 'টোকেন জেনারেট' ? 'items-start pt-24' : 
-            confirmModal.title === 'পদ মুছে ফেলুন' ? 'items-start pt-48' : 
-            'items-center'
-          }`}
-          onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
-        >
-          <div 
-            className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-8 text-center space-y-6">
-              <div className={`w-20 h-20 mx-auto rounded-3xl flex items-center justify-center shadow-xl ${
-                confirmModal.type === 'danger' ? 'bg-red-50 text-red-600 shadow-red-100' : 
-                confirmModal.type === 'warning' ? 'bg-amber-50 text-amber-600 shadow-amber-100' : 
-                'bg-blue-50 text-blue-600 shadow-blue-100'
-              }`}>
-                {confirmModal.type === 'danger' ? <Trash2 size={40} /> : 
-                 confirmModal.type === 'warning' ? <AlertCircle size={40} /> : 
-                 <HelpCircle size={40} />}
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-2xl font-black text-slate-900">{confirmModal.title}</h3>
-                <p className="text-slate-500 font-bold leading-relaxed">{confirmModal.message}</p>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button 
-                  onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
-                  className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all active:scale-95"
-                >
-                  বাতিল
-                </button>
-                <button 
-                  onClick={confirmModal.onConfirm}
-                  className={`flex-1 py-4 text-white rounded-2xl font-black shadow-lg transition-all active:scale-95 ${
-                    confirmModal.type === 'danger' ? 'bg-red-600 hover:bg-red-700 shadow-red-600/20' : 
-                    confirmModal.type === 'warning' ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20' : 
-                    'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20'
-                  }`}
-                >
-                  নিশ্চিত করুন
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Photo Manager Modal */}
-      {photoModal.isOpen && (
-        <div 
-          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
-          onClick={() => { setPhotoModal({ isOpen: false, voterName: '' }); setSelectedFileBase64(null); }}
-        >
-          <div 
-            className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-8 space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <Camera size={24} />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black text-slate-900">ছবি পরিবর্তন করুন</h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{photoModal.voterName}</p>
-                  </div>
-                </div>
-                <button onClick={() => { setPhotoModal({ isOpen: false, voterName: '' }); setSelectedFileBase64(null); }} className="p-2 text-slate-400 hover:text-slate-600 transition-all">
-                  <X size={24} />
-                </button>
-              </div>
-
-              <div className="flex flex-col items-center gap-4 py-4">
-                <div className="relative group">
-                  {selectedFileBase64 ? (
-                    <img src={selectedFileBase64} className="w-24 h-24 rounded-full object-cover border-4 border-blue-100 shadow-lg" referrerPolicy="no-referrer" />
-                  ) : (
-                    <ReceiverAvatar name={photoModal.voterName} size="xl" />
-                  )}
-                  <button 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
-                  >
-                    <Upload size={24} />
-                  </button>
-                </div>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileSelect} 
-                  accept="image/*" 
-                  className="hidden" 
-                />
-                <p className="text-xs font-bold text-slate-500 text-center">সরাসরি কম্পিউটার বা মোবাইল থেকে ছবি আপলোড করুন অথবা নিচের লিংকে ইউআরএল দিন।</p>
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-black text-xs hover:bg-slate-200 transition-all flex items-center gap-2"
-                >
-                  <Upload size={14} /> ছবি সিলেক্ট করুন
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">অথবা ছবির লিংক (Image URL)</label>
-                  <div className="relative">
-                    <Link className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      type="text" 
-                      placeholder="https://example.com/photo.jpg" 
-                      value={photoUrlInput} 
-                      onChange={e => { setPhotoUrlInput(e.target.value); setSelectedFileBase64(null); }}
-                      className="w-full h-[58px] pl-12 pr-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none focus:border-blue-500 transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button 
-                  onClick={() => { setPhotoModal({ isOpen: false, voterName: '' }); setSelectedFileBase64(null); }}
-                  className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all active:scale-95"
-                >
-                  বাতিল
-                </button>
-                <button 
-                  onClick={handleUpdateVoterPhoto}
-                  disabled={isLoading}
-                  className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-2"
-                >
-                  {isLoading ? <Loader2 className="animate-spin" size={20} /> : <Check size={20} strokeWidth={3} />}
-                  সংরক্ষণ করুন
-                </button>
-              </div>
             </div>
           </div>
         </div>

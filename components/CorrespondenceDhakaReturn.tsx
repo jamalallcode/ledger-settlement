@@ -5,7 +5,6 @@ import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberU
 import { OFFICE_HEADER } from '../constants';
 import { format as dateFnsFormat } from 'date-fns';
 import LetterDetailsModal from './LetterDetailsModal';
-import ReceiverAvatar from './ReceiverAvatar';
 
 interface CorrespondenceDhakaReturnProps {
   correspondenceEntries: any[];
@@ -496,13 +495,6 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       )}
 
       <div className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-6 relative animate-table-entrance">
-        <button 
-          onClick={() => setSelectedReportType(null)}
-          className="absolute top-4 left-4 p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-red-50 hover:text-red-600 text-slate-500 shadow-sm transition-all group z-[300] no-print"
-          title="ফিরে যান"
-        >
-          <X size={18} className="group-hover:scale-110 transition-transform" />
-        </button>
         <div className="text-center mb-8 pt-4 relative">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-4">
             চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)।
@@ -607,7 +599,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       {/* Auditor Statistics Modal */}
       {showAuditorStatsModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[3000] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-600/20 rounded-xl flex items-center justify-center">
@@ -630,7 +622,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-slate-100">
-                    <th className="border border-slate-200 p-2 text-left text-[12px] font-black text-slate-700 w-[200px]">অডিটর</th>
+                    <th className="border border-slate-200 p-2 text-left text-[12px] font-black text-slate-700">অডিটর</th>
                     <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">অডিটরের কাছে</th>
                     <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">এএন্ডএও</th>
                     <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">উপপরিচালক</th>
@@ -640,12 +632,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                 <tbody>
                   {auditorWiseStats.map((stat, idx) => (
                     <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
-                      <td className="border border-slate-200 p-2 text-[12px] font-bold text-slate-900">
-                        <div className="flex items-center gap-2">
-                          <ReceiverAvatar name={stat.name} size="sm" />
-                          <span>{stat.name}</span>
-                        </div>
-                      </td>
+                      <td className="border border-slate-200 p-2 text-[12px] font-bold text-slate-900">{stat.name}</td>
                       <td 
                         className="border border-slate-200 p-2 text-center text-[12px] font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all"
                         onClick={() => handleCountClick(`${stat.name} - অডিটরের কাছে`, stat.auditorLetters)}

@@ -17,11 +17,6 @@ interface ReturnSummaryTableProps {
   showFilters: boolean;
   searchTerm: string;
   filterMinistry: string;
-  dynamicSetupConfig?: {
-    enabled: boolean;
-    startDate: string;
-    endDate: string;
-  };
 }
 
 const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
@@ -35,8 +30,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   IDBadge,
   showFilters,
   searchTerm,
-  filterMinistry,
-  dynamicSetupConfig
+  filterMinistry
 }) => {
   const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
@@ -240,13 +234,6 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
       )}
 
       <div id="card-report-table-container" className="bg-white border border-slate-300 shadow-2xl w-full overflow-x-auto p-1 relative animate-table-entrance">
-        <button 
-          onClick={() => setSelectedReportType(null)}
-          className="absolute top-4 left-4 p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-red-50 hover:text-red-600 text-slate-500 shadow-sm transition-all group z-[300] no-print"
-          title="ফিরে যান"
-        >
-          <X size={18} className="group-hover:scale-110 transition-transform" />
-        </button>
         <div className="text-center mb-8 pt-4">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-4">
             {selectedReportType}
@@ -255,13 +242,6 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             <div className="inline-flex items-center gap-3 px-6 py-1.5 bg-slate-900 text-white rounded-xl text-[10px] font-black border border-slate-700 shadow-md">
               <span className="text-blue-400">{selectedReportType}</span> | {toBengaliDigits(activeCycle.label)}
             </div>
-            
-            {dynamicSetupConfig?.enabled && (
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-50 text-amber-700 rounded-xl text-[10px] font-black border border-amber-200 shadow-sm animate-pulse">
-                <Sparkles size={12} className="text-amber-500" />
-                ডাইনামিক প্রারম্ভিক জের সক্রিয় ({toBengaliDigits(dynamicSetupConfig.startDate.split('-').reverse().join('/'))} হতে {toBengaliDigits(dynamicSetupConfig.endDate.split('-').reverse().join('/'))})
-              </div>
-            )}
           </div>
           <div className="flex items-center justify-center gap-4">
             <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
