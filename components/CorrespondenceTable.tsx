@@ -1906,6 +1906,16 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             })()
           ) : (
             <tbody>
+              {/* Invisible baseline row to secure table-layout fixed column widths when empty */}
+              <tr className="h-0 p-0 border-0 pointer-events-none select-none invisible">
+                <td className="p-0 border-0 h-0"></td>
+                <td className="p-0 border-0 h-0"></td>
+                <td className="p-0 border-0 h-0"></td>
+                <td className="p-0 border-0 h-0"></td>
+                <td className="p-0 border-0 h-0"></td>
+                <td className="p-0 border-0 h-0"></td>
+                <td className="p-0 border-0 h-0"></td>
+              </tr>
               <tr>
                 <td colSpan={7} className="py-20 text-center bg-white">
                   <div className="flex flex-col items-center gap-3 opacity-30">

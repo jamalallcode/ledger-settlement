@@ -41,6 +41,7 @@ const App: React.FC = () => {
   const navigate = useNavigate();
   const [entries, setEntries] = useState<SettlementEntry[]>([]);
   const [correspondenceEntries, setCorrespondenceEntries] = useState<CorrespondenceEntry[]>([]);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('landing'); 
   const [resetKey, setResetKey] = useState(0); 
   const [editingEntry, setEditingEntry] = useState<any | null>(null);
@@ -406,19 +407,58 @@ const App: React.FC = () => {
             }
           });
           
-          console.log(`Fetched ${processedEntries.length} settlement and ${corrEntries.length} correspondence entries`);
+          console.log(`Fetched ${processedEntries.length} settlement and ${corrEntries.length} correspondence entries from Supabase`);
           
           setEntries(processedEntries);
           setCorrespondenceEntries(corrEntries);
+          
+          // Securely save to local offline backup
+          localStorage.setItem('cached_settlement_entries', JSON.stringify(processedEntries));
+          localStorage.setItem('cached_correspondence_entries', JSON.stringify(corrEntries));
+        } else {
+          console.log("Supabase fetch unavailable or empty, checking offline local storage backup...");
+          const localSettlements = localStorage.getItem('cached_settlement_entries');
+          const localCorrespondence = localStorage.getItem('cached_correspondence_entries');
+          
+          if (localSettlements) {
+            const parsedSet = JSON.parse(localSettlements);
+            console.log(`Loaded ${parsedSet.length} settlement entries from local backup cache`);
+            setEntries(parsedSet);
+          }
+          if (localCorrespondence) {
+            const parsedCorr = JSON.parse(localCorrespondence);
+            console.log(`Loaded ${parsedCorr.length} correspondence entries from local backup cache`);
+            setCorrespondenceEntries(parsedCorr);
+          }
         }
-      } catch (e) { console.error('Data error:', e); } 
-      finally { 
+      } catch (e) {
+        console.error('Data loading error:', e);
+        // Fallback on error
+        const localSettlements = localStorage.getItem('cached_settlement_entries');
+        const localCorrespondence = localStorage.getItem('cached_correspondence_entries');
+        if (localSettlements) setEntries(JSON.parse(localSettlements));
+        if (localCorrespondence) setCorrespondenceEntries(JSON.parse(localCorrespondence));
+      } finally { 
         console.log("fetchData finally called");
         setIsLoading(false); 
+        setIsDataLoaded(true);
       }
     };
     fetchData();
   }, []);
+
+  // Sync state changes back to local storage cache immediately when data has loaded
+  useEffect(() => {
+    if (isDataLoaded) {
+      localStorage.setItem('cached_settlement_entries', JSON.stringify(entries));
+    }
+  }, [entries, isDataLoaded]);
+
+  useEffect(() => {
+    if (isDataLoaded) {
+      localStorage.setItem('cached_correspondence_entries', JSON.stringify(correspondenceEntries));
+    }
+  }, [correspondenceEntries, isDataLoaded]);
 
   useEffect(() => {
     const syncPrevStats = async () => {
