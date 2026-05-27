@@ -92,30 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     userEmail === 'unauthorized_guest' ||
     (typeof window !== 'undefined' && localStorage.getItem('unauthorized_user_detected') === 'true');
 
-  const [showAdminLoginButton, setShowAdminLoginButton] = useState(() => {
-    try {
-      const isUnauth = typeof window !== 'undefined' && (
-        localStorage.getItem('unauthorized_user_detected') === 'true'
-      );
-      if (isUnauth) return false;
-
-      const saved = localStorage.getItem('show_admin_login_portal');
-      if (saved === 'true') return true;
-      const urlParams = new URLSearchParams(window.location.search);
-      if (
-        urlParams.get('admin') === 'true' || 
-        urlParams.get('admin') === 'show' || 
-        urlParams.get('login') === 'true' || 
-        urlParams.get('allow') === 'admin'
-      ) {
-        localStorage.setItem('show_admin_login_portal', 'true');
-        return true;
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    return false;
-  });
+  const [showAdminLoginButton, setShowAdminLoginButton] = useState(false);
 
   // Load admin settings from storage
   useEffect(() => {
@@ -215,21 +192,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, [userEmail, isUserUnauthorized]);
 
   const handleLogoClick = () => {
-    // If logged in with an unauthorized email or identified as unauthorized guest/flag, never allow activating the admin portal
-    if (isUserUnauthorized) {
-      console.log("Admin portal activation blocked: Unauthorized account detected.");
-      return;
-    }
-    const now = Date.now();
-    if (now - lastClickTime.current > 2000) clickCount.current = 0;
-    clickCount.current += 1;
-    lastClickTime.current = now;
-    if (clickCount.current === 5) {
-      clickCount.current = 0;
-      setShowAdminLoginButton(true);
-      localStorage.setItem('show_admin_login_portal', 'true');
-      alert("এডমিন লগইন পোর্টালটি সক্রিয় করা হয়েছে! নিচে এখন 'এডমিন লগইন' বাটনটি প্রদর্শিত হচ্ছে।");
-    }
+    // 5-click portal trigger has been completely disabled for maximum security.
+    // The Admin Login option can now only be accessed by using the secret '?admin=true' URL parameter.
+    console.log("Logo clicked. Admin shortcut has been completely disabled for other users.");
   };
 
   const handleAdminSubmit = (e?: React.FormEvent) => {
@@ -808,27 +773,27 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div id="sidebar-footer" className="p-1.5 border-t border-slate-800 bg-slate-900/80 backdrop-blur-sm space-y-1 relative shrink-0">
           <IDBadge id="sidebar-footer" />
           
-          {!isUserUnauthorized && (isAdmin || userEmail === 'websitetogather@gmail.com' || (showAdminLoginButton && (!userEmail || userEmail === 'websitetogather@gmail.com'))) ? (
-            isAdmin ? (
-              <div className="grid grid-cols-1 gap-1">
-                <button 
-                  onClick={handleLogout}
-                  className="w-full flex items-center justify-center px-1.5 py-1 rounded-lg bg-red-500/5 text-red-400 hover:bg-red-500 hover:text-white transition-all font-bold text-[9px] group border border-red-500/10 hover:border-red-400"
-                >
-                  লগআউট করুন
-                </button>
+          {(!userEmail || userEmail === 'unauthorized_guest') ? (
+            /* If completely logged out or guest, show the Login option */
+            <button 
+              onClick={() => setShowAdminModal(true)}
+              className="w-full flex items-center justify-center px-1.5 py-1.5 rounded-lg bg-gradient-to-r from-slate-800 to-slate-850 text-slate-200 hover:from-blue-600 hover:to-blue-700 hover:text-white transition-all font-black text-[12px] group border border-slate-700 hover:border-blue-400 shadow-xl shadow-black/20"
+            >
+              <div className="flex items-center gap-1.5">
+                <span>লগইন করুন</span>
               </div>
-            ) : (
+            </button>
+          ) : (userEmail === 'websitetogather@gmail.com') ? (
+            /* If logged in with the admin email, show the Logout option */
+            <div className="grid grid-cols-1 gap-1">
               <button 
-                onClick={() => setShowAdminModal(true)}
-                className="w-full flex items-center justify-center px-1.5 py-1.5 rounded-lg bg-gradient-to-r from-slate-800 to-slate-850 text-slate-200 hover:from-blue-600 hover:to-blue-700 hover:text-white transition-all font-black text-[12px] group border border-slate-700 hover:border-blue-400 shadow-xl shadow-black/20"
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center px-1.5 py-1 rounded-lg bg-red-500/5 text-red-400 hover:bg-red-500 hover:text-white transition-all font-bold text-[9px] group border border-red-500/10 hover:border-red-400"
               >
-                <div className="flex items-center gap-1.5">
-                  <span>এডমিন লগইন</span>
-                </div>
+                লগআউট করুন
               </button>
-            )
-          ) : null}
+            </div>
+          ) : null /* If logged in with any other email, show absolutely nothing */}
         </div>
       </div>
       {showAdminModal && (
