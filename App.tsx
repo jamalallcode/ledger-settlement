@@ -246,18 +246,26 @@ const App: React.FC = () => {
           setIsAdmin(true);
           setIsLockedMode(false); // Auto-unlock for admin
           localStorage.setItem(ADMIN_MODE_KEY, 'true');
+          localStorage.removeItem('unauthorized_user_detected');
         } else {
           console.log("User is NOT admin based on email: logging out...");
-          setUserEmail(null);
+          setUserEmail('unauthorized_guest');
           setIsAdmin(false);
           setIsLockedMode(true);
           localStorage.removeItem(ADMIN_MODE_KEY);
+          localStorage.setItem('unauthorized_user_detected', 'true');
           supabase.auth.signOut().then(() => {
             alert("দুঃখিত, এই গুগল একাউন্টটি ('" + email + "') এই ড্যাশবোর্ডে প্রবেশের জন্য অনুমোদিত নয়। শুধুমাত্র প্রধান এডমিন প্রবেশ করতে পারবেন।");
           });
         }
       } else {
-        setUserEmail(null);
+        const isUnauthorized = localStorage.getItem('unauthorized_user_detected') === 'true';
+        if (isUnauthorized) {
+          setUserEmail('unauthorized_guest');
+        } else {
+          setUserEmail(null);
+        }
+        
         const savedAdmin = localStorage.getItem(ADMIN_MODE_KEY);
         if (savedAdmin === 'true') {
           setIsAdmin(true);
@@ -699,6 +707,7 @@ const App: React.FC = () => {
     if (window.confirm("আপনি কি এডমিন একাউন্ট থেকে লগআউট করতে চান?")) {
       setIsAdmin(false);
       localStorage.removeItem(ADMIN_MODE_KEY);
+      localStorage.removeItem('unauthorized_user_detected');
       await supabase.auth.signOut();
       setActiveTab('landing');
       setEntryModule(null);
