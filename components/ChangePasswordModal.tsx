@@ -11,35 +11,42 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
   const [confirmPassword, setConfirmPassword] = useState('');
   const [newQuestion, setNewQuestion] = useState('');
   const [newAnswer, setNewAnswer] = useState('');
+  const [newEmail, setNewEmail] = useState('websitetogather@gmail.com');
   
   const [storedPassword, setStoredPassword] = useState('80093424LEdg@');
   const [storedRecoveryQuestion, setStoredRecoveryQuestion] = useState('আপনার প্রিয় রং কি?');
   const [storedRecoveryAnswer, setStoredRecoveryAnswer] = useState('সাদা');
+  const [storedRecoveryEmail, setStoredRecoveryEmail] = useState('websitetogather@gmail.com');
 
   useEffect(() => {
     const savedPass = localStorage.getItem('ledger_admin_password_v1');
     const savedQuestion = localStorage.getItem('ledger_admin_recovery_q_v1');
     const savedAnswer = localStorage.getItem('ledger_admin_recovery_a_v1');
+    const savedEmail = localStorage.getItem('ledger_admin_recovery_email_v1');
     
     if (savedPass) setStoredPassword(savedPass);
     if (savedQuestion) setStoredRecoveryQuestion(savedQuestion);
     if (savedAnswer) setStoredRecoveryAnswer(savedAnswer);
+    if (savedEmail) setStoredRecoveryEmail(savedEmail);
   }, []);
 
   useEffect(() => {
     if (isOpen) {
       setNewQuestion(storedRecoveryQuestion);
       setNewAnswer(storedRecoveryAnswer);
+      setNewEmail(storedRecoveryEmail);
     }
-  }, [isOpen, storedRecoveryQuestion, storedRecoveryAnswer]);
+  }, [isOpen, storedRecoveryQuestion, storedRecoveryAnswer, storedRecoveryEmail]);
 
-  const saveAdminSettings = (pass: string, q: string, a: string) => {
+  const saveAdminSettings = (pass: string, q: string, a: string, email: string) => {
     localStorage.setItem('ledger_admin_password_v1', pass);
     localStorage.setItem('ledger_admin_recovery_q_v1', q);
     localStorage.setItem('ledger_admin_recovery_a_v1', a);
+    localStorage.setItem('ledger_admin_recovery_email_v1', email);
     setStoredPassword(pass);
     setStoredRecoveryQuestion(q);
     setStoredRecoveryAnswer(a);
+    setStoredRecoveryEmail(email);
   };
 
   const handleChangePassword = (e: React.FormEvent) => {
@@ -54,18 +61,16 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
       return;
     }
     
-    if (!newQuestion.trim() || !newAnswer.trim()) {
-      alert("অনুগ্রহ করে নিরাপত্তা প্রশ্ন এবং উত্তর প্রদান করুন।");
+    if (!newEmail.trim() || !newEmail.includes('@')) {
+      alert("অনুগ্রহ করে একটি সঠিক রিকভারি জিমেইল এড্রেস লিখুন।");
       return;
     }
     
-    saveAdminSettings(trimmedPassword, newQuestion.trim(), newAnswer.trim());
-    alert("পাসওয়ার্ড এবং নিরাপত্তা সেটিংস সফলভাবে পরিবর্তন করা হয়েছে।");
+    saveAdminSettings(trimmedPassword, newQuestion.trim(), newAnswer.trim(), newEmail.trim());
+    alert("পাসওয়ার্ড এবং রিকভারি জিমেইল সফলভাবে পরিবর্তন করা হয়েছে।");
     onClose();
     setNewPassword('');
     setConfirmPassword('');
-    setNewQuestion('');
-    setNewAnswer('');
   };
 
   if (!isOpen) return null;
@@ -93,7 +98,6 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
               <X size={18} />
             </button>
           </div>
-
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div className="space-y-4">
               <div className="space-y-1.5">
@@ -120,28 +124,19 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
               <div className="pt-2 border-t border-slate-100 space-y-4">
                 <div className="flex items-center gap-2 px-1">
                   <AlertCircle size={14} className="text-amber-500" />
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">নিরাপত্তা প্রশ্ন (পাসওয়ার্ড উদ্ধারের জন্য)</span>
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">রিকভারি সেটিংস (পাসওয়ার্ড উদ্ধারের জন্য)</span>
                 </div>
                 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">নিরাপত্তা প্রশ্ন</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">রিকভারি জিমেইল (Gmail)</label>
                   <input 
-                    type="text" 
-                    placeholder="যেমন: আপনার প্রিয় রং কি?" 
-                    value={newQuestion} 
-                    onChange={(e) => setNewQuestion(e.target.value)} 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 text-slate-900 font-bold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all" 
+                    type="email" 
+                    placeholder="যেমন: example@gmail.com" 
+                    value={newEmail} 
+                    onChange={(e) => setNewEmail(e.target.value)} 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 text-slate-900 font-bold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all focus:invalid:border-rose-500 focus:invalid:ring-rose-500/5" 
                   />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">আপনার উত্তর</label>
-                  <input 
-                    type="text" 
-                    placeholder="উত্তর দিন" 
-                    value={newAnswer} 
-                    onChange={(e) => setNewAnswer(e.target.value)} 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 text-slate-900 font-bold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all" 
-                  />
+                  <p className="text-[9px] text-slate-500 font-medium px-1 leading-relaxed">পাসওয়ার্ড ভুলে গেলে এই জিমেইলে ওটিপি (OTP) ও পাসওয়ার্ড রিসেট লিংক পাঠিয়ে দ্রুত রিকভার করা যাবে।</p>
                 </div>
               </div>
             </div>
