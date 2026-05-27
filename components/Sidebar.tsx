@@ -26,6 +26,7 @@ interface SidebarProps {
   onOpenChangePassword?: () => void;
   moduleVisibility?: ModuleVisibility;
   showPendingOnly?: boolean;
+  userEmail?: string | null;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -59,7 +60,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     change_pass: true,
     admin_analytics: true,
     audit_details: true,
-  }
+  },
+  userEmail = null
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -758,9 +760,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div id="sidebar-footer" className="p-1.5 border-t border-slate-800 bg-slate-900/80 backdrop-blur-sm space-y-1 relative shrink-0">
           <IDBadge id="sidebar-footer" />
           
-          {isAdmin ? (
-            <div className="grid grid-cols-1 gap-1">
-
+          {(!userEmail || userEmail === 'websitetogather@gmail.com') ? (
+            isAdmin ? (
+              <div className="grid grid-cols-1 gap-1">
                 <button 
                   onClick={handleLogout}
                   className="w-full flex items-center justify-center px-1.5 py-1 rounded-lg bg-red-500/5 text-red-400 hover:bg-red-500 hover:text-white transition-all font-bold text-[9px] group border border-red-500/10 hover:border-red-400"
@@ -777,8 +779,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <span>এডমিন লগইন</span>
                 </div>
               </button>
-            )}
-          </div>
+            )
+          ) : null}
+        </div>
       </div>
       {showAdminModal && (
         <div className="fixed inset-0 z-[20000] flex items-start justify-center p-4 pt-32 bg-black/80 backdrop-blur-md animate-in fade-in duration-500">
