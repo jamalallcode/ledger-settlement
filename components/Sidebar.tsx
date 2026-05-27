@@ -86,6 +86,26 @@ const Sidebar: React.FC<SidebarProps> = ({
   const clickCount = useRef(0);
   const lastClickTime = useRef(0);
 
+  const [showAdminLoginButton, setShowAdminLoginButton] = useState(() => {
+    try {
+      const saved = localStorage.getItem('show_admin_login_portal');
+      if (saved === 'true') return true;
+      const urlParams = new URLSearchParams(window.location.search);
+      if (
+        urlParams.get('admin') === 'true' || 
+        urlParams.get('admin') === 'show' || 
+        urlParams.get('login') === 'true' || 
+        urlParams.get('allow') === 'admin'
+      ) {
+        localStorage.setItem('show_admin_login_portal', 'true');
+        return true;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return false;
+  });
+
   // Load admin settings from storage
   useEffect(() => {
     const savedPass = localStorage.getItem('ledger_admin_password_v1');
@@ -180,9 +200,11 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (now - lastClickTime.current > 2000) clickCount.current = 0;
     clickCount.current += 1;
     lastClickTime.current = now;
-    if (clickCount.current === 3) {
+    if (clickCount.current === 5) {
       clickCount.current = 0;
-      setShowAdminModal(true);
+      setShowAdminLoginButton(true);
+      localStorage.setItem('show_admin_login_portal', 'true');
+      alert("এডমিন লগইন পোর্টালটি সক্রিয় করা হয়েছে! নিচে এখন 'এডমিন লগইন' বাটনটি প্রদর্শিত হচ্ছে।");
     }
   };
 
@@ -331,6 +353,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const handleLogout = () => {
+    setShowAdminLoginButton(false);
+    localStorage.removeItem('show_admin_login_portal');
     if (onLogout) {
       onLogout();
     } else {
@@ -760,7 +784,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div id="sidebar-footer" className="p-1.5 border-t border-slate-800 bg-slate-900/80 backdrop-blur-sm space-y-1 relative shrink-0">
           <IDBadge id="sidebar-footer" />
           
-          {(!userEmail || userEmail === 'websitetogather@gmail.com') ? (
+          {isAdmin || userEmail === 'websitetogather@gmail.com' || (showAdminLoginButton && (!userEmail || userEmail === 'websitetogather@gmail.com')) ? (
             isAdmin ? (
               <div className="grid grid-cols-1 gap-1">
                 <button 
