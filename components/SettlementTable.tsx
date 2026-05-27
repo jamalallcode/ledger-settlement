@@ -2122,16 +2122,35 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                   );
                 })
               ) : (
-                <tr>
-                  <td colSpan={14} className="py-20 text-center bg-white">
-                    <div className="flex flex-col items-center gap-3 opacity-30">
-                      <Archive size={40} />
-                      <p className="text-sm font-black text-slate-900 tracking-widest">
-                        রেজিস্টার খালি
-                      </p>
-                    </div>
-                  </td>
-                </tr>
+                <>
+                  {/* Invisible baseline row to secure table-layout fixed column widths when empty */}
+                  <tr className="h-0 p-0 border-0 pointer-events-none select-none invisible">
+                    <td className="p-0 border-0 h-0"></td>
+                    <td className="p-0 border-0 h-0"></td>
+                    <td className="p-0 border-0 h-0"></td>
+                    <td className="p-0 border-0 h-0"></td>
+                    <td className="p-0 border-0 h-0"></td>
+                    <td className="p-0 border-0 h-0"></td>
+                    <td className="p-0 border-0 h-0"></td>
+                    <td className="p-0 border-0 h-0"></td>
+                    <td className="p-0 border-0 h-0"></td>
+                    <td className="p-0 border-0 h-0"></td>
+                    <td className="p-0 border-0 h-0"></td>
+                    <td className="p-0 border-0 h-0"></td>
+                    <td className="p-0 border-0 h-0"></td>
+                    <td className="p-0 border-0 h-0"></td>
+                  </tr>
+                  <tr>
+                    <td colSpan={14} className="py-20 text-center bg-white">
+                      <div className="flex flex-col items-center gap-3 opacity-30">
+                        <Archive size={40} />
+                        <p className="text-sm font-black text-slate-900 tracking-widest">
+                          রেজিস্টার খালি
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                </>
               )}
             </tbody>
             {!isAdminView && (
@@ -2180,9 +2199,6 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                   </td>
                   <td className={footerTdCls + " text-amber-400 font-black"}>
                     {toBengaliDigits(Math.round(grandTotals.tAdj))}
-                  </td>
-                  <td className={footerTdCls + " text-emerald-400 font-black"}>
-                    {toBengaliDigits(Math.round(grandTotals.tRec + grandTotals.tAdj))}
                   </td>
                 </tr>
               </tfoot>
