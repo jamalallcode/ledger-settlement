@@ -239,15 +239,32 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleAdminSync = (email?: string) => {
       console.log("handleAdminSync called with email:", email);
-      setUserEmail(email || null);
-      const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com', 'emailaddress3424@gmail.com', 'commercialauditkhulna@gmail.com'];
-      if (email && adminEmails.includes(email)) {
-        console.log("User is admin based on email");
-        setIsAdmin(true);
-        setIsLockedMode(false); // Auto-unlock for admin
-        localStorage.setItem(ADMIN_MODE_KEY, 'true');
+      if (email) {
+        if (email === 'websitetogather@gmail.com') {
+          console.log("User is admin based on email");
+          setUserEmail(email);
+          setIsAdmin(true);
+          setIsLockedMode(false); // Auto-unlock for admin
+          localStorage.setItem(ADMIN_MODE_KEY, 'true');
+        } else {
+          console.log("User is NOT admin based on email: logging out...");
+          setUserEmail(null);
+          setIsAdmin(false);
+          setIsLockedMode(true);
+          localStorage.removeItem(ADMIN_MODE_KEY);
+          supabase.auth.signOut().then(() => {
+            alert("দুঃখিত, এই গুগল একাউন্টটি ('" + email + "') এই ড্যাশবোর্ডে প্রবেশের জন্য অনুমোদিত নয়। শুধুমাত্র প্রধান এডমিন প্রবেশ করতে পারবেন।");
+          });
+        }
       } else {
-        console.log("User is NOT admin based on email");
+        setUserEmail(null);
+        const savedAdmin = localStorage.getItem(ADMIN_MODE_KEY);
+        if (savedAdmin === 'true') {
+          setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
+          setIsLockedMode(true);
+        }
       }
     };
 
