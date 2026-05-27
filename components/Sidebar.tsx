@@ -195,7 +195,19 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (activeTab === 'return') setIsReturnExpanded(true);
   }, [activeTab]);
 
+  // Disable admin portal access completely if user is logged in with another account
+  useEffect(() => {
+    if (userEmail && userEmail !== 'websitetogather@gmail.com') {
+      setShowAdminLoginButton(false);
+      localStorage.removeItem('show_admin_login_portal');
+    }
+  }, [userEmail]);
+
   const handleLogoClick = () => {
+    // If logged in with an unauthorized email, never allow activating the admin portal
+    if (userEmail && userEmail !== 'websitetogather@gmail.com') {
+      return;
+    }
     const now = Date.now();
     if (now - lastClickTime.current > 2000) clickCount.current = 0;
     clickCount.current += 1;
