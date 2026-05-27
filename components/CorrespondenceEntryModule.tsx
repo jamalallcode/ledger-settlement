@@ -401,7 +401,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   navigateToEntry
 }) => {
   // Admin check for receiver management
-  const adminEmails = ['websitetogather@gmail.com', 'kamalismybrother@gmail.com'];
+  const adminEmails = ['websitetogather@gmail.com'];
   const isReceiverAdmin = isAdmin || (userEmail && adminEmails.includes(userEmail));
 
   const [isSuccess, setIsSuccess] = useState(false);
