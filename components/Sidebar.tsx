@@ -70,6 +70,16 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [storedPassword, setStoredPassword] = useState('80093424LEdg@');
   const [storedRecoveryQuestion, setStoredRecoveryQuestion] = useState('আপনার প্রিয় রং কি?');
   const [storedRecoveryAnswer, setStoredRecoveryAnswer] = useState('সাদা');
+  const [storedRecoveryEmail, setStoredRecoveryEmail] = useState('websitetogather@gmail.com');
+
+  // Gmail password reset states
+  const [recoveryMethod, setRecoveryMethod] = useState<'question' | 'email'>('email');
+  const [recoveryEmail, setRecoveryEmail] = useState('websitetogather@gmail.com');
+  const [resetOtpInput, setResetOtpInput] = useState('');
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [requestingOtp, setRequestingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [simulatedOtpCode, setSimulatedOtpCode] = useState<string | null>(null);
   
   const clickCount = useRef(0);
   const lastClickTime = useRef(0);
@@ -79,19 +89,70 @@ const Sidebar: React.FC<SidebarProps> = ({
     const savedPass = localStorage.getItem('ledger_admin_password_v1');
     const savedQuestion = localStorage.getItem('ledger_admin_recovery_q_v1');
     const savedAnswer = localStorage.getItem('ledger_admin_recovery_a_v1');
+    const savedEmail = localStorage.getItem('ledger_admin_recovery_email_v1');
     
     if (savedPass) setStoredPassword(savedPass);
     if (savedQuestion) setStoredRecoveryQuestion(savedQuestion);
     if (savedAnswer) setStoredRecoveryAnswer(savedAnswer);
+    if (savedEmail) {
+      setStoredRecoveryEmail(savedEmail);
+      setRecoveryEmail(savedEmail);
+    } else {
+      localStorage.setItem('ledger_admin_recovery_email_v1', 'websitetogather@gmail.com');
+    }
+
+    // Intercept Password Reset URL details from query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const resetEmailParam = urlParams.get('reset-email');
+    const resetCodeParam = urlParams.get('reset-code');
+
+    if (resetEmailParam && resetCodeParam) {
+      // Clear URL params to make it clean
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Open the recovery modal and set correct states
+      setRecoveryMethod('email');
+      setRecoveryEmail(resetEmailParam);
+      setResetOtpInput(resetCodeParam);
+      setIsOtpSent(true);
+      setShowRecoveryModal(true);
+
+      // Perform automatic verification of the link token!
+      const autoVerify = async () => {
+        try {
+          const res = await fetch("/api/admin/verify-reset-code", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: resetEmailParam, code: resetCodeParam })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            setRecoveredPassword(savedPass || '80093424LEdg@');
+            setIsOtpSent(false);
+            setResetOtpInput('');
+            alert("সফলভাবে সিকিউরিটি লিংক যাচাই করা হয়েছে! এখন নিচের বাটন থেকে পাসওয়ার্ড পরিবর্তন বা নতুন পাসওয়ার্ড সেট করুন।");
+          } else {
+            alert(data.error || "সিকিউরিটি রিসেট লিংকটি ভুল অথবা মেয়াদোত্তীর্ণ।");
+          }
+        } catch (e) {
+          console.error(e);
+          alert("অটো-যাচাইকরণ ব্যর্থ হয়েছে। কোডটি ম্যানুয়ালি দিন।");
+        }
+      };
+      autoVerify();
+    }
   }, []);
 
-  const saveAdminSettings = (pass: string, q: string, a: string) => {
+  const saveAdminSettings = (pass: string, q: string, a: string, email: string) => {
     localStorage.setItem('ledger_admin_password_v1', pass);
     localStorage.setItem('ledger_admin_recovery_q_v1', q);
     localStorage.setItem('ledger_admin_recovery_a_v1', a);
+    localStorage.setItem('ledger_admin_recovery_email_v1', email);
     setStoredPassword(pass);
     setStoredRecoveryQuestion(q);
     setStoredRecoveryAnswer(a);
+    setStoredRecoveryEmail(email);
+    setRecoveryEmail(email);
   };
 
   // --- Sub-menu States ---
@@ -141,10 +202,129 @@ const Sidebar: React.FC<SidebarProps> = ({
     const input = recoveryAnswer.trim().toLowerCase();
     const stored = storedRecoveryAnswer.trim().toLowerCase();
     
-    if (input === stored || input === 'সাদা' || input === 'white') {
+    if (
+      input === stored || 
+      input === 'সাদা' || 
+      input === 'white' || 
+      input === 'shada' ||
+      input === 'sada' ||
+      input.includes('সাদা') ||
+      input.includes('white') ||
+      input.includes('shada')
+    ) {
       setRecoveredPassword(storedPassword);
     } else {
       alert("ভুল উত্তর! আবার চেষ্টা করুন।");
+    }
+  };
+
+  const handleSendResetCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recoveryEmail.trim() || !recoveryEmail.includes('@')) {
+      alert("দয়া করে একটি সঠিক জিমেইল এড্রেস প্রদান করুন।");
+      return;
+    }
+    setRequestingOtp(true);
+    setSimulatedOtpCode(null);
+
+    try {
+      const response = await fetch("/api/admin/request-password-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: recoveryEmail.toLowerCase().trim(),
+          origin: window.location.origin
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("HTTP error " + response.status);
+      }
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setIsOtpSent(true);
+        if (data.simulated) {
+          setSimulatedOtpCode(data.code);
+          alert(`${data.message}\n\nআপনার ৬-ডিজিট সিকিউরিটি কোড: ${data.code}`);
+        } else {
+          alert("সিকিউরিটি ওটিপি কোড এবং রিসেট লিংকটি আপনার জিমেইলে পাঠানো হয়েছে। অনুগ্রহ করে ইনবক্স বা স্প্যাম ফোল্ডার চেক করুন।");
+        }
+      } else {
+        alert(data.error || "রিসেট কোড পাঠাতে সমস্যা হয়েছে। দয়া করে সঠিক জিমেইল এড্রেস দিয়ে আবার চেষ্টা করুন।");
+      }
+    } catch (err) {
+      console.warn("API Error, falling back to local simulation mode:", err);
+      // Fallback local simulation
+      const enteredEmail = recoveryEmail.toLowerCase().trim();
+      const actualSavedEmail = storedRecoveryEmail.toLowerCase().trim();
+      
+      if (enteredEmail !== actualSavedEmail) {
+        alert("ভুল জিমেইল! অ্যাকাউন্টে নিবন্ধিত রিকভারি জিমেইল এড্রেসটির সাথে আপনার দেওয়া এড্রেসটি মেলেনি।");
+        setRequestingOtp(false);
+        return;
+      }
+
+      // Generate local fallback code
+      const localCode = Math.floor(100000 + Math.random() * 900000).toString();
+      localStorage.setItem('local_reset_code_v1', localCode);
+      setIsOtpSent(true);
+      setSimulatedOtpCode(localCode);
+      
+      alert("সার্ভার সংযোগ সম্ভব হচ্ছে না (Vercel হোস্টিং বা অফলাইন মোড)।\n\nআপনার রিকভারি জিমেইলটি সঠিক থাকায় সিস্টেম স্বয়ংক্রিয়ভাবে একটি লোকাল ডেমো রিকভারি কোড তৈরি করেছে।\n\nসিকিউরিটি ভেরিফিকেশন কোড: " + localCode + "\n\nকোডটি প্রবেশ করিয়ে কন্টিনিউ করুন।");
+    } finally {
+      setRequestingOtp(false);
+    }
+  };
+
+  const handleVerifyResetCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetOtpInput.trim()) {
+      alert("অনুগ্রহ করে জিমেইলে পাঠানো ৬ ডিজিটের কোডটি দিন।");
+      return;
+    }
+    setVerifyingOtp(true);
+
+    try {
+      const response = await fetch("/api/admin/verify-reset-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: recoveryEmail.toLowerCase().trim(),
+          code: resetOtpInput.trim()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("HTTP error " + response.status);
+      }
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setRecoveredPassword(storedPassword);
+        setIsOtpSent(false);
+        setResetOtpInput('');
+        setSimulatedOtpCode(null);
+        alert("কোডটি সফলভাবে ভেরিফাই করা হয়েছে!");
+      } else {
+        alert(data.error || "সিকিউরিটি ওটিপি কোডটি সঠিক নয়।");
+      }
+    } catch (err) {
+      console.warn("API Error during verify, falling back to local verification:", err);
+      // Fallback local verify
+      const localSavedCode = localStorage.getItem('local_reset_code_v1');
+      if (localSavedCode && resetOtpInput.trim() === localSavedCode) {
+        setRecoveredPassword(storedPassword);
+        setIsOtpSent(false);
+        setResetOtpInput('');
+        setSimulatedOtpCode(null);
+        localStorage.removeItem('local_reset_code_v1');
+        alert("লোকাল ব্যাকআপ মুডে সিকিউরিটি কোডটি সফলভাবে যাচাই করা হয়েছে!");
+      } else {
+        alert("ভুল সিকিউরিটি কোড! আবার চেষ্টা করুন।");
+      }
+    } finally {
+      setVerifyingOtp(false);
     }
   };
 
@@ -764,47 +944,92 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <>
-                    <div className="p-5 bg-white/5 rounded-2xl border border-white/10 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck size={12} className="text-amber-500" />
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">নিরাপত্তা প্রশ্ন:</p>
-                      </div>
-                      <p className="text-white font-bold text-lg leading-relaxed">{storedRecoveryQuestion}</p>
-                    </div>
-
-                    <form onSubmit={handleRecoverySubmit} className="space-y-6">
-                      <div className="space-y-3">
-                        <p className="text-slate-300 text-sm font-bold ml-1">আপনার উত্তর দিন:</p>
-                        <div className="relative group/input">
+                  <div className="space-y-5 animate-in fade-in duration-300">
+                    {!isOtpSent ? (
+                      <form onSubmit={handleSendResetCode} className="space-y-5">
+                        <div className="p-5 bg-white/5 rounded-2xl border border-white/10 text-center space-y-2">
+                          <p className="text-white font-bold text-xs leading-relaxed text-slate-300">
+                            অ্যাকাউন্টে নিবন্ধিত রিকভারি জিমেইল এড্রেসটি নিচে দিয়ে ওটিপি পাঠান।
+                          </p>
+                        </div>
+                        
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">আপনার রিকভারি জিমেইল (Gmail):</label>
                           <input 
-                            autoFocus
-                            type="text" 
-                            value={recoveryAnswer} 
-                            onChange={(e) => setRecoveryAnswer(e.target.value)} 
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-amber-500/50 focus:ring-8 focus:ring-amber-500/5 transition-all placeholder:text-slate-700" 
-                            placeholder="উত্তর এখানে লিখুন..."
+                            type="email" 
+                            value={recoveryEmail} 
+                            onChange={(e) => setRecoveryEmail(e.target.value)} 
+                            className="w-full bg-slate-900 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/5 transition-all text-center placeholder:text-slate-600" 
+                            placeholder="যেমন: websitetogather@gmail.com"
+                            required
                           />
                         </div>
-                      </div>
 
-                      <div className="flex gap-4">
-                        <button 
-                          type="button" 
-                          onClick={() => { setShowRecoveryModal(false); setRecoveryAnswer(''); }} 
-                          className="flex-1 py-4 bg-white/5 text-slate-300 rounded-2xl font-black text-xs hover:bg-white/10 transition-all border border-white/5"
-                        >
-                          বাতিল
-                        </button>
-                        <button 
-                          type="submit" 
-                          className="flex-1 py-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-2xl font-black text-xs hover:from-amber-500 hover:to-orange-500 transition-all shadow-xl shadow-amber-600/20 active:scale-95 ring-4 ring-amber-500/10"
-                        >
-                          যাচাই করুন
-                        </button>
-                      </div>
-                    </form>
-                  </>
+                        <div className="flex gap-4">
+                          <button 
+                            type="button" 
+                            onClick={() => { setShowRecoveryModal(false); }} 
+                            className="flex-1 py-4 bg-white/5 text-slate-300 rounded-2xl font-black text-xs hover:bg-white/10 transition-all border border-white/5"
+                          >
+                            বাতিল
+                          </button>
+                          <button 
+                            type="submit" 
+                            disabled={requestingOtp}
+                            className="flex-1 py-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-2xl font-black text-xs hover:from-amber-500 hover:to-orange-500 disabled:opacity-50 disabled:pointer-events-none transition-all shadow-xl shadow-amber-600/20 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                          >
+                            {requestingOtp ? "কোড পাঠানো হচ্ছে..." : "ওটিপি পাঠান"}
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <form onSubmit={handleVerifyResetCode} className="space-y-5">
+                        <div className="p-5 bg-white/5 border border-white/10 rounded-2xl text-center space-y-2">
+                          <p className="text-emerald-400 font-black text-[10px] uppercase tracking-widest">সিকিউরিটি ওটিপি প্রেরণ করা হয়েছে!</p>
+                          <p className="text-slate-300 font-bold text-xs leading-relaxed">
+                            <strong>{recoveryEmail}</strong> জিমেইল চেক করে ৬ ডিজিটের সিকিউরিটি কোডটি নিচে দিন।
+                          </p>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 text-center block">৬-ডিজিট সিকিউরিটি কোড (OTP):</label>
+                          <input 
+                            type="text" 
+                            value={resetOtpInput} 
+                            onChange={(e) => setResetOtpInput(e.target.value)} 
+                            className="w-full bg-slate-900 border border-white/10 rounded-2xl px-5 py-4 text-center text-white font-black text-2xl tracking-[0.5em] outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/5 transition-all" 
+                            placeholder="------"
+                            maxLength={6}
+                            required
+                          />
+                        </div>
+
+                        {simulatedOtpCode && (
+                          <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-center space-y-1">
+                            <p className="text-[10px] font-black text-amber-500 uppercase tracking-wider">সিমুলেশন ওটিপি (SMTP অফ):</p>
+                            <p className="text-white font-black text-lg tracking-widest">{simulatedOtpCode}</p>
+                          </div>
+                        )}
+
+                        <div className="flex gap-4">
+                          <button 
+                            type="button" 
+                            onClick={() => { setIsOtpSent(false); setResetOtpInput(''); setSimulatedOtpCode(null); }} 
+                            className="flex-1 py-4 bg-white/5 text-slate-300 rounded-2xl font-black text-xs hover:bg-white/10 transition-all border border-white/5 cursor-pointer"
+                          >
+                            পিছনে যান
+                          </button>
+                          <button 
+                            type="submit" 
+                            disabled={verifyingOtp}
+                            className="flex-1 py-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-2xl font-black text-xs hover:from-amber-500 hover:to-orange-500 disabled:opacity-50 disabled:pointer-events-none transition-all shadow-xl shadow-amber-600/20 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                          >
+                            {verifyingOtp ? "যাচাই করা হচ্ছে..." : "কোড যাচাই করুন"}
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
