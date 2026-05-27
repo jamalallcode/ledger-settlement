@@ -708,6 +708,7 @@ const App: React.FC = () => {
       setIsAdmin(false);
       localStorage.removeItem(ADMIN_MODE_KEY);
       localStorage.removeItem('unauthorized_user_detected');
+      localStorage.removeItem('show_admin_login_portal');
       await supabase.auth.signOut();
       setActiveTab('landing');
       setEntryModule(null);
