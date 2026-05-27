@@ -741,6 +741,7 @@ const App: React.FC = () => {
             highlightSearch={highlightSearch}
             moduleVisibility={moduleVisibility}
             showPendingOnly={showPendingOnly}
+            userEmail={userEmail}
           />
         </div>
       )}
