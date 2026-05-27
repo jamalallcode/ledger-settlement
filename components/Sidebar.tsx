@@ -86,8 +86,19 @@ const Sidebar: React.FC<SidebarProps> = ({
   const clickCount = useRef(0);
   const lastClickTime = useRef(0);
 
+  // Check if current user is unauthorized using email or local storage flags
+  const isUserUnauthorized = 
+    (userEmail && userEmail !== 'websitetogather@gmail.com') || 
+    userEmail === 'unauthorized_guest' ||
+    (typeof window !== 'undefined' && localStorage.getItem('unauthorized_user_detected') === 'true');
+
   const [showAdminLoginButton, setShowAdminLoginButton] = useState(() => {
     try {
+      const isUnauth = typeof window !== 'undefined' && (
+        localStorage.getItem('unauthorized_user_detected') === 'true'
+      );
+      if (isUnauth) return false;
+
       const saved = localStorage.getItem('show_admin_login_portal');
       if (saved === 'true') return true;
       const urlParams = new URLSearchParams(window.location.search);
@@ -195,7 +206,20 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (activeTab === 'return') setIsReturnExpanded(true);
   }, [activeTab]);
 
+  // Disable admin portal access completely if user is logged in with another account or is unauthorized
+  useEffect(() => {
+    if (isUserUnauthorized) {
+      setShowAdminLoginButton(false);
+      localStorage.removeItem('show_admin_login_portal');
+    }
+  }, [userEmail, isUserUnauthorized]);
+
   const handleLogoClick = () => {
+    // If logged in with an unauthorized email or identified as unauthorized guest/flag, never allow activating the admin portal
+    if (isUserUnauthorized) {
+      console.log("Admin portal activation blocked: Unauthorized account detected.");
+      return;
+    }
     const now = Date.now();
     if (now - lastClickTime.current > 2000) clickCount.current = 0;
     clickCount.current += 1;
@@ -784,7 +808,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div id="sidebar-footer" className="p-1.5 border-t border-slate-800 bg-slate-900/80 backdrop-blur-sm space-y-1 relative shrink-0">
           <IDBadge id="sidebar-footer" />
           
-          {isAdmin || userEmail === 'websitetogather@gmail.com' || (showAdminLoginButton && (!userEmail || userEmail === 'websitetogather@gmail.com')) ? (
+          {!isUserUnauthorized && (isAdmin || userEmail === 'websitetogather@gmail.com' || (showAdminLoginButton && (!userEmail || userEmail === 'websitetogather@gmail.com'))) ? (
             isAdmin ? (
               <div className="grid grid-cols-1 gap-1">
                 <button 
