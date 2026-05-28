@@ -94,10 +94,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const lastClickTime = useRef(0);
 
   // Check if current user is unauthorized using email or local storage flags
-  const isUserUnauthorized = 
-    (userEmail && userEmail !== 'websitetogather@gmail.com') || 
-    userEmail === 'unauthorized_guest' ||
-    (typeof window !== 'undefined' && localStorage.getItem('unauthorized_user_detected') === 'true');
+  const isUserUnauthorized = false;
 
   const [showAdminLoginButton, setShowAdminLoginButton] = useState(false);
 

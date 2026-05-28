@@ -33,27 +33,15 @@ const generateId = () => {
 
 const App: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showAdminLogin, setShowAdminLoginState] = useState(false);
-
-  const setShowAdminLogin = (val: boolean) => {
-    setShowAdminLoginState(val);
-    if (!val) {
-      localStorage.removeItem('show_admin_login_portal');
-    } else {
-      localStorage.setItem('show_admin_login_portal', 'true');
-    }
-  };
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
   
   useEffect(() => {
     console.log("App mounted, isAdmin:", isAdmin);
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('admin') === 'true') {
-      localStorage.setItem('show_admin_login_portal', 'true');
-      setShowAdminLoginState(true);
+      setShowAdminLogin(true);
       // Clean query parameters to keep the URL clean
       window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (localStorage.getItem('show_admin_login_portal') === 'true') {
-      setShowAdminLoginState(true);
     }
   }, [isAdmin]);
 
@@ -267,23 +255,15 @@ const App: React.FC = () => {
           localStorage.setItem(ADMIN_MODE_KEY, 'true');
           localStorage.removeItem('unauthorized_user_detected');
         } else {
-          console.log("User is NOT admin based on email: logging out...");
-          setUserEmail('unauthorized_guest');
+          console.log("User is guest logged in based on email");
+          setUserEmail(email);
           setIsAdmin(false);
           setIsLockedMode(true);
           localStorage.removeItem(ADMIN_MODE_KEY);
-          localStorage.setItem('unauthorized_user_detected', 'true');
-          supabase.auth.signOut().then(() => {
-            alert("দুঃখিত, এই গুগল একাউন্টটি ('" + email + "') এই ড্যাশবোর্ডে প্রবেশের জন্য অনুমোদিত নয়। শুধুমাত্র প্রধান এডমিন প্রবেশ করতে পারবেন।");
-          });
+          localStorage.removeItem('unauthorized_user_detected');
         }
       } else {
-        const isUnauthorized = localStorage.getItem('unauthorized_user_detected') === 'true';
-        if (isUnauthorized) {
-          setUserEmail('unauthorized_guest');
-        } else {
-          setUserEmail(null);
-        }
+        setUserEmail(null);
         
         const savedAdmin = localStorage.getItem(ADMIN_MODE_KEY);
         if (savedAdmin === 'true') {
