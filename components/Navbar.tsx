@@ -30,6 +30,8 @@ interface NavbarProps {
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
   setShowPendingOnly?: (val: boolean) => void;
+  onOpenLogin?: () => void;
+  onLogout?: () => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
@@ -50,7 +52,9 @@ const Navbar: React.FC<NavbarProps> = ({
   pendingEntries = [],
   onApprove,
   onReject,
-  setShowPendingOnly
+  setShowPendingOnly,
+  onOpenLogin,
+  onLogout
 }) => {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
@@ -79,9 +83,7 @@ const Navbar: React.FC<NavbarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const navItems = [
-    { id: 'landing', label: 'হোম', icon: Home },
-  ];
+  const navItems: any[] = [];
 
   return (
     <nav className="sticky top-0 z-[9991] bg-slate-900 border-b border-slate-800 h-[45px] shadow-2xl no-print relative">
@@ -249,21 +251,42 @@ const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center gap-2">
             {(activeTab === 'register' || activeTab === 'return') && <button onClick={() => setShowRegisterFilters(!showRegisterFilters)} className={`p-1 rounded-lg border transition-all ${showRegisterFilters ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}><Filter size={16} /></button>}
             
-            {isAdmin && (
-              <div className="relative" ref={toolsRef}>
-                <button onClick={() => setShowToolsDropdown(!showToolsDropdown)} className={`p-1 rounded-lg border transition-all ${showToolsDropdown ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}><Settings size={16} /></button>
-                {showToolsDropdown && (
-                  <div className="absolute top-[calc(100%+12px)] right-0 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 z-[5010]">
-                    <div className="space-y-3 animate-in fade-in duration-500">
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">সিস্টেম টুলস</span>
-                      <button onClick={onExportSystem} className="w-full flex items-center gap-3 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl font-black text-[11px] text-slate-400 hover:text-white transition-all">
-                        <Download size={14} /> এক্সপোর্ট ডাটাবেস
+            <div className="relative" ref={toolsRef}>
+              <button onClick={() => setShowToolsDropdown(!showToolsDropdown)} className={`p-1 rounded-lg border transition-all ${showToolsDropdown ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'}`}><Settings size={16} /></button>
+              {showToolsDropdown && (
+                <div className="absolute top-[calc(100%+12px)] right-0 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 space-y-3 animate-in fade-in slide-in-from-top-4 duration-300 z-[5010]">
+                  <div className="space-y-3 animate-in fade-in duration-500">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">সিস্টেম টুলস</span>
+                    {isAdmin ? (
+                      <>
+                        <button onClick={onExportSystem} className="w-full flex items-center gap-3 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl font-black text-[11px] text-slate-400 hover:text-white transition-all">
+                          <Download size={14} /> এক্সপোর্ট ডাটাবেস
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setShowToolsDropdown(false);
+                            onLogout?.();
+                          }}
+                          className="w-full flex items-center justify-center gap-2 py-2 bg-red-500/10 text-red-400 border border-red-500/25 rounded-xl font-black text-[11px] hover:bg-red-550 hover:text-white transition-all transition-all active:scale-95"
+                        >
+                          <LogOut size={14} /> লগআউট করুন
+                        </button>
+                      </>
+                    ) : (
+                      <button 
+                        onClick={() => {
+                          setShowToolsDropdown(false);
+                          onOpenLogin?.();
+                        }}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 border border-blue-500 text-white rounded-xl font-black text-[11px] hover:bg-blue-500 hover:text-white transition-all shadow-lg active:scale-95"
+                      >
+                        <Lock size={14} /> লগইন করুন
                       </button>
-                    </div>
+                    )}
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
             
             <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden p-1.5 bg-slate-800 text-white rounded-xl border border-slate-700"><Menu size={20} /></button>
           </div>
