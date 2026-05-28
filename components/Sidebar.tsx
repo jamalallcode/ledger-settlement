@@ -196,9 +196,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, [userEmail, isUserUnauthorized]);
 
   const handleLogoClick = () => {
-    // 5-click portal trigger has been completely disabled for maximum security.
-    // The Admin Login option can now only be accessed by using the secret '?admin=true' URL parameter.
-    console.log("Logo clicked. Admin shortcut has been completely disabled for other users.");
+    setActiveTab('landing');
   };
 
   const handleAdminSubmit = (e?: React.FormEvent) => {
@@ -359,7 +357,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const menuItems = [
-    { id: 'landing', label: 'হোম', icon: Home, badgeId: 'side-nav-home' },
     { id: 'entry', label: 'নতুন এন্ট্রি', icon: FilePlus2, badgeId: 'side-nav-entry', isDropdown: true },
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter, badgeId: 'side-nav-register', isDropdown: true },
     { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return', isDropdown: true },
@@ -443,11 +440,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <IDBadge id={item.badgeId} />
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px]">{item.label}</span>
-                      {item.id === 'archive' && isAdmin && pendingCount > 0 && (
-                        <span className="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full animate-pulse shadow-lg shadow-red-900/40">
-                          {toBengaliDigits(pendingCount.toString())}
-                        </span>
-                      )}
+                      {/* Notification badge removed for archive as requested */}
                     </div>
                     {item.isDropdown && (
                       <ChevronDown size={10} className={`transition-transform duration-300 ${
