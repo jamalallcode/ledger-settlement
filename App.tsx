@@ -33,10 +33,28 @@ const generateId = () => {
 
 const App: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [showAdminLogin, setShowAdminLoginState] = useState(false);
+
+  const setShowAdminLogin = (val: boolean) => {
+    setShowAdminLoginState(val);
+    if (!val) {
+      localStorage.removeItem('show_admin_login_portal');
+    } else {
+      localStorage.setItem('show_admin_login_portal', 'true');
+    }
+  };
   
   useEffect(() => {
     console.log("App mounted, isAdmin:", isAdmin);
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('admin') === 'true') {
+      localStorage.setItem('show_admin_login_portal', 'true');
+      setShowAdminLoginState(true);
+      // Clean query parameters to keep the URL clean
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (localStorage.getItem('show_admin_login_portal') === 'true') {
+      setShowAdminLoginState(true);
+    }
   }, [isAdmin]);
 
   const navigate = useNavigate();
