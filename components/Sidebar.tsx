@@ -27,6 +27,9 @@ interface SidebarProps {
   moduleVisibility?: ModuleVisibility;
   showPendingOnly?: boolean;
   userEmail?: string | null;
+  isSidebarOpen?: boolean;
+  showAdminLogin?: boolean;
+  setShowAdminLogin?: (val: boolean) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -61,10 +64,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     admin_analytics: true,
     audit_details: true,
   },
-  userEmail = null
+  userEmail = null,
+  isSidebarOpen = true,
+  showAdminLogin = false,
+  setShowAdminLogin
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showAdminModal, setShowAdminModal] = useState(false);
+  const showAdminModal = showAdminLogin;
+  const setShowAdminModal = setShowAdminLogin || (() => {});
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [recoveryAnswer, setRecoveryAnswer] = useState('');
@@ -389,21 +396,20 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      <div id="sidebar-container" className="w-[140px] bg-slate-900 h-full text-slate-300 flex flex-col border-r border-slate-800 shadow-2xl overflow-hidden relative z-[5000]">
-        <IDBadge id="sidebar-container" />
-        <div id="sidebar-header" className="p-1.5 border-b border-slate-800 flex items-center justify-between relative">
-          <IDBadge id="sidebar-header" />
-          <div id="sidebar-logo" onClick={handleLogoClick} className="flex items-center gap-1 relative cursor-pointer select-none active:scale-95 transition-transform">
-            <IDBadge id="sidebar-logo" />
-            <div className="w-4 h-4 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/40">
+      {isSidebarOpen && (
+        <div id="sidebar-container" className="w-[140px] bg-slate-900 h-full text-slate-300 flex flex-col border-r border-slate-800 shadow-2xl overflow-hidden relative z-[5000]">
+          <IDBadge id="sidebar-container" />
+          <div id="sidebar-header" className="p-1.5 border-b border-slate-800 flex items-center justify-between relative">
+            <IDBadge id="sidebar-header" />
+            <div id="sidebar-logo" onClick={handleLogoClick} className="flex items-center gap-1 relative cursor-pointer select-none active:scale-95 transition-transform">
+              <IDBadge id="sidebar-logo" />
+              <span className="font-black text-white tracking-tight text-[11px]">অডিট রেজিস্টার</span>
             </div>
-            <span className="font-black text-white tracking-tight text-[11px]">অডিট রেজিস্টার</span>
+            <button onClick={onToggleVisibility} className="p-1 hover:bg-slate-800 rounded transition-colors text-slate-400 hover:text-white relative">
+              <IDBadge id="btn-sidebar-toggle" />
+              <ChevronLeft size={12} />
+            </button>
           </div>
-          <button onClick={onToggleVisibility} className="p-1 hover:bg-slate-800 rounded transition-colors text-slate-400 hover:text-white relative">
-            <IDBadge id="btn-sidebar-toggle" />
-            <ChevronLeft size={12} />
-          </button>
-        </div>
         <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
           <nav id="sidebar-nav" className="py-1 px-1.5 space-y-0.5 relative">
             <IDBadge id="sidebar-nav" />
@@ -769,33 +775,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           </nav>
         </div>
 
-        {/* Fixed Footer Section - Moved out of scrollable area to the very bottom */}
-        <div id="sidebar-footer" className="p-1.5 border-t border-slate-800 bg-slate-900/80 backdrop-blur-sm space-y-1 relative shrink-0">
-          <IDBadge id="sidebar-footer" />
-          
-          {(!userEmail || userEmail === 'unauthorized_guest') ? (
-            /* If completely logged out or guest, show the Login option */
-            <button 
-              onClick={() => setShowAdminModal(true)}
-              className="w-full flex items-center justify-center px-1.5 py-1.5 rounded-lg bg-gradient-to-r from-slate-800 to-slate-850 text-slate-200 hover:from-blue-600 hover:to-blue-700 hover:text-white transition-all font-black text-[12px] group border border-slate-700 hover:border-blue-400 shadow-xl shadow-black/20"
-            >
-              <div className="flex items-center gap-1.5">
-                <span>লগইন করুন</span>
-              </div>
-            </button>
-          ) : (userEmail === 'websitetogather@gmail.com') ? (
-            /* If logged in with the admin email, show the Logout option */
-            <div className="grid grid-cols-1 gap-1">
-              <button 
-                onClick={handleLogout}
-                className="w-full flex items-center justify-center px-1.5 py-1 rounded-lg bg-red-500/5 text-red-400 hover:bg-red-500 hover:text-white transition-all font-bold text-[9px] group border border-red-500/10 hover:border-red-400"
-              >
-                লগআউট করুন
-              </button>
-            </div>
-          ) : null /* If logged in with any other email, show absolutely nothing */}
-        </div>
       </div>
+      )}
       {showAdminModal && (
         <div className="fixed inset-0 z-[20000] flex items-start justify-center p-4 pt-32 bg-black/80 backdrop-blur-md animate-in fade-in duration-500">
           <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 space-y-6 animate-in zoom-in-95 duration-500 relative overflow-y-auto max-h-[90vh] group no-scrollbar">

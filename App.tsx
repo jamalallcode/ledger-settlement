@@ -33,6 +33,7 @@ const generateId = () => {
 
 const App: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
   
   useEffect(() => {
     console.log("App mounted, isAdmin:", isAdmin);
@@ -752,26 +753,27 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-bengali">
-      {isSidebarOpen && (
-        <div className="no-print h-full relative z-[10000]">
-          <Sidebar 
-            activeTab={activeTab} setActiveTab={handleTabChange} 
-            onToggleVisibility={() => setIsSidebarOpen(false)}
-            isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
-            isAdmin={isAdmin} setIsAdmin={setIsAdmin}
-            onLogout={handleLogout}
-            onOpenChangePassword={() => setShowChangePassword(true)}
-            pendingCount={totalPendingCount}
-            entryModule={entryModule}
-            registerSubModule={registerSubModule}
-            reportType={reportType}
-            highlightSearch={highlightSearch}
-            moduleVisibility={moduleVisibility}
-            showPendingOnly={showPendingOnly}
-            userEmail={userEmail}
-          />
-        </div>
-      )}
+      <div className={`no-print h-full relative z-[10000] ${isSidebarOpen ? '' : 'w-0'}`}>
+        <Sidebar 
+          activeTab={activeTab} setActiveTab={handleTabChange} 
+          onToggleVisibility={() => setIsSidebarOpen(false)}
+          isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
+          isAdmin={isAdmin} setIsAdmin={setIsAdmin}
+          onLogout={handleLogout}
+          onOpenChangePassword={() => setShowChangePassword(true)}
+          pendingCount={totalPendingCount}
+          entryModule={entryModule}
+          registerSubModule={registerSubModule}
+          reportType={reportType}
+          highlightSearch={highlightSearch}
+          moduleVisibility={moduleVisibility}
+          showPendingOnly={showPendingOnly}
+          userEmail={userEmail}
+          isSidebarOpen={isSidebarOpen}
+          showAdminLogin={showAdminLogin}
+          setShowAdminLogin={setShowAdminLogin}
+        />
+      </div>
 
       <div className="flex-1 flex flex-col min-w-0">
         <div className="no-print">
@@ -786,6 +788,8 @@ const App: React.FC = () => {
             onApprove={handleApproveEntry}
             onReject={handleRejectEntry}
             setShowPendingOnly={setShowPendingOnly}
+            onOpenLogin={() => setShowAdminLogin(true)}
+            onLogout={handleLogout}
           />
         </div>
 
