@@ -12,13 +12,18 @@ interface SearchableSelectProps {
   required?: boolean;
   isLayoutEditable?: boolean;
   badgeId?: string;
+  isAdmin?: boolean;
+  showSearch?: boolean;
 }
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({ 
-  label, value, onChange, groups, placeholder = "নির্বাচন করুন", required, isLayoutEditable = false, badgeId 
+  label, value, onChange, groups, placeholder = "নির্বাচন করুন", required, isLayoutEditable = false, badgeId, isAdmin = false, showSearch = true 
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAddingCustom, setIsAddingCustom] = useState(false);
+  const [customValue, setCustomValue] = useState('');
+  const [customAddedOptions, setCustomAddedOptions] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -34,27 +39,28 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setSearchTerm(value || '');
+      setSearchTerm('');
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
-          inputRef.current.select();
         }
       }, 50);
     } else {
       setSearchTerm('');
+      setIsAddingCustom(false);
+      setCustomValue('');
     }
   }, [isOpen]);
 
-  const allOptions = groups.flatMap(g => g.options);
+  const allOptions = [...groups.flatMap(g => g.options), ...customAddedOptions];
   
   const filteredOptions = allOptions
     .filter(opt => {
-      if (!searchTerm || searchTerm === value) return true;
+      if (!searchTerm) return true;
       return opt.toLowerCase().includes(searchTerm.toLowerCase());
     })
     .sort((a, b) => {
-      if (!searchTerm || searchTerm === value) return 0;
+      if (!searchTerm) return 0;
       const aLower = a.toLowerCase();
       const bLower = b.toLowerCase();
       const sLower = searchTerm.toLowerCase();
@@ -106,37 +112,17 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       
       <div 
         className={triggerStyle}
-        onClick={() => setIsOpen(true)}
+        onClick={() => setIsOpen(!isOpen)}
       >
-        {isOpen ? (
-          <input
-            ref={inputRef}
-            type="text"
-            className="w-full bg-transparent border-none focus:ring-0 text-[14px] font-bold text-slate-900 placeholder-slate-400 outline-none p-0"
-            placeholder="টাইপ করে খুঁজুন..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onFocus={(e) => e.target.select()}
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && searchTerm && !exactMatch) {
-                onChange(searchTerm);
-                setIsOpen(false);
-              }
-              if (e.key === 'Escape') setIsOpen(false);
-            }}
-          />
-        ) : (
-          <span className={`text-[14px] truncate ${value ? "text-slate-900 font-bold" : "text-slate-400 font-medium"}`}>
-            {value || placeholder}
-          </span>
-        )}
+        <span className={`text-[14px] truncate ${value ? "text-slate-900 font-bold" : "text-slate-400 font-medium"}`}>
+          {value || placeholder}
+        </span>
         <div className="flex items-center gap-1 ml-2">
-          {isOpen && searchTerm && (
+          {value && (
             <X 
               size={14} 
               className="text-slate-300 hover:text-slate-500 cursor-pointer" 
-              onClick={(e) => { e.stopPropagation(); setSearchTerm(''); }} 
+              onClick={(e) => { e.stopPropagation(); onChange(''); }} 
             />
           )}
           <ChevronDown size={16} className={`text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-blue-500' : ''}`} />
@@ -145,24 +131,34 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
       {isOpen && (
         <div className="absolute z-[200] w-full mt-2 bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600">
-          <div className="max-h-72 overflow-y-auto py-3 no-scrollbar">
-            {searchTerm && !exactMatch && (
-              <div 
-                className="px-4 py-3 mx-2 mb-2 rounded-xl cursor-pointer bg-blue-50 border border-blue-100 hover:bg-blue-100 transition-all group"
-                onClick={() => {
-                  onChange(searchTerm);
-                  setIsOpen(false);
+          
+          {/* Search container inside the dropdown itself */}
+          {showSearch && (
+            <div className="p-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <input
+                ref={inputRef}
+                type="text"
+                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-800 placeholder-slate-400 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all font-sans"
+                placeholder="টাইপ করে খুঁজুন..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') setIsOpen(false);
                 }}
-              >
-                <div className="flex items-center gap-3 text-blue-600 font-black text-xs">
-                  <div className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                    <PlusCircle size={14} />
-                  </div>
-                  <span>নতুন হিসেবে যোগ করুন: "{searchTerm}"</span>
-                </div>
-              </div>
-            )}
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          )}
 
+          <div className="max-h-72 overflow-y-auto py-3 no-scrollbar">
             {filteredOptions.length > 0 ? filteredOptions.map((option, idx) => (
               <div
                 key={idx}
@@ -187,6 +183,61 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
               </div>
             )}
           </div>
+
+          {isAdmin && (
+            <div className="border-t border-slate-100 bg-slate-50">
+              {!isAddingCustom ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsAddingCustom(true);
+                    setCustomValue('');
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-3 hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 font-bold text-xs transition-all duration-200"
+                >
+                  <PlusCircle size={14} className="text-emerald-500" />
+                  <span>নতুন যুক্ত করুন</span>
+                </button>
+              ) : (
+                <div className="p-3 flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="text"
+                    placeholder="নতুন নাম লিখুন..."
+                    value={customValue}
+                    onChange={(e) => setCustomValue(e.target.value)}
+                    className="w-full h-9 px-3 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-50 outline-none transition-all"
+                    autoFocus
+                  />
+                  <div className="flex justify-end gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingCustom(false)}
+                      className="px-2.5 py-1 text-slate-500 hover:bg-slate-100 border border-slate-200 rounded-md text-[10px] font-bold transition-all"
+                    >
+                      বাতিল
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!customValue.trim()}
+                      onClick={() => {
+                        const trimmed = customValue.trim();
+                        if (trimmed) {
+                          setCustomAddedOptions(prev => [...prev, trimmed]);
+                          onChange(trimmed);
+                          setIsOpen(false);
+                          setIsAddingCustom(false);
+                        }
+                      }}
+                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:hover:bg-emerald-600 text-white rounded-md text-[10px] font-bold transition-all"
+                    >
+                      সংরক্ষণ
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

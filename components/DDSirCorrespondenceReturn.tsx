@@ -433,7 +433,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             {/* Branch Filter */}
             <div className="space-y-1 relative group" ref={branchDropdownRef}>
               <div 
-                className={customDropdownCls(false) + " min-w-[150px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
+                className={customDropdownCls(false) + " min-w-[170px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
               >
                 <Mail size={16} className="text-blue-600" />
                 <span className="font-bold text-[12px] text-slate-900 truncate">
@@ -442,9 +442,9 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600" />
               </div>
               
-              <div className="absolute top-full left-0 w-full pt-2 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
-                <div className="min-w-[180px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
-                  <div className="max-h-[250px] overflow-y-auto no-scrollbar py-2">
+              <div className="absolute top-full left-0 w-full pt-1 opacity-0 invisible translate-y-1.5 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
+                <div className="w-full bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
+                  <div className="max-h-[250px] overflow-y-auto no-scrollbar">
                     {['সকল', 'এসএফআই', 'নন এসএফআই'].map((opt, idx) => (
                       <div 
                         key={idx} 
@@ -472,9 +472,9 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600" />
               </div>
               
-              <div className="absolute top-full left-0 w-full pt-2 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
-                <div className="min-w-[200px] bg-white border-2 border-slate-200 rounded-2xl shadow-2xl z-[2000] overflow-hidden">
-                  <div className="max-h-[250px] overflow-y-auto no-scrollbar py-2">
+              <div className="absolute top-full left-0 w-full pt-1 opacity-0 invisible translate-y-1.5 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
+                <div className="w-full bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
+                  <div className="max-h-[250px] overflow-y-auto no-scrollbar">
                     {auditorOptions.map((opt, idx) => (
                       <div 
                         key={idx} 

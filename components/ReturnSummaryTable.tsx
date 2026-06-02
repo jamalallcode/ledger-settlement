@@ -12,7 +12,7 @@ interface ReturnSummaryTableProps {
   selectedReportType: string | null;
   setSelectedReportType: (type: string | null) => void;
   isAdmin: boolean;
-  HistoricalFilter: React.FC;
+  historicalFilterElement?: React.ReactNode;
   IDBadge: React.FC<{ id: string }>;
   showFilters: boolean;
   searchTerm: string;
@@ -26,7 +26,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   selectedReportType,
   setSelectedReportType,
   isAdmin,
-  HistoricalFilter,
+  historicalFilterElement,
   IDBadge,
   showFilters,
   searchTerm,
@@ -228,7 +228,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
-            <HistoricalFilter />
+            {historicalFilterElement}
           </div>
         </div>
       )}

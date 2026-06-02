@@ -459,7 +459,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   };
 
-  const HistoricalFilter = () => (
+  const historicalFilterElement = (
     <div className="flex items-center gap-3 no-print">
       {showFilters && (
         <div className="relative" ref={dropdownRef}>
@@ -473,7 +473,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             </div>
           </div>
           {isCycleDropdownOpen && (
-            <div className="absolute top-[55px] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="p-2 max-h-[350px] overflow-y-auto no-scrollbar">
                 <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between"><span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2"><CalendarSearch size={12} /> মাস ও বছর নির্বাচন</span></div>
                 {cycleOptions.map((opt, idx) => (
@@ -510,8 +510,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
           <div className="relative" ref={ministryDropdownRef}>
             <div 
-              onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
-              className={`flex items-center gap-3 px-5 h-[48px] min-w-[220px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isMinistryDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}
+               onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
+               className={`flex items-center gap-3 px-5 h-[48px] min-w-[220px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isMinistryDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}
             >
               <LayoutGrid size={18} className="text-blue-600" />
               <span className="font-black text-[13.5px] text-slate-800 tracking-tight flex-1">
@@ -521,7 +521,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             </div>
 
             {isMinistryDropdownOpen && (
-              <div className="absolute top-[55px] right-0 w-[280px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="p-2 max-h-[350px] overflow-y-auto no-scrollbar">
                   <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between">
                     <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
@@ -551,11 +551,21 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           </div>
 
           <button 
-            onClick={() => { setSearchTerm(''); setFilterMinistry(''); }}
-            className="flex items-center justify-center w-[48px] h-[48px] bg-slate-100 text-slate-500 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all duration-300 shadow-sm border border-slate-200"
-            title="ফিল্টার রিসেট করুন"
+            type="button"
+            onClick={(e) => { 
+              e.preventDefault(); 
+              e.stopPropagation();
+              if (searchTerm.trim() !== '' || filterMinistry !== '') {
+                setSearchTerm(''); 
+                setFilterMinistry(''); 
+              } else {
+                setSelectedReportType(null); 
+              }
+            }}
+            className="flex items-center justify-center w-[48px] h-[48px] bg-red-50 text-red-600 rounded-xl hover:bg-red-100 hover:text-red-700 transition-all duration-300 shadow-sm border-2 border-red-200"
+            title={searchTerm.trim() !== '' || filterMinistry !== '' ? "ফিল্টার রিসেট করুন" : "রিপোর্ট বন্ধ করুন"}
           >
-            <X size={20} />
+            <X size={20} className="stroke-[3px]" />
           </button>
         </div>
       )}
@@ -620,7 +630,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }
 
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
-    return <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={HistoricalFilter} IDBadge={IDBadge} showFilters={showFilters} />;
+    return <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={() => null} IDBadge={IDBadge} showFilters={showFilters} />;
   }
 
   if (isSetupMode) {
@@ -653,7 +663,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     selectedReportType={selectedReportType} 
     setSelectedReportType={setSelectedReportType} 
     isAdmin={isAdmin || false} 
-    HistoricalFilter={HistoricalFilter} 
+    historicalFilterElement={historicalFilterElement} 
     IDBadge={IDBadge} 
     showFilters={showFilters} 
     searchTerm={searchTerm} 

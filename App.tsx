@@ -84,6 +84,19 @@ const App: React.FC = () => {
   const [showAdminAlert, setShowAdminAlert] = useState(false);
   const [hasShownAlert, setHasShownAlert] = useState(false);
 
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    return localStorage.getItem('is_dark_mode') === 'true';
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('is_dark_mode', String(darkMode));
+  }, [darkMode]);
+
   const pendingEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'pending'), [entries]);
   const pendingCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'pending'), [correspondenceEntries]);
   const totalPendingCount = pendingEntries.length + pendingCorrespondence.length;
@@ -690,6 +703,10 @@ const App: React.FC = () => {
   const approvedEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'approved' || !e.approvalStatus), [entries]);
   const approvedCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'approved' || !e.approvalStatus), [correspondenceEntries]);
   
+  const unassignedCorrespondence = useMemo(() => {
+    return approvedCorrespondence.filter(e => !e.receiverName || e.receiverName.trim() === "");
+  }, [approvedCorrespondence]);
+  
   const branchSuggestions: GroupOption[] = useMemo(() => {
     const branches = new Set<string>();
     entries.forEach(e => {
@@ -783,16 +800,19 @@ const App: React.FC = () => {
             showRegisterFilters={showRegisterFilters} setShowRegisterFilters={setShowRegisterFilters}
             onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen}
             pendingEntries={[...pendingEntries, ...pendingCorrespondence]}
+            unassignedEntries={unassignedCorrespondence}
             onApprove={handleApproveEntry}
             onReject={handleRejectEntry}
             setShowPendingOnly={setShowPendingOnly}
             onOpenLogin={() => setShowAdminLogin(true)}
             onLogout={handleLogout}
+            isDarkMode={darkMode}
+            onToggleDarkMode={() => setDarkMode(!darkMode)}
           />
         </div>
 
         <main ref={mainScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-white relative scroll-smooth" style={{ scrollbarGutter: 'stable' }}>
-          <div className="p-4 md:p-8 max-w-full mx-auto w-full flex flex-col">
+          <div className={`px-1 md:px-2 pt-4 md:pt-8 max-w-full mx-auto w-full flex flex-col ${(activeTab === 'register' || activeTab === 'return') ? 'pb-0' : 'pb-4 md:pb-8'}`}>
             <div className="animate-in fade-in duration-500 flex-1">
               
               {activeTab === 'setup_receivers' && (
