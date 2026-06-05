@@ -138,3 +138,135 @@ tbody tr:not(.no-hover-row):hover td {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
+
+/* --- SYSTEM DARK MODE THEME CONTROLS --- */
+.dark, .dark body {
+  background-color: #0b0f19 !important; /* deep slate-950 dark canvas */
+  color: #e2e8f0 !important; /* slate-200 */
+}
+
+/* Base scrollbar dark */
+.dark * {
+  scrollbar-color: #4b5563 transparent !important;
+}
+
+/* Main background overrides */
+.dark main,
+.dark .bg-slate-50,
+.dark .bg-gray-50,
+.dark .bg-slate-100/50,
+.dark .bg-slate-50/50 {
+  background-color: #0b0f19 !important;
+}
+
+/* Card alignments in dark mode */
+.dark .bg-white,
+.dark .bg-white\/90 {
+  background-color: #111827 !important; /* slate-900 / gray-900 */
+  color: #f1f5f9 !important;
+  border-color: #374151 !important;
+}
+
+/* Secondary bg alignments */
+.dark .bg-slate-100,
+.dark .bg-slate-200/50,
+.dark .bg-slate-100/90,
+.dark .bg-slate-150 {
+  background-color: #1f2937 !important; /* slate-800 / gray-800 */
+  border-color: #374151 !important;
+}
+
+.dark .bg-slate-200 {
+  background-color: #374151 !important; /* gray-700 */
+}
+
+/* Active sidebar elements, headers, tables */
+.dark th {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+  border-color: #374151 !important;
+}
+
+.dark td {
+  background-color: #111827 !important;
+  color: #e5e7eb !important;
+  border-color: #374151 !important;
+}
+
+.dark tr:hover td {
+  background-color: #1f2937 !important;
+}
+
+/* Secondary and primary text alignments in Dark Mode */
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700,
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-slate-650 {
+  color: #f3f4f6 !important; /* light gray-100 */
+}
+
+.dark .text-slate-600,
+.dark .text-gray-650,
+.dark .text-slate-550 {
+  color: #d1d5db !important; /* gray-300 */
+}
+
+.dark .text-slate-500,
+.dark .text-slate-400,
+.dark .text-gray-500,
+.dark .text-gray-400 {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+/* Border styles in Dark Mode */
+.dark .border,
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-slate-300,
+.dark .border-slate-250,
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-slate-200\/80 {
+  border-color: #374151 !important; /* gray-700 splitters */
+}
+
+/* Shadow details */
+.dark .shadow-2xl,
+.dark .shadow-xl,
+.dark .shadow-md,
+.dark .shadow-lg {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Global scroll controls for dark body */
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563 !important;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280 !important;
+}
+
+/* Custom styles for input/form components */
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #1a202c !important;
+  color: #f3f4f6 !important;
+  border-color: #4b5563 !important;
+}
+
+.dark input::placeholder {
+  color: #6b7280 !important;
+}
+
+/* Soft card/layout exceptions */
+.dark .no-print .bg-white {
+  background-color: #111827 !important;
+}
+
+/* Soft exceptions for interactive elements and state */
+.dark .text-slate-900\/80 {
+  color: rgba(243, 244, 246, 0.8) !important;
+}

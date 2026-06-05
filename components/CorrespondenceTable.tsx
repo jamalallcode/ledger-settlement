@@ -999,7 +999,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           id="correspondence-filters"
           className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {/* Cycle Selection */}
             <div className="space-y-1.5" ref={cycleDropdownRef}>
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">
@@ -1219,16 +1219,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center justify-between">
                 <span>অনুসন্ধান</span>
-                <button 
-                  onClick={() => setSearchTerm(searchTerm === "__UNASSIGNED__" ? "" : "__UNASSIGNED__")}
-                  className={`text-[9px] px-2 py-0.5 rounded-full border transition-all ${
-                    searchTerm === "__UNASSIGNED__" 
-                      ? "bg-red-100 text-red-700 border-red-200" 
-                      : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100"
-                  }`}
-                >
-                  {searchTerm === "__UNASSIGNED__" ? "অনির্ধারিত ফিল্টার বন্ধ করুন" : "অনির্ধারিত এন্ট্রি খুঁজুন"}
-                </button>
               </label>
               <div className="relative">
                 <Search
@@ -1240,12 +1230,21 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                   value={searchTerm === "__UNASSIGNED__" ? "অনির্ধারিত এন্ট্রি" : searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="বিবরণ, জারিপত্র বা নং দিয়ে খুঁজুন..."
-                  className={`w-full pl-9 pr-4 h-[48px] bg-white border rounded-xl font-bold text-[13px] outline-none focus:ring-4 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold ${
+                  className={`w-full pl-9 pr-9 h-[48px] bg-white border rounded-xl font-bold text-[13px] outline-none focus:ring-4 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold ${
                     searchTerm === "__UNASSIGNED__"
                       ? "border-red-300 text-red-700 focus:border-red-600 focus:ring-red-50"
                       : "border-slate-300 text-slate-900 focus:border-blue-600 focus:ring-blue-50"
                   }`}
                 />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 font-bold text-[15px]"
+                    title="অনুসন্ধান মুছুন"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             </div>
           </div>

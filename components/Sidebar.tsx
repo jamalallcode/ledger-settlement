@@ -391,7 +391,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {isSidebarOpen && (
-        <div id="sidebar-container" className="w-[140px] bg-slate-900 h-full text-slate-300 flex flex-col border-r border-slate-800 shadow-2xl overflow-hidden relative z-[5000]">
+        <div id="sidebar-container" className="w-[126px] bg-slate-900 h-full text-slate-300 flex flex-col border-r border-slate-800 shadow-2xl overflow-hidden relative z-[5000]">
           <IDBadge id="sidebar-container" />
           <div id="sidebar-header" className="p-1.5 border-b border-slate-800 flex items-center justify-between relative">
             <IDBadge id="sidebar-header" />
@@ -422,13 +422,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                     onClick={() => {
                       if (item.id === 'entry') {
                         setIsEntryExpanded(!isEntryExpanded);
-                        setActiveTab('entry');
                       } else if (item.id === 'register') {
                         setIsRegisterExpanded(!isRegisterExpanded);
-                        setActiveTab('register');
                       } else if (item.id === 'return') {
                         setIsReturnExpanded(!isReturnExpanded);
-                        setActiveTab('return');
                       } else if (item.id === 'change_pass') {
                         if (onOpenChangePassword) onOpenChangePassword();
                       } else {

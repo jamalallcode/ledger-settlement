@@ -447,6 +447,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const [showReceiverDropdown, setShowReceiverDropdown] = useState(false);
   const [showDescriptionDropdown, setShowDescriptionDropdown] = useState(false);
   const [showAuditYearWarning, setShowAuditYearWarning] = useState(false);
+  const [hasWarnedAuditYear, setHasWarnedAuditYear] = useState(false);
   
   // New states for recipient management
   const [isManagingReceivers, setIsManagingReceivers] = useState(false);
@@ -458,6 +459,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const bottomRef = useRef<HTMLDivElement>(null);
   const receiverRef = useRef<HTMLDivElement>(null);
   const descriptionRef = useRef<HTMLDivElement>(null);
+  const descriptionInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const loadReceivers = async () => {
@@ -704,6 +706,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         totalAmount: toBengaliDigits(initialEntry.totalAmount),
         sentParaCount: toBengaliDigits(initialEntry.sentParaCount)
       });
+      setHasWarnedAuditYear(false);
     }
   }, [initialEntry]);
 
@@ -899,15 +902,15 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     const desc = value.trim();
     if (!desc) {
       setShowAuditYearWarning(false);
+      setHasWarnedAuditYear(false);
       return;
     }
     
     // Regex to check for 4 consecutive digits (English or Bengali)
     const yearRegex = /[0-9]{4}|[০-৯]{4}/;
-    if (!yearRegex.test(desc)) {
-      setShowAuditYearWarning(true);
-    } else {
+    if (yearRegex.test(desc)) {
       setShowAuditYearWarning(false);
+      setHasWarnedAuditYear(false);
     }
   };
 
@@ -939,6 +942,52 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     setRcd(''); setRcm(''); setRcy('');
     setRawInputs({});
     setCalculatedCycle('');
+    setHasWarnedAuditYear(false);
+  };
+
+  const handleFormFocusCapture = (e: React.FocusEvent<HTMLFormElement>) => {
+    const target = e.target as HTMLElement;
+    
+    // Skip checking if user is focusing within Field 1 (description container) itself
+    if (descriptionRef.current && descriptionRef.current.contains(target)) {
+      return;
+    }
+
+    // Only apply if they are focusing on an form input/select/button/segmented item
+    const isInteractive = target.tagName === 'INPUT' || 
+                          target.tagName === 'SELECT' || 
+                          target.tagName === 'TEXTAREA' || 
+                          target.tagName === 'BUTTON' ||
+                          target.getAttribute('role') === 'button';
+                          
+    if (!isInteractive) return;
+
+    const desc = (formData.description || '').trim();
+    if (desc) {
+      const yearRegex = /[0-9]{4}|[০-৯]{4}/;
+      if (!yearRegex.test(desc)) {
+        if (hasWarnedAuditYear) {
+          // Hide the warning banner so it doesn't float on the screen forever
+          setShowAuditYearWarning(false);
+          return;
+        }
+
+        // Blur to close keyboard on mobile devices
+        (target as any).blur?.();
+        
+        setShowAuditYearWarning(true);
+        alert("আপনি নিরীক্ষা সাল উল্লেখ করেন নি");
+        setHasWarnedAuditYear(true);
+        
+        setTimeout(() => {
+          descriptionInputRef.current?.focus();
+          descriptionInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
+      } else {
+        setShowAuditYearWarning(false);
+        setHasWarnedAuditYear(false);
+      }
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -963,6 +1012,22 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
       return;
+    }
+
+    // Audit Year validation
+    const desc = (formData.description || '').trim();
+    if (desc) {
+      const yearRegex = /[0-9]{4}|[০-৯]{4}/;
+      if (!yearRegex.test(desc)) {
+        if (!hasWarnedAuditYear) {
+          setShowAuditYearWarning(true);
+          alert("আপনি নিরীক্ষা সাল উল্লেখ করেন নি");
+          descriptionInputRef.current?.focus();
+          descriptionInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setHasWarnedAuditYear(true);
+          return;
+        }
+      }
     }
     
     // Defer heavy work to next tick to avoid blocking UI (INP fix)
@@ -1065,7 +1130,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} onFocusCapture={handleFormFocusCapture} className="space-y-8">
         <fieldset className="space-y-8 border-none p-0 m-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             
@@ -1075,35 +1140,29 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               <label className={labelCls}><span className={numBadge}>১</span> <FileText size={14} className="text-emerald-600" /> পত্রের বিবরণ নিরীক্ষা সালসহ:</label>
               <div className="relative group">
                 <input 
+                  ref={descriptionInputRef}
                   type="text" 
                   required 
-                  className={`${inputCls} ${formData.description ? 'border-emerald-500' : 'border-red-500'}`} 
+                  className={`${inputCls} ${formData.description ? 'border-emerald-500 !pr-12' : 'border-red-500'}`} 
                   value={formData.description} 
                   onFocus={() => {
                     setShowDescriptionDropdown(true);
-                    setShowAuditYearWarning(false);
                   }}
                   onBlur={() => {
                     checkAuditYear(formData.description);
                   }}
                   onChange={e => {
-                    setFormData({...formData, description: e.target.value});
-                    if (showAuditYearWarning) setShowAuditYearWarning(false);
+                    const val = e.target.value;
+                    setFormData({...formData, description: val});
+                    checkAuditYear(val);
                   }}
-                  placeholder="বিবরণ লিখুন বা সাজেশন্স থেকে বাছুন..."
+                  placeholder="বিবরণ লিখুন"
                   autoComplete="off"
                 />
-                <button 
-                  type="button" 
-                  onClick={() => setShowDescriptionDropdown(!showDescriptionDropdown)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition-colors"
-                >
-                  <ChevronDown size={18} className={`transition-transform duration-300 ${showDescriptionDropdown ? 'rotate-180' : ''}`} />
-                </button>
 
                 {showAuditYearWarning && (
-                  <div className="mt-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl text-[11px] font-black text-amber-700 flex items-center gap-2 animate-in slide-in-from-top-1 duration-300 shadow-sm">
-                    <AlertCircle size={14} className="shrink-0" />
+                  <div className="mt-2.5 flex items-center gap-1.5 text-[13px] font-black text-red-600 animate-pulse">
+                    <AlertCircle size={15} className="shrink-0 text-red-600" />
                     <span>আপনি পত্রটির নিরীক্ষা সাল উল্লেখ করেননি</span>
                   </div>
                 )}
@@ -1315,10 +1374,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   <input 
                     type="text" 
                     readOnly
-                    className={`${inputCls} ${formData.receiverName ? 'border-emerald-500' : 'border-red-500'} cursor-pointer`} 
+                    className={`${inputCls} ${formData.receiverName ? 'border-emerald-500' : 'border-red-500'} cursor-pointer !text-[11px] placeholder:!text-[10px] !pl-3 !pr-9`} 
                     value={formData.receiverName} 
                     onClick={() => setShowReceiverDropdown(!showReceiverDropdown)}
-                    placeholder="তালিকা থেকে নাম বাছুন"
+                    placeholder="গ্রহীতার নাম"
                     autoComplete="off"
                   />
                   <button 
