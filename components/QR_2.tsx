@@ -1,5 +1,5 @@
 import React from 'react';
-import { Printer } from 'lucide-react';
+import { Printer, Sparkles, ChevronDown, BarChart3 } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
@@ -74,7 +74,47 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     <div id="qr-2-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
       <IDBadge id="qr-2-container" />
       
-      <div className="flex justify-end mb-4 no-print">
+      <div className="flex justify-between items-center mb-4 no-print">
+        {/* Statistics Button */}
+        <div className="relative group">
+          <button
+            type="button"
+            className="flex items-center gap-2 px-4 h-[40px] bg-slate-50 text-slate-700 rounded-xl font-bold text-[13px] border border-slate-200 transition-all duration-300 hover:bg-white hover:border-blue-200 hover:shadow-sm"
+          >
+            <Sparkles size={16} className="text-blue-500" />
+            পরিসংখ্যান
+            <ChevronDown size={14} className="text-slate-400 transition-transform duration-300 group-hover:rotate-180" />
+          </button>
+          
+          <div className="absolute top-[calc(100%+4px)] left-0 w-[350px] bg-white rounded-2xl shadow-2xl border border-slate-100 p-5 z-[1000] opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-auto text-left">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                <BarChart3 size={20} className="text-blue-600" />
+                <span className="text-blue-900 font-black text-sm">ত্রৈমাসিক রিপোর্ট পরিসংখ্যান</span>
+              </div>
+              <div className="space-y-2 text-slate-700 text-xs font-bold leading-relaxed">
+                <div className="flex justify-between">
+                  <span>সর্বমোট আলোচিত অনুচ্ছেদ:</span>
+                  <span className="text-blue-700">{toBengaliDigits(totals.sentPara ?? 0)} টি</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>সর্বমোট সুপারিশকৃত অনুচ্ছেদ:</span>
+                  <span className="text-emerald-600">{toBengaliDigits(totals.settledPara ?? 0)} টি</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>জড়িত মোট টাকা:</span>
+                  <span className="text-slate-900">{toBengaliDigits(Math.round(totals.amount ?? 0))} টাকা</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>মোট আদায় সমন্বয়ের পরিমাণ:</span>
+                  <span className="text-emerald-700">{toBengaliDigits(Math.round((totals.recovery ?? 0) + (totals.adjustment ?? 0)))} টাকা</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div></div>
       </div>
 
       {/* Header Section */}

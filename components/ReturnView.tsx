@@ -139,8 +139,24 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
     const base = baseMap[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
     
-    const allPotentialEntries = [...entries, ...correspondenceEntries];
-    const pastEntries = allPotentialEntries.filter(e => {
+    let filteredPotential = [...entries, ...correspondenceEntries];
+    if (selectedReportType?.includes('বিএসআর')) {
+      filteredPotential = filteredPotential.filter(e => {
+        const meetingType = e.meetingType || e.letterType || '';
+        return !e.isMeeting || meetingType.includes('বিএসআর');
+      });
+    } else if (selectedReportType?.includes('দ্বিপক্ষীয়')) {
+      filteredPotential = filteredPotential.filter(e => {
+        const meetingType = e.meetingType || e.letterType || '';
+        return e.isMeeting && (meetingType.includes('দ্বিপক্ষীয়') || meetingType.includes('দ্বিপাক্ষিক'));
+      });
+    }
+
+    if (selectedReportType?.includes('অনলাইন প্রাপ্তি')) {
+      filteredPotential = filteredPotential.filter(e => e.isSentOnline === 'হ্যাঁ' || e.isOnline === 'হ্যাঁ');
+    }
+
+    const pastEntries = filteredPotential.filter(e => {
         if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
         if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
         
@@ -191,7 +207,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         settledCount: base.settledCount + pastSC,
         settledAmount: base.settledAmount + Math.round(pastSA)
     };
-  }, [entries, correspondenceEntries, activeCycle, prevStats]);
+  }, [entries, correspondenceEntries, activeCycle, prevStats, selectedReportType]);
 
   useEffect(() => {
     if (isSetupMode) {
@@ -207,7 +223,10 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }, [isSetupMode, prevStats, ministryGroups]);
 
   const reportData = useMemo(() => {
-    if (!selectedReportType || selectedReportType.includes('চিঠিপত্র সংক্রান্ত')) return [];
+    const isExcludedReport = !selectedReportType || 
+      selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' || 
+      selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।';
+    if (isExcludedReport) return [];
     const cycleStartStr = dateFnsFormat(activeCycle.start, 'yyyy-MM-dd');
     const cycleEndStr = dateFnsFormat(activeCycle.end, 'yyyy-MM-dd');
     const activeLabelCanon = toEnglishDigits(activeCycle.label).trim();
@@ -243,12 +262,30 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
             return dateMatch;
           });
+
+          let filteredMatching = matchingEntries;
+          if (selectedReportType.includes('বিএসআর')) {
+            filteredMatching = filteredMatching.filter(e => {
+              const meetingType = e.meetingType || e.letterType || '';
+              return !e.isMeeting || meetingType.includes('বিএসআর');
+            });
+          } else if (selectedReportType.includes('দ্বিপক্ষীয়')) {
+            filteredMatching = filteredMatching.filter(e => {
+              const meetingType = e.meetingType || e.letterType || '';
+              return e.isMeeting && (meetingType.includes('দ্বিপক্ষীয়') || meetingType.includes('দ্বিপাক্ষিক'));
+            });
+          }
+
+          if (selectedReportType.includes('অনলাইন প্রাপ্তি')) {
+            filteredMatching = filteredMatching.filter(e => e.isSentOnline === 'হ্যাঁ' || e.isOnline === 'হ্যাঁ');
+          }
+
           let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0, curSFIC = 0, curNonSFIC = 0, sfiSA = 0, nonSfiSA = 0;
           let sfiBSR = 0, sfiTriWork = 0, sfiTriMin = 0, sfiRecon = 0;
           let nonSfiBSR = 0, nonSfiBiWork = 0, nonSfiBiMin = 0, nonSfiRecon = 0;
 
           const processedParaIds = new Set<string>();
-          matchingEntries.forEach(entry => {
+          filteredMatching.forEach(entry => {
             const isSFI = robustNormalize(entry.paraType || '') === robustNormalize('এসএফআই');
             const rawLT = entry.meetingType || entry.letterType || '';
             const normLT = robustNormalize(rawLT);
@@ -408,6 +445,183 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     }, initial);
   }, [reportData]);
 
+  const statsDataTuple = useMemo(() => {
+    if (!selectedReportType) return { statsReportData: [], statsGrandTotals: null };
+    
+    let targetReportType = selectedReportType;
+    if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর') {
+      targetReportType = 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর';
+    } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়') {
+      targetReportType = 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়';
+    }
+
+    if (targetReportType === selectedReportType) {
+      return { statsReportData: reportData, statsGrandTotals: grandTotals };
+    }
+
+    const cycleStartStr = dateFnsFormat(activeCycle.start, 'yyyy-MM-dd');
+    const cycleEndStr = dateFnsFormat(activeCycle.end, 'yyyy-MM-dd');
+
+    const calculatedStatsReportData = ministryGroups.map(ministryName => {
+      const normMinistry = robustNormalize(ministryName);
+      const mapKey = Object.keys(MINISTRY_ENTITY_MAP).find(k => robustNormalize(k) === normMinistry);
+      const entities = mapKey ? (MINISTRY_ENTITY_MAP[mapKey] || []) : [];
+      return {
+        ministry: normMinistry,
+        entityRows: entities.map(entityName => {
+          const normEntity = robustNormalize(entityName);
+          const ePrevSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'এসএফআই');
+          const ePrevNonSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'নন এসএফআই');
+          const ePrev = {
+            unsettledCount: ePrevSFI.unsettledCount + ePrevNonSFI.unsettledCount,
+            unsettledAmount: ePrevSFI.unsettledAmount + ePrevNonSFI.unsettledAmount,
+            settledCount: ePrevSFI.settledCount + ePrevNonSFI.settledCount,
+            settledAmount: ePrevSFI.settledAmount + ePrevNonSFI.settledAmount
+          };
+          const allPotentialEntries = [...entries, ...correspondenceEntries];
+          const matchingEntries = allPotentialEntries.filter(e => {
+            const eMin = robustNormalize(e.ministryName || '');
+            const eEnt = robustNormalize(e.entityName || '');
+            if (eMin !== normMinistry || eEnt !== normEntity) return false;
+            
+            const entryDateRaw = e.issueDateISO || "";
+            const entryDate = entryDateRaw.split("T")[0];
+            const dateMatch =
+              entryDate !== "" &&
+              entryDate >= cycleStartStr &&
+              entryDate <= cycleEndStr;
+
+            return dateMatch;
+          });
+
+          let filteredMatching = matchingEntries;
+          if (targetReportType.includes('বিএসআর')) {
+            filteredMatching = filteredMatching.filter(e => {
+              const meetingType = e.meetingType || e.letterType || '';
+              return !e.isMeeting || meetingType.includes('বিএসআর');
+            });
+          } else if (targetReportType.includes('দ্বিপক্ষীয়')) {
+            filteredMatching = filteredMatching.filter(e => {
+              const meetingType = e.meetingType || e.letterType || '';
+              return e.isMeeting && (meetingType.includes('দ্বিপক্ষীয়') || meetingType.includes('দ্বিপাক্ষিক'));
+            });
+          }
+
+          let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0, curSFIC = 0, curNonSFIC = 0, sfiSA = 0, nonSfiSA = 0;
+          let sfiBSR = 0, sfiTriWork = 0, sfiTriMin = 0, sfiRecon = 0;
+          let nonSfiBSR = 0, nonSfiBiWork = 0, nonSfiBiMin = 0, nonSfiRecon = 0;
+
+          const processedParaIds = new Set<string>();
+          filteredMatching.forEach(entry => {
+            const isSFI = robustNormalize(entry.paraType || '') === robustNormalize('এসএফআই');
+            const rawLT = entry.meetingType || entry.letterType || '';
+            const normLT = robustNormalize(rawLT);
+
+            if (entry.paragraphs && entry.paragraphs.length > 0) {
+              entry.paragraphs.forEach((p, pIdx) => { 
+                const cleanParaNo = String(p.paraNo || '').trim();
+                const pUniqueKey = p.id ? `${entry.id}-${p.id}` : `${entry.id}-idx-${pIdx}`;
+                
+                if (!processedParaIds.has(pUniqueKey) && (/[১-৯1-9]/.test(cleanParaNo) || p.recoveredAmount > 0 || p.adjustedAmount > 0)) {
+                  processedParaIds.add(pUniqueKey);
+                  const settledAmt = p.recoveredAmount + p.adjustedAmount;
+                  if (settledAmt > 0) {
+                    curSA += settledAmt;
+                    if (isSFI) sfiSA += settledAmt;
+                    else nonSfiSA += settledAmt;
+                  }
+
+                  if (p.recoveredAmount > 0 || p.adjustedAmount > 0) {
+                    const status = robustNormalize(p.status || '');
+                    if (status === robustNormalize('পূর্ণাঙ্গ')) { 
+                      curFC++; curSC++; 
+                      if (isSFI) {
+                        curSFIC++;
+                        if (normLT.includes(robustNormalize('বিএসআর'))) sfiBSR++;
+                        else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়'))) {
+                          if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !entry.meetingType) sfiTriMin++;
+                          else sfiTriWork++;
+                        } else if (normLT.includes(robustNormalize('মিলিকরণ'))) sfiRecon++;
+                      } else {
+                        curNonSFIC++;
+                        if (normLT.includes(robustNormalize('বিএসআর'))) nonSfiBSR++;
+                        else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়'))) {
+                          if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !entry.meetingType) nonSfiBiMin++;
+                          else nonSfiBiWork++;
+                        } else if (normLT.includes(robustNormalize('মিলিকরণ'))) nonSfiRecon++;
+                      }
+                    } else if (status === robustNormalize('আংশিক')) {
+                      curPC++;
+                    }
+                  }
+                }
+              });
+            } else {
+              const settledAmt = parseBengaliNumber(entry.totalRec || '0') + parseBengaliNumber(entry.totalAdj || '0');
+              const fc = parseBengaliNumber(entry.meetingFullSettledParaCount || '0');
+              const pc = parseBengaliNumber(entry.meetingPartialSettledParaCount || '0');
+              
+              if (fc > 0 || pc > 0 || settledAmt > 0) {
+                curFC += fc; curPC += pc; curSC += fc;
+                if (settledAmt > 0) {
+                  curSA += settledAmt;
+                  if (isSFI) sfiSA += settledAmt;
+                  else nonSfiSA += settledAmt;
+                }
+              }
+            }
+            const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
+            if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") curRC += parseBengaliNumber(rCountRaw);
+            if (entry.manualRaisedAmount) curRA += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
+          });
+          return { 
+            entity: entityName, 
+            currentRaisedCount: curRC, currentRaisedAmount: curRA,
+            currentSettledCount: curSC, currentSettledAmount: curSA,
+            currentFullCount: curFC, currentPartialCount: curPC,
+            currentSFICount: curSFIC, currentNonSFICount: curNonSFIC,
+            currentSFIAmount: sfiSA, currentNonSFIAmount: nonSfiSA,
+            sfiBreakdown: { bsr: sfiBSR, triWork: sfiTriWork, triMin: sfiTriMin, recon: sfiRecon },
+            nonSfiBreakdown: { bsr: nonSfiBSR, biWork: nonSfiBiWork, biMin: nonSfiBiMin, recon: nonSfiRecon },
+            prev: ePrev 
+          };
+        })
+      };
+    });
+
+    const calculatedStatsGrandTotals = calculatedStatsReportData.reduce((acc, mGroup) => {
+      mGroup.entityRows.forEach((row: any) => {
+        acc.pUC += (row.prev.unsettledCount || 0); acc.pUA += (row.prev.unsettledAmount || 0); 
+        acc.cRC += (row.currentRaisedCount || 0); acc.cRA += (row.currentRaisedAmount || 0);
+        acc.pSC += (row.prev.settledCount || 0); acc.pSA += (row.prev.settledAmount || 0); 
+        acc.cSC += (row.currentSettledCount || 0); acc.cSA += (row.currentSettledAmount || 0);
+        acc.cFC += (row.currentFullCount || 0); acc.cPC += (row.currentPartialCount || 0);
+        acc.cSFIC += (row.currentSFICount || 0); acc.cNonSFIC += (row.currentNonSFICount || 0);
+        acc.cSFIA += (row.currentSFIAmount || 0); acc.cNonSFIA += (row.currentNonSFIAmount || 0);
+        
+        acc.sfiBSR += (row.sfiBreakdown?.bsr || 0);
+        acc.sfiTriWork += (row.sfiBreakdown?.triWork || 0);
+        acc.sfiTriMin += (row.sfiBreakdown?.triMin || 0);
+        acc.sfiRecon += (row.sfiBreakdown?.recon || 0);
+        
+        acc.nonSfiBSR += (row.nonSfiBreakdown?.bsr || 0);
+        acc.nonSfiBiWork += (row.nonSfiBreakdown?.biWork || 0);
+        acc.nonSfiBiMin += (row.nonSfiBreakdown?.biMin || 0);
+        acc.nonSfiRecon += (row.nonSfiBreakdown?.recon || 0);
+      });
+      return acc;
+    }, { 
+      pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0, 
+      cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0,
+      sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0,
+      nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0
+    });
+
+    return { statsReportData: calculatedStatsReportData, statsGrandTotals: calculatedStatsGrandTotals };
+  }, [entries, correspondenceEntries, selectedReportType, calculateRecursiveOpening, activeCycle, ministryGroups, reportData, grandTotals]);
+
+  const { statsReportData, statsGrandTotals } = statsDataTuple;
+
   const handleSaveSetup = () => {
     setPrevStats({ ...prevStats, entitiesSFI: tempPrevStats, entitiesNonSFI: {} });
     setIsSetupMode(false); setSelectedReportType(null); setIsEditingSetup(false);
@@ -550,23 +764,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             )}
           </div>
 
-          <button 
-            type="button"
-            onClick={(e) => { 
-              e.preventDefault(); 
-              e.stopPropagation();
-              if (searchTerm.trim() !== '' || filterMinistry !== '') {
-                setSearchTerm(''); 
-                setFilterMinistry(''); 
-              } else {
-                setSelectedReportType(null); 
-              }
-            }}
-            className="flex items-center justify-center w-[48px] h-[48px] bg-red-50 text-red-600 rounded-xl hover:bg-red-100 hover:text-red-700 transition-all duration-300 shadow-sm border-2 border-red-200"
-            title={searchTerm.trim() !== '' || filterMinistry !== '' ? "ফিল্টার রিসেট করুন" : "রিপোর্ট বন্ধ করুন"}
-          >
-            <X size={20} className="stroke-[3px]" />
-          </button>
+          {/* Red close button removed as per user request */}
         </div>
       )}
     </div>
@@ -668,6 +866,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     showFilters={showFilters} 
     searchTerm={searchTerm} 
     filterMinistry={filterMinistry} 
+    statsReportData={statsReportData}
+    statsGrandTotals={statsGrandTotals}
   />;
 };
 
