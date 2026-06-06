@@ -184,17 +184,61 @@ tbody tr:not(.no-hover-row):hover td {
 .dark th {
   background-color: #1f2937 !important;
   color: #f3f4f6 !important;
-  border-color: #374151 !important;
+  border-color: #4b5563 !important;
 }
 
 .dark td {
   background-color: #111827 !important;
   color: #e5e7eb !important;
-  border-color: #374151 !important;
+  border-color: #4b5563 !important;
 }
 
 .dark tr:hover td {
   background-color: #1f2937 !important;
+}
+
+/* Explicit overrides for Tailwind light hover utility classes inside tables in Dark Mode */
+.dark .hover\:bg-blue-50\/50:hover,
+.dark .group:hover .group-hover\:bg-blue-50\/50,
+.dark .group:hover .group-hover\:bg-blue-50\/30,
+.dark .hover\:bg-blue-100\/70:hover,
+.dark .hover\:bg-blue-50\/30:hover,
+.dark .hover\:bg-amber-100\/50:hover,
+.dark .hover\:bg-slate-200\/50:hover,
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-blue-100\/40:hover,
+.dark .group:hover .group-hover\:bg-blue-100\/80,
+.dark .group:hover .group-hover\:bg-blue-200\/40,
+.dark .group:hover .group-hover\:bg-blue-100\/70,
+.dark .hover\:bg-blue-100\/50:hover,
+.dark .hover\:bg-blue-50\/10:hover,
+.dark .hover\:bg-blue-100\/20:hover,
+.dark .hover\:bg-slate-100:hover,
+.dark .group\/cycle-header:hover,
+.dark .no-hover-row:hover td {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .bg-sky-100 {
+  background-color: #1f2937 !important; /* slate-800 */
+  color: #f3f4f6 !important;
+}
+
+.dark .text-blue-950 {
+  color: #38bdf8 !important; /* sky-400 */
+}
+
+.dark .bg-amber-50 {
+  background-color: rgba(30, 58, 138, 0.25) !important; /* deep blue focus background */
+  color: #93c5fd !important; /* light blue text */
+}
+
+/* Ensure highlights inside <mark> tags are readable in Dark Mode */
+.dark mark {
+  background-color: #f59e0b !important; /* amber-500 */
+  color: #0b0f19 !important; /* deep dark background */
+  border-color: #d97706 !important; /* amber-600 */
 }
 
 /* Secondary and primary text alignments in Dark Mode */
@@ -205,6 +249,20 @@ tbody tr:not(.no-hover-row):hover td {
 .dark .text-gray-800,
 .dark .text-slate-650 {
   color: #f3f4f6 !important; /* light gray-100 */
+}
+
+/* Vibrant and readable semantic colors on dark backgrounds */
+.dark .text-emerald-700 {
+  color: #34d399 !important; /* emerald-400 */
+}
+
+.dark .text-blue-700,
+.dark .text-blue-600 {
+  color: #60a5fa !important; /* blue-400 */
+}
+
+.dark .text-red-600 {
+  color: #f87171 !important; /* red-400 */
 }
 
 .dark .text-slate-600,
@@ -225,11 +283,16 @@ tbody tr:not(.no-hover-row):hover td {
 .dark .border-slate-100,
 .dark .border-slate-200,
 .dark .border-slate-300,
+.dark .border-slate-400,
 .dark .border-slate-250,
 .dark .border-gray-100,
 .dark .border-gray-200,
-.dark .border-slate-200\/80 {
-  border-color: #374151 !important; /* gray-700 splitters */
+.dark .border-slate-200\/80,
+.dark .border-t,
+.dark .border-b,
+.dark .border-l,
+.dark .border-r {
+  border-color: #4b5563 !important; /* slate-600 splitters instead of 374151 */
 }
 
 /* Shadow details */
@@ -269,4 +332,168 @@ tbody tr:not(.no-hover-row):hover td {
 /* Soft exceptions for interactive elements and state */
 .dark .text-slate-900\/80 {
   color: rgba(243, 244, 246, 0.8) !important;
+}
+
+/* Inset box-shadow overrides for sticky headers and footers in tables in Dark Mode */
+.dark .table-container thead th {
+  box-shadow: inset 0 -1px 0 #4b5563, inset -1px 0 0 #4b5563 !important;
+}
+
+.dark .table-container tfoot td,
+.dark .table-container tfoot th {
+  box-shadow: inset 0 1px 0 #4b5563, inset -1px 0 0 #4b5563 !important;
+}
+
+.dark .qr-sticky-footer td {
+  box-shadow: inset 0 1px 0 #4b5563, inset 0 -1px 0 #4b5563, inset -1px 0 0 #4b5563 !important;
+}
+
+.dark .qr-sticky-footer-bottom td {
+  box-shadow: inset 0 1px 0 #4b5563, inset 0 -1px 0 #4b5563, inset -1px 0 0 #4b5563 !important;
+}
+
+.dark .qr-sticky-footer-offset td {
+  box-shadow: inset 0 1px 0 #4b5563, inset 0 -1px 0 #4b5563, inset -1px 0 0 #4b5563 !important;
+}
+
+/* --- EXECUTIVE PREMIUM LANDING PAGE STYLING --- */
+
+/* 1. Main Hero Panel Container */
+.landing-hero-card {
+  background-color: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.05);
+  color: #1e293b;
+}
+
+.dark .landing-hero-card {
+  background-color: #111827 !important; /* premium dark slate */
+  border: 1px solid #1e293b !important;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6) !important;
+  color: #f1f5f9 !important;
+}
+
+/* 2. Premium Grid Backdrop (Custom clean glow instead of dotted pattern) */
+.landing-grid-bg {
+  background: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 50%),
+              radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.03) 0%, transparent 50%);
+  opacity: 1;
+}
+
+.dark .landing-grid-bg {
+  background: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+              radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%) !important;
+  opacity: 1 !important;
+}
+
+/* 3. Government Tag Overlay */
+.landing-gov-tag {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.dark .landing-gov-tag {
+  background-color: rgba(220, 38, 38, 0.15) !important;
+  color: #fca5a5 !important;
+  border: 1px solid rgba(220, 38, 38, 0.3) !important;
+}
+
+/* 4. Active Sector text */
+.landing-sector-text {
+  color: #1e3a8a;
+}
+
+.dark .landing-sector-text {
+  color: #38bdf8 !important; /* highly readable sky-400 */
+}
+
+/* 5. System Intro / Description Panel */
+.landing-intro-panel {
+  background: linear-gradient(to right, rgba(239, 246, 255, 0.9), rgba(239, 246, 255, 0.2));
+  border-color: rgba(191, 219, 254, 0.5);
+}
+
+.dark .landing-intro-panel {
+  background: linear-gradient(to right, rgba(30, 41, 59, 0.65), rgba(15, 23, 42, 0.2)) !important;
+  border-color: rgba(51, 65, 85, 0.7) !important;
+}
+
+/* 6. Tag for Intro */
+.landing-tag-intro {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.dark .landing-tag-intro {
+  background-color: rgba(30, 58, 138, 0.5) !important;
+  color: #93c5fd !important;
+}
+
+/* 7. Overview text with premium readability and high contrast */
+.landing-desc-text {
+  color: #334155;
+}
+
+.dark .landing-desc-text {
+  color: #e2e8f0 !important; /* perfectly bright, sharp contrast on dark blue-slate background */
+}
+
+/* 8. Actions Deck (center card) */
+.landing-action-deck {
+  background-color: #f8fafc;
+  border: 1px solid rgba(226, 232, 240, 1.0);
+}
+
+.dark .landing-action-deck {
+  background-color: #1a202c !important; /* deep card slate */
+  border: 1px solid #2d3748 !important;
+}
+
+/* 9. Muted labels for elements */
+.landing-label-muted {
+  color: #64748b;
+}
+
+.dark .landing-label-muted {
+  color: #94a3b8 !important; /* beautifully readable slate-400 */
+}
+
+/* 10. Normal dynamic value fonts with high weight & contrast */
+.landing-val-text {
+  color: #1e293b;
+}
+
+.dark .landing-val-text {
+  color: #ffffff !important; /* pure visible white */
+}
+
+/* 11. Custom Developer Credentials block */
+.landing-developer-panel {
+  background-color: #f8fafc;
+  border: 1px solid rgba(226, 232, 240, 1.0);
+}
+
+.dark .landing-developer-panel {
+  background-color: #1a202c !important; /* deep card slate */
+  border: 1px solid #2d3748 !important;
+}
+
+/* 12. Developer phone action click triggers animation */
+.landing-phone-link {
+  color: #1d4ed8;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.landing-phone-link:hover {
+  color: #1e40af;
+}
+
+.dark .landing-phone-link {
+  color: #38bdf8 !important;
+}
+
+.dark .landing-phone-link:hover {
+  color: #7dd3fc !important;
 }

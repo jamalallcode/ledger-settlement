@@ -383,7 +383,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // Helper for active styling
   const getSubItemCls = (isActive: boolean) => 
-    `w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[9px] font-black transition-all group ${isActive ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`;
+    `w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[9px] font-black transition-all group cursor-pointer ${isActive ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`;
 
   const getSubIconCls = (isActive: boolean, hoverColor: string = 'emerald') => 
     `${isActive ? 'text-white' : `text-slate-400 group-hover:text-${hoverColor}-400`} transition-transform group-hover:scale-110`;
@@ -399,7 +399,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <IDBadge id="sidebar-logo" />
               <span className="font-black text-white tracking-tight text-[11px]">অডিট রেজিস্টার</span>
             </div>
-            <button onClick={onToggleVisibility} className="p-1 hover:bg-slate-800 rounded transition-colors text-slate-400 hover:text-white relative">
+            <button onClick={onToggleVisibility} className="p-1 hover:bg-slate-800 rounded transition-colors text-slate-400 hover:text-white relative cursor-pointer">
               <IDBadge id="btn-sidebar-toggle" />
               <ChevronLeft size={12} />
             </button>
@@ -432,7 +432,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         setActiveTab(item.id);
                       }
                     }} 
-                    className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group ${activeTab === item.id || (item.id === 'archive' && activeTab === 'register' && showPendingOnly) ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
+                    className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group cursor-pointer ${activeTab === item.id || (item.id === 'archive' && activeTab === 'register' && showPendingOnly) ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
                   >
                     <IDBadge id={item.badgeId} />
                     <div className="flex items-center gap-1.5">
@@ -513,7 +513,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         {/* ১. মাসিক (Toggle) */}
                         <button 
                           onClick={() => setIsMonthlyExpanded(!isMonthlyExpanded)}
-                          className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-black transition-all ${isMonthlyExpanded ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                          className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-black transition-all cursor-pointer ${isMonthlyExpanded ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
                         >
                           <div className="flex items-center gap-2">
                             <span>মাসিক</span>
@@ -534,7 +534,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                               {/* ১. চিঠিপত্র (Toggle) */}
                               <button 
                                 onClick={() => setIsMonthlyCorrExpanded(!isMonthlyCorrExpanded)}
-                                className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-[9px] font-black transition-all ${isMonthlyCorrExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                                className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-[9px] font-black transition-all cursor-pointer ${isMonthlyCorrExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
                               >
                                 <div className="flex items-center gap-1.5">
                                   <span>চিঠিপত্র</span>
@@ -555,7 +555,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     {/* ১. ঢাকা */}
                                     <button 
                                       onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')}
-                                      className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                      className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                                     >
                                       ঢাকা
                                     </button>
@@ -563,7 +563,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     {/* ২. নিষ্পত্তি (Toggle) */}
                                     <button 
                                       onClick={() => setIsSettlementExpanded(!isSettlementExpanded)}
-                                      className={`w-full flex items-center justify-between px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${isSettlementExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                                      className={`w-full flex items-center justify-between px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${isSettlementExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
                                     >
                                       <div className="flex items-center gap-1.5">
                                         <span>নিষ্পত্তি</span>
@@ -582,13 +582,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         >
                                           <button 
                                             onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর')}
-                                            className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                            className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                                           >
                                             বিএসআর
                                           </button>
                                           <button 
                                             onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়')}
-                                            className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                            className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                                           >
                                             দ্বিপক্ষীয়
                                           </button>
@@ -599,7 +599,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     {/* ৩. অনলাইন প্রাপ্তি (Toggle) */}
                                     <button 
                                       onClick={() => setIsOnlineExpanded(!isOnlineExpanded)}
-                                      className={`w-full flex items-center justify-between px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${isOnlineExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                                      className={`w-full flex items-center justify-between px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${isOnlineExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
                                     >
                                       <div className="flex items-center gap-1.5">
                                         <span>অনলাইন প্রাপ্তি</span>
@@ -618,13 +618,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         >
                                           <button 
                                             onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর')}
-                                            className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                            className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                                           >
                                             বিএসআর
                                           </button>
                                           <button 
                                             onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়')}
-                                            className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                            className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                                           >
                                             দ্বিপক্ষীয়
                                           </button>
@@ -635,7 +635,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     {/* ৪. ডিডি স্যার ফরমেট */}
                                     <button 
                                       onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।')}
-                                      className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                      className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                                     >
                                       ডিডি স্যার ফরমেট
                                     </button>
@@ -646,7 +646,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                               {/* ২. অনুচ্ছেদ */}
                               <button 
                                 onClick={() => setActiveTab('return', null, 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
-                                className={`w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[9px] font-black transition-all ${reportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-blue-400'}`}
+                                className={`w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[9px] font-black transition-all cursor-pointer ${reportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-blue-400'}`}
                               >
                                 <span>অনুচ্ছেদ</span>
                               </button>
@@ -657,7 +657,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         {/* ২. ত্রৈমাসিক (Toggle) */}
                         <button 
                           onClick={() => setIsQuarterlyExpanded(!isQuarterlyExpanded)}
-                          className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-black transition-all ${isQuarterlyExpanded ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                          className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-black transition-all cursor-pointer ${isQuarterlyExpanded ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
                         >
                           <div className="flex items-center gap-2">
                             <span>ত্রৈমাসিক</span>
@@ -679,7 +679,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 <button 
                                   key={num}
                                   onClick={() => setActiveTab('return', null, `ত্রৈমাসিক রিটার্ন - ${toBengaliDigits(num.toString())}`)}
-                                  className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === `ত্রৈমাসিক রিটার্ন - ${toBengaliDigits(num.toString())}` ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                  className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === `ত্রৈমাসিক রিটার্ন - ${toBengaliDigits(num.toString())}` ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                                 >
                                   রিটার্ন {toBengaliDigits(num.toString())}
                                 </button>
@@ -709,7 +709,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                           <>
                             <button 
                               onClick={() => setIsSetupExpanded(!isSetupExpanded)}
-                              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-black transition-all ${isSetupExpanded ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-black transition-all cursor-pointer ${isSetupExpanded ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
                             >
                               <div className="flex items-center gap-2">
                                 <span>সেটআপ</span>
@@ -728,7 +728,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 >
                                   <button 
                                     onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক')}
-                                    className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md ${reportType === 'প্রারম্ভিক জের সেটআপ: মাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                    className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'প্রারম্ভিক জের সেটআপ: মাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                                   >
                                     মাসিক জের
                                   </button>
@@ -750,7 +750,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <button 
                   id="side-nav-dashboard" 
                   onClick={() => setActiveTab('dashboard')} 
-                  className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
+                  className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group cursor-pointer ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
                 >
                   <IDBadge id="side-nav-dashboard" />
                   <div className="flex items-center gap-1.5">
