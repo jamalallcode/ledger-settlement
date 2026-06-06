@@ -811,8 +811,8 @@ const App: React.FC = () => {
           />
         </div>
 
-        <main ref={mainScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-white relative scroll-smooth" style={{ scrollbarGutter: 'stable' }}>
-          <div className={`px-1 md:px-2 pt-4 md:pt-8 max-w-full mx-auto w-full flex flex-col ${(activeTab === 'register' || activeTab === 'return') ? 'pb-0' : 'pb-4 md:pb-8'}`}>
+        <main ref={mainScrollRef} className={`flex-1 overflow-y-auto overflow-x-hidden bg-white relative scroll-smooth ${activeTab === 'landing' ? 'flex flex-col justify-center' : ''}`} style={{ scrollbarGutter: 'stable' }}>
+          <div className={`px-1 md:px-2 max-w-full mx-auto w-full flex flex-col ${activeTab === 'landing' ? 'py-2 justify-center' : 'pt-4 md:pt-8 ' + ((activeTab === 'register' || activeTab === 'return') ? 'pb-0' : 'pb-4 md:pb-8')}`}>
             <div className="animate-in fade-in duration-500 flex-1">
               
               {activeTab === 'setup_receivers' && (
