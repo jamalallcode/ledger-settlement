@@ -358,142 +358,135 @@ tbody tr:not(.no-hover-row):hover td {
 
 /* --- EXECUTIVE PREMIUM LANDING PAGE STYLING --- */
 
-/* 1. Main Hero Panel Container */
-.landing-hero-card {
-  background-color: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.05);
-  color: #1e293b;
+/* --- LANDING PAGE CUSTOM SPECIFIC STYLES --- */
+
+/* Force Return Main Container to remain clean, premium, and ALWAYS pure white */
+.return-main-container,
+.dark .return-main-container {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
 }
 
-.dark .landing-hero-card {
-  background-color: #111827 !important; /* premium dark slate */
-  border: 1px solid #1e293b !important;
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6) !important;
-  color: #f1f5f9 !important;
+/* Landing Page Main Container uses base background-color with our custom watermark pattern, working elegantly with light/dark */
+.landing-main-container,
+.dark .landing-main-container {
+  background-color: #ffffff;
+}
+
+/* Force elements inside landing page container to maintain light-theme text colors even when document is in dark mode */
+.dark .landing-main-container p,
+.dark .landing-main-container h3,
+.dark .landing-main-container span,
+.dark .landing-main-container div,
+.dark .landing-main-container button {
+  color: inherit;
+}
+
+.dark .landing-main-container .landing-desc-text {
+  color: #334155 !important;
+}
+
+.dark .landing-main-container .landing-hero-title {
+  color: #1e293b !important;
+}
+
+.dark .landing-main-container .landing-sector-text {
+  color: #1e3a8a !important;
+  background-color: #eff6ff !important;
+  border-color: #dbeafe !important;
+}
+
+.dark .landing-main-container .landing-val-text {
+  color: #1d4ed8 !important;
+  background-color: rgba(239, 246, 255, 0.5) !important;
+  border-color: rgba(191, 219, 254, 0.5) !important;
+}
+
+.dark .landing-main-container .landing-label-muted {
+  color: #64748b !important;
+}
+
+.dark .landing-main-container .inline-flex.bg-slate-100 {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border-color: rgba(226, 232, 240, 0.9) !important;
+}
+
+/* 1. Main Hero Panel Container (Premium translucent with blurred background) */
+.landing-hero-card {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.05) !important;
+  color: #1e293b !important;
+}
+
+.landing-hero-title {
+  color: #1e293b !important;
 }
 
 /* 2. Premium Grid Backdrop (Custom clean glow instead of dotted pattern) */
 .landing-grid-bg {
   background: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 50%),
-              radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.03) 0%, transparent 50%);
-  opacity: 1;
-}
-
-.dark .landing-grid-bg {
-  background: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
-              radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%) !important;
+              radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.03) 0%, transparent 50%) !important;
   opacity: 1 !important;
 }
 
 /* 3. Government Tag Overlay */
 .landing-gov-tag {
-  background-color: #fef2f2;
-  color: #b91c1c;
-  border: 1px solid #fecaca;
-}
-
-.dark .landing-gov-tag {
-  background-color: rgba(220, 38, 38, 0.15) !important;
-  color: #fca5a5 !important;
-  border: 1px solid rgba(220, 38, 38, 0.3) !important;
+  background-color: #fef2f2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #fecaca !important;
 }
 
 /* 4. Active Sector text */
 .landing-sector-text {
-  color: #1e3a8a;
+  color: #1e3a8a !important;
 }
 
-.dark .landing-sector-text {
-  color: #38bdf8 !important; /* highly readable sky-400 */
-}
-
-/* 5. System Intro / Description Panel */
-.landing-intro-panel {
-  background: linear-gradient(to right, rgba(239, 246, 255, 0.9), rgba(239, 246, 255, 0.2));
-  border-color: rgba(191, 219, 254, 0.5);
-}
-
-.dark .landing-intro-panel {
-  background: linear-gradient(to right, rgba(30, 41, 59, 0.65), rgba(15, 23, 42, 0.2)) !important;
-  border-color: rgba(51, 65, 85, 0.7) !important;
+/* 5. Cohesive Right Panel Container */
+.landing-right-card {
+  background: rgba(239, 246, 255, 0.7) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-color: rgba(191, 219, 254, 0.5) !important;
 }
 
 /* 6. Tag for Intro */
 .landing-tag-intro {
-  background-color: #dbeafe;
-  color: #1e40af;
-}
-
-.dark .landing-tag-intro {
-  background-color: rgba(30, 58, 138, 0.5) !important;
-  color: #93c5fd !important;
+  background-color: #dbeafe !important;
+  color: #1e40af !important;
 }
 
 /* 7. Overview text with premium readability and high contrast */
 .landing-desc-text {
-  color: #334155;
-}
-
-.dark .landing-desc-text {
-  color: #e2e8f0 !important; /* perfectly bright, sharp contrast on dark blue-slate background */
-}
-
-/* 8. Actions Deck (center card) */
-.landing-action-deck {
-  background-color: #f8fafc;
-  border: 1px solid rgba(226, 232, 240, 1.0);
-}
-
-.dark .landing-action-deck {
-  background-color: #1a202c !important; /* deep card slate */
-  border: 1px solid #2d3748 !important;
+  color: #334155 !important;
 }
 
 /* 9. Muted labels for elements */
 .landing-label-muted {
-  color: #64748b;
-}
-
-.dark .landing-label-muted {
-  color: #94a3b8 !important; /* beautifully readable slate-400 */
+  color: #64748b !important;
 }
 
 /* 10. Normal dynamic value fonts with high weight & contrast */
 .landing-val-text {
-  color: #1e293b;
-}
-
-.dark .landing-val-text {
-  color: #ffffff !important; /* pure visible white */
+  color: #1e293b !important;
 }
 
 /* 11. Custom Developer Credentials block */
 .landing-developer-panel {
-  background-color: #f8fafc;
-  border: 1px solid rgba(226, 232, 240, 1.0);
-}
-
-.dark .landing-developer-panel {
-  background-color: #1a202c !important; /* deep card slate */
-  border: 1px solid #2d3748 !important;
+  background-color: #f8fafc !important;
+  border: 1px solid rgba(226, 232, 240, 1.0) !important;
 }
 
 /* 12. Developer phone action click triggers animation */
 .landing-phone-link {
-  color: #1d4ed8;
-  cursor: pointer;
-  text-decoration: underline;
+  color: #1d4ed8 !important;
+  cursor: pointer !important;
+  text-decoration: underline !important;
 }
 
 .landing-phone-link:hover {
-  color: #1e40af;
-}
-
-.dark .landing-phone-link {
-  color: #38bdf8 !important;
-}
-
-.dark .landing-phone-link:hover {
-  color: #7dd3fc !important;
+  color: #1e40af !important;
 }

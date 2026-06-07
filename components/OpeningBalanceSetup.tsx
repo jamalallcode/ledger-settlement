@@ -52,7 +52,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
   ];
 
   const setupThCls = "p-4 text-center font-black text-slate-900 border border-slate-300 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-20 align-middle z-[210] shadow-[inset_0_-1px_0_#cbd5e1]";
-  const setupFooterTdCls = "p-4 border border-slate-300 text-center text-[15px] bg-black text-white font-black z-[190] shadow-[inset_0_1px_0_#cbd5e1]";
+  const setupFooterTdCls = "p-4 border border-slate-300 text-center text-[15px] bg-slate-200 text-slate-900 font-black z-[190] shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]";
   
   const totalStats = ministryGroups.reduce((acc, m) => {
     const entities = MINISTRY_ENTITY_MAP[m] || [];
@@ -99,7 +99,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
         </div>
       </div>
 
-      <div className="table-container bg-white rounded-3xl border border-slate-300 shadow-2xl relative w-full overflow-auto">
+      <div className="table-container bg-white rounded-3xl relative w-full overflow-auto">
          <table className="w-full text-sm border-separate border-spacing-0">
            <thead>
               <tr>
@@ -161,13 +161,13 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
              })}
            </tbody>
            <tfoot>
-             <tr className="bg-black text-white font-black border-t-2 border-slate-400">
-               <td className="px-6 py-4 border border-slate-300 text-right text-[13px] uppercase tracking-tighter z-[190] bg-black text-white shadow-[inset_0_1px_0_#cbd5e1]">সর্বমোট সেটআপ তথ্য:</td>
+             <tr className="bg-slate-200 text-slate-900 font-black border-t-2 border-slate-400">
+               <td className="px-6 py-4 border border-slate-300 text-right text-[13px] uppercase tracking-tighter z-[190] bg-slate-200 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]">সর্বমোট সেটআপ তথ্য:</td>
                {displayFields.map(f => {
                   const val = f.key === 'unsettledCount' ? totalStats.uC :
                               f.key === 'unsettledAmount' ? totalStats.uA :
                               f.key === 'settledCount' ? totalStats.sC : totalStats.sA;
-                  const colorCls = f.key.startsWith('settled') ? 'text-emerald-400' : 'text-amber-400';
+                  const colorCls = f.key.startsWith('settled') ? 'text-emerald-700 font-extrabold' : 'text-blue-700 font-extrabold';
                   return <td key={f.key} className={`${setupFooterTdCls} ${colorCls}`}>{toBengaliDigits(Math.round(val))}</td>;
                 })}
 
