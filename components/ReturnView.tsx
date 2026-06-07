@@ -678,7 +678,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       {showFilters && (
         <div className="relative" ref={dropdownRef}>
           <div className="flex items-center gap-3">
-            <div onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} className={`flex items-center gap-3 px-5 h-[48px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isCycleDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}>
+            <div onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} className={`flex items-center gap-3 px-5 h-[38px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isCycleDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}>
                <CalendarDays size={20} className="text-blue-600" />
                <span className="font-black text-[13.5px] text-slate-800 tracking-tight">
                  {cycleOptions.find(o => o.cycleLabel === activeCycle.label)?.label || toBengaliDigits(activeCycle.label)}
@@ -713,7 +713,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
               placeholder="সার্চ করুন..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-11 pr-4 h-[48px] w-[260px] bg-white border-2 border-slate-200 rounded-xl text-[13.5px] font-bold text-slate-800 placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all outline-none shadow-sm"
+              className="pl-11 pr-4 h-[38px] w-[260px] bg-white border-2 border-slate-200 rounded-xl text-[13.5px] font-bold text-slate-800 placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all outline-none shadow-sm"
             />
             {searchTerm && (
               <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-red-500 transition-colors">
@@ -725,7 +725,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           <div className="relative" ref={ministryDropdownRef}>
             <div 
                onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
-               className={`flex items-center gap-3 px-5 h-[48px] min-w-[220px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isMinistryDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}
+               className={`flex items-center gap-3 px-5 h-[38px] min-w-[220px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isMinistryDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}
             >
               <LayoutGrid size={18} className="text-blue-600" />
               <span className="font-black text-[13.5px] text-slate-800 tracking-tight flex-1">

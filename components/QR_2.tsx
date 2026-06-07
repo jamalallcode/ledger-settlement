@@ -67,32 +67,70 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
   const thCls = "border-r border-b border-slate-400 p-1 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
   const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle";
   const numTdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
-  const footerTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-white align-middle bg-black";
-  const footerNumTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-white text-center align-middle font-bold bg-black";
+  const footerTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-900 align-middle bg-slate-200 font-extrabold";
+  const footerNumTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-200";
 
   return (
-    <div id="qr-2-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
+    <div id="qr-2-container" className="w-full mx-auto py-4 px-[4px] bg-white rounded-xl relative animate-in fade-in duration-500 font-sans">
       <IDBadge id="qr-2-container" />
-      
-      <div className="flex justify-between items-center mb-4 no-print">
-        {/* Statistics Button */}
-        <div className="relative group">
+
+      {/* Header Section */}
+      <div className="text-center mb-3 pt-1">
+        <div className="inline-block relative">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">
+            ত্রৈমাসিক রিটার্ন - ২
+          </h1>
+
+          {/* Date Range Pill */}
+          <div className="mt-1 mb-2 flex justify-center">
+            <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 border border-blue-100 rounded-full shadow-sm scale-95 origin-center">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+              <span className="text-blue-700 font-bold text-[12px]">
+                ত্রৈমাসিক রিটার্ন - ২ | {activeCycle.label}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center justify-center gap-4 mb-2">
+            <div className="h-[1px] w-10 bg-gradient-to-r from-transparent to-slate-400"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+            <div className="h-[1px] w-10 bg-gradient-to-l from-transparent to-slate-400"></div>
+          </div>
+          <div className="inline-block border-b border-slate-900 pb-0.5">
+            <span className="text-sm font-black text-slate-900">ছক: ৪(ক)</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Info Section + Lowered statistics button */}
+      <div className="mb-3 text-[11px] font-bold text-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-x-4 gap-y-2 border-b border-t border-slate-200 py-1.5 px-2 bg-slate-50/50 rounded-lg">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <p><span className="text-slate-500">অধিদপ্তরঃ</span> বাণিজ্যিক অডিট অধিদপ্তর, খুলনা</p>
+          <span className="text-slate-300 hidden md:inline font-normal">|</span>
+          <p><span className="text-slate-500">বিষয়ঃ</span> ব্রডশিট জবাবের বিপরীতে নিষ্পত্তির সুপারিশের ত্রৈমাসিক প্রতিবেদন</p>
+          <span className="text-slate-300 hidden md:inline font-normal">|</span>
+          <p><span className="text-slate-500">শাখাঃ</span> নন এসএফআই শাখা</p>
+          <span className="text-slate-300 hidden md:inline font-normal">|</span>
+          <p><span className="text-slate-500">সময়সীমাঃ</span> {getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} খ্রিঃ</p>
+        </div>
+
+        {/* Statistics Button (Lowered into subject bar) */}
+        <div className="relative group no-print shrink-0">
           <button
             type="button"
-            className="flex items-center gap-2 px-4 h-[40px] bg-slate-50 text-slate-700 rounded-xl font-bold text-[13px] border border-slate-200 transition-all duration-300 hover:bg-white hover:border-blue-200 hover:shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 rounded-lg font-black text-[11px] border border-blue-100 transition-all duration-300 hover:bg-blue-100 hover:border-blue-200"
           >
-            <Sparkles size={16} className="text-blue-500" />
+            <Sparkles size={13} className="text-blue-500" />
             পরিসংখ্যান
-            <ChevronDown size={14} className="text-slate-400 transition-transform duration-300 group-hover:rotate-180" />
+            <ChevronDown size={11} className="text-blue-400 transition-transform duration-300 group-hover:rotate-180" />
           </button>
           
-          <div className="absolute top-[calc(100%+4px)] left-0 w-[350px] bg-white rounded-2xl shadow-2xl border border-slate-100 p-5 z-[1000] opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-auto text-left">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-                <BarChart3 size={20} className="text-blue-600" />
-                <span className="text-blue-900 font-black text-sm">ত্রৈমাসিক রিপোর্ট পরিসংখ্যান</span>
+          <div className="absolute top-[calc(100%+4px)] right-0 w-[330px] bg-white rounded-xl shadow-xl border border-slate-200 p-4 z-[1000] opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-1 group-hover:translate-y-0 transition-all duration-300 pointer-events-auto text-left">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                <BarChart3 size={16} className="text-blue-600" />
+                <span className="text-blue-900 font-black text-[13px]">ত্রৈমাসিক রিপোর্ট পরিসংখ্যান</span>
               </div>
-              <div className="space-y-2 text-slate-700 text-xs font-bold leading-relaxed">
+              <div className="space-y-1.5 text-slate-700 text-[11px] font-bold leading-normal">
                 <div className="flex justify-between">
                   <span>সর্বমোট আলোচিত অনুচ্ছেদ:</span>
                   <span className="text-blue-700">{toBengaliDigits(totals.sentPara ?? 0)} টি</span>
@@ -113,44 +151,6 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
             </div>
           </div>
         </div>
-        
-        <div></div>
-      </div>
-
-      {/* Header Section */}
-      <div className="text-center mb-8 pt-4">
-        <div className="inline-block relative">
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
-            ত্রৈমাসিক রিটার্ন - ২
-          </h1>
-
-          {/* Date Range Pill */}
-          <div className="mt-4 mb-6 flex justify-center">
-            <div className="inline-flex items-center gap-3 px-6 py-2 bg-blue-50 border border-blue-100 rounded-full shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-              <span className="text-blue-700 font-bold text-sm">
-                ত্রৈমাসিক রিটার্ন - ২ | {activeCycle.label}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center justify-center gap-4 mb-4">
-            <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
-            <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-            <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-slate-400"></div>
-          </div>
-          <div className="inline-block border-b-2 border-slate-900 pb-0.5">
-            <span className="text-md font-black text-slate-900">ছক: ৪(ক)</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Info Section */}
-      <div className="mb-4 text-[11px] font-bold text-slate-800 space-y-1">
-        <p>অডিট অধিদপ্তরের নামঃ বাণিজ্যিক অডিট অধিদপ্তর, আঞ্চলিক কার্যালয়, খুলনা।</p>
-        <p className="underline underline-offset-4 decoration-1">বিষয়ঃ নিরীক্ষা পরিদর্শন প্রতিবেদনে (AIR) অন্তর্ভুক্ত আপত্তি নিষ্পত্তির অগ্রগতি সংক্রান্ত মাসিক প্রতিবেদন (মন্ত্রণালয়ভিত্তিক)</p>
-        <p>ক. ব্রডশিট জবাবের প্রেক্ষিতে নিষ্পত্তির সুপারিশ সংক্রান্ত ত্রৈমাসিক প্রতিবেদন</p>
-        <p>শাখার নামঃ নন এসএফআই</p>
-        <p>মাসের নামঃ {getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} খ্রি: তারিখ পর্যন্ত</p>
       </div>
 
       {/* Table Section */}

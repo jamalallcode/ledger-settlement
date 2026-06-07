@@ -372,7 +372,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   };
 
   return (
-    <div id="dd-sir-report-container" className="space-y-6 py-2 w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view">
+    <div id="dd-sir-report-container" className="space-y-6 py-2 px-[4px] w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view">
       <IDBadge id="dd-sir-report-container" />
       {/* Control Bar (No Print) */}
       {showFilters && (
@@ -520,7 +520,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
       {/* Summary Stats Panel (Removed as it's now in hover) */}
 
-      <div className="w-full bg-white p-2 md:p-6 relative">
+      <div className="w-full bg-white px-0 py-6 relative">
         {/* Office Header */}
         <div className="text-center mb-8 pt-4">
           <div className="inline-block relative">
@@ -801,12 +801,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 )}
               </tbody>
               <tfoot>
-                <tr className="bg-black text-white font-bold text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] border-t border-slate-700">
-                  <td colSpan={3} className="px-6 text-left border-t border-slate-700 bg-black">
-                    <span className="mr-4">সর্বমোট চিঠিপত্র:</span>
-                    <span className="text-white font-bold">{toBengaliDigits(filteredEntries.length)} টি</span>
+                <tr className="bg-slate-200 text-slate-900 font-bold text-[12px] h-11 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] border-t border-slate-300">
+                  <td colSpan={3} className="px-6 text-left border-t border-slate-300 bg-slate-200">
+                    <span className="mr-4 text-slate-700 font-extrabold">সর্বমোট চিঠিপত্র:</span>
+                    <span className="text-blue-700 font-black ml-4">{toBengaliDigits(filteredEntries.length)} টি</span>
                   </td>
-                  <td colSpan={6} className="border-t border-slate-700 bg-black"></td>
+                  <td colSpan={6} className="border-t border-slate-300 bg-slate-200"></td>
                 </tr>
               </tfoot>
             </table>

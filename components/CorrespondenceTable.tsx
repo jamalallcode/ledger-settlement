@@ -757,9 +757,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
       {/* Header Controls */}
       <div className="relative mb-6 no-print z-[99999]">
         <IDBadge id="section-correspondence-top-header" />
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 relative group transition-all duration-500 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)]">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-[1.5rem] border border-slate-200 shadow-sm relative group transition-all duration-500 hover:shadow-md">
           <div className="flex items-center gap-4 relative z-10">
-            <div className="w-14 h-14 bg-emerald-50 rounded-[1.2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100/50 group-hover:scale-105 transition-transform duration-500">
+            <div className="w-14 h-14 bg-emerald-50 rounded-[1.2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100 group-hover:scale-105 transition-transform duration-500">
               <Mail size={28} strokeWidth={2} />
             </div>
             <div className="space-y-1">
@@ -767,7 +767,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                 প্রাপ্ত চিঠিপত্র সংক্রান্ত রেজিস্টার
               </h2>
               <div className="flex items-center gap-3">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-500 text-white rounded-full font-bold text-[10px] shadow-lg shadow-blue-200 border border-blue-400/30">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-500 text-white rounded-full font-bold text-[10px] shadow-sm border border-blue-400/30">
                   <CalendarRange size={12} />
                   <span>সাইকেল: {toBengaliDigits(cycleInfo.label)}</span>
                 </div>
@@ -790,7 +790,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             <div className="relative">
               <button
                 onClick={() => setShowSummary(!showSummary)}
-                className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-2xl ${showSummary ? "bg-blue-600 text-white shadow-blue-200" : "bg-[#f0f7ff] text-blue-700 border border-blue-100/50 hover:bg-blue-100 shadow-blue-500/10"}`}
+                className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-md ${showSummary ? "bg-blue-600 text-white shadow-blue-500/20" : "bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100 shadow-sm"}`}
               >
                 <Sparkles
                   size={16}
@@ -1928,22 +1928,22 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             </tbody>
           )}
           <tfoot className="sticky bottom-0 z-[110]">
-            <tr className="bg-black text-white font-black text-[12px] h-10 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]">
+            <tr className="bg-slate-200 text-slate-900 font-black text-[12px] h-10 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] border-t border-slate-300">
               <td
                 colSpan={2}
-                className="px-4 text-left border-t border-slate-400 bg-black shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
+                className="px-4 text-left border-t border-slate-300 bg-slate-200 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
               >
                 সর্বমোট (ফিল্টার ডাটা):
               </td>
               <td
                 colSpan={1}
-                className="px-2 text-center border-t border-slate-400 bg-black text-amber-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
+                className="px-2 text-center border-t border-slate-300 bg-slate-200 text-blue-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] font-black"
               >
                 {toBengaliDigits(filteredEntries.length)} টি
               </td>
               <td
                 colSpan={4}
-                className="border-t border-slate-400 bg-black shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
+                className="border-t border-slate-300 bg-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
               ></td>
             </tr>
           </tfoot>

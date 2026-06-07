@@ -8,6 +8,8 @@ import SettlementTable from './components/SettlementTable';
 import CorrespondenceTable from './components/CorrespondenceTable';
 import ReturnView from './components/ReturnView';
 import LandingPage from './components/LandingPage';
+// @ts-ignore
+import bengaliHeritageBg from './src/assets/images/gov_audit_bg_v2_1780851709850.png';
 import VotingSystem from './components/VotingSystem';
 import DocumentArchive from './document-library/DocumentArchive';
 import ReceiverManagement from './components/ReceiverManagement';
@@ -811,8 +813,21 @@ const App: React.FC = () => {
           />
         </div>
 
-        <main ref={mainScrollRef} className={`flex-1 overflow-y-auto overflow-x-hidden bg-white relative scroll-smooth ${activeTab === 'landing' ? 'flex flex-col justify-center' : ''}`} style={{ scrollbarGutter: 'stable' }}>
-          <div className={`px-1 md:px-2 max-w-full mx-auto w-full flex flex-col ${activeTab === 'landing' ? 'py-2 justify-center' : 'pt-4 md:pt-8 ' + ((activeTab === 'register' || activeTab === 'return') ? 'pb-0' : 'pb-4 md:pb-8')}`}>
+        <main 
+          ref={mainScrollRef} 
+          className={`flex-1 ${activeTab === 'landing' ? 'overflow-y-auto flex flex-col items-center p-3 sm:p-4 md:p-5 lg:p-6 landing-main-container' : activeTab === 'return' ? 'overflow-y-auto overflow-x-hidden return-main-container' : 'overflow-y-auto overflow-x-hidden'} relative scroll-smooth bg-white`} 
+          style={{ 
+            scrollbarGutter: 'stable',
+            ...(activeTab === 'landing' ? {
+              backgroundImage: `url(${bengaliHeritageBg})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              backgroundAttachment: 'fixed'
+            } : {})
+          }}
+        >
+          <div className={activeTab === 'landing' ? "w-full max-w-5xl lg:max-w-6xl mx-auto flex flex-col justify-start mt-0 md:mt-1.5 lg:mt-2 mb-4 md:mb-6 animate-fade-in" : activeTab === 'return' ? "px-0 max-w-full mx-auto w-full flex flex-col pt-0 pb-0" : `px-2 md:px-4 max-w-full mx-auto w-full flex flex-col pt-4 md:pt-8 ${activeTab === 'register' ? 'pb-0' : 'pb-4 md:pb-8'}`}>
             <div className="animate-in fade-in duration-500 flex-1">
               
               {activeTab === 'setup_receivers' && (

@@ -93,43 +93,44 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
   const thCls = "border-r border-b border-slate-400 p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
   const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle";
   const numTdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
-  const footerTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-white align-middle bg-black";
-  const footerNumTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-white text-center align-middle font-bold bg-black";
+  const footerTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-900 align-middle bg-slate-200 font-extrabold";
+  const footerNumTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-200";
 
   return (
-    <div id="qr-5-container" className="w-full mx-auto p-8 bg-white rounded-xl border border-slate-300 shadow-2xl relative animate-in fade-in duration-500 font-sans">
+    <div id="qr-5-container" className="w-full mx-auto py-4 px-[4px] bg-white rounded-xl relative animate-in fade-in duration-500 font-sans">
       <IDBadge id="qr-5-container" />
       
       <div className="flex justify-end mb-4 no-print">
       </div>
 
       {/* Header Section */}
-      <div className="text-center mb-8 pt-4">
+      <div className="text-center mb-3 pt-1">
         <div className="inline-block relative">
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">
             ত্রৈমাসিক রিটার্ন - ৫
           </h1>
 
           {/* Date Range Pill */}
-          <div className="mt-4 mb-6 flex justify-center">
-            <div className="inline-flex items-center gap-3 px-6 py-2 bg-blue-50 border border-blue-100 rounded-full shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-              <span className="text-blue-700 font-bold text-sm">
+          <div className="mt-1 mb-2 flex justify-center">
+            <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 border border-blue-100 rounded-full shadow-sm scale-95 origin-center">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+              <span className="text-blue-700 font-bold text-[12px]">
                 ত্রৈমাসিক রিটার্ন - ৫ | {activeCycle.label}
               </span>
             </div>
           </div>
           <div className="flex items-center justify-center gap-4">
-            <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
-            <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-            <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-slate-400"></div>
+            <div className="h-[1px] w-10 bg-gradient-to-r from-transparent to-slate-400"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+            <div className="h-[1px] w-10 bg-gradient-to-l from-transparent to-slate-400"></div>
           </div>
         </div>
       </div>
 
-      <div className="flex justify-between items-start mb-4 text-[11px] font-bold text-slate-800">
-        <p className="max-w-[70%]">বিষয়ঃ অডিট আপত্তির ফলে আদায়কৃত/সমন্বয়কৃত অর্থের ত্রৈমাসিক প্রতিবেদন {getMonthNameBN(startDate)}/{formatYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatYearBN(endDate)} পর্যন্ত</p>
-        <p>শাখার নামঃ এসএফআই শাখা।</p>
+      <div className="mb-3 text-[11px] font-bold text-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-x-4 gap-y-2 border-b border-t border-slate-200 py-1.5 px-2 bg-slate-50/50 rounded-lg">
+        <p><span className="text-slate-500">বিষয়ঃ</span> অডিট আপত্তির ফলে আদায়কৃত/সমন্বয়কৃত অর্থের ত্রৈমাসিক প্রতিবেদন {getMonthNameBN(startDate)}/{formatYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatYearBN(endDate)} পর্যন্ত</p>
+        <span className="text-slate-300 hidden md:inline font-normal">|</span>
+        <p className="shrink-0"><span className="text-slate-500">শাখাঃ</span> এসএফআই শাখা</p>
       </div>
 
       <div className="table-container qr-table-container overflow-auto border border-slate-400 shadow-sm rounded-lg">

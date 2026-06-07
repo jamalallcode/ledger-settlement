@@ -327,7 +327,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   };
 
   return (
-    <div id="correspondence-dhaka-container" className="space-y-4 py-2 w-full animate-report-page relative">
+    <div id="correspondence-dhaka-container" className="space-y-4 py-2 px-[4px] w-full animate-report-page relative">
       <IDBadge id="correspondence-dhaka-container" />
       {showFilters && (
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
@@ -494,7 +494,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
         </div>
       )}
 
-      <div className="bg-white border border-slate-300 shadow-2xl w-full overflow-visible p-6 relative animate-table-entrance">
+      <div className="bg-white w-full overflow-visible px-0 py-6 relative animate-table-entrance">
         <div className="text-center mb-8 pt-4 relative">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-4">
             চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)।

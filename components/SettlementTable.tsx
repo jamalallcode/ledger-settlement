@@ -857,7 +857,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
     let lastRenderedCycle = "";
     // Footer text font-black
     const footerTdCls =
-      "p-1 text-center font-black text-[10px] bg-black text-white border border-slate-400";
+      "p-1 text-center font-black text-[10px] bg-slate-200 text-slate-900 border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]";
     const filterInputCls =
       "w-full pl-7 pr-1.5 h-[38px] bg-white border border-slate-300 rounded-lg font-bold text-slate-900 text-[11px] outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold";
     const customDropdownCls = (isOpen: boolean) =>
@@ -875,9 +875,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             className="relative mb-6 no-print z-[99999]"
           >
             <IDBadge id="section-register-top-header" />
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 relative group transition-all duration-500 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)]">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-[1.5rem] border border-slate-200 shadow-sm relative group transition-all duration-500 hover:shadow-md">
               <div className="flex items-center gap-4 relative z-10">
-                <div className="w-14 h-14 bg-emerald-50 rounded-[1.2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100/50 group-hover:scale-105 transition-transform duration-500">
+                <div className="w-14 h-14 bg-emerald-50 rounded-[1.2rem] text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100 group-hover:scale-105 transition-transform duration-500">
                   <ClipboardList size={28} strokeWidth={2} />
                 </div>
                 <div className="space-y-1">
@@ -885,8 +885,8 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                     মীমাংসা রেজিস্টার
                   </h2>
                   <div className="flex items-center gap-3">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500 text-white rounded-full font-bold text-[10px] shadow-lg shadow-emerald-200 border border-emerald-400/30">
-                      <div className="h-1.5 w-1.5 rounded-full bg-white shadow-sm"></div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500 text-white rounded-full font-bold text-[10px] shadow-sm border border-emerald-400/30">
+                      <div className="h-1.5 w-1.5 rounded-full bg-white shadow-xs"></div>
                       <span>চলমান মাস: {toBengaliDigits(cycleInfo.label)}</span>
                     </div>
                     <p className="text-slate-400 font-bold text-[9px] uppercase tracking-[0.2em]">
@@ -901,7 +901,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                   <button
                     ref={summaryButtonRef}
                     onClick={() => setShowSummary(!showSummary)}
-                    className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-2xl ${showSummary ? "bg-blue-600 text-white shadow-blue-200" : "bg-[#f0f7ff] text-blue-700 border border-blue-100/50 hover:bg-blue-100 shadow-blue-500/10"}`}
+                    className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-md ${showSummary ? "bg-blue-600 text-white shadow-blue-500/20" : "bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100 shadow-sm"}`}
                   >
                     <Sparkles
                       size={16}
@@ -2155,49 +2155,49 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             </tbody>
             {!isAdminView && (
               <tfoot className="z-[100]">
-                <tr className="h-[45px] bg-black text-white shadow-[0_-10px_20px_rgba(0,0,0,0.1)]">
+                <tr className="h-[45px] bg-slate-200 text-slate-900 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] border-t border-slate-300">
                   <td
                     colSpan={2}
                     className={
-                      footerTdCls + " text-white uppercase tracking-wider"
+                      footerTdCls + " text-slate-900 uppercase tracking-wider font-black"
                     }
                   >
                     সর্বমোট (ফিল্টার ডাটা):
                   </td>
-                  <td className={footerTdCls + " text-amber-400"}>
+                  <td className={footerTdCls + " text-blue-700"}>
                     {toBengaliDigits(grandTotals.paraCount)}
                   </td>
-                  <td className={footerTdCls + " text-amber-400"}>
+                  <td className={footerTdCls + " text-blue-700"}>
                     {toBengaliDigits(Math.round(grandTotals.inv))}
                   </td>
-                  <td className={footerTdCls + " text-amber-400"}>
+                  <td className={footerTdCls + " text-blue-700"}>
                     {toBengaliDigits(grandTotals.raisedCount)}
                   </td>
-                  <td className={footerTdCls + " text-amber-400"}>
+                  <td className={footerTdCls + " text-blue-700"}>
                     {toBengaliDigits(Math.round(grandTotals.raisedAmount))}
                   </td>
-                  <td className={footerTdCls + " text-white"}>
+                  <td className={footerTdCls + " text-slate-900"}>
                     {toBengaliDigits(Math.round(grandTotals.vRec))}
                   </td>
-                  <td className={footerTdCls + " text-white"}>
+                  <td className={footerTdCls + " text-slate-900"}>
                     {toBengaliDigits(Math.round(grandTotals.vAdj))}
                   </td>
-                  <td className={footerTdCls + " text-white"}>
+                  <td className={footerTdCls + " text-slate-900"}>
                     {toBengaliDigits(Math.round(grandTotals.iRec))}
                   </td>
-                  <td className={footerTdCls + " text-white"}>
+                  <td className={footerTdCls + " text-slate-900"}>
                     {toBengaliDigits(Math.round(grandTotals.iAdj))}
                   </td>
-                  <td className={footerTdCls + " text-white"}>
+                  <td className={footerTdCls + " text-slate-900"}>
                     {toBengaliDigits(Math.round(grandTotals.oRec))}
                   </td>
-                  <td className={footerTdCls + " text-white"}>
+                  <td className={footerTdCls + " text-slate-900"}>
                     {toBengaliDigits(Math.round(grandTotals.oAdj))}
                   </td>
-                  <td className={footerTdCls + " text-amber-400 font-black"}>
+                  <td className={footerTdCls + " text-blue-800 font-extrabold"}>
                     {toBengaliDigits(Math.round(grandTotals.tRec))}
                   </td>
-                  <td className={footerTdCls + " text-amber-400 font-black"}>
+                  <td className={footerTdCls + " text-blue-800 font-extrabold"}>
                     {toBengaliDigits(Math.round(grandTotals.tAdj))}
                   </td>
                 </tr>
