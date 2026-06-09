@@ -42,7 +42,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
       {isAdmin && pendingCount > 0 && (
         <div 
           id="admin-moderation-alert" 
-          className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 p-3.5 border border-amber-200 shadow-xs transition-all duration-300 w-full"
+          className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 p-3.5 border border-amber-200 shadow-xs transition-all duration-300 w-full mb-6"
         >
           <div className="absolute -right-6 -bottom-6 opacity-5 text-amber-900 pointer-events-none transition-transform duration-500 group-hover:scale-110">
              <ShieldAlert size={80} />
