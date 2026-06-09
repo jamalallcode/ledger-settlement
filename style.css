@@ -382,6 +382,20 @@ tbody tr:not(.no-hover-row):hover td {
   color: inherit;
 }
 
+/* Ensure admin moderation alert elements keep their original text colors and styling in dark mode */
+.dark #admin-moderation-alert h2 {
+  color: #451a03 !important;
+}
+.dark #admin-moderation-alert p {
+  color: rgba(146, 64, 14, 0.8) !important;
+}
+.dark #admin-moderation-alert span {
+  color: #78350f !important;
+}
+.dark #admin-moderation-alert button {
+  color: #ffffff !important;
+}
+
 .dark .landing-main-container .landing-desc-text {
   color: #334155 !important;
 }
