@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Printer, ChevronLeft, Search, X, ChevronDown, Check, LayoutGrid, FileText, ChevronRight, Sparkles, BarChart3, Calendar } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
@@ -100,12 +101,18 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [detailsModalTitle, setDetailsModalTitle] = useState('');
   const [detailsModalLetters, setDetailsModalLetters] = useState<any[]>([]);
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null);
 
   const handleCountClick = (title: string, letters: any[]) => {
     if (letters.length === 0) return;
     setDetailsModalTitle(title);
     setDetailsModalLetters(letters);
     setIsDetailsModalOpen(true);
+    setHighlightedKey(title);
+  };
+
+  const getHighlightClass = (key: string) => {
+    return highlightedKey === key ? 'clicked-cell-highlight' : '';
   };
 
   const normalizeName = (name: string | null | undefined) => {
@@ -597,96 +604,123 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
         </div>
       </div>
       {/* Auditor Statistics Modal */}
-      {showAuditorStatsModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[3000] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-600/20 rounded-xl flex items-center justify-center">
-                  <BarChart3 size={20} className="text-blue-400" />
-                </div>
-                <div>
-                  <h3 className="text-white font-bold text-[16px]">অডিটর ভিত্তিক পরিসংখ্যান</h3>
-                  <p className="text-slate-400 text-[11px] font-bold">কার কাছে কয়টি চিঠি আছে তার বিস্তারিত হিসাব</p>
-                </div>
+      {showAuditorStatsModal && createPortal(
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 xl:p-8 animate-in fade-in duration-200">
+          <div className={`w-full ${isDetailsModalOpen ? 'max-w-[95%] lg:max-w-7xl h-[85vh]' : 'max-w-2xl max-h-[90vh]'} flex flex-col lg:flex-row items-stretch gap-4 transition-all duration-300`}>
+            
+            {/* Auditor Stats Card */}
+            <div className={`bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${isDetailsModalOpen ? 'w-full lg:w-[29%] shrink-0 h-full' : 'w-full max-h-full'}`}>
+               <div className="bg-slate-900 px-6 py-3.5 flex items-center justify-between shrink-0">
+                 <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 bg-blue-600/20 rounded-xl flex items-center justify-center">
+                     <BarChart3 size={20} className="text-blue-400" />
+                   </div>
+                   <div>
+                     <h3 className="text-white font-bold text-[16px]">অডিটর ভিত্তিক পরিসংখ্যান</h3>
+                     <p className="text-slate-400 text-[11px] font-bold">কার কাছে কয়টি চিঠি আছে তার বিস্তারিত হিসাব</p>
+                   </div>
+                 </div>
+                 <button 
+                  onClick={() => {
+                    setShowAuditorStatsModal(false);
+                    setIsDetailsModalOpen(false);
+                  }}
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
+                >
+                  <X size={20} />
+                </button>
               </div>
-              <button 
-                onClick={() => setShowAuditorStatsModal(false)}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="p-6 max-h-[70vh] overflow-y-auto no-scrollbar">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-slate-100">
-                    <th className="border border-slate-200 p-2 text-left text-[12px] font-black text-slate-700">অডিটর</th>
-                    <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">অডিটরের কাছে</th>
-                    <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">এএন্ডএও</th>
-                    <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">উপপরিচালক</th>
-                    <th className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-700">মোট</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {auditorWiseStats.map((stat, idx) => (
-                    <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
-                      <td className="border border-slate-200 p-2 text-[12px] font-bold text-slate-900">{stat.name}</td>
-                      <td 
-                        className="border border-slate-200 p-2 text-center text-[12px] font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all"
-                        onClick={() => handleCountClick(`${stat.name} - অডিটরের কাছে`, stat.auditorLetters)}
-                      >
-                        {toBengaliDigits(stat.auditor)} টি
-                      </td>
-                      <td 
-                        className="border border-slate-200 p-2 text-center text-[12px] font-black text-blue-600 bg-blue-50/30 cursor-pointer hover:bg-blue-100/50 transition-all"
-                        onClick={() => handleCountClick(`${stat.name} - এএন্ডএও`, stat.aaoLetters)}
-                      >
-                        {toBengaliDigits(stat.aao)} টি
-                      </td>
-                      <td 
-                        className="border border-slate-200 p-2 text-center text-[12px] font-black text-green-600 bg-green-50/30 cursor-pointer hover:bg-green-100/50 transition-all"
-                        onClick={() => handleCountClick(`${stat.name} - উপপরিচালক`, stat.ddLetters)}
-                      >
-                        {toBengaliDigits(stat.dd)} টি
-                      </td>
-                      <td 
-                        className="border border-slate-200 p-2 text-center text-[12px] font-black text-slate-900 bg-slate-50 cursor-pointer hover:bg-slate-200/50 transition-all"
-                        onClick={() => handleCountClick(`${stat.name} - মোট`, stat.totalLetters)}
-                      >
-                        {toBengaliDigits(stat.total)} টি
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
               
-              {auditorWiseStats.length === 0 && (
-                <div className="py-10 text-center text-slate-400 font-bold italic">
-                  কোনো তথ্য পাওয়া যায়নি।
-                </div>
-              )}
+              <div className={`overflow-y-auto no-scrollbar flex-1 min-h-0 ${isDetailsModalOpen ? 'p-2' : 'p-4 sm:p-6'}`}>
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-slate-100">
+                      <th className="border border-slate-200 px-1 py-1.5 text-left text-[10px] sm:text-[11px] font-black text-slate-700 leading-tight">অডিটর</th>
+                      <th className="border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11px] font-black text-slate-700 leading-tight">অডিটরের</th>
+                      <th className="border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11px] font-black text-slate-700 leading-tight">এএন্ডএও</th>
+                      <th className="border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11px] font-black text-slate-700 leading-tight">উপপরিচালক</th>
+                      <th className="border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11px] font-black text-slate-700 leading-tight">মোট</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditorWiseStats.map((stat, idx) => (
+                      <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
+                        <td className="border border-slate-200 px-1.5 py-1.5 text-[10px] sm:text-[11.5px] font-bold text-slate-900 leading-snug">{stat.name}</td>
+                        <td 
+                          className={`border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11.5px] font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all ${getHighlightClass(`${stat.name} - অডিটরের কাছে`)}`}
+                          onClick={() => handleCountClick(`${stat.name} - অডিটরের কাছে`, stat.auditorLetters)}
+                        >
+                          {toBengaliDigits(stat.auditor)} টি
+                        </td>
+                        <td 
+                          className={`border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11.5px] font-black text-blue-600 bg-blue-50/30 cursor-pointer hover:bg-blue-100/50 transition-all ${getHighlightClass(`${stat.name} - এএন্ডএও`)}`}
+                          onClick={() => handleCountClick(`${stat.name} - এএন্ডএও`, stat.aaoLetters)}
+                        >
+                          {toBengaliDigits(stat.aao)} টি
+                        </td>
+                        <td 
+                          className={`border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11.5px] font-black text-green-600 bg-green-50/30 cursor-pointer hover:bg-green-100/50 transition-all ${getHighlightClass(`${stat.name} - উপপরিচালক`)}`}
+                          onClick={() => handleCountClick(`${stat.name} - উপপরিচালক`, stat.ddLetters)}
+                        >
+                          {toBengaliDigits(stat.dd)} টি
+                        </td>
+                        <td 
+                          className={`border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11.5px] font-black text-slate-900 bg-slate-50 cursor-pointer hover:bg-slate-200/50 transition-all ${getHighlightClass(`${stat.name} - মোট`)}`}
+                          onClick={() => handleCountClick(`${stat.name} - মোট`, stat.totalLetters)}
+                        >
+                          {toBengaliDigits(stat.total)} টি
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                
+                {auditorWiseStats.length === 0 && (
+                  <div className="py-10 text-center text-slate-400 font-bold italic">
+                    কোনো তথ্য পাওয়া যায়নি।
+                  </div>
+                )}
+              </div>
+              
+              <div className="bg-slate-50 px-6 py-3.5 flex justify-end border-t border-slate-100 shrink-0">
+                <button 
+                  onClick={() => {
+                    setShowAuditorStatsModal(false);
+                    setIsDetailsModalOpen(false);
+                  }}
+                  className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-[12px] hover:bg-slate-800 transition-all shadow-md"
+                >
+                  বন্ধ করুন
+                </button>
+              </div>
             </div>
-            
-            <div className="bg-slate-50 px-6 py-4 flex justify-end">
-              <button 
-                onClick={() => setShowAuditorStatsModal(false)}
-                className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-[12px] hover:bg-slate-800 transition-all shadow-md"
-              >
-                বন্ধ করুন
-              </button>
-            </div>
+
+            {/* Embedded letters detail card */}
+            {isDetailsModalOpen && (
+              <div className="w-full lg:flex-1 h-full flex flex-col overflow-hidden animate-in slide-in-from-right-8 duration-300">
+                <LetterDetailsModal 
+                  isOpen={isDetailsModalOpen}
+                  onClose={() => setIsDetailsModalOpen(false)}
+                  title={detailsModalTitle}
+                  letters={detailsModalLetters}
+                  isEmbedded={true}
+                />
+              </div>
+            )}
+
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-      {/* Letter Details Modal */}
-      <LetterDetailsModal 
-        isOpen={isDetailsModalOpen}
-        onClose={() => setIsDetailsModalOpen(false)}
-        title={detailsModalTitle}
-        letters={detailsModalLetters}
-      />
+      {/* Letter Details Modal (fallback only) */}
+      {!showAuditorStatsModal && (
+        <LetterDetailsModal 
+          isOpen={isDetailsModalOpen}
+          onClose={() => setIsDetailsModalOpen(false)}
+          title={detailsModalTitle}
+          letters={detailsModalLetters}
+        />
+      )}
     </div>
   );
 };
