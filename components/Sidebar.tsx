@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3, Settings, ArrowRight, Chrome } from 'lucide-react';
+import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3, Settings, ArrowRight, Chrome, Landmark } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { signInWithGoogle } from '../lib/supabase';
 import { ModuleVisibility } from '../types';
@@ -395,19 +395,24 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {isSidebarOpen && (
-        <div id="sidebar-container" className="w-[126px] bg-slate-900 h-full text-slate-300 flex flex-col border-r border-slate-800 shadow-2xl overflow-hidden relative z-[5000]">
+      <div id="sidebar-container" className="w-[126px] bg-slate-900 h-full text-slate-300 flex flex-col border-r border-slate-800 shadow-2xl overflow-hidden relative z-[5000]">
           <IDBadge id="sidebar-container" />
-          <div id="sidebar-header" className="px-1.5 border-b border-slate-800/60 flex items-center justify-between relative bg-slate-900/45 h-[45px] shrink-0">
+          <div id="sidebar-header" className="px-1.5 flex items-center justify-between relative bg-slate-900/45 h-[45px] shrink-0">
             <IDBadge id="sidebar-header" />
             <div id="sidebar-logo" onClick={handleLogoClick} className="flex items-center gap-1.5 relative cursor-pointer select-none active:scale-95 transition-all duration-300 group">
               <IDBadge id="sidebar-logo" />
-              <ShieldCheck size={11} className="text-amber-500 group-hover:scale-110 transition-transform duration-300 shrink-0" />
+              <div className="relative flex items-center justify-center w-5.5 h-5.5 bg-gradient-to-br from-indigo-700 via-blue-800 to-emerald-800 text-white rounded-md shadow-xs shrink-0 group-hover:scale-105 group-hover:shadow-[0_0_12px_rgba(245,158,11,0.6)] transition-all duration-300">
+                <Landmark size={11} className="stroke-[2.5] text-white" />
+              </div>
               <span className="font-black text-slate-200 tracking-tight text-[10px] group-hover:text-white transition-colors">অডিট রেজিস্টার</span>
             </div>
-            <button onClick={onToggleVisibility} className="p-1 bg-slate-800/10 hover:bg-slate-800/60 rounded-md transition-all duration-200 text-slate-400 hover:text-slate-100 relative cursor-pointer">
+            <button onClick={onToggleVisibility} className="group/toggle w-5.5 h-5.5 flex items-center justify-center bg-slate-800/30 hover:bg-slate-700/50 border border-slate-800 hover:border-slate-700/60 rounded-md transition-all duration-300 text-slate-400 hover:text-amber-400 relative cursor-pointer active:scale-90 hover:shadow-[0_0_8px_rgba(245,158,11,0.25)]">
               <IDBadge id="btn-sidebar-toggle" />
-              <ChevronLeft size={10} />
+              <div className="flex items-center gap-[1px] transition-transform duration-300 group-hover/toggle:-translate-x-0.5">
+                <div className="w-[1px] h-[7px] bg-current opacity-70 shrink-0" />
+                <div className="w-[1px] h-[7px] bg-current opacity-70 shrink-0" />
+                <ChevronLeft size={8} className="stroke-[2.5] -ml-[1px] shrink-0" />
+              </div>
             </button>
           </div>
         <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
@@ -769,7 +774,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
       </div>
-      )}
       {showAdminModal && (
         <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-500">
           <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 space-y-6 animate-in zoom-in-95 duration-500 relative overflow-y-auto max-h-[90vh] group no-scrollbar">

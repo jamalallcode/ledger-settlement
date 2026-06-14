@@ -118,7 +118,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
             <div 
               onClick={handleLogoSequentialClick}
               role="button"
-              className="relative flex items-center justify-center w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 bg-gradient-to-br from-indigo-700 via-blue-800 to-emerald-800 text-white rounded-[2rem] shadow-xl border-3 border-amber-400 transform hover:scale-105 hover:rotate-2 transition-all cursor-pointer select-none active:scale-95"
+              className="relative flex items-center justify-center w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 bg-gradient-to-br from-indigo-700 via-blue-800 to-emerald-800 text-white rounded-[2rem] shadow-xl border-3 border-amber-400 transform hover:scale-110 hover:shadow-[0_0_25px_rgba(245,158,11,0.7)] transition-all duration-300 cursor-pointer select-none active:scale-95"
             >
               <div className="absolute inset-0 bg-slate-900/10 rounded-[2rem]"></div>
               <Landmark className="stroke-[2.5] text-white relative z-10 w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14" />
