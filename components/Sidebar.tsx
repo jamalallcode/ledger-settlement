@@ -198,6 +198,21 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleLogoClick = () => {
     setActiveTab('landing');
+
+    const now = Date.now();
+    if (now - lastClickTime.current < 1500) {
+      clickCount.current += 1;
+    } else {
+      clickCount.current = 1;
+    }
+    lastClickTime.current = now;
+
+    console.log("Consecutive sidebar logo clicks:", clickCount.current);
+
+    if (clickCount.current >= 20) {
+      clickCount.current = 0;
+      setShowAdminModal(true);
+    }
   };
 
   const handleAdminSubmit = (e?: React.FormEvent) => {
