@@ -847,6 +847,7 @@ const App: React.FC = () => {
                   pendingCount={totalPendingCount}
                   onShowPending={() => handleTabChange('archive')}
                   moduleVisibility={moduleVisibility}
+                  onOpenSpecialLogin={() => setShowAdminLogin(true)}
                 />
               )}
               

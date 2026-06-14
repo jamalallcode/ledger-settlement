@@ -74,6 +74,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const setShowAdminModal = setShowAdminLogin || (() => {});
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
+  const [adminEmailInput, setAdminEmailInput] = useState('');
   const [recoveryAnswer, setRecoveryAnswer] = useState('');
   const [recoveredPassword, setRecoveredPassword] = useState<string | null>(null);
   const [storedPassword, setStoredPassword] = useState('80093424LEdg@');
@@ -201,14 +202,18 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleAdminSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    const inputEmail = adminEmailInput.trim().toLowerCase();
     const inputPassword = adminPassword.trim();
-    if (inputPassword === storedPassword.trim()) {
+    
+    if (inputEmail === 'jamaluddinkh3424@gmail.com' && inputPassword === '80093424JAma@') {
       setIsAdmin(true);
       localStorage.setItem('ledger_admin_access_v1', 'true');
+      localStorage.setItem('ledger_admin_email_v1', 'jamaluddinkh3424@gmail.com');
       setShowAdminModal(false);
       setAdminPassword('');
+      setAdminEmailInput('');
     } else {
-      alert("ভুল পাসওয়ার্ড!");
+      alert("ভুল জিমেইল আইডি অথবা পাসওয়ার্ড!");
     }
   };
 
@@ -765,7 +770,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
       )}
       {showAdminModal && (
-        <div className="fixed inset-0 z-[20000] flex items-start justify-center p-4 pt-32 bg-black/80 backdrop-blur-md animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-500">
           <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 space-y-6 animate-in zoom-in-95 duration-500 relative overflow-y-auto max-h-[90vh] group no-scrollbar">
             {/* Decorative Glows */}
             <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/20 blur-[80px] rounded-full group-hover:bg-blue-600/30 transition-colors duration-700"></div>
@@ -790,75 +795,67 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </button>
               </div>
 
-              <div className="space-y-2">
-                <p className="text-slate-300 text-sm font-bold ml-1">মালিকের সিক্রেট পাসওয়ার্ড দিন:</p>
+              <div className="space-y-4">
                 <form onSubmit={handleAdminSubmit} className="space-y-4">
-                  <div className="relative group/input">
-                    <input 
-                      autoFocus 
-                      type="password" 
-                      placeholder="••••••••" 
-                      value={adminPassword} 
-                      onChange={(e) => setAdminPassword(e.target.value)} 
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-black text-center text-2xl outline-none focus:border-blue-500/50 focus:ring-8 focus:ring-blue-500/5 transition-all placeholder:text-slate-700 tracking-[0.5em]" 
-                    />
-                    <div className="absolute inset-0 rounded-2xl bg-blue-500/5 opacity-0 group-focus-within/input:opacity-100 pointer-events-none transition-opacity"></div>
-                  </div>
-
-                  <div className="text-center">
-                    <button 
-                      type="button"
-                      onClick={() => { setShowAdminModal(false); setShowRecoveryModal(true); }}
-                      className="text-[9px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-widest transition-colors"
-                    >
-                      পাসওয়ার্ড ভুলে গেছেন? উদ্ধার করুন
-                    </button>
-                  </div>
-
-                  <div className="relative py-2">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-white/10"></span>
-                    </div>
-                    <div className="relative flex justify-center text-[8px] uppercase font-black tracking-[0.3em]">
-                      <span className="bg-slate-900 px-3 text-slate-500">অথবা</span>
+                  {/* Email Input */}
+                  <div className="space-y-1 text-left">
+                    <label className="text-slate-300 text-[11px] font-black pl-1 block uppercase tracking-wider">জিমেইল আইডি (Gmail ID)</label>
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                        <Mail size={16} />
+                      </div>
+                      <input 
+                        autoFocus 
+                        type="email" 
+                        placeholder="example@gmail.com" 
+                        value={adminEmailInput} 
+                        onChange={(e) => setAdminEmailInput(e.target.value)} 
+                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white font-bold text-sm outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-600 block" 
+                        required
+                      />
                     </div>
                   </div>
 
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      console.log("Calling signInWithGoogle from Sidebar");
-                      window.alert("Calling signInWithGoogle from Sidebar");
-                      signInWithGoogle();
-                    }}
-                    className="w-full flex items-center justify-center gap-3 py-3.5 bg-white text-slate-900 rounded-2xl font-black text-xs hover:bg-slate-100 transition-all active:scale-95 shadow-xl shadow-white/5"
-                  >
-                    <Chrome size={18} className="text-blue-600" />
-                    গুগল দিয়ে লগইন করুন
-                  </button>
+                  {/* Password Input */}
+                  <div className="space-y-1 text-left">
+                    <label className="text-slate-300 text-[11px] font-black pl-1 block uppercase tracking-wider">পাসওয়ার্ড (Password)</label>
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                        <Lock size={16} />
+                      </div>
+                      <input 
+                        type="password" 
+                        placeholder="••••••••" 
+                        value={adminPassword} 
+                        onChange={(e) => setAdminPassword(e.target.value)} 
+                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white font-bold text-sm outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-600 block" 
+                        required
+                      />
+                    </div>
+                  </div>
 
-                  <div className="flex gap-4">
+                  {/* Warning Message */}
+                  <div className="p-3 bg-red-950/20 border border-red-900/40 rounded-xl flex items-start gap-2.5">
+                    <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+                    <p className="text-[10px] font-black text-red-200/90 leading-normal">
+                      নিরাপত্তা সতর্কীকরণ: এই নির্দিষ্ট জিমেইল আইডি ছাড়া অন্য কোন জিমেইল আইডি এবং পাসওয়ার্ড দিয়ে প্রবেশ করা সম্পূর্ণ নিষিদ্ধ।
+                    </p>
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex gap-4 pt-2">
                     <button 
                       type="button" 
-                      onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} 
-                      className="flex-1 py-3.5 bg-white/5 text-slate-300 rounded-2xl font-black text-xs hover:bg-white/10 transition-all active:scale-95 border border-white/5"
+                      onClick={() => { setShowAdminModal(false); setAdminPassword(''); setAdminEmailInput(''); }} 
+                      className="flex-1 py-3 bg-white/5 text-slate-300 rounded-xl font-bold text-xs hover:bg-white/15 transition-all active:scale-95 border border-white/5 cursor-pointer"
                     >
                       বাতিল
                     </button>
                     <button 
                       type="submit" 
-                      className="flex-1 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-xs hover:from-blue-500 hover:to-indigo-500 transition-all active:scale-95 shadow-xl shadow-blue-600/20 ring-4 ring-blue-500/10"
+                      className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-extrabold text-xs hover:from-blue-500 hover:to-indigo-500 transition-all active:scale-95 shadow-lg shadow-blue-600/20 ring-2 ring-blue-500/10 cursor-pointer"
                     >
-                      প্রবেশ করুন
-                    </button>
-                  </div>
-                  <div className="text-center pt-1">
-                    <button 
-                      type="button"
-                      onClick={() => { setShowAdminModal(false); onOpenChangePassword && onOpenChangePassword(); }}
-                      className="text-[8px] font-black text-slate-500 hover:text-blue-400 uppercase tracking-[0.2em] transition-colors"
-                    >
-                      পাসওয়ার্ড পরিবর্তন করতে চান?
+                      নিরাপদভাবে প্রবেশ করুন
                     </button>
                   </div>
                 </form>
