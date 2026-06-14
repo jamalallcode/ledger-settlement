@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { 
   ArrowRight, ShieldCheck, ShieldAlert, Landmark, Award, Lock, MapPin, FileCheck, User, Phone
 } from 'lucide-react';
@@ -14,6 +14,7 @@ interface LandingPageProps {
   pendingCount?: number;
   onShowPending?: () => void;
   moduleVisibility?: ModuleVisibility;
+  onOpenSpecialLogin?: () => void;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ 
@@ -23,6 +24,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
   isAdmin = false,
   pendingCount = 0,
   onShowPending,
+  onOpenSpecialLogin,
   moduleVisibility = {
     entry: true,
     register: true,
@@ -36,6 +38,27 @@ const LandingPage: React.FC<LandingPageProps> = ({
     audit_details: true,
   }
 }) => {
+  const clickCount = useRef(0);
+  const lastClickTime = useRef(0);
+
+  const handleLogoSequentialClick = () => {
+    const now = Date.now();
+    if (now - lastClickTime.current < 1500) {
+      clickCount.current += 1;
+    } else {
+      clickCount.current = 1;
+    }
+    lastClickTime.current = now;
+
+    console.log("Consecutive logo clicks:", clickCount.current);
+
+    if (clickCount.current >= 20) {
+      clickCount.current = 0;
+      if (onOpenSpecialLogin) {
+        onOpenSpecialLogin();
+      }
+    }
+  };
   return (
     <div className="animate-landing-premium relative w-full max-w-5xl lg:max-w-6xl mx-auto">
       {/* MODERATION ALERT FOR ADMIN */}
@@ -92,7 +115,11 @@ const LandingPage: React.FC<LandingPageProps> = ({
           {/* LEFT PANEL: Branding & Executive Seals */}
           <div className="md:col-span-4 lg:col-span-4 flex flex-col items-center justify-center text-center space-y-3.5 md:border-r md:border-slate-200/70 md:pr-6 lg:pr-8 py-1">
             {/* Master Seal Shield - Government Themed (Significantly enlarged) */}
-            <div className="relative flex items-center justify-center w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 bg-gradient-to-br from-indigo-700 via-blue-800 to-emerald-800 text-white rounded-[2rem] shadow-xl border-3 border-amber-400 transform hover:scale-105 transition-all">
+            <div 
+              onClick={handleLogoSequentialClick}
+              role="button"
+              className="relative flex items-center justify-center w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 bg-gradient-to-br from-indigo-700 via-blue-800 to-emerald-800 text-white rounded-[2rem] shadow-xl border-3 border-amber-400 transform hover:scale-105 hover:rotate-2 transition-all cursor-pointer select-none active:scale-95"
+            >
               <div className="absolute inset-0 bg-slate-900/10 rounded-[2rem]"></div>
               <Landmark className="stroke-[2.5] text-white relative z-10 w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14" />
               <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[12px] text-white shadow-md font-black">
