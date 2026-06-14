@@ -340,9 +340,25 @@ const Navbar: React.FC<NavbarProps> = ({
                   {isAdmin && (
                     <div className="space-y-3 border-t border-slate-800 pt-3">
                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">সিস্টেম টুলস</span>
-                      <button onClick={onExportSystem} className="w-full flex items-center gap-3 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl font-black text-[11px] text-slate-400 hover:text-white transition-all">
+                      <button onClick={onExportSystem} className="w-full flex items-center gap-3 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl font-black text-[11px] text-slate-400 hover:text-white transition-all cursor-pointer">
                         <Download size={14} /> এক্সপোর্ট ডাটাবেস
                       </button>
+                      <label className="w-full flex items-center gap-3 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl font-black text-[11px] text-slate-400 hover:text-white transition-all cursor-pointer">
+                        <Upload size={14} /> ইম্পোর্ট ডাটাবেস
+                        <input 
+                          type="file" 
+                          accept=".json" 
+                          className="hidden" 
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              onImportSystem?.(file);
+                              e.target.value = '';
+                              setShowToolsDropdown(false);
+                            }
+                          }}
+                        />
+                      </label>
                       <button 
                         onClick={() => {
                           setShowToolsDropdown(false);
