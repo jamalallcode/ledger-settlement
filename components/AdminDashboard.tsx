@@ -123,63 +123,62 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header Section */}
-      <div className="relative p-8 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-2xl overflow-hidden group shadow-2xl">
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-600/20 blur-[100px] rounded-full group-hover:bg-blue-600/30 transition-colors duration-1000"></div>
-        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-emerald-600/10 blur-[100px] rounded-full group-hover:bg-emerald-600/20 transition-colors duration-1000"></div>
+      <div className="relative p-4 md:p-5 rounded-2xl bg-gradient-to-br from-slate-50 via-white to-slate-100/50 border border-slate-200/70 shadow-xs overflow-hidden group">
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/5 blur-[60px] rounded-full group-hover:bg-blue-500/8 transition-colors duration-1000"></div>
+        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-500/5 blur-[60px] rounded-full group-hover:bg-indigo-500/8 transition-colors duration-1000"></div>
         
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/20 ring-4 ring-blue-500/10">
-                <LayoutDashboard size={24} className="text-white" />
+              <div className="w-10 h-10 bg-gradient-to-tr from-indigo-500 via-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-md shadow-indigo-500/10 ring-2 ring-indigo-500/5 transition-transform duration-500 group-hover:rotate-1">
+                <LayoutDashboard size={18} className="text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-black text-slate-800 tracking-tight">এডমিন ড্যাশবোর্ড</h1>
-                <p className="text-blue-600/60 text-[10px] font-black uppercase tracking-[0.3em]">Administrator Command Center</p>
+                <h1 className="text-lg font-black text-slate-800 tracking-tight">এডমিন ড্যাশবোর্ড</h1>
+                <p className="text-indigo-600/70 text-[9px] font-black uppercase tracking-wider">Administrator Command Center</p>
               </div>
             </div>
-            <p className="text-slate-600 text-sm font-bold max-w-xl">
+            <p className="text-slate-500 text-[11px] font-semibold max-w-xl leading-relaxed">
               স্বাগতম! এখান থেকে আপনি সিস্টেমের সকল প্রশাসনিক কাজ পরিচালনা করতে পারবেন। আপনার সকল তথ্য সুরক্ষিত এবং এনক্রিপ্টেড।
             </p>
           </div>
           
-          <div className="flex items-center gap-4">
-            <div className="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md flex items-center gap-3 group/status">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-              <span className="text-xs font-black text-slate-300 uppercase tracking-widest">System Online</span>
+          <div className="flex items-center gap-2 shrink-0 sm:self-center">
+            <div className="px-3.5 py-1.5 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-2 shadow-[0_2px_8px_rgba(16,185,129,0.02)]">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-[9.5px] font-black text-emerald-700 uppercase tracking-wider leading-none">System Online</span>
             </div>
-            <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer">
-              <BellRing size={20} />
+            <div className="w-9 h-9 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:bg-slate-50 hover:border-indigo-100 transition-all cursor-pointer active:scale-95 shadow-xs">
+              <BellRing size={15} />
             </div>
           </div>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, idx) => {
           const colors = colorClasses[stat.color] || colorClasses.blue;
           return (
             <div 
               key={idx} 
               onClick={stat.onClick}
-              className="relative p-6 rounded-[2rem] bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all duration-500 group overflow-hidden cursor-pointer active:scale-95"
+              className="relative p-5 rounded-2xl bg-white border border-slate-200/50 hover:border-slate-300/40 hover:bg-slate-50/10 shadow-[0_4px_16px_rgba(0,0,0,0.015)] hover:shadow-[0_16px_32px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all duration-300 group overflow-hidden cursor-pointer active:scale-[0.98] select-none flex items-center gap-4"
             >
-              <div className={`absolute -right-8 -bottom-8 w-24 h-24 ${colors.lightBg} blur-3xl rounded-full group-hover:scale-150 transition-transform duration-700`}></div>
-              <div className="relative z-10 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className={`w-10 h-10 ${colors.bg} rounded-xl flex items-center justify-center ${colors.text} group-hover:scale-110 transition-transform`}>
-                    <stat.icon size={20} />
-                  </div>
-                  <Sparkles size={14} className="text-slate-300 group-hover:text-amber-400 transition-colors" />
-                </div>
-                <div>
-                  <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{stat.label}</p>
-                  <h3 className={`text-4xl font-black ${colors.accent}`}>{stat.value}</h3>
-                </div>
-                <p className="text-slate-400 text-[10px] font-bold">{stat.desc}</p>
+              <div className={`absolute -right-8 -bottom-8 w-24 h-24 ${colors.lightBg} blur-3xl rounded-full group-hover:scale-125 transition-all duration-700`}></div>
+              
+              {/* Elegant rounded-2xl icon box on left matching the premium design in user image */}
+              <div className={`w-14 h-14 ${colors.bg} rounded-2xl flex items-center justify-center ${colors.text} shrink-0 shadow-[0_2px_10px_rgba(0,0,0,0.01)] transition-transform duration-300 group-hover:scale-105`}>
+                <stat.icon size={24} className="transition-transform duration-300" />
+              </div>
+              
+              {/* Text contents stack on right */}
+              <div className="flex-1 min-w-0 space-y-1 relative z-10">
+                <span className="text-slate-400 text-xs font-black uppercase tracking-wider block leading-none">{stat.label}</span>
+                <span className={`text-3xl font-black tracking-tight block ${colors.accent}`}>{stat.value}</span>
+                <p className="text-slate-500/90 text-[10px] md:text-sm font-bold leading-normal">{stat.desc}</p>
               </div>
             </div>
           );

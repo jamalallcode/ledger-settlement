@@ -398,15 +398,16 @@ const Sidebar: React.FC<SidebarProps> = ({
       {isSidebarOpen && (
         <div id="sidebar-container" className="w-[126px] bg-slate-900 h-full text-slate-300 flex flex-col border-r border-slate-800 shadow-2xl overflow-hidden relative z-[5000]">
           <IDBadge id="sidebar-container" />
-          <div id="sidebar-header" className="p-1.5 border-b border-slate-800 flex items-center justify-between relative">
+          <div id="sidebar-header" className="px-1.5 border-b border-slate-800/60 flex items-center justify-between relative bg-slate-900/45 h-[45px] shrink-0">
             <IDBadge id="sidebar-header" />
-            <div id="sidebar-logo" onClick={handleLogoClick} className="flex items-center gap-1 relative cursor-pointer select-none active:scale-95 transition-transform">
+            <div id="sidebar-logo" onClick={handleLogoClick} className="flex items-center gap-1.5 relative cursor-pointer select-none active:scale-95 transition-all duration-300 group">
               <IDBadge id="sidebar-logo" />
-              <span className="font-black text-white tracking-tight text-[11px]">অডিট রেজিস্টার</span>
+              <ShieldCheck size={11} className="text-amber-500 group-hover:scale-110 transition-transform duration-300 shrink-0" />
+              <span className="font-black text-slate-200 tracking-tight text-[10px] group-hover:text-white transition-colors">অডিট রেজিস্টার</span>
             </div>
-            <button onClick={onToggleVisibility} className="p-1 hover:bg-slate-800 rounded transition-colors text-slate-400 hover:text-white relative cursor-pointer">
+            <button onClick={onToggleVisibility} className="p-1 bg-slate-800/10 hover:bg-slate-800/60 rounded-md transition-all duration-200 text-slate-400 hover:text-slate-100 relative cursor-pointer">
               <IDBadge id="btn-sidebar-toggle" />
-              <ChevronLeft size={12} />
+              <ChevronLeft size={10} />
             </button>
           </div>
         <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">

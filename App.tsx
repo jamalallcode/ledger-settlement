@@ -735,6 +735,106 @@ const App: React.FC = () => {
     }
   };
 
+  const handleExportDatabase = () => {
+    try {
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        version: "1.0.0",
+        settlementEntries: entries,
+        correspondenceEntries: correspondenceEntries,
+        allPrevStats: allPrevStats,
+        moduleVisibility: moduleVisibility,
+      };
+
+      const jsonString = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.href = url;
+      downloadAnchor.download = `audit_ledger_backup_${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      document.body.removeChild(downloadAnchor);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Export database error:", error);
+      alert("ডাটাবেস এক্সপোর্ট করার সময় একটি ত্রুটি ঘটেছে।");
+    }
+  };
+
+  const handleImportDatabase = async (file: File) => {
+    try {
+      const text = await file.text();
+      const importData = JSON.parse(text);
+
+      if (!importData || typeof importData !== 'object') {
+        throw new Error("Invalid format");
+      }
+
+      // Safe checks for mandatory lists
+      const importedSettlements = Array.isArray(importData.settlementEntries) ? importData.settlementEntries : [];
+      const importedCorrespondence = Array.isArray(importData.correspondenceEntries) ? importData.correspondenceEntries : [];
+      const importedPrevStats = importData.allPrevStats;
+      const importedVisibility = importData.moduleVisibility;
+
+      if (importedSettlements.length === 0 && importedCorrespondence.length === 0) {
+        if (!window.confirm("ইমপোর্ট করা ফাইলে কোনো এন্ট্রি পাওয়া যায়নি। আপনি কি তবুও শূন্য ডাটাবেস দিয়ে বর্তমান ডাটা প্রতিস্থাপন করতে চান?")) {
+          return;
+        }
+      } else {
+        if (!window.confirm(`আপনি কি আমদানিকৃত ${importedSettlements.length}টি সেটেলমেন্ট এবং ${importedCorrespondence.length}টি করেসপনডেন্স এন্ট্রি দিয়ে আপনার বর্তমান ডাটাবেস আপডেট করতে চান?`)) {
+          return;
+        }
+      }
+
+      // Update Local State first
+      setEntries(importedSettlements);
+      setCorrespondenceEntries(importedCorrespondence);
+      if (importedPrevStats) {
+        setAllPrevStats(importedPrevStats);
+        localStorage.setItem(PREV_STATS_KEY, JSON.stringify(importedPrevStats));
+      }
+      if (importedVisibility) {
+        setModuleVisibility(importedVisibility);
+      }
+
+      // Store in Localstorage offline caches
+      localStorage.setItem('cached_settlement_entries', JSON.stringify(importedSettlements));
+      localStorage.setItem('cached_correspondence_entries', JSON.stringify(importedCorrespondence));
+
+      // Attempt to upsert/write back to Supabase if config is valid
+      if (isOnline) {
+        alert("ডাটাবেস সফলভাবে ইমপোর্ট করা হয়েছে এবং ব্যাকগ্রাউন্ডে দূরবর্তী ডেটাবেসের সাথে সিঙ্ক করা হচ্ছে।");
+        
+        const allSystemRows: { id: string; content: any }[] = [];
+        importedSettlements.forEach((e: any) => {
+          allSystemRows.push({ id: e.id, content: e });
+        });
+        importedCorrespondence.forEach((e: any) => {
+          allSystemRows.push({ id: e.id, content: e });
+        });
+        if (importedPrevStats) {
+          allSystemRows.push({ id: 'system_metadata_prev_stats', content: importedPrevStats });
+        }
+
+        // Upload in background chunk by chunk to prevent overload
+        for (const row of allSystemRows) {
+          try {
+            await supabase.from('settlement_entries').upsert({ id: row.id, content: row.content });
+          } catch (e) {
+            console.error("Backing up rows to cloud error", e);
+          }
+        }
+      } else {
+        alert("ডাটাবেস সফলভাবে লোড করা হয়েছে অফলাইন মোডে। এটি পরে অনলাইনের সাথে সিঙ্ক হবে।");
+      }
+    } catch (error) {
+      console.error("Import database error:", error);
+      alert("ডাটা ফাইল নির্বাচন অথবা ফাইলে ভুল ফরম্যাটের কারণে আমদানি ব্যর্থ হয়েছে। সঠিক ব্যাকআপ .json ফাইল যাচাই করুন।");
+    }
+  };
+
   const viewMode = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('mode');
@@ -797,7 +897,7 @@ const App: React.FC = () => {
           <Navbar 
             activeTab={activeTab} setActiveTab={handleTabChange} onDemoLoad={() => {}}
             isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
-            onExportSystem={() => {}} onImportSystem={() => {}}
+            onExportSystem={handleExportDatabase} onImportSystem={handleImportDatabase}
             isAdmin={isAdmin} setIsAdmin={setIsAdmin} cycleLabel={cycleLabelBengali}
             showRegisterFilters={showRegisterFilters} setShowRegisterFilters={setShowRegisterFilters}
             onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen}
