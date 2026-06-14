@@ -870,7 +870,7 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-bengali">
-      <div className={`no-print h-full relative z-[10000] ${isSidebarOpen ? '' : 'w-0'}`}>
+      <div className={`no-print h-full relative z-[10000] transition-all duration-300 ease-in-out overflow-hidden ${isSidebarOpen ? 'w-[126px]' : 'w-0'}`}>
         <Sidebar 
           activeTab={activeTab} setActiveTab={handleTabChange} 
           onToggleVisibility={() => setIsSidebarOpen(false)}
