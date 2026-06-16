@@ -515,6 +515,8 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
       return () => window.removeEventListener("scroll", handleScroll);
     }, [groupedEntries]);
 
+
+
     const grandTotals = useMemo(() => {
       return filteredEntries.reduce(
         (acc, entry) => {
@@ -651,9 +653,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
 
     // Headers reverted to font-black
     const thBase =
-      "sticky top-0 border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 z-[110] relative";
+      "sticky top-0 border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 z-[110]";
     const thBase2 =
-      "sticky top-[42px] border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 z-[110] relative";
+      "sticky top-[42px] border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 z-[110]";
     // Body cells reverted to font-bold
     const tdBase =
       "border border-slate-300 px-0.5 py-1.5 text-center align-middle text-[9px] leading-tight font-bold text-slate-900 relative";
@@ -928,10 +930,11 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                           }}
                           style={{
                             width: "450px",
+                            maxHeight: "min(540px, 75vh)",
                           }}
-                          className="bg-white rounded-[2rem] shadow-[0_40px_100px_-15px_rgba(0,0,0,0.4)] border border-slate-200 overflow-hidden no-print text-left"
+                          className="bg-white rounded-[2rem] shadow-[0_40px_100px_-15px_rgba(0,0,0,0.4)] border border-slate-200 overflow-hidden no-print text-left flex flex-col"
                         >
-                          <div className="bg-gradient-to-r from-emerald-700 to-teal-700 p-6 flex items-center justify-between">
+                          <div className="bg-gradient-to-r from-emerald-700 to-teal-700 p-6 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-3 text-white">
                               <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center shadow-inner">
                                 <Sparkles size={22} className="text-white" />
@@ -953,7 +956,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                             </button>
                           </div>
 
-                          <div className="p-6 space-y-6">
+                          <div className="p-6 space-y-6 overflow-y-auto flex-1">
                             {/* Total Letters Card */}
                             <div className="relative overflow-hidden bg-slate-50 rounded-2xl p-5 border border-slate-200 group">
                               <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-700"></div>
@@ -1380,7 +1383,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           </div>
         )}
 
-        <div className="table-container border border-slate-300 rounded-sm overflow-auto relative z-[1]">
+        <div id="settlement-register-table-container" className="table-container border border-slate-300 rounded-sm relative z-[1]">
           <IDBadge id="table-main-ledger" />
           <table
             id="table-main-ledger"
@@ -1469,7 +1472,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                 [group.label]: nextState,
                               });
                             }}
-                            className="bg-slate-100/95 backdrop-blur-sm border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
+                            className="bg-slate-100 border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-md group-hover/cycle-header:scale-110 transition-transform">

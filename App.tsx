@@ -8,6 +8,7 @@ import SettlementTable from './components/SettlementTable';
 import CorrespondenceTable from './components/CorrespondenceTable';
 import ReturnView from './components/ReturnView';
 import LandingPage from './components/LandingPage';
+import AnimatedPremiumBg from './components/AnimatedPremiumBg';
 // @ts-ignore
 import bengaliHeritageBg from './src/assets/images/gov_audit_bg_v2_1780851709850.png';
 import VotingSystem from './components/VotingSystem';
@@ -915,20 +916,30 @@ const App: React.FC = () => {
 
         <main 
           ref={mainScrollRef} 
-          className={`flex-1 ${activeTab === 'landing' ? 'overflow-y-auto flex flex-col items-center p-3 sm:p-4 md:p-5 lg:p-6 landing-main-container' : activeTab === 'return' ? 'overflow-y-auto overflow-x-hidden return-main-container' : 'overflow-y-auto overflow-x-hidden'} relative scroll-smooth bg-white`} 
+          className={`flex-1 ${
+            activeTab === 'landing' 
+              ? 'overflow-y-auto flex flex-col items-center p-3 sm:p-4 md:p-5 lg:p-6 landing-main-container' 
+              : activeTab === 'return' 
+                ? 'overflow-y-auto overflow-x-hidden return-main-container' 
+                : activeTab === 'register'
+                  ? 'overflow-y-auto overflow-x-hidden register-main-container' 
+                  : 'overflow-y-auto overflow-x-hidden'
+          } relative scroll-smooth bg-white`} 
           style={{ 
-            scrollbarGutter: 'stable',
-            ...(activeTab === 'landing' ? {
-              backgroundImage: `url(${bengaliHeritageBg})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-              backgroundAttachment: 'fixed'
-            } : {})
+            scrollbarGutter: 'stable'
           }}
         >
-          <div className={activeTab === 'landing' ? "w-full max-w-5xl lg:max-w-6xl mx-auto flex flex-col justify-start mt-0 md:mt-1.5 lg:mt-2 mb-4 md:mb-6 animate-fade-in" : activeTab === 'return' ? "px-0 max-w-full mx-auto w-full flex flex-col pt-0 pb-0" : `px-2 md:px-4 max-w-full mx-auto w-full flex flex-col pt-4 md:pt-8 ${activeTab === 'register' ? 'pb-0' : 'pb-4 md:pb-8'}`}>
-            <div className="animate-in fade-in duration-500 flex-1">
+          {activeTab === 'landing' && <AnimatedPremiumBg />}
+          <div className={
+            activeTab === 'landing' 
+              ? "relative z-10 w-full max-w-5xl lg:max-w-6xl mx-auto flex flex-col justify-start mt-0 md:mt-1.5 lg:mt-2 mb-4 md:mb-6 animate-fade-in" 
+              : activeTab === 'return' 
+                ? "px-0 max-w-full mx-auto w-full flex flex-col pt-0 pb-0" 
+                : activeTab === 'register'
+                  ? "px-2 md:px-4 max-w-full mx-auto w-full flex flex-col pt-4 md:pt-8 pb-4 md:pb-8"
+                  : `px-2 md:px-4 max-w-full mx-auto w-full flex flex-col pt-4 md:pt-8 pb-4 md:pb-8`
+          }>
+            <div className={`animate-in fade-in duration-500 flex-1`}>
               
               {activeTab === 'setup_receivers' && (
                 <ReceiverManagement 
@@ -954,7 +965,7 @@ const App: React.FC = () => {
               {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} moduleVisibility={moduleVisibility} />}
               
               {activeTab === 'register' && (
-                <div className="space-y-6 relative">
+                <div className="w-full relative">
                   {showPendingOnly ? (
                     <div className="space-y-8 animate-in fade-in duration-700">
                       <div className="flex items-center justify-between no-print mb-4">
@@ -1026,9 +1037,9 @@ const App: React.FC = () => {
                       )}
                     </div>
                   ) : (
-                    <div className="animate-in fade-in duration-700">
+                    <div className="animate-in fade-in duration-700 w-full">
                       {(registerSubModule === 'settlement') ? (
-                        <div className="space-y-6">
+                        <div className="w-full">
                           <div className="flex items-center gap-4 no-print mb-2">
                           </div>
 
@@ -1045,7 +1056,7 @@ const App: React.FC = () => {
                           />
                         </div>
                       ) : (
-                        <div className="space-y-6">
+                        <div className="w-full">
                           <div className="flex items-center gap-4 no-print mb-2">
                           </div>
 

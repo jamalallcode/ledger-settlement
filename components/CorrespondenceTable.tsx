@@ -376,6 +376,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const cycleDropdownRef = useRef<HTMLDivElement>(null);
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const summaryButtonRef = useRef<HTMLButtonElement>(null);
 
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
 
@@ -396,6 +398,14 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         !typeDropdownRef.current.contains(event.target as Node)
       )
         setIsTypeDropdownOpen(false);
+      if (
+        summaryRef.current &&
+        !summaryRef.current.contains(event.target as Node) &&
+        summaryButtonRef.current &&
+        !summaryButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowSummary(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -725,6 +735,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
     }
   };
 
+
+
   // Header font-black
   const thCls =
     "sticky top-0 border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[8px] bg-slate-200 z-[110] shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
@@ -789,6 +801,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             )}
             <div className="relative">
               <button
+                ref={summaryButtonRef}
                 onClick={() => setShowSummary(!showSummary)}
                 className={`px-5 py-3 rounded-xl font-black text-[12px] flex items-center gap-2 transition-all shadow-md ${showSummary ? "bg-blue-600 text-white shadow-blue-500/20" : "bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100 shadow-sm"}`}
               >
@@ -802,6 +815,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
               <AnimatePresence>
                 {showSummary && (
                   <motion.div
+                    ref={summaryRef}
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -815,10 +829,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                       right: 0,
                       width: "450px",
                       zIndex: 9999999,
+                      maxHeight: "min(540px, 75vh)",
                     }}
-                    className="bg-white rounded-[2rem] shadow-[0_40px_100px_-15px_rgba(0,0,0,0.4)] border border-slate-200 overflow-hidden no-print text-left"
+                    className="bg-white rounded-[2rem] shadow-[0_40px_100px_-15px_rgba(0,0,0,0.4)] border border-slate-200 overflow-hidden no-print text-left flex flex-col"
                   >
-                    <div className="bg-gradient-to-r from-blue-700 to-indigo-700 p-6 flex items-center justify-between">
+                    <div className="bg-gradient-to-r from-blue-700 to-indigo-700 p-6 flex items-center justify-between shrink-0">
                       <div className="flex items-center gap-3 text-white">
                         <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center shadow-inner">
                           <Sparkles size={22} className="text-white" />
@@ -840,7 +855,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                       </button>
                     </div>
 
-                    <div className="p-6 space-y-6">
+                    <div className="p-6 space-y-6 overflow-y-auto flex-1">
                       {/* Total Letters Card */}
                       <div className="relative overflow-hidden bg-slate-50 rounded-2xl p-5 border border-slate-200 group">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-700"></div>
@@ -1252,7 +1267,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
       )}
 
       {/* Table Container */}
-      <div className="table-container border border-slate-300 rounded-sm overflow-auto relative z-[1] shadow-xl bg-white max-w-full">
+      <div id="correspondence-register-table-container" className="table-container border border-slate-300 rounded-sm relative z-[1] shadow-xl bg-white max-w-full">
         <table className="w-full border-separate border-spacing-0 table-fixed">
           <colgroup>
             <col className="w-[30px]" />
@@ -1295,7 +1310,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                           if (nextState) lastActiveLabel.current = group.label;
                           else lastActiveLabel.current = "";
                         }}
-                        className="bg-slate-100/95 backdrop-blur-sm border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
+                        className="bg-slate-100 border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-md group-hover/cycle-header:scale-110 transition-transform">
