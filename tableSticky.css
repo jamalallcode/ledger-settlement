@@ -5,13 +5,24 @@
 .table-container {
   width: 100%;
   max-width: 100%;
-  max-height: 85vh !important; 
-  overflow-y: auto !important;
-  overflow-x: auto !important;
   position: relative;
   background-color: white;
-  scrollbar-gutter: stable;
   border: 1px solid #cbd5e1;
+}
+
+@media (min-width: 1280px) {
+  .table-container {
+    overflow: visible !important;
+  }
+}
+
+@media (max-width: 1279px) {
+  .table-container {
+    max-height: 72vh;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    scrollbar-gutter: stable;
+  }
 }
 
 /* Ensure table header is always on top */
