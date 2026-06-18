@@ -918,7 +918,7 @@ const App: React.FC = () => {
           ref={mainScrollRef} 
           className={`flex-1 ${
             activeTab === 'landing' 
-              ? 'overflow-y-auto flex flex-col items-center p-3 sm:p-4 md:p-5 lg:p-6 landing-main-container' 
+              ? 'overflow-y-auto flex flex-col items-center p-2.5 sm:p-3 md:p-4 lg:p-4 landing-main-container' 
               : activeTab === 'return' 
                 ? 'overflow-y-auto overflow-x-hidden return-main-container' 
                 : activeTab === 'register'
@@ -932,7 +932,7 @@ const App: React.FC = () => {
           {activeTab === 'landing' && <AnimatedPremiumBg />}
           <div className={
             activeTab === 'landing' 
-              ? "relative z-10 w-full max-w-5xl lg:max-w-6xl mx-auto flex flex-col justify-start mt-0 md:mt-1.5 lg:mt-2 mb-4 md:mb-6 animate-fade-in" 
+              ? "relative z-10 w-full max-w-5xl lg:max-w-6xl mx-auto flex flex-col justify-start mt-0 md:mt-1 mb-2 md:mb-3.5 animate-fade-in" 
               : activeTab === 'return' 
                 ? "px-0 max-w-full mx-auto w-full flex flex-col pt-0 pb-0" 
                 : activeTab === 'register'
