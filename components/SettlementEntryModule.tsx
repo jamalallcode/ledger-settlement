@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOption } from '../types.ts';
 import SearchableSelect from './SearchableSelect.tsx';
+import DeleteConfirmationModal from './DeleteConfirmationModal.tsx';
 import { MINISTRIES_LIST, MINISTRY_ENTITY_MAP, ENTITY_BRANCH_MAP, AUDIT_YEARS_OPTIONS } from '../constants.ts';
 import { Trash2, Globe, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus, Hash } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils.ts';
@@ -226,6 +227,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [wizardStep, setWizardStep] = useState('details'); 
   const [isSuccess, setIsSuccess] = useState(false);
   const [isDeletingPara, setIsDeletingPara] = useState(false);
+  const [paraToDeleteId, setParaToDeleteId] = useState<string | null>(null);
   const isSubmitting = useRef(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -1056,63 +1058,127 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               </div>
             </div>
             <div id="section-para-list" className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10 relative">
-              {paragraphs.map((p, idx) => (
-                <div key={p.id} id={`card-para-${idx}`} className={`p-6 rounded-[2rem] relative border-2 ${p.involvedAmount > 0 && p.involvedAmount === (p.recoveredAmount + p.adjustedAmount) ? "border-emerald-500 bg-emerald-50/10 shadow-emerald-100" : "border-red-500 bg-red-50/20 shadow-red-100"} hover:shadow-xl transition-all group overflow-hidden`}>
-                  
-                  {(isAdmin || !isUpdateMode) && (
-                    <button 
-                      type="button" 
-                      onClick={() => { 
-                        if (!window.confirm("আপনি কি নিশ্চিতভাবে এই অনুচ্ছেদটি মুছে ফেলতে চান?")) return;
-                        setIsDeletingPara(true);
-                        setIsSuccess(true);
-                        setTimeout(() => {
-                          setParagraphs(prev => prev.filter(x => x.id !== p.id));
-                          setIsSuccess(false);
-                          setIsDeletingPara(false);
-                          if(isUpdateMode) { setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100); }
-                        }, 2800);
-                      }} 
-                      className="absolute top-4 right-4 h-6 w-6 flex items-center justify-center bg-white text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-100 rounded-lg transition-all shadow-sm z-30 active:scale-95 hover:scale-110"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  )}
-
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6 relative z-10 pr-10">
-                    <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-xl shadow-md">
-                      <span className="text-[14px] font-black text-white">{toBengaliDigits(idx + 1)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black text-slate-500 uppercase">অনু: নং</span>
-                      <input type="text" className={`w-20 h-9 border-2 rounded-lg text-center font-black bg-white text-slate-950 outline-none ${p.paraNo ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-paraNo`] || toBengaliDigits(p.paraNo)} onChange={e => handleNumericInput(p.id, 'paraNo', e.target.value)} />
-                    </div>
-                    <button type="button" onClick={() => setParagraphs(prev => prev.map(x => x.id === p.id ? {...x, status: x.status === 'পূর্ণাঙ্গ' ? 'আংশিক' : 'পূর্ণাঙ্গ'} : x))} className={`h-9 w-[85px] rounded-xl text-[10px] font-black text-white shadow-md transition-all active:scale-95 flex items-center justify-center ${p.status === 'পূর্ণাঙ্গ' ? 'bg-emerald-600' : 'bg-red-600'}`}>{p.status}</button>
-                    <div className="flex bg-slate-100 rounded-lg p-1 h-9 border border-slate-200">
-                      {['ভ্যাট', 'আয়কর', 'অন্যান্য'].map(cat => (
-                        <button key={cat} type="button" onClick={() => setParagraphs(prev => prev.map(x => x.id === p.id ? {...x, category: cat as FinancialCategory} : x))} className={`whitespace-nowrap px-3 py-1 text-[9px] font-black rounded-md transition-all ${p.category === cat ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>
-                          {cat}
+              {paragraphs.map((p, idx) => {
+                const isMatched = p.involvedAmount > 0 && p.involvedAmount === (p.recoveredAmount + p.adjustedAmount);
+                return (
+                  <div key={p.id} id={`card-para-${idx}`} className={`p-6 rounded-[2rem] relative border-2 ${isMatched ? "border-emerald-500 bg-emerald-50/10 shadow-emerald-100" : "border-red-500 bg-red-50/20 shadow-red-100"} hover:shadow-xl transition-all group overflow-visible`}>
+                    
+                    {(isAdmin || !isUpdateMode) && (
+                      <div className="absolute top-[30px] right-4 z-40 flex items-center">
+                        <button 
+                          type="button" 
+                          onClick={() => setParaToDeleteId(p.id)} 
+                          className="h-6 w-6 flex items-center justify-center bg-white text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-100 rounded-lg transition-all shadow-sm active:scale-95 hover:scale-110"
+                        >
+                          <Trash2 size={12} />
                         </button>
-                      ))}
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-3 gap-4 relative z-10">
-                    <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 pl-1 uppercase tracking-wider text-center block">জড়িত টাকা</label><input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${p.involvedAmount > 0 ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-involvedAmount`] || (p.involvedAmount === 0 ? '' : toBengaliDigits(p.involvedAmount))} onChange={e => handleNumericInput(p.id, 'involvedAmount', e.target.value)} placeholder="০" /></div>
-                    <div className="space-y-1"><label className="text-[10px] font-black text-emerald-600 pl-1 uppercase tracking-wider text-center block">আদায়কৃত</label><input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${p.recoveredAmount > 0 ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-recoveredAmount`] || (p.recoveredAmount === 0 ? '' : toBengaliDigits(p.recoveredAmount))} onChange={e => handleNumericInput(p.id, 'recoveredAmount', e.target.value)} placeholder="০" /></div>
-                    <div className="space-y-1"><label className="text-[10px] font-black text-indigo-600 pl-1 uppercase tracking-wider text-center block">সমন্বয়কৃত</label><input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${p.adjustedAmount > 0 ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-adjustedAmount`] || (p.adjustedAmount === 0 ? '' : toBengaliDigits(p.adjustedAmount))} onChange={e => handleNumericInput(p.id, 'adjustedAmount', e.target.value)} placeholder="০" /></div>
-                  </div>
+                        {paraToDeleteId === p.id && (
+                          <div className="absolute right-8 top-[-8px] z-50 bg-slate-950 text-white rounded-2xl p-3 shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-slate-800 flex flex-col items-start gap-2 w-52 animate-in fade-in zoom-in-95 duration-150">
+                            {/* Decorative mini pointer arrow */}
+                            <div className="absolute right-[-4px] top-4 w-2 h-2 bg-slate-950 rotate-45 border-t border-r border-slate-800"></div>
+                            
+                            <div className="flex items-center gap-1.5 text-rose-400">
+                              <Trash size={13} strokeWidth={2.5} className="animate-pulse" />
+                              <span className="text-[11px] font-black tracking-tight mb-[-1px]">মুছে ফেলবেন?</span>
+                            </div>
+                            
+                            <p className="text-[9px] font-black text-slate-400 text-left leading-normal">
+                              অনুচ্ছেদটির ডায়েরি ও তালিকাভুক্ত ট্র্যাকিং তথ্য চলে যাবে।
+                            </p>
+                            
+                            <div className="flex items-center gap-2 w-full mt-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsDeletingPara(true);
+                                  setIsSuccess(true);
+                                  setParaToDeleteId(null);
+                                  setTimeout(() => {
+                                    setParagraphs(prev => prev.filter(x => x.id !== p.id));
+                                    setIsSuccess(false);
+                                    setIsDeletingPara(false);
+                                    if (isUpdateMode) { setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100); }
+                                  }, 700);
+                                }}
+                                className="flex-1 py-1 px-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[9px] font-black transition-all active:scale-95 shadow-sm shadow-red-500/20 text-center"
+                              >
+                                হ্যাঁ, মুছুন
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setParaToDeleteId(null)}
+                                className="flex-1 py-1 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[9px] font-black transition-all active:scale-95 border border-slate-700/60 text-center"
+                              >
+                                না
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                  {p.involvedAmount > 0 && p.involvedAmount !== (p.recoveredAmount + p.adjustedAmount) && (
-                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600 animate-in slide-in-from-top-2 duration-300 relative z-10">
-                      <AlertCircle size={14} className="shrink-0" />
-                      <span className="text-[10px] font-black uppercase tracking-tight leading-tight">
-                        সতর্কতা: জড়িত টাকা ({toBengaliDigits(p.involvedAmount)}) এবং আদায় ও সমন্বয়ের যোগফল ({toBengaliDigits(p.recoveredAmount + p.adjustedAmount)}) সমান নয়।
-                      </span>
+                    <div className="flex flex-row flex-nowrap items-center gap-1.5 sm:gap-2 mb-6 relative z-10 pr-8 sm:pr-10">
+                      <div className="flex items-center gap-1 bg-slate-900 px-2.5 py-1.5 rounded-xl shadow-md shrink-0">
+                        <span className="text-[13px] font-black text-white">{toBengaliDigits(idx + 1)}</span>
+                        {isMatched && (
+                          <Check size={12} strokeWidth={4} className="text-emerald-400 ml-1 animate-bounce" />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] font-black text-slate-500 uppercase">অনু: নং</span>
+                        <input type="text" className={`w-14 sm:w-16 h-9 border-2 rounded-lg text-center font-black bg-white text-slate-950 outline-none ${p.paraNo ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-paraNo`] || toBengaliDigits(p.paraNo)} onChange={e => handleNumericInput(p.id, 'paraNo', e.target.value)} />
+                      </div>
+                      <button type="button" onClick={() => setParagraphs(prev => prev.map(x => x.id === p.id ? {...x, status: x.status === 'পূর্ণাঙ্গ' ? 'আংশিক' : 'পূর্ণাঙ্গ'} : x))} className={`h-9 w-[70px] sm:w-[80px] rounded-xl text-[10px] font-black text-white shadow-md transition-all active:scale-95 flex items-center justify-center shrink-0 ${p.status === 'পূর্ণাঙ্গ' ? 'bg-emerald-600' : 'bg-red-600'}`}>{p.status}</button>
+                      <div className="flex bg-slate-100 rounded-lg p-0.5 sm:p-1 h-9 border border-slate-200 shrink-0 ml-3 sm:ml-5">
+                        {['ভ্যাট', 'আয়কর', 'অন্যান্য'].map(cat => (
+                          <button key={cat} type="button" onClick={() => setParagraphs(prev => prev.map(x => x.id === p.id ? {...x, category: cat as FinancialCategory} : x))} className={`whitespace-nowrap px-1.5 sm:px-2.5 py-1 text-[9px] font-black rounded-md transition-all ${p.category === cat ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    <div className="grid grid-cols-3 gap-4 relative z-10">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 pl-1 uppercase tracking-wider text-center block">জড়িত টাকা</label>
+                        <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${(p.involvedAmount > 0 || isMatched) ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-involvedAmount`] || (p.involvedAmount === 0 ? '' : toBengaliDigits(p.involvedAmount))} onChange={e => handleNumericInput(p.id, 'involvedAmount', e.target.value)} placeholder="০" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-emerald-600 pl-1 uppercase tracking-wider text-center block">আদায়কৃত</label>
+                        <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${(p.recoveredAmount > 0 || isMatched) ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-recoveredAmount`] || (p.recoveredAmount === 0 ? '' : toBengaliDigits(p.recoveredAmount))} onChange={e => handleNumericInput(p.id, 'recoveredAmount', e.target.value)} placeholder="০" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-indigo-600 pl-1 uppercase tracking-wider text-center block">সমন্বয়কৃত</label>
+                        <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${(p.adjustedAmount > 0 || isMatched) ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-adjustedAmount`] || (p.adjustedAmount === 0 ? '' : toBengaliDigits(p.adjustedAmount))} onChange={e => handleNumericInput(p.id, 'adjustedAmount', e.target.value)} placeholder="০" />
+                      </div>
+                    </div>
+
+                    {isMatched && (
+                      <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-2 text-emerald-700 animate-in zoom-in-95 duration-300 relative z-10 shadow-sm shadow-emerald-500/10">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                          <span className="text-[10px] font-black uppercase tracking-tight leading-tight">
+                            সফলতা: জড়িত টাকা ও আদায়-সমন্বয়ের যোগফল সম্পূর্ণ সমান হয়েছে!
+                          </span>
+                        </div>
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm shrink-0 animate-bounce">
+                          <Check size={11} strokeWidth={3} />
+                        </span>
+                      </div>
+                    )}
+
+                    {p.involvedAmount > 0 && p.involvedAmount !== (p.recoveredAmount + p.adjustedAmount) && (
+                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600 animate-in slide-in-from-top-2 duration-300 relative z-10">
+                        <AlertCircle size={14} className="shrink-0" />
+                        <span className="text-[10px] font-black uppercase tracking-tight leading-tight">
+                          সতর্কতা: জড়িত টাকা ({toBengaliDigits(p.involvedAmount)}) এবং আদায় ও সমন্বয়ের যোগফল ({toBengaliDigits(p.recoveredAmount + p.adjustedAmount)}) সমান নয়।
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

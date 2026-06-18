@@ -119,7 +119,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                   <Award size={13} className="text-blue-600 shrink-0" />
                   আঞ্চলিক কার্যালয়, সেক্টর: ০৬
                 </span>
-                <span className="landing-sector-text text-sm md:text-base font-black mt-2 bg-blue-50 text-blue-800 px-4 py-1 rounded-full border border-blue-105">
+                <span className="landing-sector-text text-sm md:text-base font-black mt-2 px-6 py-1.5 rounded-xl border border-blue-200 transition-all shadow-md animate-pulse-green">
                   খুলনা
                 </span>
               </div>
@@ -140,18 +140,14 @@ const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* LAUNCH ACTIONS (Inside cohesive container) */}
-            <div className="w-full flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 transition-colors">
+            <div className="w-full flex flex-col lg:flex-row items-start lg:items-end justify-between gap-4 transition-colors">
               
-              <div className="flex items-center gap-3 text-left shrink-0">
-                <div className="relative flex h-2 w-2 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </div>
-                <div className="space-y-1">
-                  <div className="landing-label-muted text-[10px] md:text-xs uppercase font-black tracking-wider">চলমান রিপোর্টিং সাইকেল</div>
-                  <div className="landing-val-text text-xs sm:text-sm md:text-base font-black text-blue-700 bg-blue-50/50 px-3 py-1 rounded-lg border border-blue-100/50">
-                    {cycleLabel || "চলমান কোয়ার্টার"}
-                  </div>
+              <div className="flex flex-col items-start justify-start gap-2 text-left shrink-0">
+                <span className="landing-label-muted text-[10px] md:text-xs uppercase font-black tracking-wider text-left inline-block m-0 p-0 animate-colorful-slide">
+                  চলমান রিপোর্টিং সাইকেল
+                </span>
+                <div className="landing-val-text text-xs sm:text-sm md:text-base font-black text-white bg-gradient-to-r from-blue-600 to-indigo-700 px-5 py-3.5 rounded-xl border border-blue-500/40 shadow-lg shadow-blue-500/20 w-fit block text-left m-0">
+                  {cycleLabel || "চলমান কোয়ার্টার"}
                 </div>
               </div>
 

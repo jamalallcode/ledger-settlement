@@ -9,7 +9,7 @@ import { getCycleForDate } from '../utils/cycleHelper';
 import { getDateError } from '../utils/dateValidation';
 import { SFI_RECEIVERS } from '../utils/sfi';
 import { NONSFI_RECEIVERS } from '../utils/nonsfi';
-import { isSFI, isNonSFI, getBranchVariations } from '../utils/branchUtils';
+import { isSFI, isNonSFI, isAdminBranch, getBranchVariations } from '../utils/branchUtils';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 /**
@@ -190,6 +190,7 @@ const PremiumParaTypeSelect = ({ value, onChange, IDBadge }: any) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const options = [
+    { id: 'admin', label: 'প্রশাসন (Admin)', value: 'প্রশাসন', icon: User, color: 'emerald', desc: 'Administration Branch' },
     { id: 'sfi', label: 'এসএফআই (SFI)', value: 'এসএফআই', icon: ShieldCheck, color: 'blue', desc: 'Special Audit Branch' },
     { id: 'nonsfi', label: 'নন এসএফআই (NON-SFI)', value: 'নন এসএফআই', icon: Layout, color: 'indigo', desc: 'General Audit Branch' },
   ];
@@ -510,7 +511,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
         // If Supabase failed or is not configured, try LocalStorage
         if (!isSupabaseConfigured || supabaseError || finalReceivers.length === 0) {
-          const key = isSFI(formData.paraType) ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+          const key = isAdminBranch(formData.paraType) ? 'ledger_correspondence_receivers_admin' :
+                      isNonSFI(formData.paraType) ? 'ledger_correspondence_receivers_nonsfi' :
+                      'ledger_correspondence_receivers_sfi';
           const savedNames = localStorage.getItem(key);
           if (savedNames) {
             try {
@@ -599,7 +602,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
       } catch (err) {
         console.error('Error loading receivers:', err);
-        const initialList = isSFI(formData.paraType) ? SFI_RECEIVERS : NONSFI_RECEIVERS;
+        const initialList = isAdminBranch(formData.paraType) ? [] :
+                            isSFI(formData.paraType) ? SFI_RECEIVERS : NONSFI_RECEIVERS;
         setReceiverSuggestions(initialList.map(name => ({ name, designation: 'অডিটর' })));
       }
     };
@@ -790,7 +794,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           const { error } = await supabase.from('receivers').insert([profileData]);
           if (error) throw error;
         } else {
-          const key = isSFI(formData.paraType) ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+          const key = isAdminBranch(formData.paraType) ? 'ledger_correspondence_receivers_admin' :
+                      isNonSFI(formData.paraType) ? 'ledger_correspondence_receivers_nonsfi' :
+                      'ledger_correspondence_receivers_sfi';
           const updated = [...receiverSuggestions, profileData];
           setReceiverSuggestions(updated);
           localStorage.setItem(key, JSON.stringify(updated));
@@ -825,7 +831,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             .eq('id', receiverSuggestions[idx].id);
           if (error) throw error;
         } else {
-          const key = isSFI(formData.paraType) ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+          const key = isAdminBranch(formData.paraType) ? 'ledger_correspondence_receivers_admin' :
+                      isNonSFI(formData.paraType) ? 'ledger_correspondence_receivers_nonsfi' :
+                      'ledger_correspondence_receivers_sfi';
           const updated = [...receiverSuggestions];
           updated[idx] = profileData;
           setReceiverSuggestions(updated);
@@ -879,7 +887,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           .eq('id', profileToDelete.id);
         if (error) throw error;
       } else {
-        const key = isSFI(formData.paraType) ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+        const key = isAdminBranch(formData.paraType) ? 'ledger_correspondence_receivers_admin' :
+                    isNonSFI(formData.paraType) ? 'ledger_correspondence_receivers_nonsfi' :
+                    'ledger_correspondence_receivers_sfi';
         const updated = receiverSuggestions.filter((_, i) => i !== idx);
         setReceiverSuggestions(updated);
         localStorage.setItem(key, JSON.stringify(updated));
@@ -1033,7 +1043,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     // Defer heavy work to next tick to avoid blocking UI (INP fix)
     setTimeout(() => {
       if (isReceiverAdmin && formData.receiverName.trim()) {
-        const key = formData.paraType === 'এসএফআই' ? 'ledger_correspondence_receivers_sfi' : 'ledger_correspondence_receivers_nonsfi';
+        const key = isAdminBranch(formData.paraType) ? 'ledger_correspondence_receivers_admin' :
+                    isNonSFI(formData.paraType) ? 'ledger_correspondence_receivers_nonsfi' :
+                    'ledger_correspondence_receivers_sfi';
         const updatedNames = Array.from(new Set([formData.receiverName.trim(), ...receiverSuggestions]));
         setReceiverSuggestions(updatedNames);
         localStorage.setItem(key, JSON.stringify(updatedNames));
@@ -1389,21 +1401,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   </button>
                 </div>
                 
-                {isReceiverAdmin && (
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      setEditingReceiverIdx(null);
-                      setTempReceiverName('');
-                      setIsManagingReceivers(true);
-                    }}
-                    className="w-[52px] h-[52px] bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 shrink-0"
-                    title="নতুন গ্রহীতা যোগ করুন"
-                  >
-                    <Plus size={24} />
-                  </button>
-                )}
-
                 {showReceiverDropdown && (
                   <div className="absolute top-[calc(100%+8px)] left-0 w-[420px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600">
                     <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
