@@ -15,9 +15,11 @@ const PremiumVoterSelect: React.FC<{
   label: string;
   value: string;
   options: string[];
+  voterImages?: Record<string, string>;
+  voterDesignations?: Record<string, string>;
   onChange: (val: string) => void;
   placeholder?: string;
-}> = ({ label, value, options, onChange, placeholder = "প্রার্থী নির্বাচন করুন" }) => {
+}> = ({ label, value, options, voterImages = {}, voterDesignations = {}, onChange, placeholder = "প্রার্থী নির্বাচন করুন" }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -32,6 +34,11 @@ const PremiumVoterSelect: React.FC<{
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const extractDesignation = (name: string): string => {
+    const match = name.match(/\(([^)]+)\)/);
+    return match ? match[1] : '';
+  };
+
   const filteredOptions = options.filter(opt => 
     opt.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -44,12 +51,35 @@ const PremiumVoterSelect: React.FC<{
       
       <div 
         onClick={() => { setIsOpen(!isOpen); if (!isOpen) setSearchTerm(''); }}
-        className={`w-full h-[58px] px-5 bg-slate-50 border-2 rounded-2xl flex items-center justify-between cursor-pointer transition-all duration-300 shadow-sm ${isOpen ? 'border-blue-500 bg-white ring-4 ring-blue-50' : 'border-slate-100 hover:border-slate-200'}`}
+        className={`w-full min-h-[58px] py-2 px-5 bg-slate-50 border-2 rounded-2xl flex items-center justify-between cursor-pointer transition-all duration-300 shadow-sm ${isOpen ? 'border-blue-500 bg-white ring-4 ring-blue-50' : 'border-slate-100 hover:border-slate-200'}`}
       >
-        <span className={`font-bold text-[15px] truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>
-          {value || placeholder}
-        </span>
-        <ChevronDown size={20} className={`text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-blue-600' : ''}`} />
+        {value ? (
+          <div className="flex items-center gap-3 min-w-0">
+            {voterImages[value] ? (
+              <img 
+                src={voterImages[value]} 
+                alt={value} 
+                className="w-10 h-10 rounded-xl object-cover border border-slate-200 shrink-0" 
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-black text-xs shrink-0 uppercase">
+                {value.slice(0, 2)}
+              </div>
+            )}
+            <div className="flex flex-col text-left min-w-0">
+              <span className="font-extrabold text-[15px] text-slate-900 truncate leading-tight">{value}</span>
+              <span className="text-[11px] font-bold text-slate-500 truncate mt-0.5">
+                {voterDesignations[value] || extractDesignation(value) || "কর্মী"}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <span className="font-bold text-[15px] truncate text-slate-400">
+            {placeholder}
+          </span>
+        )}
+        <ChevronDown size={20} className={`text-slate-400 transition-transform duration-300 shrink-0 ${isOpen ? 'rotate-180 text-blue-600' : ''}`} />
       </div>
 
       {isOpen && (
@@ -73,10 +103,29 @@ const PremiumVoterSelect: React.FC<{
               <div 
                 key={i}
                 onClick={() => { onChange(opt); setIsOpen(false); }}
-                className={`px-5 py-3.5 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${value === opt ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-blue-50 text-slate-700 font-bold'}`}
+                className={`px-5 py-2.5 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${value === opt ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-blue-50 text-slate-700'}`}
               >
-                <span className="text-[14px]">{opt}</span>
-                {value === opt && <Check size={18} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                <div className="flex items-center gap-3 min-w-0">
+                  {voterImages[opt] ? (
+                    <img 
+                      src={voterImages[opt]} 
+                      alt={opt} 
+                      className="w-9 h-9 rounded-xl object-cover border border-slate-200 shrink-0" 
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${value === opt ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                      {opt.slice(0, 2)}
+                    </div>
+                  )}
+                  <div className="flex flex-col text-left min-w-0">
+                    <span className={`font-extrabold text-[14px] truncate leading-tight ${value === opt ? 'text-white' : 'text-slate-800'}`}>{opt}</span>
+                    <span className={`text-[10px] font-bold truncate mt-0.5 ${value === opt ? 'text-blue-100' : 'text-slate-400'}`}>
+                      {voterDesignations[opt] || extractDesignation(opt) || 'কর্মী'}
+                    </span>
+                  </div>
+                </div>
+                {value === opt && <Check size={18} strokeWidth={3} className="animate-in zoom-in duration-300 shrink-0 ml-2" />}
               </div>
             )) : (
               <div className="py-8 text-center text-slate-400 font-bold text-xs italic">কিছু পাওয়া যায়নি</div>
@@ -110,6 +159,9 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
 
   // Dynamic Voter List & Permissions
   const [voterList, setVoterList] = useState<string[]>([]);
+  const [excludedVoters, setExcludedVoters] = useState<string[]>([]);
+  const [voterImages, setVoterImages] = useState<Record<string, string>>({});
+  const [voterDesignations, setVoterDesignations] = useState<Record<string, string>>({});
   const [authorizedViewers, setAuthorizedViewers] = useState<any[]>([]);
   const [isViewerVerified, setIsViewerVerified] = useState(false);
   const [newVoterName, setNewVoterName] = useState('');
@@ -142,6 +194,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
         pollQuestion,
         pollOptions,
         isResultsLocked,
+        excludedVoters,
         ...(currentData?.content || {}),
         ...updates
       };
@@ -151,6 +204,200 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
       });
     } catch (err) {
       console.error("Config sync error:", err);
+    }
+  };
+
+  const fetchVotersFromReceivers = async () => {
+    try {
+      let finalReceivers: { name: string; para_type?: string }[] = [];
+      const imagesMap: Record<string, string> = {};
+      const designationsMap: Record<string, string> = {};
+
+      const normalizeName = (name: string | null | undefined) => {
+        if (!name) return '';
+        return name
+          .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
+          .trim()
+          .replace(/\s+/g, ' ')
+          .replace(/[:ঃ।\.\-]/g, '')
+          .normalize('NFC');
+      };
+
+      // 1. Fetch receivers from Database (receivers table)
+      try {
+        const { data: dbReceivers, error: dbError } = await supabase
+          .from('receivers')
+          .select('name, para_type, image, designation');
+        if (!dbError && dbReceivers) {
+          dbReceivers.forEach(r => {
+            if (r.name && r.name.trim()) {
+              const nameTrim = r.name.trim();
+              finalReceivers.push({ 
+                name: nameTrim, 
+                para_type: r.para_type || 'এসএফআই' 
+              });
+              if (r.image) {
+                imagesMap[nameTrim] = r.image;
+                imagesMap[normalizeName(nameTrim)] = r.image;
+              }
+              if (r.designation) {
+                designationsMap[nameTrim] = r.designation;
+                designationsMap[normalizeName(nameTrim)] = r.designation;
+              }
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Supabase load error for voters:", err);
+      }
+
+      // 2. Load receivers from LocalStorage of three branches
+      const localKeys = [
+        { key: 'ledger_correspondence_receivers_admin', branch: 'প্রশাসন' },
+        { key: 'ledger_correspondence_receivers_sfi', branch: 'এসএফআই' },
+        { key: 'ledger_correspondence_receivers_nonsfi', branch: 'নন এসএফআই' }
+      ];
+
+      localKeys.forEach(({ key, branch }) => {
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          try {
+            const items = JSON.parse(saved);
+            const existingKeys = new Set(finalReceivers.map(r => normalizeName(r.name) + '_' + (r.para_type || '')));
+            items.forEach((item: any) => {
+              if (item.name && item.name.trim()) {
+                const b = item.para_type || branch;
+                const compositeKey = normalizeName(item.name) + '_' + b;
+                const nameTrim = item.name.trim();
+                if (!existingKeys.has(compositeKey)) {
+                  finalReceivers.push({
+                    name: nameTrim,
+                    para_type: b
+                  });
+                  existingKeys.add(compositeKey);
+                }
+                if (item.image) {
+                  imagesMap[nameTrim] = item.image;
+                  imagesMap[normalizeName(nameTrim)] = item.image;
+                }
+                if (item.designation) {
+                  designationsMap[nameTrim] = item.designation;
+                  designationsMap[normalizeName(nameTrim)] = item.designation;
+                }
+              }
+            });
+          } catch (e) {
+            console.error("Local storage voter load error:", e);
+          }
+        }
+      });
+
+      // 3. Scan correspondence entries
+      try {
+        const { data: entries, error: entriesError } = await supabase
+          .from('settlement_entries')
+          .select('content');
+        if (!entriesError && entries) {
+          entries.forEach(row => {
+            let content = row.content;
+            if (typeof content === 'string') {
+              try { content = JSON.parse(content); } catch (e) { return; }
+            }
+            if (content && (content.type === 'correspondence' || content.description)) {
+              if (content.receiverName && content.receiverName.trim()) {
+                const b = content.paraType || 'এসএফআই';
+                const originalName = content.receiverName.trim();
+                const normalizedName = normalizeName(originalName);
+                const compKey = `${normalizedName}_${b}`;
+                
+                const existingKeys = new Set(finalReceivers.map(r => normalizeName(r.name) + '_' + (r.para_type || '')));
+                if (!existingKeys.has(compKey)) {
+                  finalReceivers.push({ name: originalName, para_type: b });
+                }
+                if (content.receiverImage) {
+                  imagesMap[originalName] = content.receiverImage;
+                  imagesMap[normalizedName] = content.receiverImage;
+                }
+                if (content.receiverDesignation) {
+                  designationsMap[originalName] = content.receiverDesignation;
+                  designationsMap[normalizedName] = content.receiverDesignation;
+                }
+              }
+            }
+          });
+        }
+      } catch (e) {
+        const savedCorr = localStorage.getItem('ledger_correspondence_v1');
+        if (savedCorr) {
+          try {
+            const entries = JSON.parse(savedCorr);
+            entries.forEach((entry: any) => {
+              if (entry.receiverName && entry.receiverName.trim()) {
+                const b = entry.paraType || 'এসএফআই';
+                const originalName = entry.receiverName.trim();
+                const normalizedName = normalizeName(originalName);
+                const compKey = `${normalizedName}_${b}`;
+                const existingKeys = new Set(finalReceivers.map(r => normalizeName(r.name) + '_' + (r.para_type || '')));
+                if (!existingKeys.has(compKey)) {
+                  finalReceivers.push({ name: originalName, para_type: b });
+                }
+                if (entry.receiverImage) {
+                  imagesMap[originalName] = entry.receiverImage;
+                  imagesMap[normalizedName] = entry.receiverImage;
+                }
+                if (entry.receiverDesignation) {
+                  designationsMap[originalName] = entry.receiverDesignation;
+                  designationsMap[normalizedName] = entry.receiverDesignation;
+                }
+              }
+            });
+          } catch (errCorr) {}
+        }
+      }
+
+      // 4. Fetch the excludedVoters list from Supabase settlements_entries voting_system_config
+      let excluded: string[] = [];
+      try {
+        const { data: configData, error: configError } = await supabase
+          .from('settlement_entries')
+          .select('content')
+          .eq('id', 'voting_system_config')
+          .maybeSingle();
+        if (!configError && configData && configData.content) {
+          excluded = configData.content.excludedVoters || [];
+        }
+      } catch (errConfig) {
+        console.error("Error loading excluded voters:", errConfig);
+      }
+      const localExcluded = localStorage.getItem('voting_excluded_voters');
+      if (localExcluded) {
+        try {
+          const parsed = JSON.parse(localExcluded);
+          excluded = Array.from(new Set([...excluded, ...parsed]));
+        } catch (e) {}
+      }
+
+      setExcludedVoters(excluded);
+
+      // 5. Get all registered workers as voterList without filtering, so they all show in list
+      const allowedVoters = finalReceivers
+        .filter(r => r.name && r.name.trim() !== '')
+        .map(r => r.name.trim());
+
+      const uniqVoters = Array.from(new Set(allowedVoters)).sort((a, b) => a.localeCompare(b));
+
+      // 6. Update voter list state and image state
+      setVoterImages(imagesMap);
+      setVoterDesignations(designationsMap);
+
+      if (uniqVoters.length > 0) {
+        setVoterList(uniqVoters);
+        localStorage.setItem('voting_voter_list', JSON.stringify(uniqVoters));
+      } else {
+        setVoterList(EMPLOYEES);
+      }
+    } catch (errGlobal) {
+      console.error("Global error loading voters in voting system:", errGlobal);
     }
   };
 
@@ -166,22 +413,19 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
         if (!error && data && data.content) {
           const config = data.content;
           if (config.activePositions) setActivePositions(config.activePositions);
-          if (config.voterList) setVoterList(config.voterList);
           if (config.authorizedViewers) setAuthorizedViewers(config.authorizedViewers);
           if (config.pollQuestion) setPollQuestion(config.pollQuestion);
           if (config.pollOptions) setPollOptions(config.pollOptions);
           if (config.isResultsLocked !== undefined) setIsResultsLocked(config.isResultsLocked);
+          if (config.excludedVoters) setExcludedVoters(config.excludedVoters);
         } else {
           // Fallback to localStorage if no DB entry exists yet
-          const savedVoters = localStorage.getItem('voting_voter_list');
           const savedViewers = localStorage.getItem('voting_authorized_viewers');
           const savedQuestion = localStorage.getItem('active_poll_q');
           const savedOptions = localStorage.getItem('active_poll_opts');
           const savedLock = localStorage.getItem('voting_results_locked');
           const savedPos = localStorage.getItem('voting_active_positions');
-
-          if (savedVoters) setVoterList(JSON.parse(savedVoters));
-          else setVoterList(EMPLOYEES);
+          const savedExcluded = localStorage.getItem('voting_excluded_voters');
 
           if (savedPos) setActivePositions(JSON.parse(savedPos));
           else setActivePositions(VOTE_POSITIONS);
@@ -190,13 +434,22 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
           if (savedQuestion) setPollQuestion(savedQuestion);
           if (savedOptions) setPollOptions(JSON.parse(savedOptions));
           if (savedLock !== null) setIsResultsLocked(JSON.parse(savedLock));
+          if (savedExcluded) setExcludedVoters(JSON.parse(savedExcluded));
         }
       } catch (e) {
         console.error("Config load error:", e);
+      } finally {
+        await fetchVotersFromReceivers();
       }
     };
     
     fetchConfig();
+
+    const handleStorageChange = () => {
+      fetchVotersFromReceivers();
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   // Update localStorage for immediate feedback, though primary source is now DB
@@ -204,10 +457,11 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
     localStorage.setItem('voting_voter_list', JSON.stringify(voterList));
     localStorage.setItem('voting_active_positions', JSON.stringify(activePositions));
     localStorage.setItem('voting_authorized_viewers', JSON.stringify(authorizedViewers));
+    localStorage.setItem('voting_excluded_voters', JSON.stringify(excludedVoters));
     localStorage.setItem('active_poll_q', pollQuestion);
     localStorage.setItem('active_poll_opts', JSON.stringify(pollOptions));
     localStorage.setItem('voting_results_locked', JSON.stringify(isResultsLocked));
-  }, [voterList, activePositions, authorizedViewers, pollQuestion, pollOptions, isResultsLocked]);
+  }, [voterList, activePositions, authorizedViewers, excludedVoters, pollQuestion, pollOptions, isResultsLocked]);
 
   // Initial fetch for votes/tokens
   useEffect(() => {
@@ -405,8 +659,31 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
     syncConfigToDB({ authorizedViewers: next });
   };
 
+  const toggleVoterEligibility = async (name: string) => {
+    const trimmedName = name.trim();
+    const isCurrentlyExcluded = excludedVoters.includes(trimmedName);
+    let nextExcluded: string[];
+    if (isCurrentlyExcluded) {
+      nextExcluded = excludedVoters.filter(n => n !== trimmedName);
+    } else {
+      nextExcluded = [...excludedVoters, trimmedName];
+    }
+    setExcludedVoters(nextExcluded);
+    localStorage.setItem('voting_excluded_voters', JSON.stringify(nextExcluded));
+
+    try {
+      await syncConfigToDB({ excludedVoters: nextExcluded });
+      setMessage({ 
+        type: 'success', 
+        text: `"${trimmedName}" এর ভোটাধিকার সফলভাবে ${isCurrentlyExcluded ? 'চালু' : 'বন্ধ'} করা হয়েছে।` 
+      });
+    } catch (err) {
+      console.error("Error saving voter eligibility:", err);
+    }
+  };
+
   const generateTokens = async () => {
-    const count = voterList.length;
+    const count = voterList.filter(v => !excludedVoters.includes(v)).length;
     if (!window.confirm(`আপনি কি নতুন ${toBengaliDigits(count)}টি টোকেন জেনারেট করতে চান?`)) return;
     try {
       setIsLoading(true);
@@ -674,7 +951,9 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
                     key={pos.id}
                     label={pos.title}
                     value={selections[pos.id] || ''}
-                    options={voterList}
+                    options={voterList.filter(name => !excludedVoters.includes(name))}
+                    voterImages={voterImages}
+                    voterDesignations={voterDesignations}
                     onChange={(val) => setSelections({...selections, [pos.id]: val})}
                   />
                 ))}
@@ -840,7 +1119,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
                 <button onClick={clearAllTokens} className="px-5 py-2.5 bg-red-50 text-red-600 rounded-xl font-black text-xs flex items-center gap-2 border border-red-100 hover:bg-red-600 hover:text-white transition-all shadow-sm"><Trash2 size={16} /> ফ্যাক্টরি রিসেট</button>
                 <button onClick={() => handleGenerateVoteLink('vote')} className="px-5 py-2.5 bg-blue-50 text-blue-600 rounded-xl font-black text-xs flex items-center gap-2 border border-blue-100 hover:bg-blue-600 hover:text-white transition-all shadow-sm"><Link size={16} /> ভোটিং লিংক তৈরি</button>
                 <button onClick={() => handleGenerateVoteLink('poll')} className="px-5 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl font-black text-xs flex items-center gap-2 border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"><MessageSquare size={16} /> পোল লিংক তৈরি</button>
-                <button onClick={generateTokens} className="px-6 py-2.5 bg-purple-600 text-white rounded-xl font-black text-xs flex items-center gap-2 shadow-xl hover:bg-purple-700 transition-all"><Plus size={16} /> {toBengaliDigits(voterList.length)}টি টোকেন তৈরি</button>
+                <button onClick={generateTokens} className="px-6 py-2.5 bg-purple-600 text-white rounded-xl font-black text-xs flex items-center gap-2 shadow-xl hover:bg-purple-700 transition-all"><Plus size={16} /> {toBengaliDigits(voterList.filter(v => !excludedVoters.includes(v)).length)}টি টোকেন তৈরি</button>
               </div>
             </div>
 
@@ -936,13 +1215,27 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
 
               {/* Voter & Permission Management */}
               <div className="pt-6 space-y-6">
-                <h4 className="text-lg font-black text-slate-900 flex items-center gap-2"><UserPlus size={20} className="text-emerald-600" /> ভোটার ও পারমিশন ম্যানেজমেন্ট</h4>
-                <form onSubmit={(e) => { e.preventDefault(); handleAddVoter(); }} className="flex gap-2">
-                  <input type="text" placeholder="নতুন ভোটারের নাম" value={newVoterName} onChange={e => setNewVoterName(e.target.value)} className="flex-1 h-[58px] px-5 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold outline-none focus:border-blue-500 transition-all" />
-                  <button type="submit" className="h-[58px] w-[58px] bg-emerald-600 text-white rounded-2xl font-black shadow-lg hover:bg-emerald-700 transition-all active:scale-95 flex items-center justify-center shrink-0">
-                    <Plus size={24} />
-                  </button>
-                </form>
+                <div>
+                  <h4 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                    <UserPlus size={20} className="text-emerald-600" /> ভোটার ও পারমিশন ম্যানেজমেন্ট
+                  </h4>
+                  <p className="text-xs text-slate-500 font-bold mt-1">
+                    ভোটার তালিকা প্রাপক কর্মী ব্যবস্থাপনা পাতা থেকে স্বয়ংক্রিয়ভাবে আপডেট হয়।
+                  </p>
+                </div>
+
+                <div className="p-4 bg-emerald-50 border border-emerald-200/80 rounded-3xl flex gap-3">
+                  <div className="w-10 h-10 bg-emerald-100 rounded-2xl flex items-center justify-center shrink-0 text-emerald-600">
+                    <ShieldCheck size={20} />
+                  </div>
+                  <div>
+                    <h5 className="font-extrabold text-sm text-emerald-900">ডিজিটাল ও লাইভ ভোটার ডেটা</h5>
+                    <p className="text-[11px] font-bold text-emerald-700/90 mt-0.5 leading-relaxed">
+                      "প্রাপক কর্মী ব্যবস্থাপনা" পেজে যেকোনো কর্মকর্তা/কর্মচারীকে সক্রিয় রাখলে বা ভোটার সুবিধা বন্ধ করলে, তা এখানে রিয়েল-টাইমে আপডেট হয়ে যাবে। অনুমতি বাতিল করা ছাড়া ম্যানুয়ালি নাম পরিবর্তন বা ডিলিট করার কোনো প্রয়োজন নেই।
+                    </p>
+                  </div>
+                </div>
+
                 <div className="max-h-[450px] overflow-y-auto pr-2 space-y-3 no-scrollbar">
                   {voterList.map((voter, idx) => {
                     const authViewer = authorizedViewers.find(v => (typeof v === 'object' ? v.name === voter : v === voter));
@@ -952,69 +1245,65 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
                     return (
                       <div key={idx} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-white border border-slate-200 rounded-3xl group hover:border-emerald-400 transition-all shadow-sm">
                         <div className="flex items-center gap-4 flex-1">
-                          <div className="w-10 h-10 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xs shrink-0 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
-                            {toBengaliDigits(idx + 1)}
-                          </div>
-                          
-                          {editingVoterName === voter ? (
-                            <div className="flex-1 flex gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
-                              <input 
-                                autoFocus
-                                type="text" 
-                                value={newVoterEditValue} 
-                                onChange={e => setNewVoterEditValue(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleUpdateVoterName(voter)}
-                                className="flex-1 px-4 h-10 bg-white border-2 border-blue-400 rounded-xl font-black text-slate-800 outline-none shadow-inner text-sm"
+                          {voterImages[voter] ? (
+                            <div className="relative w-10 h-10 shrink-0">
+                              <img 
+                                src={voterImages[voter]} 
+                                alt={voter} 
+                                className="w-10 h-10 rounded-2xl object-cover border border-slate-200 shadow-sm"
+                                referrerPolicy="no-referrer"
                               />
-                              <button onClick={() => handleUpdateVoterName(voter)} className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"><Check size={16} strokeWidth={3} /></button>
-                              <button onClick={() => setEditingVoterName(null)} className="p-2 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 transition-all"><X size={16} /></button>
+                              <div className="absolute -bottom-1 -right-1 bg-emerald-600 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white shadow-sm">
+                                {toBengaliDigits(idx + 1)}
+                              </div>
                             </div>
                           ) : (
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-center gap-3">
-                                <span className="font-black text-slate-800 text-[15px]">{voter}</span>
-                                {isAuthorized && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-600 text-[9px] font-black rounded-full uppercase tracking-tighter flex items-center gap-1 shadow-sm border border-emerald-200"><Eye size={10} /> Authorized</span>}
-                              </div>
-                              {isAuthorized && accessId && (
-                                <div className="flex items-center gap-2 mt-0.5 px-2 py-1 bg-slate-900 text-white text-[10px] font-black rounded-lg w-fit shadow-lg animate-in slide-in-from-top-1 duration-300">
-                                   <KeyRound size={12} className="text-amber-400" />
-                                   <span className="tracking-widest font-mono">ID: {accessId}</span>
-                                   <button 
-                                      onClick={() => copyToClipboard(accessId)} 
-                                      className="ml-2 p-1 hover:bg-slate-700 rounded transition-colors"
-                                      title="আইডি কপি করুন"
-                                   >
-                                      {copiedToken === accessId ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} />}
-                                   </button>
-                                </div>
-                              )}
+                            <div className="w-10 h-10 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xs shrink-0 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                              {toBengaliDigits(idx + 1)}
                             </div>
                           )}
+                          
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-3">
+                              <span className="font-black text-slate-800 text-[15px]">{voter}</span>
+                              {isAuthorized && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-600 text-[9px] font-black rounded-full uppercase tracking-tighter flex items-center gap-1 shadow-sm border border-emerald-200"><Eye size={10} /> Authorized</span>}
+                            </div>
+                            {isAuthorized && accessId && (
+                              <div className="flex items-center gap-2 mt-0.5 px-2 py-1 bg-slate-900 text-white text-[10px] font-black rounded-lg w-fit shadow-lg animate-in slide-in-from-top-1 duration-300">
+                                 <KeyRound size={12} className="text-amber-400" />
+                                 <span className="tracking-widest font-mono">ID: {accessId}</span>
+                                 <button 
+                                    onClick={() => copyToClipboard(accessId)} 
+                                    className="ml-2 p-1 hover:bg-slate-700 rounded transition-colors"
+                                    title="আইডি কপি করুন"
+                                 >
+                                    {copiedToken === accessId ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} />}
+                                 </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         
-                        <div className="flex items-center gap-2 mt-4 md:mt-0 ml-auto">
-                          {!editingVoterName && (
-                            <button 
-                              onClick={() => { setEditingVoterName(voter); setNewVoterEditValue(voter); }} 
-                              title="নাম এডিট করুন"
-                              className="p-2.5 bg-white text-slate-400 hover:text-blue-600 border border-slate-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-all shadow-sm"
-                            >
-                              <Pencil size={14} />
-                            </button>
-                          )}
+                        <div className="flex items-center gap-2 mt-4 md:mt-0 ml-auto flex-wrap">
+                          <button 
+                            onClick={() => toggleVoterEligibility(voter)} 
+                            title={!excludedVoters.includes(voter) ? "ভোটাধিকার বন্ধ করুন" : "ভোটাধিকার চালু করুন"} 
+                            className={`px-3 py-1.5 text-xs font-black rounded-xl border flex items-center gap-1.5 transition-all shadow-sm ${
+                              !excludedVoters.includes(voter)
+                                ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
+                                : 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
+                            }`}
+                          >
+                            <Vote size={14} />
+                            {!excludedVoters.includes(voter) ? 'অনুমোদিত' : 'ভোটদানে বিরত'}
+                          </button>
+
                           <button 
                             onClick={() => toggleViewerPermission(voter)} 
                             title={isAuthorized ? "অনুমতি বাতিল করুন" : "ফলাফল দেখার আইডি জেনারেট করুন"} 
                             className={`p-2.5 rounded-xl transition-all border shadow-sm ${isAuthorized ? 'bg-emerald-500 text-white border-emerald-400 shadow-emerald-200' : 'bg-white text-slate-400 hover:text-emerald-600 border-slate-200 hover:bg-emerald-50'}`}
                           >
                             {isAuthorized ? <Eye size={14} /> : <EyeOff size={14} />}
-                          </button>
-                          <button 
-                            onClick={() => handleRemoveVoter(voter)} 
-                            title="মুছে ফেলুন"
-                            className="p-2.5 bg-white text-slate-400 hover:text-red-600 border border-slate-200 rounded-xl hover:bg-red-50 hover:border-red-200 transition-all shadow-sm"
-                          >
-                            <UserMinus size={14} />
                           </button>
                         </div>
                       </div>

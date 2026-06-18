@@ -5,6 +5,7 @@ import { Printer, ChevronLeft, Search, X, ChevronDown, Check, LayoutGrid, FileTe
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 import { format as dateFnsFormat } from 'date-fns';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import LetterDetailsModal from './LetterDetailsModal';
 
 interface CorrespondenceDhakaReturnProps {
@@ -103,6 +104,82 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   const [detailsModalLetters, setDetailsModalLetters] = useState<any[]>([]);
   const [highlightedKey, setHighlightedKey] = useState<string | null>(null);
 
+  const [receiverImages, setReceiverImages] = useState<Record<string, string>>({});
+  const [receiverDesignations, setReceiverDesignations] = useState<Record<string, string>>({});
+
+  const normalizeName = (name: string | null | undefined) => {
+    if (!name) return 'অনির্ধারিত';
+    return name
+      .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .normalize('NFC');
+  };
+
+  useEffect(() => {
+    const fetchReceiverProfiles = async () => {
+      const imagesMap: Record<string, string> = {};
+      const designationsMap: Record<string, string> = {};
+
+      const addProfile = (name: string, img: string | null, desig: string | null) => {
+        if (!name) return;
+        const nameTrim = name.trim();
+        const norm = normalizeName(nameTrim);
+        if (img) {
+          imagesMap[nameTrim] = img;
+          imagesMap[norm] = img;
+        }
+        if (desig) {
+          designationsMap[nameTrim] = desig;
+          designationsMap[norm] = desig;
+        }
+      };
+
+      // 1. Fetch from database (Supabase)
+      if (isSupabaseConfigured) {
+        try {
+          const { data: dbReceivers } = await supabase
+            .from('receivers')
+            .select('name, image, designation');
+          if (dbReceivers) {
+            dbReceivers.forEach(r => {
+              addProfile(r.name, r.image, r.designation);
+            });
+          }
+        } catch (err) {
+          console.error("Error fetching db receivers in Return:", err);
+        }
+      }
+
+      // 2. Fetch from local storage keys
+      const localKeys = [
+        'ledger_correspondence_receivers_admin',
+        'ledger_correspondence_receivers_sfi',
+        'ledger_correspondence_receivers_nonsfi'
+      ];
+      localKeys.forEach(key => {
+        try {
+          const saved = localStorage.getItem(key);
+          if (saved) {
+            const items = JSON.parse(saved);
+            if (Array.isArray(items)) {
+              items.forEach((item: any) => {
+                addProfile(item.name, item.image, item.designation);
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing local receivers:", e);
+        }
+      });
+
+      setReceiverImages(imagesMap);
+      setReceiverDesignations(designationsMap);
+    };
+
+    fetchReceiverProfiles();
+  }, [correspondenceEntries]);
+
   const handleCountClick = (title: string, letters: any[]) => {
     if (letters.length === 0) return;
     setDetailsModalTitle(title);
@@ -113,15 +190,6 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
 
   const getHighlightClass = (key: string) => {
     return highlightedKey === key ? 'clicked-cell-highlight' : '';
-  };
-
-  const normalizeName = (name: string | null | undefined) => {
-    if (!name) return 'অনির্ধারিত';
-    return name
-      .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
-      .trim()
-      .replace(/\s+/g, ' ')
-      .normalize('NFC');
   };
 
   const branchOptions = useMemo(() => ['সকল', 'এসএফআই', 'নন এসএফআই'], []);
@@ -635,37 +703,58 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-slate-100">
-                      <th className="border border-slate-200 px-1 py-1.5 text-left text-[10px] sm:text-[11px] font-black text-slate-700 leading-tight">অডিটর</th>
-                      <th className="border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11px] font-black text-slate-700 leading-tight">অডিটরের</th>
-                      <th className="border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11px] font-black text-slate-700 leading-tight">এএন্ডএও</th>
-                      <th className="border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11px] font-black text-slate-700 leading-tight">উপপরিচালক</th>
-                      <th className="border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11px] font-black text-slate-700 leading-tight">মোট</th>
+                      <th className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>অডিটর</th>
+                      <th className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>অডিটরের</th>
+                      <th className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>এএন্ডএও</th>
+                      <th className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>উপপরিচালক</th>
+                      <th className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>মোট</th>
                     </tr>
                   </thead>
                   <tbody>
                     {auditorWiseStats.map((stat, idx) => (
                       <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
-                        <td className="border border-slate-200 px-1.5 py-1.5 text-[10px] sm:text-[11.5px] font-bold text-slate-900 leading-snug">{stat.name}</td>
+                        <td className={`border border-slate-200 ${isDetailsModalOpen ? 'p-0.5' : 'px-1 py-2'} text-center align-middle`}>
+                          <div className={`flex flex-col items-center justify-center gap-1 w-full mx-auto ${isDetailsModalOpen ? 'max-w-[65px]' : 'min-w-[80px]'}`}>
+                            {receiverImages[stat.name] || receiverImages[normalizeName(stat.name)] ? (
+                              <img 
+                                src={receiverImages[stat.name] || receiverImages[normalizeName(stat.name)]} 
+                                alt={stat.name} 
+                                className={`${isDetailsModalOpen ? 'w-6 h-6 sm:w-7 sm:h-7 rounded-lg' : 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl'} object-cover border border-slate-100 shrink-0 shadow-sm`} 
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              <div className={`${isDetailsModalOpen ? 'w-6 h-6 sm:w-7 sm:h-7 text-[8px] rounded-lg' : 'w-9 h-9 sm:w-10 sm:h-10 text-xs rounded-xl'} bg-blue-50 text-blue-600 flex items-center justify-center font-black shrink-0 uppercase shadow-sm`}>
+                                {stat.name.slice(0, 2)}
+                              </div>
+                            )}
+                            <div className="flex flex-col items-center min-w-0 w-full">
+                              <span className={`${isDetailsModalOpen ? 'text-[7.5px] sm:text-[8px] tracking-tight' : 'text-[10px] sm:text-[11.5px]'} font-extrabold text-slate-800 leading-tight text-center break-words w-full`}>{stat.name}</span>
+                              <span className={`${isDetailsModalOpen ? 'text-[6.5px] sm:text-[7px]' : 'text-[8px] sm:text-[9.5px]'} font-bold text-slate-400 leading-none mt-0.5 text-center break-words w-full`}>
+                                {receiverDesignations[stat.name] || receiverDesignations[normalizeName(stat.name)] || "অডিটর"}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
                         <td 
-                          className={`border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11.5px] font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all ${getHighlightClass(`${stat.name} - অডিটরের কাছে`)}`}
+                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all ${getHighlightClass(`${stat.name} - অডিটরের কাছে`)}`}
                           onClick={() => handleCountClick(`${stat.name} - অডিটরের কাছে`, stat.auditorLetters)}
                         >
                           {toBengaliDigits(stat.auditor)} টি
                         </td>
                         <td 
-                          className={`border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11.5px] font-black text-blue-600 bg-blue-50/30 cursor-pointer hover:bg-blue-100/50 transition-all ${getHighlightClass(`${stat.name} - এএন্ডএও`)}`}
+                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-blue-600 bg-blue-50/30 cursor-pointer hover:bg-blue-100/50 transition-all ${getHighlightClass(`${stat.name} - এএন্ডএও`)}`}
                           onClick={() => handleCountClick(`${stat.name} - এএন্ডএও`, stat.aaoLetters)}
                         >
                           {toBengaliDigits(stat.aao)} টি
                         </td>
                         <td 
-                          className={`border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11.5px] font-black text-green-600 bg-green-50/30 cursor-pointer hover:bg-green-100/50 transition-all ${getHighlightClass(`${stat.name} - উপপরিচালক`)}`}
+                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-green-600 bg-green-50/30 cursor-pointer hover:bg-green-100/50 transition-all ${getHighlightClass(`${stat.name} - উপপরিচালক`)}`}
                           onClick={() => handleCountClick(`${stat.name} - উপপরিচালক`, stat.ddLetters)}
                         >
                           {toBengaliDigits(stat.dd)} টি
                         </td>
                         <td 
-                          className={`border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11.5px] font-black text-slate-900 bg-slate-50 cursor-pointer hover:bg-slate-200/50 transition-all ${getHighlightClass(`${stat.name} - মোট`)}`}
+                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-slate-900 bg-slate-50 cursor-pointer hover:bg-slate-200/50 transition-all ${getHighlightClass(`${stat.name} - মোট`)}`}
                           onClick={() => handleCountClick(`${stat.name} - মোট`, stat.totalLetters)}
                         >
                           {toBengaliDigits(stat.total)} টি

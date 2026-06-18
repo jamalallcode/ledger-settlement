@@ -1,10 +1,11 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, Printer, Mail, Calendar, RotateCcw, Search, X, User, ChevronDown, Check, Sparkles, BarChart3 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Printer, Mail, Calendar, RotateCcw, Search, X, User, ChevronDown, Check, Sparkles, BarChart3 } from 'lucide-react';
 import React from 'react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 import { format, startOfMonth, addDays, isBefore, subMonths, parseISO } from 'date-fns';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import LetterDetailsModal from './LetterDetailsModal';
 
 interface DDSirCorrespondenceReturnProps {
@@ -15,6 +16,13 @@ interface DDSirCorrespondenceReturnProps {
   IDBadge: React.FC<{ id: string }>;
   showFilters: boolean;
 }
+
+const BENGALI_MONTHS = [
+  'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+  'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+];
+
+const BENGALI_WEEKDAYS = ['শনি', 'রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র'];
 
 const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({ 
   entries, 
@@ -29,8 +37,13 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const [showStats, setShowStats] = useState(false);
   const [isAuditorDropdownOpen, setIsAuditorDropdownOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const auditorDropdownRef = useRef<HTMLDivElement>(null);
   const branchDropdownRef = useRef<HTMLDivElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  const [receiverImages, setReceiverImages] = useState<Record<string, string>>({});
+  const [receiverDesignations, setReceiverDesignations] = useState<Record<string, string>>({});
 
   const normalizeName = (name: string | null | undefined) => {
     if (!name) return 'অনির্ধারিত';
@@ -43,12 +56,79 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   };
 
   useEffect(() => {
+    const fetchReceiverProfiles = async () => {
+      const imagesMap: Record<string, string> = {};
+      const designationsMap: Record<string, string> = {};
+
+      const addProfile = (name: string, img: string | null, desig: string | null) => {
+        if (!name) return;
+        const nameTrim = name.trim();
+        const norm = normalizeName(nameTrim);
+        if (img) {
+          imagesMap[nameTrim] = img;
+          imagesMap[norm] = img;
+        }
+        if (desig) {
+          designationsMap[nameTrim] = desig;
+          designationsMap[norm] = desig;
+        }
+      };
+
+      // 1. Fetch from database (Supabase)
+      if (isSupabaseConfigured) {
+        try {
+          const { data: dbReceivers } = await supabase
+            .from('receivers')
+            .select('name, image, designation');
+          if (dbReceivers) {
+            dbReceivers.forEach(r => {
+              addProfile(r.name, r.image, r.designation);
+            });
+          }
+        } catch (err) {
+          console.error("Error fetching db receivers in DD Sir Return:", err);
+        }
+      }
+
+      // 2. Fetch from local storage keys
+      const localKeys = [
+        'ledger_correspondence_receivers_admin',
+        'ledger_correspondence_receivers_sfi',
+        'ledger_correspondence_receivers_nonsfi'
+      ];
+      localKeys.forEach(key => {
+        try {
+          const saved = localStorage.getItem(key);
+          if (saved) {
+            const items = JSON.parse(saved);
+            if (Array.isArray(items)) {
+              items.forEach((item: any) => {
+                addProfile(item.name, item.image, item.designation);
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing local receivers:", e);
+        }
+      });
+
+      setReceiverImages(imagesMap);
+      setReceiverDesignations(designationsMap);
+    };
+
+    fetchReceiverProfiles();
+  }, [entries]);
+
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (auditorDropdownRef.current && !auditorDropdownRef.current.contains(e.target as Node)) {
         setIsAuditorDropdownOpen(false);
       }
       if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) {
         setIsBranchDropdownOpen(false);
+      }
+      if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
+        setIsCalendarOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -90,9 +170,11 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   }, [activeCycle.start]);
 
   const [selectedReportingDate, setSelectedReportingDate] = useState<string>(format(reportingLimitDate, 'yyyy-MM-dd'));
+  const [currentViewDate, setCurrentViewDate] = useState<Date>(new Date(reportingLimitDate));
 
   useEffect(() => {
     setSelectedReportingDate(format(reportingLimitDate, 'yyyy-MM-dd'));
+    setCurrentViewDate(new Date(reportingLimitDate));
   }, [reportingLimitDate]);
 
   const parseDate = (dateStr: string | null | undefined) => {
@@ -383,18 +465,85 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       <IDBadge id="dd-sir-report-container" />
       {/* Control Bar (No Print) */}
       {showFilters && (
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
-          <div className="flex items-center gap-3">
-
+        <div className="flex flex-col md:flex-row items-center justify-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print max-w-2xl mx-auto mb-2">
+          {/* Branch Filter */}
+          <div className="space-y-1 relative group" ref={branchDropdownRef}>
+            <div 
+              className={customDropdownCls(false) + " min-w-[200px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
+            >
+              <Mail size={16} className="text-blue-600" />
+              <span className="font-bold text-[12px] text-slate-900 truncate">
+                {filterBranch === 'সকল' ? 'সকল শাখা' : filterBranch}
+              </span>
+              <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600" />
+            </div>
             
-            <div className="relative group ml-4">
+            <div className="absolute top-full left-0 w-full pt-1 opacity-0 invisible translate-y-1.5 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
+              <div className="w-full bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
+                <div className="max-h-[250px] overflow-y-auto no-scrollbar">
+                  {['সকল', 'এসএফআই', 'নন এসএফআই'].map((opt, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={() => setFilterBranch(opt)} 
+                      className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterBranch === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
+                    >
+                      <span>{opt === 'সকল' ? 'সকল শাখা' : opt}</span>
+                      {filterBranch === opt && <Check size={14} strokeWidth={3} />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Auditor Filter */}
+          <div className="space-y-1 relative group" ref={auditorDropdownRef}>
+            <div 
+              className={customDropdownCls(false) + " min-w-[220px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
+            >
+              <User size={16} className="text-blue-600" />
+              <span className="font-bold text-[12px] text-slate-900 truncate">
+                {filterAuditor === 'সকল' ? 'সকল অডিটর' : filterAuditor}
+              </span>
+              <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600" />
+            </div>
+            
+            <div className="absolute top-full left-0 w-full pt-1 opacity-0 invisible translate-y-1.5 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
+              <div className="w-full bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
+                <div className="max-h-[250px] overflow-y-auto no-scrollbar">
+                  {auditorOptions.map((opt, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={() => setFilterAuditor(opt)} 
+                      className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterAuditor === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
+                    >
+                      <span>{opt === 'সকল' ? 'সকল অডিটর' : opt}</span>
+                      {filterAuditor === opt && <Check size={14} strokeWidth={3} />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Summary Stats Panel (Removed as it's now in hover) */}
+
+      <div className="w-full bg-white px-0 py-6 relative">
+        {/* Office Header Row matching user's marked request */}
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 pt-4 px-4 no-print border-b border-dashed border-slate-100 pb-6">
+          {/* Left Side: পরিসংখ্যান */}
+          <div className="flex justify-start min-w-[200px]">
+            <div className="relative group">
               <button 
-                className={`px-4 py-2 rounded-xl border transition-all flex items-center gap-2 font-bold text-[12px] no-print ${showStats ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm'}`}
+                className={`px-5 py-2.5 rounded-xl border transition-all flex items-center gap-2 font-bold text-[12px] no-print ${showStats ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm hover:border-blue-500 hover:ring-4 hover:ring-blue-100'}`}
               >
                 <Sparkles size={14} className={showStats ? 'animate-pulse' : ''} />
                 পরিসংখ্যান <ChevronDown size={14} className="transition-transform duration-300 group-hover:rotate-180" />
               </button>
-              <div className="absolute top-full left-0 w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all">
+              
+              <div className="absolute top-full left-0 mt-2 w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[2000] animate-in fade-in slide-in-from-top-2 duration-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all">
                 <div className="space-y-5 text-left">
                   <div className="flex items-center justify-between border-b border-slate-50 pb-3">
                     <div className="flex items-center gap-3">
@@ -436,105 +585,176 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Branch Filter */}
-            <div className="space-y-1 relative group" ref={branchDropdownRef}>
-              <div 
-                className={customDropdownCls(false) + " min-w-[170px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
-              >
-                <Mail size={16} className="text-blue-600" />
-                <span className="font-bold text-[12px] text-slate-900 truncate">
-                  {filterBranch === 'সকল' ? 'সকল শাখা' : filterBranch}
-                </span>
-                <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600" />
-              </div>
-              
-              <div className="absolute top-full left-0 w-full pt-1 opacity-0 invisible translate-y-1.5 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
-                <div className="w-full bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
-                  <div className="max-h-[250px] overflow-y-auto no-scrollbar">
-                    {['সকল', 'এসএফআই', 'নন এসএফআই'].map((opt, idx) => (
-                      <div 
-                        key={idx} 
-                        onClick={() => setFilterBranch(opt)} 
-                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterBranch === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
-                      >
-                        <span>{opt === 'সকল' ? 'সকল শাখা' : opt}</span>
-                        {filterBranch === opt && <Check size={14} strokeWidth={3} />}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Center Column: Centered Header Title */}
+          <div className="text-center flex-1">
+            <div className="inline-block relative">
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
+                চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন (ডিডি স্যার)
+              </h1>
 
-            {/* Auditor Filter */}
-            <div className="space-y-1 relative group" ref={auditorDropdownRef}>
-              <div 
-                className={customDropdownCls(false) + " min-w-[180px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
-              >
-                <User size={16} className="text-blue-600" />
-                <span className="font-bold text-[12px] text-slate-900 truncate">
-                  {filterAuditor === 'সকল' ? 'সকল অডিটর' : filterAuditor}
-                </span>
-                <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600" />
+              <div className="flex items-center justify-center gap-4">
+                <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
+                <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+                <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-slate-400"></div>
               </div>
-              
-              <div className="absolute top-full left-0 w-full pt-1 opacity-0 invisible translate-y-1.5 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
-                <div className="w-full bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
-                  <div className="max-h-[250px] overflow-y-auto no-scrollbar">
-                    {auditorOptions.map((opt, idx) => (
-                      <div 
-                        key={idx} 
-                        onClick={() => setFilterAuditor(opt)} 
-                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterAuditor === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
-                      >
-                        <span>{opt === 'সকল' ? 'সকল অডিটর' : opt}</span>
-                        {filterAuditor === opt && <Check size={14} strokeWidth={3} />}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 h-[44px] rounded-xl relative group">
-               <Calendar size={16} className="text-blue-600" />
-               <label className="text-[11px] font-black text-slate-500 uppercase tracking-tighter mr-1">রিপোর্টিং তারিখ:</label>
-               <div className="relative flex items-center">
-                 <span className="font-black text-slate-900 text-xs pointer-events-none">
-                   {toBengaliDigits(format(reportingDate, 'dd/MM/yyyy'))}
-                 </span>
-                 <input 
-                   type="date" 
-                   className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                   value={selectedReportingDate}
-                   onChange={(e) => setSelectedReportingDate(e.target.value)}
-                 />
-               </div>
-               {selectedReportingDate !== format(reportingLimitDate, 'yyyy-MM-dd') && (
-                 <button 
-                  onClick={() => setSelectedReportingDate(format(reportingLimitDate, 'yyyy-MM-dd'))}
-                  className="p-1 hover:bg-white rounded-md text-blue-400 hover:text-blue-600 transition-all"
-                  title="ডিফল্ট তারিখে ফিরুন"
-                 >
-                   <RotateCcw size={14} />
-                 </button>
-               )}
             </div>
           </div>
+
+          {/* Right Column: Reporting Date with Elegant Custom Calendar picker */}
+          <div className="flex justify-end min-w-[200px] items-center gap-2">
+            <div className="relative" ref={calendarRef}>
+              <button
+                onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+                className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl hover:border-blue-500 hover:ring-4 hover:ring-blue-100 hover:bg-white transition-all duration-300 shadow-sm font-bold text-slate-700 h-[44px]"
+              >
+                <Calendar size={16} className="text-blue-600" />
+                <span className="text-[12px] font-black text-slate-800">
+                  রিপোর্টিং তারিখ: {toBengaliDigits(format(reportingDate, 'dd/MM/yyyy'))}
+                </span>
+                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${isCalendarOpen ? 'rotate-180 text-blue-600' : ''}`} />
+              </button>
+
+              {isCalendarOpen && (
+                <div className="absolute top-full right-0 mt-2 w-[300px] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 z-[3000] animate-in fade-in slide-in-from-top-2 duration-200">
+                  {/* Calendar Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+                      }}
+                      className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
+                      type="button"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    
+                    <span className="font-extrabold text-[14px] text-slate-800">
+                      {BENGALI_MONTHS[currentViewDate.getMonth()]} {toBengaliDigits(currentViewDate.getFullYear().toString())}
+                    </span>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+                      }}
+                      className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
+                      type="button"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+
+                  {/* Calendar Week Days */}
+                  <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                    {BENGALI_WEEKDAYS.map((wd, i) => (
+                      <span key={i} className="text-[11px] font-black text-slate-400">
+                        {wd}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Calendar Days Grid */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {(() => {
+                      const Y = currentViewDate.getFullYear();
+                      const M = currentViewDate.getMonth();
+                      const firstDay = new Date(Y, M, 1);
+                      
+                      // Map day: Sunday is 0, Monday is 1... Saturday is 6.
+                      // Let's align Saturday to index 0, Sunday to index 1... Friday to index 6.
+                      let startOffset = (firstDay.getDay() + 1) % 7; 
+                      
+                      const daysInMonth = new Date(Y, M + 1, 0).getDate();
+                      const prevMonthDays = new Date(Y, M, 0).getDate();
+                      
+                      const cells = [];
+                      
+                      // Trailing days
+                      for (let i = startOffset - 1; i >= 0; i--) {
+                        const d = prevMonthDays - i;
+                        const dateObj = new Date(Y, M - 1, d);
+                        cells.push({ day: d, isCurrentMonth: false, dateObj });
+                      }
+                      
+                      // Current month days
+                      for (let d = 1; d <= daysInMonth; d++) {
+                        const dateObj = new Date(Y, M, d);
+                        cells.push({ day: d, isCurrentMonth: true, dateObj });
+                      }
+                      
+                      // Lead days
+                      const remaining = 42 - cells.length;
+                      for (let d = 1; d <= remaining; d++) {
+                        const dateObj = new Date(Y, M + 1, d);
+                        cells.push({ day: d, isCurrentMonth: false, dateObj });
+                      }
+
+                      return cells.map((cell, idx) => {
+                        const dateStr = format(cell.dateObj, 'yyyy-MM-dd');
+                        const isSelected = dateStr === selectedReportingDate;
+                        const isDisabled = cell.dateObj.getTime() > reportingLimitDate.getTime();
+                        
+                        let cellCls = "text-[12px] font-bold h-8 flex items-center justify-center rounded-lg transition-all cursor-pointer ";
+                        if (isSelected) {
+                          cellCls += "bg-blue-600 text-white font-extrabold shadow-md";
+                        } else if (isDisabled) {
+                          cellCls += "text-slate-200 cursor-not-allowed";
+                        } else if (cell.isCurrentMonth) {
+                          cellCls += "text-slate-800 hover:bg-blue-50 hover:text-blue-600";
+                        } else {
+                          cellCls += "text-slate-300 hover:bg-slate-50";
+                        }
+
+                        // Check if today
+                        const todayStr = format(new Date(), 'yyyy-MM-dd');
+                        const isToday = dateStr === todayStr;
+
+                        return (
+                          <div
+                            key={idx}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isDisabled) return;
+                              setSelectedReportingDate(dateStr);
+                              setIsCalendarOpen(false);
+                            }}
+                            className={`${cellCls} relative`}
+                          >
+                            <span>{toBengaliDigits(cell.day.toString())}</span>
+                            {isToday && !isSelected && (
+                              <span className="absolute bottom-[2px] w-1 h-1 bg-blue-600 rounded-full"></span>
+                            )}
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {selectedReportingDate !== format(reportingLimitDate, 'yyyy-MM-dd') && (
+              <button 
+                onClick={() => {
+                  setSelectedReportingDate(format(reportingLimitDate, 'yyyy-MM-dd'));
+                  setIsCalendarOpen(false);
+                }}
+                className="p-2.5 bg-slate-50 border border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-500 rounded-xl transition-all shadow-sm h-[44px] flex items-center justify-center"
+                title="ডিফল্ট তারিখে ফিরুন"
+              >
+                <RotateCcw size={14} />
+              </button>
+            )}
+          </div>
         </div>
-      )}
 
-      {/* Summary Stats Panel (Removed as it's now in hover) */}
-
-      <div className="w-full bg-white px-0 py-6 relative">
-        {/* Office Header */}
-        <div className="text-center mb-8 pt-4">
+        {/* Print Only Header (invisible on screen, but visible when printing) */}
+        <div className="hidden print:block text-center mb-8 pt-4">
           <div className="inline-block relative">
             <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
               চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন (ডিডি স্যার)
             </h1>
-
             <div className="flex items-center justify-center gap-4">
               <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
               <div className="w-2 h-2 rounded-full bg-blue-600"></div>
@@ -712,18 +932,18 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         <div className="pt-10 border-t-4 border-double border-slate-200 flex flex-col items-center overflow-visible">
           <div className="text-center mb-6 w-full">
              <div className="inline-block px-10 py-1 bg-black text-white text-[15px] font-bold tracking-widest uppercase mb-4">ছক</div>
-             <div className="flex justify-between items-end border-b border-slate-300 pb-1">
+             <div className="flex justify-between items-end border-b-2 border-slate-300 pb-2.5 px-8">
                 <div className="flex items-center gap-4">
-                  <span className="font-bold text-[14px]">বকেয়া চিঠিপত্রের তালিকা ({filterBranch === 'সকল' ? 'সকল' : filterBranch} শাখা)</span>
                   <button 
                     onClick={() => setShowAuditorStatsModal(true)}
-                    className="flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[11px] font-bold transition-all shadow-sm no-print"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-xl text-[13px] font-black transition-all shadow-md hover:shadow-lg no-print"
                   >
-                    <BarChart3 size={12} />
+                    <BarChart3 size={15} />
                     পরিসংখ্যান
                   </button>
+                  <span className="font-black text-[15px] text-slate-800">বকেয়া চিঠিপত্রের তালিকা ({filterBranch === 'সকল' ? 'সকল' : filterBranch} শাখা)</span>
                 </div>
-                <span className="font-bold text-[14px]">তাং- {reportingDateBN} খ্রি:</span>
+                <span className="font-black text-[15px] text-slate-800">তাং- {reportingDateBN} খ্রি:</span>
              </div>
           </div>
 
@@ -853,37 +1073,58 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-slate-100">
-                      <th className="border border-slate-200 px-1 py-1.5 text-left text-[10px] sm:text-[11px] font-black text-slate-700 leading-tight">অডিটর</th>
-                      <th className="border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11px] font-black text-slate-700 leading-tight">অডিটরের</th>
-                      <th className="border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11px] font-black text-slate-700 leading-tight">এএন্ডএও</th>
-                      <th className="border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11px] font-black text-slate-700 leading-tight">উপপরিচালক</th>
-                      <th className="border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11px] font-black text-slate-700 leading-tight">মোট</th>
+                      <th className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>অডিটর</th>
+                      <th className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>অডিটরের</th>
+                      <th className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>এএন্ডএও</th>
+                      <th className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>উপপরিচালক</th>
+                      <th className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>মোট</th>
                     </tr>
                   </thead>
                   <tbody>
                     {auditorWiseStats.map((stat, idx) => (
                       <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
-                        <td className="border border-slate-200 px-1.5 py-1.5 text-[10px] sm:text-[11.5px] font-bold text-slate-900 leading-snug">{stat.name}</td>
+                        <td className={`border border-slate-200 ${isDetailsModalOpen ? 'p-0.5' : 'px-1 py-2'} text-center align-middle`}>
+                          <div className={`flex flex-col items-center justify-center gap-1 w-full mx-auto ${isDetailsModalOpen ? 'max-w-[65px]' : 'min-w-[80px]'}`}>
+                            {receiverImages[stat.name] || receiverImages[normalizeName(stat.name)] ? (
+                              <img 
+                                      src={receiverImages[stat.name] || receiverImages[normalizeName(stat.name)]} 
+                                alt={stat.name} 
+                                className={`${isDetailsModalOpen ? 'w-6 h-6 sm:w-7 sm:h-7 rounded-lg' : 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl'} object-cover border border-slate-100 shrink-0 shadow-sm`} 
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              <div className={`${isDetailsModalOpen ? 'w-6 h-6 sm:w-7 sm:h-7 text-[8px] rounded-lg' : 'w-9 h-9 sm:w-10 sm:h-10 text-xs rounded-xl'} bg-blue-50 text-blue-600 flex items-center justify-center font-black shrink-0 uppercase shadow-sm`}>
+                                {stat.name.slice(0, 2)}
+                              </div>
+                            )}
+                            <div className="flex flex-col items-center min-w-0 w-full">
+                              <span className={`${isDetailsModalOpen ? 'text-[7.5px] sm:text-[8px] tracking-tight' : 'text-[10px] sm:text-[11.5px]'} font-extrabold text-slate-800 leading-tight text-center break-words w-full`}>{stat.name}</span>
+                              <span className={`${isDetailsModalOpen ? 'text-[6.5px] sm:text-[7px]' : 'text-[8px] sm:text-[9.5px]'} font-bold text-slate-400 leading-none mt-0.5 text-center break-words w-full`}>
+                                {receiverDesignations[stat.name] || receiverDesignations[normalizeName(stat.name)] || "অডিটর"}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
                         <td 
-                          className={`border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11.5px] font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all ${getHighlightClass(`${stat.name} - অডিটরের কাছে`)}`}
+                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all ${getHighlightClass(`${stat.name} - অডিটরের কাছে`)}`}
                           onClick={() => handleCountClick(`${stat.name} - অডিটরের কাছে`, stat.auditorLetters)}
                         >
                           {toBengaliDigits(stat.auditor)} টি
                         </td>
                         <td 
-                          className={`border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11.5px] font-black text-blue-600 bg-blue-50/30 cursor-pointer hover:bg-blue-100/50 transition-all ${getHighlightClass(`${stat.name} - এএন্ডএও`)}`}
+                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-blue-600 bg-blue-50/30 cursor-pointer hover:bg-blue-100/50 transition-all ${getHighlightClass(`${stat.name} - এএন্ডএও`)}`}
                           onClick={() => handleCountClick(`${stat.name} - এএন্ডএও`, stat.aaoLetters)}
                         >
                           {toBengaliDigits(stat.aao)} টি
                         </td>
                         <td 
-                          className={`border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11.5px] font-black text-green-600 bg-green-50/30 cursor-pointer hover:bg-green-100/50 transition-all ${getHighlightClass(`${stat.name} - উপপরিচালক`)}`}
+                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-green-600 bg-green-50/30 cursor-pointer hover:bg-green-100/50 transition-all ${getHighlightClass(`${stat.name} - উপপরিচালক`)}`}
                           onClick={() => handleCountClick(`${stat.name} - উপপরিচালক`, stat.ddLetters)}
                         >
                           {toBengaliDigits(stat.dd)} টি
                         </td>
                         <td 
-                          className={`border border-slate-200 px-1 py-1.5 text-center text-[10px] sm:text-[11.5px] font-black text-slate-900 bg-slate-50 cursor-pointer hover:bg-slate-200/50 transition-all ${getHighlightClass(`${stat.name} - মোট`)}`}
+                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-slate-900 bg-slate-50 cursor-pointer hover:bg-slate-200/50 transition-all ${getHighlightClass(`${stat.name} - মোট`)}`}
                           onClick={() => handleCountClick(`${stat.name} - মোট`, stat.totalLetters)}
                         >
                           {toBengaliDigits(stat.total)} টি

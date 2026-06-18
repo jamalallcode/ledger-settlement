@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { toBengaliDigits, parseBengaliNumber, formatDateBN } from '../../utils/numberUtils';
 import { 
   BarChart3, Calendar, Users, FileText, 
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 
 interface AdminAnalyticsProps {
   entries: any[];
@@ -27,18 +28,76 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     data: any[];
   } | null>(null);
 
-  const receiverProfiles = useMemo(() => {
-    const sfi = JSON.parse(localStorage.getItem('ledger_correspondence_receivers_sfi') || '[]');
-    const nonSfi = JSON.parse(localStorage.getItem('ledger_correspondence_receivers_nonsfi') || '[]');
-    const all = [...sfi, ...nonSfi];
-    const map: Record<string, { designation?: string, image?: string }> = {};
-    all.forEach((p: any) => {
-      if (typeof p === 'object' && p.name) {
-        map[p.name] = { designation: p.designation, image: p.image };
+  const normalizeName = (name: string | null | undefined) => {
+    if (!name) return 'অনির্ধারিত';
+    return name
+      .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .normalize('NFC');
+  };
+
+  const [receiverProfiles, setReceiverProfiles] = useState<Record<string, { designation?: string, image?: string }>>({});
+
+  useEffect(() => {
+    const fetchReceiverProfiles = async () => {
+      const map: Record<string, { designation?: string, image?: string }> = {};
+
+      const addProfile = (name: string, img: string | null, desig: string | null) => {
+        if (!name) return;
+        const nameTrim = name.trim();
+        const norm = normalizeName(nameTrim);
+        const profileData = { 
+          designation: desig || undefined, 
+          image: img || undefined 
+        };
+        map[nameTrim] = profileData;
+        map[norm] = profileData;
+      };
+
+      // 1. Fetch from database (Supabase)
+      if (isSupabaseConfigured) {
+        try {
+          const { data: dbReceivers } = await supabase
+            .from('receivers')
+            .select('name, image, designation');
+          if (dbReceivers) {
+            dbReceivers.forEach(r => {
+              addProfile(r.name, r.image, r.designation);
+            });
+          }
+        } catch (err) {
+          console.error("Error fetching db receivers in Analytics:", err);
+        }
       }
-    });
-    return map;
-  }, []);
+
+      // 2. Fetch from local storage keys
+      const localKeys = [
+        'ledger_correspondence_receivers_admin',
+        'ledger_correspondence_receivers_sfi',
+        'ledger_correspondence_receivers_nonsfi'
+      ];
+      localKeys.forEach(key => {
+        try {
+          const saved = localStorage.getItem(key);
+          if (saved) {
+            const items = JSON.parse(saved);
+            if (Array.isArray(items)) {
+              items.forEach((item: any) => {
+                addProfile(item.name, item.image, item.designation);
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing local receivers in Analytics:", e);
+        }
+      });
+
+      setReceiverProfiles(map);
+    };
+
+    fetchReceiverProfiles();
+  }, [correspondenceEntries]);
 
   const allData = useMemo(() => [...entries, ...correspondenceEntries], [entries, correspondenceEntries]);
 
@@ -63,11 +122,14 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     const stats: Record<string, { name: string, letterCount: number, paraCount: number, designation?: string, image?: string }> = {};
 
     filteredData.forEach(entry => {
-      const name = entry.receiverName || 'অনির্ধারিত (Unassigned)';
-      if (!stats[name]) {
-        const profile = receiverProfiles[name] || {};
-        stats[name] = { 
-          name, 
+      const rawName = entry.receiverName || 'অনির্ধারিত (Unassigned)';
+      const normName = normalizeName(rawName);
+      const nameKey = rawName === 'অনির্ধারিত (Unassigned)' ? 'অনির্ধারিত (Unassigned)' : normName;
+
+      if (!stats[nameKey]) {
+        const profile = receiverProfiles[rawName] || receiverProfiles[normName] || {};
+        stats[nameKey] = { 
+          name: rawName, 
           letterCount: 0, 
           paraCount: 0,
           designation: profile.designation,
@@ -75,10 +137,10 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
         };
       }
       
-      stats[name].letterCount += 1;
+      stats[nameKey].letterCount += 1;
       
       // Count paragraphs from correspondence entries
-      stats[name].paraCount += parseBengaliNumber(entry.totalParas || '0');
+      stats[nameKey].paraCount += parseBengaliNumber(entry.totalParas || '0');
     });
 
     return Object.values(stats).sort((a, b) => b.letterCount - a.letterCount);
@@ -296,7 +358,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm">
                             {stat.image ? (
-                              <img src={stat.image} alt={stat.name} className="w-full h-full object-cover" />
+                              <img src={stat.image} alt={stat.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                             ) : (
                               <Users size={20} className="text-slate-400 group-hover:text-white" />
                             )}
@@ -354,7 +416,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                   <div className="flex items-center justify-between mb-6">
                     <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm">
                       {stat.image ? (
-                        <img src={stat.image} alt={stat.name} className="w-full h-full object-cover" />
+                        <img src={stat.image} alt={stat.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
                         <Users size={28} className="text-slate-300 group-hover:text-white" />
                       )}
