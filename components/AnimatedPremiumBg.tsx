@@ -7,39 +7,22 @@ const AnimatedPremiumBg: React.FC = () => {
     id: i,
     left: `${Math.random() * 100}%`,
     delay: `${Math.random() * 12}s`,
-    size: Math.random() * 6 + 2,
+    size: Math.random() * 4 + 1.5,
     duration: `${Math.random() * 15 + 12}s`,
-    opacity: Math.random() * 0.4 + 0.1,
+    opacity: Math.random() * 0.3 + 0.1,
   }));
 
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0 bg-slate-50/55">
-      {/* 1. Dynamic Moving Smooth Gradient Mesh Background */}
+    <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0 bg-gradient-to-tr from-[#93c5fd] via-[#e0f2fe] to-[#bae6fd]">
+      {/* 1. Sky Blue Soft Gradient Background */}
       <div className="absolute inset-0 z-0">
-        {/* Deep luxurious blue gradient orb - top left */}
-        <div 
-          className="absolute -top-32 -left-32 w-[35rem] h-[35rem] rounded-full bg-blue-500/10 blur-[90px] animate-float-1" 
-          style={{ mixBlendMode: 'multiply' }}
-        />
-        {/* Soft, refreshing emerald orb - bottom right */}
-        <div 
-          className="absolute -bottom-32 -right-32 w-[40rem] h-[40rem] rounded-full bg-emerald-500/8 blur-[100px] animate-float-2" 
-          style={{ mixBlendMode: 'multiply' }}
-        />
-        {/* Subtle, premium gold/warm orb - center left */}
-        <div 
-          className="absolute top-1/3 -left-20 w-[30rem] h-[30rem] rounded-full bg-amber-400/6 blur-[80px] animate-float-3" 
-          style={{ mixBlendMode: 'multiply' }}
-        />
-        {/* Ultra-soft celestial indigo orb - center right */}
-        <div 
-          className="absolute top-1/4 right-[10%] w-[35rem] h-[35rem] rounded-full bg-indigo-500/5 blur-[90px] animate-float-1" 
-          style={{ animationDelay: '-8s' }}
-        />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#7dd3fc] via-[#f0f9ff] to-[#e0f2fe] opacity-100" />
+        {/* Soft elegant radial shine in the center to highlight content */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.7)_0%,rgba(255,255,255,0)_80%)]" />
       </div>
 
-      {/* 2. Premium Grid Overlay with Custom Diagonal Continuous Panning */}
-      <div className="absolute inset-0 z-10 premium-grid-panning opacity-[0.80]" />
+      {/* 2. Premium Light Soft Grid Overlay (very light, elegant) */}
+      <div className="absolute inset-0 z-10 premium-grid-panning opacity-[0.25]" />
 
       {/* 3. Infinite Floating Vector Waves (Beautiful, flowing ledger paths) */}
       <svg className="absolute inset-0 w-full h-full z-15 opacity-[0.12]" xmlns="http://www.w3.org/2000/svg">
@@ -100,6 +83,31 @@ const AnimatedPremiumBg: React.FC = () => {
       <div className="absolute top-[12%] left-[8%] z-10 w-2.5 h-2.5 border border-blue-500/20 rotate-45 animate-spin" style={{ animationDuration: '12s' }} />
       <div className="absolute top-[35%] right-[15%] z-10 w-3.5 h-3.5 border border-emerald-500/20 rounded-full animate-pulse" style={{ animationDuration: '6s' }} />
       <div className="absolute bottom-[20%] left-[18%] z-10 w-2 h-2 bg-amber-500/10 rounded-xs" />
+
+      {/* 6. Premium Artistic Gold/Orange Corner Designs (Matches Top-Left & Bottom-Right user layout) */}
+      {/* Top-Left Corner Bracket */}
+      <div className="absolute top-0 left-0 w-40 h-40 sm:w-48 sm:h-48 md:w-60 md:h-60 z-20 pointer-events-none overflow-hidden">
+        {/* Soft atmospheric ambient warm lighting shadow */}
+        <div className="absolute -top-1/4 -left-1/4 w-[120%] h-[120%] rounded-full bg-amber-500/20 blur-3xl" />
+        {/* Main luxury gradient crescent structure */}
+        <div className="absolute -top-[50%] -left-[50%] w-[140%] h-[140%] rounded-br-[5rem] sm:rounded-br-[7rem] bg-gradient-to-br from-orange-600 via-amber-500 to-yellow-400 shadow-xl border-r-[6px] border-b-[6px] border-amber-300/65" />
+        {/* Secondary inner floating highlight contour */}
+        <div className="absolute -top-[60%] -left-[60%] w-[130%] h-[130%] rounded-br-[4rem] sm:rounded-br-[5.5rem] bg-gradient-to-br from-yellow-400 via-amber-400 to-orange-500 border-r-2 border-b-2 border-white/45 opacity-85" />
+        {/* Fine gold accent line */}
+        <div className="absolute -top-[42%] -left-[42%] w-[120%] h-[120%] rounded-br-[6rem] sm:rounded-br-[8rem] border-r border-b border-yellow-200/50" />
+      </div>
+
+      {/* Bottom-Right Corner Bracket */}
+      <div className="absolute bottom-0 right-0 w-40 h-40 sm:w-48 sm:h-48 md:w-60 md:h-60 z-20 pointer-events-none overflow-hidden">
+        {/* Soft atmospheric ambient warm lighting shadow */}
+        <div className="absolute -bottom-1/4 -right-1/4 w-[120%] h-[120%] rounded-full bg-amber-500/20 blur-3xl" />
+        {/* Main luxury gradient crescent structure */}
+        <div className="absolute -bottom-[50%] -right-[50%] w-[140%] h-[140%] rounded-tl-[5rem] sm:rounded-tl-[7rem] bg-gradient-to-tl from-orange-600 via-amber-500 to-yellow-400 shadow-xl border-l-[6px] border-t-[6px] border-amber-300/65" />
+        {/* Secondary inner floating highlight contour */}
+        <div className="absolute -bottom-[60%] -right-[60%] w-[130%] h-[130%] rounded-tl-[4rem] sm:rounded-tl-[5.5rem] bg-gradient-to-tl from-yellow-400 via-amber-400 to-orange-500 border-l-2 border-t-2 border-white/45 opacity-85" />
+        {/* Fine gold accent line */}
+        <div className="absolute -bottom-[42%] -right-[42%] w-[120%] h-[120%] rounded-tl-[6rem] sm:rounded-tl-[8rem] border-l border-t border-yellow-200/50" />
+      </div>
     </div>
   );
 };

@@ -39,12 +39,12 @@ const LandingPage: React.FC<LandingPageProps> = ({
   }
 }) => {
   return (
-    <div className="animate-landing-premium relative w-full max-w-5xl lg:max-w-6xl mx-auto">
+    <div className="animate-landing-premium relative w-full h-full max-w-5xl lg:max-w-6xl mx-auto flex flex-col justify-center">
       {/* MODERATION ALERT FOR ADMIN */}
       {isAdmin && pendingCount > 0 && (
         <div 
           id="admin-moderation-alert" 
-          className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 p-3.5 border border-amber-200 shadow-xs transition-all duration-300 w-full mb-6"
+          className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 p-3.5 border border-amber-200 shadow-xs transition-all duration-300 w-full mb-4 shrink-0"
         >
           <div className="absolute -right-6 -bottom-6 opacity-5 text-amber-900 pointer-events-none transition-transform duration-500 group-hover:scale-110">
              <ShieldAlert size={80} />
@@ -83,7 +83,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
       {/* Prime Master Institutional Showcase Card */}
       <div 
         id="hero-section" 
-        className="landing-hero-card relative overflow-hidden rounded-[2rem] p-4 sm:p-5 md:p-6 lg:p-7 transition-all duration-500 animate-fade-in w-full shadow-lg"
+        className="landing-hero-card relative overflow-hidden rounded-[2rem] p-4 sm:p-5 md:p-6 lg:p-7 transition-all duration-500 animate-fade-in w-full shadow-lg flex-1 flex flex-col justify-center"
       >
         {/* Subtle patterned backdrop */}
         <div className="landing-grid-bg absolute inset-0 pointer-events-none" />
@@ -165,11 +165,11 @@ const LandingPage: React.FC<LandingPageProps> = ({
                           <stop offset="50%" stopColor="#f59e0b" /> {/* amber-500 */}
                           <stop offset="100%" stopColor="#d97706" /> {/* amber-600 */}
                         </linearGradient>
-                        {/* White cone gradient with soft shadow */}
+                        {/* Red-maroon cone gradient */}
                         <linearGradient id="cone-white" x1="0%" y1="0%" x2="100%" y2="50%">
-                          <stop offset="0%" stopColor="#cbd5e1" />
-                          <stop offset="30%" stopColor="#f8fafc" />
-                          <stop offset="100%" stopColor="#f1f5f9" />
+                          <stop offset="0%" stopColor="#7f1d1d" /> {/* red-900 / deep burgundy maroon */}
+                          <stop offset="40%" stopColor="#ef4444" /> {/* red-500 / bright highlight */}
+                          <stop offset="100%" stopColor="#991b1b" /> {/* red-800 / red-maroon */}
                         </linearGradient>
                         {/* Dark rubber rim gradient */}
                         <linearGradient id="rim-dark" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -250,7 +250,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                              C 18.5 22, 15.5 19, 12 19 
                              Z" 
                           fill="url(#cone-white)" 
-                          stroke="#cbd5e1" 
+                          stroke="#7f1d1d" 
                           strokeWidth="0.5" 
                         />
 
@@ -269,7 +269,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                           cy="15" 
                           rx="1" 
                           ry="10" 
-                          fill="#f1f5f9" 
+                          fill="#fee2e2" 
                         />
 
                         {/* Center speaker driver dome */}
