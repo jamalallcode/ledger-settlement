@@ -431,59 +431,68 @@ tbody tr:not(.no-hover-row):hover td {
 
 /* 1. Main Hero Panel Container (Premium translucent with blurred background) */
 .landing-hero-card {
-  background-color: rgba(255, 255, 255, 0.92) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(226, 232, 240, 0.9) !important;
-  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.05) !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fbfd 100%) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.01),
+    0 12px 24px -6px rgba(15, 23, 42, 0.04),
+    0 25px 50px -12px rgba(15, 23, 42, 0.035),
+    inset 0 1px 1px rgba(255, 255, 255, 0.95) !important;
   color: #1e293b !important;
 }
 
 .landing-hero-title {
-  color: #1e293b !important;
+  color: #0f172a !important;
+  text-shadow: 0 1px 1px rgba(15, 23, 42, 0.03);
 }
 
 /* 2. Premium Grid Backdrop (Custom clean glow instead of dotted pattern) */
 .landing-grid-bg {
-  background: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 50%),
-              radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.03) 0%, transparent 50%) !important;
+  background: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.03) 0%, transparent 60%),
+              radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.02) 0%, transparent 60%) !important;
   opacity: 1 !important;
 }
 
 /* 3. Government Tag Overlay */
 .landing-gov-tag {
-  background-color: #fef2f2 !important;
-  color: #b91c1c !important;
-  border: 1px solid #fecaca !important;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffebeb 100%) !important;
+  color: #991b1b !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+  box-shadow: 0 1px 2px rgba(239, 68, 68, 0.04) !important;
 }
 
 /* 4. Active Sector text */
 .landing-sector-text {
-  color: #1e3a8a !important;
-}
-
-/* 5. Cohesive Right Panel Container */
-.landing-right-card {
-  background: rgba(239, 246, 255, 0.7) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-color: rgba(191, 219, 254, 0.5) !important;
+  color: #0c4a6e !important;
+  background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%) !important;
+  border: 1.5px solid #99f6e4 !important;
+  box-shadow: 
+    0 2px 4px rgba(13, 148, 136, 0.05),
+    0 8px 16px -4px rgba(13, 148, 136, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
 }
 
 /* 6. Tag for Intro */
 .landing-tag-intro {
-  background-color: #dbeafe !important;
-  color: #1e40af !important;
+  background: linear-gradient(90deg, #eff6ff 0%, #dbeafe 100%) !important;
+  color: #1d4ed8 !important;
+  border: 1px solid rgba(191, 219, 254, 0.7) !important;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.02) !important;
 }
 
 /* 7. Overview text with premium readability and high contrast */
 .landing-desc-text {
   color: #334155 !important;
+  font-family: inherit;
+  letter-spacing: 0.01em;
 }
 
 /* 9. Muted labels for elements */
 .landing-label-muted {
-  color: #64748b !important;
+  color: #475569 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 
@@ -691,27 +700,27 @@ tbody tr:not(.no-hover-row):hover td {
 
 @keyframes colorful-slide-x {
   0% {
-    transform: translateX(0);
-    color: #3b82f6 !important; /* Blue */
-    text-shadow: 0 0 8px rgba(59, 130, 246, 0.2);
+    transform: translateX(0px);
+    color: #10b981 !important; /* Premium Emerald Green */
+    text-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
   }
   25% {
-    color: #8b5cf6 !important; /* Elegant Purple */
-    text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+    color: #059669 !important; /* Rich Forest Green */
+    text-shadow: 0 0 10px rgba(5, 150, 105, 0.3);
   }
   50% {
-    transform: translateX(140px); /* Moves up to the point marked by the arrow */
-    color: #ec4899 !important; /* Vibrant Pink / Rose */
-    text-shadow: 0 0 12px rgba(236, 72, 153, 0.4);
+    transform: translateX(12px); /* Moves only rightwards, staying completely within the date box limits */
+    color: #34d399 !important; /* Radiant Mint Green */
+    text-shadow: 0 0 12px rgba(52, 211, 153, 0.4);
   }
   75% {
-    color: #06b6d4 !important; /* Bright Cyan / Teal */
-    text-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+    color: #047857 !important; /* Deep Jade Green */
+    text-shadow: 0 0 10px rgba(4, 120, 87, 0.3);
   }
   100% {
-    transform: translateX(0);
-    color: #3b82f6 !important; /* Smoothly back to Blue */
-    text-shadow: 0 0 8px rgba(59, 130, 246, 0.2);
+    transform: translateX(0px);
+    color: #10b981 !important; /* Smoothly back */
+    text-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
   }
 }
 
@@ -721,6 +730,28 @@ tbody tr:not(.no-hover-row):hover td {
   font-weight: 900 !important; /* Keep font weight crisp and strong */
   transition: color 0.5s ease-in-out;
 }
+
+/* 13. Interactive hover pop effects for Launch Actions - perfectly flat and stable on hover */
+.landing-val-text {
+  transition: opacity 0.2s ease, filter 0.2s ease !important;
+  cursor: pointer;
+}
+
+.landing-val-text:hover {
+  opacity: 0.95;
+  filter: brightness(1.04);
+}
+
+/* Premium effect for work button */
+#btn-start-work {
+  transition: opacity 0.2s ease, filter 0.2s ease !important;
+}
+
+#btn-start-work:hover {
+  opacity: 0.95;
+  filter: brightness(1.04);
+}
+
 
 
 

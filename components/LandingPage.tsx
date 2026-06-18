@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  ArrowRight, ShieldCheck, ShieldAlert, Landmark, Award, Lock, MapPin, FileCheck, User, Phone
+  ArrowRight, ShieldCheck, ShieldAlert, Landmark, Award, Lock, MapPin, FileCheck, User, Phone, Megaphone
 } from 'lucide-react';
 import { SettlementEntry, ModuleVisibility } from '../types.ts';
 import { toBengaliDigits } from '../utils/numberUtils.ts';
@@ -88,48 +88,54 @@ const LandingPage: React.FC<LandingPageProps> = ({
         {/* Subtle patterned backdrop */}
         <div className="landing-grid-bg absolute inset-0 pointer-events-none" />
         
-        {/* Dynamic Split Layout to utilize left/right space and remain compact vertically */}
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-6 lg:gap-8 items-center">
+        {/* Top Split Identity Area - using stretch to match left and right column heights */}
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-6 lg:gap-8 items-stretch">
           
           {/* LEFT PANEL: Branding & Executive Seals */}
-          <div className="md:col-span-4 lg:col-span-4 flex flex-col items-center justify-center text-center space-y-3.5 md:border-r md:border-slate-200/70 md:pr-6 lg:pr-8 py-1">
-            {/* Master Seal Shield - Government Themed (Significantly enlarged) */}
-            <div 
-              className="relative flex items-center justify-center w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 bg-gradient-to-br from-indigo-700 via-blue-800 to-emerald-800 text-white rounded-[2rem] shadow-xl border-3 border-amber-400 transform hover:scale-110 hover:shadow-[0_0_25px_rgba(245,158,11,0.7)] transition-all duration-300 select-none"
-            >
-              <div className="absolute inset-0 bg-slate-900/10 rounded-[2rem]"></div>
-              <Landmark className="stroke-[2.5] text-white relative z-10 w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14" />
-              <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[12px] text-white shadow-md font-black">
-                ✓
+          <div className="md:col-span-4 lg:col-span-4 flex flex-col justify-between items-center text-center md:border-r md:border-slate-200/70 md:pr-6 lg:pr-8 pt-2 pb-5 md:pb-6 lg:pb-7">
+            {/* Master Seal Shield - Government Themed */}
+            <div className="flex flex-col items-center space-y-3.5">
+              <div 
+                className="relative flex items-center justify-center w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 bg-gradient-to-br from-indigo-700 via-blue-800 to-emerald-800 text-white rounded-[2rem] shadow-xl border-3 border-amber-400 transform hover:scale-[1.03] transition-all duration-300 select-none"
+              >
+                <div className="absolute inset-0 bg-slate-900/10 rounded-[2rem]"></div>
+                <Landmark className="stroke-[2.5] text-white relative z-10 w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14" />
+                <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[12px] text-white shadow-md font-black">
+                  ✓
+                </div>
+              </div>
+
+              {/* Structured Institutional Identity Card */}
+              <div className="space-y-2 w-full">
+                <span className="landing-gov-tag inline-block px-2.5 py-1 rounded-md text-[10px] md:text-xs font-black uppercase tracking-wider">
+                  গণপ্রজাতন্ত্রী বাংলাদেশ সরকার
+                </span>
+                
+                <h3 className="landing-hero-title text-xl md:text-2xl lg:text-[23px] font-black tracking-tight leading-tight">
+                  বাণিজ্যিক অডিট অধিদপ্তর
+                </h3>
+                
+                <div className="flex flex-col items-center w-full space-y-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 rounded-full border border-slate-200/40 text-[10px] md:text-xs font-bold shadow-2xs">
+                    <Award size={13} className="text-blue-600 shrink-0" />
+                    আঞ্চলিক কার্যালয়, সেক্টর: ০৬
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Structured Institutional Identity Card */}
-            <div className="space-y-2 w-full">
-              <span className="landing-gov-tag inline-block px-2.5 py-1 rounded-md text-[10px] md:text-xs font-black uppercase tracking-wider">
-                গণপ্রজাতন্ত্রী বাংলাদেশ সরকার
+            {/* খুলনা Tag (Placed perfectly at the bottom of the left column) */}
+            <div className="mt-4 flex items-center justify-center">
+              <span className="landing-sector-text text-sm md:text-base font-black px-6 py-1.5 rounded-xl border border-blue-200 transition-all shadow-md animate-pulse-green">
+                খুলনা
               </span>
-              
-              <h3 className="landing-hero-title text-xl md:text-2xl lg:text-[23px] font-black tracking-tight leading-tight">
-                বাণিজ্যিক অডিট অধিদপ্তর
-              </h3>
-              
-              <div className="flex flex-col items-center w-full space-y-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 rounded-full border border-slate-200/40 text-[10px] md:text-xs font-bold shadow-2xs">
-                  <Award size={13} className="text-blue-600 shrink-0" />
-                  আঞ্চলিক কার্যালয়, সেক্টর: ০৬
-                </span>
-                <span className="landing-sector-text text-sm md:text-base font-black mt-2 px-6 py-1.5 rounded-xl border border-blue-200 transition-all shadow-md animate-pulse-green">
-                  খুলনা
-                </span>
-              </div>
             </div>
           </div>
 
-          {/* RIGHT PANEL: App Description & Interactive Portal Actions in a single cohesive card */}
-          <div className="md:col-span-8 lg:col-span-8 landing-right-card flex flex-col justify-between rounded-3xl border p-5 md:p-6 lg:p-7 space-y-4 md:space-y-5 w-full shadow-xs">
+          {/* RIGHT PANEL: App Description & Interactive Portal Actions - Seamlessly integrated on the parent background */}
+          <div className="md:col-span-8 lg:col-span-8 flex flex-col justify-between p-3 md:p-5 lg:p-6 space-y-4 md:space-y-6 w-full">
             
-            {/* System Overview / Platform Description (Inside cohesive container) */}
+            {/* System Overview / Platform Description */}
             <div className="w-full space-y-2.5">
               <div className="landing-tag-intro inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] md:text-xs font-black uppercase tracking-wider">
                 💡 সিস্টেম পরিচিতি ও বিবরণ
@@ -139,36 +145,187 @@ const LandingPage: React.FC<LandingPageProps> = ({
               </p>
             </div>
 
-            {/* LAUNCH ACTIONS (Inside cohesive container) */}
-            <div className="w-full flex flex-col lg:flex-row items-start lg:items-end justify-between gap-4 transition-colors">
+            {/* LAUNCH ACTIONS (Enclosed inside Right Card) */}
+            <div className="w-full flex flex-col sm:flex-row items-center sm:items-end justify-between gap-5 transition-colors pt-2">
               
-              <div className="flex flex-col items-start justify-start gap-2 text-left shrink-0">
-                <span className="landing-label-muted text-[10px] md:text-xs uppercase font-black tracking-wider text-left inline-block m-0 p-0 animate-colorful-slide">
-                  চলমান রিপোর্টিং সাইকেল
-                </span>
-                <div className="landing-val-text text-xs sm:text-sm md:text-base font-black text-white bg-gradient-to-r from-blue-600 to-indigo-700 px-5 py-3.5 rounded-xl border border-blue-500/40 shadow-lg shadow-blue-500/20 w-fit block text-left m-0">
+              {/* Centered label with premium yellow megaphone on the left, with green text appearing to emerge from its mouth */}
+              <div className="flex flex-col items-center sm:items-start justify-center gap-2.5 text-center sm:text-left relative">
+                <div className="flex items-center gap-2.5 justify-center sm:justify-start">
+                  {/* Premium Megaphone Icon matching user uploaded image */}
+                  <div className="relative flex items-center justify-center shrink-0">
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      viewBox="0 0 32 32" 
+                      className="w-7 h-7 drop-shadow-[0_4px_12px_rgba(245,158,11,0.35)] hover:scale-105 transition-transform duration-200"
+                    >
+                      <defs>
+                        {/* Yellow/Amber body gradient */}
+                        <linearGradient id="body-yellow" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#fef08a" /> {/* yellow-200 */}
+                          <stop offset="50%" stopColor="#f59e0b" /> {/* amber-500 */}
+                          <stop offset="100%" stopColor="#d97706" /> {/* amber-600 */}
+                        </linearGradient>
+                        {/* White cone gradient with soft shadow */}
+                        <linearGradient id="cone-white" x1="0%" y1="0%" x2="100%" y2="50%">
+                          <stop offset="0%" stopColor="#cbd5e1" />
+                          <stop offset="30%" stopColor="#f8fafc" />
+                          <stop offset="100%" stopColor="#f1f5f9" />
+                        </linearGradient>
+                        {/* Dark rubber rim gradient */}
+                        <linearGradient id="rim-dark" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#475569" />
+                          <stop offset="100%" stopColor="#1e293b" />
+                        </linearGradient>
+                        {/* Handle grey gradient */}
+                        <linearGradient id="handle-grey" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#cbd5e1" />
+                          <stop offset="100%" stopColor="#64748b" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Main rotated group to point mouth UPPER RIGHT (so it tilts up nicely towards the text) */}
+                      <g transform="rotate(-15 16 16)">
+                        
+                        {/* 1. Handle (dark grey / plastic) */}
+                        <path 
+                          d="M 12 18 
+                             L 10 26 
+                             C 9.8 26.8, 10.3 27.5, 11 27.5 
+                             L 13 27 
+                             C 13.6 26.8, 14 26.2, 13.8 25.5 
+                             L 13.5 19 
+                             Z" 
+                          fill="url(#handle-grey)" 
+                          stroke="#475569" 
+                          strokeWidth="0.75" 
+                          strokeLinejoin="round" 
+                        />
+                        
+                        {/* Small black trigger button */}
+                        <path 
+                          d="M 10.5 19.5 L 11.5 21" 
+                          stroke="#1e293b" 
+                          strokeWidth="1.5" 
+                          strokeLinecap="round" 
+                        />
+
+                        {/* 2. Yellow back cylinder body */}
+                        {/* Dome back cap */}
+                        <path 
+                          d="M 5 11 
+                             C 3 11, 3 19, 5 19 
+                             Z" 
+                          fill="#b45309" 
+                        />
+                        {/* Main Yellow Cylinder */}
+                        <path 
+                          d="M 5 11 
+                             L 12 11 
+                             L 12 19 
+                             L 5 19 
+                             C 3.8 19, 3.8 11, 5 11 Z" 
+                          fill="url(#body-yellow)" 
+                          stroke="#d97706" 
+                          strokeWidth="0.5" 
+                        />
+                        
+                        {/* Yellow body horizontal ridges */}
+                        <line x1="6" y1="13" x2="10" y2="13" stroke="#b45309" strokeWidth="0.75" />
+                        <line x1="6" y1="15" x2="10" y2="15" stroke="#b45309" strokeWidth="0.75" />
+                        <line x1="6" y1="17" x2="10" y2="17" stroke="#b45309" strokeWidth="0.75" />
+
+                        {/* Strap loop hanger plate at top */}
+                        <path 
+                          d="M 6.5 11 Q 7.5 9 8.5 11" 
+                          fill="none" 
+                          stroke="#cbd5e1" 
+                          strokeWidth="0.75" 
+                        />
+
+                        {/* 3. White Funnel (expanding towards the right) */}
+                        <path 
+                          d="M 12 11 
+                             C 15.5 11, 18.5 8, 25 5 
+                             L 25 25 
+                             C 18.5 22, 15.5 19, 12 19 
+                             Z" 
+                          fill="url(#cone-white)" 
+                          stroke="#cbd5e1" 
+                          strokeWidth="0.5" 
+                        />
+
+                        {/* Inner shadow/reflection guide line */}
+                        <path 
+                          d="M 12 14 Q 17.5 14.5 25 10" 
+                          fill="none" 
+                          stroke="#ffffff" 
+                          strokeWidth="1.2" 
+                          opacity="0.8" 
+                        />
+
+                        {/* 4. Inside of the mouth flare */}
+                        <ellipse 
+                          cx="25" 
+                          cy="15" 
+                          rx="1" 
+                          ry="10" 
+                          fill="#f1f5f9" 
+                        />
+
+                        {/* Center speaker driver dome */}
+                        <ellipse 
+                          cx="24.8" 
+                          cy="15" 
+                          rx="0.5" 
+                          ry="2" 
+                          fill="#94a3b8" 
+                        />
+
+                        {/* 5. Thick Grey Rubber Rim */}
+                        <ellipse 
+                          cx="25" 
+                          cy="15" 
+                          rx="1.2" 
+                          ry="10.2" 
+                          fill="none" 
+                          stroke="url(#rim-dark)" 
+                          strokeWidth="1.5" 
+                        />
+
+                      </g>
+                    </svg>
+                    {/* Visual pulse at the megaphone mouthpiece facing the text */}
+                    <span className="absolute right-[1px] top-[3px] w-2 h-2 bg-emerald-400 rounded-full animate-ping opacity-85"></span>
+                  </div>
+                  <span className="landing-label-muted text-[11px] md:text-xs uppercase font-black tracking-wider block text-center sm:text-left animate-colorful-slide">
+                    চলমান রিপোর্টিং সাইকেল
+                  </span>
+                </div>
+                <div className="landing-val-text text-xs sm:text-sm md:text-base font-black text-white bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-2.5 sm:py-3.5 rounded-xl border border-blue-500/40 shadow-lg shadow-blue-500/20 w-max text-center sm:text-left block m-0">
                   {cycleLabel || "চলমান কোয়ার্টার"}
                 </div>
               </div>
 
-              <div className="w-full lg:w-auto shrink-0 flex justify-start">
+              {/* Launch Action Button */}
+              <div className="w-full sm:w-auto flex justify-center sm:justify-end">
                 {(isAdmin || moduleVisibility.entry) && (
                   <button 
                     id="btn-start-work"
                     onClick={() => setActiveTab('entry')}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-850 text-white text-xs sm:text-sm md:text-base font-black rounded-xl hover:scale-[1.03] active:scale-95 transition-all duration-200 shadow-lg shadow-blue-500/20 cursor-pointer border border-blue-500/40 text-center"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-850 text-white text-xs sm:text-sm md:text-base font-black rounded-xl active:scale-95 transition-all duration-200 shadow-lg shadow-blue-500/20 cursor-pointer border border-blue-500/40 text-center"
                   >
                     <span className="text-white tracking-wide font-black">কাজ শুরু করুন</span>
                     <ArrowRight size={16} className="stroke-[3] text-white animate-bounce-horizontal" />
                   </button>
                 )}
               </div>
-              
+
             </div>
 
           </div>
 
         </div>
+
       </div>
     </div>
   );
