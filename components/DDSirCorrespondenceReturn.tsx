@@ -799,12 +799,6 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
         {/* SECTION 1: সারসংক্ষেপ টেবিল */}
         <div className="mb-10 flex flex-col items-stretch overflow-visible">
-          {/* তারিখ অংশটি উপরে ডান পাশে */}
-          <div className="flex justify-end mb-2 mr-1 select-none">
-            <span className="text-slate-800 font-bold text-[13px] bg-slate-50 border border-slate-200 rounded-md px-3 py-1 shadow-sm">
-              তারিখ: {reportingDateBN} খ্রি:
-            </span>
-          </div>
           <div className="summary-table-container max-w-full w-full border border-slate-300 rounded-lg overflow-auto">
             <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
               <colgroup>
@@ -825,7 +819,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <tr className="bg-slate-200">
                   <th colSpan={2} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">অনিষ্পন্ন কাজের তালিকা</th>
                   <th colSpan={4} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">শাখা: {filterBranch === 'সকল' ? 'সকল' : filterBranch}</th>
-                  <th colSpan={6} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">মাস: {reportingMonthBN}</th>
+                  <th colSpan={3} className="border border-r-0 border-slate-300 p-1.5 text-center font-bold text-[13px]">মাস: {reportingMonthBN}</th>
+                  <th colSpan={3} className="border border-l-0 border-slate-300 p-1.5 text-center font-bold text-[13px]">তারিখ: {reportingDateBN} খ্রি:</th>
                 </tr>
                 <tr>
                   <th rowSpan={2} className={thStyle}>ক্রমিক নং</th>
