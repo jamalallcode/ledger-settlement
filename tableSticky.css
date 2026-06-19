@@ -232,10 +232,10 @@
   box-shadow: none !important;
 }
 
-/* DD Sir Detailed Table Sticky Header Adjustment to sit below the navbar on desktop */
+/* DD Sir Detailed Table Sticky Header Adjustment to sit cleanly at top-0 of the scrolling container */
 @media (min-width: 1280px) {
   .dd-sir-detailed-table-container thead th,
   .dd-sir-detailed-table-container thead tr th {
-    top: 45px !important;
+    top: 0 !important;
   }
 }

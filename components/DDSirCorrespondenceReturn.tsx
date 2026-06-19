@@ -463,8 +463,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   // Data cells reverted to font-bold (700 weight as per instruction)
   const tdStyle = "border border-slate-300 px-1.5 py-1.5 text-[12px] text-center font-bold leading-tight align-middle transition-colors";
   
-  // Reverted sticky header from bold to black
-  const stickyThStyle = "sticky top-0 xl:top-[45px] z-[240] border border-slate-300 px-1 py-1.5 font-black text-center text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1]";
+  // Reverted sticky header from bold to black with clean top-0 stickiness
+  const stickyThStyle = "sticky top-0 z-[240] border border-slate-300 px-1 py-1.5 font-black text-center text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1]";
   // Reverted sticky data from medium to bold
   const stickyTdStyle = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-center font-bold leading-tight align-middle transition-colors";
 
