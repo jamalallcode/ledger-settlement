@@ -205,131 +205,133 @@ const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="relative" ref={notifRef}>
-            <button 
-              onClick={() => setShowNotifDropdown(!showNotifDropdown)}
-              className={`p-1 rounded-lg border transition-all relative flex items-center justify-center ${showNotifDropdown || (pendingEntries.length + unassignedEntries.length) > 0 ? 'bg-amber-500 text-white border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'}`}
-            >
-              {(pendingEntries.length + unassignedEntries.length) > 0 ? <BellRing size={16} className="animate-pulse" /> : <Bell size={16} />}
-              {(pendingEntries.length + unassignedEntries.length) > 0 && (
-                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center border border-slate-900 shadow-sm animate-notif-scale">
-                  {toBengaliDigits(pendingEntries.length + unassignedEntries.length)}
-                </span>
-              )}
-            </button>
+          {isAdmin && (
+            <div className="relative" ref={notifRef}>
+              <button 
+                onClick={() => setShowNotifDropdown(!showNotifDropdown)}
+                className={`p-1 rounded-lg border transition-all relative flex items-center justify-center ${showNotifDropdown || (pendingEntries.length + unassignedEntries.length) > 0 ? 'bg-amber-500 text-white border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'}`}
+              >
+                {(pendingEntries.length + unassignedEntries.length) > 0 ? <BellRing size={16} className="animate-pulse" /> : <Bell size={16} />}
+                {(pendingEntries.length + unassignedEntries.length) > 0 && (
+                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center border border-slate-900 shadow-sm animate-notif-scale">
+                    {toBengaliDigits(pendingEntries.length + unassignedEntries.length)}
+                  </span>
+                )}
+              </button>
 
-            {showNotifDropdown && (
-              <div className="absolute top-[calc(100%+12px)] right-0 w-80 sm:w-96 bg-slate-900 border-2 border-amber-500/50 rounded-[2rem] shadow-2xl overflow-hidden z-[5010] animate-in fade-in slide-in-from-top-4 duration-300">
-                {/* Moderation Pending (Admin Only) */}
-                {pendingEntries.length > 0 && (
-                  <div className="flex flex-col">
-                    <div className="p-4 bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700 flex items-center justify-between">
-                      <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
-                        <ShieldAlert size={14} className="text-amber-500" /> মডোরেশন পেন্ডিং
-                      </h4>
-                      <span className="bg-amber-500 text-slate-900 text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg">
-                        {toBengaliDigits(pendingEntries.length)} টি এন্ট্রি
-                      </span>
-                    </div>
-                    <div className="max-h-[180px] overflow-y-auto no-scrollbar py-1 bg-slate-900/50 backdrop-blur-xl border-b border-slate-800">
-                      {pendingEntries.map((entry) => (
-                        <div key={entry.id} className="px-5 py-3 hover:bg-slate-800/80 border-b border-slate-850 last:border-0 group transition-all">
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[12px] font-black text-slate-100 truncate group-hover:text-amber-400 transition-colors">{entry.entityName}</p>
-                              <p className="text-[10px] font-bold text-slate-500 truncate mt-0.5">{entry.branchName}</p>
-                              <div className="mt-2 flex items-center gap-2">
-                                <span className="text-[8px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full uppercase font-black tracking-tighter">{entry.paraType}</span>
-                                <span className="text-[9px] text-blue-400 font-bold">{toBengaliDigits(entry.auditYear)}</span>
+              {showNotifDropdown && (
+                <div className="absolute top-[calc(100%+12px)] right-0 w-80 sm:w-96 bg-slate-900 border-2 border-amber-500/50 rounded-[2rem] shadow-2xl overflow-hidden z-[5010] animate-in fade-in slide-in-from-top-4 duration-300">
+                  {/* Moderation Pending (Admin Only) */}
+                  {pendingEntries.length > 0 && (
+                    <div className="flex flex-col">
+                      <div className="p-4 bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700 flex items-center justify-between">
+                        <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                          <ShieldAlert size={14} className="text-amber-500" /> মডোরেশন পেন্ডিং
+                        </h4>
+                        <span className="bg-amber-500 text-slate-900 text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg">
+                          {toBengaliDigits(pendingEntries.length)} টি এন্ট্রি
+                        </span>
+                      </div>
+                      <div className="max-h-[180px] overflow-y-auto no-scrollbar py-1 bg-slate-900/50 backdrop-blur-xl border-b border-slate-800">
+                        {pendingEntries.map((entry) => (
+                          <div key={entry.id} className="px-5 py-3 hover:bg-slate-800/80 border-b border-slate-850 last:border-0 group transition-all">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[12px] font-black text-slate-100 truncate group-hover:text-amber-400 transition-colors">{entry.entityName}</p>
+                                <p className="text-[10px] font-bold text-slate-500 truncate mt-0.5">{entry.branchName}</p>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <span className="text-[8px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full uppercase font-black tracking-tighter">{entry.paraType}</span>
+                                  <span className="text-[9px] text-blue-400 font-bold">{toBengaliDigits(entry.auditYear)}</span>
+                                </div>
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                <button 
+                                  onClick={() => onApprove?.(entry.id)}
+                                  className="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm border border-emerald-500/20"
+                                  title="অনুমোদন দিন"
+                                >
+                                  <Check size={14} strokeWidth={3} />
+                                </button>
+                                <button 
+                                  onClick={() => onReject?.(entry.id)}
+                                  className="p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm border border-red-500/20"
+                                  title="বাতিল করুন"
+                                >
+                                  <XCircle size={14} />
+                                </button>
                               </div>
                             </div>
-                            <div className="flex flex-col gap-2">
-                              <button 
-                                onClick={() => onApprove?.(entry.id)}
-                                className="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm border border-emerald-500/20"
-                                title="অনুমোদন দিন"
-                              >
-                                <Check size={14} strokeWidth={3} />
-                              </button>
-                              <button 
-                                onClick={() => onReject?.(entry.id)}
-                                className="p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm border border-red-500/20"
-                                title="বাতিল করুন"
-                              >
-                                <XCircle size={14} />
-                              </button>
-                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Unassigned Entries notifications */}
-                {unassignedEntries.length > 0 && (
-                  <div className="flex flex-col">
-                    <div className="p-4 bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700 flex items-center justify-between">
-                      <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
-                        <AlertTriangle size={14} className="text-rose-400 animate-pulse" /> অনির্ধারিত চিঠিপত্র
-                      </h4>
-                      <span className="bg-rose-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg">
-                        {toBengaliDigits(unassignedEntries.length)} টি চিঠি
-                      </span>
-                    </div>
-                    <div className="max-h-[220px] overflow-y-auto no-scrollbar py-2 bg-slate-900/50 backdrop-blur-xl">
-                      {unassignedEntries.map((entry) => (
-                        <div 
-                          key={entry.id} 
+                  {/* Unassigned Entries notifications */}
+                  {unassignedEntries.length > 0 && (
+                    <div className="flex flex-col">
+                      <div className="p-4 bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700 flex items-center justify-between">
+                        <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                          <AlertTriangle size={14} className="text-rose-400 animate-pulse" /> অনির্ধারিত চিঠিপত্র
+                        </h4>
+                        <span className="bg-rose-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg">
+                          {toBengaliDigits(unassignedEntries.length)} টি চিঠি
+                        </span>
+                      </div>
+                      <div className="max-h-[220px] overflow-y-auto no-scrollbar py-2 bg-slate-900/50 backdrop-blur-xl">
+                        {unassignedEntries.map((entry) => (
+                          <div 
+                            key={entry.id} 
+                            onClick={() => {
+                              setActiveTab('register', 'correspondence', undefined, entry.diaryNo);
+                              setShowNotifDropdown(false);
+                            }}
+                            className="px-5 py-3 hover:bg-slate-800/80 border-b border-slate-800/30 last:border-0 group cursor-pointer transition-all flex flex-col gap-1 text-left"
+                          >
+                            <p className="text-[12px] font-black text-slate-100 truncate group-hover:text-rose-400 transition-colors">
+                              {entry.description || "কোনো বিবরণ নেই"}
+                            </p>
+                            <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold">
+                              <span>ডায়েরি নং: {toBengaliDigits(entry.diaryNo || "")}</span>
+                              <span className="text-blue-400">{entry.diaryDate}</span>
+                            </div>
+                            <span className="text-[9px] text-rose-400 font-bold bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md w-fit mt-1">প্রাপক নির্ধারণ করুন</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="p-3 bg-slate-950 border-t border-slate-800">
+                        <button
                           onClick={() => {
-                            setActiveTab('register', 'correspondence', undefined, entry.diaryNo);
+                            setActiveTab('register', 'correspondence', undefined, '__UNASSIGNED__');
                             setShowNotifDropdown(false);
                           }}
-                          className="px-5 py-3 hover:bg-slate-800/80 border-b border-slate-800/30 last:border-0 group cursor-pointer transition-all flex flex-col gap-1 text-left"
+                          className="w-full py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 rounded-xl font-black text-[10.5px] transition-all flex items-center justify-center gap-1.5"
                         >
-                          <p className="text-[12px] font-black text-slate-100 truncate group-hover:text-rose-400 transition-colors">
-                            {entry.description || "কোনো বিবরণ নেই"}
-                          </p>
-                          <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold">
-                            <span>ডায়েরি নং: {toBengaliDigits(entry.diaryNo || "")}</span>
-                            <span className="text-blue-400">{entry.diaryDate}</span>
-                          </div>
-                          <span className="text-[9px] text-rose-400 font-bold bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md w-fit mt-1">প্রাপক নির্ধারণ করুন</span>
-                        </div>
-                      ))}
+                          সব অনির্ধারিত চিঠিপত্র দেখুন <ArrowRight size={12} />
+                        </button>
+                      </div>
                     </div>
-                    <div className="p-3 bg-slate-950 border-t border-slate-800">
-                      <button
-                        onClick={() => {
-                          setActiveTab('register', 'correspondence', undefined, '__UNASSIGNED__');
-                          setShowNotifDropdown(false);
-                        }}
-                        className="w-full py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 rounded-xl font-black text-[10.5px] transition-all flex items-center justify-center gap-1.5"
-                      >
-                        সব অনির্ধারিত চিঠিপত্র দেখুন <ArrowRight size={12} />
-                      </button>
+                  )}
+
+                  {pendingEntries.length === 0 && unassignedEntries.length === 0 && (
+                    <div className="p-12 text-center space-y-4 opacity-40">
+                      <UserCheck size={36} className="mx-auto text-slate-600" />
+                      <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest leading-relaxed">বর্তমানে কোনো অপেক্ষমান বা<br/>অনির্ধারিত এন্ট্রি নেই</p>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {pendingEntries.length === 0 && unassignedEntries.length === 0 && (
-                  <div className="p-12 text-center space-y-4 opacity-40">
-                    <UserCheck size={36} className="mx-auto text-slate-600" />
-                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest leading-relaxed">বর্তমানে কোনো অপেক্ষমান বা<br/>অনির্ধারিত এন্ট্রি নেই</p>
-                  </div>
-                )}
-
-                {pendingEntries.length > 0 && (
-                  <button 
-                    onClick={() => { setActiveTab('archive'); setShowNotifDropdown(false); }}
-                    className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-amber-500 text-[10px] font-black uppercase tracking-widest transition-all border-t border-slate-700 flex items-center justify-center gap-2"
-                  >
-                    বিস্তারিত তালিকা দেখুন <ArrowRight size={14} />
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+                  {pendingEntries.length > 0 && (
+                    <button 
+                      onClick={() => { setActiveTab('archive'); setShowNotifDropdown(false); }}
+                      className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-amber-500 text-[10px] font-black uppercase tracking-widest transition-all border-t border-slate-700 flex items-center justify-center gap-2"
+                    >
+                      বিস্তারিত তালিকা দেখুন <ArrowRight size={14} />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Cycle badge removed as per request */}
           
