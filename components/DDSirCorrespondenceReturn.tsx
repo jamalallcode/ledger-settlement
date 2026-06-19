@@ -38,6 +38,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const [isAuditorDropdownOpen, setIsAuditorDropdownOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
   const auditorDropdownRef = useRef<HTMLDivElement>(null);
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -131,10 +132,25 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
         setIsCalendarOpen(false);
       }
+      if (statsRef.current && !statsRef.current.contains(e.target as Node)) {
+        setIsStatsOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    // Intercepted scroll-locking via data-scroll-locked attribute to prevent layout shifts and flickering (flickering/কাপাকাপি)
+    if (isStatsOpen) {
+      document.body.setAttribute('data-scroll-locked', 'true');
+    } else {
+      document.body.removeAttribute('data-scroll-locked');
+    }
+    return () => {
+      document.body.removeAttribute('data-scroll-locked');
+    };
+  }, [isStatsOpen]);
 
   const auditorOptions = useMemo(() => {
     let filteredForOptions = entries || [];
@@ -447,8 +463,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   // Data cells reverted to font-bold (700 weight as per instruction)
   const tdStyle = "border border-slate-300 px-1.5 py-1.5 text-[12px] text-center font-bold leading-tight align-middle transition-colors";
   
-  // Reverted sticky header from bold to black
-  const stickyThStyle = "border border-slate-300 px-1 py-3 font-black text-center text-[10px] bg-slate-200";
+  // Reverted sticky header from bold to black with clean top-0 stickiness
+  const stickyThStyle = "sticky top-0 z-[240] border border-slate-300 px-1 py-1.5 font-black text-center text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1]";
   // Reverted sticky data from medium to bold
   const stickyTdStyle = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-center font-bold leading-tight align-middle transition-colors";
 
@@ -469,7 +485,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
       <div className="w-full bg-white px-0 py-6 relative z-[1000]">
         {/* Header container for Title, Reporting Date, Filters and Statistics on a single line */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-100 w-full px-6 relative z-[1010]">
+        <div className="bg-white flex flex-col lg:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-200/80 w-full px-6 transition-all duration-300">
           
           {/* Left: Title Header styled as split-block button */}
           <div className="flex items-stretch h-11 w-fit max-w-[95%] shadow-[0_4px_12px_rgba(0,0,0,0.1)] select-none rounded-lg overflow-hidden border border-slate-200/50 shrink-0">
@@ -704,16 +720,27 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             </div>
 
             {/* Right: Statistics button and its dropdown */}
-            <div className="relative group z-[1050]" ref={statsRef}>
+            <div 
+              className="relative z-[1050]" 
+              ref={statsRef}
+            >
               <button 
+                type="button"
+                onClick={() => setIsStatsOpen(prev => !prev)}
                 className="flex items-center gap-2 px-5 py-2.5 bg-sky-50 text-sky-800 rounded-xl font-black text-[13px] border border-sky-100 hover:border-sky-300 transition-all duration-300 hover:bg-white hover:shadow-md cursor-pointer h-[44px]"
               >
                 <Sparkles size={16} className="text-sky-600 animate-pulse" />
                 পরিসংখ্যান
-                <ChevronDown size={14} className="text-sky-500 transition-transform duration-300 group-hover:rotate-180" />
+                <ChevronDown size={14} className={`text-sky-500 transition-transform duration-300 ${isStatsOpen ? 'rotate-180' : ''}`} />
               </button>
               
-              <div className="absolute top-full right-0 mt-2 w-[320px] sm:w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[9999] opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-auto text-left">
+              <div 
+                onWheel={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+                className={`absolute top-full right-0 mt-2 w-[320px] sm:w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[9999] transition-all duration-300 pointer-events-auto text-left max-h-[80vh] overflow-y-auto overscroll-contain scrollbar-thin ${
+                  isStatsOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'
+                }`}
+              >
                 <div className="space-y-5">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-3">
@@ -771,8 +798,14 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         </div>
 
         {/* SECTION 1: সারসংক্ষেপ টেবিল */}
-        <div className="mb-10 flex justify-center overflow-visible">
-          <div className="table-container max-w-full w-full border border-slate-300 rounded-lg overflow-auto">
+        <div className="mb-10 flex flex-col items-stretch overflow-visible">
+          {/* তারিখ অংশটি উপরে ডান পাশে */}
+          <div className="flex justify-end mb-2 mr-1 select-none">
+            <span className="text-slate-800 font-bold text-[13px] bg-slate-50 border border-slate-200 rounded-md px-3 py-1 shadow-sm">
+              তারিখ: {reportingDateBN} খ্রি:
+            </span>
+          </div>
+          <div className="summary-table-container max-w-full w-full border border-slate-300 rounded-lg overflow-auto">
             <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
               <colgroup>
                 <col className="w-[30px]" />
@@ -789,11 +822,10 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <col className="w-[70px]" />
               </colgroup>
               <thead>
-                <tr className="bg-white">
+                <tr className="bg-slate-200">
                   <th colSpan={2} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">অনিষ্পন্ন কাজের তালিকা</th>
                   <th colSpan={4} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">শাখা: {filterBranch === 'সকল' ? 'সকল' : filterBranch}</th>
-                  <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">মাস: {reportingMonthBN}</th>
-                  <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">তারিখ: {reportingDateBN} খ্রি:</th>
+                  <th colSpan={6} className="border border-slate-300 p-1.5 text-center font-bold text-[13px]">মাস: {reportingMonthBN}</th>
                 </tr>
                 <tr>
                   <th rowSpan={2} className={thStyle}>ক্রমিক নং</th>
@@ -954,7 +986,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
              </div>
           </div>
 
-          <div className="table-container relative overflow-auto w-full border border-slate-300 rounded-lg">
+          <div className="table-container dd-sir-detailed-table-container relative overflow-auto w-full border border-slate-300 rounded-lg">
             <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
               <colgroup>
                 <col className="w-[30px]" />
