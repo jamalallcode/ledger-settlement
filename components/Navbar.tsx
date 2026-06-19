@@ -6,7 +6,7 @@ import {
   Upload, ShieldCheck, LogOut, X, KeyRound, Settings, 
   Calendar, ShieldAlert, Filter, Printer, Menu, Fingerprint, 
   Bell, Check, XCircle, UserCheck, BellRing, ArrowRight, Library, Plus,
-  Mail, ClipboardList, AlertTriangle, Sun, Moon
+  Mail, ClipboardList, AlertTriangle, Sun, Moon, MessageCircle
 } from 'lucide-react';
 import { SettlementEntry } from '../types';
 import { toBengaliDigits } from '../utils/numberUtils';
@@ -38,6 +38,7 @@ interface NavbarProps {
   entryModule?: 'settlement' | 'correspondence' | null;
   registerSubModule?: 'settlement' | 'correspondence' | null;
   reportType?: string | null;
+  contactLink?: string;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
@@ -66,7 +67,8 @@ const Navbar: React.FC<NavbarProps> = ({
   onToggleDarkMode,
   entryModule = null,
   registerSubModule = null,
-  reportType = null
+  reportType = null,
+  contactLink = 'https://facebook.com'
 }) => {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
@@ -142,6 +144,18 @@ const Navbar: React.FC<NavbarProps> = ({
       isActive: activeTab === 'return' && reportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।',
       activeClass: 'bg-amber-500/15 text-amber-400 border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.15)] font-black',
       onClick: () => setActiveTab('return', undefined, 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')
+    },
+    {
+      id: 'contact',
+      label: 'যোগাযোগ',
+      icon: MessageCircle,
+      isActive: false,
+      activeClass: 'bg-sky-500/15 text-sky-400 border-sky-500/30 shadow-[0_0_12px_rgba(14,165,233,0.15)] font-black',
+      onClick: () => {
+        if (contactLink) {
+          window.open(contactLink, '_blank');
+        }
+      }
     }
   ];
 

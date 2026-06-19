@@ -77,6 +77,27 @@ const App: React.FC = () => {
     audit_details: true,
   });
   
+  const [contactLink, setContactLink] = useState<string>(() => {
+    return localStorage.getItem('admin_contact_link') || 'https://facebook.com';
+  });
+
+  const handleUpdateContactLink = async (newLink: string) => {
+    setContactLink(newLink);
+    localStorage.setItem('admin_contact_link', newLink);
+    try {
+      if (supabase && typeof supabase.from === 'function') {
+        const { error } = await supabase
+          .from('app_settings')
+          .upsert({ key: 'contact_link', value: newLink }, { onConflict: 'key' });
+        if (error) {
+          console.error("Error updating contact link in supabase:", error);
+        }
+      }
+    } catch (err) {
+      console.error("Error updating contact link:", err);
+    }
+  };
+  
   // State for direct module entry from sidebar
   const [entryModule, setEntryModule] = useState<'settlement' | 'correspondence' | null>(null);
   
@@ -330,7 +351,7 @@ const App: React.FC = () => {
       handleAdminSync(session?.user?.email);
     });
 
-    // Sync Global Settings (Visibility)
+    // Sync Global Settings (Visibility & Contact Link)
     const fetchSettings = async () => {
       if (!supabase || typeof supabase.from !== 'function') {
         console.warn("সুপাবেজ (Supabase) কনফিগার করা নেই। সেটিংস সিঙ্ক্রোনাইজেশন কাজ করবে না।");
@@ -345,14 +366,20 @@ const App: React.FC = () => {
         if (!error && data) {
           const newVisibility = { ...moduleVisibility };
           data.forEach((setting: any) => {
-            const key = setting.key.replace('show_', '');
-            if (key in newVisibility) {
-              (newVisibility as any)[key] = setting.value;
+            if (setting.key === 'contact_link') {
+              if (setting.value) {
+                setContactLink(setting.value);
+                localStorage.setItem('admin_contact_link', setting.value);
+              }
+            } else {
+              const key = setting.key.replace('show_', '');
+              if (key in newVisibility) {
+                (newVisibility as any)[key] = setting.value;
+              }
             }
           });
-          // Special case for legacy keys if needed, but we'll stick to the mapping
           setModuleVisibility(newVisibility);
-          console.log("Fetched module visibility settings:", newVisibility);
+          console.log("Fetched module settings & contact link successfully");
         } else if (error) {
           console.error("Error fetching app_settings:", error);
         }
@@ -371,13 +398,20 @@ const App: React.FC = () => {
         table: 'app_settings'
       }, (payload: any) => {
         if (payload.new) {
-          const key = payload.new.key.replace('show_', '');
-          setModuleVisibility(prev => {
-            if (key in prev) {
-              return { ...prev, [key]: payload.new.value };
+          if (payload.new.key === 'contact_link') {
+            if (payload.new.value) {
+              setContactLink(payload.new.value);
+              localStorage.setItem('admin_contact_link', payload.new.value);
             }
-            return prev;
-          });
+          } else {
+            const key = payload.new.key.replace('show_', '');
+            setModuleVisibility(prev => {
+              if (key in prev) {
+                return { ...prev, [key]: payload.new.value };
+              }
+              return prev;
+            });
+          }
         }
       })
       .subscribe();
@@ -943,6 +977,7 @@ const App: React.FC = () => {
             entryModule={entryModule}
             registerSubModule={registerSubModule}
             reportType={reportType}
+            contactLink={contactLink}
           />
         </div>
 
@@ -1153,6 +1188,8 @@ const App: React.FC = () => {
                   onOpenChangePassword={() => setShowChangePassword(true)}
                   moduleVisibility={moduleVisibility}
                   setModuleVisibility={setModuleVisibility}
+                  contactLink={contactLink}
+                  onUpdateContactLink={handleUpdateContactLink}
                 />
               )}
             </div>
