@@ -40,46 +40,6 @@ const LandingPage: React.FC<LandingPageProps> = ({
 }) => {
   return (
     <div className="animate-landing-premium relative w-full h-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-center">
-      {/* MODERATION ALERT FOR ADMIN */}
-      {isAdmin && pendingCount > 0 && (
-        <div 
-          id="admin-moderation-alert" 
-          className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 p-3.5 border border-amber-200 shadow-xs transition-all duration-300 w-full mb-4 shrink-0"
-        >
-          <div className="absolute -right-6 -bottom-6 opacity-5 text-amber-900 pointer-events-none transition-transform duration-500 group-hover:scale-110">
-             <ShieldAlert size={80} />
-          </div>
-
-          <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-3 text-left">
-              <div className="relative flex h-8 w-8 items-center justify-center shrink-0">
-                <div className="absolute inset-0 animate-ping rounded-full bg-amber-400 opacity-20"></div>
-                <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500 text-white shadow-xs">
-                  <ShieldAlert size={16} />
-                </div>
-              </div>
-              <div className="space-y-0.5">
-                <h2 className="text-xs font-black text-amber-950 flex items-center gap-1.5">
-                  রিভিউ অপেক্ষমাণ রয়েছে
-                  <span className="px-2 py-0.5 bg-amber-200 text-amber-900 rounded-full text-[8px] font-black">
-                    {toBengaliDigits(pendingCount)} টি অনুচ্ছেদ
-                  </span>
-                </h2>
-                <p className="text-amber-800/70 font-semibold text-[10px]">নতুন ডাটাগুলো স্থায়ীভাবে যুক্ত করার পূর্বে আপনার অনুমোদন আবশ্যক।</p>
-              </div>
-            </div>
-            
-            <button 
-              onClick={onShowPending}
-              className="flex items-center gap-1 px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-black text-[11px] shadow-xs transition-all active:scale-95 whitespace-nowrap cursor-pointer"
-            >
-              এখনই অনুমোদন করুন
-              <ArrowRight size={10} />
-            </button>
-          </div>
-        </div>
-      )}
-      
       {/* Prime Master Institutional Showcase Card */}
       <div 
         id="hero-section" 
