@@ -219,7 +219,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
 
       <div id="card-report-table-container" className="bg-white w-full p-1 relative animate-table-entrance overflow-x-auto xl:overflow-visible">
         {/* Header container for Title block, cycle badge and statistics in a single line on desktop/lg screens */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 pt-4 pb-6 border-b border-slate-100 w-full px-6 relative z-[50]">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 pt-4 pb-6 border-b border-slate-100 w-full px-6 relative z-[1000]">
           
           {/* Left: Title Header styled as split-block button */}
           <div className="flex items-stretch h-[38px] w-fit max-w-[95%] shadow-md select-none rounded-xl overflow-hidden border border-slate-200/50 shrink-0 transition-all duration-300">
@@ -243,7 +243,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
           </div>
 
           {/* Right Group: Reporting cycle, month picker, and statistics button in a flex-wrap container */}
-          <div className="flex items-center gap-4 sm:gap-6 flex-wrap lg:flex-nowrap justify-center lg:justify-end shrink-0 z-[100] lg:mr-4">
+          <div className="flex items-center gap-4 sm:gap-6 flex-wrap lg:flex-nowrap justify-center lg:justify-end shrink-0 z-[1010] lg:mr-4">
             
             {/* Cycle / Reporting Period badge */}
             <div className="flex items-center justify-center shrink-0">
@@ -263,7 +263,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             {/* Statistics Dropdown */}
             {showStatsButton && (
               <div 
-                className="relative group z-[350] no-print shrink-0"
+                className="relative group z-[1050] no-print shrink-0"
                 ref={statsRef}
               >
                 <button
