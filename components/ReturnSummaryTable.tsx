@@ -59,20 +59,14 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   }, []);
 
   useEffect(() => {
-    const mainContainer = document.querySelector('.return-main-container') || document.querySelector('main');
+    // Intercepted scroll-locking via data-scroll-locked attribute to prevent layout shifts and flickering (flickering/কাপাকাপি)
     if (isStatsOpen) {
-      if (mainContainer) {
-        (mainContainer as HTMLElement).style.overflowY = 'hidden';
-      }
+      document.body.setAttribute('data-scroll-locked', 'true');
     } else {
-      if (mainContainer) {
-        (mainContainer as HTMLElement).style.overflowY = 'auto';
-      }
+      document.body.removeAttribute('data-scroll-locked');
     }
     return () => {
-      if (mainContainer) {
-        (mainContainer as HTMLElement).style.overflowY = 'auto';
-      }
+      document.body.removeAttribute('data-scroll-locked');
     };
   }, [isStatsOpen]);
 
@@ -217,7 +211,8 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
     }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0, sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0, nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0 });
   }, [filteredStatsReportData, searchTerm, statsGrandTotals, grandTotals, filterMinistry]);
 
-  const reportThStyle = "px-0.5 py-2 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
+  const reportThStyle1 = "sticky top-0 xl:top-[45px] z-[240] px-0.5 py-2 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
+  const reportThStyle2 = "sticky top-[42px] xl:top-[87px] z-[240] px-0.5 py-2 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] text-center font-bold leading-tight group-hover:bg-blue-100/80 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
   const subTotalTdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] text-center font-bold leading-tight text-slate-900 h-[38px] whitespace-normal break-words relative";
   const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[10px] bg-slate-200 z-[190] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
@@ -235,12 +230,8 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
     <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative">
       <IDBadge id="section-report-summary" />
 
-      <div id="card-report-table-container" className="bg-white w-full p-1 relative animate-table-entrance overflow-x-auto xl:overflow-visible">
-        {/* Header container for Title block, cycle badge and statistics in a single line on desktop/lg screens */}
-        <div className={isStatsOpen 
-          ? "sticky top-0 bg-white/95 backdrop-blur-md flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 pt-4 pb-6 border-b border-slate-200/80 w-full px-6 z-[1010] shadow-sm transition-all duration-300"
-          : "flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 pt-4 pb-6 border-b border-slate-100 w-full px-6 relative z-[50] transition-all duration-300"
-        }>
+      {/* Header container for Title block, cycle badge and statistics in a single line on desktop/lg screens OUTSIDE card-report-table-container to guarantee stickiness */}
+      <div className="bg-white flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 pt-4 pb-6 border-b border-slate-200/80 w-full px-6 transition-all duration-300">
           
           {/* Left: Title Header styled as split-block button */}
           <div className="flex items-stretch h-[38px] w-fit max-w-[95%] shadow-md select-none rounded-xl overflow-hidden border border-slate-200/50 shrink-0 transition-all duration-300">
@@ -286,8 +277,6 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
               <div 
                 className="relative z-[1050] no-print shrink-0"
                 ref={statsRef}
-                onMouseEnter={() => setIsStatsOpen(true)}
-                onMouseLeave={() => setIsStatsOpen(false)}
               >
                 <button
                   type="button"
@@ -299,9 +288,13 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                   <ChevronDown size={13} className={`text-sky-500 transition-transform duration-300 shrink-0 ${isStatsOpen ? 'rotate-180' : ''}`} />
                 </button>
 
-              <div className={`absolute top-full right-0 mt-2 w-[320px] sm:w-[450px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[9999] transition-all duration-300 pointer-events-auto text-left max-h-[80vh] overflow-y-auto scrollbar-thin ${
-                isStatsOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'
-              }`}>
+              <div 
+                onWheel={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+                className={`absolute top-full right-0 mt-2 w-[320px] sm:w-[450px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[9999] transition-all duration-300 pointer-events-auto text-left max-h-[80vh] overflow-y-auto overscroll-contain scrollbar-thin ${
+                  isStatsOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'
+                }`}
+              >
                 <div className="space-y-6">
                   {/* Overall Header */}
                   <div className="flex items-center gap-4 border-b border-slate-100 pb-4">
@@ -409,7 +402,8 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
           </div>
         </div>
 
-        <div className="table-container qr-table-container border border-slate-300 overflow-auto xl:overflow-visible relative z-[10] rounded-lg">
+        <div id="card-report-table-container" className="bg-white w-full p-1 relative animate-table-entrance overflow-x-auto xl:overflow-visible">
+          <div className="table-container qr-table-container border border-slate-300 overflow-auto xl:overflow-visible relative z-[10] rounded-lg">
           <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0 !table-auto">
             <colgroup>
               <col className="w-[50px]" />
@@ -431,24 +425,24 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             </colgroup>
             <thead className="z-[240] bg-slate-200">
               <tr className="h-[42px]">
-                <th rowSpan={2} className={`${reportThStyle}`}>মন্ত্রণালয়</th>
-                <th rowSpan={2} className={`${reportThStyle}`}>সংস্থা</th>
-                <th colSpan={2} className={`${reportThStyle}`}>প্রারম্ভিক অমীমাংসিত</th>
-                <th colSpan={2} className={`${reportThStyle}`}>বর্তমান উত্থাপিত</th>
-                <th colSpan={2} className={`${reportThStyle}`}>মোট অমীমাংসিত</th>
-                <th colSpan={2} className={`${reportThStyle}`}>প্রারম্ভিক মীমাংসিত</th>
-                <th colSpan={2} className={`${reportThStyle}`}>চলতি মীমাংসিত</th>
-                <th colSpan={2} className={`${reportThStyle}`}>মোট মীমাংসিত</th>
-                <th colSpan={2} className={`${reportThStyle}`}>সর্বমোট অমীমাংসিত</th>
+                <th rowSpan={2} className={`${reportThStyle1}`}>মন্ত্রণালয়</th>
+                <th rowSpan={2} className={`${reportThStyle1}`}>সংস্থা</th>
+                <th colSpan={2} className={`${reportThStyle1}`}>প্রারম্ভিক অমীমাংসিত</th>
+                <th colSpan={2} className={`${reportThStyle1}`}>বর্তমান উত্থাপিত</th>
+                <th colSpan={2} className={`${reportThStyle1}`}>মোট অমীমাংসিত</th>
+                <th colSpan={2} className={`${reportThStyle1}`}>প্রারম্ভিক মীমাংসিত</th>
+                <th colSpan={2} className={`${reportThStyle1}`}>চলতি মীমাংসিত</th>
+                <th colSpan={2} className={`${reportThStyle1}`}>মোট মীমাংসিত</th>
+                <th colSpan={2} className={`${reportThStyle1}`}>সর্বমোট অমীমাংসিত</th>
               </tr>
               <tr className="h-[38px]">
-                <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
-                <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
-                <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
-                <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
-                <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
-                <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
-                <th className={`${reportThStyle}`}>সংখ্যা</th><th className={`${reportThStyle}`}>টাকা</th>
+                <th className={`${reportThStyle2}`}>সংখ্যা</th><th className={`${reportThStyle2}`}>টাকা</th>
+                <th className={`${reportThStyle2}`}>সংখ্যা</th><th className={`${reportThStyle2}`}>টাকা</th>
+                <th className={`${reportThStyle2}`}>সংখ্যা</th><th className={`${reportThStyle2}`}>টাকা</th>
+                <th className={`${reportThStyle2}`}>সংখ্যা</th><th className={`${reportThStyle2}`}>টাকা</th>
+                <th className={`${reportThStyle2}`}>সংখ্যা</th><th className={`${reportThStyle2}`}>টাকা</th>
+                <th className={`${reportThStyle2}`}>সংখ্যা</th><th className={`${reportThStyle2}`}>টাকা</th>
+                <th className={`${reportThStyle2}`}>সংখ্যা</th><th className={`${reportThStyle2}`}>টাকা</th>
               </tr>
             </thead>
             <tbody>

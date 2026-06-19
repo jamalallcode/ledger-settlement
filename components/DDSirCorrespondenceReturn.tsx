@@ -141,20 +141,14 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   }, []);
 
   useEffect(() => {
-    const mainContainer = document.querySelector('.return-main-container') || document.querySelector('main');
+    // Intercepted scroll-locking via data-scroll-locked attribute to prevent layout shifts and flickering (flickering/কাপাকাপি)
     if (isStatsOpen) {
-      if (mainContainer) {
-        (mainContainer as HTMLElement).style.overflowY = 'hidden';
-      }
+      document.body.setAttribute('data-scroll-locked', 'true');
     } else {
-      if (mainContainer) {
-        (mainContainer as HTMLElement).style.overflowY = 'auto';
-      }
+      document.body.removeAttribute('data-scroll-locked');
     }
     return () => {
-      if (mainContainer) {
-        (mainContainer as HTMLElement).style.overflowY = 'auto';
-      }
+      document.body.removeAttribute('data-scroll-locked');
     };
   }, [isStatsOpen]);
 
@@ -470,7 +464,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const tdStyle = "border border-slate-300 px-1.5 py-1.5 text-[12px] text-center font-bold leading-tight align-middle transition-colors";
   
   // Reverted sticky header from bold to black
-  const stickyThStyle = "border border-slate-300 px-1 py-3 font-black text-center text-[10px] bg-slate-200";
+  const stickyThStyle = "sticky top-0 xl:top-[45px] z-[240] border border-slate-300 px-1 py-1.5 font-black text-center text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1]";
   // Reverted sticky data from medium to bold
   const stickyTdStyle = "border border-slate-300 px-1.5 py-1.5 text-[11px] text-center font-bold leading-tight align-middle transition-colors";
 
@@ -491,10 +485,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
       <div className="w-full bg-white px-0 py-6 relative z-[1000]">
         {/* Header container for Title, Reporting Date, Filters and Statistics on a single line */}
-        <div className={isStatsOpen 
-          ? "sticky top-0 bg-white/95 backdrop-blur-md flex flex-col lg:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-200/80 w-full px-6 z-[1010] shadow-sm transition-all duration-300"
-          : "flex flex-col lg:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-100 w-full px-6 relative z-[50] transition-all duration-300"
-        }>
+        <div className="bg-white flex flex-col lg:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-200/80 w-full px-6 transition-all duration-300">
           
           {/* Left: Title Header styled as split-block button */}
           <div className="flex items-stretch h-11 w-fit max-w-[95%] shadow-[0_4px_12px_rgba(0,0,0,0.1)] select-none rounded-lg overflow-hidden border border-slate-200/50 shrink-0">
@@ -732,8 +723,6 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             <div 
               className="relative z-[1050]" 
               ref={statsRef}
-              onMouseEnter={() => setIsStatsOpen(true)}
-              onMouseLeave={() => setIsStatsOpen(false)}
             >
               <button 
                 type="button"
@@ -745,9 +734,13 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <ChevronDown size={14} className={`text-sky-500 transition-transform duration-300 ${isStatsOpen ? 'rotate-180' : ''}`} />
               </button>
               
-              <div className={`absolute top-full right-0 mt-2 w-[320px] sm:w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[9999] transition-all duration-300 pointer-events-auto text-left max-h-[80vh] overflow-y-auto scrollbar-thin ${
-                isStatsOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'
-              }`}>
+              <div 
+                onWheel={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+                className={`absolute top-full right-0 mt-2 w-[320px] sm:w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[9999] transition-all duration-300 pointer-events-auto text-left max-h-[80vh] overflow-y-auto overscroll-contain scrollbar-thin ${
+                  isStatsOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'
+                }`}
+              >
                 <div className="space-y-5">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-3">

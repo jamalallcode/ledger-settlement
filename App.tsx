@@ -101,6 +101,34 @@ const App: React.FC = () => {
     localStorage.setItem('is_dark_mode', String(darkMode));
   }, [darkMode]);
 
+  useEffect(() => {
+    // Intercept wheel/touchmove events globally when an interactive dropdown is active
+    // This freezes the main page / table from scrolling, whilst preserving scrollbars and avoiding any shaking/flickering.
+    const preventScroll = (e: WheelEvent | TouchEvent) => {
+      if (document.body.getAttribute('data-scroll-locked') === 'true') {
+        const target = e.target as HTMLElement;
+        const scrollableElement = target.closest('.overscroll-contain') || 
+                                  target.closest('.overflow-y-auto') || 
+                                  target.closest('.overflow-auto') || 
+                                  target.closest('.no-scrollbar') || 
+                                  target.closest('.scrollbar-thin');
+        const isMainContainer = scrollableElement?.tagName?.toLowerCase() === 'main' || 
+                                scrollableElement?.classList?.contains('return-main-container') ||
+                                scrollableElement?.classList?.contains('register-main-container');
+        if (scrollableElement && !isMainContainer) {
+          return;
+        }
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('wheel', preventScroll, { passive: false });
+    window.addEventListener('touchmove', preventScroll, { passive: false });
+    return () => {
+      window.removeEventListener('wheel', preventScroll);
+      window.removeEventListener('touchmove', preventScroll);
+    };
+  }, []);
+
   const pendingEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'pending'), [entries]);
   const pendingCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'pending'), [correspondenceEntries]);
   const totalPendingCount = pendingEntries.length + pendingCorrespondence.length;

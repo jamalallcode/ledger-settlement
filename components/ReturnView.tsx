@@ -115,6 +115,18 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    // Lock scroll when dropdown is open without hiding scrollbars/layout flickering
+    if (isCycleDropdownOpen || isMinistryDropdownOpen) {
+      document.body.setAttribute('data-scroll-locked', 'true');
+    } else {
+      document.body.removeAttribute('data-scroll-locked');
+    }
+    return () => {
+      document.body.removeAttribute('data-scroll-locked');
+    };
+  }, [isCycleDropdownOpen, isMinistryDropdownOpen]);
+
   const cycleOptions = useMemo(() => {
     const options = [];
     const banglaMonths: Record<string, string> = {
@@ -696,122 +708,49 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
   const monthPickerElement = (
     <div className="relative no-print" ref={dropdownRef}>
-      <div onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} className={`flex items-center gap-2 px-4 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}>
+      <div 
+        onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
+        className={`flex items-center gap-2 px-4 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}
+      >
          <CalendarDays size={14} className="text-blue-600 shrink-0" />
          <span className="font-extrabold text-[12px] sm:text-[12.5px] text-slate-800 tracking-tight shrink-0 leading-none">
            {cycleOptions.find(o => o.cycleLabel === activeCycle.label)?.label || toBengaliDigits(activeCycle.label)}
          </span>
-         <ChevronDown size={13} className={`text-slate-400 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-blue-50' : ''}`} />
+         <ChevronDown size={13} className={`text-slate-400 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-blue-500' : ''}`} />
       </div>
       {isCycleDropdownOpen && (
-        <div className="absolute top-[calc(100%+4px)] right-0 lg:left-0 w-[300px] bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
-          {/* Calendar Header */}
-          <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
-              }}
-              className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors cursor-pointer"
-              type="button"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            
-            <span className="font-extrabold text-[14px] text-slate-800">
-              {BENGALI_MONTHS[currentViewDate.getMonth()]} {toBengaliDigits(currentViewDate.getFullYear().toString())}
+        <div 
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          className="absolute top-[calc(100%+4px)] right-0 lg:left-0 w-[240px] bg-white border border-slate-200 rounded-3xl shadow-2xl z-[9999] p-3 animate-in fade-in slide-in-from-top-2 duration-200"
+        >
+          <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-[10] mb-2">
+            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
+              <CalendarDays size={11} className="text-blue-500" /> সাইকেল নির্বাচন করুন
             </span>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
-              }}
-              className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors cursor-pointer"
-              type="button"
-            >
-              <ChevronRight size={16} />
-            </button>
           </div>
-
-          {/* Calendar Week Days */}
-          <div className="grid grid-cols-7 gap-1 text-center mb-2">
-            {BENGALI_WEEKDAYS.map((wd, i) => (
-              <span key={i} className="text-[11px] font-black text-slate-400">
-                {wd}
-              </span>
-            ))}
-          </div>
-
-          {/* Calendar Days Grid */}
-          <div className="grid grid-cols-7 gap-1">
-            {(() => {
-              const Y = currentViewDate.getFullYear();
-              const M = currentViewDate.getMonth();
-              const firstDay = new Date(Y, M, 1);
-              
-              let startOffset = (firstDay.getDay() + 1) % 7; 
-              
-              const daysInMonth = new Date(Y, M + 1, 0).getDate();
-              const prevMonthDays = new Date(Y, M, 0).getDate();
-              
-              const cells = [];
-              
-              // Trailing days
-              for (let i = startOffset - 1; i >= 0; i--) {
-                const d = prevMonthDays - i;
-                const dateObj = new Date(Y, M - 1, d);
-                cells.push({ day: d, isCurrentMonth: false, dateObj });
-              }
-              
-              // Current month days
-              for (let d = 1; d <= daysInMonth; d++) {
-                const dateObj = new Date(Y, M, d);
-                cells.push({ day: d, isCurrentMonth: true, dateObj });
-              }
-              
-              // Lead days
-              const remaining = 42 - cells.length;
-              for (let d = 1; d <= remaining; d++) {
-                const dateObj = new Date(Y, M + 1, d);
-                cells.push({ day: d, isCurrentMonth: false, dateObj });
-              }
-
-              return cells.map((cell, idx) => {
-                const dateStr = dateFnsFormat(cell.dateObj, 'yyyy-MM-dd');
-                const isSelected = dateFnsFormat(cell.dateObj, 'yyyy-MM-dd') === dateFnsFormat(selectedCycleDate, 'yyyy-MM-dd');
-                
-                let cellCls = "text-[12px] font-bold h-8 flex items-center justify-center rounded-lg transition-all cursor-pointer ";
-                if (isSelected) {
-                  cellCls += "bg-blue-600 text-white font-extrabold shadow-md";
-                } else if (cell.isCurrentMonth) {
-                  cellCls += "text-slate-800 hover:bg-blue-50 hover:text-blue-600";
-                } else {
-                  cellCls += "text-slate-300 hover:bg-slate-50";
-                }
-
-                // Check if today
-                const todayStr = dateFnsFormat(new Date(), 'yyyy-MM-dd');
-                const isToday = dateStr === todayStr;
-
-                return (
-                  <div
-                    key={idx}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedCycleDate(cell.dateObj);
-                      setIsCycleDropdownOpen(false);
-                    }}
-                    className={`${cellCls} relative`}
-                  >
-                    <span>{toBengaliDigits(cell.day.toString())}</span>
-                    {isToday && !isSelected && (
-                      <span className="absolute bottom-[2px] w-1 h-1 bg-blue-600 rounded-full"></span>
-                    )}
-                  </div>
-                );
-              });
-            })()}
+          <div className="max-h-[260px] overflow-y-auto overscroll-contain space-y-1 p-0.5 scrollbar-thin">
+            {cycleOptions.map((opt, idx) => {
+              const matchesActive = opt.cycleLabel === activeCycle.label;
+              return (
+                <div
+                  key={idx}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCycleDate(opt.date);
+                    setIsCycleDropdownOpen(false);
+                  }}
+                  className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                    matchesActive 
+                      ? "bg-blue-600 text-white font-extrabold shadow-md"
+                      : "hover:bg-slate-50 text-slate-700 hover:text-blue-600 font-bold bg-white"
+                  }`}
+                >
+                  <span className="text-[12px]">{opt.label}</span>
+                  {matchesActive && <Check size={13} className="text-white stroke-[3.5]" />}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -835,8 +774,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           </div>
 
           {isMinistryDropdownOpen && (
-            <div className="absolute top-[110%] right-0 lg:left-1/2 lg:-translate-x-1/2 w-[220px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-2 animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="p-1 max-h-[300px] overflow-y-auto no-scrollbar">
+            <div 
+              onWheel={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
+              className="absolute top-[110%] right-0 lg:left-1/2 lg:-translate-x-1/2 w-[220px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-2 overscroll-contain animate-in fade-in slide-in-from-top-2 duration-200"
+            >
+              <div className="p-1 max-h-[300px] overflow-y-auto overscroll-contain no-scrollbar">
                 <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
                   <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1">
                     <LayoutGrid size={10} /> মন্ত্রণালয় নির্বাচন
