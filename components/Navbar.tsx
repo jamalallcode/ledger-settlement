@@ -35,6 +35,9 @@ interface NavbarProps {
   onLogout?: () => void;
   isDarkMode?: boolean;
   onToggleDarkMode?: () => void;
+  entryModule?: 'settlement' | 'correspondence' | null;
+  registerSubModule?: 'settlement' | 'correspondence' | null;
+  reportType?: string | null;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
@@ -60,7 +63,10 @@ const Navbar: React.FC<NavbarProps> = ({
   onOpenLogin,
   onLogout,
   isDarkMode = false,
-  onToggleDarkMode
+  onToggleDarkMode,
+  entryModule = null,
+  registerSubModule = null,
+  reportType = null
 }) => {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
@@ -89,83 +95,98 @@ const Navbar: React.FC<NavbarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const navItems: any[] = [];
+  const customNavButtons = [
+    {
+      id: 'landing',
+      label: 'হোম',
+      icon: Home,
+      isActive: activeTab === 'landing',
+      onClick: () => setActiveTab('landing')
+    },
+    {
+      id: 'correspondence-entry',
+      label: 'চিঠিপত্র এন্ট্রি',
+      icon: Mail,
+      isActive: activeTab === 'entry' && entryModule === 'correspondence',
+      activeClass: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.15)] font-black',
+      onClick: () => setActiveTab('entry', 'correspondence')
+    },
+    {
+      id: 'settlement-entry',
+      label: 'মীমাংসা এন্ট্রি',
+      icon: Plus,
+      isActive: activeTab === 'entry' && entryModule === 'settlement',
+      activeClass: 'bg-blue-500/15 text-blue-400 border-blue-500/30 shadow-[0_0_12px_rgba(59,130,246,0.15)] font-black',
+      onClick: () => setActiveTab('entry', 'settlement')
+    },
+    {
+      id: 'correspondence-register',
+      label: 'চিঠিপত্র রেজি:',
+      icon: Library,
+      isActive: activeTab === 'register' && registerSubModule === 'correspondence',
+      activeClass: 'bg-violet-500/15 text-violet-400 border-violet-500/30 shadow-[0_0_12px_rgba(139,92,246,0.15)] font-black',
+      onClick: () => setActiveTab('register', 'correspondence')
+    },
+    {
+      id: 'settlement-register',
+      label: 'মীমাংসিত রেজি:',
+      icon: CheckCircle2,
+      isActive: activeTab === 'register' && registerSubModule === 'settlement',
+      activeClass: 'bg-rose-500/15 text-rose-400 border-rose-500/30 shadow-[0_0_12px_rgba(244,63,94,0.15)] font-black',
+      onClick: () => setActiveTab('register', 'settlement')
+    },
+    {
+      id: 'paragraphs',
+      label: 'অনুচ্ছেদ',
+      icon: ClipboardList,
+      isActive: activeTab === 'return' && reportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।',
+      activeClass: 'bg-amber-500/15 text-amber-400 border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.15)] font-black',
+      onClick: () => setActiveTab('return', undefined, 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')
+    }
+  ];
 
   return (
     <nav className="sticky top-0 z-[9991] bg-slate-900 border-b border-slate-800 h-[45px] shadow-2xl no-print relative">
       <div className="max-w-[1600px] mx-auto h-full px-4 md:px-5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button onClick={onToggleSidebar} className={`p-1 hover:bg-slate-800 rounded-lg transition-all text-slate-400 hover:text-white ${isSidebarOpen ? 'hidden lg:hidden' : 'flex'}`}><Menu size={16} /></button>
-          <div className="hidden lg:flex items-center gap-2">
-            {navItems.map((item) => (
-              <React.Fragment key={item.id}>
-                {item.id === 'landing' ? (
-                  <button 
-                    onClick={() => setActiveTab(item.id)} 
-                    className={`group relative flex items-center justify-center w-8 h-8 rounded-full transition-all duration-500 overflow-hidden
-                      ${activeTab === item.id 
-                        ? 'scale-110 z-10 shadow-[0_5px_15px_rgba(0,0,0,0.4)]' 
-                        : 'opacity-90 hover:opacity-100 hover:scale-105 active:scale-95 shadow-[0_2px_8px_rgba(0,0,0,0.3)]'}
-                    `}
-                    title={item.label}
-                  >
-                    {/* The Multi-color Glass Sphere Base - Refined to match image */}
-                    <div className="absolute inset-0 bg-[conic-gradient(from_225deg,#2dd4bf,#3b82f6,#ef4444,#f97316,#2dd4bf)]" />
-                    
-                    {/* Inner Shadow for depth */}
-                    <div className="absolute inset-0 rounded-full shadow-[inset_0_-3px_8px_rgba(0,0,0,0.5),inset_0_3px_8px_rgba(255,255,255,0.4)]" />
-                    
-                    {/* Top Glossy Highlight (The white arc at the top) */}
-                    <div className="absolute top-[4%] left-[12%] w-[76%] h-[48%] bg-gradient-to-b from-white/90 to-transparent rounded-[100%] pointer-events-none" />
-                    
-                    {/* Bottom Reflection */}
-                    <div className="absolute bottom-[6%] left-[22%] w-[56%] h-[18%] bg-white/30 blur-[1px] rounded-[100%] pointer-events-none" />
-                    
-                    {/* Active State Glow */}
-                    <div className={`absolute inset-0 rounded-full transition-opacity duration-500 ${activeTab === item.id ? 'bg-white/10' : 'opacity-0'}`} />
-                    
-                    <div className="relative z-10 flex items-center justify-center">
-                      <item.icon size={14} className="text-slate-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)]" />
-                    </div>
-                  </button>
-                ) : (
-                  <div 
-                    className="relative"
-                    onMouseEnter={() => item.id === 'register' && setShowRegisterDropdown(true)}
-                    onMouseLeave={() => item.id === 'register' && setShowRegisterDropdown(false)}
-                  >
-                    <button 
-                      onClick={() => setActiveTab(item.id)} 
-                      className={`flex items-center gap-1 px-[11px] py-[5px] bg-white text-slate-900 rounded-lg font-bold text-[11px] shadow-lg hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all relative ${activeTab === item.id ? 'ring-1 ring-blue-500' : ''}`}
-                    >
-                      <item.icon size={13} className="text-blue-600" /> {item.label}
-                      {item.id === 'register' && <ChevronDown size={11} className={`ml-0.5 transition-transform ${showRegisterDropdown ? 'rotate-180' : ''}`} />}
-                    </button>
+          
+          {/* Custom Capsule/Pill Navigation Bar (Exact clone of user's requested style) */}
+          <div className="hidden lg:flex items-center bg-zinc-950 border border-zinc-800/80 h-9 px-1.5 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.5)] select-none">
+            {/* Left brand/Logo/Home Circle Button */}
+            <button
+              onClick={() => setActiveTab('landing')}
+              className={`group relative flex items-center justify-center w-7 h-7 rounded-full transition-all duration-300 transform hover:scale-105 active:scale-95
+                ${activeTab === 'landing'
+                  ? 'bg-white text-zinc-950 shadow-[0_0_10px_rgba(255,255,255,0.4)]'
+                  : 'bg-white hover:bg-slate-100 text-zinc-900 shadow-md'}`}
+              title="হোম"
+            >
+              <Home size={13} className="stroke-[3]" />
+            </button>
 
-                    {item.id === 'register' && showRegisterDropdown && (
-                      <div className="absolute top-full left-0 pt-2 w-64 z-[5010] animate-in fade-in slide-in-from-top-2 duration-200">
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2">
-                          <button 
-                            onClick={() => { setActiveTab('register', 'correspondence'); setShowRegisterDropdown(false); }}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all text-left font-bold text-sm"
-                          >
-                            <Mail size={16} className="text-emerald-500" />
-                            ১. চিঠিপত্র রেজিস্টার
-                          </button>
-                          <button 
-                            onClick={() => { setActiveTab('register', 'settlement'); setShowRegisterDropdown(false); }}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all text-left font-bold text-sm"
-                          >
-                            <ClipboardList size={16} className="text-blue-500" />
-                            ২. মীমাংসা রেজিস্টার
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </React.Fragment>
-            ))}
+            {/* Vertical capsule separator */}
+            <div className="h-4 w-[1px] bg-zinc-800/80 mx-2" />
+
+            {/* Nav Link Buttons inside Capsule */}
+            <div className="flex items-center gap-1">
+              {customNavButtons.slice(1).map((btn) => {
+                const IconComp = btn.icon;
+                return (
+                  <button
+                    key={btn.id}
+                    onClick={btn.onClick}
+                    className={`px-3 py-1 text-[11px] font-bold rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1 border border-transparent
+                      ${btn.isActive 
+                        ? `${btn.activeClass}` 
+                        : 'text-zinc-400 hover:text-white hover:bg-zinc-800/40'}`}
+                  >
+                    <IconComp size={11} className={`stroke-[2.5] ${btn.isActive ? '' : 'text-zinc-500'}`} />
+                    <span>{btn.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 

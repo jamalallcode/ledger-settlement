@@ -39,7 +39,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
   }
 }) => {
   return (
-    <div className="animate-landing-premium relative w-full h-full max-w-5xl lg:max-w-6xl mx-auto flex flex-col justify-center">
+    <div className="animate-landing-premium relative w-full h-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-center">
       {/* MODERATION ALERT FOR ADMIN */}
       {isAdmin && pendingCount > 0 && (
         <div 

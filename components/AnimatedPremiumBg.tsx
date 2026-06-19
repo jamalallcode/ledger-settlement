@@ -84,29 +84,31 @@ const AnimatedPremiumBg: React.FC = () => {
       <div className="absolute top-[35%] right-[15%] z-10 w-3.5 h-3.5 border border-emerald-500/20 rounded-full animate-pulse" style={{ animationDuration: '6s' }} />
       <div className="absolute bottom-[20%] left-[18%] z-10 w-2 h-2 bg-amber-500/10 rounded-xs" />
 
-      {/* 6. Premium Artistic Gold/Orange Corner Designs (Matches Top-Left & Bottom-Right user layout) */}
-      {/* Top-Left Corner Bracket */}
-      <div className="absolute top-0 left-0 w-40 h-40 sm:w-48 sm:h-48 md:w-60 md:h-60 z-20 pointer-events-none overflow-hidden">
-        {/* Soft atmospheric ambient warm lighting shadow */}
-        <div className="absolute -top-1/4 -left-1/4 w-[120%] h-[120%] rounded-full bg-amber-500/20 blur-3xl" />
-        {/* Main luxury gradient crescent structure */}
-        <div className="absolute -top-[50%] -left-[50%] w-[140%] h-[140%] rounded-br-[5rem] sm:rounded-br-[7rem] bg-gradient-to-br from-orange-600 via-amber-500 to-yellow-400 shadow-xl border-r-[6px] border-b-[6px] border-amber-300/65" />
-        {/* Secondary inner floating highlight contour */}
-        <div className="absolute -top-[60%] -left-[60%] w-[130%] h-[130%] rounded-br-[4rem] sm:rounded-br-[5.5rem] bg-gradient-to-br from-yellow-400 via-amber-400 to-orange-500 border-r-2 border-b-2 border-white/45 opacity-85" />
-        {/* Fine gold accent line */}
-        <div className="absolute -top-[42%] -left-[42%] w-[120%] h-[120%] rounded-br-[6rem] sm:rounded-br-[8rem] border-r border-b border-yellow-200/50" />
-      </div>
+      {/* 6. Premium Artistic Gold/Orange Corner Designs (Anchored to the content grid width to remain static under sidebar toggle) */}
+      <div className="w-full h-full max-w-[1880px] xl:max-w-[1880px] mx-auto relative px-[10px] pointer-events-none transition-all duration-300">
+        {/* Top-Left Corner Bracket - Locked to the top-left corner of the content card area */}
+        <div className="absolute top-0 left-[-10px] w-40 h-40 sm:w-48 sm:h-48 md:w-60 md:h-60 z-20 pointer-events-none overflow-hidden">
+          {/* Soft atmospheric ambient warm lighting shadow */}
+          <div className="absolute -top-1/4 -left-1/4 w-[120%] h-[120%] rounded-full bg-amber-500/20 blur-3xl" />
+          {/* Main luxury gradient crescent structure */}
+          <div className="absolute -top-[50%] -left-[50%] w-[140%] h-[140%] rounded-br-[5rem] sm:rounded-br-[7rem] bg-gradient-to-br from-orange-600 via-amber-500 to-yellow-400 shadow-xl border-r-[6px] border-b-[6px] border-amber-300/65" />
+          {/* Secondary inner floating highlight contour */}
+          <div className="absolute -top-[60%] -left-[60%] w-[130%] h-[130%] rounded-br-[4rem] sm:rounded-br-[5.5rem] bg-gradient-to-br from-yellow-400 via-amber-400 to-orange-500 border-r-2 border-b-2 border-white/45 opacity-85" />
+          {/* Fine gold accent line */}
+          <div className="absolute -top-[42%] -left-[42%] w-[120%] h-[120%] rounded-br-[6rem] sm:rounded-br-[8rem] border-r border-b border-yellow-200/50" />
+        </div>
 
-      {/* Bottom-Right Corner Bracket */}
-      <div className="absolute bottom-0 right-0 w-40 h-40 sm:w-48 sm:h-48 md:w-60 md:h-60 z-20 pointer-events-none overflow-hidden">
-        {/* Soft atmospheric ambient warm lighting shadow */}
-        <div className="absolute -bottom-1/4 -right-1/4 w-[120%] h-[120%] rounded-full bg-amber-500/20 blur-3xl" />
-        {/* Main luxury gradient crescent structure */}
-        <div className="absolute -bottom-[50%] -right-[50%] w-[140%] h-[140%] rounded-tl-[5rem] sm:rounded-tl-[7rem] bg-gradient-to-tl from-orange-600 via-amber-500 to-yellow-400 shadow-xl border-l-[6px] border-t-[6px] border-amber-300/65" />
-        {/* Secondary inner floating highlight contour */}
-        <div className="absolute -bottom-[60%] -right-[60%] w-[130%] h-[130%] rounded-tl-[4rem] sm:rounded-tl-[5.5rem] bg-gradient-to-tl from-yellow-400 via-amber-400 to-orange-500 border-l-2 border-t-2 border-white/45 opacity-85" />
-        {/* Fine gold accent line */}
-        <div className="absolute -bottom-[42%] -right-[42%] w-[120%] h-[120%] rounded-tl-[6rem] sm:rounded-tl-[8rem] border-l border-t border-yellow-200/50" />
+        {/* Bottom-Right Corner Bracket - Locked to the bottom-right corner of the content card area */}
+        <div className="absolute bottom-0 right-[-10px] w-40 h-40 sm:w-48 sm:h-48 md:w-60 md:h-60 z-20 pointer-events-none overflow-hidden">
+          {/* Soft atmospheric ambient warm lighting shadow */}
+          <div className="absolute -bottom-1/4 -right-1/4 w-[120%] h-[120%] rounded-full bg-amber-500/20 blur-3xl" />
+          {/* Main luxury gradient crescent structure */}
+          <div className="absolute -bottom-[50%] -right-[50%] w-[140%] h-[140%] rounded-tl-[5rem] sm:rounded-tl-[7rem] bg-gradient-to-tl from-orange-600 via-amber-500 to-yellow-400 shadow-xl border-l-[6px] border-t-[6px] border-amber-300/65" />
+          {/* Secondary inner floating highlight contour */}
+          <div className="absolute -bottom-[60%] -right-[60%] w-[130%] h-[130%] rounded-tl-[4rem] sm:rounded-tl-[5.5rem] bg-gradient-to-tl from-yellow-400 via-amber-400 to-orange-500 border-l-2 border-t-2 border-white/45 opacity-85" />
+          {/* Fine gold accent line */}
+          <div className="absolute -bottom-[42%] -right-[42%] w-[120%] h-[120%] rounded-tl-[6rem] sm:rounded-tl-[8rem] border-l border-t border-yellow-200/50" />
+        </div>
       </div>
     </div>
   );

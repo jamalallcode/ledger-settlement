@@ -781,7 +781,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   }
 
   return (
-    <div id="form-container-settlement" className="bg-white p-4 md:p-10 rounded-[2.5rem] border border-slate-200 shadow-2xl animate-landing-premium max-w-7xl mx-auto overflow-x-hidden relative">
+    <div id="form-container-settlement" className="bg-white p-4 md:p-10 rounded-[2.5rem] border border-slate-200 shadow-2xl animate-landing-premium max-w-[1880px] mx-auto overflow-x-hidden relative">
       <div id="form-header" className="flex flex-col md:flex-row justify-between items-center mb-10 pb-6 border-b border-slate-100 gap-4 relative">
         <div className="flex items-center gap-4">
           <button 

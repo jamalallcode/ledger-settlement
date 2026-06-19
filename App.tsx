@@ -940,6 +940,9 @@ const App: React.FC = () => {
             onLogout={handleLogout}
             isDarkMode={darkMode}
             onToggleDarkMode={() => setDarkMode(!darkMode)}
+            entryModule={entryModule}
+            registerSubModule={registerSubModule}
+            reportType={reportType}
           />
         </div>
 
@@ -961,7 +964,7 @@ const App: React.FC = () => {
           {activeTab === 'landing' && <AnimatedPremiumBg />}
           <div className={
             activeTab === 'landing' 
-              ? "relative z-10 w-full h-full max-w-5xl lg:max-w-6xl mx-auto flex flex-col animate-fade-in" 
+              ? "relative z-10 w-full h-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col animate-fade-in" 
               : activeTab === 'return' 
                 ? "px-0 max-w-full mx-auto w-full flex flex-col pt-0 pb-0" 
                 : activeTab === 'register'
