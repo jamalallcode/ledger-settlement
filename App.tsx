@@ -945,6 +945,7 @@ const App: React.FC = () => {
                 <ReceiverManagement 
                   isAdmin={isAdmin} 
                   onViewEntries={handleViewEntries}
+                  onBack={() => handleTabChange('landing')}
                 />
               )}
 

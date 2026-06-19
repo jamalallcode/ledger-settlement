@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  ArrowRight, ShieldCheck, ShieldAlert, Landmark, Award, Lock, MapPin, FileCheck, User, Phone, Megaphone
+  ArrowRight, ShieldCheck, ShieldAlert, Landmark, Award, Lock, MapPin, FileCheck, User, Phone, Megaphone, Calendar
 } from 'lucide-react';
 import { SettlementEntry, ModuleVisibility } from '../types.ts';
 import { toBengaliDigits } from '../utils/numberUtils.ts';
@@ -149,7 +149,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
             <div className="w-full flex flex-col sm:flex-row items-center sm:items-end justify-between gap-5 transition-colors pt-2">
               
               {/* Centered label with premium yellow megaphone on the left, with green text appearing to emerge from its mouth */}
-              <div className="flex flex-col items-center sm:items-start justify-center gap-2.5 text-center sm:text-left relative">
+              <div className="flex flex-col items-center sm:items-stretch justify-center gap-2.5 text-center sm:text-left relative w-full sm:w-[43%] max-w-[280px]">
                 <div className="flex items-center gap-2.5 justify-center sm:justify-start">
                   {/* Premium Megaphone Icon matching user uploaded image */}
                   <div className="relative flex items-center justify-center shrink-0">
@@ -301,21 +301,52 @@ const LandingPage: React.FC<LandingPageProps> = ({
                     চলমান রিপোর্টিং সাইকেল
                   </span>
                 </div>
-                <div className="landing-val-text text-xs sm:text-sm md:text-base font-black text-white bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-2.5 sm:py-3.5 rounded-xl border border-blue-500/40 shadow-lg shadow-blue-500/20 w-max text-center sm:text-left block m-0">
-                  {cycleLabel || "চলমান কোয়ার্টার"}
+                <div className="flex items-stretch h-11 sm:h-12 w-full shadow-[0_3px_8px_rgba(0,0,0,0.08)] select-none rounded-[4px] overflow-hidden">
+                  {/* Left Icon Area: Off-white bg & gray bottom border */}
+                  <div className="flex flex-col w-11 sm:w-12 shrink-0 h-full">
+                    <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
+                      <Calendar className="text-emerald-700 w-4.5 h-4.5 sm:w-5 sm:h-5 stroke-[2.5]" />
+                    </div>
+                    <div className="h-[4px] bg-[#94a3b8]" />
+                  </div>
+                  
+                  {/* Right Text Area: Solid Emerald Green with dark green bottom bar */}
+                  <div className="flex-1 flex flex-col h-full">
+                    <div className="flex-1 bg-[#059669] flex items-center justify-center px-3">
+                      <span className="text-white font-[950] text-[11px] sm:text-xs md:text-[13px] tracking-wide text-center whitespace-nowrap">
+                        {cycleLabel || "চলমান কোয়ার্টার"}
+                      </span>
+                    </div>
+                    <div className="h-[4px] bg-[#047857]" />
+                  </div>
                 </div>
               </div>
 
               {/* Launch Action Button */}
-              <div className="w-full sm:w-auto flex justify-center sm:justify-end">
+              <div className="w-full sm:w-[43%] max-w-[280px] flex justify-center sm:justify-end">
                 {(isAdmin || moduleVisibility.entry) && (
                   <button 
                     id="btn-start-work"
                     onClick={() => setActiveTab('entry')}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-850 text-white text-xs sm:text-sm md:text-base font-black rounded-xl active:scale-95 transition-all duration-200 shadow-lg shadow-blue-500/20 cursor-pointer border border-blue-500/40 text-center"
+                    className="group flex items-stretch h-11 sm:h-12 w-full shadow-[0_3px_8px_rgba(0,0,0,0.08)] active:translate-y-[1px] transition-transform duration-100 select-none cursor-pointer text-left font-inherit outline-none border-none p-0 rounded-[4px] overflow-hidden"
                   >
-                    <span className="text-white tracking-wide font-black">কাজ শুরু করুন</span>
-                    <ArrowRight size={16} className="stroke-[3] text-white animate-bounce-horizontal" />
+                    {/* Left Icon Area: Off-white bg & gray bottom border */}
+                    <div className="flex flex-col w-11 sm:w-12 shrink-0 h-full">
+                      <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
+                        <ArrowRight className="text-red-800 w-4.5 h-4.5 sm:w-5 sm:h-5 stroke-[3] group-hover:translate-x-1 transition-transform" />
+                      </div>
+                      <div className="h-[4px] bg-[#94a3b8]" />
+                    </div>
+                    
+                    {/* Right Text Area: Solid Maroon with dark maroon bottom bar */}
+                    <div className="flex-1 flex flex-col h-full">
+                      <div className="flex-1 bg-[#991b1b] group-hover:bg-[#851616] transition-colors flex items-center justify-center px-3">
+                        <span className="text-white font-[950] text-[11px] sm:text-xs md:text-[13px] tracking-wide text-center uppercase whitespace-nowrap">
+                          কাজ শুরু করুন
+                        </span>
+                      </div>
+                      <div className="h-[4px] bg-[#450a0a]" />
+                    </div>
                   </button>
                 )}
               </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Plus, FileEdit, Trash, X, ShieldCheck, Sparkles, AlertCircle, Loader2, FileText, Check } from 'lucide-react';
+import { User, Plus, FileEdit, Trash, X, ShieldCheck, Sparkles, AlertCircle, Loader2, FileText, Check, ArrowLeft } from 'lucide-react';
 import { SFI_RECEIVERS } from '../utils/sfi';
 import { NONSFI_RECEIVERS } from '../utils/nonsfi';
 import { isSFI, isNonSFI, isAdminBranch, getBranchVariations } from '../utils/branchUtils';
@@ -9,6 +9,7 @@ import { toBengaliDigits } from '../utils/numberUtils';
 interface ReceiverManagementProps {
   isAdmin: boolean;
   onViewEntries?: (name: string, type: 'settlement' | 'correspondence') => void;
+  onBack?: () => void;
 }
 
 interface ReceiverProfile {
@@ -32,7 +33,7 @@ const getCleanBranch = (type: string | null | undefined): string => {
   return 'এসএফআই';
 };
 
-const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onViewEntries }) => {
+const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onViewEntries, onBack }) => {
   const [receiversList, setReceiversList] = useState<ReceiverProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -568,8 +569,17 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
   return (
     <div className="p-4 sm:p-8 max-w-7xl mx-auto animate-in fade-in duration-500">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 pb-6 border-b border-slate-100">
         <div className="flex items-center gap-4">
+          {onBack && (
+            <button 
+              onClick={onBack}
+              className="p-3 bg-slate-50 border border-slate-200 text-slate-600 rounded-2xl hover:bg-slate-100 hover:text-slate-900 transition-all hover:border-slate-300 shadow-sm hover:shadow active:scale-95 flex items-center justify-center shrink-0 cursor-pointer"
+              title="পূর্ববর্তী পৃষ্ঠায় ফিরে যান"
+            >
+              <ArrowLeft size={20} className="stroke-[2.5]" />
+            </button>
+          )}
           <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-200 shrink-0 select-none">
             <User size={30} className="text-white" />
           </div>
@@ -578,6 +588,17 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
             <p className="text-xs sm:text-sm text-slate-500 font-bold mt-0.5">অফিসের ৩টি ভিন্ন শাখার কর্মকর্তাদের বায়োডাটা, ছবি এবং দায়িত্ব নিয়ন্ত্রণ করুন</p>
           </div>
         </div>
+
+        {onBack && (
+          <button 
+            type="button"
+            onClick={onBack}
+            className="flex items-center gap-2 px-5 py-2.5 bg-rose-50 text-rose-700 hover:bg-rose-100/80 border border-rose-100 hover:border-rose-300 rounded-2xl font-black text-xs transition-all hover:shadow active:scale-95 self-start sm:self-center cursor-pointer shadow-sm"
+          >
+            <X size={16} className="stroke-[2.5]" />
+            বাতিল / বন্ধ করুন
+          </button>
+        )}
       </div>
 
       {loading ? (

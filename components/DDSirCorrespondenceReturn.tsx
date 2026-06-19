@@ -41,6 +41,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const auditorDropdownRef = useRef<HTMLDivElement>(null);
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
 
   const [receiverImages, setReceiverImages] = useState<Record<string, string>>({});
   const [receiverDesignations, setReceiverDesignations] = useState<Record<string, string>>({});
@@ -463,89 +464,258 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   return (
     <div id="dd-sir-report-container" className="space-y-6 py-2 px-[4px] w-full animate-report-reveal relative font-['Hind_Siliguri'] bg-white multi-table-view">
       <IDBadge id="dd-sir-report-container" />
-      {/* Control Bar (No Print) */}
-      {showFilters && (
-        <div className="flex flex-col md:flex-row items-center justify-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print max-w-2xl mx-auto mb-2">
-          {/* Branch Filter */}
-          <div className="space-y-1 relative group" ref={branchDropdownRef}>
-            <div 
-              className={customDropdownCls(false) + " min-w-[200px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
-            >
-              <Mail size={16} className="text-blue-600" />
-              <span className="font-bold text-[12px] text-slate-900 truncate">
-                {filterBranch === 'সকল' ? 'সকল শাখা' : filterBranch}
-              </span>
-              <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600" />
-            </div>
-            
-            <div className="absolute top-full left-0 w-full pt-1 opacity-0 invisible translate-y-1.5 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
-              <div className="w-full bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
-                <div className="max-h-[250px] overflow-y-auto no-scrollbar">
-                  {['সকল', 'এসএফআই', 'নন এসএফআই'].map((opt, idx) => (
-                    <div 
-                      key={idx} 
-                      onClick={() => setFilterBranch(opt)} 
-                      className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterBranch === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
-                    >
-                      <span>{opt === 'সকল' ? 'সকল শাখা' : opt}</span>
-                      {filterBranch === opt && <Check size={14} strokeWidth={3} />}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Auditor Filter */}
-          <div className="space-y-1 relative group" ref={auditorDropdownRef}>
-            <div 
-              className={customDropdownCls(false) + " min-w-[220px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
-            >
-              <User size={16} className="text-blue-600" />
-              <span className="font-bold text-[12px] text-slate-900 truncate">
-                {filterAuditor === 'সকল' ? 'সকল অডিটর' : filterAuditor}
-              </span>
-              <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600" />
-            </div>
-            
-            <div className="absolute top-full left-0 w-full pt-1 opacity-0 invisible translate-y-1.5 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[2000]">
-              <div className="w-full bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
-                <div className="max-h-[250px] overflow-y-auto no-scrollbar">
-                  {auditorOptions.map((opt, idx) => (
-                    <div 
-                      key={idx} 
-                      onClick={() => setFilterAuditor(opt)} 
-                      className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterAuditor === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
-                    >
-                      <span>{opt === 'সকল' ? 'সকল অডিটর' : opt}</span>
-                      {filterAuditor === opt && <Check size={14} strokeWidth={3} />}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Summary Stats Panel (Removed as it's now in hover) */}
 
       <div className="w-full bg-white px-0 py-6 relative">
-        {/* Office Header Row matching user's marked request */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 pt-4 px-4 no-print border-b border-dashed border-slate-100 pb-6">
-          {/* Left Side: পরিসংখ্যান */}
-          <div className="flex justify-start min-w-[200px]">
-            <div className="relative group">
-              <button 
-                className={`px-5 py-2.5 rounded-xl border transition-all flex items-center gap-2 font-bold text-[12px] no-print ${showStats ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm hover:border-blue-500 hover:ring-4 hover:ring-blue-100'}`}
+        {/* Header container for Title, Reporting Date, Filters and Statistics on a single line */}
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-100 w-full px-6 relative z-[50]">
+          
+          {/* Left: Title Header styled as split-block button */}
+          <div className="flex items-stretch h-11 w-fit max-w-[95%] shadow-[0_4px_12px_rgba(0,0,0,0.1)] select-none rounded-lg overflow-hidden border border-slate-200/50 shrink-0">
+            {/* Left Icon Area: Off-white bg & gray bottom border */}
+            <div className="flex flex-col w-10 sm:w-12 shrink-0 h-full">
+              <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
+                <Mail className="text-red-700 w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+              </div>
+              <div className="h-[4px] bg-[#94a3b8]" />
+            </div>
+            
+            {/* Right Text Area: Solid Deep Blue/Indigo with dark blue bottom bar */}
+            <div className="flex-1 flex flex-col h-full min-w-[180px] sm:min-w-[220px]">
+              <div className="flex-1 bg-[#1e40af] flex items-center justify-center px-4 sm:px-6">
+                <span className="text-white font-bold text-xs sm:text-[13px] tracking-wide text-center">
+                  চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন (ডিডি স্যার)
+                </span>
+              </div>
+              <div className="h-[4px] bg-[#1e3a8a]" />
+            </div>
+          </div>
+
+          {/* Right Group: Date Picker, Filters & Statistics on a single row */}
+          <div className="flex items-center gap-3 flex-wrap lg:flex-nowrap justify-center lg:justify-end shrink-0 select-none no-print">
+            
+            {/* Reporting Date with Elegant Custom Calendar picker */}
+            <div className="flex items-center justify-center gap-2">
+              <div className="relative" ref={calendarRef}>
+                <button
+                  onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+                  className="flex items-center gap-2.5 bg-slate-50 border border-slate-300 px-4 py-2.5 rounded-xl hover:border-blue-500 hover:ring-4 hover:ring-blue-100 hover:bg-white transition-all duration-300 shadow-sm font-bold text-slate-700 h-[44px] cursor-pointer"
+                >
+                  <Calendar size={16} className="text-blue-600 animate-pulse" />
+                  <span className="text-[12px] font-black text-slate-800">
+                    রিপোর্টিং তারিখ: {toBengaliDigits(format(reportingDate, 'dd/MM/yyyy'))}
+                  </span>
+                  <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${isCalendarOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                </button>
+
+                {isCalendarOpen && (
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[300px] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
+                    {/* Calendar Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+                        }}
+                        className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
+                        type="button"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      
+                      <span className="font-extrabold text-[14px] text-slate-800">
+                        {BENGALI_MONTHS[currentViewDate.getMonth()]} {toBengaliDigits(currentViewDate.getFullYear().toString())}
+                      </span>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+                        }}
+                        className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
+                        type="button"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+
+                    {/* Calendar Week Days */}
+                    <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                      {BENGALI_WEEKDAYS.map((wd, i) => (
+                        <span key={i} className="text-[11px] font-black text-slate-400">
+                          {wd}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Calendar Days Grid */}
+                    <div className="grid grid-cols-7 gap-1">
+                      {(() => {
+                        const Y = currentViewDate.getFullYear();
+                        const M = currentViewDate.getMonth();
+                        const firstDay = new Date(Y, M, 1);
+                        
+                        // Map day: Sunday is 0, Monday is 1... Saturday is 6.
+                        // Let's align Saturday to index 0, Sunday to index 1... Friday to index 6.
+                        let startOffset = (firstDay.getDay() + 1) % 7; 
+                        
+                        const daysInMonth = new Date(Y, M + 1, 0).getDate();
+                        const prevMonthDays = new Date(Y, M, 0).getDate();
+                        
+                        const cells = [];
+                        
+                        // Trailing days
+                        for (let i = startOffset - 1; i >= 0; i--) {
+                          const d = prevMonthDays - i;
+                          const dateObj = new Date(Y, M - 1, d);
+                          cells.push({ day: d, isCurrentMonth: false, dateObj });
+                        }
+                        
+                        // Current month days
+                        for (let d = 1; d <= daysInMonth; d++) {
+                          const dateObj = new Date(Y, M, d);
+                          cells.push({ day: d, isCurrentMonth: true, dateObj });
+                        }
+                        
+                        // Lead days
+                        const remaining = 42 - cells.length;
+                        for (let d = 1; d <= remaining; d++) {
+                          const dateObj = new Date(Y, M + 1, d);
+                          cells.push({ day: d, isCurrentMonth: false, dateObj });
+                        }
+
+                        return cells.map((cell, idx) => {
+                          const dateStr = format(cell.dateObj, 'yyyy-MM-dd');
+                          const isSelected = dateStr === selectedReportingDate;
+                          const isDisabled = cell.dateObj.getTime() > reportingLimitDate.getTime();
+                          
+                          let cellCls = "text-[12px] font-bold h-8 flex items-center justify-center rounded-lg transition-all cursor-pointer ";
+                          if (isSelected) {
+                            cellCls += "bg-blue-600 text-white font-extrabold shadow-md";
+                          } else if (isDisabled) {
+                            cellCls += "text-slate-200 cursor-not-allowed";
+                          } else if (cell.isCurrentMonth) {
+                            cellCls += "text-slate-800 hover:bg-blue-50 hover:text-blue-600";
+                          } else {
+                            cellCls += "text-slate-300 hover:bg-slate-50";
+                          }
+
+                          // Check if today
+                          const todayStr = format(new Date(), 'yyyy-MM-dd');
+                          const isToday = dateStr === todayStr;
+
+                          return (
+                            <div
+                              key={idx}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (isDisabled) return;
+                                setSelectedReportingDate(dateStr);
+                                setIsCalendarOpen(false);
+                              }}
+                              className={`${cellCls} relative`}
+                            >
+                              <span>{toBengaliDigits(cell.day.toString())}</span>
+                              {isToday && !isSelected && (
+                                <span className="absolute bottom-[2px] w-1 h-1 bg-blue-600 rounded-full"></span>
+                              )}
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {selectedReportingDate !== format(reportingLimitDate, 'yyyy-MM-dd') && (
+                <button 
+                  onClick={() => {
+                    setSelectedReportingDate(format(reportingLimitDate, 'yyyy-MM-dd'));
+                    setIsCalendarOpen(false);
+                  }}
+                  className="p-2.5 bg-slate-50 border border-slate-300 hover:bg-red-50 hover:border-red-200 hover:text-red-500 rounded-xl transition-all shadow-sm h-[44px] flex items-center justify-center cursor-pointer"
+                  title="ডিফল্ট তারিখে ফিরুন"
+                >
+                  <RotateCcw size={14} />
+                </button>
+              )}
+            </div>
+
+            {/* Branch Filter */}
+            <div className="relative group shrink-0" ref={branchDropdownRef}>
+              <div 
+                className={customDropdownCls(false) + " min-w-[150px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
               >
-                <Sparkles size={14} className={showStats ? 'animate-pulse' : ''} />
-                পরিসংখ্যান <ChevronDown size={14} className="transition-transform duration-300 group-hover:rotate-180" />
+                <Mail size={16} className="text-blue-600" />
+                <span className="font-bold text-[12px] text-slate-900 truncate">
+                  {filterBranch === 'সকল' ? 'সকল শাখা' : filterBranch}
+                </span>
+                <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600" />
+              </div>
+              
+              <div className="absolute top-full right-0 lg:left-0 w-[180px] pt-1 opacity-0 invisible translate-y-1.5 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[9999]">
+                <div className="w-full bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
+                  <div className="max-h-[250px] overflow-y-auto no-scrollbar">
+                    {['সকল', 'এসএফআই', 'নন এসএফআই'].map((opt, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={() => setFilterBranch(opt)} 
+                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterBranch === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
+                      >
+                        <span>{opt === 'সকল' ? 'সকল শাখা' : opt}</span>
+                        {filterBranch === opt && <Check size={14} strokeWidth={3} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Auditor Filter */}
+            <div className="relative group shrink-0" ref={auditorDropdownRef}>
+              <div 
+                className={customDropdownCls(false) + " min-w-[180px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
+              >
+                <User size={16} className="text-blue-600" />
+                <span className="font-bold text-[12px] text-slate-900 truncate">
+                  {filterAuditor === 'সকল' ? 'সকল অডিটর' : filterAuditor}
+                </span>
+                <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600" />
+              </div>
+              
+              <div className="absolute top-full right-0 lg:left-0 w-[200px] pt-1 opacity-0 invisible translate-y-1.5 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[9999]">
+                <div className="w-full bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden font-sans">
+                  <div className="max-h-[250px] overflow-y-auto no-scrollbar">
+                    {auditorOptions.map((opt, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={() => setFilterAuditor(opt)} 
+                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterAuditor === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
+                      >
+                        <span>{opt === 'সকল' ? 'সকল অডিটর' : opt}</span>
+                        {filterAuditor === opt && <Check size={14} strokeWidth={3} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Statistics button and its dropdown */}
+            <div className="relative group z-[350]" ref={statsRef}>
+              <button 
+                className="flex items-center gap-2 px-5 py-2.5 bg-sky-50 text-sky-800 rounded-xl font-black text-[13px] border border-sky-100 hover:border-sky-300 transition-all duration-300 hover:bg-white hover:shadow-md cursor-pointer h-[44px]"
+              >
+                <Sparkles size={16} className="text-sky-600 animate-pulse" />
+                পরিসংখ্যান
+                <ChevronDown size={14} className="text-sky-500 transition-transform duration-300 group-hover:rotate-180" />
               </button>
               
-              <div className="absolute top-full left-0 mt-2 w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[2000] animate-in fade-in slide-in-from-top-2 duration-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all">
-                <div className="space-y-5 text-left">
-                  <div className="flex items-center justify-between border-b border-slate-50 pb-3">
+              <div className="absolute top-full right-0 mt-2 w-[320px] sm:w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[9999] opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-auto text-left">
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
                         <BarChart3 size={16} className="text-blue-600" />
@@ -583,169 +753,6 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Center Column: Centered Header Title */}
-          <div className="text-center flex-1">
-            <div className="inline-block relative">
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
-                চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন (ডিডি স্যার)
-              </h1>
-
-              <div className="flex items-center justify-center gap-4">
-                <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
-                <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-                <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-slate-400"></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Reporting Date with Elegant Custom Calendar picker */}
-          <div className="flex justify-end min-w-[200px] items-center gap-2">
-            <div className="relative" ref={calendarRef}>
-              <button
-                onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-                className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl hover:border-blue-500 hover:ring-4 hover:ring-blue-100 hover:bg-white transition-all duration-300 shadow-sm font-bold text-slate-700 h-[44px]"
-              >
-                <Calendar size={16} className="text-blue-600" />
-                <span className="text-[12px] font-black text-slate-800">
-                  রিপোর্টিং তারিখ: {toBengaliDigits(format(reportingDate, 'dd/MM/yyyy'))}
-                </span>
-                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${isCalendarOpen ? 'rotate-180 text-blue-600' : ''}`} />
-              </button>
-
-              {isCalendarOpen && (
-                <div className="absolute top-full right-0 mt-2 w-[300px] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 z-[3000] animate-in fade-in slide-in-from-top-2 duration-200">
-                  {/* Calendar Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
-                      }}
-                      className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
-                      type="button"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-                    
-                    <span className="font-extrabold text-[14px] text-slate-800">
-                      {BENGALI_MONTHS[currentViewDate.getMonth()]} {toBengaliDigits(currentViewDate.getFullYear().toString())}
-                    </span>
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
-                      }}
-                      className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
-                      type="button"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
-
-                  {/* Calendar Week Days */}
-                  <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                    {BENGALI_WEEKDAYS.map((wd, i) => (
-                      <span key={i} className="text-[11px] font-black text-slate-400">
-                        {wd}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Calendar Days Grid */}
-                  <div className="grid grid-cols-7 gap-1">
-                    {(() => {
-                      const Y = currentViewDate.getFullYear();
-                      const M = currentViewDate.getMonth();
-                      const firstDay = new Date(Y, M, 1);
-                      
-                      // Map day: Sunday is 0, Monday is 1... Saturday is 6.
-                      // Let's align Saturday to index 0, Sunday to index 1... Friday to index 6.
-                      let startOffset = (firstDay.getDay() + 1) % 7; 
-                      
-                      const daysInMonth = new Date(Y, M + 1, 0).getDate();
-                      const prevMonthDays = new Date(Y, M, 0).getDate();
-                      
-                      const cells = [];
-                      
-                      // Trailing days
-                      for (let i = startOffset - 1; i >= 0; i--) {
-                        const d = prevMonthDays - i;
-                        const dateObj = new Date(Y, M - 1, d);
-                        cells.push({ day: d, isCurrentMonth: false, dateObj });
-                      }
-                      
-                      // Current month days
-                      for (let d = 1; d <= daysInMonth; d++) {
-                        const dateObj = new Date(Y, M, d);
-                        cells.push({ day: d, isCurrentMonth: true, dateObj });
-                      }
-                      
-                      // Lead days
-                      const remaining = 42 - cells.length;
-                      for (let d = 1; d <= remaining; d++) {
-                        const dateObj = new Date(Y, M + 1, d);
-                        cells.push({ day: d, isCurrentMonth: false, dateObj });
-                      }
-
-                      return cells.map((cell, idx) => {
-                        const dateStr = format(cell.dateObj, 'yyyy-MM-dd');
-                        const isSelected = dateStr === selectedReportingDate;
-                        const isDisabled = cell.dateObj.getTime() > reportingLimitDate.getTime();
-                        
-                        let cellCls = "text-[12px] font-bold h-8 flex items-center justify-center rounded-lg transition-all cursor-pointer ";
-                        if (isSelected) {
-                          cellCls += "bg-blue-600 text-white font-extrabold shadow-md";
-                        } else if (isDisabled) {
-                          cellCls += "text-slate-200 cursor-not-allowed";
-                        } else if (cell.isCurrentMonth) {
-                          cellCls += "text-slate-800 hover:bg-blue-50 hover:text-blue-600";
-                        } else {
-                          cellCls += "text-slate-300 hover:bg-slate-50";
-                        }
-
-                        // Check if today
-                        const todayStr = format(new Date(), 'yyyy-MM-dd');
-                        const isToday = dateStr === todayStr;
-
-                        return (
-                          <div
-                            key={idx}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (isDisabled) return;
-                              setSelectedReportingDate(dateStr);
-                              setIsCalendarOpen(false);
-                            }}
-                            className={`${cellCls} relative`}
-                          >
-                            <span>{toBengaliDigits(cell.day.toString())}</span>
-                            {isToday && !isSelected && (
-                              <span className="absolute bottom-[2px] w-1 h-1 bg-blue-600 rounded-full"></span>
-                            )}
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {selectedReportingDate !== format(reportingLimitDate, 'yyyy-MM-dd') && (
-              <button 
-                onClick={() => {
-                  setSelectedReportingDate(format(reportingLimitDate, 'yyyy-MM-dd'));
-                  setIsCalendarOpen(false);
-                }}
-                className="p-2.5 bg-slate-50 border border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-500 rounded-xl transition-all shadow-sm h-[44px] flex items-center justify-center"
-                title="ডিফল্ট তারিখে ফিরুন"
-              >
-                <RotateCcw size={14} />
-              </button>
-            )}
           </div>
         </div>
 
