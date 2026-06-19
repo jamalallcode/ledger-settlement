@@ -467,9 +467,9 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
       {/* Summary Stats Panel (Removed as it's now in hover) */}
 
-      <div className="w-full bg-white px-0 py-6 relative">
+      <div className="w-full bg-white px-0 py-6 relative z-[200]">
         {/* Header container for Title, Reporting Date, Filters and Statistics on a single line */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-100 w-full px-6 relative z-[50]">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-100 w-full px-6 relative z-[210]">
           
           {/* Left: Title Header styled as split-block button */}
           <div className="flex items-stretch h-11 w-fit max-w-[95%] shadow-[0_4px_12px_rgba(0,0,0,0.1)] select-none rounded-lg overflow-hidden border border-slate-200/50 shrink-0">
