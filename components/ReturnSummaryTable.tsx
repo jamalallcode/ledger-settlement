@@ -58,6 +58,24 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const mainContainer = document.querySelector('.return-main-container') || document.querySelector('main');
+    if (isStatsOpen) {
+      if (mainContainer) {
+        (mainContainer as HTMLElement).style.overflowY = 'hidden';
+      }
+    } else {
+      if (mainContainer) {
+        (mainContainer as HTMLElement).style.overflowY = 'auto';
+      }
+    }
+    return () => {
+      if (mainContainer) {
+        (mainContainer as HTMLElement).style.overflowY = 'auto';
+      }
+    };
+  }, [isStatsOpen]);
+
   const ministryOptions = useMemo(() => {
     const unique = Array.from(new Set(reportData.map(m => m.ministry)));
     return ['সকল', ...unique];
@@ -219,7 +237,10 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
 
       <div id="card-report-table-container" className="bg-white w-full p-1 relative animate-table-entrance overflow-x-auto xl:overflow-visible">
         {/* Header container for Title block, cycle badge and statistics in a single line on desktop/lg screens */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 pt-4 pb-6 border-b border-slate-100 w-full px-6 relative z-[1000]">
+        <div className={isStatsOpen 
+          ? "sticky top-0 bg-white/95 backdrop-blur-md flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 pt-4 pb-6 border-b border-slate-200/80 w-full px-6 z-[1010] shadow-sm transition-all duration-300"
+          : "flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 pt-4 pb-6 border-b border-slate-100 w-full px-6 relative z-[50] transition-all duration-300"
+        }>
           
           {/* Left: Title Header styled as split-block button */}
           <div className="flex items-stretch h-[38px] w-fit max-w-[95%] shadow-md select-none rounded-xl overflow-hidden border border-slate-200/50 shrink-0 transition-all duration-300">
@@ -263,19 +284,24 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             {/* Statistics Dropdown */}
             {showStatsButton && (
               <div 
-                className="relative group z-[1050] no-print shrink-0"
+                className="relative z-[1050] no-print shrink-0"
                 ref={statsRef}
+                onMouseEnter={() => setIsStatsOpen(true)}
+                onMouseLeave={() => setIsStatsOpen(false)}
               >
                 <button
                   type="button"
-                  className="flex items-center gap-2 px-4 h-[38px] bg-sky-50 text-sky-800 rounded-xl font-bold text-[11.5px] sm:text-[12.5px] border border-sky-100 hover:border-sky-300 transition-all duration-300 hover:bg-white hover:shadow-md cursor-pointer shrink-0 leading-none"
+                  onClick={() => setIsStatsOpen(prev => !prev)}
+                  className="flex items-center gap-2 px-4 h-[38px] bg-sky-50 text-sky-800 rounded-xl font-bold text-[11.5px] sm:text-[12.5px] border border-sky-100 hover:border-sky-300 transition-all duration-300 hover:bg-white hover:shadow-md cursor-pointer shrink-0 leading-none animate-in fade-in"
                 >
                   <Sparkles size={13} className="text-sky-600 animate-pulse shrink-0" />
                   <span>পরিসংখ্যান</span>
-                  <ChevronDown size={13} className="text-sky-500 transition-transform duration-300 group-hover:rotate-180 shrink-0" />
+                  <ChevronDown size={13} className={`text-sky-500 transition-transform duration-300 shrink-0 ${isStatsOpen ? 'rotate-180' : ''}`} />
                 </button>
 
-              <div className="absolute top-full right-0 mt-2 w-[320px] sm:w-[450px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[9999] opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-auto text-left">
+              <div className={`absolute top-full right-0 mt-2 w-[320px] sm:w-[450px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[9999] transition-all duration-300 pointer-events-auto text-left max-h-[80vh] overflow-y-auto scrollbar-thin ${
+                isStatsOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'
+              }`}>
                 <div className="space-y-6">
                   {/* Overall Header */}
                   <div className="flex items-center gap-4 border-b border-slate-100 pb-4">
@@ -289,7 +315,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                   </div>
 
                   {/* Ministry List */}
-                  <div className="space-y-4 max-h-[260px] overflow-y-auto no-scrollbar">
+                  <div className="space-y-4">
                     {filteredStatsReportData.length === 0 ? (
                       <div className="text-center py-4 text-slate-400 font-bold text-xs">কোনো তথ্য পাওয়া যায়নি</div>
                     ) : (

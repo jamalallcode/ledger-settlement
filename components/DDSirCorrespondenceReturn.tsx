@@ -38,6 +38,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const [isAuditorDropdownOpen, setIsAuditorDropdownOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
   const auditorDropdownRef = useRef<HTMLDivElement>(null);
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -131,10 +132,31 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
         setIsCalendarOpen(false);
       }
+      if (statsRef.current && !statsRef.current.contains(e.target as Node)) {
+        setIsStatsOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    const mainContainer = document.querySelector('.return-main-container') || document.querySelector('main');
+    if (isStatsOpen) {
+      if (mainContainer) {
+        (mainContainer as HTMLElement).style.overflowY = 'hidden';
+      }
+    } else {
+      if (mainContainer) {
+        (mainContainer as HTMLElement).style.overflowY = 'auto';
+      }
+    }
+    return () => {
+      if (mainContainer) {
+        (mainContainer as HTMLElement).style.overflowY = 'auto';
+      }
+    };
+  }, [isStatsOpen]);
 
   const auditorOptions = useMemo(() => {
     let filteredForOptions = entries || [];
@@ -469,7 +491,10 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
       <div className="w-full bg-white px-0 py-6 relative z-[1000]">
         {/* Header container for Title, Reporting Date, Filters and Statistics on a single line */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-100 w-full px-6 relative z-[1010]">
+        <div className={isStatsOpen 
+          ? "sticky top-0 bg-white/95 backdrop-blur-md flex flex-col lg:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-200/80 w-full px-6 z-[1010] shadow-sm transition-all duration-300"
+          : "flex flex-col lg:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-100 w-full px-6 relative z-[50] transition-all duration-300"
+        }>
           
           {/* Left: Title Header styled as split-block button */}
           <div className="flex items-stretch h-11 w-fit max-w-[95%] shadow-[0_4px_12px_rgba(0,0,0,0.1)] select-none rounded-lg overflow-hidden border border-slate-200/50 shrink-0">
@@ -704,16 +729,25 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             </div>
 
             {/* Right: Statistics button and its dropdown */}
-            <div className="relative group z-[1050]" ref={statsRef}>
+            <div 
+              className="relative z-[1050]" 
+              ref={statsRef}
+              onMouseEnter={() => setIsStatsOpen(true)}
+              onMouseLeave={() => setIsStatsOpen(false)}
+            >
               <button 
+                type="button"
+                onClick={() => setIsStatsOpen(prev => !prev)}
                 className="flex items-center gap-2 px-5 py-2.5 bg-sky-50 text-sky-800 rounded-xl font-black text-[13px] border border-sky-100 hover:border-sky-300 transition-all duration-300 hover:bg-white hover:shadow-md cursor-pointer h-[44px]"
               >
                 <Sparkles size={16} className="text-sky-600 animate-pulse" />
                 পরিসংখ্যান
-                <ChevronDown size={14} className="text-sky-500 transition-transform duration-300 group-hover:rotate-180" />
+                <ChevronDown size={14} className={`text-sky-500 transition-transform duration-300 ${isStatsOpen ? 'rotate-180' : ''}`} />
               </button>
               
-              <div className="absolute top-full right-0 mt-2 w-[320px] sm:w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[9999] opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-auto text-left">
+              <div className={`absolute top-full right-0 mt-2 w-[320px] sm:w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[9999] transition-all duration-300 pointer-events-auto text-left max-h-[80vh] overflow-y-auto scrollbar-thin ${
+                isStatsOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'
+              }`}>
                 <div className="space-y-5">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-3">
