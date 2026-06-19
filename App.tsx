@@ -424,11 +424,11 @@ const App: React.FC = () => {
 
   // Proactive Admin Notification Effect
   useEffect(() => {
-    if (userEmail === 'websitetogather@gmail.com' && totalPendingCount > 0 && !hasShownAlert && !isLoading) {
+    if (isAdmin && totalPendingCount > 0 && !hasShownAlert && !isLoading) {
       setShowAdminAlert(true);
       setHasShownAlert(true);
     }
-  }, [userEmail, totalPendingCount, hasShownAlert, isLoading]);
+  }, [isAdmin, totalPendingCount, hasShownAlert, isLoading]);
 
   useEffect(() => {
     if (mainScrollRef.current) mainScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });

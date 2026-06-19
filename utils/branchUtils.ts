@@ -4,6 +4,7 @@
 
 export const isSFI = (type: string | null | undefined): boolean => {
   if (!type) return false;
+  if (isNonSFI(type)) return false;
   const t = type.trim();
   const upper = t.toUpperCase();
   return (
