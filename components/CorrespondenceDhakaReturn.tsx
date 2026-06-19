@@ -49,6 +49,13 @@ const parseDate = (dateStr: string | null | undefined) => {
   return null;
 };
 
+const BENGALI_MONTHS = [
+  'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+  'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+];
+
+const BENGALI_WEEKDAYS = ['শনি', 'রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র'];
+
 const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   correspondenceEntries,
   activeCycle,
@@ -62,10 +69,42 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   const [filterLetterType, setFilterLetterType] = useState('সকল');
   const [selectedMonthDate, setSelectedMonthDate] = useState<Date>(new Date(activeCycle.end));
   
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [currentViewDate, setCurrentViewDate] = useState<Date>(new Date(selectedMonthDate));
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setCurrentViewDate(new Date(selectedMonthDate));
+  }, [selectedMonthDate]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) {
+        setIsBranchDropdownOpen(false);
+      }
+      if (typeDropdownRef.current && !typeDropdownRef.current.contains(e.target as Node)) {
+        setIsTypeDropdownOpen(false);
+      }
+      if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
+        setIsCalendarOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+  
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [dateInputText, setDateInputText] = useState(dateFnsFormat(selectedMonthDate, 'dd/MM/yyyy'));
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isSearchExpanded && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchExpanded]);
   
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
@@ -404,81 +443,185 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   return (
     <div id="correspondence-dhaka-container" className="space-y-4 py-2 px-[4px] w-full animate-report-page relative">
       <IDBadge id="correspondence-dhaka-container" />
-      {showFilters && (
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
-          <div className="flex items-center gap-3">
-            <div className="relative group">
-              <button 
-                className={`px-4 py-2 rounded-xl border transition-all flex items-center gap-2 font-bold text-[12px] no-print ${showStats ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm'}`}
-              >
-                <Sparkles size={14} className={showStats ? 'animate-pulse' : ''} />
-                পরিসংখ্যান <ChevronDown size={14} className="transition-transform duration-300 group-hover:rotate-180" />
-              </button>
-              <div className="absolute top-full left-0 w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all">
-                <div className="space-y-5 text-left">
-                  <div className="flex items-center justify-between border-b border-slate-50 pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                        <BarChart3 size={16} className="text-blue-600" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-blue-700 font-black text-[15px]">মোট চিঠি: {toBengaliDigits(summaryStats.total)} টি</span>
-                        <span className="text-emerald-600 font-bold text-[12px]">মোট অনুচ্ছেদ: {toBengaliDigits(summaryStats.totalParas)} টি</span>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="space-y-4">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-blue-700 font-black text-[14px]">এসএফআই:</span>
-                        <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(summaryStats.sfi.total)} টি</span>
-                        <span className="text-emerald-600 font-bold text-[12px] ml-1">({toBengaliDigits(summaryStats.sfi.paras)} টি অনুচ্ছেদ)</span>
-                      </div>
-                      <div className="text-slate-600 font-bold text-[11px] leading-relaxed pl-4">
-                        (বিএসআর: {toBengaliDigits(summaryStats.sfi.bsr)} টি, ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি)
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-blue-700 font-black text-[14px]">নন এসএফআই:</span>
-                        <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(summaryStats.nonSfi.total)} টি</span>
-                        <span className="text-emerald-600 font-bold text-[12px] ml-1">({toBengaliDigits(summaryStats.nonSfi.paras)} টি অনুচ্ছেদ)</span>
-                      </div>
-                      <div className="text-slate-600 font-bold text-[11px] leading-relaxed pl-4">
-                        (বিএসআর: {toBengaliDigits(summaryStats.nonSfi.bsr)} টি, দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি)
-                      </div>
-                    </div>
-                  </div>
-                </div>
+      <div className="bg-white w-full overflow-visible px-0 py-6 relative animate-table-entrance">
+        {/* Header container for Title, Reporting Period and Statistics in a single line on desktop/lg screens */}
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-100 w-full px-6">
+          
+          {/* Left: Title Header styled as split-block button */}
+          <div className="flex items-stretch h-11 w-fit max-w-[95%] shadow-[0_4px_12px_rgba(0,0,0,0.1)] select-none rounded-lg overflow-hidden border border-slate-200/50 shrink-0 transition-all duration-300">
+            {/* Left Icon Area: Off-white bg & gray bottom border */}
+            <div className={`flex flex-col shrink-0 h-full transition-all duration-300 ${isSearchExpanded ? 'w-8' : 'w-11'}`}>
+              <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
+                <FileText className={`text-red-700 stroke-[2.5] transition-all duration-300 ${isSearchExpanded ? 'w-4 h-4' : 'w-4.5 h-4.5'}`} />
               </div>
+              <div className="h-[4px] bg-[#94a3b8]" />
+            </div>
+            
+            {/* Right Text Area: Rich Royal Blue/Indigo with dark bottom bar */}
+            <div className={`flex-1 flex flex-col h-full transition-all duration-300 ${isSearchExpanded ? 'min-w-[130px] sm:min-w-[150px]' : 'min-w-[180px] sm:min-w-[220px]'}`}>
+              <div className="flex-1 bg-[#1e40af] flex items-center justify-center px-3 sm:px-6">
+                <span className={`text-white font-bold tracking-wide text-center transition-all duration-300 whitespace-nowrap ${isSearchExpanded ? 'text-[10px] sm:text-[11.5px]' : 'text-xs sm:text-[13px]'}`}>
+                  {isSearchExpanded ? 'চিঠিপত্র রিটার্ণ (ঢাকা)' : 'চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)'}
+                </span>
+              </div>
+              <div className="h-[4px] bg-[#1e3a8a]" />
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            {/* Branch Filter */}
-            <div className="space-y-1 relative group" ref={branchDropdownRef}>
+
+          {/* Right/Middle: Group of Compact Controls */}
+          <div className="flex flex-wrap lg:flex-nowrap items-center justify-center lg:justify-end gap-2 w-full lg:w-auto">
+            {/* 1. Reporting Period Date Picker */}
+            <div className="relative shrink-0 select-none z-[400]" ref={calendarRef}>
               <div 
-                className={customDropdownCls(false) + " min-w-[170px] group-hover:border-emerald-600 group-hover:ring-4 group-hover:ring-emerald-50 shadow-sm transition-all duration-300"}
+                onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+                className="relative inline-flex items-center gap-2 px-3 h-[35px] bg-slate-900 border border-slate-700 hover:border-emerald-500 hover:bg-slate-800 transition-all text-white rounded-xl text-[11px] sm:text-[11.5px] font-bold shadow-md cursor-pointer"
               >
-                <LayoutGrid size={16} className="text-emerald-600" />
-                <span className="font-bold text-[12px] text-slate-900 break-words">
+                <span className={`text-blue-400 leading-none transition-all duration-300 ${isSearchExpanded ? 'hidden xl:inline' : 'hidden sm:inline'}`}>রিপোর্টিং সময়কাল:</span> 
+                <span className="text-white flex items-center gap-1 font-black leading-none">
+                  {toBengaliDigits(dateFnsFormat(selectedMonthDate, 'dd/MM/yyyy'))} খ্রি: তারিখ পর্যন্ত।
+                  <Calendar size={11} className="text-emerald-400 group-hover:scale-110 transition-transform duration-200" />
+                </span>
+                <ChevronDown size={11} className={`text-slate-400 transition-transform duration-300 lg:inline shrink-0 ${isCalendarOpen ? 'rotate-180 text-emerald-400' : ''}`} />
+              </div>
+
+              {isCalendarOpen && (
+                <div className="absolute top-[110%] right-0 lg:left-1/2 lg:-translate-x-1/2 w-[300px] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
+                  {/* Calendar Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+                      }}
+                      className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors cursor-pointer"
+                      type="button"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    
+                    <span className="font-extrabold text-[14px] text-slate-800">
+                      {BENGALI_MONTHS[currentViewDate.getMonth()]} {toBengaliDigits(currentViewDate.getFullYear().toString())}
+                    </span>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+                      }}
+                      className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors cursor-pointer"
+                      type="button"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+
+                  {/* Calendar Week Days */}
+                  <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                    {BENGALI_WEEKDAYS.map((wd, i) => (
+                      <span key={i} className="text-[11px] font-black text-slate-400">
+                        {wd}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Calendar Days Grid */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {(() => {
+                      const Y = currentViewDate.getFullYear();
+                      const M = currentViewDate.getMonth();
+                      const firstDay = new Date(Y, M, 1);
+                      
+                      let startOffset = (firstDay.getDay() + 1) % 7; 
+                      
+                      const daysInMonth = new Date(Y, M + 1, 0).getDate();
+                      const prevMonthDays = new Date(Y, M, 0).getDate();
+                      
+                      const cells = [];
+                      
+                      // Trailing days
+                      for (let i = startOffset - 1; i >= 0; i--) {
+                        const d = prevMonthDays - i;
+                        const dateObj = new Date(Y, M - 1, d);
+                        cells.push({ day: d, isCurrentMonth: false, dateObj });
+                      }
+                      
+                      // Current month days
+                      for (let d = 1; d <= daysInMonth; d++) {
+                        const dateObj = new Date(Y, M, d);
+                        cells.push({ day: d, isCurrentMonth: true, dateObj });
+                      }
+                      
+                      // Lead days
+                      const remaining = 42 - cells.length;
+                      for (let d = 1; d <= remaining; d++) {
+                        const dateObj = new Date(Y, M + 1, d);
+                        cells.push({ day: d, isCurrentMonth: false, dateObj });
+                      }
+
+                      return cells.map((cell, idx) => {
+                        const dateStr = dateFnsFormat(cell.dateObj, 'yyyy-MM-dd');
+                        const isSelected = dateFnsFormat(cell.dateObj, 'yyyy-MM-dd') === dateFnsFormat(selectedMonthDate, 'yyyy-MM-dd');
+                        
+                        let cellCls = "text-[12px] font-bold h-8 flex items-center justify-center rounded-lg transition-all cursor-pointer ";
+                        if (isSelected) {
+                          cellCls += "bg-blue-600 text-white font-extrabold shadow-md";
+                        } else if (cell.isCurrentMonth) {
+                          cellCls += "text-slate-800 hover:bg-blue-50 hover:text-blue-600";
+                        } else {
+                          cellCls += "text-slate-300 hover:bg-slate-50";
+                        }
+
+                        // Check if today
+                        const todayStr = dateFnsFormat(new Date(), 'yyyy-MM-dd');
+                        const isToday = dateStr === todayStr;
+
+                        return (
+                          <div
+                            key={idx}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedMonthDate(cell.dateObj);
+                              setIsCalendarOpen(false);
+                            }}
+                            className={`${cellCls} relative`}
+                          >
+                            <span>{toBengaliDigits(cell.day.toString())}</span>
+                            {isToday && !isSelected && (
+                              <span className="absolute bottom-[2px] w-1 h-1 bg-blue-600 rounded-full"></span>
+                            )}
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Branch Filter Dropdown */}
+            <div className="relative group shrink-0 no-print" ref={branchDropdownRef}>
+              <div 
+                className="relative flex items-center gap-1.5 px-2.5 h-[35px] bg-slate-50 border border-slate-300 rounded-xl cursor-pointer transition-all duration-300 hover:border-emerald-600 hover:ring-2 hover:ring-emerald-50 shadow-sm min-w-[115px] sm:min-w-[130px]"
+              >
+                <LayoutGrid size={13} className="text-emerald-600 shrink-0" />
+                <span className="font-extrabold text-[11px] sm:text-[11.5px] text-slate-800 break-words leading-none">
                   {filterParaType === 'সকল' ? 'সকল শাখা' : filterParaType}
                 </span>
-                <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-emerald-600" />
+                <ChevronDown size={11} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-emerald-600 shrink-0" />
               </div>
               
-              <div className="absolute top-full left-0 w-full pt-1 opacity-0 invisible translate-y-1.5 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 ease-out z-[2000]">
-                <div className="w-full bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
-                  <div className="max-h-[250px] overflow-y-auto no-scrollbar">
+              <div className="absolute top-full left-0 w-full pt-1 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 ease-out z-[2000]">
+                <div className="w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
+                  <div className="max-h-[220px] overflow-y-auto no-scrollbar">
                     {branchOptions.map((opt, idx) => (
                       <div 
                         key={idx} 
                         onClick={() => setFilterParaType(opt)} 
-                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterParaType === opt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[12px]'}`}
+                        className={`flex items-center justify-between px-3 py-2 cursor-pointer transition-all ${filterParaType === opt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[11.5px]'}`}
                       >
                         <span>{opt === 'সকল' ? 'সকল শাখা' : opt}</span>
-                        {filterParaType === opt && <Check size={14} strokeWidth={3} />}
+                        {filterParaType === opt && <Check size={12} strokeWidth={3} />}
                       </div>
                     ))}
                   </div>
@@ -486,29 +629,29 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               </div>
             </div>
 
-            {/* Type Filter */}
-            <div className="space-y-1 relative group" ref={typeDropdownRef}>
+            {/* 3. Type Filter Dropdown */}
+            <div className="relative group shrink-0 no-print" ref={typeDropdownRef}>
               <div 
-                className={customDropdownCls(false) + " min-w-[190px] group-hover:border-emerald-600 group-hover:ring-4 group-hover:ring-emerald-50 shadow-sm transition-all duration-300"}
+                className="relative flex items-center gap-1.5 px-2.5 h-[35px] bg-slate-50 border border-slate-300 rounded-xl cursor-pointer transition-all duration-300 hover:border-emerald-600 hover:ring-2 hover:ring-emerald-50 shadow-sm min-w-[125px] sm:min-w-[145px]"
               >
-                <FileText size={16} className="text-emerald-600" />
-                <span className="font-bold text-[12px] text-slate-900 break-words">
+                <FileText size={13} className="text-emerald-600 shrink-0" />
+                <span className="font-extrabold text-[11px] sm:text-[11.5px] text-slate-800 break-words leading-none">
                   {filterLetterType === 'সকল' ? 'চিঠির ধরন' : filterLetterType}
                 </span>
-                <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-emerald-600" />
+                <ChevronDown size={11} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-emerald-600 shrink-0" />
               </div>
               
-              <div className="absolute top-full left-0 w-full pt-1 opacity-0 invisible translate-y-1.5 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 ease-out z-[2000]">
-                <div className="w-full bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
+              <div className="absolute top-full left-0 w-full pt-1 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 ease-out z-[2000]">
+                <div className="w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
                   <div className="py-0">
                     {typeOptions.map((opt, idx) => (
                       <div 
                         key={idx} 
                         onClick={() => setFilterLetterType(opt)} 
-                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterLetterType === opt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[12px]'}`}
+                        className={`flex items-center justify-between px-3 py-2 cursor-pointer transition-all ${filterLetterType === opt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[11.5px]'}`}
                       >
                         <span>{opt === 'সকল' ? 'চিঠির ধরন' : opt}</span>
-                        {filterLetterType === opt && <Check size={14} strokeWidth={3} />}
+                        {filterLetterType === opt && <Check size={12} strokeWidth={3} />}
                       </div>
                     ))}
                   </div>
@@ -516,85 +659,53 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               </div>
             </div>
 
-            <div className="relative group min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={16} />
-              <input 
-                type="text"
-                placeholder="ডায়েরি, স্মারক বা বিবরণ..."
-                className="w-full pl-10 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              {searchTerm && (
-                <button 
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors"
+            {/* 4. Search Filter */}
+            <div className={`relative flex items-center transition-all duration-300 shrink-0 no-print ${isSearchExpanded ? 'w-[140px] sm:w-[170px]' : 'w-[35px]'}`}>
+              {!isSearchExpanded ? (
+                <button
+                  type="button"
+                  onClick={() => setIsSearchExpanded(true)}
+                  className="flex items-center justify-center w-[35px] h-[35px] bg-slate-50 border border-slate-300 rounded-xl text-slate-500 hover:text-emerald-600 hover:border-emerald-600 transition-all cursor-pointer shadow-sm"
+                  title="অনুসন্ধান করুন"
                 >
-                  <X size={14} />
+                  <Search size={14} />
                 </button>
+              ) : (
+                <div className="relative w-full group animate-in fade-in zoom-in-95 duration-200">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-600" size={12} />
+                  <input 
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="অনুসন্ধান..."
+                    className="w-full pl-7.5 pr-6 h-[35px] bg-white border border-emerald-600 rounded-xl text-[11px] font-bold text-slate-800 outline-none shadow-md transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-50"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onBlur={() => {
+                      if (!searchTerm) {
+                        setIsSearchExpanded(false);
+                      }
+                    }}
+                  />
+                  <button 
+                    onClick={() => {
+                      setSearchTerm('');
+                      setIsSearchExpanded(false);
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
               )}
             </div>
-            
-            {/* Date Picker */}
-            <div className="relative group flex items-center">
-              <div className="relative flex items-center w-[180px] h-[44px] bg-white border border-slate-300 rounded-xl shadow-sm hover:border-emerald-600 transition-all duration-300 overflow-hidden">
-                <input 
-                  type="text"
-                  value={dateInputText}
-                  onChange={handleDateTextChange}
-                  placeholder="DD/MM/YYYY"
-                  className="pl-4 pr-10 w-full h-full bg-transparent outline-none font-bold text-[14px] text-slate-800"
-                  title="বাম পাশে টাইপ করুন"
-                />
-                <div className="absolute right-3 pointer-events-none text-slate-400 group-hover:text-emerald-600 transition-colors">
-                  <Calendar size={18} />
-                </div>
-                {/* Interaction Layer: Covers the right 60% of the area to capture clicks for the calendar */}
-                <input 
-                  ref={dateInputRef}
-                  type="date"
-                  value={dateFnsFormat(selectedMonthDate, 'yyyy-MM-dd')}
-                  onChange={(e) => {
-                    const newDate = new Date(e.target.value);
-                    if (!isNaN(newDate.getTime())) {
-                      setSelectedMonthDate(newDate);
-                    }
-                  }}
-                  className="absolute top-0 right-0 bottom-0 w-[60%] opacity-0 cursor-pointer z-10"
-                  title="ক্যালেন্ডার ওপেন করতে এখানে ক্লিক করুন"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
-      <div className="bg-white w-full overflow-visible px-0 py-6 relative animate-table-entrance">
-        <div className="text-center mb-8 pt-4 relative">
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-4">
-            চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)।
-          </h1>
-          
-          <div className="mb-6 flex justify-center">
-            <div className="inline-flex items-center gap-3 px-8 py-2 bg-slate-900 text-white rounded-xl text-xs font-black border border-slate-700 shadow-md">
-              <span className="text-blue-400">চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা) | {toBengaliDigits(dateFnsFormat(selectedMonthDate, 'dd/MM/yyyy'))} খ্রি: তারিখ পর্যন্ত।</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center gap-4">
-            <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-slate-400"></div>
-            <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-            <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-slate-400"></div>
-          </div>
-
-          {/* New Statistics Button */}
-          <div className="absolute top-1/2 right-0 -translate-y-1/2 no-print">
+            {/* 5. Statistics Trigger Button */}
             <button 
               onClick={() => setShowAuditorStatsModal(true)}
-              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[13px] font-black transition-all shadow-lg hover:shadow-blue-200/50 hover:-translate-y-0.5"
+              className="flex items-center justify-center gap-1 px-2.5 h-[35px] bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] sm:text-[11.5px] font-black transition-all shadow-md hover:shadow-blue-200/50 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer shrink-0 no-print"
             >
-              <BarChart3 size={16} />
-              পরিসংখ্যান
+              <BarChart3 size={12} />
+              <span className="leading-none">পরিসংখ্যান</span>
             </button>
           </div>
         </div>

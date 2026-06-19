@@ -3,7 +3,7 @@ import React from 'react';
 import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants';
-import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles } from 'lucide-react';
+import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
 import { getCycleForDate } from '../utils/cycleHelper';
 import { isSFI, isNonSFI } from '../utils/branchUtils';
@@ -17,6 +17,13 @@ import QR_3 from './QR_3';
 import QR_4 from './QR_4';
 import QR_5 from './QR_5';
 import QR_6 from './QR_6';
+
+const BENGALI_MONTHS = [
+  'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+  'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+];
+
+const BENGALI_WEEKDAYS = ['শনি', 'রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র'];
 
 interface ReturnViewProps {
   entries: SettlementEntry[];
@@ -53,11 +60,25 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   const [tempPrevStats, setTempPrevStats] = useState<Record<string, MinistryPrevStats>>({});
   
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const [currentViewDate, setCurrentViewDate] = useState<Date>(new Date(selectedCycleDate));
+  
+  useEffect(() => {
+    setCurrentViewDate(new Date(selectedCycleDate));
+  }, [selectedCycleDate]);
   
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
   const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMinistry, setFilterMinistry] = useState('');
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isSearchExpanded && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchExpanded]);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ministryDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -673,100 +694,176 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   };
 
-  const historicalFilterElement = (
-    <div className="flex items-center gap-3 no-print">
-      {showFilters && (
-        <div className="relative" ref={dropdownRef}>
-          <div className="flex items-center gap-3">
-            <div onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} className={`flex items-center gap-3 px-5 h-[38px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isCycleDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}>
-               <CalendarDays size={20} className="text-blue-600" />
-               <span className="font-black text-[13.5px] text-slate-800 tracking-tight">
-                 {cycleOptions.find(o => o.cycleLabel === activeCycle.label)?.label || toBengaliDigits(activeCycle.label)}
-               </span>
-               <ChevronDown size={18} className={`text-slate-400 ml-2 transition-transform duration-300 ${isCycleDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
-            </div>
+  const monthPickerElement = (
+    <div className="relative no-print" ref={dropdownRef}>
+      <div onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} className={`flex items-center gap-2 px-4 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}>
+         <CalendarDays size={14} className="text-blue-600 shrink-0" />
+         <span className="font-extrabold text-[12px] sm:text-[12.5px] text-slate-800 tracking-tight shrink-0 leading-none">
+           {cycleOptions.find(o => o.cycleLabel === activeCycle.label)?.label || toBengaliDigits(activeCycle.label)}
+         </span>
+         <ChevronDown size={13} className={`text-slate-400 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-blue-50' : ''}`} />
+      </div>
+      {isCycleDropdownOpen && (
+        <div className="absolute top-[calc(100%+4px)] right-0 lg:left-0 w-[300px] bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Calendar Header */}
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+              }}
+              className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors cursor-pointer"
+              type="button"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            
+            <span className="font-extrabold text-[14px] text-slate-800">
+              {BENGALI_MONTHS[currentViewDate.getMonth()]} {toBengaliDigits(currentViewDate.getFullYear().toString())}
+            </span>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+              }}
+              className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors cursor-pointer"
+              type="button"
+            >
+              <ChevronRight size={16} />
+            </button>
           </div>
-          {isCycleDropdownOpen && (
-            <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="p-2 max-h-[350px] overflow-y-auto no-scrollbar">
-                <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between"><span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2"><CalendarSearch size={12} /> মাস ও বছর নির্বাচন</span></div>
-                {cycleOptions.map((opt, idx) => (
-                  <div key={idx} onClick={() => { setSelectedCycleDate(opt.date); setIsCycleDropdownOpen(false); }} className={`flex items-center justify-between px-4 py-2.5 mb-1 rounded-xl cursor-pointer transition-all ${opt.cycleLabel === activeCycle.label ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-slate-50 text-slate-700 font-bold'}`}>
-                    <span className="text-[13px]">{opt.label}</span>
-                    {opt.cycleLabel === activeCycle.label && <Check size={16} strokeWidth={3} />}
+
+          {/* Calendar Week Days */}
+          <div className="grid grid-cols-7 gap-1 text-center mb-2">
+            {BENGALI_WEEKDAYS.map((wd, i) => (
+              <span key={i} className="text-[11px] font-black text-slate-400">
+                {wd}
+              </span>
+            ))}
+          </div>
+
+          {/* Calendar Days Grid */}
+          <div className="grid grid-cols-7 gap-1">
+            {(() => {
+              const Y = currentViewDate.getFullYear();
+              const M = currentViewDate.getMonth();
+              const firstDay = new Date(Y, M, 1);
+              
+              let startOffset = (firstDay.getDay() + 1) % 7; 
+              
+              const daysInMonth = new Date(Y, M + 1, 0).getDate();
+              const prevMonthDays = new Date(Y, M, 0).getDate();
+              
+              const cells = [];
+              
+              // Trailing days
+              for (let i = startOffset - 1; i >= 0; i--) {
+                const d = prevMonthDays - i;
+                const dateObj = new Date(Y, M - 1, d);
+                cells.push({ day: d, isCurrentMonth: false, dateObj });
+              }
+              
+              // Current month days
+              for (let d = 1; d <= daysInMonth; d++) {
+                const dateObj = new Date(Y, M, d);
+                cells.push({ day: d, isCurrentMonth: true, dateObj });
+              }
+              
+              // Lead days
+              const remaining = 42 - cells.length;
+              for (let d = 1; d <= remaining; d++) {
+                const dateObj = new Date(Y, M + 1, d);
+                cells.push({ day: d, isCurrentMonth: false, dateObj });
+              }
+
+              return cells.map((cell, idx) => {
+                const dateStr = dateFnsFormat(cell.dateObj, 'yyyy-MM-dd');
+                const isSelected = dateFnsFormat(cell.dateObj, 'yyyy-MM-dd') === dateFnsFormat(selectedCycleDate, 'yyyy-MM-dd');
+                
+                let cellCls = "text-[12px] font-bold h-8 flex items-center justify-center rounded-lg transition-all cursor-pointer ";
+                if (isSelected) {
+                  cellCls += "bg-blue-600 text-white font-extrabold shadow-md";
+                } else if (cell.isCurrentMonth) {
+                  cellCls += "text-slate-800 hover:bg-blue-50 hover:text-blue-600";
+                } else {
+                  cellCls += "text-slate-300 hover:bg-slate-50";
+                }
+
+                // Check if today
+                const todayStr = dateFnsFormat(new Date(), 'yyyy-MM-dd');
+                const isToday = dateStr === todayStr;
+
+                return (
+                  <div
+                    key={idx}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedCycleDate(cell.dateObj);
+                      setIsCycleDropdownOpen(false);
+                    }}
+                    className={`${cellCls} relative`}
+                  >
+                    <span>{toBengaliDigits(cell.day.toString())}</span>
+                    {isToday && !isSelected && (
+                      <span className="absolute bottom-[2px] w-1 h-1 bg-blue-600 rounded-full"></span>
+                    )}
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const historicalFilterElement = (
+    <div className="flex items-center gap-2 no-print shrink-0">
+      <div className="flex items-center gap-2 animate-in fade-in duration-300 shrink-0">
+        {/* COMPACT MINISTRY DROPDOWN */}
+        <div className="relative shrink-0 select-none z-[400]" ref={ministryDropdownRef}>
+          <div 
+             onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
+             className={`flex items-center gap-2 px-4 h-[38px] bg-slate-900 border hover:border-emerald-500 hover:bg-slate-800 transition-all rounded-xl cursor-pointer shadow-md select-none ${isMinistryDropdownOpen ? 'border-emerald-500' : 'border-slate-700'}`}
+          >
+            <LayoutGrid size={14} className="text-emerald-400 shrink-0" />
+            <span className="font-extrabold text-[12px] sm:text-[12.5px] text-white tracking-tight shrink-0 max-w-[140px] sm:max-w-[180px] truncate leading-none">
+              {filterMinistry || 'সকল মন্ত্রণালয়'}
+            </span>
+            <ChevronDown size={13} className={`text-slate-400 shrink-0 transition-transform duration-300 ${isMinistryDropdownOpen ? 'rotate-180 text-emerald-400' : ''}`} />
+          </div>
+
+          {isMinistryDropdownOpen && (
+            <div className="absolute top-[110%] right-0 lg:left-1/2 lg:-translate-x-1/2 w-[220px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-2 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="p-1 max-h-[300px] overflow-y-auto no-scrollbar">
+                <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
+                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1">
+                    <LayoutGrid size={10} /> মন্ত্রণালয় নির্বাচন
+                  </span>
+                </div>
+                <div 
+                  onClick={() => { setFilterMinistry(''); setIsMinistryDropdownOpen(false); }}
+                  className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 text-left ${filterMinistry === '' ? 'bg-blue-50 text-blue-700 font-extrabold' : 'hover:bg-slate-50 text-slate-600 font-bold'}`}
+                >
+                  <span className="text-[11px]">সকল মন্ত্রণালয়</span>
+                  {filterMinistry === '' && <Check size={12} className="text-blue-600 stroke-[3]" />}
+                </div>
+                {ministryGroups.map((m, idx) => (
+                  <div 
+                    key={idx} 
+                    onClick={() => { setFilterMinistry(m); setIsMinistryDropdownOpen(false); }}
+                    className={`flex items-center justify-between px-3 py-2 mt-0.5 rounded-xl cursor-pointer transition-all duration-200 text-left ${filterMinistry === m ? 'bg-blue-50 text-blue-700 font-extrabold' : 'hover:bg-slate-50 text-slate-600 font-bold'}`}
+                  >
+                    <span className="text-[11px] truncate">{m}</span>
+                    {filterMinistry === m && <Check size={12} className="text-blue-600 stroke-[3]" />}
                   </div>
                 ))}
               </div>
             </div>
           )}
         </div>
-      )}
-
-      {showFilters && (
-        <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-4 duration-500">
-          <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Search size={18} className="text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-            </div>
-            <input
-              type="text"
-              placeholder="সার্চ করুন..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-11 pr-4 h-[38px] w-[260px] bg-white border-2 border-slate-200 rounded-xl text-[13.5px] font-bold text-slate-800 placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all outline-none shadow-sm"
-            />
-            {searchTerm && (
-              <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-red-500 transition-colors">
-                <X size={16} />
-              </button>
-            )}
-          </div>
-
-          <div className="relative" ref={ministryDropdownRef}>
-            <div 
-               onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
-               className={`flex items-center gap-3 px-5 h-[38px] min-w-[220px] bg-white border-2 rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-400 group ${isMinistryDropdownOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 shadow-sm'}`}
-            >
-              <LayoutGrid size={18} className="text-blue-600" />
-              <span className="font-black text-[13.5px] text-slate-800 tracking-tight flex-1">
-                {filterMinistry || 'সকল মন্ত্রণালয়'}
-              </span>
-              <ChevronDown size={18} className={`text-slate-400 transition-transform duration-300 ${isMinistryDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
-            </div>
-
-            {isMinistryDropdownOpen && (
-              <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="p-2 max-h-[350px] overflow-y-auto no-scrollbar">
-                  <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
-                      <LayoutGrid size={12} /> মন্ত্রণালয় নির্বাচন
-                    </span>
-                  </div>
-                  <div 
-                    onClick={() => { setFilterMinistry(''); setIsMinistryDropdownOpen(false); }}
-                    className={`flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${filterMinistry === '' ? 'bg-blue-50 text-blue-700' : 'hover:bg-slate-50 text-slate-600'}`}
-                  >
-                    <span className="text-[13px] font-black">সকল মন্ত্রণালয়</span>
-                    {filterMinistry === '' && <Check size={14} />}
-                  </div>
-                  {ministryGroups.map((m, idx) => (
-                    <div 
-                      key={idx} 
-                      onClick={() => { setFilterMinistry(m); setIsMinistryDropdownOpen(false); }}
-                      className={`flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${filterMinistry === m ? 'bg-blue-50 text-blue-700' : 'hover:bg-slate-50 text-slate-600'}`}
-                    >
-                      <span className="text-[13px] font-black">{m}</span>
-                      {filterMinistry === m && <Check size={14} />}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Red close button removed as per user request */}
-        </div>
-      )}
+      </div>
     </div>
   );
 
@@ -862,12 +959,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     setSelectedReportType={setSelectedReportType} 
     isAdmin={isAdmin || false} 
     historicalFilterElement={historicalFilterElement} 
+    monthPickerElement={monthPickerElement}
     IDBadge={IDBadge} 
     showFilters={showFilters} 
     searchTerm={searchTerm} 
     filterMinistry={filterMinistry} 
     statsReportData={statsReportData}
     statsGrandTotals={statsGrandTotals}
+    isSearchExpanded={isSearchExpanded}
   />;
 };
 

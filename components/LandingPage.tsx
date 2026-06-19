@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  ArrowRight, ShieldCheck, ShieldAlert, Landmark, Award, Lock, MapPin, FileCheck, User, Phone, Megaphone
+  ArrowRight, ShieldCheck, ShieldAlert, Landmark, Award, Lock, MapPin, FileCheck, User, Phone, Megaphone, Calendar
 } from 'lucide-react';
 import { SettlementEntry, ModuleVisibility } from '../types.ts';
 import { toBengaliDigits } from '../utils/numberUtils.ts';
@@ -39,12 +39,12 @@ const LandingPage: React.FC<LandingPageProps> = ({
   }
 }) => {
   return (
-    <div className="animate-landing-premium relative w-full max-w-5xl lg:max-w-6xl mx-auto">
+    <div className="animate-landing-premium relative w-full h-full max-w-5xl lg:max-w-6xl mx-auto flex flex-col justify-center">
       {/* MODERATION ALERT FOR ADMIN */}
       {isAdmin && pendingCount > 0 && (
         <div 
           id="admin-moderation-alert" 
-          className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 p-3.5 border border-amber-200 shadow-xs transition-all duration-300 w-full mb-6"
+          className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 p-3.5 border border-amber-200 shadow-xs transition-all duration-300 w-full mb-4 shrink-0"
         >
           <div className="absolute -right-6 -bottom-6 opacity-5 text-amber-900 pointer-events-none transition-transform duration-500 group-hover:scale-110">
              <ShieldAlert size={80} />
@@ -83,7 +83,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
       {/* Prime Master Institutional Showcase Card */}
       <div 
         id="hero-section" 
-        className="landing-hero-card relative overflow-hidden rounded-[2rem] p-4 sm:p-5 md:p-6 lg:p-7 transition-all duration-500 animate-fade-in w-full shadow-lg"
+        className="landing-hero-card relative overflow-hidden rounded-[2rem] p-4 sm:p-5 md:p-6 lg:p-7 transition-all duration-500 animate-fade-in w-full shadow-lg flex-1 flex flex-col justify-center"
       >
         {/* Subtle patterned backdrop */}
         <div className="landing-grid-bg absolute inset-0 pointer-events-none" />
@@ -149,7 +149,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
             <div className="w-full flex flex-col sm:flex-row items-center sm:items-end justify-between gap-5 transition-colors pt-2">
               
               {/* Centered label with premium yellow megaphone on the left, with green text appearing to emerge from its mouth */}
-              <div className="flex flex-col items-center sm:items-start justify-center gap-2.5 text-center sm:text-left relative">
+              <div className="flex flex-col items-center sm:items-stretch justify-center gap-2.5 text-center sm:text-left relative w-full sm:w-[43%] max-w-[280px]">
                 <div className="flex items-center gap-2.5 justify-center sm:justify-start">
                   {/* Premium Megaphone Icon matching user uploaded image */}
                   <div className="relative flex items-center justify-center shrink-0">
@@ -165,11 +165,11 @@ const LandingPage: React.FC<LandingPageProps> = ({
                           <stop offset="50%" stopColor="#f59e0b" /> {/* amber-500 */}
                           <stop offset="100%" stopColor="#d97706" /> {/* amber-600 */}
                         </linearGradient>
-                        {/* White cone gradient with soft shadow */}
+                        {/* Red-maroon cone gradient */}
                         <linearGradient id="cone-white" x1="0%" y1="0%" x2="100%" y2="50%">
-                          <stop offset="0%" stopColor="#cbd5e1" />
-                          <stop offset="30%" stopColor="#f8fafc" />
-                          <stop offset="100%" stopColor="#f1f5f9" />
+                          <stop offset="0%" stopColor="#7f1d1d" /> {/* red-900 / deep burgundy maroon */}
+                          <stop offset="40%" stopColor="#ef4444" /> {/* red-500 / bright highlight */}
+                          <stop offset="100%" stopColor="#991b1b" /> {/* red-800 / red-maroon */}
                         </linearGradient>
                         {/* Dark rubber rim gradient */}
                         <linearGradient id="rim-dark" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -250,7 +250,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                              C 18.5 22, 15.5 19, 12 19 
                              Z" 
                           fill="url(#cone-white)" 
-                          stroke="#cbd5e1" 
+                          stroke="#7f1d1d" 
                           strokeWidth="0.5" 
                         />
 
@@ -269,7 +269,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                           cy="15" 
                           rx="1" 
                           ry="10" 
-                          fill="#f1f5f9" 
+                          fill="#fee2e2" 
                         />
 
                         {/* Center speaker driver dome */}
@@ -301,21 +301,52 @@ const LandingPage: React.FC<LandingPageProps> = ({
                     চলমান রিপোর্টিং সাইকেল
                   </span>
                 </div>
-                <div className="landing-val-text text-xs sm:text-sm md:text-base font-black text-white bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-2.5 sm:py-3.5 rounded-xl border border-blue-500/40 shadow-lg shadow-blue-500/20 w-max text-center sm:text-left block m-0">
-                  {cycleLabel || "চলমান কোয়ার্টার"}
+                <div className="flex items-stretch h-11 sm:h-12 w-full shadow-[0_3px_8px_rgba(0,0,0,0.08)] select-none rounded-[4px] overflow-hidden">
+                  {/* Left Icon Area: Off-white bg & gray bottom border */}
+                  <div className="flex flex-col w-11 sm:w-12 shrink-0 h-full">
+                    <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
+                      <Calendar className="text-emerald-700 w-4.5 h-4.5 sm:w-5 sm:h-5 stroke-[2.5]" />
+                    </div>
+                    <div className="h-[4px] bg-[#94a3b8]" />
+                  </div>
+                  
+                  {/* Right Text Area: Solid Emerald Green with dark green bottom bar */}
+                  <div className="flex-1 flex flex-col h-full">
+                    <div className="flex-1 bg-[#059669] flex items-center justify-center px-3">
+                      <span className="text-white font-[950] text-[11px] sm:text-xs md:text-[13px] tracking-wide text-center whitespace-nowrap">
+                        {cycleLabel || "চলমান কোয়ার্টার"}
+                      </span>
+                    </div>
+                    <div className="h-[4px] bg-[#047857]" />
+                  </div>
                 </div>
               </div>
 
               {/* Launch Action Button */}
-              <div className="w-full sm:w-auto flex justify-center sm:justify-end">
+              <div className="w-full sm:w-[43%] max-w-[280px] flex justify-center sm:justify-end">
                 {(isAdmin || moduleVisibility.entry) && (
                   <button 
                     id="btn-start-work"
                     onClick={() => setActiveTab('entry')}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-850 text-white text-xs sm:text-sm md:text-base font-black rounded-xl active:scale-95 transition-all duration-200 shadow-lg shadow-blue-500/20 cursor-pointer border border-blue-500/40 text-center"
+                    className="group flex items-stretch h-11 sm:h-12 w-full shadow-[0_3px_8px_rgba(0,0,0,0.08)] active:translate-y-[1px] transition-transform duration-100 select-none cursor-pointer text-left font-inherit outline-none border-none p-0 rounded-[4px] overflow-hidden"
                   >
-                    <span className="text-white tracking-wide font-black">কাজ শুরু করুন</span>
-                    <ArrowRight size={16} className="stroke-[3] text-white animate-bounce-horizontal" />
+                    {/* Left Icon Area: Off-white bg & gray bottom border */}
+                    <div className="flex flex-col w-11 sm:w-12 shrink-0 h-full">
+                      <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
+                        <ArrowRight className="text-red-800 w-4.5 h-4.5 sm:w-5 sm:h-5 stroke-[3] group-hover:translate-x-1 transition-transform" />
+                      </div>
+                      <div className="h-[4px] bg-[#94a3b8]" />
+                    </div>
+                    
+                    {/* Right Text Area: Solid Maroon with dark maroon bottom bar */}
+                    <div className="flex-1 flex flex-col h-full">
+                      <div className="flex-1 bg-[#991b1b] group-hover:bg-[#851616] transition-colors flex items-center justify-center px-3">
+                        <span className="text-white font-[950] text-[11px] sm:text-xs md:text-[13px] tracking-wide text-center uppercase whitespace-nowrap">
+                          কাজ শুরু করুন
+                        </span>
+                      </div>
+                      <div className="h-[4px] bg-[#450a0a]" />
+                    </div>
                   </button>
                 )}
               </div>

@@ -228,6 +228,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [isSuccess, setIsSuccess] = useState(false);
   const [isDeletingPara, setIsDeletingPara] = useState(false);
   const [paraToDeleteId, setParaToDeleteId] = useState<string | null>(null);
+  const [deletingLocalParaId, setDeletingLocalParaId] = useState<string | null>(null);
   const isSubmitting = useRef(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -1078,41 +1079,55 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                             {/* Decorative mini pointer arrow */}
                             <div className="absolute right-[-4px] top-4 w-2 h-2 bg-slate-950 rotate-45 border-t border-r border-slate-800"></div>
                             
-                            <div className="flex items-center gap-1.5 text-rose-400">
-                              <Trash size={13} strokeWidth={2.5} className="animate-pulse" />
-                              <span className="text-[11px] font-black tracking-tight mb-[-1px]">মুছে ফেলবেন?</span>
-                            </div>
-                            
-                            <p className="text-[9px] font-black text-slate-400 text-left leading-normal">
-                              অনুচ্ছেদটির ডায়েরি ও তালিকাভুক্ত ট্র্যাকিং তথ্য চলে যাবে।
-                            </p>
-                            
-                            <div className="flex items-center gap-2 w-full mt-1">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setIsDeletingPara(true);
-                                  setIsSuccess(true);
-                                  setParaToDeleteId(null);
-                                  setTimeout(() => {
-                                    setParagraphs(prev => prev.filter(x => x.id !== p.id));
-                                    setIsSuccess(false);
-                                    setIsDeletingPara(false);
-                                    if (isUpdateMode) { setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100); }
-                                  }, 700);
-                                }}
-                                className="flex-1 py-1 px-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[9px] font-black transition-all active:scale-95 shadow-sm shadow-red-500/20 text-center"
-                              >
-                                হ্যাঁ, মুছুন
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setParaToDeleteId(null)}
-                                className="flex-1 py-1 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[9px] font-black transition-all active:scale-95 border border-slate-700/60 text-center"
-                              >
-                                না
-                              </button>
-                            </div>
+                            {deletingLocalParaId === p.id ? (
+                              <div className="flex flex-col items-center justify-center py-4 px-1 w-full gap-3 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="relative flex items-center justify-center">
+                                  {/* Outer premium spinning gradient ring */}
+                                  <div className="w-10 h-10 rounded-full border-[3.5px] border-rose-500/10 border-t-rose-500 animate-spin"></div>
+                                  {/* Inner pulsing trash icon */}
+                                  <Trash size={12} className="absolute text-rose-500 animate-pulse" />
+                                </div>
+                                <span className="text-[12px] font-black text-rose-400 tracking-wider animate-pulse">ডিলিট করা হচ্ছে...</span>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-1.5 text-rose-400">
+                                  <Trash size={13} strokeWidth={2.5} className="animate-pulse" />
+                                  <span className="text-[11px] font-black tracking-tight mb-[-1px]">মুছে ফেলবেন?</span>
+                                </div>
+                                
+                                <p className="text-[9px] font-black text-slate-400 text-left leading-normal">
+                                  অনুচ্ছেদটির ডায়েরি ও তালিকাভুক্ত ট্র্যাকিং তথ্য চলে যাবে।
+                                </p>
+                                
+                                <div className="flex items-center gap-2 w-full mt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setDeletingLocalParaId(p.id);
+                                      setTimeout(() => {
+                                        setParagraphs(prev => prev.filter(x => x.id !== p.id));
+                                        setDeletingLocalParaId(null);
+                                        setParaToDeleteId(null);
+                                        if (isUpdateMode) { 
+                                          setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100); 
+                                        }
+                                      }, 800);
+                                    }}
+                                    className="flex-1 py-1 px-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[9px] font-black transition-all active:scale-95 shadow-sm shadow-red-500/20 text-center cursor-pointer"
+                                  >
+                                    হ্যাঁ, মুছুন
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setParaToDeleteId(null)}
+                                    className="flex-1 py-1 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[9px] font-black transition-all active:scale-95 border border-slate-700/60 text-center cursor-pointer"
+                                  >
+                                    না
+                                  </button>
+                                </div>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>

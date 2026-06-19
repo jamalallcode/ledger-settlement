@@ -17,6 +17,7 @@ import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import AdminAnalytics from './subapps/admin_analytics/AdminAnalytics';
+import BackToTop from './components/BackToTop';
 import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, CorrespondenceEntry } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
@@ -918,7 +919,7 @@ const App: React.FC = () => {
           ref={mainScrollRef} 
           className={`flex-1 ${
             activeTab === 'landing' 
-              ? 'overflow-y-auto flex flex-col items-center p-2.5 sm:p-3 md:p-4 lg:p-4 landing-main-container' 
+              ? 'overflow-y-auto flex flex-col items-center justify-center p-[10px] landing-main-container' 
               : activeTab === 'return' 
                 ? 'overflow-y-auto overflow-x-hidden return-main-container' 
                 : activeTab === 'register'
@@ -932,19 +933,20 @@ const App: React.FC = () => {
           {activeTab === 'landing' && <AnimatedPremiumBg />}
           <div className={
             activeTab === 'landing' 
-              ? "relative z-10 w-full max-w-5xl lg:max-w-6xl mx-auto flex flex-col justify-start mt-0 md:mt-1 mb-2 md:mb-3.5 animate-fade-in" 
+              ? "relative z-10 w-full h-full max-w-5xl lg:max-w-6xl mx-auto flex flex-col animate-fade-in" 
               : activeTab === 'return' 
                 ? "px-0 max-w-full mx-auto w-full flex flex-col pt-0 pb-0" 
                 : activeTab === 'register'
                   ? "px-2 md:px-4 max-w-full mx-auto w-full flex flex-col pt-4 md:pt-8 pb-4 md:pb-8"
                   : `px-2 md:px-4 max-w-full mx-auto w-full flex flex-col pt-4 md:pt-8 pb-4 md:pb-8`
           }>
-            <div className={`animate-in fade-in duration-500 flex-1`}>
+            <div className={`animate-in fade-in duration-500 flex-1 h-full flex flex-col`}>
               
               {activeTab === 'setup_receivers' && (
                 <ReceiverManagement 
                   isAdmin={isAdmin} 
                   onViewEntries={handleViewEntries}
+                  onBack={() => handleTabChange('landing')}
                 />
               )}
 
@@ -1131,6 +1133,8 @@ const App: React.FC = () => {
         isOpen={showChangePassword} 
         onClose={() => setShowChangePassword(false)} 
       />
+
+      <BackToTop scrollRef={mainScrollRef} />
 
       {/* Admin Proactive Notification */}
       {showAdminAlert && (
