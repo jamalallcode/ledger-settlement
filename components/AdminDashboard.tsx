@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Users, ShieldCheck, BarChart3, 
   PieChart, FileText, Mail, PlusCircle, ArrowRight,
   Settings, KeyRound, Fingerprint, Library, BellRing,
   Sparkles, CheckCircle2, AlertCircle, Clock, Eye, EyeOff,
-  CalendarRange
+  CalendarRange, MessageCircle
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { supabase } from '../lib/supabase';
@@ -19,6 +19,8 @@ interface AdminDashboardProps {
   onOpenChangePassword: () => void;
   moduleVisibility: ModuleVisibility;
   setModuleVisibility: (val: ModuleVisibility) => void;
+  contactLink?: string;
+  onUpdateContactLink?: (newLink: string) => void;
 }
 
 const colorClasses: Record<string, any> = {
@@ -38,9 +40,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   setActiveTab,
   onOpenChangePassword,
   moduleVisibility,
-  setModuleVisibility
+  setModuleVisibility,
+  contactLink = 'https://facebook.com',
+  onUpdateContactLink
 }) => {
   if (!isAdmin) return null;
+
+  const [localContactLink, setLocalContactLink] = useState(contactLink);
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    setLocalContactLink(contactLink);
+  }, [contactLink]);
+
+  const handleSaveContactLink = () => {
+    if (onUpdateContactLink) {
+      onUpdateContactLink(localContactLink);
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
+    }
+  };
 
   const handleToggleModule = async (moduleKey: keyof ModuleVisibility) => {
     const newValue = !moduleVisibility[moduleKey];
@@ -288,6 +307,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </button>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Contact Link Settings */}
+              <div className="pt-3 pb-1 border-t border-slate-100">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">যোগাযোগ লিংক সেটিংস</h3>
+                <div className="p-3 bg-slate-150/10 rounded-2xl border border-slate-200/60 space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <MessageCircle size={15} className="text-indigo-600 shrink-0" />
+                    <span className="text-xs font-bold text-slate-700">আমার সাথে যোগাযোগ লিংক</span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <input 
+                      type="url"
+                      value={localContactLink}
+                      onChange={(e) => setLocalContactLink(e.target.value)}
+                      placeholder="ফেসবুক লিংক, যেমন: https://facebook.com/..."
+                      className="flex-1 px-3 py-1.5 text-xs text-slate-800 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 shadow-xs"
+                    />
+                    <button
+                      onClick={handleSaveContactLink}
+                      className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black transition-all shadow-md active:scale-95 flex items-center justify-center gap-1 shrink-0"
+                    >
+                      {isSaved ? <CheckCircle2 size={12} className="text-white" /> : null}
+                      <span>{isSaved ? 'সংরক্ষিত' : 'সংরক্ষণ'}</span>
+                    </button>
+                  </div>
+                  <p className="text-[9px] font-bold text-slate-400 leading-normal">
+                    * এখানে দেয়া লিংকটি প্রধান নেভিগেশন বারের "যোগাযোগ" বাটনে সেট হবে। যে কেউ এটিতে ক্লিক করে সরাসরি আপনার সাথে যোগাযোগ করতে পারবে।
+                  </p>
                 </div>
               </div>
 
