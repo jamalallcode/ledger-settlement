@@ -406,6 +406,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const isReceiverAdmin = isAdmin || (userEmail && adminEmails.includes(userEmail));
 
   const [isSuccess, setIsSuccess] = useState(false);
+  const [successProgress, setSuccessProgress] = useState(0);
+  const [isDataSavedFully, setIsDataSavedFully] = useState(false);
   const [calculatedCycle, setCalculatedCycle] = useState<string>('');
   
   const [formData, setFormData] = useState({
@@ -461,6 +463,58 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const receiverRef = useRef<HTMLDivElement>(null);
   const descriptionRef = useRef<HTMLDivElement>(null);
   const descriptionInputRef = useRef<HTMLInputElement>(null);
+
+  // Simulated progress simulation when isSuccess is true
+  useEffect(() => {
+    if (isSuccess) {
+      setSuccessProgress(0);
+      setIsDataSavedFully(false);
+      const interval = setInterval(() => {
+        setSuccessProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            setIsDataSavedFully(true);
+            return 100;
+          }
+          // smooth realistic increment
+          const next = prev + Math.floor(Math.random() * 15) + 12;
+          return next > 100 ? 100 : next;
+        });
+      }, 55);
+      return () => clearInterval(interval);
+    }
+  }, [isSuccess]);
+
+  // Automated reversion from success screen back to entry form when any field gets modified (user re-fills form)
+  useEffect(() => {
+    if (isSuccess) {
+      const isModified = 
+        formData.description !== '' ||
+        formData.letterNo !== '' ||
+        formData.letterDate !== '' ||
+        formData.totalParas !== '' ||
+        formData.totalAmount !== '' ||
+        formData.diaryNo !== '' ||
+        formData.diaryDate !== '' ||
+        formData.receiptDate !== '' ||
+        formData.digitalFileNo !== '' ||
+        formData.presentationDate !== '' ||
+        formData.presentedToName !== '' ||
+        formData.sentParaCount !== '' ||
+        formData.receiverName !== '' ||
+        formData.receivedDate !== '' ||
+        formData.archiveNo !== '' ||
+        formData.remarks !== '' ||
+        ld !== '' || lm !== '' || ly !== '' ||
+        dd !== '' || dm !== '' || dy !== '' ||
+        rd !== '' || rm !== '' || ry !== '' ||
+        rcd !== '' || rcm !== '' || rcy !== '';
+
+      if (isModified) {
+        setIsSuccess(false);
+      }
+    }
+  }, [formData, ld, lm, ly, dd, dm, dy, rd, rm, ry, rcd, rcm, rcy, isSuccess]);
 
   useEffect(() => {
     const loadReceivers = async () => {
@@ -1596,13 +1650,13 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         {/* Action Buttons & Success Message */}
         <div className="pt-10 border-t border-slate-100 relative" ref={bottomRef}>
           {isSuccess ? (
-            <div className="w-full py-10 bg-emerald-50 border-2 border-dashed border-emerald-200 rounded-[3rem] flex flex-col items-center justify-center gap-6 animate-in zoom-in-95 duration-500 shadow-xl shadow-emerald-100/50">
+            <div className="w-full py-10 bg-emerald-50 border-2 border-dashed border-emerald-200 rounded-[3rem] flex flex-col items-center justify-center gap-6 animate-in zoom-in-95 duration-500 shadow-xl shadow-emerald-100/40">
                <div className="relative">
                   <div className="w-24 h-24 bg-emerald-600 text-white rounded-[2.5rem] flex items-center justify-center shadow-[0_20px_40px_rgba(5,150,105,0.3)] animate-in spin-in-12 duration-700 border-4 border-white">
                      <CheckCircle2 size={56} strokeWidth={2.5} className="animate-pulse" />
                   </div>
                   <div className="absolute -right-2 -bottom-2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg border border-emerald-100">
-                     <Sparkles size={22} className="text-amber-50" />
+                     <Sparkles size={22} className="text-amber-500" />
                   </div>
                </div>
                <div className="text-center space-y-3 px-6">
@@ -1617,40 +1671,59 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                <div className="flex flex-col md:flex-row items-center gap-4 mt-2">
                   <button 
                     onClick={() => setIsSuccess(false)}
-                    className="px-8 py-4 bg-white text-emerald-600 border-2 border-emerald-600 rounded-2xl font-black text-lg shadow-lg hover:bg-emerald-50 transition-all flex items-center gap-3 active:scale-95 group"
+                    className="px-8 py-4 bg-white text-emerald-600 border-2 border-emerald-600 rounded-2xl font-black text-lg shadow-lg hover:bg-emerald-50 transition-all flex items-center gap-3 active:scale-95 group cursor-pointer"
                   >
                     নতুন চিঠি এন্ট্রি দিন <Plus size={20} />
                   </button>
                   <button 
                     onClick={onViewRegister}
-                    className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-3 active:scale-95 group"
+                    className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-3 active:scale-95 group cursor-pointer"
                   >
                     চিঠিপত্র প্রাপ্তি রেজিস্টার দেখুন <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                   </button>
                </div>
 
-               <div className="flex flex-col items-center gap-3 mt-4">
-                  <div className="h-1.5 w-64 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-                     <div className="h-full bg-emerald-600 animate-progress-loading-premium"></div>
+               <div className="flex flex-col items-center gap-3.5 mt-3">
+                  <div className="h-2 w-72 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                     <div 
+                        className="h-full bg-emerald-500 rounded-full transition-all duration-150 ease-out"
+                        style={{ width: `${successProgress}%` }}
+                     ></div>
                   </div>
-                  <div className="relative flex items-center justify-center">
-                    <span className="text-[14px] font-black text-emerald-600 uppercase tracking-widest animate-complete-text">কমপ্লিট</span>
+                  <div className="relative h-8 flex items-center justify-center">
+                    {!isDataSavedFully ? (
+                      <span className="text-[14px] font-black text-slate-500 uppercase tracking-widest animate-pulse flex items-center gap-2">
+                        সংরক্ষণ করা হচ্ছে... <span className="text-emerald-600 font-mono">{toBengaliDigits(successProgress)}%</span>
+                      </span>
+                    ) : (
+                      <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 rounded-full font-black text-[13px] shadow-sm animate-in zoom-in-95 duration-350">
+                        <span className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs animate-in spin-in-95 duration-500">
+                          <Check size={12} strokeWidth={4} />
+                        </span>
+                        <span>কমপ্লিট</span>
+                      </div>
+                    )}
                   </div>
                </div>
             </div>
           ) : (
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-5 max-w-2xl mx-auto w-full pt-4">
                <button 
-                  type="button" onClick={onBackToMenu}
-                  className="flex-1 py-5 bg-slate-100 text-slate-600 rounded-[2rem] font-black text-lg border border-slate-200 hover:bg-slate-200 transition-all active:scale-95"
-               >বাতিল করুন</button>
+                  type="button" 
+                  onClick={onBackToMenu}
+                  className="flex-1 py-4.5 px-6 rounded-2xl font-black text-lg border-2 border-slate-200 hover:border-rose-300 bg-slate-50 text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-all duration-300 active:scale-95 flex items-center justify-center gap-3 group cursor-pointer shadow-xs hover:shadow-rose-100"
+               >
+                  <X size={20} className="text-slate-400 group-hover:text-rose-500 transition-transform group-hover:rotate-90 duration-300" />
+                  <span>বাতিল করুন</span>
+               </button>
                <button 
                   type="submit"
                   disabled={isDuplicate || !!diaryDateError || !!receiptDateError || !!receivedDateError}
-                  className={`flex-[2] py-5 rounded-[2rem] font-black text-xl shadow-[0_20px_40px_rgba(5,150,105,0.3)] transition-all active:scale-95 flex items-center justify-center gap-4 group relative overflow-hidden ${isDuplicate || diaryDateError || receiptDateError || receivedDateError ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                  className={`flex-[1.8] py-4.5 px-8 rounded-2xl font-black text-xl transition-all duration-300 active:scale-95 flex items-center justify-center gap-3.5 group relative overflow-hidden cursor-pointer shadow-md ${isDuplicate || diaryDateError || receiptDateError || receivedDateError ? 'bg-slate-200 text-slate-400 border-2 border-slate-300 shadow-none cursor-not-allowed' : 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 text-white hover:shadow-lg hover:shadow-emerald-500/10 hover:scale-[1.01]'}`}
                >
-                 {(!isDuplicate && !diaryDateError && !receiptDateError && !receivedDateError) && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>}
-                 <CheckCircle2 size={24} /> {initialEntry ? 'তথ্য আপডেট করুন' : 'তথ্য সংরক্ষণ করুন'}
+                  {(!isDuplicate && !diaryDateError && !receiptDateError && !receivedDateError) && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>}
+                  <CheckCircle2 size={22} className="group-hover:scale-110 transition-transform duration-300" />
+                  <span>{initialEntry ? 'তথ্য আপডেট করুন' : 'তথ্য সংরক্ষণ করুন'}</span>
                </button>
             </div>
           )}
