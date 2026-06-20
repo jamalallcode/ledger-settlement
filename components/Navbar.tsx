@@ -344,7 +344,6 @@ const Navbar: React.FC<NavbarProps> = ({
           )}
 
           <div className="flex items-center gap-2">
-            {(activeTab === 'register' || activeTab === 'return') && <button onClick={() => setShowRegisterFilters(!showRegisterFilters)} className={`p-1 rounded-lg border transition-all ${showRegisterFilters ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}><Filter size={16} /></button>}
             
             <div className="relative" ref={toolsRef}>
               <button 

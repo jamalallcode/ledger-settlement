@@ -361,6 +361,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
+  const [isReceiverDropdownOpen, setIsReceiverDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (highlightSearch) {
@@ -378,6 +379,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const cycleDropdownRef = useRef<HTMLDivElement>(null);
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
+  const receiverDropdownRef = useRef<HTMLDivElement>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
   const summaryButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -400,6 +402,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         !typeDropdownRef.current.contains(event.target as Node)
       )
         setIsTypeDropdownOpen(false);
+      if (
+        receiverDropdownRef.current &&
+        !receiverDropdownRef.current.contains(event.target as Node)
+      )
+        setIsReceiverDropdownOpen(false);
       if (
         summaryRef.current &&
         !summaryRef.current.contains(event.target as Node) &&
@@ -793,14 +800,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           </div>
 
           <div className="flex items-center gap-3 relative z-10">
-            {isFiltered && (
-              <button
-                onClick={clearFilters}
-                className="px-4 py-3 bg-red-50 text-red-600 rounded-xl font-black text-[12px] flex items-center gap-2 hover:bg-red-100 transition-all border border-red-100"
-              >
-                <XCircle size={16} /> ফিল্টার মুছুন
-              </button>
-            )}
             <div className="relative">
               <button
                 ref={summaryButtonRef}
@@ -1011,11 +1010,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
       </div>
 
       {/* Filter UI for Correspondence */}
-      {showFilters && (
-        <div
-          id="correspondence-filters"
-          className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate"
-        >
+      <div
+        id="correspondence-filters"
+        className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate"
+      >
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {/* Cycle Selection */}
             <div className="space-y-1.5" ref={cycleDropdownRef}>
@@ -1210,25 +1208,65 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             </div>
 
             {/* Receiver Selection */}
-            <div className="space-y-1.5">
+            <div className="space-y-1.5" ref={receiverDropdownRef}>
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">
                 প্রাপক/গ্রহীতা
               </label>
-              <div className="relative">
-                <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600" size={16} />
-                <select
-                  value={filterReceiver}
-                  onChange={(e) => setFilterReceiver(e.target.value)}
-                  className="w-full pl-9 pr-4 h-[48px] bg-white border border-slate-300 rounded-xl font-bold text-[13px] outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-600 transition-all shadow-sm appearance-none"
-                >
-                  <option value="">সকল প্রাপক</option>
-                  {uniqueReceivers.map((receiver) => (
-                    <option key={receiver} value={receiver}>
-                      {receiver}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <div
+                onClick={() => setIsReceiverDropdownOpen(!isReceiverDropdownOpen)}
+                className={customDropdownCls(isReceiverDropdownOpen)}
+              >
+                <Users className="text-blue-600 font-bold" size={16} />
+                <span className="font-bold text-[13px] text-slate-900 truncate">
+                  {filterReceiver === "" ? "সকল প্রাপক" : filterReceiver}
+                </span>
+                <ChevronDown
+                  size={14}
+                  className={`text-slate-400 ml-auto transition-transform duration-300 ${isReceiverDropdownOpen ? "rotate-180 text-blue-600" : ""}`}
+                />
+
+                {isReceiverDropdownOpen && (
+                  <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                    <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
+                      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                          <Users size={12} /> প্রাপক নির্বাচন
+                        </span>
+                      </div>
+                      <div className="p-2 space-y-1">
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFilterReceiver("");
+                            setIsReceiverDropdownOpen(false);
+                          }}
+                          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterReceiver === "" ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                        >
+                          <span className="text-[13px]">সকল প্রাপক</span>
+                          {filterReceiver === "" && (
+                            <Check size={16} strokeWidth={3} />
+                          )}
+                        </div>
+                        {uniqueReceivers.map((receiver, idx) => (
+                          <div
+                            key={idx}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFilterReceiver(receiver);
+                              setIsReceiverDropdownOpen(false);
+                            }}
+                            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterReceiver === receiver ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                          >
+                            <span className="text-[13px]">{receiver}</span>
+                            {filterReceiver === receiver && (
+                              <Check size={16} strokeWidth={3} />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1266,7 +1304,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             </div>
           </div>
         </div>
-      )}
 
       {/* Table Container */}
       <div id="correspondence-register-table-container" className="table-container border border-slate-300 rounded-sm relative z-[1] shadow-xl bg-white max-w-full">
