@@ -33,6 +33,7 @@ import {
   CalendarSearch,
   LayoutGrid,
   CalendarDays,
+  AlertTriangle,
 } from "lucide-react";
 import { isSFI, isNonSFI } from "../utils/branchUtils";
 import {
@@ -348,6 +349,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const cycleRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState("");
@@ -1504,6 +1506,29 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                     const isPendingForApproval =
                       entry.approvalStatus === "pending";
 
+                    const isDeleting = deletingId === entry.id;
+
+                    if (isDeleting) {
+                      return (
+                        <tr
+                          key={entry.id}
+                          className="bg-rose-50/60 transition-all duration-500 animate-pulse"
+                        >
+                          <td
+                            colSpan={7}
+                            className="p-8 text-center text-rose-600 font-black text-sm border border-rose-200"
+                          >
+                            <div className="flex items-center justify-center gap-3">
+                              <div className="relative flex items-center justify-center">
+                                <span className="w-5 h-5 rounded-full border-2 border-rose-600 border-t-transparent animate-spin"></span>
+                              </div>
+                              <span className="animate-pulse">ডাটাবেজ থেকে তথ্যটি মুছে ফেলা হচ্ছে... অনুগ্রহ করে অপেক্ষা করুন</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+
                     return (
                       <tr
                         key={entry.id}
@@ -1880,16 +1905,70 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               >
                                 <Pencil size={12} />
                               </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeleteConfirmId(entry.id);
-                                }}
-                                className="p-1.5 bg-rose-600 text-white rounded-md shadow-md hover:bg-rose-700 transition-colors"
-                                title="মুছে ফেলুন"
-                              >
-                                <Trash2 size={12} />
-                              </button>
+                              <div className="relative inline-block">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeleteConfirmId(deleteConfirmId === entry.id ? null : entry.id);
+                                  }}
+                                  className={`p-1.5 rounded-md shadow-md transition-all duration-300 ${deleteConfirmId === entry.id ? "bg-rose-100 text-rose-700 ring-2 ring-rose-500/20" : "bg-rose-600 text-white hover:bg-rose-700"}`}
+                                  title="মুছে ফেলুন"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+
+                                {deleteConfirmId === entry.id && (
+                                  <div 
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="absolute bottom-full right-0 mb-3 z-[150] w-64 p-4 bg-white border-2 border-rose-200 rounded-2xl shadow-[0_15px_35px_rgba(244,63,94,0.18)] text-left animate-in zoom-in-95 duration-200"
+                                    style={{ transformOrigin: "bottom right" }}
+                                  >
+                                    <div className="flex items-start gap-3">
+                                      <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center shrink-0 border border-rose-100 animate-bounce">
+                                        <AlertTriangle size={16} className="text-rose-600" />
+                                      </div>
+                                      <div className="space-y-1">
+                                        <p className="text-[12px] font-black text-slate-800 leading-tight">
+                                          তথ্য মুছে ফেলার অবগতি
+                                        </p>
+                                        <p className="text-[10px] font-medium text-slate-500 leading-relaxed">
+                                          আপনি কি নিশ্চিতভাবে এই তথ্যটি মুছে ফেলতে চান? এটি আর ফিরিয়ে আনা যাবে না।
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center justify-end gap-2.5 mt-3 pt-2.5 border-t border-slate-100">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setDeleteConfirmId(null);
+                                        }}
+                                        className="px-3 py-1.5 text-[10px] text-slate-500 font-extrabold hover:text-slate-800 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200/60 transition-all cursor-pointer"
+                                      >
+                                        না, বাতিল
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setDeleteConfirmId(null);
+                                          setDeletingId(entry.id);
+                                          setTimeout(() => {
+                                            if (onDelete) {
+                                              onDelete(entry.id);
+                                            }
+                                            setDeletingId(null);
+                                          }, 1000);
+                                        }}
+                                        className="px-3.5 py-1.5 text-[10px] text-white font-extrabold bg-rose-600 hover:bg-rose-700 active:scale-95 rounded-lg shadow-sm shadow-rose-500/10 transition-all flex items-center gap-1.5 cursor-pointer"
+                                      >
+                                        <Trash2 size={10} />
+                                        <span>হ্যাঁ, নিশ্চিত</span>
+                                      </button>
+                                    </div>
+                                    {/* Small arrow down to the clicked button */}
+                                    <div className="absolute top-full right-3 -translate-y-1 w-2.5 h-2.5 bg-white border-r-2 border-b-2 border-rose-200 rotate-45"></div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
                         </td>
@@ -1965,15 +2044,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         </table>
       </div>
 
-      <DeleteConfirmationModal
-        isOpen={!!deleteConfirmId}
-        onClose={() => setDeleteConfirmId(null)}
-        onConfirm={() => {
-          if (deleteConfirmId && onDelete) {
-            onDelete(deleteConfirmId);
-          }
-        }}
-      />
+
     </div>
   );
 };

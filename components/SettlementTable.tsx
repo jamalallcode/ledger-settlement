@@ -29,6 +29,7 @@ import {
   XCircle,
   AlertCircle,
   MessageSquare,
+  AlertTriangle,
 } from "lucide-react";
 import {
   toBengaliDigits,
@@ -112,6 +113,11 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
     );
 
     const [deleteConfirm, setDeleteConfirm] = useState<{
+      id: string;
+      paraId?: string;
+    } | null>(null);
+
+    const [deletingInfo, setDeletingInfo] = useState<{
       id: string;
       paraId?: string;
     } | null>(null);
@@ -1655,14 +1661,58 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                             ? entry.manualRaisedAmount
                             : 0;
 
+                        const isDeletingEntry = deletingInfo && deletingInfo.id === entry.id && !deletingInfo.paraId;
+
+                        if (isDeletingEntry) {
+                          return (
+                            <tr key={entry.id} className="bg-rose-50/60 transition-all duration-500 animate-pulse">
+                              <td colSpan={14} className="p-8 text-center text-rose-600 font-extrabold text-sm border border-rose-200">
+                                <div className="flex items-center justify-center gap-3">
+                                  <div className="relative flex items-center justify-center">
+                                    <span className="w-5 h-5 rounded-full border-2 border-rose-600 border-t-transparent animate-spin"></span>
+                                  </div>
+                                  <span>ডাটাবেজ থেকে সম্পূর্ণ এন্ট্রিটি মুছে ফেলা হচ্ছে... অনুগ্রহ করে অপেক্ষা করুন</span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }
+
                         return (
                           <React.Fragment key={entry.id}>
                             {paras.length > 0 ? (
-                              paras.map((p, pIdx) => (
-                                <tr
-                                  key={p.id}
-                                  className={`transition-colors group bg-white ${isAdminView ? "hover:bg-amber-100/50" : "hover:bg-blue-50/30"}`}
-                                >
+                              paras.map((p, pIdx) => {
+                                const isDeletingPara = deletingInfo && deletingInfo.id === entry.id && deletingInfo.paraId === p.id;
+                                if (isDeletingPara) {
+                                  return (
+                                    <tr key={p.id} className="bg-rose-50/60 transition-all duration-500 animate-pulse">
+                                      {pIdx === 0 && (
+                                        <>
+                                          <td rowSpan={paras.length} className={tdBase + " font-black bg-rose-50/30 text-rose-600"}>
+                                            {toBengaliDigits(idx + 1)}
+                                          </td>
+                                          <td rowSpan={paras.length} className={tdBase + " bg-rose-50/30 text-rose-600 p-3"}>
+                                            <div className="text-center font-bold text-[10px]">
+                                              বিবরণ লোড হচ্ছে...
+                                            </div>
+                                          </td>
+                                        </>
+                                      )}
+                                      <td colSpan={12} className="py-4 px-2 text-center text-rose-600 font-extrabold text-[11px] border border-rose-250">
+                                        <div className="flex items-center justify-center gap-2">
+                                          <span className="w-3.5 h-3.5 rounded-full border-2 border-rose-600 border-t-transparent animate-spin inline-block"></span>
+                                          <span>এই মিমাংসিত অনুচ্ছেদটি মুছে ফেলা হচ্ছে... দয়া করে অপেক্ষা করুন</span>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                }
+
+                                return (
+                                  <tr
+                                    key={p.id}
+                                    className={`transition-colors group bg-white ${isAdminView ? "hover:bg-amber-100/50" : "hover:bg-blue-50/30"}`}
+                                  >
                                   {pIdx === 0 && (
                                     <>
                                       <td
@@ -1886,18 +1936,67 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                         >
                                           <Pencil size={11} />
                                         </button>
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setDeleteConfirm({
-                                              id: entry.id,
-                                              paraId: p.id,
-                                            });
-                                          }}
-                                          className="p-1 text-red-600 bg-white border rounded shadow-sm ml-0.5 hover:bg-red-50"
-                                        >
-                                          <Trash2 size={11} />
-                                        </button>
+                                        <div className="relative inline-block ml-0.5">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setDeleteConfirm(deleteConfirm && deleteConfirm.id === entry.id && deleteConfirm.paraId === p.id ? null : { id: entry.id, paraId: p.id });
+                                            }}
+                                            className={`p-1 rounded shadow-sm transition-all duration-300 ${deleteConfirm && deleteConfirm.id === entry.id && deleteConfirm.paraId === p.id ? "bg-red-100 text-red-700 ring-1 ring-red-500/20" : "bg-white text-red-600 border hover:bg-red-50"}`}
+                                          >
+                                            <Trash2 size={11} />
+                                          </button>
+
+                                          {deleteConfirm && deleteConfirm.id === entry.id && deleteConfirm.paraId === p.id && (
+                                            <div 
+                                              onClick={(e) => e.stopPropagation()}
+                                              className="absolute bottom-full right-0 mb-3 z-[150] w-64 p-4 bg-white border-2 border-rose-200 rounded-2xl shadow-[0_15px_35px_rgba(244,63,94,0.18)] text-left animate-in zoom-in-95 duration-200 font-sans leading-normal normal-case pointer-events-auto"
+                                              style={{ transformOrigin: "bottom right" }}
+                                            >
+                                              <div className="flex items-start gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center shrink-0 border border-rose-100 animate-bounce">
+                                                  <AlertTriangle size={16} className="text-rose-600" />
+                                                </div>
+                                                <div className="space-y-1">
+                                                  <p className="text-[12px] font-black text-slate-800 leading-tight">
+                                                    অনুচ্ছেদ মুছে ফেলার অবগতি
+                                                  </p>
+                                                  <p className="text-[10px] font-medium text-slate-500 leading-normal">
+                                                    আপনি কি নিশ্চিতভাবে এই মিমাংসিত অনুচ্ছেদটি মুছে ফেলতে চান?
+                                                  </p>
+                                                </div>
+                                              </div>
+                                              <div className="flex items-center justify-end gap-2.5 mt-3 pt-2.5 border-t border-slate-100">
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDeleteConfirm(null);
+                                                  }}
+                                                  className="px-3 py-1.5 text-[10px] text-slate-500 font-extrabold hover:text-slate-800 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200/60 transition-all cursor-pointer"
+                                                >
+                                                  না, বাতিল
+                                                </button>
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDeleteConfirm(null);
+                                                    setDeletingInfo({ id: entry.id, paraId: p.id });
+                                                    setTimeout(() => {
+                                                      onDelete(entry.id, p.id);
+                                                      setDeletingInfo(null);
+                                                    }, 1000);
+                                                  }}
+                                                  className="px-3.5 py-1.5 text-[10px] text-white font-extrabold bg-rose-600 hover:bg-rose-700 active:scale-95 rounded-lg shadow-sm shadow-rose-500/10 transition-all flex items-center gap-1.5 cursor-pointer"
+                                                >
+                                                  <Trash2 size={10} />
+                                                  <span>হ্যাঁ, নিশ্চিত</span>
+                                                </button>
+                                              </div>
+                                              {/* Arrow */}
+                                              <div className="absolute top-full right-2.5 -translate-y-1 w-2.5 h-2.5 bg-white border-r-2 border-b-2 border-rose-200 rotate-45"></div>
+                                            </div>
+                                          )}
+                                        </div>
                                       </div>
                                     )}
                                     {isAdminView && (
@@ -1926,7 +2025,8 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                     )}
                                   </td>
                                 </tr>
-                              ))
+                              );
+                            })
                             ) : (
                               <tr
                                 className={`transition-colors group bg-white ${isAdminView ? "hover:bg-amber-100/50" : "hover:bg-blue-50/30"}`}
@@ -2012,15 +2112,67 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                       >
                                         <Pencil size={11} />
                                       </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setDeleteConfirm({ id: entry.id });
-                                        }}
-                                        className="p-1 text-red-600 bg-white border rounded shadow-sm ml-0.5 hover:bg-red-50"
-                                      >
-                                        <Trash2 size={11} />
-                                      </button>
+                                      <div className="relative inline-block ml-0.5">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDeleteConfirm(deleteConfirm && deleteConfirm.id === entry.id && !deleteConfirm.paraId ? null : { id: entry.id });
+                                          }}
+                                          className={`p-1 rounded shadow-sm transition-all duration-300 ${deleteConfirm && deleteConfirm.id === entry.id && !deleteConfirm.paraId ? "bg-red-100 text-red-700 ring-1 ring-red-500/20" : "bg-white text-red-600 border hover:bg-red-50"}`}
+                                        >
+                                          <Trash2 size={11} />
+                                        </button>
+
+                                        {deleteConfirm && deleteConfirm.id === entry.id && !deleteConfirm.paraId && (
+                                          <div 
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="absolute bottom-full right-0 mb-3 z-[150] w-64 p-4 bg-white border-2 border-rose-200 rounded-2xl shadow-[0_15px_35px_rgba(244,63,94,0.18)] text-left animate-in zoom-in-95 duration-200 font-sans leading-normal normal-case pointer-events-auto"
+                                            style={{ transformOrigin: "bottom right" }}
+                                          >
+                                            <div className="flex items-start gap-3">
+                                              <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center shrink-0 border border-rose-100 animate-bounce">
+                                                <AlertTriangle size={16} className="text-rose-600" />
+                                              </div>
+                                              <div className="space-y-1">
+                                                <p className="text-[12px] font-black text-slate-800 leading-tight">
+                                                  তথ্য মুছে ফেলার অবগতি
+                                                </p>
+                                                <p className="text-[10px] font-medium text-slate-500 leading-normal">
+                                                  আপনি কি নিশ্চিতভাবে এই সম্পূর্ণ এন্ট্রিটি মুছে ফেলতে চান?
+                                                </p>
+                                              </div>
+                                            </div>
+                                            <div className="flex items-center justify-end gap-2.5 mt-3 pt-2.5 border-t border-slate-100">
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setDeleteConfirm(null);
+                                                }}
+                                                className="px-3 py-1.5 text-[10px] text-slate-500 font-extrabold hover:text-slate-800 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200/60 transition-all cursor-pointer"
+                                              >
+                                                না, বাতিল
+                                              </button>
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setDeleteConfirm(null);
+                                                  setDeletingInfo({ id: entry.id });
+                                                  setTimeout(() => {
+                                                    onDelete(entry.id);
+                                                    setDeletingInfo(null);
+                                                  }, 1000);
+                                                }}
+                                                className="px-3.5 py-1.5 text-[10px] text-white font-extrabold bg-rose-600 hover:bg-rose-700 active:scale-95 rounded-lg shadow-sm shadow-rose-500/10 transition-all flex items-center gap-1.5 cursor-pointer"
+                                              >
+                                                <Trash2 size={10} />
+                                                <span>হ্যাঁ, নিশ্চিত</span>
+                                              </button>
+                                            </div>
+                                            {/* Arrow */}
+                                            <div className="absolute top-full right-2.5 -translate-y-1 w-2.5 h-2.5 bg-white border-r-2 border-b-2 border-rose-200 rotate-45"></div>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                   )}
                                   {isAdminView && (
@@ -2209,20 +2361,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           </table>
         </div>
 
-        <DeleteConfirmationModal
-          isOpen={!!deleteConfirm}
-          onClose={() => setDeleteConfirm(null)}
-          onConfirm={() => {
-            if (deleteConfirm) {
-              onDelete(deleteConfirm.id, deleteConfirm.paraId);
-            }
-          }}
-          message={
-            deleteConfirm?.paraId
-              ? "আপনি কি নিশ্চিতভাবে এই অনুচ্ছেদটি মুছে ফেলতে চান? এই কাজটি আর ফিরিয়ে আনা সম্ভব হবে না।"
-              : "আপনি কি নিশ্চিতভাবে সম্পূর্ণ এন্ট্রিটি মুছে ফেলতে চান? এই কাজটি আর ফিরিয়ে আনা সম্ভব হবে না।"
-          }
-        />
+
       </div>
     );
   },
