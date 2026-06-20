@@ -345,36 +345,19 @@ const Navbar: React.FC<NavbarProps> = ({
 
           <div className="flex items-center gap-2">
             
-            <div className="relative" ref={toolsRef}>
-              <button 
-                onClick={() => setShowToolsDropdown(!showToolsDropdown)} 
-                className={`p-1 rounded-lg border transition-all ${showToolsDropdown ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'}`}
-                title="সেটিংস"
-              >
-                <Settings size={16} />
-              </button>
-              {showToolsDropdown && (
-                <div className="absolute top-[calc(100%+12px)] right-0 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 z-[5010]">
-                  {/* Theme settings section */}
-                  <div className="space-y-3">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">থিম সেটিংস</span>
-                    <button 
-                      onClick={() => onToggleDarkMode?.()} 
-                      className="w-full flex items-center justify-between px-3 py-2 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl font-black text-[11px] text-slate-300 hover:text-white transition-all cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2">
-                        {isDarkMode ? <Sun size={14} className="text-amber-400" /> : <Moon size={14} className="text-blue-400" />}
-                        <span>ডার্ক মোড (Dark Mode)</span>
-                      </div>
-                      <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${isDarkMode ? 'bg-emerald-500' : 'bg-slate-650'}`}>
-                        <div className={`w-3 h-3 bg-white rounded-full transition-transform ${isDarkMode ? 'translate-x-4' : 'translate-x-0'}`}></div>
-                      </div>
-                    </button>
-                  </div>
-
-                  {/* System Tools (Admin Only) */}
-                  {isAdmin && (
-                    <div className="space-y-3 border-t border-slate-800 pt-3">
+            {isAdmin && (
+              <div className="relative" ref={toolsRef}>
+                <button 
+                  onClick={() => setShowToolsDropdown(!showToolsDropdown)} 
+                  className={`p-1 rounded-lg border transition-all ${showToolsDropdown ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'}`}
+                  title="সেটিংস"
+                >
+                  <Settings size={16} />
+                </button>
+                {showToolsDropdown && (
+                  <div className="absolute top-[calc(100%+12px)] right-0 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 z-[5010]">
+                    {/* System Tools (Admin Only) */}
+                    <div className="space-y-3">
                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">সিস্টেম টুলস</span>
                       <button onClick={onExportSystem} className="w-full flex items-center gap-3 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl font-black text-[11px] text-slate-400 hover:text-white transition-all cursor-pointer">
                         <Download size={14} /> এক্সপোর্ট ডাটাবেস
@@ -405,10 +388,10 @@ const Navbar: React.FC<NavbarProps> = ({
                         <LogOut size={14} /> লগআউট করুন
                       </button>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
+                  </div>
+                )}
+              </div>
+            )}
             
             <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden p-1.5 bg-slate-800 text-white rounded-xl border border-slate-700"><Menu size={20} /></button>
           </div>
