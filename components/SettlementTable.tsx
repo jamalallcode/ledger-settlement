@@ -1095,7 +1095,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           </div>
         )}
 
-        {showFilters && !isAdminView && (
+        {!isAdminView && (
           <div
             id="register-filters"
             className="!bg-white p-2.5 md:p-3 rounded-xl border border-slate-200 shadow-lg space-y-3 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate"
