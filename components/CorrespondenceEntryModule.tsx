@@ -675,7 +675,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           const compKey = `${norm}_${rBranchClean}`;
           
           let is_active = r.is_active;
-          if (is_active === undefined) {
+          if (is_active === undefined || is_active === null) {
             if (inactiveKeysSet.has(compKey)) {
               is_active = false;
             } else if (inactiveKeysSet.has(norm)) {

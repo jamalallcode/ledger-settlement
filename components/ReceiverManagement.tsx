@@ -279,7 +279,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
         const compKey = `${norm}_${b}`;
         
         let is_active = r.is_active;
-        if (is_active === undefined) {
+        if (is_active === undefined || is_active === null) {
           if (inactiveKeysSet.has(compKey)) {
             is_active = false;
           } else if (inactiveKeysSet.has(norm)) {
@@ -745,7 +745,9 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`font-bold text-[13px] sm:text-sm truncate ${isInactive ? 'text-slate-400 line-through font-normal' : 'text-slate-700'}`}>{profile.name}</span>
+                        <span className={`font-bold text-[13px] sm:text-sm truncate ${isInactive ? 'text-slate-400 line-through font-normal' : 'text-slate-700'}`}>
+                          {profile.name} {isInactive && <span className="text-rose-500 font-bold ml-1 no-underline inline-block">(বদলী হয়েছেন)</span>}
+                        </span>
                         {isInactive && (
                           <span className="px-1.5 py-0.5 bg-rose-50 text-rose-600 text-[8px] font-black rounded border border-rose-100 uppercase tracking-wider shrink-0 flex items-center gap-1">
                             বদলি / নিষ্ক্রিয় {profile.transferred_to ? `(${profile.transferred_to})` : ''}
