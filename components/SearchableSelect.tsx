@@ -16,11 +16,12 @@ interface SearchableSelectProps {
   showSearch?: boolean;
   allowCustom?: boolean;
   hideAddNew?: boolean;
+  align?: 'left' | 'right';
 }
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({ 
   label, value, onChange, groups, placeholder = "নির্বাচন করুন", required, isLayoutEditable = false, badgeId, isAdmin = false, showSearch = true,
-  allowCustom = false, hideAddNew = false
+  allowCustom = false, hideAddNew = false, align = 'left'
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -133,7 +134,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       </div>
 
       {isOpen && (
-        <div className="absolute z-[200] w-full md:w-[150%] md:min-w-[400px] left-0 mt-2 bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600">
+        <div className={`absolute z-[200] w-full ${align === 'right' ? 'right-0' : 'left-0'} mt-2 bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600`}>
           
           {/* Search container inside the dropdown itself */}
           {showSearch && (
