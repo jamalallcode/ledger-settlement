@@ -824,10 +824,10 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     <div className="relative no-print" ref={dropdownRef}>
       <div 
         onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
-        className={`flex items-center gap-2 px-4 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}
+        className={`flex items-center gap-1.5 px-2.5 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}
       >
          <CalendarDays size={14} className="text-blue-600 shrink-0" />
-         <span className="font-extrabold text-[12px] sm:text-[12.5px] text-slate-800 tracking-tight shrink-0 leading-none">
+         <span className="font-extrabold text-[11px] sm:text-[11.5px] text-slate-800 tracking-tight shrink-0 leading-none">
            {cycleOptions.find(o => o.cycleLabel === activeCycle.label)?.label || toBengaliDigits(activeCycle.label)}
          </span>
          <ChevronDown size={13} className={`text-slate-400 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-blue-500' : ''}`} />
@@ -872,16 +872,16 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   );
 
   const historicalFilterElement = (
-    <div className="flex items-center gap-2 no-print shrink-0">
-      <div className="flex items-center gap-2 animate-in fade-in duration-300 shrink-0">
+    <div className="flex items-center gap-1.5 no-print shrink-0">
+      <div className="flex items-center gap-1.5 animate-in fade-in duration-300 shrink-0">
         {/* COMPACT MINISTRY DROPDOWN */}
         <div className="relative shrink-0 select-none z-[400]" ref={ministryDropdownRef}>
           <div 
              onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
-             className={`flex items-center gap-2 px-4 h-[38px] bg-sky-50 border hover:border-sky-300 hover:bg-white transition-all rounded-xl cursor-pointer shadow-md select-none ${isMinistryDropdownOpen ? 'border-sky-300 bg-white ring-2 ring-sky-50' : 'border-sky-100'}`}
+             className={`flex items-center gap-1.5 px-2.5 h-[38px] bg-sky-50 border hover:border-sky-300 hover:bg-white transition-all rounded-xl cursor-pointer shadow-md select-none ${isMinistryDropdownOpen ? 'border-sky-300 bg-white ring-2 ring-sky-50' : 'border-sky-100'}`}
           >
             <LayoutGrid size={14} className="text-sky-600 shrink-0" />
-            <span className="font-extrabold text-[12px] sm:text-[12.5px] text-sky-800 tracking-tight shrink-0 max-w-[140px] sm:max-w-[180px] truncate leading-none">
+            <span className="font-extrabold text-[11px] sm:text-[11.5px] text-sky-800 tracking-tight shrink-0 max-w-[140px] sm:max-w-[180px] truncate leading-none">
               {filterMinistry || 'সকল মন্ত্রণালয়'}
             </span>
             <ChevronDown size={13} className={`text-sky-500 shrink-0 transition-transform duration-300 ${isMinistryDropdownOpen ? 'rotate-180 text-sky-600' : ''}`} />
@@ -1027,22 +1027,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       statsReportData={statsReportData}
       statsGrandTotals={statsGrandTotals}
       isSearchExpanded={isSearchExpanded}
+      onDownloadExcel={downloadExcel}
     />;
   }
 
   return (
     <div className="relative w-full">
       {renderedContent}
-      {!isSetupMode && selectedReportType !== null && (
-        <button
-          onClick={downloadExcel}
-          className="fixed bottom-6 right-6 z-[12000] no-print flex items-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 active:scale-95 text-white font-black text-sm rounded-full shadow-[0_10px_25px_-5px_rgba(16,185,129,0.4)] hover:shadow-[0_15px_30px_-5px_rgba(16,185,129,0.5)] border border-emerald-400/20 transition-all cursor-pointer select-none group"
-          title="রিপোর্ট বা রিটার্ন এক্সেল ফাইল ডাউনলোড করুন"
-        >
-          <FileSpreadsheet size={16} className="group-hover:scale-110 transition-transform" />
-          <span>এক্সেল ফাইল ডাউনলোড</span>
-        </button>
-      )}
     </div>
   );
 };

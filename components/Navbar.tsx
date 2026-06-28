@@ -186,7 +186,7 @@ const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-2">
           <button onClick={onToggleSidebar} className={`p-1 hover:bg-slate-800 rounded-lg transition-all text-slate-400 hover:text-white ${isSidebarOpen ? 'hidden lg:hidden' : 'flex'}`}><Menu size={16} /></button>
           
-          {hasHistory && onGoBack && (
+          {hasHistory && onGoBack && activeTab !== 'landing' && (
             <button 
               id="navbar-back-btn"
               onClick={onGoBack} 

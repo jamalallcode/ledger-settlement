@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Printer } from 'lucide-react';
+import { Printer, FileSpreadsheet } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate, format as dateFnsFormat } from 'date-fns';
 import HighlightText from './HighlightText';
@@ -20,6 +20,74 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   const startDate = setDate(subMonths(activeCycle.start, 1), 16);
   const endDate = setDate(addMonths(activeCycle.start, 2), 15);
   const prevMonthDate = subMonths(startDate, 1);
+
+  const downloadExcel = () => {
+    const tables = document.querySelectorAll('table');
+    if (tables.length === 0) return;
+
+    let tablesHtml = '';
+    tables.forEach((table, tableIdx) => {
+      const clonedTable = table.cloneNode(true) as HTMLTableElement;
+      const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
+      interactiveElements.forEach(el => el.remove());
+      
+      tablesHtml += `
+        <div style="margin-bottom: 40px;">
+          ${tableIdx > 0 ? '<br><hr><br>' : ''}
+          ${clonedTable.outerHTML}
+        </div>
+      `;
+    });
+
+    const filename = `ত্রৈমাসিক_রিটার্ন_৩_${format(new Date(), 'yyyy-MM-dd')}.xls`;
+
+    const template = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>রিপোর্ট</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Hind Siliguri', sans-serif; }
+          table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+          th, td { border: 1px solid #cbd5e1 !important; padding: 8px 12px !important; text-align: center; font-size: 11px; vertical-align: middle; }
+          th { background-color: #f1f5f9 !important; color: #0f172a !important; font-weight: bold !important; }
+          .bg-slate-200, thead, tfoot { background-color: #e2e8f0 !important; font-weight: bold !important; }
+          .bg-sky-100 { background-color: #e0f2fe !important; }
+          .bg-amber-50 { background-color: #fef3c7 !important; }
+          .bg-black { background-color: #090d16 !important; color: #ffffff !important; }
+          tfoot td { background-color: #0f172a !important; color: #ffffff !important; font-weight: bold !important; }
+        </style>
+      </head>
+      <body>
+        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">ত্রৈমাসিক রিটার্ন - ৩</h2>
+        ${tablesHtml}
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([template], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const getMonthNameBN = (date: Date) => {
     const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
@@ -288,6 +356,14 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       <IDBadge id="qr-3-container" />
       
       <div className="flex justify-end mb-4 no-print">
+        <button
+          type="button"
+          onClick={downloadExcel}
+          className="flex items-center justify-center w-10 h-10 bg-emerald-50 text-emerald-700 hover:text-emerald-800 border border-emerald-100 hover:border-emerald-300 hover:bg-white hover:shadow-md transition-all duration-300 rounded-xl cursor-pointer shrink-0"
+          title="এক্সেল ফাইল ডাউনলোড করুন"
+        >
+          <FileSpreadsheet size={16} className="stroke-[2.5]" />
+        </button>
       </div>
 
       {/* Header Section */}

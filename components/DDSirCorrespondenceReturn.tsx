@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, Printer, Mail, Calendar, RotateCcw, Search, X, User, ChevronDown, Check, Sparkles, BarChart3 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Printer, Mail, Calendar, RotateCcw, Search, X, User, ChevronDown, Check, Sparkles, BarChart3, FileSpreadsheet } from 'lucide-react';
 import React from 'react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
@@ -43,6 +43,74 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
+
+  const downloadExcel = () => {
+    const tables = document.querySelectorAll('table');
+    if (tables.length === 0) return;
+
+    let tablesHtml = '';
+    tables.forEach((table, tableIdx) => {
+      const clonedTable = table.cloneNode(true) as HTMLTableElement;
+      const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
+      interactiveElements.forEach(el => el.remove());
+      
+      tablesHtml += `
+        <div style="margin-bottom: 40px;">
+          ${tableIdx > 0 ? '<br><hr><br>' : ''}
+          ${clonedTable.outerHTML}
+        </div>
+      `;
+    });
+
+    const filename = `চিঠিপত্র_সংক্রান্ত_মাসিক_রিটার্ন_ডিডি_স্যার_${format(new Date(), 'yyyy-MM-dd')}.xls`;
+
+    const template = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>রিপোর্ট</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Hind Siliguri', sans-serif; }
+          table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+          th, td { border: 1px solid #cbd5e1 !important; padding: 8px 12px !important; text-align: center; font-size: 11px; vertical-align: middle; }
+          th { background-color: #f1f5f9 !important; color: #0f172a !important; font-weight: bold !important; }
+          .bg-slate-200, thead, tfoot { background-color: #e2e8f0 !important; font-weight: bold !important; }
+          .bg-sky-100 { background-color: #e0f2fe !important; }
+          .bg-amber-50 { background-color: #fef3c7 !important; }
+          .bg-black { background-color: #090d16 !important; color: #ffffff !important; }
+          tfoot td { background-color: #0f172a !important; color: #ffffff !important; font-weight: bold !important; }
+        </style>
+      </head>
+      <body>
+        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন (ডিডি স্যার)</h2>
+        ${tablesHtml}
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([template], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const [receiverImages, setReceiverImages] = useState<Record<string, string>>({});
   const [receiverDesignations, setReceiverDesignations] = useState<Record<string, string>>({});
@@ -343,7 +411,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     .replace('July', 'জুলাই').replace('August', 'আগস্ট').replace('September', 'সেপ্টেম্বর')
     .replace('October', 'অক্টোবর').replace('November', 'নভেম্বর').replace('December', 'ডিসেম্বর');
 
-  const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-300'}`;
+  const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-2.5 px-3 h-[38px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-300'}`;
 
   // --- Grouping & Calculation Logic for Table 1 (Summary) ---
   const reportTableData = useMemo(() => {
@@ -485,44 +553,44 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
       <div className="w-full bg-white px-0 py-6 relative z-[1000]">
         {/* Header container for Title, Reporting Date, Filters and Statistics on a single line */}
-        <div className="bg-white flex flex-col lg:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-200/80 w-full px-6 transition-all duration-300">
+        <div className="bg-white flex flex-col xl:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-200/80 w-full px-4 sm:px-6 transition-all duration-300">
           
           {/* Left: Title Header styled as split-block button */}
-          <div className="flex items-stretch h-11 w-fit max-w-[95%] shadow-[0_4px_12px_rgba(0,0,0,0.1)] select-none rounded-lg overflow-hidden border border-slate-200/50 shrink-0">
+          <div className="flex items-stretch h-[38px] w-fit max-w-[95%] shadow-[0_4px_12px_rgba(0,0,0,0.1)] select-none rounded-lg overflow-hidden border border-slate-200/50 shrink-0">
             {/* Left Icon Area: Off-white bg & gray bottom border */}
-            <div className="flex flex-col w-10 sm:w-12 shrink-0 h-full">
+            <div className="flex flex-col w-9 sm:w-10 shrink-0 h-full">
               <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
-                <Mail className="text-red-700 w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+                <Mail className="text-red-700 w-4 h-4 stroke-[2.5]" />
               </div>
-              <div className="h-[4px] bg-[#94a3b8]" />
+              <div className="h-[3px] bg-[#94a3b8]" />
             </div>
             
             {/* Right Text Area: Solid Deep Blue/Indigo with dark blue bottom bar */}
-            <div className="flex-1 flex flex-col h-full min-w-[180px] sm:min-w-[220px]">
-              <div className="flex-1 bg-[#1e40af] flex items-center justify-center px-4 sm:px-6">
-                <span className="text-white font-bold text-xs sm:text-[13px] tracking-wide text-center">
+            <div className="flex-1 flex flex-col h-full min-w-[160px] sm:min-w-[200px]">
+              <div className="flex-1 bg-[#1e40af] flex items-center justify-center px-2.5 sm:px-4">
+                <span className="text-white font-bold text-[11px] sm:text-[12px] tracking-wide text-center">
                   চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন (ডিডি স্যার)
                 </span>
               </div>
-              <div className="h-[4px] bg-[#1e3a8a]" />
+              <div className="h-[3px] bg-[#1e3a8a]" />
             </div>
           </div>
 
           {/* Right Group: Date Picker, Filters & Statistics on a single row */}
-          <div className="flex items-center gap-3 flex-wrap lg:flex-nowrap justify-center lg:justify-end shrink-0 select-none no-print">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap xl:flex-nowrap justify-center xl:justify-end shrink-0 select-none no-print">
             
             {/* Reporting Date with Elegant Custom Calendar picker */}
             <div className="flex items-center justify-center gap-2">
               <div className="relative" ref={calendarRef}>
                 <button
                   onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-                  className="flex items-center gap-2.5 bg-slate-50 border border-slate-300 px-4 py-2.5 rounded-xl hover:border-blue-500 hover:ring-4 hover:ring-blue-100 hover:bg-white transition-all duration-300 shadow-sm font-bold text-slate-700 h-[44px] cursor-pointer"
+                  className="flex items-center gap-2 bg-slate-50 border border-slate-300 px-3 py-1.5 rounded-xl hover:border-blue-500 hover:ring-4 hover:ring-blue-100 hover:bg-white transition-all duration-300 shadow-sm font-bold text-slate-700 h-[38px] cursor-pointer"
                 >
-                  <Calendar size={16} className="text-blue-600 animate-pulse" />
-                  <span className="text-[12px] font-black text-slate-800">
-                    রিপোর্টিং তারিখ: {toBengaliDigits(format(reportingDate, 'dd/MM/yyyy'))}
+                  <Calendar size={14} className="text-blue-600 animate-pulse" />
+                  <span className="text-[11.5px] font-black text-slate-800">
+                    তারিখ: {toBengaliDigits(format(reportingDate, 'dd/MM/yyyy'))}
                   </span>
-                  <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${isCalendarOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                  <ChevronDown size={13} className={`text-slate-400 transition-transform duration-300 ${isCalendarOpen ? 'rotate-180 text-blue-600' : ''}`} />
                 </button>
 
                 {isCalendarOpen && (
@@ -651,7 +719,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                     setSelectedReportingDate(format(reportingLimitDate, 'yyyy-MM-dd'));
                     setIsCalendarOpen(false);
                   }}
-                  className="p-2.5 bg-slate-50 border border-slate-300 hover:bg-red-50 hover:border-red-200 hover:text-red-500 rounded-xl transition-all shadow-sm h-[44px] flex items-center justify-center cursor-pointer"
+                  className="p-2 bg-slate-50 border border-slate-300 hover:bg-red-50 hover:border-red-200 hover:text-red-500 rounded-xl transition-all shadow-sm h-[38px] flex items-center justify-center cursor-pointer"
                   title="ডিফল্ট তারিখে ফিরুন"
                 >
                   <RotateCcw size={14} />
@@ -662,13 +730,13 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             {/* Branch Filter */}
             <div className="relative group shrink-0" ref={branchDropdownRef}>
               <div 
-                className={customDropdownCls(false) + " min-w-[150px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
+                className={customDropdownCls(false) + " min-w-[115px] sm:min-w-[125px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
               >
-                <Mail size={16} className="text-blue-600" />
-                <span className="font-bold text-[12px] text-slate-900 truncate">
+                <Mail size={14} className="text-blue-600 shrink-0" />
+                <span className="font-bold text-[11.5px] text-slate-900 truncate">
                   {filterBranch === 'সকল' ? 'সকল শাখা' : filterBranch}
                 </span>
-                <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600" />
+                <ChevronDown size={13} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600 shrink-0" />
               </div>
               
               <div className="absolute top-full right-0 lg:left-0 w-[180px] pt-1 opacity-0 invisible translate-y-1.5 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[9999]">
@@ -692,13 +760,13 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             {/* Auditor Filter */}
             <div className="relative group shrink-0" ref={auditorDropdownRef}>
               <div 
-                className={customDropdownCls(false) + " min-w-[180px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
+                className={customDropdownCls(false) + " min-w-[135px] sm:min-w-[145px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
               >
-                <User size={16} className="text-blue-600" />
-                <span className="font-bold text-[12px] text-slate-900 truncate">
+                <User size={14} className="text-blue-600 shrink-0" />
+                <span className="font-bold text-[11.5px] text-slate-900 truncate">
                   {filterAuditor === 'সকল' ? 'সকল অডিটর' : filterAuditor}
                 </span>
-                <ChevronDown size={14} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600" />
+                <ChevronDown size={13} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600 shrink-0" />
               </div>
               
               <div className="absolute top-full right-0 lg:left-0 w-[200px] pt-1 opacity-0 invisible translate-y-1.5 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[9999]">
@@ -719,6 +787,16 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               </div>
             </div>
 
+            {/* Download Button */}
+            <button
+              type="button"
+              onClick={downloadExcel}
+              className="flex items-center justify-center w-10 h-[38px] bg-emerald-50 text-emerald-700 hover:text-emerald-800 border border-emerald-100 hover:border-emerald-300 hover:bg-white hover:shadow-md transition-all duration-300 rounded-xl cursor-pointer shrink-0"
+              title="এক্সেল ফাইল ডাউনলোড করুন"
+            >
+              <FileSpreadsheet size={15} className="stroke-[2.5]" />
+            </button>
+
             {/* Right: Statistics button and its dropdown */}
             <div 
               className="relative z-[1050]" 
@@ -727,11 +805,11 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               <button 
                 type="button"
                 onClick={() => setIsStatsOpen(prev => !prev)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-sky-50 text-sky-800 rounded-xl font-black text-[13px] border border-sky-100 hover:border-sky-300 transition-all duration-300 hover:bg-white hover:shadow-md cursor-pointer h-[44px]"
+                className="flex items-center gap-2 px-4 h-[38px] bg-sky-50 text-sky-800 rounded-xl font-black text-[12px] border border-sky-100 hover:border-sky-300 transition-all duration-300 hover:bg-white hover:shadow-md cursor-pointer"
               >
-                <Sparkles size={16} className="text-sky-600 animate-pulse" />
+                <Sparkles size={14} className="text-sky-600 animate-pulse shrink-0" />
                 পরিসংখ্যান
-                <ChevronDown size={14} className={`text-sky-500 transition-transform duration-300 ${isStatsOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={13} className={`text-sky-500 transition-transform duration-300 shrink-0 ${isStatsOpen ? 'rotate-180' : ''}`} />
               </button>
               
               <div 
