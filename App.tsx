@@ -177,8 +177,65 @@ const App: React.FC = () => {
 
   const mainScrollRef = useRef<HTMLElement>(null);
 
+  const [navHistory, setNavHistory] = useState<any[]>([]);
+
+  const pushHistory = (customPrevState?: any) => {
+    const prevState = customPrevState || {
+      activeTab,
+      entryModule,
+      registerSubModule,
+      reportType,
+      editingEntry,
+      showPendingOnly,
+      highlightSearch,
+      showRegisterFilters,
+    };
+
+    setNavHistory(prev => {
+      // Avoid identical duplicates at the top of the history stack
+      if (prev.length > 0) {
+        const top = prev[prev.length - 1];
+        if (
+          top.activeTab === prevState.activeTab &&
+          top.entryModule === prevState.entryModule &&
+          top.registerSubModule === prevState.registerSubModule &&
+          top.reportType === prevState.reportType &&
+          top.editingEntry === prevState.editingEntry &&
+          top.showPendingOnly === prevState.showPendingOnly &&
+          top.highlightSearch === prevState.highlightSearch &&
+          top.showRegisterFilters === prevState.showRegisterFilters
+        ) {
+          return prev;
+        }
+      }
+      const updated = [...prev, prevState];
+      if (updated.length > 50) updated.shift();
+      return updated;
+    });
+  };
+
+  const goBack = () => {
+    if (navHistory.length === 0) return;
+    
+    // Pop the last state
+    const previousState = navHistory[navHistory.length - 1];
+    setNavHistory(prev => prev.slice(0, -1));
+
+    // Restore the state
+    if (previousState.activeTab !== undefined) setActiveTab(previousState.activeTab);
+    if (previousState.entryModule !== undefined) setEntryModule(previousState.entryModule);
+    if (previousState.registerSubModule !== undefined) setRegisterSubModule(previousState.registerSubModule);
+    if (previousState.reportType !== undefined) setReportType(previousState.reportType);
+    if (previousState.editingEntry !== undefined) setEditingEntry(previousState.editingEntry);
+    if (previousState.showPendingOnly !== undefined) setShowPendingOnly(previousState.showPendingOnly);
+    if (previousState.highlightSearch !== undefined) setHighlightSearch(previousState.highlightSearch);
+    if (previousState.showRegisterFilters !== undefined) setShowRegisterFilters(previousState.showRegisterFilters);
+  };
+
   const handleTabChange = (tab: string, subModule?: 'settlement' | 'correspondence', rType?: string, searchTerm?: string) => {
     console.log("handleTabChange called with tab:", tab, "subModule:", subModule, "rType:", rType, "searchTerm:", searchTerm);
+    
+    pushHistory();
     
     // If clicking Document Library (archive) and there are pending items, go to moderation
     if (tab === 'archive' && isAdmin && totalPendingCount > 0) {
@@ -242,6 +299,7 @@ const App: React.FC = () => {
   const [highlightSearch, setHighlightSearch] = useState<string | null>(null);
 
   const navigateToEntry = (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => {
+    pushHistory();
     setActiveTab('register');
     setRegisterSubModule(type);
     
@@ -685,6 +743,7 @@ const App: React.FC = () => {
   };
 
   const handleViewRegister = (module: 'settlement' | 'correspondence') => {
+    pushHistory();
     setActiveTab('register');
     setRegisterSubModule(module);
   };
@@ -777,6 +836,7 @@ const App: React.FC = () => {
   };
 
   const handleViewEntries = (name: string, type: 'settlement' | 'correspondence') => {
+    pushHistory();
     setRegisterSubModule(type);
     setActiveTab('register');
     setHighlightSearch(name);
@@ -995,6 +1055,8 @@ const App: React.FC = () => {
             registerSubModule={registerSubModule}
             reportType={reportType}
             contactLink={contactLink}
+            onGoBack={goBack}
+            hasHistory={navHistory.length > 0}
           />
         </div>
 
@@ -1017,7 +1079,7 @@ const App: React.FC = () => {
           <div className={
             activeTab === 'landing' 
               ? "relative z-10 w-full h-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col animate-fade-in" 
-              : activeTab === 'return' 
+              : (activeTab === 'return' || activeTab === 'admin_analytics')
                 ? "px-0 max-w-full mx-auto w-full flex flex-col pt-0 pb-0" 
                 : activeTab === 'register'
                   ? "px-2 md:px-4 max-w-full mx-auto w-full flex flex-col pt-4 md:pt-8 pb-4 md:pb-8"
@@ -1047,7 +1109,7 @@ const App: React.FC = () => {
                 />
               )}
               
-              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} moduleVisibility={moduleVisibility} />}
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { pushHistory(); setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} moduleVisibility={moduleVisibility} />}
               
               {activeTab === 'register' && (
                 <div className="w-full relative">
@@ -1090,7 +1152,7 @@ const App: React.FC = () => {
                             entries={pendingCorrespondence} 
                             onBack={() => {}}
                             isAdmin={isAdmin}
-                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
+                            onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }}
                             onInlineUpdate={handleInlineUpdateEntry}
                             onDelete={handleDelete}
                             onApprove={handleApproveEntry}
@@ -1110,7 +1172,7 @@ const App: React.FC = () => {
                             key={`pending-list`} 
                             entries={pendingEntries} 
                             onDelete={handleDelete} 
-                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
+                            onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }} 
                             showFilters={false} 
                             setShowFilters={setShowRegisterFilters}
                             isAdminView={true}
@@ -1132,7 +1194,7 @@ const App: React.FC = () => {
                             key={`register-reset-${resetKey}`} 
                             entries={approvedEntries} 
                             onDelete={handleDelete} 
-                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }} 
+                            onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }} 
                             showFilters={showRegisterFilters} 
                             setShowFilters={setShowRegisterFilters} 
                             isAdmin={isAdmin}
@@ -1147,9 +1209,9 @@ const App: React.FC = () => {
 
                           <CorrespondenceTable 
                             entries={approvedCorrespondence} 
-                            onBack={() => setActiveTab('landing')} 
+                            onBack={() => { pushHistory(); setActiveTab('landing'); }} 
                             isAdmin={isAdmin}
-                            onEdit={e => { setEditingEntry(e); setActiveTab('entry'); }}
+                            onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }}
                             onInlineUpdate={handleInlineUpdateEntry}
                             onDelete={handleDelete}
                             showFilters={showRegisterFilters}
@@ -1191,7 +1253,7 @@ const App: React.FC = () => {
                 <AdminAnalytics 
                   entries={entries} 
                   correspondenceEntries={correspondenceEntries} 
-                  onBack={() => setActiveTab('dashboard')} 
+                  onBack={() => { pushHistory(); setActiveTab('dashboard'); }} 
                 />
               )}
 

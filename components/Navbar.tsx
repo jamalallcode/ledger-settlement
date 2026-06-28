@@ -6,7 +6,8 @@ import {
   Upload, ShieldCheck, LogOut, X, KeyRound, Settings, 
   Calendar, ShieldAlert, Filter, Printer, Menu, Fingerprint, 
   Bell, Check, XCircle, UserCheck, BellRing, ArrowRight, Library, Plus,
-  Mail, ClipboardList, AlertTriangle, Sun, Moon, MessageCircle, Send
+  Mail, ClipboardList, AlertTriangle, Sun, Moon, MessageCircle, Send,
+  ChevronLeft
 } from 'lucide-react';
 import { SettlementEntry } from '../types';
 import { toBengaliDigits } from '../utils/numberUtils';
@@ -39,6 +40,8 @@ interface NavbarProps {
   registerSubModule?: 'settlement' | 'correspondence' | null;
   reportType?: string | null;
   contactLink?: string;
+  onGoBack?: () => void;
+  hasHistory?: boolean;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
@@ -68,7 +71,9 @@ const Navbar: React.FC<NavbarProps> = ({
   entryModule = null,
   registerSubModule = null,
   reportType = null,
-  contactLink = 'https://wa.me/8801700000000'
+  contactLink = 'https://wa.me/8801700000000',
+  onGoBack,
+  hasHistory = false
 }) => {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
@@ -180,6 +185,18 @@ const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-[1600px] mx-auto h-full px-4 md:px-5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button onClick={onToggleSidebar} className={`p-1 hover:bg-slate-800 rounded-lg transition-all text-slate-400 hover:text-white ${isSidebarOpen ? 'hidden lg:hidden' : 'flex'}`}><Menu size={16} /></button>
+          
+          {hasHistory && onGoBack && (
+            <button 
+              id="navbar-back-btn"
+              onClick={onGoBack} 
+              className="flex items-center gap-1.5 px-3 py-1 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 rounded-full font-black text-[11px] shadow-[0_0_12px_rgba(245,158,11,0.4)] transition-all duration-300 animate-in zoom-in-95 shrink-0"
+              title="পূর্ববর্তী পেজে ফিরে যান"
+            >
+              <ChevronLeft size={13} strokeWidth={3} />
+              <span>পেছনে ফিরুন</span>
+            </button>
+          )}
           
           {/* Custom Capsule/Pill Navigation Bar (Exact clone of user's requested style) */}
           <div className="hidden lg:flex items-center bg-zinc-950 border border-zinc-800/80 h-9 px-1.5 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.5)] select-none">

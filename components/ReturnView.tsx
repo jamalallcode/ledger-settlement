@@ -863,16 +863,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   }
 
+  let renderedContent;
+
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
-    return <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
-  }
-
-  if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
-    return <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={() => null} IDBadge={IDBadge} showFilters={showFilters} />;
-  }
-
-  if (isSetupMode) {
-    return <OpeningBalanceSetup 
+    renderedContent = <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
+    renderedContent = <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={() => null} IDBadge={IDBadge} showFilters={showFilters} />;
+  } else if (isSetupMode) {
+    renderedContent = <OpeningBalanceSetup 
       ministryGroups={ministryGroups} 
       tempPrevStats={tempPrevStats} 
       setTempPrevStats={setTempPrevStats} 
@@ -886,32 +884,53 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       setupType={selectedReportType || ''} 
       originalStats={prevStats.entitiesSFI}
     />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') {
+    renderedContent = <QR_1 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') {
+    renderedContent = <QR_2 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') {
+    renderedContent = <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') {
+    renderedContent = <QR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') {
+    renderedContent = <QR_5 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') {
+    renderedContent = <QR_6 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  } else {
+    renderedContent = <ReturnSummaryTable 
+      reportData={reportData} 
+      grandTotals={grandTotals} 
+      activeCycle={activeCycle} 
+      selectedReportType={selectedReportType} 
+      setSelectedReportType={setSelectedReportType} 
+      isAdmin={isAdmin || false} 
+      historicalFilterElement={historicalFilterElement} 
+      monthPickerElement={monthPickerElement}
+      IDBadge={IDBadge} 
+      showFilters={showFilters} 
+      searchTerm={searchTerm} 
+      filterMinistry={filterMinistry} 
+      statsReportData={statsReportData}
+      statsGrandTotals={statsGrandTotals}
+      isSearchExpanded={isSearchExpanded}
+    />;
   }
 
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') return <QR_1 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') return <QR_2 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') return <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') return <QR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') return <QR_5 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') return <QR_6 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-
-  return <ReturnSummaryTable 
-    reportData={reportData} 
-    grandTotals={grandTotals} 
-    activeCycle={activeCycle} 
-    selectedReportType={selectedReportType} 
-    setSelectedReportType={setSelectedReportType} 
-    isAdmin={isAdmin || false} 
-    historicalFilterElement={historicalFilterElement} 
-    monthPickerElement={monthPickerElement}
-    IDBadge={IDBadge} 
-    showFilters={showFilters} 
-    searchTerm={searchTerm} 
-    filterMinistry={filterMinistry} 
-    statsReportData={statsReportData}
-    statsGrandTotals={statsGrandTotals}
-    isSearchExpanded={isSearchExpanded}
-  />;
+  return (
+    <div className="relative w-full">
+      {renderedContent}
+      {!isSetupMode && selectedReportType !== null && (
+        <button
+          onClick={() => window.print()}
+          className="fixed bottom-6 right-6 z-[12000] no-print flex items-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 active:scale-95 text-white font-black text-sm rounded-full shadow-[0_10px_25px_-5px_rgba(16,185,129,0.4)] hover:shadow-[0_15px_30px_-5px_rgba(16,185,129,0.5)] border border-emerald-400/20 transition-all cursor-pointer select-none group"
+          title="রিপোর্ট বা রিটার্ন প্রিন্ট অথবা পিডিএফ ডাউনলোড করুন"
+        >
+          <Printer size={16} className="group-hover:rotate-12 transition-transform" />
+          <span>প্রিন্ট / পিডিএফ ডাউনলোড</span>
+        </button>
+      )}
+    </div>
+  );
 };
 
 export default ReturnView;

@@ -22,6 +22,7 @@ interface ReceiverProfile {
   entryDetails?: any[];
   source?: 'database' | 'local' | 'correspondence' | 'unassigned';
   is_voter?: boolean;
+  is_active?: boolean;
 }
 
 const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
@@ -33,6 +34,25 @@ const getCleanBranch = (type: string | null | undefined): string => {
   return 'এসএফআই';
 };
 
+const INACTIVE_STORAGE_KEY = 'ledger_inactive_receivers_v1';
+
+const getInactiveList = (): string[] => {
+  try {
+    const saved = localStorage.getItem(INACTIVE_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveInactiveList = (list: string[]) => {
+  try {
+    localStorage.setItem(INACTIVE_STORAGE_KEY, JSON.stringify(list));
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onViewEntries, onBack }) => {
   const [receiversList, setReceiversList] = useState<ReceiverProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +62,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
   const [tempName, setTempName] = useState('');
   const [tempDesignation, setTempDesignation] = useState('');
   const [tempImage, setTempImage] = useState<string | null>(null);
+  const [tempIsActive, setTempIsActive] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   const fetchReceivers = async () => {
@@ -219,14 +240,23 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
         });
       });
 
-      // Map counts
+      const inactiveNamesSet = new Set(getInactiveList().map(name => normalizeName(name)));
+
+      // Map counts and active status
       const receiversWithCounts = finalReceivers.map(r => {
         const b = getCleanBranch(r.para_type);
         const norm = normalizeName(r.name);
         const compKey = `${norm}_${b}`;
+        
+        let is_active = r.is_active;
+        if (is_active === undefined) {
+          is_active = !inactiveNamesSet.has(norm);
+        }
+
         return {
           ...r,
           para_type: b,
+          is_active,
           entryCount: entryCounts[compKey] || 0,
           entryDetails: entryDetails[compKey] || []
         };
@@ -255,6 +285,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
     setTempName('');
     setTempDesignation('');
     setTempImage(null);
+    setTempIsActive(true);
     setIsModalOpen(true);
   };
 
@@ -264,6 +295,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
     setTempName(profile.name);
     setTempDesignation(profile.designation || '');
     setTempImage(profile.image || null);
+    setTempIsActive(profile.is_active !== false);
     setIsModalOpen(true);
   };
 
@@ -275,23 +307,77 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
       name: tempName.trim(),
       designation: tempDesignation.trim() || null,
       image: tempImage || null,
-      para_type: selectedParaType
+      para_type: selectedParaType,
+      is_active: tempIsActive
     };
+
+    const normalizeName = (name: string | null | undefined) => {
+      if (!name) return '';
+      return name
+        .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .replace(/[:ঃ।\.\-]/g, '')
+        .normalize('NFC');
+    };
+
+    // Update the local inactive storage key
+    const currentNorm = normalizeName(tempName.trim());
+    let inactiveList = getInactiveList();
+
+    if (editingId) {
+      // If we are editing, check if the name was changed and clean up the old name from inactive list
+      const oldProfile = receiversList.find(r => r.id === editingId || r.name === editingId);
+      if (oldProfile && oldProfile.name !== tempName.trim()) {
+        const oldNorm = normalizeName(oldProfile.name);
+        inactiveList = inactiveList.filter(n => normalizeName(n) !== oldNorm);
+      }
+    }
+
+    if (tempIsActive) {
+      inactiveList = inactiveList.filter(n => normalizeName(n) !== currentNorm);
+    } else {
+      if (!inactiveList.some(n => normalizeName(n) === currentNorm)) {
+        inactiveList.push(tempName.trim());
+      }
+    }
+    saveInactiveList(inactiveList);
 
     try {
       if (isSupabaseConfigured) {
         let error;
         if (editingId && !editingId.toString().startsWith('local-')) {
+          // Attempt update with is_active
           const { error: updateError } = await supabase
             .from('receivers')
             .update(profileData)
             .eq('id', editingId);
           error = updateError;
+          
+          // Fallback if column does not exist
+          if (error && (error.message?.includes('column') || error.code === '42703')) {
+            const { is_active, ...rest } = profileData;
+            const { error: retryError } = await supabase
+              .from('receivers')
+              .update(rest)
+              .eq('id', editingId);
+            error = retryError;
+          }
         } else {
+          // Attempt insert with is_active
           const { error: insertError } = await supabase
             .from('receivers')
             .insert([profileData]);
           error = insertError;
+
+          // Fallback if column does not exist
+          if (error && (error.message?.includes('column') || error.code === '42703')) {
+            const { is_active, ...rest } = profileData;
+            const { error: retryError } = await supabase
+              .from('receivers')
+              .insert([rest]);
+            error = retryError;
+          }
         }
         
         if (error) {
@@ -362,6 +448,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
     setTempName('');
     setTempDesignation('');
     setTempImage(null);
+    setTempIsActive(true);
     setEditingId(null);
   };
 
@@ -405,6 +492,20 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
     if (!window.confirm(`আপনি কি নিশ্চিতভাবে "${profile.name}" নামটিকে রিসেপশন বা মুছতে চান?`)) return;
     
     try {
+      const normalizeName = (name: string | null | undefined) => {
+        if (!name) return '';
+        return name
+          .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
+          .trim()
+          .replace(/\s+/g, ' ')
+          .replace(/[:ঃ।\.\-]/g, '')
+          .normalize('NFC');
+      };
+      
+      const norm = normalizeName(profile.name);
+      const inactiveList = getInactiveList().filter(n => normalizeName(n) !== norm);
+      saveInactiveList(inactiveList);
+
       if (isSupabaseConfigured && profile.id && !profile.id.toString().startsWith('local-')) {
         const { error } = await supabase
           .from('receivers')
@@ -498,35 +599,42 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
               <p className="text-xs font-bold">কোন প্রাপক বা স্টাফ পাওয়া যায়নি।</p>
             </div>
           ) : (
-            list.map((profile, idx) => (
-              <div 
-                key={idx} 
-                className={`group flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-2xl ${themes.borderTheme} hover:bg-blue-50/10 transition-all duration-300`}
-              >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="w-10 sm:w-11 h-10 sm:h-11 bg-white border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
-                    {profile.image ? (
-                      <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    ) : (
-                      <div className={`w-full h-full flex items-center justify-center ${themes.avatarBg} font-black text-xs sm:text-sm`}>
-                        {profile.name ? profile.name.slice(0, 1) : <User size={16} />}
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-bold text-slate-700 text-[13px] sm:text-sm truncate">{profile.name}</span>
-                      {profile.entryCount !== undefined && profile.entryCount > 0 && (
-                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] sm:text-[9px] font-black rounded-full border border-blue-100">
-                          {toBengaliDigits(profile.entryCount.toString())}টি চিঠিপত্র
-                        </span>
+            list.map((profile, idx) => {
+              const isInactive = profile.is_active === false;
+              return (
+                <div 
+                  key={idx} 
+                  className={`group flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-2xl ${themes.borderTheme} hover:bg-blue-50/10 transition-all duration-300 ${isInactive ? 'opacity-65' : ''}`}
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-10 sm:w-11 h-10 sm:h-11 bg-white border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                      {profile.image ? (
+                        <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className={`w-full h-full flex items-center justify-center ${themes.avatarBg} font-black text-xs sm:text-sm`}>
+                          {profile.name ? profile.name.slice(0, 1) : <User size={16} />}
+                        </div>
                       )}
                     </div>
-                    {profile.designation && (
-                      <span className="text-[10px] font-bold text-slate-400 truncate block mt-0.5 uppercase tracking-wider">{profile.designation}</span>
-                    )}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`font-bold text-[13px] sm:text-sm truncate ${isInactive ? 'text-slate-400 line-through font-normal' : 'text-slate-700'}`}>{profile.name}</span>
+                        {isInactive && (
+                          <span className="px-1.5 py-0.5 bg-rose-50 text-rose-600 text-[8px] font-black rounded border border-rose-100 uppercase tracking-wider shrink-0">
+                            বদলি / নিষ্ক্রিয়
+                          </span>
+                        )}
+                        {profile.entryCount !== undefined && profile.entryCount > 0 && (
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] sm:text-[9px] font-black rounded-full border border-blue-100">
+                            {toBengaliDigits(profile.entryCount.toString())}টি চিঠিপত্র
+                          </span>
+                        )}
+                      </div>
+                      {profile.designation && (
+                        <span className="text-[10px] font-bold text-slate-400 truncate block mt-0.5 uppercase tracking-wider">{profile.designation}</span>
+                      )}
+                    </div>
                   </div>
-                </div>
 
                 {/* Edit and Delete Actions on Hover */}
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -559,7 +667,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
                   )}
                 </div>
               </div>
-            ))
+            );
+          })
           )}
         </div>
       </div>
@@ -702,6 +811,19 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
                     <option value="প্রশাসন">১. প্রশাসন শাখা</option>
                     <option value="এসএফআই">২. এসএফআই শাখা</option>
                     <option value="নন এসএফআই">৩. নন এসএফআই শাখা</option>
+                  </select>
+                </div>
+
+                {/* Active Status Selector */}
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">সক্রিয়তা / বদলি অবস্থা</label>
+                  <select 
+                    value={tempIsActive ? "active" : "inactive"}
+                    onChange={(e) => setTempIsActive(e.target.value === "active")}
+                    className="w-full h-[54px] px-5 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all text-sm shadow-sm"
+                  >
+                    <option value="active">সক্রিয় (Active)</option>
+                    <option value="inactive">বদলি / নিষ্ক্রিয় (Transferred / Inactive)</option>
                   </select>
                 </div>
 

@@ -3,7 +3,7 @@ import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOpt
 import SearchableSelect from './SearchableSelect.tsx';
 import DeleteConfirmationModal from './DeleteConfirmationModal.tsx';
 import { MINISTRIES_LIST, MINISTRY_ENTITY_MAP, ENTITY_BRANCH_MAP, AUDIT_YEARS_OPTIONS } from '../constants.ts';
-import { Trash2, Globe, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus, Hash } from 'lucide-react';
+import { Trash2, Globe, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus, Hash, ChevronDown, CheckCircle } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils.ts';
 import { getCycleForDate, isEntryLate } from '../utils/cycleHelper.ts';
 import { getDateError } from '../utils/dateValidation';
@@ -194,6 +194,21 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   navigateToEntry,
   showAuditDetails = true
 }) => {
+  const dynamicAuditYearsOptions = useMemo(() => {
+    const years = new Set<string>();
+    // First, populate with default years from AUDIT_YEARS_OPTIONS
+    AUDIT_YEARS_OPTIONS.forEach(group => {
+      group.options.forEach(opt => years.add(opt));
+    });
+    // Then, add any custom years from existingEntries
+    existingEntries.forEach(e => {
+      if (e.auditYear) years.add(e.auditYear);
+    });
+    // Convert to sorted array or preserve the order
+    const sortedYears = Array.from(years).sort((a, b) => b.localeCompare(a));
+    return [{ label: "সাল", options: sortedYears }];
+  }, [existingEntries]);
+
   const [formData, setFormData] = useState({
     paraType: 'এসএফআই' as ParaType, 
     meetingType: 'বিএসআর',
@@ -398,6 +413,12 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         newRaw[`${p.id}-involvedAmount`] = p.involvedAmount === 0 ? '' : toBengaliDigits(p.involvedAmount);
         newRaw[`${p.id}-recoveredAmount`] = p.recoveredAmount === 0 ? '' : toBengaliDigits(p.recoveredAmount);
         newRaw[`${p.id}-adjustedAmount`] = p.adjustedAmount === 0 ? '' : toBengaliDigits(p.adjustedAmount);
+        newRaw[`${p.id}-vatRec`] = p.vatRec === 0 ? '' : toBengaliDigits(p.vatRec);
+        newRaw[`${p.id}-vatAdj`] = p.vatAdj === 0 ? '' : toBengaliDigits(p.vatAdj);
+        newRaw[`${p.id}-itRec`] = p.itRec === 0 ? '' : toBengaliDigits(p.itRec);
+        newRaw[`${p.id}-itAdj`] = p.itAdj === 0 ? '' : toBengaliDigits(p.itAdj);
+        newRaw[`${p.id}-othersRec`] = p.othersRec === 0 ? '' : toBengaliDigits(p.othersRec);
+        newRaw[`${p.id}-othersAdj`] = p.othersAdj === 0 ? '' : toBengaliDigits(p.othersAdj);
       });
       
       if (initialEntry.manualRaisedCount) newRaw['entry-raised-count'] = toBengaliDigits(initialEntry.manualRaisedCount);
@@ -464,6 +485,27 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [paragraphs, setParagraphs] = useState<ParagraphDetail[]>([]);
   const [bulkParaInput, setBulkParaInput] = useState('');
   const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
+  const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({});
+
+  const isCatExpanded = (paraId: string, catName: string) => {
+    if (expandedCats[`${paraId}-${catName}`] !== undefined) {
+      return expandedCats[`${paraId}-${catName}`];
+    }
+    const p = paragraphs.find(x => x.id === paraId);
+    if (p) {
+      if (catName === 'ভ্যাট' && (p.vatRec > 0 || p.vatAdj > 0 || p.category === 'ভ্যাট')) return true;
+      if (catName === 'আয়কর' && (p.itRec > 0 || p.itAdj > 0 || p.category === 'আয়কর')) return true;
+      if (catName === 'অন্যান্য' && (p.othersRec > 0 || p.othersAdj > 0 || p.category === 'অন্যান্য')) return true;
+    }
+    return false;
+  };
+
+  const toggleCatExpanded = (paraId: string, catName: string) => {
+    setExpandedCats(prev => ({
+      ...prev,
+      [`${paraId}-${catName}`]: !isCatExpanded(paraId, catName)
+    }));
+  };
 
   const handleNumericInput = (id: string, field: string, val: string) => {
     const bDigits = toBengaliDigits(val);
@@ -482,7 +524,52 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
        setFormData(prev => ({ ...prev, [field]: isNumericField ? engNum : (val.includes('.') ? engNum : bDigits) } as any));
     } else {
       setRawInputs(prev => ({ ...prev, [`${id}-${field}`]: bDigits }));
-      setParagraphs(prev => prev.map(p => p.id === id ? { ...p, [field]: engNum } : p));
+      setParagraphs(prev => prev.map(p => {
+        if (p.id === id) {
+          let updated = { ...p, [field]: engNum };
+          
+          if (field === 'recoveredAmount') {
+            if (!updated.isAdvanced) {
+              if (updated.category === 'ভ্যাট') {
+                updated.vatRec = engNum;
+                updated.itRec = 0;
+                updated.othersRec = 0;
+              } else if (updated.category === 'আয়কর') {
+                updated.vatRec = 0;
+                updated.itRec = engNum;
+                updated.othersRec = 0;
+              } else {
+                updated.vatRec = 0;
+                updated.itRec = 0;
+                updated.othersRec = engNum;
+              }
+            }
+          } else if (field === 'adjustedAmount') {
+            if (!updated.isAdvanced) {
+              if (updated.category === 'ভ্যাট') {
+                updated.vatAdj = engNum;
+                updated.itAdj = 0;
+                updated.othersAdj = 0;
+              } else if (updated.category === 'আয়কর') {
+                updated.vatAdj = 0;
+                updated.itAdj = engNum;
+                updated.othersAdj = 0;
+              } else {
+                updated.vatAdj = 0;
+                updated.itAdj = 0;
+                updated.othersAdj = engNum;
+              }
+            }
+          }
+          
+          // ALWAYS keep recoveredAmount and adjustedAmount strictly synchronized with the sum of category-specific fields!
+          updated.recoveredAmount = (updated.vatRec || 0) + (updated.itRec || 0) + (updated.othersRec || 0);
+          updated.adjustedAmount = (updated.vatAdj || 0) + (updated.itAdj || 0) + (updated.othersAdj || 0);
+          
+          return updated;
+        }
+        return p;
+      }));
     }
   };
 
@@ -552,9 +639,18 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         isLate = isEntryLate(now, cycle.end);
       }
       const totals = paragraphs.reduce((acc, p) => {
-        if (p.category === 'ভ্যাট') { acc.vR += p.recoveredAmount; acc.vA += p.adjustedAmount; }
-        else if (p.category === 'আয়কর') { acc.iR += p.recoveredAmount; acc.iA += p.adjustedAmount; }
-        else { acc.oR += p.recoveredAmount; acc.oA += p.adjustedAmount; }
+        if (p.isAdvanced) {
+          acc.vR += p.vatRec || 0;
+          acc.vA += p.vatAdj || 0;
+          acc.iR += p.itRec || 0;
+          acc.iA += p.itAdj || 0;
+          acc.oR += p.othersRec || 0;
+          acc.oA += p.othersAdj || 0;
+        } else {
+          if (p.category === 'ভ্যাট') { acc.vR += p.recoveredAmount; acc.vA += p.adjustedAmount; }
+          else if (p.category === 'আয়কর') { acc.iR += p.recoveredAmount; acc.iA += p.adjustedAmount; }
+          else { acc.oR += p.recoveredAmount; acc.oA += p.adjustedAmount; }
+        }
         return acc;
       }, { vR: 0, vA: 0, iR: 0, iA: 0, oR: 0, oA: 0 });
       const paraInvTotal = paragraphs.reduce((s, p) => s + p.involvedAmount, 0);
@@ -862,8 +958,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             <div id="field-2" className={col2Style}><SearchableSelect label={<><span className={numBadge}>২</span> <Layout size={14} className="text-emerald-600 shrink-0" /> চিঠির ধরণ</>} groups={[{ label: 'চিঠি তালিকা', options: isSFI(formData.paraType) ? ['বিএসআর', 'ত্রিপক্ষীয় সভা'] : ['বিএসআর', 'দ্বিপক্ষীয় সভা'] }]} value={formData.meetingType} onChange={v => setFormData({...formData, meetingType: v, isMeeting: v !== 'বিএসআর'})} required badgeId="select-meeting-type" isAdmin={isAdmin} showSearch={false} /></div>
             <div id="field-3" className={col3Style}><SearchableSelect label={<><span className={numBadge}>৩</span> <Building size={14} className="text-amber-600 shrink-0" /> মন্ত্রণালয়</>} groups={MINISTRIES_LIST} value={formData.ministryName} onChange={v => setFormData(f=>({...f, ministryName: v}))} required badgeId="select-ministry" isAdmin={isAdmin} /></div>
             <div id="field-4" className={col4Style}><SearchableSelect label={<><span className={numBadge}>৪</span> <Building2 size={14} className="text-purple-600 shrink-0" /> এনটিটি / সংস্থা</>} groups={[{label: 'এনটিটি তালিকা', options: entityOpts}]} value={formData.entityName} onChange={v => setFormData(f=>({...f, entityName: v}))} required badgeId="select-entity" isAdmin={isAdmin} /></div>
-            <div id="field-5" className={col1Style}><SearchableSelect label={<><span className={numBadge}>৫</span> <Building size={14} className="text-sky-600 shrink-0" /> শাখা (বিস্তারিত বিবরণ)</>} groups={branchOpts.length > 0 ? [{label: ' শাখা তালিকা', options: branchOpts}] : branchSuggestions} value={formData.branchName} onChange={v => setFormData(f=>({...f, branchName: v}))} required badgeId="select-branch" isAdmin={isAdmin} /></div>
-            <div id="field-6" className={col2Style}><SearchableSelect label={<><span className={numBadge}>৬</span> <Calendar size={14} className="text-emerald-600 shrink-0" /> নিরীক্ষা সাল</>} groups={AUDIT_YEARS_OPTIONS} value={formData.auditYear} onChange={v => setFormData(f=>({...f, auditYear: v}))} required badgeId="select-audit-year" isAdmin={isAdmin} /></div>
+            <div id="field-5" className={col1Style}><SearchableSelect label={<><span className={numBadge}>৫</span> <Building size={14} className="text-sky-600 shrink-0" /> শাখা (বিস্তারিত বিবরণ)</>} groups={branchOpts.length > 0 ? [{label: ' শাখা তালিকা', options: branchOpts}] : branchSuggestions} value={formData.branchName} onChange={v => setFormData(f=>({...f, branchName: v}))} required badgeId="select-branch" isAdmin={isAdmin} allowCustom={true} hideAddNew={true} /></div>
+            <div id="field-6" className={col2Style}><SearchableSelect label={<><span className={numBadge}>৬</span> <Calendar size={14} className="text-emerald-600 shrink-0" /> নিরীক্ষা সাল</>} groups={dynamicAuditYearsOptions} value={formData.auditYear} onChange={v => setFormData(f=>({...f, auditYear: v}))} required badgeId="select-audit-year" isAdmin={isAdmin} allowCustom={true} hideAddNew={true} /></div>
             
             <div id="field-7a" className={`${colWrapperCls} ${duplicates.letterNo ? 'bg-amber-50 border-amber-200' : 'bg-amber-50/70 border-amber-100'}`}>
               <label className={labelCls}><span className={numBadge}>{toBengaliDigits('৭.ক')}</span> <Hash size={14} className="text-amber-600 shrink-0" /> পত্র নং:</label>
@@ -1144,30 +1240,277 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                         <span className="text-[10px] font-black text-slate-500 uppercase">অনু: নং</span>
                         <input type="text" className={`w-14 sm:w-16 h-9 border-2 rounded-lg text-center font-black bg-white text-slate-950 outline-none ${p.paraNo ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-paraNo`] || toBengaliDigits(p.paraNo)} onChange={e => handleNumericInput(p.id, 'paraNo', e.target.value)} />
                       </div>
-                      <button type="button" onClick={() => setParagraphs(prev => prev.map(x => x.id === p.id ? {...x, status: x.status === 'পূর্ণাঙ্গ' ? 'আংশিক' : 'পূর্ণাঙ্গ'} : x))} className={`h-9 w-[70px] sm:w-[80px] rounded-xl text-[10px] font-black text-white shadow-md transition-all active:scale-95 flex items-center justify-center shrink-0 ${p.status === 'পূর্ণাঙ্গ' ? 'bg-emerald-600' : 'bg-red-600'}`}>{p.status}</button>
-                      <div className="flex bg-slate-100 rounded-lg p-0.5 sm:p-1 h-9 border border-slate-200 shrink-0 ml-3 sm:ml-5">
-                        {['ভ্যাট', 'আয়কর', 'অন্যান্য'].map(cat => (
-                          <button key={cat} type="button" onClick={() => setParagraphs(prev => prev.map(x => x.id === p.id ? {...x, category: cat as FinancialCategory} : x))} className={`whitespace-nowrap px-1.5 sm:px-2.5 py-1 text-[9px] font-black rounded-md transition-all ${p.category === cat ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>
-                            {cat}
-                          </button>
-                        ))}
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setParagraphs(prev => prev.map(x => x.id === p.id ? {...x, status: x.status === 'পূর্ণাঙ্গ' ? 'আংশিক' : 'পূর্ণাঙ্গ'} : x))}
+                        className={`relative inline-flex h-8 w-[64px] sm:w-[70px] shrink-0 cursor-pointer rounded-full border-2 border-slate-900 transition-all duration-300 outline-none select-none items-center overflow-hidden shadow-[inset_0_3px_6px_rgba(0,0,0,0.25)] active:scale-95 ${
+                          p.status === 'পূর্ণাঙ্গ' 
+                            ? 'bg-gradient-to-b from-emerald-500 to-emerald-600' 
+                            : 'bg-gradient-to-b from-amber-500 to-amber-600'
+                        }`}
+                      >
+                        {/* The sliding dark thumb/button */}
+                        <div
+                          className={`absolute top-[2px] h-[24px] w-[24px] rounded-full transition-all duration-300 ease-out border border-slate-950 flex items-center justify-center bg-gradient-to-b from-slate-700 to-slate-800 shadow-[0_3px_6px_rgba(0,0,0,0.4),_inset_0_1px_1px_rgba(255,255,255,0.2)] ${
+                            p.status === 'পূর্ণাঙ্গ' 
+                              ? 'left-[36px] sm:left-[42px]' 
+                              : 'left-[2px]'
+                          }`}
+                        >
+                          {/* Subtle notch/dot on the knob for ultra realism */}
+                          <div className="w-1.5 h-1.5 rounded-full bg-slate-950 opacity-60 shadow-inner"></div>
+                        </div>
+
+                        {/* Text labels */}
+                        <div className="absolute inset-0 pointer-events-none select-none flex items-center">
+                          <span 
+                            className={`absolute right-1.5 text-[7.5px] sm:text-[8px] font-black text-white tracking-tighter transition-all duration-300 ${
+                              p.status === 'পূর্ণাঙ্গ' ? 'opacity-0 scale-75' : 'opacity-100 scale-100'
+                            }`}
+                          >
+                            আংশিক
+                          </span>
+                          <span 
+                            className={`absolute left-[6px] sm:left-[8px] text-[7.5px] sm:text-[8px] font-black text-white tracking-tighter transition-all duration-300 ${
+                              p.status === 'পূর্ণাঙ্গ' ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                            }`}
+                          >
+                            পূর্ণাঙ্গ
+                          </span>
+                        </div>
+                      </button>
+
+                      {/* Sparkles Special Option Toggle */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setParagraphs(prev => prev.map(x => {
+                            if (x.id === p.id) {
+                              const nextVal = !x.isAdvanced;
+                              const updated = { ...x, isAdvanced: nextVal };
+                              if (nextVal) {
+                                // Sync initial values for advanced mode
+                                if (x.category === 'ভ্যাট') {
+                                  updated.vatRec = x.recoveredAmount;
+                                  updated.vatAdj = x.adjustedAmount;
+                                  updated.itRec = 0; updated.itAdj = 0;
+                                  updated.othersRec = 0; updated.othersAdj = 0;
+                                } else if (x.category === 'আয়কর') {
+                                  updated.itRec = x.recoveredAmount;
+                                  updated.itAdj = x.adjustedAmount;
+                                  updated.vatRec = 0; updated.vatAdj = 0;
+                                  updated.othersRec = 0; updated.othersAdj = 0;
+                                } else {
+                                  updated.othersRec = x.recoveredAmount;
+                                  updated.othersAdj = x.adjustedAmount;
+                                  updated.vatRec = 0; updated.vatAdj = 0;
+                                  updated.itRec = 0; updated.itAdj = 0;
+                                }
+                              } else {
+                                // Sync back to standard mode based on current category and reset others to 0
+                                if (x.category === 'ভ্যাট') {
+                                  updated.recoveredAmount = x.vatRec || 0;
+                                  updated.adjustedAmount = x.vatAdj || 0;
+                                  updated.itRec = 0; updated.itAdj = 0;
+                                  updated.othersRec = 0; updated.othersAdj = 0;
+                                } else if (x.category === 'আয়কর') {
+                                  updated.recoveredAmount = x.itRec || 0;
+                                  updated.adjustedAmount = x.itAdj || 0;
+                                  updated.vatRec = 0; updated.vatAdj = 0;
+                                  updated.othersRec = 0; updated.othersAdj = 0;
+                                } else {
+                                  updated.recoveredAmount = x.othersRec || 0;
+                                  updated.adjustedAmount = x.othersAdj || 0;
+                                  updated.vatRec = 0; updated.vatAdj = 0;
+                                  updated.itRec = 0; updated.itAdj = 0;
+                                }
+                              }
+                              // Always keep them calculated from category-specific fields!
+                              updated.recoveredAmount = (updated.vatRec || 0) + (updated.itRec || 0) + (updated.othersRec || 0);
+                              updated.adjustedAmount = (updated.vatAdj || 0) + (updated.itAdj || 0) + (updated.othersAdj || 0);
+                              return updated;
+                            }
+                            return x;
+                          }));
+                        }}
+                        className={`h-8 w-8 rounded-lg transition-all active:scale-95 flex items-center justify-center shrink-0 border-2 shadow-sm ${
+                          p.isAdvanced 
+                            ? 'bg-amber-500 hover:bg-amber-600 border-amber-600 text-white animate-pulse' 
+                            : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                        }`}
+                        title={p.isAdvanced ? "সাধারণ ক্যাটাগরিতে ফিরে যান" : "একাধিক আর্থিক ক্যাটাগরি একসাথে যোগ করুন"}
+                      >
+                        <Sparkles size={13} className={p.isAdvanced ? "text-white" : "text-amber-500"} />
+                      </button>
+
+                      {!p.isAdvanced && (
+                        <div className="flex bg-slate-100 rounded-lg p-0.5 h-8 border border-slate-200 shrink-0 ml-1 sm:ml-1.5">
+                          {['ভ্যাট', 'আয়কর', 'অন্যান্য'].map(cat => (
+                            <button
+                              key={cat}
+                              type="button"
+                              onClick={() => setParagraphs(prev => prev.map(x => {
+                                if (x.id === p.id) {
+                                  const updated = { ...x, category: cat as FinancialCategory };
+                                  if (cat === 'ভ্যাট') {
+                                    updated.vatRec = x.recoveredAmount;
+                                    updated.vatAdj = x.adjustedAmount;
+                                    updated.itRec = 0; updated.itAdj = 0;
+                                    updated.othersRec = 0; updated.othersAdj = 0;
+                                  } else if (cat === 'আয়কর') {
+                                    updated.itRec = x.recoveredAmount;
+                                    updated.itAdj = x.adjustedAmount;
+                                    updated.vatRec = 0; updated.vatAdj = 0;
+                                    updated.othersRec = 0; updated.othersAdj = 0;
+                                  } else {
+                                    updated.othersRec = x.recoveredAmount;
+                                    updated.othersAdj = x.adjustedAmount;
+                                    updated.vatRec = 0; updated.vatAdj = 0;
+                                    updated.itRec = 0; updated.itAdj = 0;
+                                  }
+                                  return updated;
+                                }
+                                return x;
+                              }))}
+                              className={`whitespace-nowrap px-1 sm:px-1.5 py-0.5 text-[8px] sm:text-[8.5px] font-black rounded-md transition-all ${p.category === cat ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
+                            >
+                              {cat}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4 relative z-10">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black text-slate-500 pl-1 uppercase tracking-wider text-center block">জড়িত টাকা</label>
-                        <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${(p.involvedAmount > 0 || isMatched) ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-involvedAmount`] || (p.involvedAmount === 0 ? '' : toBengaliDigits(p.involvedAmount))} onChange={e => handleNumericInput(p.id, 'involvedAmount', e.target.value)} placeholder="০" />
+                    {!p.isAdvanced ? (
+                      <div className="grid grid-cols-3 gap-4 relative z-10">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-500 pl-1 uppercase tracking-wider text-center block">জড়িত টাকা</label>
+                          <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${(p.involvedAmount > 0 || isMatched) ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-involvedAmount`] || (p.involvedAmount === 0 ? '' : toBengaliDigits(p.involvedAmount))} onChange={e => handleNumericInput(p.id, 'involvedAmount', e.target.value)} placeholder="০" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-emerald-600 pl-1 uppercase tracking-wider text-center block">আদায়কৃত</label>
+                          <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${(p.recoveredAmount > 0 || isMatched) ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-recoveredAmount`] || (p.recoveredAmount === 0 ? '' : toBengaliDigits(p.recoveredAmount))} onChange={e => handleNumericInput(p.id, 'recoveredAmount', e.target.value)} placeholder="০" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-indigo-600 pl-1 uppercase tracking-wider text-center block">সমন্বয়কৃত</label>
+                          <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${(p.adjustedAmount > 0 || isMatched) ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-adjustedAmount`] || (p.adjustedAmount === 0 ? '' : toBengaliDigits(p.adjustedAmount))} onChange={e => handleNumericInput(p.id, 'adjustedAmount', e.target.value)} placeholder="০" />
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black text-emerald-600 pl-1 uppercase tracking-wider text-center block">আদায়কৃত</label>
-                        <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${(p.recoveredAmount > 0 || isMatched) ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-recoveredAmount`] || (p.recoveredAmount === 0 ? '' : toBengaliDigits(p.recoveredAmount))} onChange={e => handleNumericInput(p.id, 'recoveredAmount', e.target.value)} placeholder="০" />
+                    ) : (
+                      <div className="flex flex-col gap-4 relative z-10">
+                        {/* Involved Amount Row */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black text-slate-500 pl-1 uppercase tracking-wider text-center block">জড়িত টাকা (মোট)</label>
+                            <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${(p.involvedAmount > 0 || isMatched) ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-involvedAmount`] || (p.involvedAmount === 0 ? '' : toBengaliDigits(p.involvedAmount))} onChange={e => handleNumericInput(p.id, 'involvedAmount', e.target.value)} placeholder="০" />
+                          </div>
+                          
+                          <div className="md:col-span-2 space-y-1">
+                            <label className="text-[10px] font-black text-slate-500 pl-1 uppercase tracking-wider text-left block">
+                              বিশেষ আর্থিক ক্যাটাগরি (ক্লিক করে নিচে এন্ট্রি ফিল্ড বের করুন):
+                            </label>
+                            <div className="flex bg-slate-100/80 rounded-2xl p-1 border border-slate-200 h-12 items-center w-full gap-2">
+                              {['ভ্যাট', 'আয়কর', 'অন্যান্য'].map(cat => {
+                                const isExp = isCatExpanded(p.id, cat);
+                                let hasData = false;
+                                if (cat === 'ভ্যাট') hasData = (p.vatRec > 0 || p.vatAdj > 0);
+                                if (cat === 'আয়কর') hasData = (p.itRec > 0 || p.itAdj > 0);
+                                if (cat === 'অন্যান্য') hasData = (p.othersRec > 0 || p.othersAdj > 0);
+                                return (
+                                  <button
+                                    key={cat}
+                                    type="button"
+                                    onClick={() => toggleCatExpanded(p.id, cat)}
+                                    className={`flex-1 h-10 text-[11px] font-black rounded-xl transition-all flex items-center justify-center gap-1 border shadow-sm ${
+                                      isExp
+                                        ? 'bg-blue-600 text-white border-blue-600' 
+                                        : hasData 
+                                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200 animate-pulse'
+                                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                    }`}
+                                  >
+                                    {cat}
+                                    {hasData && <CheckCircle size={11} className={isExp ? "text-white" : "text-emerald-500"} />}
+                                    <ChevronDown size={12} className={`transition-transform duration-300 ${isExp ? 'rotate-180' : ''}`} />
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Expandable Category Inputs */}
+                        <div className="space-y-3">
+                          {['ভ্যাট', 'আয়কর', 'অন্যান্য'].map(cat => {
+                            if (!isCatExpanded(p.id, cat)) return null;
+                            
+                            let recField = '';
+                            let adjField = '';
+                            let recVal = 0;
+                            let adjVal = 0;
+                            let colorClass = '';
+                            
+                            if (cat === 'ভ্যাট') {
+                              recField = 'vatRec';
+                              adjField = 'vatAdj';
+                              recVal = p.vatRec || 0;
+                              adjVal = p.vatAdj || 0;
+                              colorClass = 'border-sky-200 bg-sky-50/20';
+                            } else if (cat === 'আয়কর') {
+                              recField = 'itRec';
+                              adjField = 'itAdj';
+                              recVal = p.itRec || 0;
+                              adjVal = p.itAdj || 0;
+                              colorClass = 'border-teal-200 bg-teal-50/20';
+                            } else {
+                              recField = 'othersRec';
+                              adjField = 'othersAdj';
+                              recVal = p.othersRec || 0;
+                              adjVal = p.othersAdj || 0;
+                              colorClass = 'border-indigo-200 bg-indigo-50/20';
+                            }
+
+                            return (
+                              <div 
+                                key={cat} 
+                                className={`p-4 border-2 rounded-2xl ${colorClass} grid grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-300 relative`}
+                              >
+                                <div className="absolute -top-3 left-4 px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase shadow-sm border border-slate-100 bg-white text-slate-700 flex items-center gap-1.5">
+                                  <div className={`w-1.5 h-1.5 rounded-full ${cat === 'ভ্যাট' ? 'bg-sky-500' : cat === 'আয়কর' ? 'bg-teal-500' : 'bg-indigo-500'}`} />
+                                  {cat} সংক্রান্ত এন্ট্রি
+                                </div>
+                                
+                                <div className="space-y-1 mt-1">
+                                  <label className="text-[10px] font-black text-emerald-600 pl-1 uppercase tracking-wider text-left block">
+                                    {cat} আদায়কৃত টাকা
+                                  </label>
+                                  <input 
+                                    type="text" 
+                                    className="w-full h-11 px-3 border-2 border-slate-200 rounded-xl text-center font-black bg-white text-slate-950 outline-none focus:border-blue-400 focus:bg-white shadow-inner" 
+                                    value={rawInputs[`${p.id}-${recField}`] || (recVal === 0 ? '' : toBengaliDigits(recVal))} 
+                                    onChange={e => handleNumericInput(p.id, recField, e.target.value)} 
+                                    placeholder="০" 
+                                  />
+                                </div>
+                                
+                                <div className="space-y-1 mt-1">
+                                  <label className="text-[10px] font-black text-indigo-600 pl-1 uppercase tracking-wider text-left block">
+                                    {cat} সমন্বয়কৃত টাকা
+                                  </label>
+                                  <input 
+                                    type="text" 
+                                    className="w-full h-11 px-3 border-2 border-slate-200 rounded-xl text-center font-black bg-white text-slate-950 outline-none focus:border-blue-400 focus:bg-white shadow-inner" 
+                                    value={rawInputs[`${p.id}-${adjField}`] || (adjVal === 0 ? '' : toBengaliDigits(adjVal))} 
+                                    onChange={e => handleNumericInput(p.id, adjField, e.target.value)} 
+                                    placeholder="০" 
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black text-indigo-600 pl-1 uppercase tracking-wider text-center block">সমন্বয়কৃত</label>
-                        <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${(p.adjustedAmount > 0 || isMatched) ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-adjustedAmount`] || (p.adjustedAmount === 0 ? '' : toBengaliDigits(p.adjustedAmount))} onChange={e => handleNumericInput(p.id, 'adjustedAmount', e.target.value)} placeholder="০" />
-                      </div>
-                    </div>
+                    )}
 
                     {isMatched && (
                       <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-2 text-emerald-700 animate-in zoom-in-95 duration-300 relative z-10 shadow-sm shadow-emerald-500/10">
