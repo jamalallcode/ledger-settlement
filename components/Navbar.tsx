@@ -6,7 +6,7 @@ import {
   Upload, ShieldCheck, LogOut, X, KeyRound, Settings, 
   Calendar, ShieldAlert, Filter, Printer, Menu, Fingerprint, 
   Bell, Check, XCircle, UserCheck, BellRing, ArrowRight, Library, Plus,
-  Mail, ClipboardList, AlertTriangle, Sun, Moon, MessageCircle
+  Mail, ClipboardList, AlertTriangle, Sun, Moon, MessageCircle, Send
 } from 'lucide-react';
 import { SettlementEntry } from '../types';
 import { toBengaliDigits } from '../utils/numberUtils';
@@ -68,7 +68,7 @@ const Navbar: React.FC<NavbarProps> = ({
   entryModule = null,
   registerSubModule = null,
   reportType = null,
-  contactLink = 'https://facebook.com'
+  contactLink = 'https://wa.me/8801700000000'
 }) => {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
@@ -144,6 +144,22 @@ const Navbar: React.FC<NavbarProps> = ({
       isActive: activeTab === 'return' && reportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।',
       activeClass: 'bg-amber-500/15 text-amber-400 border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.15)] font-black',
       onClick: () => setActiveTab('return', undefined, 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')
+    },
+    {
+      id: 'dhaka-return',
+      label: 'ঢাকা রিটার্ণ',
+      icon: Send,
+      isActive: activeTab === 'return' && reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।',
+      activeClass: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30 shadow-[0_0_12px_rgba(99,102,241,0.15)] font-black',
+      onClick: () => setActiveTab('return', undefined, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')
+    },
+    {
+      id: 'ddsir-return',
+      label: 'ডিডি স্যার রিটার্ণ',
+      icon: UserCheck,
+      isActive: activeTab === 'return' && reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।',
+      activeClass: 'bg-purple-500/15 text-purple-400 border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.15)] font-black',
+      onClick: () => setActiveTab('return', undefined, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।')
     },
     {
       id: 'contact',

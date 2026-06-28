@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Mail,
@@ -348,8 +349,31 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const lastActiveLabel = useRef<string>("");
   const cycleRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    id: string;
+    x: number;
+    y: number;
+  } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleScrollOrResize = () => {
+      setDeleteConfirm(null);
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setDeleteConfirm(null);
+      }
+    };
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState("");
@@ -1942,70 +1966,21 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               >
                                 <Pencil size={12} />
                               </button>
-                              <div className="relative inline-block">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setDeleteConfirmId(deleteConfirmId === entry.id ? null : entry.id);
-                                  }}
-                                  className={`p-1.5 rounded-md shadow-md transition-all duration-300 ${deleteConfirmId === entry.id ? "bg-rose-100 text-rose-700 ring-2 ring-rose-500/20" : "bg-rose-600 text-white hover:bg-rose-700"}`}
-                                  title="মুছে ফেলুন"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-
-                                {deleteConfirmId === entry.id && (
-                                  <div 
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="absolute bottom-full right-0 mb-3 z-[150] w-64 p-4 bg-white border-2 border-rose-200 rounded-2xl shadow-[0_15px_35px_rgba(244,63,94,0.18)] text-left animate-in zoom-in-95 duration-200"
-                                    style={{ transformOrigin: "bottom right" }}
-                                  >
-                                    <div className="flex items-start gap-3">
-                                      <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center shrink-0 border border-rose-100 animate-bounce">
-                                        <AlertTriangle size={16} className="text-rose-600" />
-                                      </div>
-                                      <div className="space-y-1">
-                                        <p className="text-[12px] font-black text-slate-800 leading-tight">
-                                          তথ্য মুছে ফেলার অবগতি
-                                        </p>
-                                        <p className="text-[10px] font-medium text-slate-500 leading-relaxed">
-                                          আপনি কি নিশ্চিতভাবে এই তথ্যটি মুছে ফেলতে চান? এটি আর ফিরিয়ে আনা যাবে না।
-                                        </p>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center justify-end gap-2.5 mt-3 pt-2.5 border-t border-slate-100">
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setDeleteConfirmId(null);
-                                        }}
-                                        className="px-3 py-1.5 text-[10px] text-slate-500 font-extrabold hover:text-slate-800 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200/60 transition-all cursor-pointer"
-                                      >
-                                        না, বাতিল
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setDeleteConfirmId(null);
-                                          setDeletingId(entry.id);
-                                          setTimeout(() => {
-                                            if (onDelete) {
-                                              onDelete(entry.id);
-                                            }
-                                            setDeletingId(null);
-                                          }, 1000);
-                                        }}
-                                        className="px-3.5 py-1.5 text-[10px] text-white font-extrabold bg-rose-600 hover:bg-rose-700 active:scale-95 rounded-lg shadow-sm shadow-rose-500/10 transition-all flex items-center gap-1.5 cursor-pointer"
-                                      >
-                                        <Trash2 size={10} />
-                                        <span>হ্যাঁ, নিশ্চিত</span>
-                                      </button>
-                                    </div>
-                                    {/* Small arrow down to the clicked button */}
-                                    <div className="absolute top-full right-3 -translate-y-1 w-2.5 h-2.5 bg-white border-r-2 border-b-2 border-rose-200 rotate-45"></div>
-                                  </div>
-                                )}
-                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setDeleteConfirm({
+                                    id: entry.id,
+                                    x: rect.right,
+                                    y: rect.top
+                                  });
+                                }}
+                                className="p-1.5 rounded-md shadow-md bg-rose-600 text-white hover:bg-rose-700 transition-all duration-300"
+                                title="মুছে ফেলুন"
+                              >
+                                <Trash2 size={12} />
+                              </button>
                             </div>
                           )}
                         </td>
@@ -2081,7 +2056,69 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         </table>
       </div>
 
-
+      {deleteConfirm && createPortal(
+        <>
+          {/* Backdrop Click Catcher */}
+          <div 
+            className="fixed inset-0 z-[29999] bg-transparent cursor-default"
+            onClick={() => setDeleteConfirm(null)}
+          />
+          
+          {/* Popover */}
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="fixed z-[30000] w-72 p-4 bg-white border-2 border-rose-200 rounded-2xl shadow-[0_15px_40px_rgba(244,63,94,0.18)] text-left animate-in zoom-in-95 fade-in duration-200"
+            style={{ 
+              left: `${deleteConfirm.x}px`,
+              top: `${deleteConfirm.y - 12}px`,
+              transform: 'translateX(-100%) translateY(-100%)',
+              transformOrigin: "bottom right"
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center shrink-0 border border-rose-100 animate-bounce">
+                <AlertTriangle size={16} className="text-rose-600" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-[12px] font-black text-slate-800 leading-tight">
+                  তথ্য মুছে ফেলার অবগতি
+                </p>
+                <p className="text-[10px] font-medium text-slate-500 leading-relaxed">
+                  আপনি কি নিশ্চিতভাবে এই তথ্যটি মুছে ফেলতে চান? এটি আর ফিরিয়ে আনা যাবে না।
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-slate-100">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="px-3 py-1.5 text-[10px] text-slate-500 font-extrabold hover:text-slate-800 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200/60 transition-all cursor-pointer"
+              >
+                না, বাতিল
+              </button>
+              <button
+                onClick={() => {
+                  const idToDelete = deleteConfirm.id;
+                  setDeleteConfirm(null);
+                  setDeletingId(idToDelete);
+                  setTimeout(() => {
+                    onDelete?.(idToDelete);
+                    setDeletingId(null);
+                  }, 1000);
+                }}
+                className="px-3.5 py-1.5 text-[10px] text-white font-extrabold bg-rose-600 hover:bg-rose-700 active:scale-95 rounded-lg shadow-sm shadow-rose-500/10 transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 size={10} />
+                <span>হ্যাঁ, নিশ্চিত</span>
+              </button>
+            </div>
+            
+            {/* Small arrow down to the clicked button */}
+            <div className="absolute top-full right-4 -translate-y-1 w-2.5 h-2.5 bg-white border-r-2 border-b-2 border-rose-200 rotate-45"></div>
+          </div>
+        </>,
+        document.body
+      )}
     </div>
   );
 };

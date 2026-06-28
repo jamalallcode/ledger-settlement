@@ -21,7 +21,7 @@ import BackToTop from './components/BackToTop';
 import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, CorrespondenceEntry } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
-import { supabase } from './lib/supabase';
+import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ArrowRight, BellRing, Sparkles, Mail, ClipboardList, ArrowRightCircle, ChevronLeft } from 'lucide-react';
 
 const STORAGE_KEY = 'ledger_settlement_v10_stable';
@@ -78,14 +78,14 @@ const App: React.FC = () => {
   });
   
   const [contactLink, setContactLink] = useState<string>(() => {
-    return localStorage.getItem('admin_contact_link') || 'https://facebook.com';
+    return localStorage.getItem('admin_contact_link') || 'https://wa.me/8801700000000';
   });
 
   const handleUpdateContactLink = async (newLink: string) => {
     setContactLink(newLink);
     localStorage.setItem('admin_contact_link', newLink);
     try {
-      if (supabase && typeof supabase.from === 'function') {
+      if (isSupabaseConfigured && supabase && typeof supabase.from === 'function') {
         const { error } = await supabase
           .from('app_settings')
           .upsert({ key: 'contact_link', value: newLink }, { onConflict: 'key' });
@@ -263,6 +263,7 @@ const App: React.FC = () => {
 
   // --- AUTO SYNC LOGIC ---
   const syncOfflineData = async () => {
+    if (!isSupabaseConfigured) return;
     const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
     if (queue.length === 0) return;
 
@@ -353,6 +354,10 @@ const App: React.FC = () => {
 
     // Sync Global Settings (Visibility & Contact Link)
     const fetchSettings = async () => {
+      if (!isSupabaseConfigured) {
+        console.log("সুপাবেজ (Supabase) কনফিগার করা নেই। লোকাল ডেটা ব্যবহার করা হচ্ছে।");
+        return;
+      }
       if (!supabase || typeof supabase.from !== 'function') {
         console.warn("সুপাবেজ (Supabase) কনফিগার করা নেই। সেটিংস সিঙ্ক্রোনাইজেশন কাজ করবে না।");
         return;
@@ -390,35 +395,40 @@ const App: React.FC = () => {
 
     fetchSettings();
 
-    const settingsSubscription = supabase
-      .channel('app_settings_changes')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'app_settings'
-      }, (payload: any) => {
-        if (payload.new) {
-          if (payload.new.key === 'contact_link') {
-            if (payload.new.value) {
-              setContactLink(payload.new.value);
-              localStorage.setItem('admin_contact_link', payload.new.value);
-            }
-          } else {
-            const key = payload.new.key.replace('show_', '');
-            setModuleVisibility(prev => {
-              if (key in prev) {
-                return { ...prev, [key]: payload.new.value };
+    let settingsSubscription: { unsubscribe: () => void } | null = null;
+    if (isSupabaseConfigured) {
+      settingsSubscription = supabase
+        .channel('app_settings_changes')
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'app_settings'
+        }, (payload: any) => {
+          if (payload.new) {
+            if (payload.new.key === 'contact_link') {
+              if (payload.new.value) {
+                setContactLink(payload.new.value);
+                localStorage.setItem('admin_contact_link', payload.new.value);
               }
-              return prev;
-            });
+            } else {
+              const key = payload.new.key.replace('show_', '');
+              setModuleVisibility(prev => {
+                if (key in prev) {
+                  return { ...prev, [key]: payload.new.value };
+                }
+                return prev;
+              });
+            }
           }
-        }
-      })
-      .subscribe();
+        })
+        .subscribe();
+    }
 
     return () => {
       subscription.unsubscribe();
-      settingsSubscription.unsubscribe();
+      if (settingsSubscription) {
+        settingsSubscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -461,7 +471,14 @@ const App: React.FC = () => {
         const savedAdmin = localStorage.getItem(ADMIN_MODE_KEY);
         if (savedAdmin === 'true') setIsAdmin(true);
 
-        const { data, error } = await supabase.from('settlement_entries').select('*');
+        let data: any[] | null = null;
+        let error: any = null;
+
+        if (isSupabaseConfigured) {
+          const res = await supabase.from('settlement_entries').select('*');
+          data = res.data;
+          error = res.error;
+        }
         if (!error && data) {
           const processedEntries: SettlementEntry[] = [];
           const corrEntries: any[] = [];

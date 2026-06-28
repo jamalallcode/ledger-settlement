@@ -764,13 +764,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         <div className="relative shrink-0 select-none z-[400]" ref={ministryDropdownRef}>
           <div 
              onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
-             className={`flex items-center gap-2 px-4 h-[38px] bg-slate-900 border hover:border-emerald-500 hover:bg-slate-800 transition-all rounded-xl cursor-pointer shadow-md select-none ${isMinistryDropdownOpen ? 'border-emerald-500' : 'border-slate-700'}`}
+             className={`flex items-center gap-2 px-4 h-[38px] bg-sky-50 border hover:border-sky-300 hover:bg-white transition-all rounded-xl cursor-pointer shadow-md select-none ${isMinistryDropdownOpen ? 'border-sky-300 bg-white ring-2 ring-sky-50' : 'border-sky-100'}`}
           >
-            <LayoutGrid size={14} className="text-emerald-400 shrink-0" />
-            <span className="font-extrabold text-[12px] sm:text-[12.5px] text-white tracking-tight shrink-0 max-w-[140px] sm:max-w-[180px] truncate leading-none">
+            <LayoutGrid size={14} className="text-sky-600 shrink-0" />
+            <span className="font-extrabold text-[12px] sm:text-[12.5px] text-sky-800 tracking-tight shrink-0 max-w-[140px] sm:max-w-[180px] truncate leading-none">
               {filterMinistry || 'সকল মন্ত্রণালয়'}
             </span>
-            <ChevronDown size={13} className={`text-slate-400 shrink-0 transition-transform duration-300 ${isMinistryDropdownOpen ? 'rotate-180 text-emerald-400' : ''}`} />
+            <ChevronDown size={13} className={`text-sky-500 shrink-0 transition-transform duration-300 ${isMinistryDropdownOpen ? 'rotate-180 text-sky-600' : ''}`} />
           </div>
 
           {isMinistryDropdownOpen && (
@@ -884,6 +884,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       setSelectedReportType={setSelectedReportType} 
       IDBadge={IDBadge} 
       setupType={selectedReportType || ''} 
+      originalStats={prevStats.entitiesSFI}
     />;
   }
 

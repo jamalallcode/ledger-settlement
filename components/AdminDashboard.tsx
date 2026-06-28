@@ -7,7 +7,7 @@ import {
   CalendarRange, MessageCircle
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { ModuleVisibility } from '../types';
 
 interface AdminDashboardProps {
@@ -41,7 +41,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onOpenChangePassword,
   moduleVisibility,
   setModuleVisibility,
-  contactLink = 'https://facebook.com',
+  contactLink = 'https://wa.me/8801700000000',
   onUpdateContactLink
 }) => {
   if (!isAdmin) return null;
@@ -66,6 +66,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const newVisibility = { ...moduleVisibility, [moduleKey]: newValue };
     setModuleVisibility(newVisibility);
     
+    if (!isSupabaseConfigured) {
+      // Save local state as fallback
+      localStorage.setItem(`show_${moduleKey}`, newValue.toString());
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('app_settings')
@@ -292,7 +298,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     { key: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, color: 'rose' },
                     { key: 'audit_details', label: 'অডিট ডিটেইলস (ফিল্ড ১০-১৫)', icon: Settings, color: 'purple' },
                   ].map((module) => (
-                    <div key={module.key} className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${moduleVisibility[module.key as keyof ModuleVisibility] ? `bg-${module.color}-600/5 border-${module.color}-200/50` : 'bg-slate-50 border-slate-200 opacity-60'}`}>
+                    <div key={module.key} className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${moduleVisibility[module.key as keyof ModuleVisibility] ? `bg-${module.color}-600/5 border-${module.color}-200/50` : 'bg-slate-50 border-slate-200/80'}`}>
                       <div className="flex items-center gap-3">
                         {moduleVisibility[module.key as keyof ModuleVisibility] ? <Eye size={16} className={`text-${module.color}-600`} /> : <EyeOff size={16} className="text-slate-400" />}
                         <div className="flex flex-col">
@@ -301,9 +307,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </div>
                       <button 
                         onClick={() => handleToggleModule(module.key as keyof ModuleVisibility)}
-                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-300 focus:outline-none ${moduleVisibility[module.key as keyof ModuleVisibility] ? `bg-${module.color}-600 shadow-lg shadow-${module.color}-500/30` : 'bg-slate-300'}`}
+                        className={`relative inline-flex h-9 w-[76px] shrink-0 cursor-pointer items-center rounded-full border-[3px] border-[#1c1c1c] overflow-hidden transition-all duration-300 select-none focus:outline-none ${
+                          moduleVisibility[module.key as keyof ModuleVisibility] 
+                            ? 'bg-gradient-to-r from-[#2ebd59] to-[#39db39] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]' 
+                            : 'bg-gradient-to-r from-[#e63c3c] to-[#ef4444] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]'
+                        }`}
                       >
-                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-300 ${moduleVisibility[module.key as keyof ModuleVisibility] ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                        {/* Inner Track Text */}
+                        {moduleVisibility[module.key as keyof ModuleVisibility] ? (
+                          <span className="ml-auto mr-3 text-white text-[10px] font-black tracking-wider select-none">ON</span>
+                        ) : (
+                          <span className="ml-3 mr-auto text-white text-[10px] font-black tracking-wider select-none">OFF</span>
+                        )}
+                        
+                        {/* Knob */}
+                        <span 
+                          className="absolute h-7 w-7 rounded-full bg-gradient-to-b from-[#404040] to-[#1e1e1e] border border-[#0d0d0d] shadow-[0_3px_5px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.35)] transition-all duration-300 ease-out"
+                          style={{ 
+                            left: moduleVisibility[module.key as keyof ModuleVisibility] ? '2px' : '40px' 
+                          }}
+                        />
                       </button>
                     </div>
                   ))}
@@ -323,7 +346,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       type="url"
                       value={localContactLink}
                       onChange={(e) => setLocalContactLink(e.target.value)}
-                      placeholder="ফেসবুক লিংক, যেমন: https://facebook.com/..."
+                      placeholder="হোয়াটসঅ্যাপ লিংক, যেমন: https://wa.me/8801700000000"
                       className="flex-1 px-3 py-1.5 text-xs text-slate-800 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 shadow-xs"
                     />
                     <button

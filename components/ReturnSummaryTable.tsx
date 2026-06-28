@@ -259,9 +259,9 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             
             {/* Cycle / Reporting Period badge */}
             <div className="flex items-center justify-center shrink-0">
-              <div className="inline-flex items-center gap-2 px-4 bg-slate-900 text-white rounded-xl text-[11.5px] sm:text-[12.5px] font-bold border border-slate-700 shadow-md h-[38px] leading-none">
-                <span className="text-blue-400">সাইকেল:</span> 
-                <span className="text-white font-extrabold">{toBengaliDigits(activeCycle.label)}</span>
+              <div className="inline-flex items-center gap-2 px-4 bg-sky-50 text-sky-800 rounded-xl text-[11.5px] sm:text-[12.5px] font-bold border border-sky-100 shadow-md h-[38px] leading-none">
+                <span className="text-sky-600">সাইকেল:</span> 
+                <span className="text-sky-900 font-extrabold">{toBengaliDigits(activeCycle.label)}</span>
               </div>
             </div>
 

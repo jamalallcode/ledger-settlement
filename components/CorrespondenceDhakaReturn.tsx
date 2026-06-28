@@ -475,14 +475,14 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
             <div className="relative shrink-0 select-none z-[400]" ref={calendarRef}>
               <div 
                 onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-                className="relative inline-flex items-center gap-2 px-3 h-[35px] bg-slate-900 border border-slate-700 hover:border-emerald-500 hover:bg-slate-800 transition-all text-white rounded-xl text-[11px] sm:text-[11.5px] font-bold shadow-md cursor-pointer"
+                className="relative inline-flex items-center gap-2 px-3 h-[35px] bg-slate-50 border border-slate-300 hover:border-emerald-600 hover:ring-2 hover:ring-emerald-50 transition-all text-slate-800 rounded-xl text-[11px] sm:text-[11.5px] font-bold shadow-sm cursor-pointer"
               >
-                <span className={`text-blue-400 leading-none transition-all duration-300 ${isSearchExpanded ? 'hidden xl:inline' : 'hidden sm:inline'}`}>রিপোর্টিং সময়কাল:</span> 
-                <span className="text-white flex items-center gap-1 font-black leading-none">
+                <span className={`text-slate-500 leading-none transition-all duration-300 ${isSearchExpanded ? 'hidden xl:inline' : 'hidden sm:inline'}`}>রিপোর্টিং সময়কাল:</span> 
+                <span className="text-slate-800 flex items-center gap-1 font-black leading-none">
                   {toBengaliDigits(dateFnsFormat(selectedMonthDate, 'dd/MM/yyyy'))} খ্রি: তারিখ পর্যন্ত।
-                  <Calendar size={11} className="text-emerald-400 group-hover:scale-110 transition-transform duration-200" />
+                  <Calendar size={11} className="text-emerald-600 group-hover:scale-110 transition-transform duration-200" />
                 </span>
-                <ChevronDown size={11} className={`text-slate-400 transition-transform duration-300 lg:inline shrink-0 ${isCalendarOpen ? 'rotate-180 text-emerald-400' : ''}`} />
+                <ChevronDown size={11} className={`text-slate-400 transition-transform duration-300 lg:inline shrink-0 ${isCalendarOpen ? 'rotate-180 text-emerald-600' : ''}`} />
               </div>
 
               {isCalendarOpen && (
@@ -659,52 +659,12 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               </div>
             </div>
 
-            {/* 4. Search Filter */}
-            <div className={`relative flex items-center transition-all duration-300 shrink-0 no-print ${isSearchExpanded ? 'w-[140px] sm:w-[170px]' : 'w-[35px]'}`}>
-              {!isSearchExpanded ? (
-                <button
-                  type="button"
-                  onClick={() => setIsSearchExpanded(true)}
-                  className="flex items-center justify-center w-[35px] h-[35px] bg-slate-50 border border-slate-300 rounded-xl text-slate-500 hover:text-emerald-600 hover:border-emerald-600 transition-all cursor-pointer shadow-sm"
-                  title="অনুসন্ধান করুন"
-                >
-                  <Search size={14} />
-                </button>
-              ) : (
-                <div className="relative w-full group animate-in fade-in zoom-in-95 duration-200">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-600" size={12} />
-                  <input 
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder="অনুসন্ধান..."
-                    className="w-full pl-7.5 pr-6 h-[35px] bg-white border border-emerald-600 rounded-xl text-[11px] font-bold text-slate-800 outline-none shadow-md transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-50"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onBlur={() => {
-                      if (!searchTerm) {
-                        setIsSearchExpanded(false);
-                      }
-                    }}
-                  />
-                  <button 
-                    onClick={() => {
-                      setSearchTerm('');
-                      setIsSearchExpanded(false);
-                    }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
-                  >
-                    <X size={11} />
-                  </button>
-                </div>
-              )}
-            </div>
-
             {/* 5. Statistics Trigger Button */}
             <button 
               onClick={() => setShowAuditorStatsModal(true)}
-              className="flex items-center justify-center gap-1 px-2.5 h-[35px] bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] sm:text-[11.5px] font-black transition-all shadow-md hover:shadow-blue-200/50 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer shrink-0 no-print"
+              className="flex items-center justify-center gap-1.5 px-2.5 h-[35px] bg-slate-50 border border-slate-300 rounded-xl cursor-pointer transition-all duration-300 hover:border-emerald-600 hover:ring-2 hover:ring-emerald-50 shadow-sm text-slate-800 text-[11px] sm:text-[11.5px] font-black shrink-0 no-print"
             >
-              <BarChart3 size={12} />
+              <BarChart3 size={13} className="text-emerald-600 shrink-0" />
               <span className="leading-none">পরিসংখ্যান</span>
             </button>
           </div>

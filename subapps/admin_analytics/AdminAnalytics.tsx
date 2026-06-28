@@ -166,21 +166,23 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 space-y-8 animate-in fade-in duration-700">
       {/* Header */}
-      <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 relative z-50 group">
+      <div className="bg-white p-8 lg:pr-20 rounded-[2.5rem] shadow-xl border border-slate-100 relative z-50 group">
         {/* Decorative Blur Circle - Wrapped in a clipping container */}
         <div className="absolute inset-0 overflow-hidden rounded-[2.5rem] pointer-events-none">
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-500/5 blur-3xl rounded-full group-hover:bg-blue-500/10 transition-colors"></div>
         </div>
+
+        {/* Close Button */}
+        <button 
+          onClick={onBack}
+          className="absolute right-6 top-6 lg:right-8 lg:top-1/2 lg:-translate-y-1/2 flex items-center justify-center w-10 h-10 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer active:scale-95 z-50 group/close"
+          title="বন্ধ করুন"
+        >
+          <X size={18} className="transition-transform duration-300 group-hover/close:rotate-90" />
+        </button>
         
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-start gap-8">
           <div className="flex items-center gap-4 shrink-0">
-            <button 
-              onClick={onBack}
-              className="group/back flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all active:scale-95 border border-slate-200 shadow-sm"
-            >
-              <ChevronLeft size={18} className="group-hover/back:-translate-x-0.5 transition-transform" />
-              <span className="text-xs font-black uppercase tracking-wider">ড্যাশবোর্ড</span>
-            </button>
             <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-blue-500/20 border border-white/10 group-hover:scale-105 transition-transform duration-500">
               <BarChart3 size={28} className="text-white" />
             </div>
@@ -219,18 +221,6 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                   className="bg-transparent border-none outline-none text-[11px] font-black text-slate-700 w-28 cursor-pointer"
                 />
               </div>
-            </div>
-
-            {/* Search in Header */}
-            <div className="relative group/search">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/search:text-blue-500 transition-colors" size={16} />
-              <input 
-                type="text" 
-                placeholder="অডিটর খুঁজুন..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none transition-all w-48 shadow-sm"
-              />
             </div>
 
             {/* Stats Toggle Button */}
