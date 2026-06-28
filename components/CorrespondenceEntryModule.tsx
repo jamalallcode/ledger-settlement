@@ -658,12 +658,33 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           }
         };
 
-        const inactiveSet = new Set(getInactiveList().map(name => normalizeName(name)));
+        const getCleanBranch = (type: string | null | undefined): string => {
+          if (!type) return 'এসএফআই';
+          if (type.includes('প্রশাসন') || type === 'ADMIN' || type === 'admin') return 'প্রশাসন';
+          if (type.includes('নন') || type.toUpperCase().includes('NON')) return 'নন এসএফআই';
+          return 'এসএফআই';
+        };
+
+        const inactiveListRaw = getInactiveList();
+        const inactiveKeysSet = new Set(inactiveListRaw.map(item => normalizeName(item)));
         const currentReceiverNormalized = normalizeName(formData.receiverName || initialEntry?.receiverName);
 
         const filteredReceivers = finalReceivers.map(r => {
           const norm = normalizeName(r.name);
-          const is_active = r.is_active !== undefined ? r.is_active : !inactiveSet.has(norm);
+          const rBranchClean = getCleanBranch(r.para_type || formData.paraType);
+          const compKey = `${norm}_${rBranchClean}`;
+          
+          let is_active = r.is_active;
+          if (is_active === undefined) {
+            if (inactiveKeysSet.has(compKey)) {
+              is_active = false;
+            } else if (inactiveKeysSet.has(norm)) {
+              const hasBranchSpecificKey = Array.from(inactiveKeysSet).some(k => k.startsWith(`${norm}_`));
+              is_active = !hasBranchSpecificKey;
+            } else {
+              is_active = true;
+            }
+          }
           return { ...r, is_active };
         }).filter(r => {
           if (r.is_active !== false) return true;
@@ -691,12 +712,32 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             return [];
           }
         };
-        const inactiveSet = new Set(getInactiveList().map(name => normalizeName(name)));
+
+        const getCleanBranch = (type: string | null | undefined): string => {
+          if (!type) return 'এসএফআই';
+          if (type.includes('প্রশাসন') || type === 'ADMIN' || type === 'admin') return 'প্রশাসন';
+          if (type.includes('নন') || type.toUpperCase().includes('NON')) return 'নন এসএফআই';
+          return 'এসএফআই';
+        };
+
+        const inactiveListRaw = getInactiveList();
+        const inactiveKeysSet = new Set(inactiveListRaw.map(item => normalizeName(item)));
         const currentReceiverNormalized = normalizeName(formData.receiverName || initialEntry?.receiverName);
 
         const filtered = mappedList.map(r => {
           const norm = normalizeName(r.name);
-          const is_active = !inactiveSet.has(norm);
+          const rBranchClean = getCleanBranch(formData.paraType);
+          const compKey = `${norm}_${rBranchClean}`;
+          
+          let is_active;
+          if (inactiveKeysSet.has(compKey)) {
+            is_active = false;
+          } else if (inactiveKeysSet.has(norm)) {
+            const hasBranchSpecificKey = Array.from(inactiveKeysSet).some(k => k.startsWith(`${norm}_`));
+            is_active = !hasBranchSpecificKey;
+          } else {
+            is_active = true;
+          }
           return { ...r, is_active };
         }).filter(r => {
           if (r.is_active !== false) return true;

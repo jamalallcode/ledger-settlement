@@ -268,7 +268,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
         });
       });
 
-      const inactiveNamesSet = new Set(getInactiveList().map(name => normalizeName(name)));
+      const inactiveListRaw = getInactiveList();
+      const inactiveKeysSet = new Set(inactiveListRaw.map(item => normalizeName(item)));
       const transfersMap = getTransfersMap();
 
       // Map counts and active status
@@ -279,7 +280,14 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
         
         let is_active = r.is_active;
         if (is_active === undefined) {
-          is_active = !inactiveNamesSet.has(norm);
+          if (inactiveKeysSet.has(compKey)) {
+            is_active = false;
+          } else if (inactiveKeysSet.has(norm)) {
+            const hasBranchSpecificKey = Array.from(inactiveKeysSet).some(k => k.startsWith(`${norm}_`));
+            is_active = !hasBranchSpecificKey;
+          } else {
+            is_active = true;
+          }
         }
 
         const transferred_to = r.transferred_to || transfersMap[compKey] || '';
@@ -356,30 +364,45 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
         .normalize('NFC');
     };
 
-    // Update the local inactive storage key
+    // Update the local inactive storage key (branch-specific)
     const currentNorm = normalizeName(tempName.trim());
+    const currentBranchClean = getCleanBranch(selectedParaType);
+    const currentCompKey = `${currentNorm}_${currentBranchClean}`;
     let inactiveList = getInactiveList();
 
     if (editingId) {
-      // If we are editing, check if the name was changed and clean up the old name from inactive list
+      // If we are editing, check if the name was changed and clean up the old name/keys from inactive list
       const oldProfile = receiversList.find(r => r.id === editingId || r.name === editingId);
-      if (oldProfile && oldProfile.name !== tempName.trim()) {
+      if (oldProfile) {
         const oldNorm = normalizeName(oldProfile.name);
-        inactiveList = inactiveList.filter(n => normalizeName(n) !== oldNorm);
+        const oldBranchClean = getCleanBranch(oldProfile.para_type);
+        const oldCompKey = `${oldNorm}_${oldBranchClean}`;
+        if (oldProfile.name !== tempName.trim() || oldBranchClean !== currentBranchClean) {
+          inactiveList = inactiveList.filter(n => {
+            const normItem = normalizeName(n);
+            return normItem !== oldCompKey && normItem !== oldNorm;
+          });
+        }
       }
     }
 
     if (tempIsActive) {
-      inactiveList = inactiveList.filter(n => normalizeName(n) !== currentNorm);
+      inactiveList = inactiveList.filter(n => {
+        const normItem = normalizeName(n);
+        return normItem !== currentCompKey && normItem !== currentNorm;
+      });
     } else {
-      if (!inactiveList.some(n => normalizeName(n) === currentNorm)) {
-        inactiveList.push(tempName.trim());
+      // Clean up simple global inactive name if it exists, to avoid global block
+      inactiveList = inactiveList.filter(n => normalizeName(n) !== currentNorm);
+      
+      const existsComp = inactiveList.some(n => normalizeName(n) === currentCompKey);
+      if (!existsComp) {
+        inactiveList.push(currentCompKey); // Save exact branch combination (e.g. "শামীমা শাহরিন_নন এসএফআই")
       }
     }
     saveInactiveList(inactiveList);
 
     // Save transfer mapping locally
-    const currentCompKey = `${currentNorm}_${getCleanBranch(selectedParaType)}`;
     const transfersMap = getTransfersMap();
     if (tempIsActive) {
       delete transfersMap[currentCompKey];
@@ -602,7 +625,12 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
       };
       
       const norm = normalizeName(profile.name);
-      const inactiveList = getInactiveList().filter(n => normalizeName(n) !== norm);
+      const branchClean = getCleanBranch(profile.para_type);
+      const compKey = `${norm}_${branchClean}`;
+      const inactiveList = getInactiveList().filter(n => {
+        const itemNorm = normalizeName(n);
+        return itemNorm !== norm && itemNorm !== compKey;
+      });
       saveInactiveList(inactiveList);
 
       if (isSupabaseConfigured && profile.id && !profile.id.toString().startsWith('local-')) {
