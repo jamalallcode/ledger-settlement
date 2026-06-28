@@ -23,6 +23,7 @@ interface ReceiverProfile {
   source?: 'database' | 'local' | 'correspondence' | 'unassigned';
   is_voter?: boolean;
   is_active?: boolean;
+  transferred_to?: string;
 }
 
 const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
@@ -53,6 +54,32 @@ const saveInactiveList = (list: string[]) => {
   }
 };
 
+const TRANSFERS_STORAGE_KEY = 'ledger_receiver_transfers_v2';
+
+const getTransfersMap = (): Record<string, string> => {
+  try {
+    const saved = localStorage.getItem(TRANSFERS_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveTransfersMap = (map: Record<string, string>) => {
+  try {
+    localStorage.setItem(TRANSFERS_STORAGE_KEY, JSON.stringify(map));
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const getBranchFromTransferName = (name: string): string | null => {
+  if (name === 'প্রশাসন শাখা') return 'প্রশাসন';
+  if (name === 'এসএফআই শাখা') return 'এসএফআই';
+  if (name === 'নন এসএফআই শাখা') return 'নন এসএফআই';
+  return null;
+};
+
 const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onViewEntries, onBack }) => {
   const [receiversList, setReceiversList] = useState<ReceiverProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,6 +90,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
   const [tempDesignation, setTempDesignation] = useState('');
   const [tempImage, setTempImage] = useState<string | null>(null);
   const [tempIsActive, setTempIsActive] = useState(true);
+  const [tempTransferredTo, setTempTransferredTo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const fetchReceivers = async () => {
@@ -241,6 +269,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
       });
 
       const inactiveNamesSet = new Set(getInactiveList().map(name => normalizeName(name)));
+      const transfersMap = getTransfersMap();
 
       // Map counts and active status
       const receiversWithCounts = finalReceivers.map(r => {
@@ -253,10 +282,13 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
           is_active = !inactiveNamesSet.has(norm);
         }
 
+        const transferred_to = r.transferred_to || transfersMap[compKey] || '';
+
         return {
           ...r,
           para_type: b,
           is_active,
+          transferred_to,
           entryCount: entryCounts[compKey] || 0,
           entryDetails: entryDetails[compKey] || []
         };
@@ -286,6 +318,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
     setTempDesignation('');
     setTempImage(null);
     setTempIsActive(true);
+    setTempTransferredTo('');
     setIsModalOpen(true);
   };
 
@@ -296,6 +329,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
     setTempDesignation(profile.designation || '');
     setTempImage(profile.image || null);
     setTempIsActive(profile.is_active !== false);
+    setTempTransferredTo(profile.transferred_to || '');
     setIsModalOpen(true);
   };
 
@@ -308,7 +342,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
       designation: tempDesignation.trim() || null,
       image: tempImage || null,
       para_type: selectedParaType,
-      is_active: tempIsActive
+      is_active: tempIsActive,
+      transferred_to: tempIsActive ? '' : tempTransferredTo
     };
 
     const normalizeName = (name: string | null | undefined) => {
@@ -343,20 +378,83 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
     }
     saveInactiveList(inactiveList);
 
+    // Save transfer mapping locally
+    const currentCompKey = `${currentNorm}_${getCleanBranch(selectedParaType)}`;
+    const transfersMap = getTransfersMap();
+    if (tempIsActive) {
+      delete transfersMap[currentCompKey];
+    } else {
+      transfersMap[currentCompKey] = tempTransferredTo;
+    }
+    saveTransfersMap(transfersMap);
+
+    // Check for automatic internal branch transfer
+    const targetBranch = getBranchFromTransferName(tempTransferredTo);
+    if (!tempIsActive && targetBranch && targetBranch !== getCleanBranch(selectedParaType)) {
+      const alreadyExists = receiversList.some(r => {
+        return normalizeName(r.name) === currentNorm && getCleanBranch(r.para_type) === targetBranch;
+      });
+
+      if (!alreadyExists) {
+        const newBranchProfile = {
+          name: tempName.trim(),
+          designation: tempDesignation.trim() || null,
+          image: tempImage || null,
+          para_type: targetBranch,
+          is_active: true
+        };
+
+        if (isSupabaseConfigured) {
+          try {
+            const { error: insErr } = await supabase
+              .from('receivers')
+              .insert([newBranchProfile]);
+            
+            if (insErr && (insErr.message?.includes('column') || insErr.code === '42703')) {
+              const { is_active, ...rest } = newBranchProfile;
+              await supabase.from('receivers').insert([rest]);
+            }
+          } catch (e) {
+            console.error('Auto branch copy failed in Supabase:', e);
+          }
+        }
+
+        try {
+          const targetKey = targetBranch === 'প্রশাসন' ? 'ledger_correspondence_receivers_admin' :
+                            targetBranch === 'নন এসএফআই' ? 'ledger_correspondence_receivers_nonsfi' :
+                            'ledger_correspondence_receivers_sfi';
+          const savedTarget = localStorage.getItem(targetKey);
+          let targetItems = [];
+          if (savedTarget) {
+            try { targetItems = JSON.parse(savedTarget); } catch (e) {}
+          }
+          if (!targetItems.some((it: any) => normalizeName(it.name) === currentNorm)) {
+            targetItems.push({
+              ...newBranchProfile,
+              id: 'local-' + Date.now() + '-copy'
+            });
+            localStorage.setItem(targetKey, JSON.stringify(targetItems));
+          }
+        } catch (e) {
+          console.error('Auto branch copy failed in LocalStorage:', e);
+        }
+      }
+    }
+
     try {
       if (isSupabaseConfigured) {
         let error;
         if (editingId && !editingId.toString().startsWith('local-')) {
-          // Attempt update with is_active
+          // Attempt update with is_active and transferred_to
           const { error: updateError } = await supabase
             .from('receivers')
             .update(profileData)
             .eq('id', editingId);
           error = updateError;
           
-          // Fallback if column does not exist
+          // Fallback if columns do not exist
           if (error && (error.message?.includes('column') || error.code === '42703')) {
-            const { is_active, ...rest } = profileData;
+            const { is_active, transferred_to, ...rest } = profileData;
             const { error: retryError } = await supabase
               .from('receivers')
               .update(rest)
@@ -364,15 +462,15 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
             error = retryError;
           }
         } else {
-          // Attempt insert with is_active
+          // Attempt insert with is_active and transferred_to
           const { error: insertError } = await supabase
             .from('receivers')
             .insert([profileData]);
           error = insertError;
 
-          // Fallback if column does not exist
+          // Fallback if columns do not exist
           if (error && (error.message?.includes('column') || error.code === '42703')) {
-            const { is_active, ...rest } = profileData;
+            const { is_active, transferred_to, ...rest } = profileData;
             const { error: retryError } = await supabase
               .from('receivers')
               .insert([rest]);
@@ -449,6 +547,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
     setTempDesignation('');
     setTempImage(null);
     setTempIsActive(true);
+    setTempTransferredTo('');
     setEditingId(null);
   };
 
@@ -620,8 +719,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className={`font-bold text-[13px] sm:text-sm truncate ${isInactive ? 'text-slate-400 line-through font-normal' : 'text-slate-700'}`}>{profile.name}</span>
                         {isInactive && (
-                          <span className="px-1.5 py-0.5 bg-rose-50 text-rose-600 text-[8px] font-black rounded border border-rose-100 uppercase tracking-wider shrink-0">
-                            বদলি / নিষ্ক্রিয়
+                          <span className="px-1.5 py-0.5 bg-rose-50 text-rose-600 text-[8px] font-black rounded border border-rose-100 uppercase tracking-wider shrink-0 flex items-center gap-1">
+                            বদলি / নিষ্ক্রিয় {profile.transferred_to ? `(${profile.transferred_to})` : ''}
                           </span>
                         )}
                         {profile.entryCount !== undefined && profile.entryCount > 0 && (
@@ -819,13 +918,34 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">সক্রিয়তা / বদলি অবস্থা</label>
                   <select 
                     value={tempIsActive ? "active" : "inactive"}
-                    onChange={(e) => setTempIsActive(e.target.value === "active")}
+                    onChange={(e) => {
+                      const val = e.target.value === "active";
+                      setTempIsActive(val);
+                      if (val) setTempTransferredTo('');
+                    }}
                     className="w-full h-[54px] px-5 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all text-sm shadow-sm"
                   >
                     <option value="active">সক্রিয় (Active)</option>
                     <option value="inactive">বদলি / নিষ্ক্রিয় (Transferred / Inactive)</option>
                   </select>
                 </div>
+
+                {!tempIsActive && (
+                  <div className="space-y-2 animate-in fade-in slide-in-from-top-3 duration-200">
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">বদলি স্থলী নির্ধারণ করুন</label>
+                    <select 
+                      value={tempTransferredTo}
+                      onChange={(e) => setTempTransferredTo(e.target.value)}
+                      className="w-full h-[54px] px-5 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all text-sm shadow-sm"
+                    >
+                      <option value="">-- বদলির শাখা/স্থান নির্ধারণ করুন --</option>
+                      <option value="প্রশাসন শাখা">১. প্রশাসন শাখা</option>
+                      <option value="এসএফআই শাখা">২. এসএফআই শাখা</option>
+                      <option value="নন এসএফআই শাখা">৩. নন এসএফআই শাখা</option>
+                      <option value="অন্যান্য দপ্তর / অন্যত্র">অন্যান্য দপ্তর / অন্যত্র</option>
+                    </select>
+                  </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-3">
