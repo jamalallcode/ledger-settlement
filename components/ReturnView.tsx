@@ -3,7 +3,7 @@ import React from 'react';
 import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants';
-import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
 import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
 import { getCycleForDate } from '../utils/cycleHelper';
 import { isSFI, isNonSFI } from '../utils/branchUtils';
@@ -78,6 +78,120 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       searchInputRef.current.focus();
     }
   }, [isSearchExpanded]);
+
+  const downloadExcel = useCallback(() => {
+    const tables = document.querySelectorAll('table');
+    if (tables.length === 0) {
+      return;
+    }
+
+    let tablesHtml = '';
+    tables.forEach((table, tableIdx) => {
+      const clonedTable = table.cloneNode(true) as HTMLTableElement;
+      
+      // Remove any interactive buttons, icons, or non-print elements inside the cloned table
+      const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
+      interactiveElements.forEach(el => el.remove());
+      
+      tablesHtml += `
+        <div style="margin-bottom: 40px;">
+          ${tableIdx > 0 ? '<br><hr><br>' : ''}
+          ${clonedTable.outerHTML}
+        </div>
+      `;
+    });
+
+    const filename = `${selectedReportType ? selectedReportType.replace(/[:|*?"<>\\/]/g, '_') : 'রিপোর্ট'}_${dateFnsFormat(new Date(), 'yyyy-MM-dd')}.xls`;
+
+    const template = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>রিপোর্ট</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Hind Siliguri', 'Calibri', sans-serif;
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 20px;
+          }
+          th, td {
+            border: 1px solid #cbd5e1 !important;
+            padding: 8px 12px !important;
+            text-align: center;
+            font-size: 11px;
+            vertical-align: middle;
+          }
+          th {
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+            font-weight: bold !important;
+          }
+          .bg-slate-200, thead, tfoot {
+            background-color: #e2e8f0 !important;
+            font-weight: bold !important;
+          }
+          .bg-sky-100 {
+            background-color: #e0f2fe !important;
+          }
+          .bg-amber-50 {
+            background-color: #fef3c7 !important;
+          }
+          .bg-black {
+            background-color: #090d16 !important;
+            color: #ffffff !important;
+          }
+          tfoot td {
+            background-color: #0f172a !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+          }
+          .text-left {
+            text-align: left !important;
+          }
+          .text-right {
+            text-align: right !important;
+          }
+          .font-black, .font-extrabold {
+            font-weight: 900 !important;
+          }
+          .font-bold {
+            font-weight: 700 !important;
+          }
+        </style>
+      </head>
+      <body>
+        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">${selectedReportType || 'রিপোর্ট'}</h2>
+        ${tablesHtml}
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([template], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [selectedReportType]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ministryDropdownRef = useRef<HTMLDivElement>(null);
@@ -921,12 +1035,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       {renderedContent}
       {!isSetupMode && selectedReportType !== null && (
         <button
-          onClick={() => window.print()}
+          onClick={downloadExcel}
           className="fixed bottom-6 right-6 z-[12000] no-print flex items-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 active:scale-95 text-white font-black text-sm rounded-full shadow-[0_10px_25px_-5px_rgba(16,185,129,0.4)] hover:shadow-[0_15px_30px_-5px_rgba(16,185,129,0.5)] border border-emerald-400/20 transition-all cursor-pointer select-none group"
-          title="রিপোর্ট বা রিটার্ন প্রিন্ট অথবা পিডিএফ ডাউনলোড করুন"
+          title="রিপোর্ট বা রিটার্ন এক্সেল ফাইল ডাউনলোড করুন"
         >
-          <Printer size={16} className="group-hover:rotate-12 transition-transform" />
-          <span>প্রিন্ট / পিডিএফ ডাউনলোড</span>
+          <FileSpreadsheet size={16} className="group-hover:scale-110 transition-transform" />
+          <span>এক্সেল ফাইল ডাউনলোড</span>
         </button>
       )}
     </div>
