@@ -539,7 +539,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                         {row.auditYear && (
                           <>
                             <br />
-                            <span className="font-normal text-slate-500">({toBengaliDigits(row.auditYear)})</span>
+                            <span className="font-bold text-slate-800">({toBengaliDigits(row.auditYear)})</span>
                           </>
                         )}
                       </td>
