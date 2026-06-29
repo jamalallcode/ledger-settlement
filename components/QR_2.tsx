@@ -129,7 +129,7 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     amount: acc.amount + (curr.involvedAmount || 0),
     recovery: acc.recovery + (curr.totalRec || 0),
     adjustment: acc.adjustment + (curr.totalAdj || 0),
-    others: acc.others + (curr.othersRec || 0) + (curr.othersAdj || 0),
+    others: 0,
   }), { sentPara: 0, settledPara: 0, amount: 0, recovery: 0, adjustment: 0, others: 0 });
 
   const thCls = "border-r border-b border-slate-400 p-1 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
@@ -277,7 +277,7 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                 <td className={numTdCls}>{toBengaliDigits(row.involvedAmount?.toString() || '০')}</td>
                 <td className={numTdCls}>{toBengaliDigits(row.totalRec?.toString() || '০')}</td>
                 <td className={numTdCls}>{toBengaliDigits(row.totalAdj?.toString() || '০')}</td>
-                <td className={numTdCls}>{toBengaliDigits((row.othersRec + row.othersAdj)?.toString() || '০')}</td>
+                <td className={numTdCls}>-</td>
                 <td className={tdCls}>{row.remarks}</td>
                 <td className={numTdCls}>{row.archiveNo}</td>
               </tr>
@@ -303,7 +303,7 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
               <td className={footerNumTdCls}>{toBengaliDigits(totals.amount.toString())}</td>
               <td className={footerNumTdCls}>{toBengaliDigits(totals.recovery.toString())}</td>
               <td className={footerNumTdCls}>{toBengaliDigits(totals.adjustment.toString())}</td>
-              <td className={footerNumTdCls}>{toBengaliDigits(totals.others.toString())}</td>
+              <td className={footerNumTdCls}>-</td>
               <td colSpan={2} className={footerTdCls}></td>
             </tr>
           </tfoot>

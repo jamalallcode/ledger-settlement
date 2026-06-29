@@ -115,10 +115,10 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
       const involvedAmount = acc.involvedAmount + (curr.involvedAmount || 0);
       const recoveredAmount = acc.recoveredAmount + (curr.totalRec || 0);
       const adjustedAmount = acc.adjustedAmount + (curr.totalAdj || 0);
-      const othersAmount = acc.othersAmount + (curr.othersRec || 0) + (curr.othersAdj || 0);
+      const othersAmount = 0; // Prevent redundant othersAmount in BSRMonthlySettlementDetail report
       const unsettledPara = acc.unsettledPara + rowUnsettledCount;
       
-      const entryUnsettledAmount = Math.max(0, (curr.involvedAmount || 0) - (curr.totalRec || 0) - (curr.totalAdj || 0) - (curr.othersRec || 0) - (curr.othersAdj || 0));
+      const entryUnsettledAmount = Math.max(0, (curr.involvedAmount || 0) - (curr.totalRec || 0) - (curr.totalAdj || 0));
       const unsettledAmount = acc.unsettledAmount + entryUnsettledAmount;
       
       return {
@@ -130,7 +130,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
         othersAmount,
         unsettledPara,
         unsettledAmount,
-        totalSettled: recoveredAmount + adjustedAmount + othersAmount
+        totalSettled: recoveredAmount + adjustedAmount
       };
     }, {
       sentPara: 0,
@@ -511,7 +511,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                 </tr>
               ) : (
                 filteredEntries.map((row, idx) => {
-                  const entryUnsettledAmount = Math.max(0, (row.involvedAmount || 0) - (row.totalRec || 0) - (row.totalAdj || 0) - (row.othersRec || 0) - (row.othersAdj || 0));
+                  const entryUnsettledAmount = Math.max(0, (row.involvedAmount || 0) - (row.totalRec || 0) - (row.totalAdj || 0));
                   const rowSentCount = parseInt(toEnglishDigits(row.meetingSentParaCount || '0')) || row.paragraphs?.length || 0;
                   const rowSettledCount = row.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').length || parseInt(toEnglishDigits(row.meetingSettledParaCount || '0')) || 0;
                   const rowUnsettledCount = parseInt(toEnglishDigits(row.meetingUnsettledParas || '0')) || Math.max(0, rowSentCount - rowSettledCount);
@@ -571,7 +571,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                         {formatAmountBengali(row.totalAdj)}
                       </td>
                       <td className={numTdStyle}>
-                        {formatAmountBengali((row.othersRec || 0) + (row.othersAdj || 0))}
+                        {formatAmountBengali(0)}
                       </td>
                       <td className={numTdStyle}>
                         {formatCountBengali(rowUnsettledCount)}
