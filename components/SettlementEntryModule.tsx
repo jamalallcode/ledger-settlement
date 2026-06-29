@@ -670,6 +670,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         meetingWorkpaper: combinedWp,
         meetingFullSettledParaCount: summaryData.fullCount.toString(),
         meetingPartialSettledParaCount: summaryData.partialCount.toString(),
+        meetingSettledParaCount: summaryData.fullCount.toString(),
         isMeeting: formData.meetingType !== 'বিএসআর', 
         paragraphs, cycleLabel, isLate, actualEntryDate: now.toISOString(), involvedAmount: paraInvTotal + (formData.meetingUnsettledAmount || 0),
         meetingUnsettledAmount: calculatedUnsettledAmount,
