@@ -22,6 +22,7 @@ interface ReturnSummaryTableProps {
   statsGrandTotals?: any;
   isSearchExpanded?: boolean;
   onDownloadExcel?: () => void;
+  onToggleDetailedView?: () => void;
 }
 
 const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
@@ -40,7 +41,8 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   statsReportData,
   statsGrandTotals,
   isSearchExpanded = false,
-  onDownloadExcel
+  onDownloadExcel,
+  onToggleDetailedView
 }) => {
   const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
@@ -407,6 +409,18 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                 title="এক্সেল ফাইল ডাউনলোড করুন"
               >
                 <FileSpreadsheet size={16} className="stroke-[2.5]" />
+              </button>
+            )}
+
+            {selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' && onToggleDetailedView && (
+              <button
+                type="button"
+                onClick={onToggleDetailedView}
+                className="flex items-center gap-1.5 px-3 h-[38px] bg-blue-50 text-blue-700 hover:text-blue-800 border border-blue-100 hover:border-blue-300 transition-all duration-300 rounded-xl cursor-pointer shrink-0 shadow-sm font-black text-[11px]"
+                title="বিস্তারিত অনুচ্ছেদ ছক দেখুন"
+              >
+                <ListChecks size={13} className="stroke-[2.5]" />
+                <span>বিস্তারিত ছক দেখুন</span>
               </button>
             )}
 
