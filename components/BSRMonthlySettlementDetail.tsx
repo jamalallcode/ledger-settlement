@@ -113,7 +113,9 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
       const adjustedAmount = acc.adjustedAmount + (curr.totalAdj || 0);
       const othersAmount = acc.othersAmount + (curr.othersRec || 0) + (curr.othersAdj || 0);
       const unsettledPara = acc.unsettledPara + (parseInt(toEnglishDigits(curr.meetingUnsettledParas || '0')) || 0);
-      const unsettledAmount = acc.unsettledAmount + (curr.meetingUnsettledAmount || 0);
+      
+      const entryUnsettledAmount = Math.max(0, (curr.involvedAmount || 0) - (curr.totalRec || 0) - (curr.totalAdj || 0) - (curr.othersRec || 0) - (curr.othersAdj || 0));
+      const unsettledAmount = acc.unsettledAmount + entryUnsettledAmount;
       
       return {
         sentPara,
@@ -201,21 +203,26 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
     return months[date.getMonth()];
   };
 
-  const thStyle = "border-r border-b border-slate-400 px-2 py-3 font-black text-center text-slate-800 text-[10.5px] leading-tight align-middle h-full bg-slate-100 bg-clip-border relative";
-  const tdStyle = "border-r border-b border-slate-400 px-2 py-2.5 text-[11px] text-slate-700 align-middle text-center break-words bg-white";
-  const numTdStyle = "border-r border-b border-slate-400 px-2 py-2.5 text-[11px] text-slate-700 align-middle text-center font-bold bg-white";
+  const thStyle = "border-r border-b border-slate-400 px-1 py-1.5 font-black text-center text-slate-800 text-[9px] sm:text-[9.5px] leading-tight align-middle h-full bg-slate-100 bg-clip-border relative";
+  const tdStyle = "border-r border-b border-slate-400 px-1 py-1 text-[9.5px] sm:text-[10px] text-slate-700 align-middle text-center break-words bg-white";
+  const numTdStyle = "border-r border-b border-slate-400 px-1 py-1 text-[9.5px] sm:text-[10px] text-slate-700 align-middle text-center font-bold bg-white";
 
   const formatAmountBengali = (num: number | undefined | null) => {
-    if (!num) return '';
+    if (num === undefined || num === null || isNaN(num) || num === 0) return '-';
     const str = Math.round(num).toLocaleString('bn-BD');
     return toBengaliDigits(str) + '/-';
   };
 
   const formatCountBengali = (count: string | number | undefined | null) => {
-    if (!count) return '';
+    if (count === undefined || count === null) return '-';
     const cStr = count.toString().trim();
-    if (cStr === '0' || cStr === '০' || cStr === '') return '';
+    if (cStr === '0' || cStr === '০' || cStr === '') return '-';
     return toBengaliDigits(cStr);
+  };
+
+  const formatTextValue = (val: string | undefined | null) => {
+    if (val === undefined || val === null || val.trim() === '') return '-';
+    return toBengaliDigits(val);
   };
 
   return (
@@ -463,22 +470,22 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
       {/* Main Table Section */}
       <div id="card-bsr-monthly-detail-table-container" className="bg-white border border-slate-300 shadow-inner rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table id="table-bsr-monthly-detail" className="w-full border-separate border-spacing-0 !table-auto min-w-[1200px] border-l border-t border-slate-400">
+          <table id="table-bsr-monthly-detail" className="w-full border-separate border-spacing-0 !table-auto border-l border-t border-slate-400">
             <thead>
               <tr className="h-[44px] bg-slate-100">
-                <th rowSpan={2} className={`${thStyle} w-[50px] rounded-tl-2xl`}>ক্রঃ নং</th>
-                <th rowSpan={2} className={`${thStyle} w-[220px]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
-                <th rowSpan={2} className={`${thStyle} w-[90px]`}>ব্রডশিট জবাবের সংখ্যা</th>
-                <th rowSpan={2} className={`${thStyle} w-[130px]`}>ডায়েরি নম্বর ও তারিখ</th>
-                <th rowSpan={2} className={`${thStyle} w-[130px]`}>ব্রডশিট জবাবের স্মারক ও তারিখ</th>
-                <th rowSpan={2} className={`${thStyle} w-[90px]`}>প্রেরিত অনুচ্ছেদ সংখ্যা</th>
-                <th rowSpan={2} className={`${thStyle} w-[90px]`}>মীমাংসিত অনুচ্ছেদ সংখ্যা</th>
-                <th rowSpan={2} className={`${thStyle} w-[130px]`}>মীমাংসা জারিপত্রের স্মারক ও তারিখ</th>
-                <th rowSpan={2} className={`${thStyle} w-[110px]`}>মীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
+                <th rowSpan={2} className={`${thStyle} w-[35px] rounded-tl-2xl`}>ক্রঃ নং</th>
+                <th rowSpan={2} className={`${thStyle} w-[180px]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
+                <th rowSpan={2} className={`${thStyle} w-[60px]`}>ব্রডশিট জবাবের সংখ্যা</th>
+                <th rowSpan={2} className={`${thStyle} w-[100px]`}>ডায়েরি নম্বর ও তারিখ</th>
+                <th rowSpan={2} className={`${thStyle} w-[110px]`}>ব্রডশিট জবাবের স্মারক ও তারিখ</th>
+                <th rowSpan={2} className={`${thStyle} w-[65px]`}>প্রেরিত অনুচ্ছেদ সংখ্যা</th>
+                <th rowSpan={2} className={`${thStyle} w-[65px]`}>মীমাংসিত অনুচ্ছেদ সংখ্যা</th>
+                <th rowSpan={2} className={`${thStyle} w-[110px]`}>মীমাংসা জারিপত্রের স্মারক ও তারিখ</th>
+                <th rowSpan={2} className={`${thStyle} w-[85px]`}>মীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
                 <th colSpan={3} className={`${thStyle}`}>ব্রডশিট জবাবের প্রেক্ষিতে আদায় সমন্বয়ের পরিমাণ</th>
-                <th rowSpan={2} className={`${thStyle} w-[90px]`}>অমীমাংসিত অনুচ্ছেদ সংখ্যা</th>
-                <th rowSpan={2} className={`${thStyle} w-[110px]`}>অমীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
-                <th rowSpan={2} className={`${thStyle} w-[90px] rounded-tr-2xl`}>আর্কাইভ নং</th>
+                <th rowSpan={2} className={`${thStyle} w-[65px]`}>অমীমাংসিত অনুচ্ছেদ সংখ্যা</th>
+                <th rowSpan={2} className={`${thStyle} w-[85px]`}>অমীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
+                <th rowSpan={2} className={`${thStyle} w-[70px] rounded-tr-2xl`}>আর্কাইভ নং</th>
               </tr>
               <tr className="h-[38px] bg-slate-100">
                 <th className={thStyle}>আদায়</th>
@@ -500,6 +507,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                 </tr>
               ) : (
                 filteredEntries.map((row, idx) => {
+                  const entryUnsettledAmount = Math.max(0, (row.involvedAmount || 0) - (row.totalRec || 0) - (row.totalAdj || 0) - (row.othersRec || 0) - (row.othersAdj || 0));
                   return (
                     <tr key={row.id} className="hover:bg-slate-50/75 bg-white transition-colors group">
                       <td className={`${numTdStyle} text-slate-700 group-hover:text-blue-600`}>
@@ -513,6 +521,14 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                             <HighlightText text={row.entityName} searchTerm={searchTerm} />
                           </>
                         )}
+                        {row.branchName && (
+                          <>
+                            ,<br />
+                            <span className="text-blue-700 font-extrabold text-[10.5px]">
+                              <HighlightText text={row.branchName} searchTerm={searchTerm} />
+                            </span>
+                          </>
+                        )}
                         {row.auditYear && (
                           <>
                             <br />
@@ -524,10 +540,10 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                         {toBengaliDigits((idx + 1).toString().padStart(2, '0'))}
                       </td>
                       <td className={numTdStyle}>
-                        <HighlightText text={toBengaliDigits(row.meetingWorkpaper || '')} searchTerm={searchTerm} />
+                        <HighlightText text={formatTextValue(row.meetingWorkpaper)} searchTerm={searchTerm} />
                       </td>
                       <td className={numTdStyle}>
-                        <HighlightText text={toBengaliDigits(row.letterNoDate || '')} searchTerm={searchTerm} />
+                        <HighlightText text={formatTextValue(row.letterNoDate)} searchTerm={searchTerm} />
                       </td>
                       <td className={numTdStyle}>
                         {formatCountBengali(row.meetingSentParaCount)}
@@ -536,7 +552,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                         {formatCountBengali(row.meetingSettledParaCount)}
                       </td>
                       <td className={numTdStyle}>
-                        <HighlightText text={toBengaliDigits(row.issueLetterNoDate || '')} searchTerm={searchTerm} />
+                        <HighlightText text={formatTextValue(row.issueLetterNoDate)} searchTerm={searchTerm} />
                       </td>
                       <td className={numTdStyle}>
                         {formatAmountBengali(row.involvedAmount)}
@@ -554,10 +570,10 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                         {formatCountBengali(row.meetingUnsettledParas)}
                       </td>
                       <td className={numTdStyle}>
-                        {formatAmountBengali(row.meetingUnsettledAmount)}
+                        {entryUnsettledAmount === 0 ? toBengaliDigits('0') + '/-' : formatAmountBengali(entryUnsettledAmount)}
                       </td>
                       <td className={numTdStyle}>
-                        <HighlightText text={row.archiveNo || ''} searchTerm={searchTerm} />
+                        <HighlightText text={formatTextValue(row.archiveNo)} searchTerm={searchTerm} />
                       </td>
                     </tr>
                   );
@@ -607,7 +623,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                     {formatCountBengali(totals.unsettledPara)}
                   </td>
                   <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-white font-black">
-                    {formatAmountBengali(totals.unsettledAmount)}
+                    {totals.unsettledAmount === 0 ? toBengaliDigits('0') + '/-' : formatAmountBengali(totals.unsettledAmount)}
                   </td>
                   <td className="border-r border-b border-slate-700 px-2 py-2 rounded-br-2xl"></td>
                 </tr>
