@@ -217,6 +217,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
 
   const reportThStyle1 = "sticky top-0 xl:top-[45px] z-[240] px-0.5 py-2 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
   const reportThStyle2 = "sticky top-[42px] xl:top-[87px] z-[240] px-0.5 py-2 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
+  const reportThStyle3 = "sticky top-[80px] xl:top-[125px] z-[240] px-0.5 py-1.5 font-black text-center text-slate-500 text-[8px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] text-center font-bold leading-tight group-hover:bg-blue-100/80 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
   const subTotalTdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] text-center font-bold leading-tight text-slate-900 h-[38px] whitespace-normal break-words relative";
   const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[10px] bg-slate-200 z-[190] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
@@ -470,6 +471,11 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                 <th className={`${reportThStyle2}`}>সংখ্যা</th><th className={`${reportThStyle2}`}>টাকা</th>
                 <th className={`${reportThStyle2}`}>সংখ্যা</th><th className={`${reportThStyle2}`}>টাকা</th>
                 <th className={`${reportThStyle2}`}>সংখ্যা</th><th className={`${reportThStyle2}`}>টাকা</th>
+              </tr>
+              <tr className="h-[32px]">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map(n => (
+                  <th key={n} className={`${reportThStyle3}`}>{toBengaliDigits(n.toString())}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
