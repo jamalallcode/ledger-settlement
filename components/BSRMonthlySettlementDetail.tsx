@@ -472,12 +472,12 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
       </div>
 
       {/* Main Table Section */}
-      <div id="card-bsr-monthly-detail-table-container" className="bg-white border border-slate-300 shadow-inner rounded-2xl overflow-hidden">
+      <div id="card-bsr-monthly-detail-table-container" className="bg-white border border-slate-300 shadow-inner rounded-none overflow-hidden">
         <div className="overflow-x-auto">
           <table id="table-bsr-monthly-detail" className="w-full border-separate border-spacing-0 !table-auto border-l border-t border-slate-400">
             <thead>
               <tr className="h-[44px] bg-slate-100">
-                <th rowSpan={2} className={`${thStyle} w-[35px] rounded-tl-2xl`}>ক্রঃ নং</th>
+                <th rowSpan={2} className={`${thStyle} w-[35px] rounded-none`}>ক্রঃ নং</th>
                 <th rowSpan={2} className={`${thStyle} w-[180px]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
                 <th rowSpan={2} className={`${thStyle} w-[60px]`}>ব্রডশিট জবাবের সংখ্যা</th>
                 <th rowSpan={2} className={`${thStyle} w-[100px]`}>ডায়েরি নম্বর ও তারিখ</th>
@@ -489,7 +489,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                 <th colSpan={3} className={`${thStyle}`}>ব্রডশিট জবাবের প্রেক্ষিতে আদায় সমন্বয়ের পরিমাণ</th>
                 <th rowSpan={2} className={`${thStyle} w-[65px]`}>অমীমাংসিত অনুচ্ছেদ সংখ্যা</th>
                 <th rowSpan={2} className={`${thStyle} w-[85px]`}>অমীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
-                <th rowSpan={2} className={`${thStyle} w-[70px] rounded-tr-2xl`}>আর্কাইভ নং</th>
+                <th rowSpan={2} className={`${thStyle} w-[70px] rounded-none`}>আর্কাইভ নং</th>
               </tr>
               <tr className="h-[38px] bg-slate-100">
                 <th className={thStyle}>আদায়</th>
@@ -586,22 +586,11 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                   );
                 })
               )}
-              
-              {/* Pad empty rows if sparse */}
-              {filteredEntries.length > 0 && filteredEntries.length < 5 && (
-                Array.from({ length: 5 - filteredEntries.length }).map((_, i) => (
-                  <tr key={`empty-${i}`} className="h-10 bg-white">
-                    {Array.from({ length: 15 }).map((_, j) => (
-                      <td key={j} className="border-r border-b border-slate-400"></td>
-                    ))}
-                  </tr>
-                ))
-              )}
             </tbody>
             {filteredEntries.length > 0 && (
               <tfoot className="bg-slate-900 text-white font-extrabold shadow-2xl relative z-10">
                 <tr className="h-[44px] bg-slate-900 border-t border-slate-700">
-                  <td colSpan={2} className="border-r border-b border-slate-700 px-3 py-2 text-left text-[11px] font-black uppercase text-white rounded-bl-2xl">সর্বমোট (ফিল্টারকৃত):</td>
+                  <td colSpan={2} className="border-r border-b border-slate-700 px-3 py-2 text-left text-[11px] font-black uppercase text-white rounded-none">সর্বমোট (ফিল্টারকৃত):</td>
                   <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-white font-black">
                     {toBengaliDigits(filteredEntries.length.toString())} টি
                   </td>
@@ -632,7 +621,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                   <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-white font-black">
                     {totals.unsettledAmount === 0 ? toBengaliDigits('0') + '/-' : formatAmountBengali(totals.unsettledAmount)}
                   </td>
-                  <td className="border-r border-b border-slate-700 px-2 py-2 rounded-br-2xl"></td>
+                  <td className="border-r border-b border-slate-700 px-2 py-2 rounded-none"></td>
                 </tr>
               </tfoot>
             )}
