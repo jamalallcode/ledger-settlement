@@ -417,7 +417,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                 </div>
                 <div className="space-y-2 text-slate-700 text-[11px] font-bold">
                   <div className="flex justify-between">
-                    <span>মোট ব্রডশিট जवाबের সংখ্যা:</span>
+                    <span>মোট ব্রডশিট জবাবের সংখ্যা:</span>
                     <span className="text-blue-700 font-extrabold">{toBengaliDigits(filteredEntries.length.toString())} টি</span>
                   </div>
                   <div className="flex justify-between">
