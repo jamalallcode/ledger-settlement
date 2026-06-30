@@ -66,6 +66,9 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
     const list: SettlementEntry[] = [];
     
     entries.forEach(e => {
+      // Filter out entries that don't have a ministry name
+      if (!e.ministryName || !e.ministryName.trim()) return;
+
       // 1. Filter by Non-SFI branch
       if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return;
       
@@ -539,7 +542,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                         {row.auditYear && (
                           <>
                             <br />
-                            <span className="font-normal text-slate-500">({toBengaliDigits(row.auditYear)})</span>
+                            <span className="font-bold text-slate-800">({toBengaliDigits(row.auditYear)})</span>
                           </>
                         )}
                       </td>

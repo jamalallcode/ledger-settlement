@@ -1021,7 +1021,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' && showDetailedBsrView) {
     renderedContent = (
       <BSRMonthlySettlementDetail
-        entries={[...entries, ...(correspondenceEntries || [])]}
+        entries={entries}
         selectedCycleDate={selectedCycleDate}
         setSelectedCycleDate={setSelectedCycleDate}
         activeCycle={activeCycle}
