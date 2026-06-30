@@ -45,6 +45,9 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
     { id: 'bilateral', label: 'দ্বিপক্ষীয় সভা', hasSub: true, icon: User, color: 'blue' },
     { id: 'trilateral', label: 'ত্রিপক্ষীয় সভা', hasSub: true, icon: Layout, color: 'indigo' },
     { id: 'reconciliation', label: 'মিলিকরণ', value: 'মিলিকরণ', icon: Sparkles, color: 'amber' },
+    { id: 'acknowledgement', label: 'অবগতি পত্র', value: 'অবগতি পত্র', icon: Mail, color: 'teal' },
+    { id: 'certificate', label: 'প্রত্যয়ন পত্র', value: 'প্রত্যয়ন পত্র', icon: ShieldCheck, color: 'purple' },
+    { id: 'others', label: 'অন্যান্য', value: 'অন্যান্য', icon: BookOpen, color: 'sky' },
   ];
 
   const subOptions = [
@@ -91,7 +94,7 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-visible animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
+        <div className="absolute top-[calc(100%+6px)] left-0 w-[60%] min-w-[220px] bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-visible animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
           <div className="p-1.5 space-y-0.5">
             <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -131,7 +134,6 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
                 
                 {opt.hasSub ? (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest group-hover:text-emerald-400 transition-colors">সাব-আইটেম</span>
                     <ArrowRight size={13} className="text-slate-300 group-hover:text-emerald-500 transition-all group-hover:translate-x-0.5" />
                   </div>
                 ) : (

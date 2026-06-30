@@ -1754,6 +1754,19 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                 />
                               </span>
                             </div>
+                            {entry.archiveNo && (
+                              <div className="flex flex-col">
+                                <span className={labelCls}>
+                                  ৬. আর্কাইভ নং:
+                                </span>
+                                <span className={valCls + " pl-3 text-purple-600 font-extrabold"}>
+                                  <HighlightText
+                                    text={entry.archiveNo}
+                                    searchTerm={searchTerm}
+                                  />
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className={tdCls}>

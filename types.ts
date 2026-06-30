@@ -122,6 +122,7 @@ export interface CorrespondenceEntry {
   issueLetterNo: string;
   issueLetterDate: string;
   issueLetterComment?: string;
+  archiveNo?: string;
   remarks?: string;
   createdAt: string;
   approvalStatus?: 'approved' | 'pending';
