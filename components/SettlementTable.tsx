@@ -1879,7 +1879,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                                 <span className="font-black text-purple-700">
                                                   আর্কাইভ নং:
                                                 </span>{" "}
-                                                <span className="font-black text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 whitespace-pre-line">
+                                                <span className="inline-block font-black text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 whitespace-pre-line leading-normal align-top mt-0.5">
                                                   <HighlightText
                                                     text={formatArchiveNoForTable(entry.archiveNo)}
                                                     searchTerm={searchTerm}
@@ -2146,7 +2146,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                           <span className="font-black text-purple-700">
                                             আর্কাইভ নং:
                                           </span>{" "}
-                                          <span className="font-black text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 whitespace-pre-line">
+                                          <span className="inline-block font-black text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 whitespace-pre-line leading-normal align-top mt-0.5">
                                             <HighlightText
                                               text={formatArchiveNoForTable(entry.archiveNo)}
                                               searchTerm={searchTerm}
