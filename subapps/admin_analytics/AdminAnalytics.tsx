@@ -358,22 +358,22 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50">
                     <th 
-                      className="sticky top-[var(--sticky-top)] bg-slate-50 px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest z-[90] shadow-sm"
+                      className="bg-slate-50 px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest shadow-sm"
                     >
                       অডিটরের নাম
                     </th>
                     <th 
-                      className="sticky top-[var(--sticky-top)] bg-slate-50 px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center z-[90] shadow-sm"
+                      className="bg-slate-50 px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center shadow-sm"
                     >
                       মোট চিঠি
                     </th>
                     <th 
-                      className="sticky top-[var(--sticky-top)] bg-slate-50 px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center z-[90] shadow-sm"
+                      className="bg-slate-50 px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center shadow-sm"
                     >
                       মোট অনুচ্ছেদ
                     </th>
                     <th 
-                      className="sticky top-[var(--sticky-top)] bg-slate-50 px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right z-[90] shadow-sm"
+                      className="bg-slate-50 px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right shadow-sm"
                     >
                       অ্যাকশন
                     </th>
