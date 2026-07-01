@@ -7,6 +7,7 @@ import { SettlementEntry } from '../types';
 
 interface BSRMonthlySettlementDetailProps {
   entries: SettlementEntry[];
+  correspondenceEntries?: any[];
   selectedCycleDate: Date;
   setSelectedCycleDate: (date: Date) => void;
   activeCycle: any;
@@ -17,8 +18,125 @@ interface BSRMonthlySettlementDetailProps {
   onToggleSummaryView?: () => void; // Option to switch back to summary
 }
 
+function parseDateToStandard(dateStr: string | undefined | null): string {
+  if (!dateStr) return '';
+  const eng = toEnglishDigits(dateStr).trim();
+  
+  // Try YYYY-MM-DD first
+  const isoMatch = eng.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+  if (isoMatch) {
+    let y = isoMatch[1];
+    let m = isoMatch[2];
+    let d = isoMatch[3];
+    if (d.length === 1) d = '0' + d;
+    if (m.length === 1) m = '0' + m;
+    return `${d}/${m}/${y}`;
+  }
+  
+  // Try DD/MM/YYYY or D/M/YY
+  const dmyMatch = eng.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
+  if (dmyMatch) {
+    let d = dmyMatch[1];
+    let m = dmyMatch[2];
+    let y = dmyMatch[3];
+    if (d.length === 1) d = '0' + d;
+    if (m.length === 1) m = '0' + m;
+    if (y.length === 2) y = '20' + y;
+    return `${d}/${m}/${y}`;
+  }
+  return '';
+}
+
+function normalizeNo(noStr: string | undefined | null): string {
+  if (!noStr) return '';
+  const eng = toEnglishDigits(noStr);
+  const cleanRegex = /(diary|letter|issue|workpaper|wp|no|date|memo|ডায়েরি|পত্র|জারিপত্র|কার্যপত্র|স্মারক|তারিখ|নং|ও|ের|র|[\s:\-–—\.,\/])/gi;
+  return eng.replace(cleanRegex, '').trim();
+}
+
+function parseCombinedField(combined: string | undefined | null) {
+  if (!combined) return { no: '', date: '' };
+  
+  const engStr = toEnglishDigits(combined);
+  
+  // Try to find standard dates first
+  const dateRegex = /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/;
+  const dateMatch = engStr.match(dateRegex);
+  
+  let date = '';
+  if (dateMatch) {
+    let d = dateMatch[1];
+    let m = dateMatch[2];
+    let y = dateMatch[3];
+    if (d.length === 1) d = '0' + d;
+    if (m.length === 1) m = '0' + m;
+    if (y.length === 2) y = '20' + y;
+    date = `${d}/${m}/${y}`;
+  }
+  
+  let noPart = engStr;
+  if (dateMatch) {
+    noPart = engStr.replace(dateMatch[0], '');
+  }
+  
+  const no = normalizeNo(noPart);
+  return { no, date };
+}
+
+function isRowSettledOrPartiallySettled(row: SettlementEntry): boolean {
+  // Check if any paragraph has status 'পূর্ণাঙ্গ' or 'আংশিক'
+  const hasParagraphSettlement = row.paragraphs && row.paragraphs.some(p => p.status === 'পূর্ণাঙ্গ' || p.status === 'আংশিক');
+  if (hasParagraphSettlement) return true;
+
+  // Check counts
+  const rowSettledCount = parseInt(toEnglishDigits(row.meetingSettledParaCount || '0')) || 0;
+  const rowPartialCount = parseInt(toEnglishDigits(row.meetingPartialSettledParaCount || '0')) || 0;
+  if (rowSettledCount > 0 || rowPartialCount > 0) return true;
+
+  // Check if any amounts are recovered or adjusted
+  if ((row.totalRec || 0) > 0 || (row.totalAdj || 0) > 0) return true;
+
+  return false;
+}
+
+function getArchiveNo(row: SettlementEntry, correspondenceEntries: any[] = []): string {
+  // First, check if the settlement condition is met
+  if (!isRowSettledOrPartiallySettled(row)) {
+    return '-';
+  }
+
+  // Next, extract the parts from the row (SettlementEntry)
+  const rowDiary = parseCombinedField(row.workpaperNoDate);
+  const rowLetter = parseCombinedField(row.letterNoDate);
+  const rowIssue = parseCombinedField(row.issueLetterNoDate);
+
+  // If we can't find a valid diary number or letter number, we can't match
+  if (!rowDiary.no && !rowLetter.no) return '-';
+
+  // Find a matching correspondence entry
+  const matchingCorr = correspondenceEntries.find(corr => {
+    const corrDiaryNo = normalizeNo(corr.diaryNo);
+    const corrDiaryDate = parseDateToStandard(corr.diaryDate);
+    
+    const corrLetterNo = normalizeNo(corr.letterNo);
+    const corrLetterDate = parseDateToStandard(corr.letterDate);
+    
+    const corrIssueNo = normalizeNo(corr.issueLetterNo);
+    const corrIssueDate = parseDateToStandard(corr.issueLetterDate);
+
+    const diaryMatches = corrDiaryNo === rowDiary.no && (corrDiaryDate === rowDiary.date || !rowDiary.date || !corrDiaryDate);
+    const letterMatches = corrLetterNo === rowLetter.no && (corrLetterDate === rowLetter.date || !rowLetter.date || !corrLetterDate);
+    const issueMatches = corrIssueNo === rowIssue.no && (corrIssueDate === rowIssue.date || !rowIssue.date || !corrIssueDate);
+
+    return diaryMatches && letterMatches && issueMatches;
+  });
+
+  return matchingCorr?.archiveNo || '-';
+}
+
 const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
   entries,
+  correspondenceEntries = [],
   selectedCycleDate,
   setSelectedCycleDate,
   activeCycle,
@@ -90,11 +208,12 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
       // 5. Search term filter
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase();
+        const resolvedArchiveNo = getArchiveNo(e, correspondenceEntries);
         const match = 
           (e.ministryName || '').toLowerCase().includes(term) ||
           (e.entityName || '').toLowerCase().includes(term) ||
           (e.remarks || '').toLowerCase().includes(term) ||
-          (e.archiveNo || '').toLowerCase().includes(term) ||
+          (resolvedArchiveNo || '').toLowerCase().includes(term) ||
           (e.letterNoDate || '').toLowerCase().includes(term) ||
           (e.issueLetterNoDate || '').toLowerCase().includes(term);
         if (!match) return;
@@ -104,7 +223,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
     });
     
     return list;
-  }, [entries, selectedCycleDate, filterMinistry, searchTerm]);
+  }, [entries, correspondenceEntries, selectedCycleDate, filterMinistry, searchTerm]);
 
   // Calculations for total statistics
   const totals = useMemo(() => {
@@ -583,7 +702,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                         {entryUnsettledAmount === 0 ? toBengaliDigits('0') + '/-' : formatAmountBengali(entryUnsettledAmount)}
                       </td>
                       <td className={numTdStyle}>
-                        <HighlightText text={formatTextValue(row.archiveNo)} searchTerm={searchTerm} />
+                        <HighlightText text={formatTextValue(getArchiveNo(row, correspondenceEntries))} searchTerm={searchTerm} />
                       </td>
                     </tr>
                   );
