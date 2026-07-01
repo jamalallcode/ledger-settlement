@@ -1077,18 +1077,38 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             <div className={`${colWrapperCls} border-emerald-100`}>
               <IDBadge id="settlement-field-online" />
               <label className={labelCls}><span className={numBadge}>১৬</span> <Globe size={14} className="text-emerald-600" /> অনলাইন/অফলাইন স্ট্যাটাস:</label>
-              <div className="flex gap-2 h-[52px] p-1 bg-slate-100 rounded-2xl border-2 border-slate-200">
-                <button 
-                  type="button" onClick={() => setFormData({...formData, isOnline: 'হ্যাঁ'})}
-                  className={`flex-1 h-full rounded-xl font-black text-sm transition-all border-2 ${formData.isOnline === 'হ্যাঁ' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-slate-400 border-slate-200'}`}
+              <div className="flex items-center h-[52px]">
+                <button
+                  type="button"
+                  onClick={() => setFormData({...formData, isOnline: formData.isOnline === 'হ্যাঁ' ? 'না' : 'হ্যাঁ'})}
+                  className={`relative w-[130px] h-[50px] rounded-full cursor-pointer select-none transition-all duration-300 shadow-[inset_0_4px_6px_rgba(0,0,0,0.25),_0_1px_0_rgba(255,255,255,0.6)] focus:outline-none border border-t-[1.5px] border-l-[1.5px] border-b-[0.5px] border-r-[0.5px] ${
+                    formData.isOnline === 'হ্যাঁ'
+                      ? 'bg-[#00a669] border-[#007348]'
+                      : 'bg-[#a3aab1] border-[#80878d]'
+                  }`}
                 >
-                  হ্যাঁ
-                </button>
-                <button 
-                  type="button" onClick={() => setFormData({...formData, isOnline: 'না'})}
-                  className={`flex-1 h-full rounded-xl font-black text-sm transition-all border-2 ${formData.isOnline === 'না' ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-400 border-slate-200'}`}
-                >
-                  না
+                  {/* Left Label ("হ্যাঁ") */}
+                  <span className={`absolute left-6 top-1/2 -translate-y-1/2 text-white font-[950] text-[16px] tracking-wider transition-all duration-300 select-none ${
+                    formData.isOnline === 'হ্যাঁ' ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'
+                  }`}>
+                    হ্যাঁ
+                  </span>
+
+                  {/* 3D Skeuomorphic Knob */}
+                  <div
+                    className={`absolute w-10 h-10 top-[4px] rounded-full bg-[#f4f6f8] border-t-2 border-l-2 border-white border-b-2 border-r-2 border-[#b6bcc2] shadow-[0_3px_6px_rgba(0,0,0,0.35),_inset_0_1px_1px_white] transition-all duration-300 ${
+                      formData.isOnline === 'হ্যাঁ'
+                        ? 'left-[calc(100%-44px)]'
+                        : 'left-[4px]'
+                    }`}
+                  />
+
+                  {/* Right Label ("না") */}
+                  <span className={`absolute right-6 top-1/2 -translate-y-1/2 text-white font-[950] text-[16px] tracking-wider transition-all duration-300 select-none ${
+                    formData.isOnline === 'হ্যাঁ' ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'
+                  }`}>
+                    না
+                  </span>
                 </button>
               </div>
             </div>
@@ -1174,7 +1194,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               {paragraphs.map((p, idx) => {
                 const isMatched = p.involvedAmount > 0 && p.involvedAmount === (p.recoveredAmount + p.adjustedAmount);
                 return (
-                  <div key={p.id} id={`card-para-${idx}`} className={`p-6 rounded-[2rem] relative border-2 ${isMatched ? "border-emerald-500 bg-emerald-50/10 shadow-emerald-100" : "border-red-500 bg-red-50/20 shadow-red-100"} hover:shadow-xl transition-all group overflow-visible`}>
+                  <div key={p.id} id={`card-para-${idx}`} className={`p-6 rounded-none relative border-2 ${isMatched ? "border-emerald-500 bg-emerald-50/10 shadow-emerald-100" : "border-red-500 bg-red-50/20 shadow-red-100"} hover:shadow-xl transition-all group overflow-visible`}>
                     
                     {(isAdmin || !isUpdateMode) && (
                       <div className="absolute top-[30px] right-4 z-40 flex items-center">
@@ -1401,15 +1421,15 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                       <div className="grid grid-cols-3 gap-4 relative z-10">
                         <div className="space-y-1">
                           <label className="text-[10px] font-black text-slate-500 pl-1 uppercase tracking-wider text-center block">জড়িত টাকা</label>
-                          <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${(p.involvedAmount > 0 || isMatched) ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-involvedAmount`] || (p.involvedAmount === 0 ? '' : toBengaliDigits(p.involvedAmount))} onChange={e => handleNumericInput(p.id, 'involvedAmount', e.target.value)} placeholder="০" />
+                          <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black transition-all duration-200 ${(p.involvedAmount > 0 || isMatched) ? 'border-emerald-500 hover:border-emerald-600 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100' : 'border-slate-300 hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100'}`} value={rawInputs[`${p.id}-involvedAmount`] || (p.involvedAmount === 0 ? '' : toBengaliDigits(p.involvedAmount))} onChange={e => handleNumericInput(p.id, 'involvedAmount', e.target.value)} placeholder="০" />
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] font-black text-emerald-600 pl-1 uppercase tracking-wider text-center block">আদায়কৃত</label>
-                          <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${(p.recoveredAmount > 0 || isMatched) ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-recoveredAmount`] || (p.recoveredAmount === 0 ? '' : toBengaliDigits(p.recoveredAmount))} onChange={e => handleNumericInput(p.id, 'recoveredAmount', e.target.value)} placeholder="০" />
+                          <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black transition-all duration-200 ${(p.recoveredAmount > 0 || isMatched) ? 'border-emerald-500 hover:border-emerald-600 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100' : 'border-slate-300 hover:border-emerald-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100'}`} value={rawInputs[`${p.id}-recoveredAmount`] || (p.recoveredAmount === 0 ? '' : toBengaliDigits(p.recoveredAmount))} onChange={e => handleNumericInput(p.id, 'recoveredAmount', e.target.value)} placeholder="০" />
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] font-black text-indigo-600 pl-1 uppercase tracking-wider text-center block">সমন্বয়কৃত</label>
-                          <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${(p.adjustedAmount > 0 || isMatched) ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-adjustedAmount`] || (p.adjustedAmount === 0 ? '' : toBengaliDigits(p.adjustedAmount))} onChange={e => handleNumericInput(p.id, 'adjustedAmount', e.target.value)} placeholder="০" />
+                          <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black transition-all duration-200 ${(p.adjustedAmount > 0 || isMatched) ? 'border-emerald-500 hover:border-emerald-600 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100' : 'border-slate-300 hover:border-indigo-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100'}`} value={rawInputs[`${p.id}-adjustedAmount`] || (p.adjustedAmount === 0 ? '' : toBengaliDigits(p.adjustedAmount))} onChange={e => handleNumericInput(p.id, 'adjustedAmount', e.target.value)} placeholder="০" />
                         </div>
                       </div>
                     ) : (
@@ -1418,7 +1438,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                           <div className="space-y-1">
                             <label className="text-[10px] font-black text-slate-500 pl-1 uppercase tracking-wider text-center block">জড়িত টাকা (মোট)</label>
-                            <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black ${(p.involvedAmount > 0 || isMatched) ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-involvedAmount`] || (p.involvedAmount === 0 ? '' : toBengaliDigits(p.involvedAmount))} onChange={e => handleNumericInput(p.id, 'involvedAmount', e.target.value)} placeholder="০" />
+                            <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black transition-all duration-200 ${(p.involvedAmount > 0 || isMatched) ? 'border-emerald-500 hover:border-emerald-600 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100' : 'border-slate-300 hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100'}`} value={rawInputs[`${p.id}-involvedAmount`] || (p.involvedAmount === 0 ? '' : toBengaliDigits(p.involvedAmount))} onChange={e => handleNumericInput(p.id, 'involvedAmount', e.target.value)} placeholder="০" />
                           </div>
                           
                           <div className="md:col-span-2 space-y-1">

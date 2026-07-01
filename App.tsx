@@ -1092,6 +1092,8 @@ const App: React.FC = () => {
                   isAdmin={isAdmin} 
                   onViewEntries={handleViewEntries}
                   onBack={() => handleTabChange('landing')}
+                  entries={entries}
+                  correspondenceEntries={correspondenceEntries}
                 />
               )}
 

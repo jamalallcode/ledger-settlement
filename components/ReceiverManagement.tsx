@@ -10,6 +10,8 @@ interface ReceiverManagementProps {
   isAdmin: boolean;
   onViewEntries?: (name: string, type: 'settlement' | 'correspondence') => void;
   onBack?: () => void;
+  entries?: any[];
+  correspondenceEntries?: any[];
 }
 
 interface ReceiverProfile {
@@ -80,7 +82,13 @@ const getBranchFromTransferName = (name: string): string | null => {
   return null;
 };
 
-const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onViewEntries, onBack }) => {
+const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ 
+  isAdmin, 
+  onViewEntries, 
+  onBack,
+  entries,
+  correspondenceEntries
+}) => {
   const [receiversList, setReceiversList] = useState<ReceiverProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -165,13 +173,50 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
       let entryCounts: Record<string, number> = {};
       let entryDetails: Record<string, any[]> = {};
 
-      if (isSupabaseConfigured) {
-        const { data: entries, error: entriesError } = await supabase
+      const hasPassedProps = (Array.isArray(entries) && entries.length > 0) || (Array.isArray(correspondenceEntries) && correspondenceEntries.length > 0);
+
+      if (hasPassedProps) {
+        const combined = [
+          ...(entries || []),
+          ...(correspondenceEntries || [])
+        ];
+        combined.forEach(item => {
+          if (!item) return;
+          const isCorr = item.type === 'correspondence' || 
+                        (item.description !== undefined && item.description !== null && item.description !== '');
+          
+          if (isCorr) {
+            const b = getCleanBranch(item.paraType);
+            if (item.receiverName && item.receiverName.trim()) {
+              const originalName = item.receiverName.trim();
+              const normalizedName = normalizeName(originalName);
+              if (normalizedName) {
+                const compKey = `${normalizedName}_${b}`;
+                if (!entryCounts[compKey]) {
+                  entryCounts[compKey] = 0;
+                  entryDetails[compKey] = [];
+                  if (!correspondenceNamesByBranch[b].some(cn => normalizeName(cn) === normalizedName)) {
+                    correspondenceNamesByBranch[b].push(originalName);
+                  }
+                }
+                entryCounts[compKey]++;
+                entryDetails[compKey].push({
+                  id: item.id,
+                  diaryNo: item.diaryNo,
+                  diaryDate: item.diaryDate,
+                  letterNo: item.letterNo
+                });
+              }
+            }
+          }
+        });
+      } else if (isSupabaseConfigured) {
+        const { data: dbEntries, error: entriesError } = await supabase
           .from('settlement_entries')
           .select('id, content');
         
-        if (!entriesError && entries) {
-          entries.forEach(row => {
+        if (!entriesError && dbEntries) {
+          dbEntries.forEach(row => {
             let content = row.content;
             if (typeof content === 'string') {
               try { content = JSON.parse(content); } catch (e) { return; }
@@ -211,8 +256,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
         const savedCorr = localStorage.getItem(CORR_STORAGE_KEY);
         if (savedCorr) {
           try {
-            const entries = JSON.parse(savedCorr);
-            entries.forEach((entry: any) => {
+            const dbEntries = JSON.parse(savedCorr);
+            dbEntries.forEach((entry: any) => {
               const isCorr = entry.type === 'correspondence' || 
                             (entry.description !== undefined && entry.description !== null && entry.description !== '');
               
@@ -317,7 +362,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
 
   useEffect(() => {
     fetchReceivers();
-  }, []);
+  }, [entries, correspondenceEntries]);
 
   const openAddModal = (branch: string) => {
     setEditingId(null);
