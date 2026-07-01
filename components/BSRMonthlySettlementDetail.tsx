@@ -50,8 +50,11 @@ function parseDateToStandard(dateStr: string | undefined | null): string {
 function normalizeNo(noStr: string | undefined | null): string {
   if (!noStr) return '';
   const eng = toEnglishDigits(noStr);
-  const cleanRegex = /(diary|letter|issue|workpaper|wp|no|date|memo|ডায়েরি|পত্র|জারিপত্র|কার্যপত্র|স্মারক|তারিখ|নং|ও|ের|র|[\s:\-–—\.,\/])/gi;
-  return eng.replace(cleanRegex, '').trim();
+  // Remove all Bengali Unicode characters
+  const withoutBengali = eng.replace(/[\u0980-\u09ff]/g, '');
+  // Remove common prefix words in English and punctuation/spaces
+  const cleanRegex = /(diary|letter|issue|workpaper|wp|no|date|memo|[\s:\-–—\.,\/])/gi;
+  return withoutBengali.replace(cleanRegex, '').trim();
 }
 
 function parseCombinedField(combined: string | undefined | null) {
@@ -124,11 +127,21 @@ function getArchiveNo(row: SettlementEntry, correspondenceEntries: any[] = []): 
     const corrIssueNo = normalizeNo(corr.issueLetterNo);
     const corrIssueDate = parseDateToStandard(corr.issueLetterDate);
 
-    const diaryMatches = corrDiaryNo === rowDiary.no && (corrDiaryDate === rowDiary.date || !rowDiary.date || !corrDiaryDate);
-    const letterMatches = corrLetterNo === rowLetter.no && (corrLetterDate === rowLetter.date || !rowLetter.date || !corrLetterDate);
-    const issueMatches = corrIssueNo === rowIssue.no && (corrIssueDate === rowIssue.date || !rowIssue.date || !corrIssueDate);
+    // Diary matches (both must match if both exist)
+    const diaryMatches = corrDiaryNo && rowDiary.no ? corrDiaryNo === rowDiary.no : true;
+    const diaryDateMatches = corrDiaryDate && rowDiary.date ? corrDiaryDate === rowDiary.date : true;
 
-    return diaryMatches && letterMatches && issueMatches;
+    // Letter matches (both must match if both exist)
+    const letterMatches = corrLetterNo && rowLetter.no ? corrLetterNo === rowLetter.no : true;
+    const letterDateMatches = corrLetterDate && rowLetter.date ? corrLetterDate === rowLetter.date : true;
+
+    // Issue matches (only must match if both exist, otherwise lenient)
+    const issueMatches = corrIssueNo && rowIssue.no ? corrIssueNo === rowIssue.no : true;
+    const issueDateMatches = corrIssueDate && rowIssue.date ? corrIssueDate === rowIssue.date : true;
+
+    const hasBaseMatch = (corrDiaryNo && rowDiary.no) || (corrLetterNo && rowLetter.no);
+
+    return hasBaseMatch && diaryMatches && diaryDateMatches && letterMatches && letterDateMatches && issueMatches && issueDateMatches;
   });
 
   return matchingCorr?.archiveNo || '-';
