@@ -413,7 +413,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
               </button>
             )}
 
-            {selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' && onToggleDetailedView && (
+            {(selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' || selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়') && onToggleDetailedView && (
               <button
                 type="button"
                 onClick={onToggleDetailedView}

@@ -1,0 +1,565 @@
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { Printer, Sparkles, ChevronDown, FileSpreadsheet, LayoutGrid, Search, X, CalendarDays, Check, Landmark, ArrowLeftRight } from 'lucide-react';
+import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
+import { format as dateFnsFormat, startOfMonth, endOfMonth } from 'date-fns';
+import HighlightText from './HighlightText';
+import { SettlementEntry } from '../types';
+
+interface BilateralMonthlySettlementDetailProps {
+  entries: SettlementEntry[];
+  selectedCycleDate: Date;
+  setSelectedCycleDate: (date: Date) => void;
+  activeCycle: any;
+  cycleOptions: any[];
+  ministryGroups: string[];
+  IDBadge: React.FC<{ id: string }>;
+  onBack?: () => void;
+  onToggleSummaryView?: () => void;
+}
+
+const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetailProps> = ({
+  entries,
+  selectedCycleDate,
+  setSelectedCycleDate,
+  activeCycle,
+  cycleOptions,
+  ministryGroups,
+  IDBadge,
+  onBack,
+  onToggleSummaryView
+}) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterMinistry, setFilterMinistry] = useState('সকল');
+  const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
+  const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
+  
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const ministryDropdownRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsCycleDropdownOpen(false);
+      }
+      if (ministryDropdownRef.current && !ministryDropdownRef.current.contains(e.target as Node)) {
+        setIsMinistryDropdownOpen(false);
+      }
+      if (statsRef.current && !statsRef.current.contains(e.target as Node)) {
+        setIsStatsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const robustNormalize = (str: string = '') => {
+    return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+  };
+
+  const startOfMonthDate = startOfMonth(selectedCycleDate);
+  const endOfMonthDate = endOfMonth(selectedCycleDate);
+
+  // Filter entries for Non-SFI and Bilateral Meeting matching selected calendar month
+  const filteredEntries = useMemo(() => {
+    const list: SettlementEntry[] = [];
+    
+    entries.forEach(e => {
+      // Filter out entries that don't have a ministry name
+      if (!e.ministryName || !e.ministryName.trim()) return;
+
+      // 1. Filter by Non-SFI branch (exactly like CamScanner's "শাখাঃ নন এসএফআই")
+      if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return;
+      
+      // 2. Filter by Bilateral meeting type (দ্বিপক্ষীয় সভা)
+      const meetingType = robustNormalize(e.meetingType || e.letterType || '');
+      if (!meetingType.includes(robustNormalize('দ্বিপক্ষীয়'))) return;
+      
+      // 3. Filter by Date range of the selected month
+      const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+      if (!issueDateStr) return;
+      const entryDate = new Date(issueDateStr);
+      if (entryDate < startOfMonthDate || entryDate > endOfMonthDate) return;
+      
+      // 4. Ministry filter
+      if (filterMinistry && filterMinistry !== 'সকল') {
+        if (robustNormalize(e.ministryName || '') !== robustNormalize(filterMinistry)) return;
+      }
+      
+      // 5. Search term filter
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        const match = 
+          (e.ministryName || '').toLowerCase().includes(term) ||
+          (e.entityName || '').toLowerCase().includes(term) ||
+          (e.remarks || '').toLowerCase().includes(term) ||
+          (e.archiveNo || '').toLowerCase().includes(term) ||
+          (e.letterNoDate || '').toLowerCase().includes(term) ||
+          (e.issueLetterNoDate || '').toLowerCase().includes(term) ||
+          (e.workpaperNoDate || '').toLowerCase().includes(term);
+        if (!match) return;
+      }
+      
+      list.push(e);
+    });
+    
+    return list;
+  }, [entries, selectedCycleDate, filterMinistry, searchTerm]);
+
+  // Calculations for total statistics
+  const totals = useMemo(() => {
+    return filteredEntries.reduce((acc, curr) => {
+      const recPara = parseInt(toEnglishDigits(curr.meetingRecommendedParaCount || '0')) || 0;
+      const settledPara = parseInt(toEnglishDigits(curr.meetingSettledParaCount || curr.meetingFullSettledParaCount || '0')) || 0;
+      const unsettledPara = parseInt(toEnglishDigits(curr.meetingUnsettledParas || '0')) || Math.max(0, recPara - settledPara);
+      
+      return {
+        recPara: acc.recPara + recPara,
+        settledPara: acc.settledPara + settledPara,
+        unsettledPara: acc.unsettledPara + unsettledPara,
+      };
+    }, {
+      recPara: 0,
+      settledPara: 0,
+      unsettledPara: 0,
+    });
+  }, [filteredEntries]);
+
+  const downloadExcel = () => {
+    const table = document.getElementById('table-bilateral-monthly-detail');
+    if (!table) return;
+
+    const clonedTable = table.cloneNode(true) as HTMLTableElement;
+    const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
+    interactiveElements.forEach(el => el.remove());
+    
+    const formattedMonth = dateFnsFormat(selectedCycleDate, 'MMMM_yyyy');
+    const filename = `দ্বিপক্ষীয়_মাসিক_রিপোর্ট_বিস্তারিত_${formattedMonth}.xls`;
+
+    const template = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>দ্বিপক্ষীয় নিষ্পত্তি বিস্তারিত</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+          table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+          th, td { border: 1px solid #94a3b8 !important; padding: 8px 12px !important; text-align: center; font-size: 11px; vertical-align: middle; }
+          th { background-color: #f1f5f9 !important; color: #0f172a !important; font-weight: bold !important; }
+          .bg-slate-200, thead, tfoot { background-color: #e2e8f0 !important; font-weight: bold !important; }
+          .font-bold { font-weight: bold !important; }
+        </style>
+      </head>
+      <body>
+        <h2 style="text-align: center; margin-bottom: 10px; color: #1e3a8a;">দ্বিপক্ষীয় সভার কার্য বিবরণীর উপর জারীপত্রের মাসিক প্রতিবেদন</h2>
+        <h3 style="text-align: center; margin-bottom: 20px; color: #475569;">মাস: ${dateFnsFormat(selectedCycleDate, 'MMMM, yyyy')} | সময়সীমা: ০১/${dateFnsFormat(startOfMonthDate, 'MM/yyyy')} হতে ${dateFnsFormat(endOfMonthDate, 'dd/MM/yyyy')} | শাখা: নন এসএফআই</h3>
+        ${clonedTable.outerHTML}
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([template], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const thStyle = "border-r border-b border-slate-400 px-2 py-2 font-black text-center text-slate-800 text-[10px] sm:text-[11px] leading-tight align-middle h-full bg-slate-100 bg-clip-border relative";
+  const tdStyle = "border-r border-b border-slate-400 px-2 py-2 text-[10.5px] sm:text-[11px] text-slate-700 align-middle text-center break-words bg-white";
+  const numTdStyle = "border-r border-b border-slate-400 px-2 py-2 text-[10.5px] sm:text-[11px] text-slate-700 align-middle text-center font-bold bg-white";
+
+  const formatCountBengali = (count: string | number | undefined | null) => {
+    if (count === undefined || count === null) return '-';
+    const cStr = count.toString().trim();
+    if (cStr === '0' || cStr === '০' || cStr === '') return '-';
+    return toBengaliDigits(cStr);
+  };
+
+  const formatTextValue = (val: string | undefined | null) => {
+    if (val === undefined || val === null || val.trim() === '') return '-';
+    return toBengaliDigits(val);
+  };
+
+  const formatArchiveNoForTable = (val: string | undefined | null) => {
+    if (!val || val.trim() === '') return '-';
+    
+    const trimmed = val.trim();
+    let prefix = "";
+    let rest = trimmed;
+    
+    if (trimmed.toLowerCase().startsWith("kg-")) {
+      const dashIdx = trimmed.indexOf("-");
+      prefix = trimmed.substring(0, dashIdx + 1).trim() + " ";
+      rest = trimmed.substring(dashIdx + 1).trim();
+    }
+    
+    if (!rest) return prefix ? prefix.trim() : '-';
+    
+    // Split rest by commas
+    const parts = rest.split(',').map(p => p.trim()).filter(p => p !== '');
+    if (parts.length === 0) return prefix ? prefix.trim() : '-';
+    
+    // Group parts: max 3 per line
+    const lines: string[] = [];
+    for (let i = 0; i < parts.length; i += 3) {
+      const chunk = parts.slice(i, i + 3);
+      lines.push(chunk.join(', '));
+    }
+    
+    return prefix + lines.join('\n');
+  };
+
+  const formattedStartDate = toBengaliDigits(dateFnsFormat(activeCycle.start, 'dd-MM-yyyy'));
+  const formattedEndDate = toBengaliDigits(dateFnsFormat(activeCycle.end, 'dd-MM-yyyy'));
+
+  return (
+    <div id="bilateral-monthly-detail-container" className="space-y-5 py-4 w-full animate-report-page relative bg-white p-5 rounded-3xl border border-slate-100 shadow-xl">
+      <IDBadge id="bilateral-monthly-detail-container" />
+
+      {/* Header Panel */}
+      <div className="flex flex-col xl:flex-row items-center justify-between gap-4 pb-5 border-b border-slate-100 w-full no-print">
+        {/* Title block */}
+        <div className="flex items-stretch h-[44px] w-fit shadow-md select-none rounded-2xl overflow-hidden border border-slate-200/40 shrink-0">
+          <div className="flex flex-col w-10 shrink-0 h-full">
+            <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
+              <Landmark className="text-blue-700 w-5 h-5 stroke-[2.5]" />
+            </div>
+            <div className="h-[2.5px] bg-[#3b82f6]" />
+          </div>
+          
+          <div className="flex flex-col h-full min-w-[240px] justify-center bg-[#1e40af] px-4">
+            <span className="text-white font-[950] tracking-tight text-[13px]">
+              চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়
+            </span>
+          </div>
+        </div>
+
+        {/* Dynamic Filters & Control buttons */}
+        <div className="flex items-center gap-2 flex-wrap justify-center xl:justify-end shrink-0 z-[1010]">
+          
+          {/* Cycle Label Pill */}
+          <div className="inline-flex items-center gap-1.5 px-3 bg-sky-50 text-sky-800 rounded-xl text-[11px] font-bold border border-sky-100 shadow-sm h-[38px]">
+            <span className="text-sky-600">সাইকেল:</span> 
+            <span className="text-sky-900 font-extrabold">{toBengaliDigits(activeCycle.label)}</span>
+          </div>
+
+          {/* Month Picker dropdown */}
+          <div className="relative no-print" ref={dropdownRef}>
+            <div 
+              onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
+              className={`flex items-center gap-1.5 px-3 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}
+            >
+               <CalendarDays size={14} className="text-blue-600 shrink-0" />
+               <span className="font-extrabold text-[11px] text-slate-800 tracking-tight shrink-0">
+                 {cycleOptions.find(o => o.cycleLabel === activeCycle.label)?.label || toBengaliDigits(activeCycle.label)}
+               </span>
+               <ChevronDown size={13} className={`text-slate-400 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-blue-500' : ''}`} />
+            </div>
+            {isCycleDropdownOpen && (
+              <div className="absolute top-[calc(100%+4px)] right-0 lg:left-0 w-[240px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-3 animate-in fade-in duration-200">
+                <div className="px-3 py-1 pb-2 border-b border-slate-100 flex items-center justify-between">
+                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1">
+                    <CalendarDays size={11} className="text-blue-500" /> মাস নির্বাচন করুন
+                  </span>
+                </div>
+                <div className="max-h-[220px] overflow-y-auto space-y-1 p-0.5 scrollbar-thin">
+                  {cycleOptions.map((opt, idx) => {
+                    const matchesActive = opt.cycleLabel === activeCycle.label;
+                    return (
+                      <div
+                        onClick={() => {
+                          setSelectedCycleDate(opt.date);
+                          setIsCycleDropdownOpen(false);
+                        }}
+                        className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                          matchesActive 
+                            ? "bg-blue-600 text-white font-extrabold"
+                            : "hover:bg-slate-50 text-slate-700 hover:text-blue-600 font-bold bg-white"
+                        }`}
+                        key={idx}
+                      >
+                        <span className="text-[12px]">{opt.label}</span>
+                        {matchesActive && <Check size={13} className="text-white stroke-[3.5]" />}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Ministry filter dropdown */}
+          <div className="relative select-none z-[400]" ref={ministryDropdownRef}>
+            <div 
+               onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
+               className={`flex items-center gap-1.5 px-3 h-[38px] bg-sky-50 border hover:border-sky-300 hover:bg-white transition-all rounded-xl cursor-pointer shadow-sm ${isMinistryDropdownOpen ? 'border-sky-300 bg-white ring-2 ring-sky-50' : 'border-sky-100'}`}
+            >
+              <LayoutGrid size={14} className="text-sky-600 shrink-0" />
+              <span className="font-extrabold text-[11px] text-sky-800 tracking-tight shrink-0 max-w-[140px] truncate">
+                {filterMinistry || 'সকল মন্ত্রণালয়'}
+              </span>
+              <ChevronDown size={13} className={`text-sky-500 shrink-0 transition-transform duration-300 ${isMinistryDropdownOpen ? 'rotate-180 text-sky-600' : ''}`} />
+            </div>
+
+            {isMinistryDropdownOpen && (
+              <div className="absolute top-[110%] right-0 lg:left-1/2 lg:-translate-x-1/2 w-[220px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-2 animate-in fade-in duration-200">
+                <div className="px-3 py-1 pb-1.5 border-b border-slate-100 flex items-center justify-between">
+                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1">
+                    <LayoutGrid size={10} /> মন্ত্রণালয় নির্বাচন
+                  </span>
+                </div>
+                <div className="max-h-[220px] overflow-y-auto space-y-1 p-0.5 scrollbar-thin">
+                  <div
+                    onClick={() => {
+                      setFilterMinistry('সকল');
+                      setIsMinistryDropdownOpen(false);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl cursor-pointer transition-all duration-150 text-[11px] ${filterMinistry === 'সকল' ? 'bg-sky-500 text-white font-extrabold' : 'hover:bg-slate-50 text-slate-700 font-bold'}`}
+                  >
+                    সকল মন্ত্রণালয়
+                  </div>
+                  {ministryGroups.map((m, idx) => {
+                    const matches = filterMinistry === m;
+                    return (
+                      <div
+                        onClick={() => {
+                          setFilterMinistry(m);
+                          setIsMinistryDropdownOpen(false);
+                        }}
+                        className={`px-3 py-1.5 rounded-xl cursor-pointer transition-all duration-150 text-[11px] truncate ${matches ? 'bg-sky-500 text-white font-extrabold' : 'hover:bg-slate-50 text-slate-700 font-bold'}`}
+                        title={m}
+                        key={idx}
+                      >
+                        {m}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Excel Export Button */}
+          <button
+            type="button"
+            onClick={downloadExcel}
+            className="flex items-center justify-center w-10 h-[38px] bg-emerald-50 text-emerald-700 hover:text-emerald-800 border border-emerald-100 hover:border-emerald-300 hover:bg-white hover:shadow-md transition-all duration-300 rounded-xl cursor-pointer shrink-0 shadow-sm"
+            title="এক্সেল ফাইল ডাউনলোড করুন"
+          >
+            <FileSpreadsheet size={16} className="stroke-[2.5]" />
+          </button>
+
+          {/* Toggle Summary View Button */}
+          {onToggleSummaryView && (
+            <button
+              type="button"
+              onClick={onToggleSummaryView}
+              className="flex items-center gap-1.5 px-3 h-[38px] bg-blue-50 text-blue-700 hover:text-blue-800 border border-blue-100 hover:border-blue-300 transition-all duration-300 rounded-xl cursor-pointer shrink-0 shadow-sm font-black text-[11px]"
+              title="সারাংশ ছক দেখুন (ব্যাংকভিত্তিক)"
+            >
+              <ArrowLeftRight size={13} className="stroke-[2.5]" />
+              <span>সারাংশ ছক দেখুন</span>
+            </button>
+          )}
+
+        </div>
+      </div>
+
+      {/* CamScanner Header Design */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-300 pb-4 mb-4 font-sans">
+        <div className="text-[13px] sm:text-[14.5px] font-black text-slate-900 text-left leading-relaxed">
+          দ্বিপক্ষীয় সভার কার্য বিবরণীর উপর জারীপত্রের মাসিক প্রতিবেদন: ({formattedStartDate} খ্রিঃ হতে {formattedEndDate} খ্রিঃ তারিখ পর্যন্ত)
+        </div>
+        <div className="text-[13px] sm:text-[14.5px] font-black text-slate-900 shrink-0 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+          শাখাঃ নন এসএফআই।
+        </div>
+      </div>
+
+      {/* Search and counters */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-3 no-print">
+        <div className="relative w-full md:w-80">
+          <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <Search className="h-4 w-4 text-slate-400" />
+          </span>
+          <input
+            type="text"
+            placeholder="বিবরণ, ডায়েরি নং, মন্তব্য দিয়ে খুঁজুন..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-8 py-2 text-xs font-bold border border-slate-300 rounded-xl bg-slate-50 outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-slate-400"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400 hover:text-slate-600"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1 bg-blue-50 border border-blue-100 text-blue-800 rounded-xl px-3 py-1.5 font-bold text-xs">
+          <span>মোট দ্বিপক্ষীয় সভার এন্ট্রি:</span>
+          <span className="bg-blue-600 text-white rounded-lg px-2 py-0.5 font-extrabold text-[11px]">
+            {toBengaliDigits(filteredEntries.length.toString())} টি
+          </span>
+        </div>
+      </div>
+
+      {/* Main Table Section (Strictly matching CamScanner layout) */}
+      <div id="card-bilateral-monthly-detail-table-container" className="bg-white border border-slate-300 shadow-inner rounded-none overflow-hidden">
+        <div className="overflow-x-auto">
+          <table id="table-bilateral-monthly-detail" className="w-full border-separate border-spacing-0 !table-auto border-l border-t border-slate-400">
+            <thead>
+              <tr className="bg-slate-50">
+                <th rowSpan={2} className={`${thStyle} w-[50px]`}>ক্রমিক নং</th>
+                <th rowSpan={2} className={`${thStyle} w-[240px]`}>বিবরণ</th>
+                <th rowSpan={2} className={`${thStyle} w-[100px]`}>প্রাপ্ত জবাব (পত্র সংখ্যা)</th>
+                <th rowSpan={2} className={`${thStyle} w-[180px]`}>প্রাপ্ত জবাবের ডায়েরি নং ও তারিখ</th>
+                <th rowSpan={2} className={`${thStyle} w-[110px]`}>সুপারিশকৃত অনুচ্ছেদ সংখ্যা</th>
+                <th colSpan={3} className={`${thStyle}`}>গৃহীত কার্যক্রম</th>
+              </tr>
+              <tr className="bg-slate-50">
+                <th className={`${thStyle} w-[180px]`}>প্রাপ্ত জবাবের Disposal সংক্রান্ত তথ্য</th>
+                <th className={`${thStyle} w-[110px]`}>নিষ্পত্তিকৃত অনুচ্ছেদ</th>
+                <th className={`${thStyle} w-[110px]`}>অনিষ্পত্তিকৃত অনুচ্ছেদ</th>
+              </tr>
+              <tr className="bg-slate-50">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
+                  <th key={n} className={`${thStyle} text-[9px] sm:text-[10px] font-bold text-slate-500 py-1`}>
+                    {toBengaliDigits(n.toString())}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredEntries.length === 0 ? (
+                <tr className="bg-white">
+                  <td colSpan={8} className="text-center font-black text-slate-900 text-[15px] py-16 border-r border-b border-slate-400 bg-white">
+                    শূন্য প্রতিবেদন
+                  </td>
+                </tr>
+              ) : (
+                filteredEntries.map((row, idx) => {
+                  const recPara = parseInt(toEnglishDigits(row.meetingRecommendedParaCount || '0')) || 0;
+                  const settledPara = parseInt(toEnglishDigits(row.meetingSettledParaCount || row.meetingFullSettledParaCount || '0')) || 0;
+                  const unsettledPara = parseInt(toEnglishDigits(row.meetingUnsettledParas || '0')) || Math.max(0, recPara - settledPara);
+                  
+                  return (
+                    <tr key={row.id} className="hover:bg-slate-50/75 bg-white transition-colors group">
+                      {/* ১. ক্রমিক নং */}
+                      <td className={`${numTdStyle} text-slate-700 font-extrabold group-hover:text-blue-600`}>
+                        {toBengaliDigits((idx + 1).toString())}
+                      </td>
+                      
+                      {/* ২. বিবরণ */}
+                      <td className={`${tdStyle} text-left font-bold text-slate-800 leading-relaxed`}>
+                        <div className="font-extrabold text-slate-950 text-[11px] sm:text-[11.5px]">
+                          <HighlightText text={row.ministryName} searchTerm={searchTerm} />
+                        </div>
+                        {row.entityName && (
+                          <div className="text-slate-700 text-[10px] sm:text-[10.5px]">
+                            <HighlightText text={row.entityName} searchTerm={searchTerm} />
+                          </div>
+                        )}
+                        {row.branchName && (
+                          <div className="text-blue-700 text-[10px] font-black">
+                            <HighlightText text={row.branchName} searchTerm={searchTerm} />
+                          </div>
+                        )}
+                        {row.auditYear && (
+                          <div className="text-slate-500 font-bold text-[10px] mt-0.5">
+                            অডিট আপত্তি বছর: {toBengaliDigits(row.auditYear)}
+                          </div>
+                        )}
+                        {row.archiveNo && (
+                          <div className="text-purple-700 font-extrabold text-[10px] mt-1 pt-1 border-t border-dashed border-slate-200 whitespace-pre-line leading-normal">
+                            আর্কাইভ নং: {formatArchiveNoForTable(row.archiveNo)}
+                          </div>
+                        )}
+                      </td>
+                      
+                      {/* ৩. প্রাপ্ত জবাব (পত্র সংখ্যা) */}
+                      <td className={numTdStyle}>
+                        {row.manualRaisedCount ? toBengaliDigits(row.manualRaisedCount) : toBengaliDigits('১')}
+                      </td>
+                      
+                      {/* ৪. প্রাপ্ত জবাবের ডায়েরি নং ও তারিখ */}
+                      <td className={`${tdStyle} font-bold text-slate-800`}>
+                        <HighlightText text={formatTextValue(row.workpaperNoDate)} searchTerm={searchTerm} />
+                      </td>
+                      
+                      {/* ৫. সুপারিশকৃত অনুচ্ছেদ সংখ্যা */}
+                      <td className={numTdStyle}>
+                        {formatCountBengali(recPara)}
+                      </td>
+                      
+                      {/* ৬. প্রাপ্ত জবাবের Disposal সংক্রান্ত তথ্য */}
+                      <td className={`${tdStyle} font-bold text-slate-800`}>
+                        <HighlightText text={formatTextValue(row.issueLetterNoDate)} searchTerm={searchTerm} />
+                      </td>
+                      
+                      {/* ৭. নিষ্পত্তিকৃত অনুচ্ছেদ */}
+                      <td className={`${numTdStyle} text-emerald-600 font-black`}>
+                        {formatCountBengali(settledPara)}
+                      </td>
+                      
+                      {/* ৮. অনিষ্পত্তিকৃত অনুচ্ছেদ */}
+                      <td className={`${numTdStyle} text-red-600 font-black`}>
+                        {formatCountBengali(unsettledPara)}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+            {filteredEntries.length > 0 && (
+              <tfoot className="bg-slate-900 text-white font-extrabold shadow-2xl relative z-10">
+                <tr className="h-[40px] bg-slate-900 border-t border-slate-700">
+                  <td colSpan={2} className="border-r border-b border-slate-700 px-3 py-2 text-left text-[11px] font-black uppercase text-white rounded-none">
+                    সর্বমোট (ফিল্টারকৃত):
+                  </td>
+                  <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-white font-black">
+                    {toBengaliDigits(filteredEntries.length.toString())} টি
+                  </td>
+                  <td className="border-r border-b border-slate-700 px-2 py-2"></td>
+                  <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-white font-black">
+                    {formatCountBengali(totals.recPara)}
+                  </td>
+                  <td className="border-r border-b border-slate-700 px-2 py-2"></td>
+                  <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-emerald-400 font-black">
+                    {formatCountBengali(totals.settledPara)}
+                  </td>
+                  <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-red-400 font-black">
+                    {formatCountBengali(totals.unsettledPara)}
+                  </td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default BilateralMonthlySettlementDetail;

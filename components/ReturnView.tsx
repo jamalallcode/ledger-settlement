@@ -18,6 +18,9 @@ import QR_4 from './QR_4';
 import QR_5 from './QR_5';
 import QR_6 from './QR_6';
 import BSRMonthlySettlementDetail from './BSRMonthlySettlementDetail';
+import BilateralMonthlySettlementDetail from './BilateralMonthlySettlementDetail';
+import BSRMonthlyOnlineReceiptDetail from './BSRMonthlyOnlineReceiptDetail';
+import BilateralMonthlyOnlineReceiptDetail from './BilateralMonthlyOnlineReceiptDetail';
 
 const BENGALI_MONTHS = [
   'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
@@ -63,6 +66,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [currentViewDate, setCurrentViewDate] = useState<Date>(new Date(selectedCycleDate));
   const [showDetailedBsrView, setShowDetailedBsrView] = useState(true);
+  const [showDetailedBilateralView, setShowDetailedBilateralView] = useState(true);
+  const [showDetailedOnlineBsrView, setShowDetailedOnlineBsrView] = useState(true);
+  const [showDetailedOnlineBilateralView, setShowDetailedOnlineBilateralView] = useState(true);
   
   useEffect(() => {
     setCurrentViewDate(new Date(selectedCycleDate));
@@ -71,6 +77,15 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   useEffect(() => {
     if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর') {
       setShowDetailedBsrView(true);
+    }
+    if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়') {
+      setShowDetailedBilateralView(true);
+    }
+    if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর') {
+      setShowDetailedOnlineBsrView(true);
+    }
+    if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়') {
+      setShowDetailedOnlineBilateralView(true);
     }
   }, [selectedReportType]);
   
@@ -1032,6 +1047,48 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         onToggleSummaryView={() => setShowDetailedBsrView(false)}
       />
     );
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়' && showDetailedBilateralView) {
+    renderedContent = (
+      <BilateralMonthlySettlementDetail
+        entries={entries}
+        selectedCycleDate={selectedCycleDate}
+        setSelectedCycleDate={setSelectedCycleDate}
+        activeCycle={activeCycle}
+        cycleOptions={cycleOptions}
+        ministryGroups={ministryGroups}
+        IDBadge={IDBadge}
+        onBack={() => setSelectedReportType(null)}
+        onToggleSummaryView={() => setShowDetailedBilateralView(false)}
+      />
+    );
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর' && showDetailedOnlineBsrView) {
+    renderedContent = (
+      <BSRMonthlyOnlineReceiptDetail
+        entries={entries}
+        selectedCycleDate={selectedCycleDate}
+        setSelectedCycleDate={setSelectedCycleDate}
+        activeCycle={activeCycle}
+        cycleOptions={cycleOptions}
+        ministryGroups={ministryGroups}
+        IDBadge={IDBadge}
+        onBack={() => setSelectedReportType(null)}
+        onToggleSummaryView={() => setShowDetailedOnlineBsrView(false)}
+      />
+    );
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়' && showDetailedOnlineBilateralView) {
+    renderedContent = (
+      <BilateralMonthlyOnlineReceiptDetail
+        entries={entries}
+        selectedCycleDate={selectedCycleDate}
+        setSelectedCycleDate={setSelectedCycleDate}
+        activeCycle={activeCycle}
+        cycleOptions={cycleOptions}
+        ministryGroups={ministryGroups}
+        IDBadge={IDBadge}
+        onBack={() => setSelectedReportType(null)}
+        onToggleSummaryView={() => setShowDetailedOnlineBilateralView(false)}
+      />
+    );
   } else {
     renderedContent = <ReturnSummaryTable 
       reportData={reportData} 
@@ -1050,7 +1107,15 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       statsGrandTotals={statsGrandTotals}
       isSearchExpanded={isSearchExpanded}
       onDownloadExcel={downloadExcel}
-      onToggleDetailedView={() => setShowDetailedBsrView(true)}
+      onToggleDetailedView={
+        selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়'
+          ? () => setShowDetailedBilateralView(true)
+          : selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর'
+          ? () => setShowDetailedOnlineBsrView(true)
+          : selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়'
+          ? () => setShowDetailedOnlineBilateralView(true)
+          : () => setShowDetailedBsrView(true)
+      }
     />;
   }
 
