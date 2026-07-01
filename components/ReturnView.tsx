@@ -1022,7 +1022,6 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     renderedContent = (
       <BSRMonthlySettlementDetail
         entries={entries}
-        correspondenceEntries={correspondenceEntries}
         selectedCycleDate={selectedCycleDate}
         setSelectedCycleDate={setSelectedCycleDate}
         activeCycle={activeCycle}
