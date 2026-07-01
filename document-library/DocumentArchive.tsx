@@ -275,7 +275,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       {/* Main Content Wrapper */}
       <div className={`max-w-7xl mx-auto space-y-8 animate-landing-premium transition-all duration-700 ${showAddModal || selectedDoc ? 'opacity-60 scale-[0.98] pointer-events-none' : 'opacity-100 scale-100'}`}>
         {/* Header Section - Height Reduced (p-10 to p-8) */}
-        <div className="bg-slate-900 rounded-[3rem] p-8 text-white relative overflow-hidden shadow-2xl border border-white/5">
+        <div className="bg-slate-900 rounded-none p-8 text-white relative overflow-hidden shadow-2xl border border-white/5">
           <div className="absolute top-0 right-0 p-12 text-white/5 pointer-events-none"><Library size={240} /></div>
           <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-600/20 blur-[100px] rounded-full pointer-events-none"></div>
           <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-600/10 blur-[100px] rounded-full pointer-events-none"></div>
@@ -283,7 +283,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
              <div className="space-y-3">
                 <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-900/40 border border-white/10">
+                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-none flex items-center justify-center shadow-xl shadow-blue-900/40 border border-white/10">
                      <Library size={24} className="text-white" />
                    </div>
                    <h2 className="text-2xl md:text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/70">
@@ -296,7 +296,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
              </div>
              <button 
                onClick={() => setShowAddModal(true)} 
-               className="px-8 py-4 bg-white text-slate-900 hover:bg-blue-50 rounded-2xl font-black flex items-center gap-3 shadow-2xl active:scale-95 transition-all shrink-0 group"
+               className="px-8 py-4 bg-white text-slate-900 hover:bg-blue-50 rounded-none font-black flex items-center gap-3 shadow-2xl active:scale-95 transition-all shrink-0 group"
              >
                 <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" /> নতুন রেফারেন্স যুক্ত করুন
              </button>
@@ -313,13 +313,13 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                   placeholder="স্মারক নং, শিরোনাম বা বিষয় দিয়ে খুঁজুন..." 
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-14 pr-6 h-[56px] bg-slate-50/50 border border-slate-100 rounded-[1.5rem] font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500/30 focus:ring-[6px] focus:ring-blue-500/5 transition-all text-sm placeholder:text-slate-400 shadow-inner"
+                  className="w-full pl-14 pr-6 h-[56px] bg-slate-50/50 border border-slate-100 rounded-none font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500/30 focus:ring-[6px] focus:ring-blue-500/5 transition-all text-sm placeholder:text-slate-400 shadow-inner"
                 />
               </div>
               
               <button 
                 onClick={() => setShowAddModal(true)}
-                className="h-[56px] w-[56px] shrink-0 bg-slate-900 text-white rounded-[1.5rem] flex items-center justify-center shadow-lg hover:bg-black active:scale-95 transition-all duration-300 group"
+                className="h-[56px] w-[56px] shrink-0 bg-slate-900 text-white rounded-none flex items-center justify-center shadow-lg hover:bg-black active:scale-95 transition-all duration-300 group"
                 title="দ্রুত আপলোড"
               >
                 <Plus size={24} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-500" />
@@ -327,21 +327,21 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
            </div>
 
            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0 justify-center">
-              <div className="flex flex-wrap gap-1.5 p-1.5 bg-slate-50 rounded-[1.5rem] border border-slate-100">
+              <div className="flex flex-wrap gap-1.5 p-1.5 bg-slate-50 rounded-none border border-slate-100">
                 {categories.map(cat => (
                   <button 
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
-                    className={`px-5 py-2.5 rounded-xl font-black text-[12px] transition-all duration-300 ${activeCategory === cat ? 'bg-white text-blue-600 shadow-[0_4px_12px_rgba(0,0,0,0.05)] scale-105' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'}`}
+                    className={`px-5 py-2.5 rounded-none font-black text-[12px] transition-all duration-300 ${activeCategory === cat ? 'bg-white text-blue-600 shadow-[0_4px_12px_rgba(0,0,0,0.05)] scale-105' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'}`}
                   >
                     {cat}
                   </button>
                 ))}
               </div>
               <div className="h-10 w-[1px] bg-slate-200 mx-1 hidden lg:block"></div>
-              <div className="flex bg-slate-50 p-1.5 rounded-[1.5rem] border border-slate-100">
-                 <button onClick={() => setViewMode('grid')} className={`p-2.5 rounded-xl transition-all duration-300 ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={18} /></button>
-                 <button onClick={() => setViewMode('list')} className={`p-2.5 rounded-xl transition-all duration-300 ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><List size={18} /></button>
+              <div className="flex bg-slate-50 p-1.5 rounded-none border border-slate-100">
+                 <button onClick={() => setViewMode('grid')} className={`p-2.5 rounded-none transition-all duration-300 ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={18} /></button>
+                 <button onClick={() => setViewMode('list')} className={`p-2.5 rounded-none transition-all duration-300 ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><List size={18} /></button>
               </div>
            </div>
         </div>
@@ -358,10 +358,10 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                    {filteredDocs.map((doc) => (
                      <div 
                        key={doc.id}
-                       className="group bg-white border border-slate-100 transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 rounded-[2.5rem] flex flex-col h-full relative overflow-hidden"
+                       className="group bg-white border border-slate-100 transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 rounded-none flex flex-col h-full relative overflow-hidden"
                      >
                         <div className="p-4 flex-1 space-y-5">
-                           <div className="aspect-[4/5] bg-slate-50 rounded-[2rem] overflow-hidden relative border border-slate-100 group-hover:border-blue-100 transition-all duration-500">
+                           <div className="aspect-[4/5] bg-slate-50 rounded-none overflow-hidden relative border border-slate-100 group-hover:border-blue-100 transition-all duration-500">
                               <img 
                                 src={`https://archive.org/services/img/${extractCleanId(doc.archiveId)}`} 
                                 alt={doc.title}
@@ -369,12 +369,12 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                                 onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
                               />
                               <div className="absolute top-4 left-4 z-20">
-                                 <span className="px-4 py-2 bg-white/90 backdrop-blur-md text-slate-900 text-[9px] font-black rounded-full uppercase tracking-[0.15em] border border-white/50 shadow-sm">{doc.category}</span>
+                                 <span className="px-4 py-2 bg-white/90 backdrop-blur-md text-slate-900 text-[9px] font-black rounded-none uppercase tracking-[0.15em] border border-white/50 shadow-sm">{doc.category}</span>
                               </div>
                               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end justify-center p-6 gap-3">
                                  <button 
                                    onClick={() => window.open(`https://archive.org/details/${extractCleanId(doc.archiveId)}`, '_blank')} 
-                                   className="flex-1 py-3 bg-white text-slate-900 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-xl hover:bg-blue-50 transition-all active:scale-95"
+                                   className="flex-1 py-3 bg-white text-slate-900 rounded-none font-black text-[11px] uppercase tracking-widest shadow-xl hover:bg-blue-50 transition-all active:scale-95"
                                  >
                                    ওপেন করুন
                                  </button>
@@ -383,7 +383,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                                      const id = extractCleanId(doc.archiveId);
                                      window.open(`https://archive.org/download/${id}/${id}.pdf`, '_blank');
                                    }} 
-                                   className="p-3 bg-blue-600 text-white rounded-xl shadow-xl hover:bg-blue-700 active:scale-95 transition-all"
+                                   className="p-3 bg-blue-600 text-white rounded-none shadow-xl hover:bg-blue-700 active:scale-95 transition-all"
                                  >
                                    <Download size={18} />
                                  </button>
@@ -392,7 +392,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                            <div className="space-y-3 px-2">
                               <h4 className="text-lg font-black text-slate-900 leading-[1.2] line-clamp-2 group-hover:text-blue-600 transition-colors tracking-tight">{doc.title}</h4>
                               {doc.memoNo && (
-                                <div className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg uppercase tracking-wider border border-blue-100/50">
+                                <div className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-none uppercase tracking-wider border border-blue-100/50">
                                   স্মারক: {doc.memoNo}
                                 </div>
                               )}
@@ -408,7 +408,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                               </div>
                            </div>
                         </div>
-                        <div className="p-4 mt-auto flex items-center justify-between bg-slate-50/30 rounded-b-[2.5rem] border-t border-slate-50">
+                        <div className="p-4 mt-auto flex items-center justify-between bg-slate-50/30 rounded-b-none border-t border-slate-50">
                            <button 
                              onClick={() => setSelectedDoc(doc)} 
                              className="text-[11px] font-black text-slate-500 hover:text-blue-600 flex items-center gap-2 transition-colors uppercase tracking-widest"
@@ -419,7 +419,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                               {isAdmin && (
                                 <button 
                                   onClick={() => setEditingDoc(doc)} 
-                                  className="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                  className="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-none transition-all"
                                 >
                                   <Edit2 size={16} />
                                 </button>
@@ -427,7 +427,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                               {isAdmin && (
                                 <button 
                                   onClick={() => handleDelete(doc.id)} 
-                                  className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                  className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-none transition-all"
                                 >
                                   <Trash2 size={16} />
                                 </button>
@@ -438,7 +438,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                    ))}
                 </div>
           ) : (
-            <div className="bg-white rounded-[3rem] border border-slate-100 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
+            <div className="bg-white rounded-none border border-slate-100 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
@@ -455,7 +455,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                       <tr key={doc.id} className="hover:bg-slate-50/80 transition-all duration-300 group">
                         <td className="p-6">
                           <div className="flex items-center gap-5">
-                            <div className="w-12 h-12 bg-slate-50 rounded-xl overflow-hidden shrink-0 border border-slate-100 group-hover:border-blue-200 transition-colors">
+                            <div className="w-12 h-12 bg-slate-50 rounded-none overflow-hidden shrink-0 border border-slate-100 group-hover:border-blue-200 transition-colors">
                               <img 
                                  src={`https://archive.org/services/img/${extractCleanId(doc.archiveId)}`} 
                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
@@ -469,7 +469,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                           </div>
                         </td>
                         <td className="p-6">
-                          <span className="px-4 py-1.5 bg-slate-50 text-slate-600 text-[10px] font-black rounded-full uppercase tracking-wider border border-slate-100">{doc.category}</span>
+                          <span className="px-4 py-1.5 bg-slate-50 text-slate-600 text-[10px] font-black rounded-none uppercase tracking-wider border border-slate-100">{doc.category}</span>
                         </td>
                         <td className="p-6">
                           <span className="text-[11px] font-bold text-slate-600">{doc.authority || 'অনির্ধারিত'}</span>
@@ -484,18 +484,18 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                           <div className="flex items-center justify-end gap-2.5">
                              <button 
                                onClick={() => setSelectedDoc(doc)} 
-                               className="p-3 bg-white text-slate-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all border border-slate-100 shadow-sm" 
+                               className="p-3 bg-white text-slate-600 rounded-none hover:bg-blue-600 hover:text-white transition-all border border-slate-100 shadow-sm" 
                                title="বিস্তারিত দেখুন"
                              >
                                <Eye size={18} />
                              </button>
-                             <button onClick={() => copyCitation(doc)} className="p-3 bg-white text-slate-600 rounded-xl hover:bg-amber-500 hover:text-white transition-all border border-slate-100 shadow-sm" title="রেফারেন্স কপি করুন"><FileText size={18} /></button>
+                             <button onClick={() => copyCitation(doc)} className="p-3 bg-white text-slate-600 rounded-none hover:bg-amber-500 hover:text-white transition-all border border-slate-100 shadow-sm" title="রেফারেন্স কপি করুন"><FileText size={18} /></button>
                              <button 
                                onClick={() => {
                                  const id = extractCleanId(doc.archiveId);
                                  window.open(`https://archive.org/download/${id}/${id}.pdf`, '_blank');
                                }} 
-                               className="p-3 bg-white text-slate-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all border border-slate-100 shadow-sm" 
+                               className="p-3 bg-white text-slate-600 rounded-none hover:bg-emerald-600 hover:text-white transition-all border border-slate-100 shadow-sm" 
                                title="সরাসরি ডাউনলোড"
                              >
                                <Download size={18} />
@@ -504,7 +504,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                                <>
                                  <button 
                                    onClick={() => setEditingDoc(doc)} 
-                                   className="p-3 bg-white text-slate-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all border border-slate-100 shadow-sm"
+                                   className="p-3 bg-white text-slate-600 rounded-none hover:bg-blue-600 hover:text-white transition-all border border-slate-100 shadow-sm"
                                    title="এডিট করুন"
                                  >
                                    <Edit2 size={18} />
@@ -522,8 +522,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
             </div>
           )
         ) : (
-          <div className="py-40 bg-white rounded-[3rem] border-2 border-dashed border-slate-200 text-center space-y-4">
-             <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-300"><Search size={40} /></div>
+          <div className="py-40 bg-white rounded-none border-2 border-dashed border-slate-200 text-center space-y-4">
+             <div className="w-20 h-20 bg-slate-50 rounded-none flex items-center justify-center mx-auto text-slate-300"><Search size={40} /></div>
              <div className="space-y-1">
                 <h3 className="text-xl font-black text-slate-800">কোনো রেফারেন্স পাওয়া যায়নি</h3>
                 <p className="text-slate-500 font-bold text-sm">আপনার অনুসন্ধানের সাথে মেলে এমন কোনো ফাইল এই মুহূর্তে নেই।</p>
@@ -536,10 +536,10 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       {/* View Modal */}
       {selectedDoc && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-400/10 backdrop-blur-md animate-in fade-in duration-500 overflow-y-auto">
-           <div className="w-full max-w-6xl bg-white rounded-[3rem] overflow-hidden flex flex-col shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white/40 relative animate-in slide-in-from-bottom-8 zoom-in-95 duration-500">
+           <div className="w-full max-w-6xl bg-white rounded-none overflow-hidden flex flex-col shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white/40 relative animate-in slide-in-from-bottom-8 zoom-in-95 duration-500">
               <button 
                 onClick={() => setSelectedDoc(null)}
-                className="absolute top-8 right-8 z-[1010] p-3.5 bg-white/80 backdrop-blur-md text-slate-400 hover:text-slate-900 rounded-2xl hover:bg-white transition-all shadow-sm border border-slate-100 group"
+                className="absolute top-8 right-8 z-[1010] p-3.5 bg-white/80 backdrop-blur-md text-slate-400 hover:text-slate-900 rounded-none hover:bg-white transition-all shadow-sm border border-slate-100 group"
               >
                 <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
               </button>
@@ -547,7 +547,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-[550px]">
                   <div className="flex-[3] bg-slate-900 relative flex flex-col items-center justify-center p-12 text-center space-y-8 overflow-hidden">
                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500/20 via-transparent to-transparent pointer-events-none"></div>
-                     <div className="w-36 h-36 bg-white/5 rounded-[2.5rem] flex items-center justify-center text-blue-400 mb-2 relative z-10 border border-white/10 shadow-inner">
+                     <div className="w-36 h-36 bg-white/5 rounded-none flex items-center justify-center text-blue-400 mb-2 relative z-10 border border-white/10 shadow-inner">
                         <BookOpen size={72} strokeWidth={1.2} />
                      </div>
                      <div className="space-y-4 max-w-md relative z-10">
@@ -558,30 +558,30 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                         href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-12 py-6 bg-white text-slate-900 rounded-[2rem] font-black text-lg flex items-center gap-4 shadow-2xl hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all group relative z-10"
+                        className="px-12 py-6 bg-white text-slate-900 rounded-none font-black text-lg flex items-center gap-4 shadow-2xl hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all group relative z-10"
                      >
                         <Eye size={28} className="group-hover:animate-bounce" /> ডকুমেন্টটি ওপেন করুন
                      </a>
                   </div>
                  <div className="flex-[2] p-12 space-y-10 overflow-y-auto bg-white no-scrollbar border-l border-slate-100">
                     <div className="space-y-6">
-                       <span className="px-6 py-2 bg-slate-50 text-slate-500 text-[11px] font-black rounded-full uppercase tracking-[0.2em] border border-slate-100 inline-block">{selectedDoc.category}</span>
+                       <span className="px-6 py-2 bg-slate-50 text-slate-500 text-[11px] font-black rounded-none uppercase tracking-[0.2em] border border-slate-100 inline-block">{selectedDoc.category}</span>
                        <h3 className="text-3xl font-black text-slate-900 leading-[1.1] tracking-tight">{selectedDoc.title}</h3>
                        
                        <div className="space-y-4 pt-4">
-                          <div className="flex items-center gap-5 text-slate-600 font-bold text-base bg-slate-50/50 p-5 rounded-[1.5rem] border border-slate-100/50">
-                             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600 border border-slate-50"><Calendar size={22} /></div>
+                          <div className="flex items-center gap-5 text-slate-600 font-bold text-base bg-slate-50/50 p-5 rounded-none border border-slate-100/50">
+                             <div className="w-12 h-12 bg-white rounded-none flex items-center justify-center shadow-sm text-blue-600 border border-slate-50"><Calendar size={22} /></div>
                              <span>তারিখ: {formatDateBN(selectedDoc.docDate)}</span>
                           </div>
                           {selectedDoc.memoNo && (
-                            <div className="flex items-center gap-5 text-slate-600 font-bold text-base bg-slate-50/50 p-5 rounded-[1.5rem] border border-slate-100/50">
-                               <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600 border border-slate-50"><FileText size={22} /></div>
+                            <div className="flex items-center gap-5 text-slate-600 font-bold text-base bg-slate-50/50 p-5 rounded-none border border-slate-100/50">
+                               <div className="w-12 h-12 bg-white rounded-none flex items-center justify-center shadow-sm text-blue-600 border border-slate-50"><FileText size={22} /></div>
                                <span>স্মারক নং: {selectedDoc.memoNo}</span>
                             </div>
                           )}
                           {selectedDoc.authority && (
-                            <div className="flex items-center gap-5 text-slate-600 font-bold text-base bg-slate-50/50 p-5 rounded-[1.5rem] border border-slate-100/50">
-                               <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600 border border-slate-50"><Library size={22} /></div>
+                            <div className="flex items-center gap-5 text-slate-600 font-bold text-base bg-slate-50/50 p-5 rounded-none border border-slate-100/50">
+                               <div className="w-12 h-12 bg-white rounded-none flex items-center justify-center shadow-sm text-blue-600 border border-slate-50"><Library size={22} /></div>
                                <span>কর্তৃপক্ষ: {selectedDoc.authority}</span>
                             </div>
                           )}
@@ -598,7 +598,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     {selectedDoc.tags && (
                       <div className="flex flex-wrap gap-2.5">
                          {selectedDoc.tags.split(',').map(tag => (
-                           <span key={tag} className="px-4 py-2 bg-slate-50 text-slate-500 text-[11px] font-black rounded-xl border border-slate-100 hover:bg-white hover:shadow-sm transition-all cursor-default">#{tag.trim()}</span>
+                           <span key={tag} className="px-4 py-2 bg-slate-50 text-slate-500 text-[11px] font-black rounded-none border border-slate-100 hover:bg-white hover:shadow-sm transition-all cursor-default">#{tag.trim()}</span>
                          ))}
                       </div>
                     )}
@@ -606,13 +606,13 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     <div className="pt-10 grid grid-cols-1 gap-4">
                        <button 
                          onClick={() => copyCitation(selectedDoc)}
-                         className="w-full py-5 bg-amber-500 text-white rounded-[1.5rem] font-black text-base flex items-center justify-center gap-3 shadow-xl shadow-amber-100 hover:bg-amber-600 transition-all active:scale-[0.98]"
+                         className="w-full py-5 bg-amber-500 text-white rounded-none font-black text-base flex items-center justify-center gap-3 shadow-xl shadow-amber-100 hover:bg-amber-600 transition-all active:scale-[0.98]"
                        >
                           <FileText size={22} /> রেফারেন্স কপি করুন
                        </button>
                        <button 
                          onClick={() => setSelectedDoc(null)}
-                         className="w-full py-5 bg-slate-900 text-white rounded-[1.5rem] font-black text-base hover:bg-black transition-all active:scale-[0.98]"
+                         className="w-full py-5 bg-slate-900 text-white rounded-none font-black text-base hover:bg-black transition-all active:scale-[0.98]"
                        >
                           বন্ধ করুন
                        </button>
@@ -626,10 +626,10 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
       {/* Add/Edit Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-400/10 backdrop-blur-md animate-in fade-in duration-500 overflow-y-auto">
-           <div className="w-full max-w-3xl bg-white rounded-[3rem] p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white/40 space-y-10 animate-in slide-in-from-bottom-8 zoom-in-95 duration-500 no-scrollbar">
+           <div className="w-full max-w-3xl bg-white rounded-none p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white/40 space-y-10 animate-in slide-in-from-bottom-8 zoom-in-95 duration-500 no-scrollbar">
               <div className="flex items-center justify-between border-b border-slate-50 pb-8">
                  <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-[1.5rem] flex items-center justify-center shadow-inner border border-blue-100/50">
+                    <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-none flex items-center justify-center shadow-inner border border-blue-100/50">
                       {editingDoc ? <Edit2 size={32} /> : <Plus size={32} />}
                     </div>
                     <div className="space-y-1">
@@ -654,14 +654,14 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                        tags: ''
                      });
                    }} 
-                   className="w-12 h-12 flex items-center justify-center text-slate-300 hover:text-slate-900 hover:bg-slate-50 rounded-2xl transition-all group"
+                   className="w-12 h-12 flex items-center justify-center text-slate-300 hover:text-slate-900 hover:bg-slate-50 rounded-none transition-all group"
                  >
                    <X size={28} className="group-hover:rotate-90 transition-transform duration-300" />
                  </button>
               </div>
 
               <form onSubmit={handleAddDocument} className="space-y-6">
-                 <div className="space-y-3 bg-blue-50 p-6 rounded-[2rem] border border-blue-100">
+                 <div className="space-y-3 bg-blue-50 p-6 rounded-none border border-blue-100">
                     <div className="flex items-center gap-2 text-blue-700 font-black text-xs uppercase tracking-widest"><AlertCircle size={14} /> আর্কাইভ লিঙ্ক (Archive Link)</div>
                     <p className="text-[11px] font-bold text-blue-600 leading-relaxed">
                       ডকুমেন্টটি <button 
@@ -681,7 +681,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                          type="text" 
                          required
                          placeholder="এখানে লিঙ্ক বা আইডি পেস্ট করুন" 
-                         className="flex-1 px-5 h-[50px] bg-white border border-blue-200 rounded-xl font-black text-blue-900 placeholder:text-blue-300 outline-none focus:border-blue-500 transition-all text-sm tracking-widest"
+                         className="flex-1 px-5 h-[50px] bg-white border border-blue-200 rounded-none font-black text-blue-900 placeholder:text-blue-300 outline-none focus:border-blue-500 transition-all text-sm tracking-widest"
                          value={newDoc.archiveId}
                          onChange={e => setNewDoc({...newDoc, archiveId: e.target.value})}
                        />
@@ -692,7 +692,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                            if (id) window.open(`https://archive.org/details/${id}`, '_blank');
                            else alert("প্রথমে একটি সঠিক লিঙ্ক দিন!");
                          }}
-                         className="px-4 bg-blue-100 text-blue-600 rounded-xl font-black text-[10px] uppercase hover:bg-blue-200 transition-all border border-blue-200"
+                         className="px-4 bg-blue-100 text-blue-600 rounded-none font-black text-[10px] uppercase hover:bg-blue-200 transition-all border border-blue-200"
                        >
                          পরীক্ষা করুন
                        </button>
@@ -701,7 +701,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                       <div className="space-y-1 px-2">
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">শনাক্তকৃত আইডি:</span>
-                          <span className={`text-[10px] font-black px-2 py-0.5 rounded border ${!extractCleanId(newDoc.archiveId) ? 'text-red-600 bg-red-50 border-red-100' : 'text-blue-600 bg-blue-100/50 border-blue-100'}`}>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-none border ${!extractCleanId(newDoc.archiveId) ? 'text-red-600 bg-red-50 border-red-100' : 'text-blue-600 bg-blue-100/50 border-blue-100'}`}>
                             {extractCleanId(newDoc.archiveId) || 'শনাক্ত করা যায়নি'}
                           </span>
                         </div>
@@ -720,7 +720,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                       type="text" 
                       required
                       placeholder="যেমন: বার্ষিক অডিট সার্কুলার ২০২৪-২৫" 
-                      className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
+                      className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
                       value={newDoc.title}
                       onChange={e => setNewDoc({...newDoc, title: e.target.value})}
                     />
@@ -730,7 +730,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     <div className="space-y-2">
                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ক্যাটাগরি</label>
                        <select 
-                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
+                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
                          value={newDoc.category}
                          onChange={e => setNewDoc({...newDoc, category: e.target.value as any})}
                        >
@@ -742,7 +742,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                        <input 
                          type="date" 
                          required
-                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
+                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
                          value={newDoc.docDate}
                          onChange={e => setNewDoc({...newDoc, docDate: e.target.value})}
                        />
@@ -755,7 +755,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                        <input 
                          type="text" 
                          placeholder="যেমন: ০৫.০০.০০০০.১২৩.৪৫.৬৭৮" 
-                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
+                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
                          value={newDoc.memoNo}
                          onChange={e => setNewDoc({...newDoc, memoNo: e.target.value})}
                        />
@@ -765,7 +765,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                        <input 
                          type="text" 
                          placeholder="যেমন: অর্থ মন্ত্রণালয় / বাংলাদেশ ব্যাংক" 
-                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
+                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
                          value={newDoc.authority}
                          onChange={e => setNewDoc({...newDoc, authority: e.target.value})}
                        />
@@ -777,7 +777,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     <input 
                       type="text" 
                       placeholder="যেমন: বোনাস, ভাতা, বেতন কাঠামো" 
-                      className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
+                      className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
                       value={newDoc.tags}
                       onChange={e => setNewDoc({...newDoc, tags: e.target.value})}
                     />
@@ -787,13 +787,13 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">বিবরণ (ঐচ্ছিক)</label>
                     <textarea 
                       placeholder="ডকুমেন্টের সারসংক্ষেপ বা গুরুত্বপূর্ণ নোট এখানে লিখুন..." 
-                      className="w-full p-5 min-h-[100px] bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all resize-none"
+                      className="w-full p-5 min-h-[100px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all resize-none"
                       value={newDoc.description}
                       onChange={e => setNewDoc({...newDoc, description: e.target.value})}
                     ></textarea>
                  </div>
 
-                 <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
+                 <div className="bg-amber-50 p-4 rounded-none border border-amber-100">
                     <p className="text-[11px] font-bold text-amber-700 flex items-center gap-2">
                       <Clock size={14} /> নতুন আপলোড করা ফাইল লাইব্রেরিতে দৃশ্যমান হতে ২-৫ মিনিট সময় লাগতে পারে।
                     </p>
@@ -816,11 +816,11 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                           tags: ''
                         });
                       }} 
-                      className="flex-1 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-sm hover:bg-slate-100 transition-all"
+                      className="flex-1 py-4 bg-slate-50 text-slate-500 rounded-none font-black text-sm hover:bg-slate-100 transition-all"
                     >
                       বাতিল
                     </button>
-                    <button type="submit" className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-3">
+                    <button type="submit" className="flex-[2] py-4 bg-blue-600 text-white rounded-none font-black text-sm shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-3">
                        <Sparkles size={18} className="text-blue-300" /> {editingDoc ? 'আপডেট করুন' : 'আর্কাইভে যুক্ত করুন'}
                     </button>
                  </div>

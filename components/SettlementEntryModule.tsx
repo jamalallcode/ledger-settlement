@@ -1113,13 +1113,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               </div>
             </div>
 
-            <div id="field-17" className={col3Style}>
-              <label className={labelCls}><span className={numBadge}>১৭</span> <MessageSquare size={14} className="text-purple-600" /> মন্তব্য</label>
-              <input type="text" className={getDynamicInputCls(formData.remarks)} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
-            </div>
-
-            <div id="field-18" className={col4Style}>
-              <label className={labelCls}><span className={numBadge}>১৮</span> <Archive size={14} className="text-purple-600 shrink-0" /> আর্কাইভ নং</label>
+            <div id="field-17" className={col4Style}>
+              <label className={labelCls}><span className={numBadge}>১৭</span> <Archive size={14} className="text-purple-600 shrink-0" /> আর্কাইভ নং</label>
               <input 
                 type="text" 
                 className={getDynamicInputCls(formData.archiveNo)} 
@@ -1132,6 +1127,11 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                 }} 
                 placeholder="আর্কাইভ নং" 
               />
+            </div>
+
+            <div id="field-18" className={`${col3Style} lg:col-span-2 md:col-span-2`}>
+              <label className={labelCls}><span className={numBadge}>১৮</span> <MessageSquare size={14} className="text-purple-600" /> মন্তব্য</label>
+              <input type="text" className={getDynamicInputCls(formData.remarks)} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
             </div>
 
             {formData.meetingType !== 'বিএসআর' && (
