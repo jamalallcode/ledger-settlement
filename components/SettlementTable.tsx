@@ -1845,6 +1845,19 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                                 />
                                               </span>
                                             </p>
+                                            {entry.archiveNo && (
+                                              <p className="text-[10px] leading-tight">
+                                                <span className="font-black text-purple-700">
+                                                  আর্কাইভ নং:
+                                                </span>{" "}
+                                                <span className="font-black text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100">
+                                                  <HighlightText
+                                                    text={entry.archiveNo}
+                                                    searchTerm={searchTerm}
+                                                  />
+                                                </span>
+                                              </p>
+                                            )}
                                           </div>
                                           <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
                                             {isExpanded ? (
@@ -2099,6 +2112,19 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                           />
                                         </span>
                                       </p>
+                                      {entry.archiveNo && (
+                                        <p className="text-[10px] leading-tight">
+                                          <span className="font-black text-purple-700">
+                                            আর্কাইভ নং:
+                                          </span>{" "}
+                                          <span className="font-black text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100">
+                                            <HighlightText
+                                              text={entry.archiveNo}
+                                              searchTerm={searchTerm}
+                                            />
+                                          </span>
+                                        </p>
+                                      )}
                                     </div>
                                     <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
                                       {isExpanded ? (
