@@ -232,6 +232,35 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
     return toBengaliDigits(val);
   };
 
+  const formatArchiveNoForTable = (val: string | undefined | null) => {
+    if (!val || val.trim() === '') return '-';
+    
+    const trimmed = val.trim();
+    let prefix = "";
+    let rest = trimmed;
+    
+    if (trimmed.toLowerCase().startsWith("kg-")) {
+      const dashIdx = trimmed.indexOf("-");
+      prefix = trimmed.substring(0, dashIdx + 1).trim() + " ";
+      rest = trimmed.substring(dashIdx + 1).trim();
+    }
+    
+    if (!rest) return prefix ? prefix.trim() : '-';
+    
+    // Split rest by commas
+    const parts = rest.split(',').map(p => p.trim()).filter(p => p !== '');
+    if (parts.length === 0) return prefix ? prefix.trim() : '-';
+    
+    // Group parts: max 3 per line
+    const lines: string[] = [];
+    for (let i = 0; i < parts.length; i += 3) {
+      const chunk = parts.slice(i, i + 3);
+      lines.push(chunk.join(', '));
+    }
+    
+    return prefix + lines.join('\n');
+  };
+
   return (
     <div id="bsr-monthly-detail-container" className="space-y-5 py-4 w-full animate-report-page relative bg-white p-5 rounded-3xl border border-slate-100 shadow-xl">
       <IDBadge id="bsr-monthly-detail-container" />
@@ -582,8 +611,8 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                       <td className={numTdStyle}>
                         {entryUnsettledAmount === 0 ? toBengaliDigits('0') + '/-' : formatAmountBengali(entryUnsettledAmount)}
                       </td>
-                      <td className={numTdStyle}>
-                        <HighlightText text={formatTextValue(row.archiveNo)} searchTerm={searchTerm} />
+                      <td className={`${numTdStyle} whitespace-pre-line`}>
+                        <HighlightText text={formatArchiveNoForTable(row.archiveNo)} searchTerm={searchTerm} />
                       </td>
                     </tr>
                   );

@@ -132,6 +132,35 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     others: 0,
   }), { sentPara: 0, settledPara: 0, amount: 0, recovery: 0, adjustment: 0, others: 0 });
 
+  const formatArchiveNoForTable = (val: string | undefined | null) => {
+    if (!val || val.trim() === '') return '-';
+    
+    const trimmed = val.trim();
+    let prefix = "";
+    let rest = trimmed;
+    
+    if (trimmed.toLowerCase().startsWith("kg-")) {
+      const dashIdx = trimmed.indexOf("-");
+      prefix = trimmed.substring(0, dashIdx + 1).trim() + " ";
+      rest = trimmed.substring(dashIdx + 1).trim();
+    }
+    
+    if (!rest) return prefix ? prefix.trim() : '-';
+    
+    // Split rest by commas
+    const parts = rest.split(',').map(p => p.trim()).filter(p => p !== '');
+    if (parts.length === 0) return prefix ? prefix.trim() : '-';
+    
+    // Group parts: max 3 per line
+    const lines: string[] = [];
+    for (let i = 0; i < parts.length; i += 3) {
+      const chunk = parts.slice(i, i + 3);
+      lines.push(chunk.join(', '));
+    }
+    
+    return prefix + lines.join('\n');
+  };
+
   const thCls = "border-r border-b border-slate-400 p-1 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
   const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle";
   const numTdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
@@ -279,7 +308,7 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                 <td className={numTdCls}>{toBengaliDigits(row.totalAdj?.toString() || '০')}</td>
                 <td className={numTdCls}>-</td>
                 <td className={tdCls}>{row.remarks}</td>
-                <td className={numTdCls}>{row.archiveNo}</td>
+                <td className={`${numTdCls} whitespace-pre-line`}>{formatArchiveNoForTable(row.archiveNo)}</td>
               </tr>
             ))}
             {/* Empty rows if data is sparse */}
