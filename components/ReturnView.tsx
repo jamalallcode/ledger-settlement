@@ -266,21 +266,48 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
   const cycleOptions = useMemo(() => {
     const options = [];
-    const banglaMonths: Record<string, string> = {
-      'January': 'জানুয়ারি', 'February': 'ফেব্রুয়ারি', 'March': 'মার্চ', 'April': 'এপ্রিল',
-      'May': 'মে', 'June': 'জুন', 'July': 'জুলাই', 'August': 'আগস্ট',
-      'September': 'সেপ্টেম্বর', 'October': 'অক্টোবর', 'November': 'নভেম্বর', 'December': 'ডিসেম্বর'
-    };
-
+    const seen = new Set<string>();
     const today = new Date();
-    for (let i = -1; i < 23; i++) {
+    
+    // We want to generate past quarters.
+    // Loop back about 24 months to find all quarters in the last 2 years.
+    for (let i = -2; i < 24; i++) {
       const refDate = addMonths(today, -i);
-      const firstOfTargetMonth = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
-      const cycle = getCycleForDate(firstOfTargetMonth);
-      const monthNameEng = dateFnsFormat(firstOfTargetMonth, 'MMMM');
-      const yearEng = dateFnsFormat(firstOfTargetMonth, 'yyyy');
-      const label = `${banglaMonths[monthNameEng]}/${toBengaliDigits(yearEng)}`;
-      options.push({ date: firstOfTargetMonth, label, cycleLabel: cycle.label });
+      const month = refDate.getMonth(); // 0 to 11
+      const year = refDate.getFullYear();
+      
+      let quarterStartMonth = 0;
+      let quarterEndMonth = 2;
+      let quarterYear = year;
+
+      if (month >= 0 && month <= 2) {
+        quarterStartMonth = 0; // Jan
+        quarterEndMonth = 2;   // Mar
+      } else if (month >= 3 && month <= 5) {
+        quarterStartMonth = 3; // Apr
+        quarterEndMonth = 5;   // Jun
+      } else if (month >= 6 && month <= 8) {
+        quarterStartMonth = 6; // Jul
+        quarterEndMonth = 8;   // Sep
+      } else {
+        quarterStartMonth = 9; // Oct
+        quarterEndMonth = 11;  // Dec
+      }
+
+      const startMonthName = BENGALI_MONTHS[quarterStartMonth];
+      const endMonthName = BENGALI_MONTHS[quarterEndMonth];
+      
+      const startYearShort = dateFnsFormat(new Date(quarterYear, quarterStartMonth, 1), 'yy');
+      const endYearShort = dateFnsFormat(new Date(quarterYear, quarterEndMonth, 1), 'yy');
+
+      const label = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
+      
+      if (!seen.has(label)) {
+        seen.add(label);
+        const reprDate = new Date(quarterYear, quarterStartMonth, 1);
+        const cycle = getCycleForDate(reprDate);
+        options.push({ date: reprDate, label, cycleLabel: cycle.label });
+      }
     }
     return options;
   }, []);
@@ -844,7 +871,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   };
 
   const monthPickerElement = (
-    <div className="relative no-print" ref={dropdownRef}>
+    <div className="relative no-print z-[350]" ref={dropdownRef}>
       <div 
         onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
         className={`flex items-center gap-1.5 px-2.5 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}

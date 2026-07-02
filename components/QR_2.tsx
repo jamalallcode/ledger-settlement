@@ -265,7 +265,7 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
               </span>
             </div>
             {monthPickerElement && (
-              <div className="scale-95 origin-center select-none">
+              <div className="scale-95 origin-center select-none relative z-[300]">
                 {monthPickerElement}
               </div>
             )}
