@@ -330,14 +330,6 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                 <td className={tdCls.replace('p-2', 'p-1') + " w-[42px]"}>{row.remarks}</td>
               </tr>
             ))}
-            {/* Empty rows if data is sparse */}
-            {filteredData.length < 5 && Array.from({ length: 5 - filteredData.length }).map((_, i) => (
-              <tr key={`empty-${i}`} className="h-10">
-                {Array.from({ length: 13 }).map((_, j) => (
-                  <td key={j} className="border-r border-b border-slate-400"></td>
-                ))}
-              </tr>
-            ))}
           </tbody>
           <tfoot className="font-black h-[32px] qr-sticky-footer qr-sticky-footer-bottom">
             <tr className="bg-black text-white">

@@ -436,14 +436,6 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                 </tr>
               );
             })}
-            {/* Empty rows if data is sparse */}
-            {filteredData.length < 5 && Array.from({ length: 5 - filteredData.length }).map((_, i) => (
-              <tr key={`empty-${i}`} className="h-10">
-                {Array.from({ length: 15 }).map((_, j) => (
-                  <td key={j} className="border-r border-b border-slate-400"></td>
-                ))}
-              </tr>
-            ))}
           </tbody>
           <tfoot className="qr-sticky-footer-bottom">
             <tr className="h-[40px]">
