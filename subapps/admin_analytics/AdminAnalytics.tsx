@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { toBengaliDigits, parseBengaliNumber, formatDateBN } from '../../utils/numberUtils';
 import { 
   BarChart3, Calendar, Users, FileText, 
@@ -27,6 +27,20 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     type: 'letters' | 'paragraphs';
     data: any[];
   } | null>(null);
+
+  const [headerHeight, setHeaderHeight] = useState(65);
+  const headerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setHeaderHeight(entry.target.clientHeight);
+      }
+    });
+    observer.observe(headerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const normalizeName = (name: string | null | undefined) => {
     if (!name) return 'অনির্ধারিত';
@@ -164,82 +178,75 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8 space-y-8 animate-in fade-in duration-700">
+    <div className="min-h-screen bg-slate-50 p-2 md:p-3 space-y-1 md:space-y-1.5 animate-in fade-in duration-700">
       {/* Header */}
-      <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 relative z-50 group">
+      <div 
+        ref={headerRef}
+        className="bg-white py-1.5 px-3 md:px-4 rounded-none shadow-md border border-slate-100 sticky top-0 z-[100] group"
+      >
         {/* Decorative Blur Circle - Wrapped in a clipping container */}
-        <div className="absolute inset-0 overflow-hidden rounded-[2.5rem] pointer-events-none">
+        <div className="absolute inset-0 overflow-hidden rounded-none pointer-events-none">
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-500/5 blur-3xl rounded-full group-hover:bg-blue-500/10 transition-colors"></div>
         </div>
+
+        {/* Close Button */}
+        <button 
+          onClick={onBack}
+          className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer active:scale-95 z-50 group/close"
+          title="বন্ধ করুন"
+        >
+          <X size={15} className="transition-transform duration-300 group-hover/close:rotate-90" />
+        </button>
         
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-start gap-8">
-          <div className="flex items-center gap-4 shrink-0">
-            <button 
-              onClick={onBack}
-              className="group/back flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all active:scale-95 border border-slate-200 shadow-sm"
-            >
-              <ChevronLeft size={18} className="group-hover/back:-translate-x-0.5 transition-transform" />
-              <span className="text-xs font-black uppercase tracking-wider">ড্যাশবোর্ড</span>
-            </button>
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-blue-500/20 border border-white/10 group-hover:scale-105 transition-transform duration-500">
-              <BarChart3 size={28} className="text-white" />
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-start gap-2.5 md:gap-4">
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-md border border-white/10 group-hover:scale-105 transition-transform duration-500">
+              <BarChart3 size={20} className="text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em] mb-1">Analytics</span>
-              <h1 className="text-2xl font-black text-slate-800 tracking-tighter leading-none">Performance Report</h1>
+              <span className="text-blue-600 text-[9px] font-black uppercase tracking-[0.3em] mb-0.5">Analytics</span>
+              <h1 className="text-lg md:text-xl font-black text-slate-800 tracking-tighter leading-none">Performance Report</h1>
             </div>
           </div>
 
           {/* Vertical Divider */}
-          <div className="hidden lg:block w-[1.5px] h-10 bg-slate-200/80 rounded-full"></div>
+          <div className="hidden lg:block w-[1.5px] h-6 bg-slate-200/80 rounded-full"></div>
 
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3">
             {/* Premium Date Range Picker in Header */}
-            <div className="flex items-center gap-1 p-1.5 bg-slate-50 border border-slate-200 rounded-2xl shadow-inner group/date">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-100 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
-                <Calendar size={14} className="text-blue-500" />
+            <div className="flex items-center gap-1 p-1 bg-slate-50 border border-slate-200 rounded-xl shadow-inner group/date">
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-white rounded-lg border border-slate-100 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                <Calendar size={12} className="text-blue-500" />
                 <input 
                   type="date" 
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-transparent border-none outline-none text-[11px] font-black text-slate-700 w-28 cursor-pointer"
+                  className="bg-transparent border-none outline-none text-[10px] font-black text-slate-700 w-24 cursor-pointer"
                 />
               </div>
               
-              <div className="px-1">
-                <div className="w-4 h-[2px] bg-slate-300 rounded-full"></div>
+              <div className="px-0.5">
+                <div className="w-3 h-[2px] bg-slate-300 rounded-full"></div>
               </div>
 
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-100 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
-                <Calendar size={14} className="text-indigo-500" />
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-white rounded-lg border border-slate-100 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                <Calendar size={12} className="text-indigo-500" />
                 <input 
                   type="date" 
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-transparent border-none outline-none text-[11px] font-black text-slate-700 w-28 cursor-pointer"
+                  className="bg-transparent border-none outline-none text-[10px] font-black text-slate-700 w-24 cursor-pointer"
                 />
               </div>
-            </div>
-
-            {/* Search in Header */}
-            <div className="relative group/search">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/search:text-blue-500 transition-colors" size={16} />
-              <input 
-                type="text" 
-                placeholder="অডিটর খুঁজুন..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none transition-all w-48 shadow-sm"
-              />
             </div>
 
             {/* Stats Toggle Button */}
             <div className="relative">
               <button 
                 onClick={() => setShowStats(!showStats)}
-                className={`px-6 py-3 rounded-2xl font-black text-xs flex items-center gap-2 transition-all shadow-lg active:scale-95 ${showStats ? 'bg-blue-700 text-white shadow-blue-500/40' : 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-700'}`}
+                className={`px-4 py-2 rounded-xl font-black text-[11px] flex items-center gap-1.5 transition-all shadow-md active:scale-95 ${showStats ? 'bg-blue-700 text-white shadow-blue-500/40' : 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-700'}`}
               >
-                <Sparkles size={16} className={showStats ? 'text-blue-100' : 'text-white'} /> পরিসংখ্যান
+                <Sparkles size={14} className={showStats ? 'text-blue-100' : 'text-white'} /> পরিসংখ্যান
               </button>
 
               <AnimatePresence>
@@ -338,23 +345,44 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       </div>
 
       {/* Main Report Table/Grid */}
-      <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100">
-        <div className="p-8">
+      <div 
+        style={{ 
+          ['--sticky-top' as any]: `${headerHeight}px` 
+        }}
+        className="bg-white rounded-none shadow-2xl border border-slate-100 relative z-10"
+      >
+        <div className="pt-2 md:pt-3 pb-1.5 px-2 md:px-3">
           {viewMode === 'table' ? (
-            <div className="overflow-x-auto rounded-3xl border border-slate-100 bg-white">
+            <div className="overflow-x-auto md:overflow-visible rounded-none border border-slate-100 bg-white">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="sticky top-0 bg-slate-50 px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest z-40 first:rounded-tl-3xl shadow-sm">অডিটরের নাম</th>
-                    <th className="sticky top-0 bg-slate-50 px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center z-40 shadow-sm">মোট চিঠি</th>
-                    <th className="sticky top-0 bg-slate-50 px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center z-40 shadow-sm">মোট অনুচ্ছেদ</th>
-                    <th className="sticky top-0 bg-slate-50 px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right z-40 last:rounded-tr-3xl shadow-sm">অ্যাকশন</th>
+                  <tr className="border-b border-slate-100 bg-slate-50">
+                    <th 
+                      className="bg-slate-50 px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest shadow-sm"
+                    >
+                      অডিটরের নাম
+                    </th>
+                    <th 
+                      className="bg-slate-50 px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center shadow-sm"
+                    >
+                      মোট চিঠি
+                    </th>
+                    <th 
+                      className="bg-slate-50 px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center shadow-sm"
+                    >
+                      মোট অনুচ্ছেদ
+                    </th>
+                    <th 
+                      className="bg-slate-50 px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right shadow-sm"
+                    >
+                      অ্যাকশন
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {filteredAuditorStats.map((stat, idx) => (
                     <tr key={idx} className="hover:bg-blue-50/30 transition-colors group">
-                      <td className="px-8 py-6">
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm">
                             {stat.image ? (
@@ -371,7 +399,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                           </div>
                         </div>
                       </td>
-                      <td className="px-8 py-6 text-center">
+                      <td className="px-4 py-3 text-center">
                         <button 
                           onClick={() => handleShowDetails(stat.name, 'letters')}
                           className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-sm font-black hover:bg-blue-100 transition-colors cursor-pointer"
@@ -379,7 +407,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                           {toBengaliDigits(stat.letterCount.toString())}
                         </button>
                       </td>
-                      <td className="px-8 py-6 text-center">
+                      <td className="px-4 py-3 text-center">
                         <button 
                           onClick={() => handleShowDetails(stat.name, 'paragraphs')}
                           className="px-4 py-1.5 bg-purple-50 text-purple-600 rounded-full text-sm font-black hover:bg-purple-100 transition-colors cursor-pointer"
@@ -387,7 +415,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                           {toBengaliDigits(stat.paraCount.toString())}
                         </button>
                       </td>
-                      <td className="px-8 py-6 text-right">
+                      <td className="px-4 py-3 text-right">
                         <button className="p-2 text-slate-300 hover:text-blue-600 transition-colors">
                           <ArrowRight size={18} />
                         </button>

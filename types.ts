@@ -121,6 +121,8 @@ export interface CorrespondenceEntry {
   isOnline: string;
   issueLetterNo: string;
   issueLetterDate: string;
+  issueLetterComment?: string;
+  archiveNo?: string;
   remarks?: string;
   createdAt: string;
   approvalStatus?: 'approved' | 'pending';

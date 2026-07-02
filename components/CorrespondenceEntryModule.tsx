@@ -41,10 +41,13 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const mainOptions = [
-    { id: 'broadsheet', label: 'বিএসআর (BSR)', value: 'বিএসআর', icon: FileText, color: 'emerald' },
+    { id: 'broadsheet', label: 'বিএসআর', value: 'বিএসআর', icon: FileText, color: 'emerald' },
     { id: 'bilateral', label: 'দ্বিপক্ষীয় সভা', hasSub: true, icon: User, color: 'blue' },
     { id: 'trilateral', label: 'ত্রিপক্ষীয় সভা', hasSub: true, icon: Layout, color: 'indigo' },
     { id: 'reconciliation', label: 'মিলিকরণ', value: 'মিলিকরণ', icon: Sparkles, color: 'amber' },
+    { id: 'acknowledgement', label: 'অবগতি পত্র', value: 'অবগতি পত্র', icon: Mail, color: 'teal' },
+    { id: 'certificate', label: 'প্রত্যয়ন পত্র', value: 'প্রত্যয়ন পত্র', icon: ShieldCheck, color: 'purple' },
+    { id: 'others', label: 'অন্যান্য', value: 'অন্যান্য', icon: BookOpen, color: 'sky' },
   ];
 
   const subOptions = [
@@ -91,11 +94,11 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+12px)] left-0 w-full bg-white border border-slate-200 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.15)] z-[1000] overflow-visible animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 border-t-4 border-t-emerald-600">
-          <div className="p-3 space-y-1">
-            <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between">
+        <div className="absolute top-[calc(100%+6px)] left-0 w-[60%] min-w-[220px] bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-visible animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
+          <div className="p-1.5 space-y-0.5">
+            <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Sparkles size={12} className="text-emerald-500" /> ক্যাটাগরি নির্বাচন করুন
+                <Sparkles size={11} className="text-emerald-500" /> ক্যাটাগরি নির্বাচন করুন
               </span>
             </div>
             {mainOptions.map((opt) => (
@@ -108,21 +111,21 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
                     setIsOpen(false);
                   }
                 }}
-                className={`px-4 py-3.5 mx-1 rounded-2xl cursor-pointer flex items-center justify-between transition-all group relative ${
+                className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
                   (opt.hasSub && hoveredItem === opt.id) || (!opt.hasSub && value === opt.value)
                     ? `bg-${opt.color}-50 text-${opt.color}-700 shadow-sm` 
                     : 'hover:bg-slate-50 text-slate-600'
                 }`}
               >
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
                     (opt.hasSub && hoveredItem === opt.id) || (!opt.hasSub && value === opt.value)
-                      ? `bg-${opt.color}-600 text-white shadow-lg shadow-${opt.color}-200`
-                      : 'bg-slate-100 text-slate-400 group-hover:bg-white group-hover:shadow-md'
+                      ? `bg-${opt.color}-600 text-white`
+                      : 'bg-slate-100 text-slate-400'
                   }`}>
-                    <opt.icon size={20} />
+                    <opt.icon size={14} />
                   </div>
-                  <span className={`text-[14px] font-black transition-colors ${
+                  <span className={`text-[12.5px] font-black transition-colors ${
                     (opt.hasSub && hoveredItem === opt.id) || (!opt.hasSub && value === opt.value)
                       ? `text-${opt.color}-700`
                       : 'text-slate-700'
@@ -130,20 +133,19 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
                 </div>
                 
                 {opt.hasSub ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest group-hover:text-emerald-400 transition-colors">সাব-আইটেম</span>
-                    <ArrowRight size={16} className="text-slate-300 group-hover:text-emerald-500 transition-all group-hover:translate-x-1" />
+                  <div className="flex items-center gap-1.5">
+                    <ArrowRight size={13} className="text-slate-300 group-hover:text-emerald-500 transition-all group-hover:translate-x-0.5" />
                   </div>
                 ) : (
-                  value === opt.value && <div className={`w-6 h-6 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-md animate-in zoom-in duration-300`}><Check size={14} strokeWidth={3} /></div>
+                  value === opt.value && <div className={`w-5 h-5 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300`}><Check size={12} strokeWidth={3} /></div>
                 )}
 
                 {opt.hasSub && hoveredItem === opt.id && (
-                  <div className="absolute left-[calc(100%+16px)] top-0 w-64 bg-white border border-slate-200 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.2)] z-[1001] overflow-hidden animate-in fade-in slide-in-from-left-4 duration-300 border-l-4 border-l-emerald-600">
-                    <div className="p-3 space-y-1">
-                      <div className="px-4 py-2 mb-2 border-b border-slate-100">
-                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
-                          <Layout size={12} /> {opt.label}
+                  <div className="absolute left-[calc(100%+8px)] top-0 w-56 bg-white border border-slate-200 rounded-xl shadow-lg z-[1001] overflow-hidden animate-in fade-in slide-in-from-left-2 duration-300 border-l-4 border-l-emerald-600">
+                    <div className="p-1.5 space-y-0.5">
+                      <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100">
+                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5">
+                          <Layout size={11} /> {opt.label}
                         </span>
                       </div>
                       {subOptions.map((sub) => {
@@ -158,15 +160,15 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
                               setIsOpen(false);
                               setHoveredItem(null);
                             }}
-                            className={`px-4 py-3 mx-1 rounded-xl cursor-pointer flex items-center justify-between transition-all group/sub ${
-                              isSelected ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'hover:bg-emerald-50 text-slate-700'
+                            className={`px-3 py-1.5 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group/sub ${
+                              isSelected ? 'bg-emerald-600 text-white shadow-sm' : 'hover:bg-emerald-50 text-slate-700'
                             }`}
                           >
-                            <div className="flex items-center gap-3">
-                               <sub.icon size={16} className={isSelected ? 'text-white' : 'text-slate-400 group-hover/sub:text-emerald-500'} />
-                               <span className="text-[13px] font-black">{sub.label}</span>
+                            <div className="flex items-center gap-2">
+                               <sub.icon size={13} className={isSelected ? 'text-white' : 'text-slate-400 group-hover/sub:text-emerald-500'} />
+                               <span className="text-[12px] font-black">{sub.label}</span>
                             </div>
-                            {isSelected && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                            {isSelected && <Check size={12} strokeWidth={3} className="animate-in zoom-in duration-300" />}
                           </div>
                         );
                       })}
@@ -190,9 +192,9 @@ const PremiumParaTypeSelect = ({ value, onChange, IDBadge }: any) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const options = [
-    { id: 'admin', label: 'প্রশাসন (Admin)', value: 'প্রশাসন', icon: User, color: 'emerald', desc: 'Administration Branch' },
-    { id: 'sfi', label: 'এসএফআই (SFI)', value: 'এসএফআই', icon: ShieldCheck, color: 'blue', desc: 'Special Audit Branch' },
-    { id: 'nonsfi', label: 'নন এসএফআই (NON-SFI)', value: 'নন এসএফআই', icon: Layout, color: 'indigo', desc: 'General Audit Branch' },
+    { id: 'admin', label: 'প্রশাসন', value: 'প্রশাসন', icon: User, color: 'emerald' },
+    { id: 'sfi', label: 'এসএফআই', value: 'এসএফআই', icon: ShieldCheck, color: 'blue' },
+    { id: 'nonsfi', label: 'নন এসএফআই', value: 'নন এসএফআই', icon: Layout, color: 'indigo' },
   ];
 
   useEffect(() => {
@@ -224,11 +226,11 @@ const PremiumParaTypeSelect = ({ value, onChange, IDBadge }: any) => {
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+12px)] left-0 w-full bg-white border border-slate-200 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.15)] z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 border-t-4 border-t-blue-600">
-          <div className="p-3 space-y-1">
-            <div className="px-4 py-2 mb-2 border-b border-slate-100 flex items-center justify-between">
+        <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600">
+          <div className="p-1.5 space-y-0.5">
+            <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Sparkles size={12} className="text-blue-500" /> শাখা নির্বাচন করুন
+                <Sparkles size={11} className="text-blue-500" /> শাখা নির্বাচন করুন
               </span>
             </div>
             {options.map((opt) => (
@@ -238,24 +240,21 @@ const PremiumParaTypeSelect = ({ value, onChange, IDBadge }: any) => {
                   onChange(opt.value);
                   setIsOpen(false);
                 }}
-                className={`px-4 py-3.5 mx-1 rounded-2xl cursor-pointer flex items-center justify-between transition-all group relative ${
+                className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
                   value === opt.value ? `bg-${opt.color}-50 text-${opt.color}-700 shadow-sm` : 'hover:bg-slate-50 text-slate-600'
                 }`}
               >
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                    value === opt.value ? `bg-${opt.color}-600 text-white shadow-lg shadow-${opt.color}-200` : 'bg-slate-100 text-slate-400 group-hover:bg-white group-hover:shadow-md'
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                    value === opt.value ? `bg-${opt.color}-600 text-white` : 'bg-slate-100 text-slate-400'
                   }`}>
-                    <opt.icon size={20} />
+                    <opt.icon size={14} />
                   </div>
-                  <div className="flex flex-col">
-                    <span className={`text-[14px] font-black transition-colors ${value === opt.value ? `text-${opt.color}-700` : 'text-slate-700'}`}>{opt.label}</span>
-                    <span className="text-[10px] font-bold text-slate-400">{opt.desc}</span>
-                  </div>
+                  <span className={`text-[12.5px] font-black transition-colors ${value === opt.value ? `text-${opt.color}-700` : 'text-slate-700'}`}>{opt.label}</span>
                 </div>
                 {value === opt.value && (
-                  <div className={`w-6 h-6 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-md animate-in zoom-in duration-300`}>
-                    <Check size={14} strokeWidth={3} />
+                  <div className={`w-5 h-5 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300`}>
+                    <Check size={12} strokeWidth={3} />
                   </div>
                 )}
               </div>
@@ -518,20 +517,20 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
   useEffect(() => {
     const loadReceivers = async () => {
+      const normalizeName = (name: string | null | undefined) => {
+        if (!name) return '';
+        return name
+          .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '') // Remove all possible invisible characters and non-breaking spaces
+          .trim()
+          .replace(/\s+/g, ' ')                  // Normalize internal whitespace to a single space
+          .replace(/[:ঃ।\.\-]/g, '')             // Remove punctuation for comparison
+          .normalize('NFC');                     // Normalize Unicode to canonical form
+      };
+
       try {
         let finalReceivers: any[] = [];
         const uniqueVariations = getBranchVariations(formData.paraType);
         let supabaseError = null;
-
-        const normalizeName = (name: string | null | undefined) => {
-          if (!name) return '';
-          return name
-            .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '') // Remove all possible invisible characters and non-breaking spaces
-            .trim()
-            .replace(/\s+/g, ' ')                  // Normalize internal whitespace to a single space
-            .replace(/[:ঃ।\.\-]/g, '')             // Remove punctuation for comparison
-            .normalize('NFC');                     // Normalize Unicode to canonical form
-        };
 
         // 1. Fetch from receivers table (Current Branch)
         if (isSupabaseConfigured) {
@@ -650,15 +649,107 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           }
         });
 
-        // 4. Sort final list
-        finalReceivers.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-        setReceiverSuggestions(finalReceivers);
+        // 4. Sort final list and filter out inactive receivers unless they are the currently selected one
+        const INACTIVE_STORAGE_KEY = 'ledger_inactive_receivers_v1';
+        const getInactiveList = (): string[] => {
+          try {
+            const saved = localStorage.getItem(INACTIVE_STORAGE_KEY);
+            return saved ? JSON.parse(saved) : [];
+          } catch {
+            return [];
+          }
+        };
+
+        const getCleanBranch = (type: string | null | undefined): string => {
+          if (!type) return 'এসএফআই';
+          if (type.includes('প্রশাসন') || type === 'ADMIN' || type === 'admin') return 'প্রশাসন';
+          if (type.includes('নন') || type.toUpperCase().includes('NON')) return 'নন এসএফআই';
+          return 'এসএফআই';
+        };
+
+        const inactiveListRaw = getInactiveList();
+        const inactiveKeysSet = new Set(inactiveListRaw.map(item => normalizeName(item)));
+        const currentReceiverNormalized = normalizeName(formData.receiverName || initialEntry?.receiverName);
+
+        const filteredReceivers = finalReceivers.map(r => {
+          const norm = normalizeName(r.name);
+          const rBranchClean = getCleanBranch(r.para_type || formData.paraType);
+          const compKey = `${norm}_${rBranchClean}`;
+          
+          let is_active = r.is_active;
+          if (is_active === undefined || is_active === null) {
+            if (inactiveKeysSet.has(compKey)) {
+              is_active = false;
+            } else if (inactiveKeysSet.has(norm)) {
+              const hasBranchSpecificKey = Array.from(inactiveKeysSet).some(k => k.startsWith(`${norm}_`));
+              is_active = !hasBranchSpecificKey;
+            } else {
+              is_active = true;
+            }
+          }
+          return { ...r, is_active };
+        }).filter(r => {
+          if (r.is_active !== false) return true;
+          if (currentReceiverNormalized && normalizeName(r.name) === currentReceiverNormalized) {
+            return true;
+          }
+          return false;
+        });
+
+        filteredReceivers.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        setReceiverSuggestions(filteredReceivers);
 
       } catch (err) {
         console.error('Error loading receivers:', err);
         const initialList = isAdminBranch(formData.paraType) ? [] :
                             isSFI(formData.paraType) ? SFI_RECEIVERS : NONSFI_RECEIVERS;
-        setReceiverSuggestions(initialList.map(name => ({ name, designation: 'অডিটর' })));
+        const mappedList = initialList.map(name => ({ name, designation: 'অডিটর' }));
+        
+        const INACTIVE_STORAGE_KEY = 'ledger_inactive_receivers_v1';
+        const getInactiveList = (): string[] => {
+          try {
+            const saved = localStorage.getItem(INACTIVE_STORAGE_KEY);
+            return saved ? JSON.parse(saved) : [];
+          } catch {
+            return [];
+          }
+        };
+
+        const getCleanBranch = (type: string | null | undefined): string => {
+          if (!type) return 'এসএফআই';
+          if (type.includes('প্রশাসন') || type === 'ADMIN' || type === 'admin') return 'প্রশাসন';
+          if (type.includes('নন') || type.toUpperCase().includes('NON')) return 'নন এসএফআই';
+          return 'এসএফআই';
+        };
+
+        const inactiveListRaw = getInactiveList();
+        const inactiveKeysSet = new Set(inactiveListRaw.map(item => normalizeName(item)));
+        const currentReceiverNormalized = normalizeName(formData.receiverName || initialEntry?.receiverName);
+
+        const filtered = mappedList.map(r => {
+          const norm = normalizeName(r.name);
+          const rBranchClean = getCleanBranch(formData.paraType);
+          const compKey = `${norm}_${rBranchClean}`;
+          
+          let is_active;
+          if (inactiveKeysSet.has(compKey)) {
+            is_active = false;
+          } else if (inactiveKeysSet.has(norm)) {
+            const hasBranchSpecificKey = Array.from(inactiveKeysSet).some(k => k.startsWith(`${norm}_`));
+            is_active = !hasBranchSpecificKey;
+          } else {
+            is_active = true;
+          }
+          return { ...r, is_active };
+        }).filter(r => {
+          if (r.is_active !== false) return true;
+          if (currentReceiverNormalized && normalizeName(r.name) === currentReceiverNormalized) {
+            return true;
+          }
+          return false;
+        });
+
+        setReceiverSuggestions(filtered);
       }
     };
 
@@ -674,7 +765,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     if (savedDescriptions) setDescriptionSuggestions(JSON.parse(savedDescriptions));
 
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [formData.paraType]);
+  }, [formData.paraType, formData.receiverName, initialEntry]);
 
   const formatDateSegments = (d: string, m: string, y: string) => {
     if (!d || !m || !y || y.length < 4) return '';
@@ -1718,10 +1809,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                </button>
                <button 
                   type="submit"
-                  disabled={isDuplicate || !!diaryDateError || !!receiptDateError || !!receivedDateError}
-                  className={`flex-[1.8] py-4.5 px-8 rounded-2xl font-black text-xl transition-all duration-300 active:scale-95 flex items-center justify-center gap-3.5 group relative overflow-hidden cursor-pointer shadow-md ${isDuplicate || diaryDateError || receiptDateError || receivedDateError ? 'bg-slate-200 text-slate-400 border-2 border-slate-300 shadow-none cursor-not-allowed' : 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 text-white hover:shadow-lg hover:shadow-emerald-500/10 hover:scale-[1.01]'}`}
+                  disabled={!!diaryDateError || !!receiptDateError || !!receivedDateError}
+                  className={`flex-[1.8] py-4.5 px-8 rounded-2xl font-black text-xl transition-all duration-300 active:scale-95 flex items-center justify-center gap-3.5 group relative overflow-hidden cursor-pointer shadow-md ${diaryDateError || receiptDateError || receivedDateError ? 'bg-slate-200 text-slate-400 border-2 border-slate-300 shadow-none cursor-not-allowed' : 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 text-white hover:shadow-lg hover:shadow-emerald-500/10 hover:scale-[1.01]'}`}
                >
-                  {(!isDuplicate && !diaryDateError && !receiptDateError && !receivedDateError) && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>}
+                  {(!diaryDateError && !receiptDateError && !receivedDateError) && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>}
                   <CheckCircle2 size={22} className="group-hover:scale-110 transition-transform duration-300" />
                   <span>{initialEntry ? 'তথ্য আপডেট করুন' : 'তথ্য সংরক্ষণ করুন'}</span>
                </button>

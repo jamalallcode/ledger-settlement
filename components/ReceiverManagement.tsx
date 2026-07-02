@@ -10,6 +10,8 @@ interface ReceiverManagementProps {
   isAdmin: boolean;
   onViewEntries?: (name: string, type: 'settlement' | 'correspondence') => void;
   onBack?: () => void;
+  entries?: any[];
+  correspondenceEntries?: any[];
 }
 
 interface ReceiverProfile {
@@ -22,6 +24,8 @@ interface ReceiverProfile {
   entryDetails?: any[];
   source?: 'database' | 'local' | 'correspondence' | 'unassigned';
   is_voter?: boolean;
+  is_active?: boolean;
+  transferred_to?: string;
 }
 
 const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
@@ -33,7 +37,58 @@ const getCleanBranch = (type: string | null | undefined): string => {
   return 'এসএফআই';
 };
 
-const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onViewEntries, onBack }) => {
+const INACTIVE_STORAGE_KEY = 'ledger_inactive_receivers_v1';
+
+const getInactiveList = (): string[] => {
+  try {
+    const saved = localStorage.getItem(INACTIVE_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveInactiveList = (list: string[]) => {
+  try {
+    localStorage.setItem(INACTIVE_STORAGE_KEY, JSON.stringify(list));
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const TRANSFERS_STORAGE_KEY = 'ledger_receiver_transfers_v2';
+
+const getTransfersMap = (): Record<string, string> => {
+  try {
+    const saved = localStorage.getItem(TRANSFERS_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveTransfersMap = (map: Record<string, string>) => {
+  try {
+    localStorage.setItem(TRANSFERS_STORAGE_KEY, JSON.stringify(map));
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const getBranchFromTransferName = (name: string): string | null => {
+  if (name === 'প্রশাসন শাখা') return 'প্রশাসন';
+  if (name === 'এসএফআই শাখা') return 'এসএফআই';
+  if (name === 'নন এসএফআই শাখা') return 'নন এসএফআই';
+  return null;
+};
+
+const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ 
+  isAdmin, 
+  onViewEntries, 
+  onBack,
+  entries,
+  correspondenceEntries
+}) => {
   const [receiversList, setReceiversList] = useState<ReceiverProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,6 +97,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
   const [tempName, setTempName] = useState('');
   const [tempDesignation, setTempDesignation] = useState('');
   const [tempImage, setTempImage] = useState<string | null>(null);
+  const [tempIsActive, setTempIsActive] = useState(true);
+  const [tempTransferredTo, setTempTransferredTo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const fetchReceivers = async () => {
@@ -116,13 +173,50 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
       let entryCounts: Record<string, number> = {};
       let entryDetails: Record<string, any[]> = {};
 
-      if (isSupabaseConfigured) {
-        const { data: entries, error: entriesError } = await supabase
+      const hasPassedProps = (Array.isArray(entries) && entries.length > 0) || (Array.isArray(correspondenceEntries) && correspondenceEntries.length > 0);
+
+      if (hasPassedProps) {
+        const combined = [
+          ...(entries || []),
+          ...(correspondenceEntries || [])
+        ];
+        combined.forEach(item => {
+          if (!item) return;
+          const isCorr = item.type === 'correspondence' || 
+                        (item.description !== undefined && item.description !== null && item.description !== '');
+          
+          if (isCorr) {
+            const b = getCleanBranch(item.paraType);
+            if (item.receiverName && item.receiverName.trim()) {
+              const originalName = item.receiverName.trim();
+              const normalizedName = normalizeName(originalName);
+              if (normalizedName) {
+                const compKey = `${normalizedName}_${b}`;
+                if (!entryCounts[compKey]) {
+                  entryCounts[compKey] = 0;
+                  entryDetails[compKey] = [];
+                  if (!correspondenceNamesByBranch[b].some(cn => normalizeName(cn) === normalizedName)) {
+                    correspondenceNamesByBranch[b].push(originalName);
+                  }
+                }
+                entryCounts[compKey]++;
+                entryDetails[compKey].push({
+                  id: item.id,
+                  diaryNo: item.diaryNo,
+                  diaryDate: item.diaryDate,
+                  letterNo: item.letterNo
+                });
+              }
+            }
+          }
+        });
+      } else if (isSupabaseConfigured) {
+        const { data: dbEntries, error: entriesError } = await supabase
           .from('settlement_entries')
           .select('id, content');
         
-        if (!entriesError && entries) {
-          entries.forEach(row => {
+        if (!entriesError && dbEntries) {
+          dbEntries.forEach(row => {
             let content = row.content;
             if (typeof content === 'string') {
               try { content = JSON.parse(content); } catch (e) { return; }
@@ -162,8 +256,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
         const savedCorr = localStorage.getItem(CORR_STORAGE_KEY);
         if (savedCorr) {
           try {
-            const entries = JSON.parse(savedCorr);
-            entries.forEach((entry: any) => {
+            const dbEntries = JSON.parse(savedCorr);
+            dbEntries.forEach((entry: any) => {
               const isCorr = entry.type === 'correspondence' || 
                             (entry.description !== undefined && entry.description !== null && entry.description !== '');
               
@@ -219,14 +313,35 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
         });
       });
 
-      // Map counts
+      const inactiveListRaw = getInactiveList();
+      const inactiveKeysSet = new Set(inactiveListRaw.map(item => normalizeName(item)));
+      const transfersMap = getTransfersMap();
+
+      // Map counts and active status
       const receiversWithCounts = finalReceivers.map(r => {
         const b = getCleanBranch(r.para_type);
         const norm = normalizeName(r.name);
         const compKey = `${norm}_${b}`;
+        
+        let is_active = r.is_active;
+        if (is_active === undefined || is_active === null) {
+          if (inactiveKeysSet.has(compKey)) {
+            is_active = false;
+          } else if (inactiveKeysSet.has(norm)) {
+            const hasBranchSpecificKey = Array.from(inactiveKeysSet).some(k => k.startsWith(`${norm}_`));
+            is_active = !hasBranchSpecificKey;
+          } else {
+            is_active = true;
+          }
+        }
+
+        const transferred_to = r.transferred_to || transfersMap[compKey] || '';
+
         return {
           ...r,
           para_type: b,
+          is_active,
+          transferred_to,
           entryCount: entryCounts[compKey] || 0,
           entryDetails: entryDetails[compKey] || []
         };
@@ -247,7 +362,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
 
   useEffect(() => {
     fetchReceivers();
-  }, []);
+  }, [entries, correspondenceEntries]);
 
   const openAddModal = (branch: string) => {
     setEditingId(null);
@@ -255,6 +370,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
     setTempName('');
     setTempDesignation('');
     setTempImage(null);
+    setTempIsActive(true);
+    setTempTransferredTo('');
     setIsModalOpen(true);
   };
 
@@ -264,6 +381,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
     setTempName(profile.name);
     setTempDesignation(profile.designation || '');
     setTempImage(profile.image || null);
+    setTempIsActive(profile.is_active !== false);
+    setTempTransferredTo(profile.transferred_to || '');
     setIsModalOpen(true);
   };
 
@@ -275,23 +394,156 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
       name: tempName.trim(),
       designation: tempDesignation.trim() || null,
       image: tempImage || null,
-      para_type: selectedParaType
+      para_type: selectedParaType,
+      is_active: tempIsActive,
+      transferred_to: tempIsActive ? '' : tempTransferredTo
     };
+
+    const normalizeName = (name: string | null | undefined) => {
+      if (!name) return '';
+      return name
+        .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .replace(/[:ঃ।\.\-]/g, '')
+        .normalize('NFC');
+    };
+
+    // Update the local inactive storage key (branch-specific)
+    const currentNorm = normalizeName(tempName.trim());
+    const currentBranchClean = getCleanBranch(selectedParaType);
+    const currentCompKey = `${currentNorm}_${currentBranchClean}`;
+    let inactiveList = getInactiveList();
+
+    if (editingId) {
+      // If we are editing, check if the name was changed and clean up the old name/keys from inactive list
+      const oldProfile = receiversList.find(r => r.id === editingId || r.name === editingId);
+      if (oldProfile) {
+        const oldNorm = normalizeName(oldProfile.name);
+        const oldBranchClean = getCleanBranch(oldProfile.para_type);
+        const oldCompKey = `${oldNorm}_${oldBranchClean}`;
+        if (oldProfile.name !== tempName.trim() || oldBranchClean !== currentBranchClean) {
+          inactiveList = inactiveList.filter(n => {
+            const normItem = normalizeName(n);
+            return normItem !== oldCompKey && normItem !== oldNorm;
+          });
+        }
+      }
+    }
+
+    if (tempIsActive) {
+      inactiveList = inactiveList.filter(n => {
+        const normItem = normalizeName(n);
+        return normItem !== currentCompKey && normItem !== currentNorm;
+      });
+    } else {
+      // Clean up simple global inactive name if it exists, to avoid global block
+      inactiveList = inactiveList.filter(n => normalizeName(n) !== currentNorm);
+      
+      const existsComp = inactiveList.some(n => normalizeName(n) === currentCompKey);
+      if (!existsComp) {
+        inactiveList.push(currentCompKey); // Save exact branch combination (e.g. "শামীমা শাহরিন_নন এসএফআই")
+      }
+    }
+    saveInactiveList(inactiveList);
+
+    // Save transfer mapping locally
+    const transfersMap = getTransfersMap();
+    if (tempIsActive) {
+      delete transfersMap[currentCompKey];
+    } else {
+      transfersMap[currentCompKey] = tempTransferredTo;
+    }
+    saveTransfersMap(transfersMap);
+
+    // Check for automatic internal branch transfer
+    const targetBranch = getBranchFromTransferName(tempTransferredTo);
+    if (!tempIsActive && targetBranch && targetBranch !== getCleanBranch(selectedParaType)) {
+      const alreadyExists = receiversList.some(r => {
+        return normalizeName(r.name) === currentNorm && getCleanBranch(r.para_type) === targetBranch;
+      });
+
+      if (!alreadyExists) {
+        const newBranchProfile = {
+          name: tempName.trim(),
+          designation: tempDesignation.trim() || null,
+          image: tempImage || null,
+          para_type: targetBranch,
+          is_active: true
+        };
+
+        if (isSupabaseConfigured) {
+          try {
+            const { error: insErr } = await supabase
+              .from('receivers')
+              .insert([newBranchProfile]);
+            
+            if (insErr && (insErr.message?.includes('column') || insErr.code === '42703')) {
+              const { is_active, ...rest } = newBranchProfile;
+              await supabase.from('receivers').insert([rest]);
+            }
+          } catch (e) {
+            console.error('Auto branch copy failed in Supabase:', e);
+          }
+        }
+
+        try {
+          const targetKey = targetBranch === 'প্রশাসন' ? 'ledger_correspondence_receivers_admin' :
+                            targetBranch === 'নন এসএফআই' ? 'ledger_correspondence_receivers_nonsfi' :
+                            'ledger_correspondence_receivers_sfi';
+          const savedTarget = localStorage.getItem(targetKey);
+          let targetItems = [];
+          if (savedTarget) {
+            try { targetItems = JSON.parse(savedTarget); } catch (e) {}
+          }
+          if (!targetItems.some((it: any) => normalizeName(it.name) === currentNorm)) {
+            targetItems.push({
+              ...newBranchProfile,
+              id: 'local-' + Date.now() + '-copy'
+            });
+            localStorage.setItem(targetKey, JSON.stringify(targetItems));
+          }
+        } catch (e) {
+          console.error('Auto branch copy failed in LocalStorage:', e);
+        }
+      }
+    }
 
     try {
       if (isSupabaseConfigured) {
         let error;
         if (editingId && !editingId.toString().startsWith('local-')) {
+          // Attempt update with is_active and transferred_to
           const { error: updateError } = await supabase
             .from('receivers')
             .update(profileData)
             .eq('id', editingId);
           error = updateError;
+          
+          // Fallback if columns do not exist
+          if (error && (error.message?.includes('column') || error.code === '42703')) {
+            const { is_active, transferred_to, ...rest } = profileData;
+            const { error: retryError } = await supabase
+              .from('receivers')
+              .update(rest)
+              .eq('id', editingId);
+            error = retryError;
+          }
         } else {
+          // Attempt insert with is_active and transferred_to
           const { error: insertError } = await supabase
             .from('receivers')
             .insert([profileData]);
           error = insertError;
+
+          // Fallback if columns do not exist
+          if (error && (error.message?.includes('column') || error.code === '42703')) {
+            const { is_active, transferred_to, ...rest } = profileData;
+            const { error: retryError } = await supabase
+              .from('receivers')
+              .insert([rest]);
+            error = retryError;
+          }
         }
         
         if (error) {
@@ -362,6 +614,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
     setTempName('');
     setTempDesignation('');
     setTempImage(null);
+    setTempIsActive(true);
+    setTempTransferredTo('');
     setEditingId(null);
   };
 
@@ -405,6 +659,25 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
     if (!window.confirm(`আপনি কি নিশ্চিতভাবে "${profile.name}" নামটিকে রিসেপশন বা মুছতে চান?`)) return;
     
     try {
+      const normalizeName = (name: string | null | undefined) => {
+        if (!name) return '';
+        return name
+          .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
+          .trim()
+          .replace(/\s+/g, ' ')
+          .replace(/[:ঃ।\.\-]/g, '')
+          .normalize('NFC');
+      };
+      
+      const norm = normalizeName(profile.name);
+      const branchClean = getCleanBranch(profile.para_type);
+      const compKey = `${norm}_${branchClean}`;
+      const inactiveList = getInactiveList().filter(n => {
+        const itemNorm = normalizeName(n);
+        return itemNorm !== norm && itemNorm !== compKey;
+      });
+      saveInactiveList(inactiveList);
+
       if (isSupabaseConfigured && profile.id && !profile.id.toString().startsWith('local-')) {
         const { error } = await supabase
           .from('receivers')
@@ -498,35 +771,44 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
               <p className="text-xs font-bold">কোন প্রাপক বা স্টাফ পাওয়া যায়নি।</p>
             </div>
           ) : (
-            list.map((profile, idx) => (
-              <div 
-                key={idx} 
-                className={`group flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-2xl ${themes.borderTheme} hover:bg-blue-50/10 transition-all duration-300`}
-              >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="w-10 sm:w-11 h-10 sm:h-11 bg-white border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
-                    {profile.image ? (
-                      <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    ) : (
-                      <div className={`w-full h-full flex items-center justify-center ${themes.avatarBg} font-black text-xs sm:text-sm`}>
-                        {profile.name ? profile.name.slice(0, 1) : <User size={16} />}
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-bold text-slate-700 text-[13px] sm:text-sm truncate">{profile.name}</span>
-                      {profile.entryCount !== undefined && profile.entryCount > 0 && (
-                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] sm:text-[9px] font-black rounded-full border border-blue-100">
-                          {toBengaliDigits(profile.entryCount.toString())}টি চিঠিপত্র
-                        </span>
+            list.map((profile, idx) => {
+              const isInactive = profile.is_active === false;
+              return (
+                <div 
+                  key={idx} 
+                  className={`group flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-2xl ${themes.borderTheme} hover:bg-blue-50/10 transition-all duration-300 ${isInactive ? 'opacity-65' : ''}`}
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-10 sm:w-11 h-10 sm:h-11 bg-white border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                      {profile.image ? (
+                        <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className={`w-full h-full flex items-center justify-center ${themes.avatarBg} font-black text-xs sm:text-sm`}>
+                          {profile.name ? profile.name.slice(0, 1) : <User size={16} />}
+                        </div>
                       )}
                     </div>
-                    {profile.designation && (
-                      <span className="text-[10px] font-bold text-slate-400 truncate block mt-0.5 uppercase tracking-wider">{profile.designation}</span>
-                    )}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`font-bold text-[13px] sm:text-sm truncate ${isInactive ? 'text-slate-400 line-through font-normal' : 'text-slate-700'}`}>
+                          {profile.name} {isInactive && <span className="text-rose-500 font-bold ml-1 no-underline inline-block">(বদলী হয়েছেন)</span>}
+                        </span>
+                        {isInactive && (
+                          <span className="px-1.5 py-0.5 bg-rose-50 text-rose-600 text-[8px] font-black rounded border border-rose-100 uppercase tracking-wider shrink-0 flex items-center gap-1">
+                            বদলি / নিষ্ক্রিয় {profile.transferred_to ? `(${profile.transferred_to})` : ''}
+                          </span>
+                        )}
+                        {profile.entryCount !== undefined && profile.entryCount > 0 && (
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] sm:text-[9px] font-black rounded-full border border-blue-100">
+                            {toBengaliDigits(profile.entryCount.toString())}টি চিঠিপত্র
+                          </span>
+                        )}
+                      </div>
+                      {profile.designation && (
+                        <span className="text-[10px] font-bold text-slate-400 truncate block mt-0.5 uppercase tracking-wider">{profile.designation}</span>
+                      )}
+                    </div>
                   </div>
-                </div>
 
                 {/* Edit and Delete Actions on Hover */}
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -559,7 +841,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
                   )}
                 </div>
               </div>
-            ))
+            );
+          })
           )}
         </div>
       </div>
@@ -704,6 +987,40 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({ isAdmin, onView
                     <option value="নন এসএফআই">৩. নন এসএফআই শাখা</option>
                   </select>
                 </div>
+
+                {/* Active Status Selector */}
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">সক্রিয়তা / বদলি অবস্থা</label>
+                  <select 
+                    value={tempIsActive ? "active" : "inactive"}
+                    onChange={(e) => {
+                      const val = e.target.value === "active";
+                      setTempIsActive(val);
+                      if (val) setTempTransferredTo('');
+                    }}
+                    className="w-full h-[54px] px-5 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all text-sm shadow-sm"
+                  >
+                    <option value="active">সক্রিয় (Active)</option>
+                    <option value="inactive">বদলি / নিষ্ক্রিয় (Transferred / Inactive)</option>
+                  </select>
+                </div>
+
+                {!tempIsActive && (
+                  <div className="space-y-2 animate-in fade-in slide-in-from-top-3 duration-200">
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">বদলি স্থলী নির্ধারণ করুন</label>
+                    <select 
+                      value={tempTransferredTo}
+                      onChange={(e) => setTempTransferredTo(e.target.value)}
+                      className="w-full h-[54px] px-5 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all text-sm shadow-sm"
+                    >
+                      <option value="">-- বদলির শাখা/স্থান নির্ধারণ করুন --</option>
+                      <option value="প্রশাসন শাখা">১. প্রশাসন শাখা</option>
+                      <option value="এসএফআই শাখা">২. এসএফআই শাখা</option>
+                      <option value="নন এসএফআই শাখা">৩. নন এসএফআই শাখা</option>
+                      <option value="অন্যান্য দপ্তর / অন্যত্র">অন্যান্য দপ্তর / অন্যত্র</option>
+                    </select>
+                  </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-3">

@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ChevronLeft, Printer, Database, CheckCircle2, Search, X, ChevronDown, Check, LayoutGrid, MapPin, PieChart, BarChart3, Building2, Landmark, ListChecks, Sparkles, Calendar } from 'lucide-react';
+import { ChevronLeft, Printer, Database, CheckCircle2, Search, X, ChevronDown, Check, LayoutGrid, MapPin, PieChart, BarChart3, Building2, Landmark, ListChecks, Sparkles, Calendar, FileSpreadsheet } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import HighlightText from './HighlightText';
 import { OFFICE_HEADER } from '../constants';
@@ -21,6 +21,8 @@ interface ReturnSummaryTableProps {
   statsReportData?: any[];
   statsGrandTotals?: any;
   isSearchExpanded?: boolean;
+  onDownloadExcel?: () => void;
+  onToggleDetailedView?: () => void;
 }
 
 const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
@@ -38,7 +40,9 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   filterMinistry,
   statsReportData,
   statsGrandTotals,
-  isSearchExpanded = false
+  isSearchExpanded = false,
+  onDownloadExcel,
+  onToggleDetailedView
 }) => {
   const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
@@ -213,6 +217,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
 
   const reportThStyle1 = "sticky top-0 xl:top-[45px] z-[240] px-0.5 py-2 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
   const reportThStyle2 = "sticky top-[42px] xl:top-[87px] z-[240] px-0.5 py-2 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
+  const reportThStyle3 = "sticky top-[80px] xl:top-[125px] z-[240] px-0.5 py-1.5 font-black text-center text-slate-500 text-[8px] leading-tight align-middle h-full bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] border-l border-slate-300 bg-clip-border relative";
   const tdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] text-center font-bold leading-tight group-hover:bg-blue-100/80 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
   const subTotalTdStyle = "border border-slate-300 px-0.5 py-1 text-[9px] text-center font-bold leading-tight text-slate-900 h-[38px] whitespace-normal break-words relative";
   const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[10px] bg-slate-200 z-[190] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
@@ -230,13 +235,13 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
     <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative">
       <IDBadge id="section-report-summary" />
 
-      {/* Header container for Title block, cycle badge and statistics in a single line on desktop/lg screens OUTSIDE card-report-table-container to guarantee stickiness */}
-      <div className="bg-white flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 pt-4 pb-6 border-b border-slate-200/80 w-full px-6 transition-all duration-300">
+      {/* Header container for Title block, cycle badge and statistics in a single line on desktop/xl screens OUTSIDE card-report-table-container to guarantee stickiness */}
+      <div className="bg-white flex flex-col xl:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-200/80 w-full px-4 sm:px-6 transition-all duration-300">
           
           {/* Left: Title Header styled as split-block button */}
           <div className="flex items-stretch h-[38px] w-fit max-w-[95%] shadow-md select-none rounded-xl overflow-hidden border border-slate-200/50 shrink-0 transition-all duration-300">
             {/* Left Icon Area: Off-white bg & gray bottom border */}
-            <div className="flex flex-col w-11 shrink-0 h-full transition-all duration-300">
+            <div className="flex flex-col w-9 sm:w-10 shrink-0 h-full transition-all duration-300">
               <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
                 <Landmark className="text-red-700 w-4 h-4 stroke-[2.5]" />
               </div>
@@ -244,9 +249,9 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             </div>
             
             {/* Right Text Area: Solid Royal Blue / Deep Blue with dark blue bottom bar */}
-            <div className={`flex-1 flex flex-col h-full transition-all duration-300 ${isSearchExpanded ? 'min-w-[120px] sm:min-w-[130px]' : 'min-w-[180px] sm:min-w-[220px]'}`}>
-              <div className="flex-1 bg-[#1e40af] flex items-center justify-center px-4.5">
-                <span className={`text-white font-[950] tracking-tight text-center transition-all duration-300 whitespace-nowrap ${isSearchExpanded ? 'text-[10px]' : 'text-[12px] sm:text-[12.5px] md:text-[13px]'}`}>
+            <div className={`flex-1 flex flex-col h-full transition-all duration-300 ${isSearchExpanded ? 'min-w-[110px] sm:min-w-[120px]' : 'min-w-[160px] sm:min-w-[200px]'}`}>
+              <div className="flex-1 bg-[#1e40af] flex items-center justify-center px-2.5 sm:px-3.5">
+                <span className={`text-white font-[950] tracking-tight text-center transition-all duration-300 whitespace-nowrap ${isSearchExpanded ? 'text-[9.5px]' : 'text-[11px] sm:text-[11.5px] md:text-[12px]'}`}>
                   {displayTitle}
                 </span>
               </div>
@@ -255,13 +260,13 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
           </div>
 
           {/* Right Group: Reporting cycle, month picker, and statistics button in a flex-wrap container */}
-          <div className="flex items-center gap-4 sm:gap-6 flex-wrap lg:flex-nowrap justify-center lg:justify-end shrink-0 z-[1010] lg:mr-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center xl:justify-end shrink-0 z-[1010] xl:mr-2">
             
             {/* Cycle / Reporting Period badge */}
             <div className="flex items-center justify-center shrink-0">
-              <div className="inline-flex items-center gap-2 px-4 bg-slate-900 text-white rounded-xl text-[11.5px] sm:text-[12.5px] font-bold border border-slate-700 shadow-md h-[38px] leading-none">
-                <span className="text-blue-400">সাইকেল:</span> 
-                <span className="text-white font-extrabold">{toBengaliDigits(activeCycle.label)}</span>
+              <div className="inline-flex items-center gap-1.5 px-2.5 bg-sky-50 text-sky-800 rounded-xl text-[11px] sm:text-[11.5px] font-bold border border-sky-100 shadow-md h-[38px] leading-none">
+                <span className="text-sky-600">সাইকেল:</span> 
+                <span className="text-sky-900 font-extrabold">{toBengaliDigits(activeCycle.label)}</span>
               </div>
             </div>
 
@@ -281,7 +286,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsStatsOpen(prev => !prev)}
-                  className="flex items-center gap-2 px-4 h-[38px] bg-sky-50 text-sky-800 rounded-xl font-bold text-[11.5px] sm:text-[12.5px] border border-sky-100 hover:border-sky-300 transition-all duration-300 hover:bg-white hover:shadow-md cursor-pointer shrink-0 leading-none animate-in fade-in"
+                  className="flex items-center gap-1.5 px-2.5 h-[38px] bg-sky-50 text-sky-800 rounded-xl font-bold text-[11px] sm:text-[11.5px] border border-sky-100 hover:border-sky-300 transition-all duration-300 hover:bg-white hover:shadow-md cursor-pointer shrink-0 leading-none animate-in fade-in"
                 >
                   <Sparkles size={13} className="text-sky-600 animate-pulse shrink-0" />
                   <span>পরিসংখ্যান</span>
@@ -397,6 +402,29 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             </div>
           )}
 
+            {onDownloadExcel && (
+              <button
+                type="button"
+                onClick={onDownloadExcel}
+                className="flex items-center justify-center w-10 h-[38px] bg-emerald-50 text-emerald-700 hover:text-emerald-800 border border-emerald-100 hover:border-emerald-300 hover:bg-white hover:shadow-md transition-all duration-300 rounded-xl cursor-pointer shrink-0"
+                title="এক্সেল ফাইল ডাউনলোড করুন"
+              >
+                <FileSpreadsheet size={16} className="stroke-[2.5]" />
+              </button>
+            )}
+
+            {(selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' || selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়') && onToggleDetailedView && (
+              <button
+                type="button"
+                onClick={onToggleDetailedView}
+                className="flex items-center gap-1.5 px-3 h-[38px] bg-blue-50 text-blue-700 hover:text-blue-800 border border-blue-100 hover:border-blue-300 transition-all duration-300 rounded-xl cursor-pointer shrink-0 shadow-sm font-black text-[11px]"
+                title="বিস্তারিত অনুচ্ছেদ ছক দেখুন"
+              >
+                <ListChecks size={13} className="stroke-[2.5]" />
+                <span>বিস্তারিত ছক দেখুন</span>
+              </button>
+            )}
+
             {/* Search and Ministry elements directly in the same row on the extreme right! */}
             {historicalFilterElement}
           </div>
@@ -443,6 +471,11 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                 <th className={`${reportThStyle2}`}>সংখ্যা</th><th className={`${reportThStyle2}`}>টাকা</th>
                 <th className={`${reportThStyle2}`}>সংখ্যা</th><th className={`${reportThStyle2}`}>টাকা</th>
                 <th className={`${reportThStyle2}`}>সংখ্যা</th><th className={`${reportThStyle2}`}>টাকা</th>
+              </tr>
+              <tr className="h-[32px]">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map(n => (
+                  <th key={n} className={`${reportThStyle3}`}>{toBengaliDigits(n.toString())}</th>
+                ))}
               </tr>
             </thead>
             <tbody>

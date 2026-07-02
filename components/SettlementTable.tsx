@@ -30,6 +30,8 @@ import {
   AlertCircle,
   MessageSquare,
   AlertTriangle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   toBengaliDigits,
@@ -91,6 +93,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
     const [showCycleStats, setShowCycleStats] = useState<
       Record<string, boolean>
     >({});
+    const [showCycleHeaders, setShowCycleHeaders] = useState<boolean>(true);
     const [showSummary, setShowSummary] = useState(false);
     const lastActiveLabel = useRef<string>("");
     const cycleRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -655,6 +658,35 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
         )
         .trim();
       return cleaned ? cleaned + " খ্রি:" : "";
+    };
+
+    const formatArchiveNoForTable = (val: string | undefined | null) => {
+      if (!val || val.trim() === '') return '-';
+      
+      const trimmed = val.trim();
+      let prefix = "";
+      let rest = trimmed;
+      
+      if (trimmed.toLowerCase().startsWith("kg-")) {
+        const dashIdx = trimmed.indexOf("-");
+        prefix = trimmed.substring(0, dashIdx + 1).trim() + " ";
+        rest = trimmed.substring(dashIdx + 1).trim();
+      }
+      
+      if (!rest) return prefix ? prefix.trim() : '-';
+      
+      // Split rest by commas
+      const parts = rest.split(',').map(p => p.trim()).filter(p => p !== '');
+      if (parts.length === 0) return prefix ? prefix.trim() : '-';
+      
+      // Group parts: max 3 per line
+      const lines: string[] = [];
+      for (let i = 0; i < parts.length; i += 3) {
+        const chunk = parts.slice(i, i + 3);
+        lines.push(chunk.join(', '));
+      }
+      
+      return prefix + lines.join('\n');
     };
 
     // Headers reverted to font-black
@@ -1389,6 +1421,19 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           </div>
         )}
 
+        {!showCycleHeaders && (
+          <div className="flex justify-end mb-4 no-print animate-in fade-in slide-in-from-top-2 duration-300">
+            <button
+              onClick={() => setShowCycleHeaders(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200 hover:border-blue-300 text-blue-700 rounded-xl font-black text-[11px] transition-all shadow-sm cursor-pointer select-none group"
+              title="সময়কাল অপশনটি পুনরায় দেখান"
+            >
+              <Eye size={14} className="animate-pulse text-blue-600 group-hover:scale-110 transition-transform" />
+              <span>সময়কাল অপশনটি পুনরায় দেখান</span>
+            </button>
+          </div>
+        )}
+
         <div id="settlement-register-table-container" className="table-container border border-slate-300 rounded-sm relative z-[1]">
           <IDBadge id="table-main-ledger" />
           <table
@@ -1462,65 +1507,78 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                   return (
                     <React.Fragment key={group.label}>
                       {/* Sticky Cycle Header */}
-                      <tr className="sticky top-[80px] z-[90] no-print">
-                        <td
-                          colSpan={14}
-                          className="p-0 border border-slate-300"
-                        >
-                          <div
-                            ref={(el) => {
-                              cycleRefs.current[group.label] = el;
-                            }}
-                            onClick={() => {
-                              const nextState = !showCycleStats[group.label];
-                              setShowCycleStats({
-                                ...showCycleStats,
-                                [group.label]: nextState,
-                              });
-                            }}
-                            className="bg-slate-100 border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
+                      {showCycleHeaders && (
+                        <tr className="sticky top-[80px] z-[90] no-print animate-in fade-in duration-300">
+                          <td
+                            colSpan={14}
+                            className="p-0 border border-slate-300"
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-md group-hover/cycle-header:scale-110 transition-transform">
-                                <CalendarDays size={18} />
+                            <div
+                              ref={(el) => {
+                                cycleRefs.current[group.label] = el;
+                              }}
+                              onClick={() => {
+                                const nextState = !showCycleStats[group.label];
+                                setShowCycleStats({
+                                  ...showCycleStats,
+                                  [group.label]: nextState,
+                                });
+                              }}
+                              className="bg-slate-100 border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-md group-hover/cycle-header:scale-110 transition-transform">
+                                  <CalendarDays size={18} />
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="font-black text-[13px] text-slate-800 tracking-tight uppercase">
+                                    সময়কাল:{" "}
+                                    <span className="text-blue-700 font-black">
+                                      {toBengaliDigits(group.label)}
+                                    </span>
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                                      Cycle Statistics
+                                    </span>
+                                    <div className="h-1 w-1 bg-slate-300 rounded-full"></div>
+                                    <span className="text-[9px] font-black text-blue-600">
+                                      মোট {toBengaliDigits(stats.totalLetters)} টি
+                                      চিঠি
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="flex flex-col">
-                                <span className="font-black text-[13px] text-slate-800 tracking-tight uppercase">
-                                  সময়কাল:{" "}
-                                  <span className="text-blue-700 font-black">
-                                    {toBengaliDigits(group.label)}
-                                  </span>
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-                                    Cycle Statistics
-                                  </span>
-                                  <div className="h-1 w-1 bg-slate-300 rounded-full"></div>
-                                  <span className="text-[9px] font-black text-blue-600">
-                                    মোট {toBengaliDigits(stats.totalLetters)} টি
-                                    চিঠি
-                                  </span>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowCycleHeaders(false);
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-95 border border-transparent hover:border-red-200 flex items-center justify-center"
+                                  title="সময়কাল অপশনটি লুকান"
+                                >
+                                  <EyeOff size={15} />
+                                </button>
+                                <div
+                                  className={`px-3 py-1 rounded-full text-[10px] font-black transition-all flex items-center gap-1.5 ${showCycleStats[group.label] ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "bg-white text-blue-600 border border-blue-200 hover:border-blue-400"}`}
+                                >
+                                  {showCycleStats[group.label]
+                                    ? "সংক্ষিপ্ত করুন"
+                                    : "বিস্তারিত দেখুন"}
+                                  <ChevronDown
+                                    size={12}
+                                    className={`transition-transform duration-300 ${showCycleStats[group.label] ? "rotate-180" : ""}`}
+                                  />
                                 </div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={`px-3 py-1 rounded-full text-[10px] font-black transition-all flex items-center gap-1.5 ${showCycleStats[group.label] ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "bg-white text-blue-600 border border-blue-200 hover:border-blue-400"}`}
-                              >
-                                {showCycleStats[group.label]
-                                  ? "সংক্ষিপ্ত করুন"
-                                  : "বিস্তারিত দেখুন"}
-                                <ChevronDown
-                                  size={12}
-                                  className={`transition-transform duration-300 ${showCycleStats[group.label] ? "rotate-180" : ""}`}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
+                          </td>
+                        </tr>
+                      )}
 
-                      {showCycleStats[group.label] && (
+                      {showCycleHeaders && showCycleStats[group.label] && (
                         <tr className="sticky top-[128px] z-[85] no-print">
                           <td
                             colSpan={14}
@@ -1816,6 +1874,19 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                                 />
                                               </span>
                                             </p>
+                                            {entry.archiveNo && (
+                                              <p className="text-[10px] leading-tight">
+                                                <span className="font-black text-purple-700">
+                                                  আর্কাইভ নং:{" "}
+                                                  <span className="font-black text-purple-600 whitespace-pre-line">
+                                                    <HighlightText
+                                                      text={formatArchiveNoForTable(entry.archiveNo)}
+                                                      searchTerm={searchTerm}
+                                                    />
+                                                  </span>
+                                                </span>
+                                              </p>
+                                            )}
                                           </div>
                                           <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
                                             {isExpanded ? (
@@ -2070,6 +2141,19 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                           />
                                         </span>
                                       </p>
+                                      {entry.archiveNo && (
+                                        <p className="text-[10px] leading-tight">
+                                          <span className="font-black text-purple-700">
+                                            আর্কাইভ নং:
+                                          </span>{" "}
+                                          <span className="font-black text-purple-600 whitespace-pre-line">
+                                            <HighlightText
+                                              text={formatArchiveNoForTable(entry.archiveNo)}
+                                              searchTerm={searchTerm}
+                                            />
+                                          </span>
+                                        </p>
+                                      )}
                                     </div>
                                     <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-center">
                                       {isExpanded ? (

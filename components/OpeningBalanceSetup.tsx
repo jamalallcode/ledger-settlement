@@ -18,6 +18,7 @@ interface OpeningBalanceSetupProps {
   setSelectedReportType: (type: string | null) => void;
   IDBadge: React.FC<{ id: string }>;
   setupType: string;
+  originalStats: Record<string, MinistryPrevStats>;
   dynamicSetupConfig?: {
     enabled: boolean;
     startDate: string;
@@ -37,9 +38,30 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
   setSelectedReportType,
   IDBadge,
   setupType,
+  originalStats,
   dynamicSetupConfig
 }) => {
   const isQuarterly = setupType.includes('ত্রৈমাসিক');
+  const hasChanges = React.useMemo(() => {
+    if (!isEditingSetup) return false;
+    for (const m of ministryGroups) {
+      const entities = MINISTRY_ENTITY_MAP[m] || [];
+      for (const ent of entities) {
+        const temp = tempPrevStats[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+        const orig = originalStats[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+        if (
+          temp.unsettledCount !== orig.unsettledCount ||
+          temp.unsettledAmount !== orig.unsettledAmount ||
+          temp.settledCount !== orig.settledCount ||
+          temp.settledAmount !== orig.settledAmount
+        ) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }, [tempPrevStats, originalStats, isEditingSetup, ministryGroups]);
+
   const displayFields: { key: keyof MinistryPrevStats, label: string, subLabel?: string }[] = isQuarterly ? [
     { key: 'unsettledCount', label: 'উত্থাপিত অনুচ্ছেদ সংখ্যা' },
     { key: 'settledCount', label: 'মোট নিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা' },
@@ -95,7 +117,9 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
              {isEditingSetup ? <Unlock size={18} /> : <Pencil size={18} />}
              {isEditingSetup ? 'এডিট মোড বন্ধ' : 'এডিট করুন'}
            </button>
-           <button onClick={handleSaveSetup} className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-blue-700 shadow-2xl transition-all border-b-4 border-blue-800 active:scale-95">সংরক্ষণ করুন</button>
+           {hasChanges && (
+             <button onClick={handleSaveSetup} className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-blue-700 shadow-2xl transition-all border-b-4 border-blue-800 active:scale-95 animate-in fade-in duration-200">সংরক্ষণ করুন</button>
+           )}
         </div>
       </div>
 

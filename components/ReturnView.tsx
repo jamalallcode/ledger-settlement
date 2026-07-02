@@ -3,7 +3,7 @@ import React from 'react';
 import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants';
-import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
 import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
 import { getCycleForDate } from '../utils/cycleHelper';
 import { isSFI, isNonSFI } from '../utils/branchUtils';
@@ -17,6 +17,10 @@ import QR_3 from './QR_3';
 import QR_4 from './QR_4';
 import QR_5 from './QR_5';
 import QR_6 from './QR_6';
+import BSRMonthlySettlementDetail from './BSRMonthlySettlementDetail';
+import BilateralMonthlySettlementDetail from './BilateralMonthlySettlementDetail';
+import BSRMonthlyOnlineReceiptDetail from './BSRMonthlyOnlineReceiptDetail';
+import BilateralMonthlyOnlineReceiptDetail from './BilateralMonthlyOnlineReceiptDetail';
 
 const BENGALI_MONTHS = [
   'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
@@ -61,10 +65,29 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [currentViewDate, setCurrentViewDate] = useState<Date>(new Date(selectedCycleDate));
+  const [showDetailedBsrView, setShowDetailedBsrView] = useState(true);
+  const [showDetailedBilateralView, setShowDetailedBilateralView] = useState(true);
+  const [showDetailedOnlineBsrView, setShowDetailedOnlineBsrView] = useState(true);
+  const [showDetailedOnlineBilateralView, setShowDetailedOnlineBilateralView] = useState(true);
   
   useEffect(() => {
     setCurrentViewDate(new Date(selectedCycleDate));
   }, [selectedCycleDate]);
+
+  useEffect(() => {
+    if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর') {
+      setShowDetailedBsrView(true);
+    }
+    if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়') {
+      setShowDetailedBilateralView(true);
+    }
+    if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর') {
+      setShowDetailedOnlineBsrView(true);
+    }
+    if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়') {
+      setShowDetailedOnlineBilateralView(true);
+    }
+  }, [selectedReportType]);
   
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
   const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
@@ -78,6 +101,120 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       searchInputRef.current.focus();
     }
   }, [isSearchExpanded]);
+
+  const downloadExcel = useCallback(() => {
+    const tables = document.querySelectorAll('table');
+    if (tables.length === 0) {
+      return;
+    }
+
+    let tablesHtml = '';
+    tables.forEach((table, tableIdx) => {
+      const clonedTable = table.cloneNode(true) as HTMLTableElement;
+      
+      // Remove any interactive buttons, icons, or non-print elements inside the cloned table
+      const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
+      interactiveElements.forEach(el => el.remove());
+      
+      tablesHtml += `
+        <div style="margin-bottom: 40px;">
+          ${tableIdx > 0 ? '<br><hr><br>' : ''}
+          ${clonedTable.outerHTML}
+        </div>
+      `;
+    });
+
+    const filename = `${selectedReportType ? selectedReportType.replace(/[:|*?"<>\\/]/g, '_') : 'রিপোর্ট'}_${dateFnsFormat(new Date(), 'yyyy-MM-dd')}.xls`;
+
+    const template = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>রিপোর্ট</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Hind Siliguri', 'Calibri', sans-serif;
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 20px;
+          }
+          th, td {
+            border: 1px solid #cbd5e1 !important;
+            padding: 8px 12px !important;
+            text-align: center;
+            font-size: 11px;
+            vertical-align: middle;
+          }
+          th {
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+            font-weight: bold !important;
+          }
+          .bg-slate-200, thead, tfoot {
+            background-color: #e2e8f0 !important;
+            font-weight: bold !important;
+          }
+          .bg-sky-100 {
+            background-color: #e0f2fe !important;
+          }
+          .bg-amber-50 {
+            background-color: #fef3c7 !important;
+          }
+          .bg-black {
+            background-color: #090d16 !important;
+            color: #ffffff !important;
+          }
+          tfoot td {
+            background-color: #0f172a !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+          }
+          .text-left {
+            text-align: left !important;
+          }
+          .text-right {
+            text-align: right !important;
+          }
+          .font-black, .font-extrabold {
+            font-weight: 900 !important;
+          }
+          .font-bold {
+            font-weight: 700 !important;
+          }
+        </style>
+      </head>
+      <body>
+        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">${selectedReportType || 'রিপোর্ট'}</h2>
+        ${tablesHtml}
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([template], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [selectedReportType]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ministryDropdownRef = useRef<HTMLDivElement>(null);
@@ -710,10 +847,10 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     <div className="relative no-print" ref={dropdownRef}>
       <div 
         onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
-        className={`flex items-center gap-2 px-4 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}
+        className={`flex items-center gap-1.5 px-2.5 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}
       >
          <CalendarDays size={14} className="text-blue-600 shrink-0" />
-         <span className="font-extrabold text-[12px] sm:text-[12.5px] text-slate-800 tracking-tight shrink-0 leading-none">
+         <span className="font-extrabold text-[11px] sm:text-[11.5px] text-slate-800 tracking-tight shrink-0 leading-none">
            {cycleOptions.find(o => o.cycleLabel === activeCycle.label)?.label || toBengaliDigits(activeCycle.label)}
          </span>
          <ChevronDown size={13} className={`text-slate-400 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-blue-500' : ''}`} />
@@ -758,19 +895,19 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   );
 
   const historicalFilterElement = (
-    <div className="flex items-center gap-2 no-print shrink-0">
-      <div className="flex items-center gap-2 animate-in fade-in duration-300 shrink-0">
+    <div className="flex items-center gap-1.5 no-print shrink-0">
+      <div className="flex items-center gap-1.5 animate-in fade-in duration-300 shrink-0">
         {/* COMPACT MINISTRY DROPDOWN */}
         <div className="relative shrink-0 select-none z-[400]" ref={ministryDropdownRef}>
           <div 
              onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
-             className={`flex items-center gap-2 px-4 h-[38px] bg-slate-900 border hover:border-emerald-500 hover:bg-slate-800 transition-all rounded-xl cursor-pointer shadow-md select-none ${isMinistryDropdownOpen ? 'border-emerald-500' : 'border-slate-700'}`}
+             className={`flex items-center gap-1.5 px-2.5 h-[38px] bg-sky-50 border hover:border-sky-300 hover:bg-white transition-all rounded-xl cursor-pointer shadow-md select-none ${isMinistryDropdownOpen ? 'border-sky-300 bg-white ring-2 ring-sky-50' : 'border-sky-100'}`}
           >
-            <LayoutGrid size={14} className="text-emerald-400 shrink-0" />
-            <span className="font-extrabold text-[12px] sm:text-[12.5px] text-white tracking-tight shrink-0 max-w-[140px] sm:max-w-[180px] truncate leading-none">
+            <LayoutGrid size={14} className="text-sky-600 shrink-0" />
+            <span className="font-extrabold text-[11px] sm:text-[11.5px] text-sky-800 tracking-tight shrink-0 max-w-[140px] sm:max-w-[180px] truncate leading-none">
               {filterMinistry || 'সকল মন্ত্রণালয়'}
             </span>
-            <ChevronDown size={13} className={`text-slate-400 shrink-0 transition-transform duration-300 ${isMinistryDropdownOpen ? 'rotate-180 text-emerald-400' : ''}`} />
+            <ChevronDown size={13} className={`text-sky-500 shrink-0 transition-transform duration-300 ${isMinistryDropdownOpen ? 'rotate-180 text-sky-600' : ''}`} />
           </div>
 
           {isMinistryDropdownOpen && (
@@ -863,16 +1000,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   }
 
+  let renderedContent;
+
   if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
-    return <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
-  }
-
-  if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
-    return <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={() => null} IDBadge={IDBadge} showFilters={showFilters} />;
-  }
-
-  if (isSetupMode) {
-    return <OpeningBalanceSetup 
+    renderedContent = <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
+    renderedContent = <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={() => null} IDBadge={IDBadge} showFilters={showFilters} />;
+  } else if (isSetupMode) {
+    renderedContent = <OpeningBalanceSetup 
       ministryGroups={ministryGroups} 
       tempPrevStats={tempPrevStats} 
       setTempPrevStats={setTempPrevStats} 
@@ -884,33 +1019,111 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       setSelectedReportType={setSelectedReportType} 
       IDBadge={IDBadge} 
       setupType={selectedReportType || ''} 
+      originalStats={prevStats.entitiesSFI}
+    />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') {
+    renderedContent = <QR_1 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') {
+    renderedContent = <QR_2 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') {
+    renderedContent = <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') {
+    renderedContent = <QR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') {
+    renderedContent = <QR_5 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') {
+    renderedContent = <QR_6 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' && showDetailedBsrView) {
+    renderedContent = (
+      <BSRMonthlySettlementDetail
+        entries={entries}
+        selectedCycleDate={selectedCycleDate}
+        setSelectedCycleDate={setSelectedCycleDate}
+        activeCycle={activeCycle}
+        cycleOptions={cycleOptions}
+        ministryGroups={ministryGroups}
+        IDBadge={IDBadge}
+        onBack={() => setSelectedReportType(null)}
+        onToggleSummaryView={() => setShowDetailedBsrView(false)}
+      />
+    );
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়' && showDetailedBilateralView) {
+    renderedContent = (
+      <BilateralMonthlySettlementDetail
+        entries={entries}
+        selectedCycleDate={selectedCycleDate}
+        setSelectedCycleDate={setSelectedCycleDate}
+        activeCycle={activeCycle}
+        cycleOptions={cycleOptions}
+        ministryGroups={ministryGroups}
+        IDBadge={IDBadge}
+        onBack={() => setSelectedReportType(null)}
+        onToggleSummaryView={() => setShowDetailedBilateralView(false)}
+      />
+    );
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর' && showDetailedOnlineBsrView) {
+    renderedContent = (
+      <BSRMonthlyOnlineReceiptDetail
+        entries={entries}
+        selectedCycleDate={selectedCycleDate}
+        setSelectedCycleDate={setSelectedCycleDate}
+        activeCycle={activeCycle}
+        cycleOptions={cycleOptions}
+        ministryGroups={ministryGroups}
+        IDBadge={IDBadge}
+        onBack={() => setSelectedReportType(null)}
+        onToggleSummaryView={() => setShowDetailedOnlineBsrView(false)}
+      />
+    );
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়' && showDetailedOnlineBilateralView) {
+    renderedContent = (
+      <BilateralMonthlyOnlineReceiptDetail
+        entries={entries}
+        selectedCycleDate={selectedCycleDate}
+        setSelectedCycleDate={setSelectedCycleDate}
+        activeCycle={activeCycle}
+        cycleOptions={cycleOptions}
+        ministryGroups={ministryGroups}
+        IDBadge={IDBadge}
+        onBack={() => setSelectedReportType(null)}
+        onToggleSummaryView={() => setShowDetailedOnlineBilateralView(false)}
+      />
+    );
+  } else {
+    renderedContent = <ReturnSummaryTable 
+      reportData={reportData} 
+      grandTotals={grandTotals} 
+      activeCycle={activeCycle} 
+      selectedReportType={selectedReportType} 
+      setSelectedReportType={setSelectedReportType} 
+      isAdmin={isAdmin || false} 
+      historicalFilterElement={historicalFilterElement} 
+      monthPickerElement={monthPickerElement}
+      IDBadge={IDBadge} 
+      showFilters={showFilters} 
+      searchTerm={searchTerm} 
+      filterMinistry={filterMinistry} 
+      statsReportData={statsReportData}
+      statsGrandTotals={statsGrandTotals}
+      isSearchExpanded={isSearchExpanded}
+      onDownloadExcel={downloadExcel}
+      onToggleDetailedView={
+        selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়'
+          ? () => setShowDetailedBilateralView(true)
+          : selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর'
+          ? () => setShowDetailedOnlineBsrView(true)
+          : selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়'
+          ? () => setShowDetailedOnlineBilateralView(true)
+          : () => setShowDetailedBsrView(true)
+      }
     />;
   }
 
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') return <QR_1 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') return <QR_2 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') return <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') return <QR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') return <QR_5 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-  if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') return <QR_6 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
-
-  return <ReturnSummaryTable 
-    reportData={reportData} 
-    grandTotals={grandTotals} 
-    activeCycle={activeCycle} 
-    selectedReportType={selectedReportType} 
-    setSelectedReportType={setSelectedReportType} 
-    isAdmin={isAdmin || false} 
-    historicalFilterElement={historicalFilterElement} 
-    monthPickerElement={monthPickerElement}
-    IDBadge={IDBadge} 
-    showFilters={showFilters} 
-    searchTerm={searchTerm} 
-    filterMinistry={filterMinistry} 
-    statsReportData={statsReportData}
-    statsGrandTotals={statsGrandTotals}
-    isSearchExpanded={isSearchExpanded}
-  />;
+  return (
+    <div className="relative w-full">
+      {renderedContent}
+    </div>
+  );
 };
 
 export default ReturnView;

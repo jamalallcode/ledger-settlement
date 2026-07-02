@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Printer, ChevronLeft, Search, X, ChevronDown, Check, LayoutGrid, FileText, ChevronRight, Sparkles, BarChart3, Calendar } from 'lucide-react';
+import { Printer, ChevronLeft, Search, X, ChevronDown, Check, LayoutGrid, FileText, ChevronRight, Sparkles, BarChart3, Calendar, FileSpreadsheet } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
 import { format as dateFnsFormat } from 'date-fns';
@@ -72,6 +72,74 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [currentViewDate, setCurrentViewDate] = useState<Date>(new Date(selectedMonthDate));
   const calendarRef = useRef<HTMLDivElement>(null);
+
+  const downloadExcel = () => {
+    const tables = document.querySelectorAll('table');
+    if (tables.length === 0) return;
+
+    let tablesHtml = '';
+    tables.forEach((table, tableIdx) => {
+      const clonedTable = table.cloneNode(true) as HTMLTableElement;
+      const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
+      interactiveElements.forEach(el => el.remove());
+      
+      tablesHtml += `
+        <div style="margin-bottom: 40px;">
+          ${tableIdx > 0 ? '<br><hr><br>' : ''}
+          ${clonedTable.outerHTML}
+        </div>
+      `;
+    });
+
+    const filename = `চিঠিপত্র_সংক্রান্ত_রিটার্ণ_ঢাকা_${dateFnsFormat(new Date(), 'yyyy-MM-dd')}.xls`;
+
+    const template = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>রিপোর্ট</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Hind Siliguri', sans-serif; }
+          table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+          th, td { border: 1px solid #cbd5e1 !important; padding: 8px 12px !important; text-align: center; font-size: 11px; vertical-align: middle; }
+          th { background-color: #f1f5f9 !important; color: #0f172a !important; font-weight: bold !important; }
+          .bg-slate-200, thead, tfoot { background-color: #e2e8f0 !important; font-weight: bold !important; }
+          .bg-sky-100 { background-color: #e0f2fe !important; }
+          .bg-amber-50 { background-color: #fef3c7 !important; }
+          .bg-black { background-color: #090d16 !important; color: #ffffff !important; }
+          tfoot td { background-color: #0f172a !important; color: #ffffff !important; font-weight: bold !important; }
+        </style>
+      </head>
+      <body>
+        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)</h2>
+        ${tablesHtml}
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([template], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     setCurrentViewDate(new Date(selectedMonthDate));
@@ -445,44 +513,44 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       <IDBadge id="correspondence-dhaka-container" />
 
       <div className="bg-white w-full overflow-visible px-0 py-6 relative animate-table-entrance">
-        {/* Header container for Title, Reporting Period and Statistics in a single line on desktop/lg screens */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-100 w-full px-6">
+        {/* Header container for Title, Reporting Period and Statistics in a single line on desktop/xl screens */}
+        <div className="flex flex-col xl:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-100 w-full px-4 sm:px-6">
           
           {/* Left: Title Header styled as split-block button */}
-          <div className="flex items-stretch h-11 w-fit max-w-[95%] shadow-[0_4px_12px_rgba(0,0,0,0.1)] select-none rounded-lg overflow-hidden border border-slate-200/50 shrink-0 transition-all duration-300">
+          <div className="flex items-stretch h-[38px] w-fit max-w-[95%] shadow-[0_4px_12px_rgba(0,0,0,0.1)] select-none rounded-lg overflow-hidden border border-slate-200/50 shrink-0 transition-all duration-300">
             {/* Left Icon Area: Off-white bg & gray bottom border */}
-            <div className={`flex flex-col shrink-0 h-full transition-all duration-300 ${isSearchExpanded ? 'w-8' : 'w-11'}`}>
+            <div className={`flex flex-col shrink-0 h-full transition-all duration-300 ${isSearchExpanded ? 'w-8' : 'w-10'}`}>
               <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
-                <FileText className={`text-red-700 stroke-[2.5] transition-all duration-300 ${isSearchExpanded ? 'w-4 h-4' : 'w-4.5 h-4.5'}`} />
+                <FileText className={`text-red-700 stroke-[2.5] transition-all duration-300 ${isSearchExpanded ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
               </div>
-              <div className="h-[4px] bg-[#94a3b8]" />
+              <div className="h-[3px] bg-[#94a3b8]" />
             </div>
             
             {/* Right Text Area: Rich Royal Blue/Indigo with dark bottom bar */}
-            <div className={`flex-1 flex flex-col h-full transition-all duration-300 ${isSearchExpanded ? 'min-w-[130px] sm:min-w-[150px]' : 'min-w-[180px] sm:min-w-[220px]'}`}>
-              <div className="flex-1 bg-[#1e40af] flex items-center justify-center px-3 sm:px-6">
-                <span className={`text-white font-bold tracking-wide text-center transition-all duration-300 whitespace-nowrap ${isSearchExpanded ? 'text-[10px] sm:text-[11.5px]' : 'text-xs sm:text-[13px]'}`}>
+            <div className={`flex-1 flex flex-col h-full transition-all duration-300 ${isSearchExpanded ? 'min-w-[120px] sm:min-w-[140px]' : 'min-w-[160px] sm:min-w-[200px]'}`}>
+              <div className="flex-1 bg-[#1e40af] flex items-center justify-center px-2.5 sm:px-4">
+                <span className={`text-white font-bold tracking-wide text-center transition-all duration-300 whitespace-nowrap ${isSearchExpanded ? 'text-[9.5px] sm:text-[11px]' : 'text-[11px] sm:text-[12px]'}`}>
                   {isSearchExpanded ? 'চিঠিপত্র রিটার্ণ (ঢাকা)' : 'চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)'}
                 </span>
               </div>
-              <div className="h-[4px] bg-[#1e3a8a]" />
+              <div className="h-[3px] bg-[#1e3a8a]" />
             </div>
           </div>
 
           {/* Right/Middle: Group of Compact Controls */}
-          <div className="flex flex-wrap lg:flex-nowrap items-center justify-center lg:justify-end gap-2 w-full lg:w-auto">
+          <div className="flex flex-wrap xl:flex-nowrap items-center justify-center xl:justify-end gap-1.5 sm:gap-2 w-full xl:w-auto">
             {/* 1. Reporting Period Date Picker */}
             <div className="relative shrink-0 select-none z-[400]" ref={calendarRef}>
               <div 
                 onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-                className="relative inline-flex items-center gap-2 px-3 h-[35px] bg-slate-900 border border-slate-700 hover:border-emerald-500 hover:bg-slate-800 transition-all text-white rounded-xl text-[11px] sm:text-[11.5px] font-bold shadow-md cursor-pointer"
+                className="relative inline-flex items-center gap-2 px-3 h-[35px] bg-slate-50 border border-slate-300 hover:border-emerald-600 hover:ring-2 hover:ring-emerald-50 transition-all text-slate-800 rounded-xl text-[11px] sm:text-[11.5px] font-bold shadow-sm cursor-pointer"
               >
-                <span className={`text-blue-400 leading-none transition-all duration-300 ${isSearchExpanded ? 'hidden xl:inline' : 'hidden sm:inline'}`}>রিপোর্টিং সময়কাল:</span> 
-                <span className="text-white flex items-center gap-1 font-black leading-none">
+                <span className={`text-slate-500 leading-none transition-all duration-300 ${isSearchExpanded ? 'hidden xl:inline' : 'hidden sm:inline'}`}>রিপোর্টিং সময়কাল:</span> 
+                <span className="text-slate-800 flex items-center gap-1 font-black leading-none">
                   {toBengaliDigits(dateFnsFormat(selectedMonthDate, 'dd/MM/yyyy'))} খ্রি: তারিখ পর্যন্ত।
-                  <Calendar size={11} className="text-emerald-400 group-hover:scale-110 transition-transform duration-200" />
+                  <Calendar size={11} className="text-emerald-600 group-hover:scale-110 transition-transform duration-200" />
                 </span>
-                <ChevronDown size={11} className={`text-slate-400 transition-transform duration-300 lg:inline shrink-0 ${isCalendarOpen ? 'rotate-180 text-emerald-400' : ''}`} />
+                <ChevronDown size={11} className={`text-slate-400 transition-transform duration-300 lg:inline shrink-0 ${isCalendarOpen ? 'rotate-180 text-emerald-600' : ''}`} />
               </div>
 
               {isCalendarOpen && (
@@ -602,7 +670,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
             {/* 2. Branch Filter Dropdown */}
             <div className="relative group shrink-0 no-print" ref={branchDropdownRef}>
               <div 
-                className="relative flex items-center gap-1.5 px-2.5 h-[35px] bg-slate-50 border border-slate-300 rounded-xl cursor-pointer transition-all duration-300 hover:border-emerald-600 hover:ring-2 hover:ring-emerald-50 shadow-sm min-w-[115px] sm:min-w-[130px]"
+                className="relative flex items-center gap-1.5 px-2.5 h-[35px] bg-slate-50 border border-slate-300 rounded-xl cursor-pointer transition-all duration-300 hover:border-emerald-600 hover:ring-2 hover:ring-emerald-50 shadow-sm min-w-[100px] sm:min-w-[115px]"
               >
                 <LayoutGrid size={13} className="text-emerald-600 shrink-0" />
                 <span className="font-extrabold text-[11px] sm:text-[11.5px] text-slate-800 break-words leading-none">
@@ -632,7 +700,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
             {/* 3. Type Filter Dropdown */}
             <div className="relative group shrink-0 no-print" ref={typeDropdownRef}>
               <div 
-                className="relative flex items-center gap-1.5 px-2.5 h-[35px] bg-slate-50 border border-slate-300 rounded-xl cursor-pointer transition-all duration-300 hover:border-emerald-600 hover:ring-2 hover:ring-emerald-50 shadow-sm min-w-[125px] sm:min-w-[145px]"
+                className="relative flex items-center gap-1.5 px-2.5 h-[35px] bg-slate-50 border border-slate-300 rounded-xl cursor-pointer transition-all duration-300 hover:border-emerald-600 hover:ring-2 hover:ring-emerald-50 shadow-sm min-w-[110px] sm:min-w-[125px]"
               >
                 <FileText size={13} className="text-emerald-600 shrink-0" />
                 <span className="font-extrabold text-[11px] sm:text-[11.5px] text-slate-800 break-words leading-none">
@@ -659,52 +727,22 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               </div>
             </div>
 
-            {/* 4. Search Filter */}
-            <div className={`relative flex items-center transition-all duration-300 shrink-0 no-print ${isSearchExpanded ? 'w-[140px] sm:w-[170px]' : 'w-[35px]'}`}>
-              {!isSearchExpanded ? (
-                <button
-                  type="button"
-                  onClick={() => setIsSearchExpanded(true)}
-                  className="flex items-center justify-center w-[35px] h-[35px] bg-slate-50 border border-slate-300 rounded-xl text-slate-500 hover:text-emerald-600 hover:border-emerald-600 transition-all cursor-pointer shadow-sm"
-                  title="অনুসন্ধান করুন"
-                >
-                  <Search size={14} />
-                </button>
-              ) : (
-                <div className="relative w-full group animate-in fade-in zoom-in-95 duration-200">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-600" size={12} />
-                  <input 
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder="অনুসন্ধান..."
-                    className="w-full pl-7.5 pr-6 h-[35px] bg-white border border-emerald-600 rounded-xl text-[11px] font-bold text-slate-800 outline-none shadow-md transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-50"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onBlur={() => {
-                      if (!searchTerm) {
-                        setIsSearchExpanded(false);
-                      }
-                    }}
-                  />
-                  <button 
-                    onClick={() => {
-                      setSearchTerm('');
-                      setIsSearchExpanded(false);
-                    }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
-                  >
-                    <X size={11} />
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* 4. Excel Download Button */}
+            <button
+              type="button"
+              onClick={downloadExcel}
+              className="flex items-center justify-center w-10 h-[35px] bg-emerald-50 text-emerald-700 hover:text-emerald-800 border border-emerald-100 hover:border-emerald-300 hover:bg-white hover:shadow-md transition-all duration-300 rounded-xl cursor-pointer shrink-0 no-print"
+              title="এক্সেল ফাইল ডাউনলোড করুন"
+            >
+              <FileSpreadsheet size={15} className="stroke-[2.5]" />
+            </button>
 
             {/* 5. Statistics Trigger Button */}
             <button 
               onClick={() => setShowAuditorStatsModal(true)}
-              className="flex items-center justify-center gap-1 px-2.5 h-[35px] bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] sm:text-[11.5px] font-black transition-all shadow-md hover:shadow-blue-200/50 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer shrink-0 no-print"
+              className="flex items-center justify-center gap-1.5 px-2.5 h-[35px] bg-slate-50 border border-slate-300 rounded-xl cursor-pointer transition-all duration-300 hover:border-emerald-600 hover:ring-2 hover:ring-emerald-50 shadow-sm text-slate-800 text-[11px] sm:text-[11.5px] font-black shrink-0 no-print"
             >
-              <BarChart3 size={12} />
+              <BarChart3 size={13} className="text-emerald-600 shrink-0" />
               <span className="leading-none">পরিসংখ্যান</span>
             </button>
           </div>

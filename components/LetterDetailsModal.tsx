@@ -90,6 +90,13 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
                         }`}>
                           {letter.paraType}
                         </span>
+                        {letter.archiveNo && (
+                          <span className={`bg-purple-50 text-purple-600 border border-purple-100 rounded font-black uppercase tracking-wider ${
+                            isEmbedded ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px]'
+                          }`}>
+                            আর্কাইভ নং: {letter.archiveNo}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </td>

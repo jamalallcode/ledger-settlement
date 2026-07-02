@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Mail,
@@ -34,6 +35,11 @@ import {
   LayoutGrid,
   CalendarDays,
   AlertTriangle,
+  MessageSquare,
+  Edit3,
+  X,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { isSFI, isNonSFI } from "../utils/branchUtils";
 import {
@@ -345,11 +351,37 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const [expandedCycles, setExpandedCycles] = useState<Record<string, boolean>>(
     {},
   );
+  const [showCycleHeaders, setShowCycleHeaders] = useState<boolean>(true);
   const lastActiveLabel = useRef<string>("");
   const cycleRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    id: string;
+    x: number;
+    y: number;
+  } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedCommentText, setSelectedCommentText] = useState<string | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleScrollOrResize = () => {
+      setDeleteConfirm(null);
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setDeleteConfirm(null);
+      }
+    };
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState("");
@@ -1305,6 +1337,19 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           </div>
         </div>
 
+      {!showCycleHeaders && (
+        <div className="flex justify-end mb-4 no-print animate-in fade-in slide-in-from-top-2 duration-300">
+          <button
+            onClick={() => setShowCycleHeaders(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200 hover:border-blue-300 text-blue-700 rounded-xl font-black text-[11px] transition-all shadow-sm cursor-pointer select-none group"
+            title="সময়কাল অপশনটি পুনরায় দেখান"
+          >
+            <Eye size={14} className="animate-pulse text-blue-600 group-hover:scale-110 transition-transform" />
+            <span>সময়কাল অপশনটি পুনরায় দেখান</span>
+          </button>
+        </div>
+      )}
+
       {/* Table Container */}
       <div id="correspondence-register-table-container" className="table-container border border-slate-300 rounded-sm relative z-[1] shadow-xl bg-white max-w-full">
         <table className="w-full border-separate border-spacing-0 table-fixed">
@@ -1334,67 +1379,80 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
               return groupedEntries.map((group) => (
                 <tbody key={group.label}>
                   {/* Sticky Cycle Header */}
-                  <tr className="sticky top-[40px] z-[105] no-print">
-                    <td
-                      colSpan={7}
-                      className="p-0 border border-slate-400 shadow-sm"
-                    >
-                      <div
-                        ref={(el) => {
-                          cycleRefs.current[group.label] = el;
-                        }}
-                        onClick={() => {
-                          const nextState = !expandedCycles[group.label];
-                          setExpandedCycles({ [group.label]: nextState });
-                          if (nextState) lastActiveLabel.current = group.label;
-                          else lastActiveLabel.current = "";
-                        }}
-                        className="bg-slate-100 border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
+                  {showCycleHeaders && (
+                    <tr className="sticky top-[40px] z-[105] no-print animate-in fade-in duration-300">
+                      <td
+                        colSpan={7}
+                        className="p-0 border border-slate-400 shadow-sm"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-md group-hover/cycle-header:scale-110 transition-transform">
-                            <CalendarDays size={18} />
+                        <div
+                          ref={(el) => {
+                            cycleRefs.current[group.label] = el;
+                          }}
+                          onClick={() => {
+                            const nextState = !expandedCycles[group.label];
+                            setExpandedCycles({ [group.label]: nextState });
+                            if (nextState) lastActiveLabel.current = group.label;
+                            else lastActiveLabel.current = "";
+                          }}
+                          className="bg-slate-100 border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-md group-hover/cycle-header:scale-110 transition-transform">
+                              <CalendarDays size={18} />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-black text-[13px] text-slate-800 tracking-tight uppercase">
+                                সময়কাল:{" "}
+                                <span className="text-blue-700 font-black">
+                                  {toBengaliDigits(group.label)}
+                                </span>
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                                  Cycle Statistics
+                                </span>
+                                <div className="h-1 w-1 bg-slate-300 rounded-full"></div>
+                                <span className="text-[9px] font-black text-blue-600">
+                                  মোট{" "}
+                                  {toBengaliDigits(
+                                    cycleStats[group.label]?.total || 0,
+                                  )}{" "}
+                                  টি চিঠি
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex flex-col">
-                            <span className="font-black text-[13px] text-slate-800 tracking-tight uppercase">
-                              সময়কাল:{" "}
-                              <span className="text-blue-700 font-black">
-                                {toBengaliDigits(group.label)}
-                              </span>
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-                                Cycle Statistics
-                              </span>
-                              <div className="h-1 w-1 bg-slate-300 rounded-full"></div>
-                              <span className="text-[9px] font-black text-blue-600">
-                                মোট{" "}
-                                {toBengaliDigits(
-                                  cycleStats[group.label]?.total || 0,
-                                )}{" "}
-                                টি চিঠি
-                              </span>
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowCycleHeaders(false);
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-95 border border-transparent hover:border-red-200 flex items-center justify-center"
+                              title="সময়কাল অপশনটি লুকান"
+                            >
+                              <EyeOff size={15} />
+                            </button>
+                            <div
+                              className={`px-3 py-1 rounded-full text-[10px] font-black transition-all flex items-center gap-1.5 ${expandedCycles[group.label] ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "bg-white text-blue-600 border border-blue-200 hover:border-blue-400"}`}
+                            >
+                              {expandedCycles[group.label]
+                                ? "সংক্ষিপ্ত করুন"
+                                : "বিস্তারিত দেখুন"}
+                              <ChevronDown
+                                size={12}
+                                className={`transition-transform duration-300 ${expandedCycles[group.label] ? "rotate-180" : ""}`}
+                              />
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`px-3 py-1 rounded-full text-[10px] font-black transition-all flex items-center gap-1.5 ${expandedCycles[group.label] ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "bg-white text-blue-600 border border-blue-200 hover:border-blue-400"}`}
-                          >
-                            {expandedCycles[group.label]
-                              ? "সংক্ষিপ্ত করুন"
-                              : "বিস্তারিত দেখুন"}
-                            <ChevronDown
-                              size={12}
-                              className={`transition-transform duration-300 ${expandedCycles[group.label] ? "rotate-180" : ""}`}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+                  )}
 
-                  {expandedCycles[group.label] && (
+                  {showCycleHeaders && expandedCycles[group.label] && (
                     <tr className="sticky top-[88px] z-[85] no-print">
                       <td colSpan={7} className="p-0 border border-slate-300">
                         <div className="bg-white p-4 border-b border-slate-200 animate-in fade-in slide-in-from-top-1 duration-200 shadow-md">
@@ -1540,6 +1598,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                       pending.issueLetterDate !== undefined
                         ? pending.issueLetterDate
                         : entry.issueLetterDate || "";
+                    const currentIssueComment =
+                      pending.issueLetterComment !== undefined
+                        ? pending.issueLetterComment
+                        : entry.issueLetterComment || "";
                     const isPendingForApproval =
                       entry.approvalStatus === "pending";
 
@@ -1692,6 +1754,19 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                 />
                               </span>
                             </div>
+                            {entry.archiveNo && (
+                              <div className="flex flex-col">
+                                <span className={labelCls}>
+                                  ৬. আর্কাইভ নং:
+                                </span>
+                                <span className={valCls + " pl-3 text-purple-600 font-extrabold"}>
+                                  <HighlightText
+                                    text={entry.archiveNo}
+                                    searchTerm={searchTerm}
+                                  />
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className={tdCls}>
@@ -1811,12 +1886,42 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               return (
                                 <>
                                   <div
-                                    className={`p-1.5 border rounded-lg space-y-1 transition-colors ${issueColorCls}`}
+                                    className={`p-1.5 border rounded-lg space-y-1 transition-colors relative ${issueColorCls}`}
                                   >
-                                    <div
-                                      className={`text-[9px] font-bold uppercase tracking-tighter flex items-center gap-1 ${labelColorCls}`}
-                                    >
-                                      <Hash size={8} /> জারিপত্র নং
+                                    <div className="flex items-center justify-between">
+                                      <div
+                                        className={`text-[9px] font-bold uppercase tracking-tighter flex items-center gap-1 ${labelColorCls}`}
+                                      >
+                                        <Hash size={8} /> জারিপত্র নং
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        {currentIssueComment && (
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedCommentText(currentIssueComment);
+                                            }}
+                                            className="text-amber-500 hover:text-amber-600 active:scale-95 p-0.5 rounded transition-all animate-pulse"
+                                            title="মন্তব্য দেখুন"
+                                          >
+                                            <MessageSquare size={10} fill="currentColor" className="text-amber-500" />
+                                          </button>
+                                        )}
+                                        {isAdmin && (
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setEditingCommentId(editingCommentId === entry.id ? null : entry.id);
+                                            }}
+                                            className={`${editingCommentId === entry.id ? 'text-blue-600' : 'text-slate-400 hover:text-blue-500'} p-0.5 rounded transition-colors`}
+                                            title="মন্তব্য লিখুন/সম্পাদনা করুন"
+                                          >
+                                            <Edit3 size={10} />
+                                          </button>
+                                        )}
+                                      </div>
                                     </div>
                                     <input
                                       type="text"
@@ -1832,6 +1937,24 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         )
                                       }
                                     />
+                                    {isAdmin && editingCommentId === entry.id && (
+                                      <div className="mt-1 pt-1 border-t border-dashed border-slate-200 space-y-1">
+                                        <div className="text-[7.5px] font-bold text-slate-400">মন্তব্য লিখুন:</div>
+                                        <input
+                                          type="text"
+                                          placeholder="ডামি জারিপত্র নং-এর কারণ"
+                                          className="w-full h-5 px-1 border border-slate-200 rounded text-[9px] font-bold outline-none bg-slate-50 focus:bg-white focus:border-blue-400"
+                                          value={currentIssueComment}
+                                          onChange={(e) =>
+                                            handleInlineChange(
+                                              entry.id,
+                                              "issueLetterComment",
+                                              e.target.value,
+                                            )
+                                          }
+                                        />
+                                      </div>
+                                    )}
                                   </div>
 
                                   <div
@@ -1942,70 +2065,21 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               >
                                 <Pencil size={12} />
                               </button>
-                              <div className="relative inline-block">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setDeleteConfirmId(deleteConfirmId === entry.id ? null : entry.id);
-                                  }}
-                                  className={`p-1.5 rounded-md shadow-md transition-all duration-300 ${deleteConfirmId === entry.id ? "bg-rose-100 text-rose-700 ring-2 ring-rose-500/20" : "bg-rose-600 text-white hover:bg-rose-700"}`}
-                                  title="মুছে ফেলুন"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-
-                                {deleteConfirmId === entry.id && (
-                                  <div 
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="absolute bottom-full right-0 mb-3 z-[150] w-64 p-4 bg-white border-2 border-rose-200 rounded-2xl shadow-[0_15px_35px_rgba(244,63,94,0.18)] text-left animate-in zoom-in-95 duration-200"
-                                    style={{ transformOrigin: "bottom right" }}
-                                  >
-                                    <div className="flex items-start gap-3">
-                                      <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center shrink-0 border border-rose-100 animate-bounce">
-                                        <AlertTriangle size={16} className="text-rose-600" />
-                                      </div>
-                                      <div className="space-y-1">
-                                        <p className="text-[12px] font-black text-slate-800 leading-tight">
-                                          তথ্য মুছে ফেলার অবগতি
-                                        </p>
-                                        <p className="text-[10px] font-medium text-slate-500 leading-relaxed">
-                                          আপনি কি নিশ্চিতভাবে এই তথ্যটি মুছে ফেলতে চান? এটি আর ফিরিয়ে আনা যাবে না।
-                                        </p>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center justify-end gap-2.5 mt-3 pt-2.5 border-t border-slate-100">
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setDeleteConfirmId(null);
-                                        }}
-                                        className="px-3 py-1.5 text-[10px] text-slate-500 font-extrabold hover:text-slate-800 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200/60 transition-all cursor-pointer"
-                                      >
-                                        না, বাতিল
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setDeleteConfirmId(null);
-                                          setDeletingId(entry.id);
-                                          setTimeout(() => {
-                                            if (onDelete) {
-                                              onDelete(entry.id);
-                                            }
-                                            setDeletingId(null);
-                                          }, 1000);
-                                        }}
-                                        className="px-3.5 py-1.5 text-[10px] text-white font-extrabold bg-rose-600 hover:bg-rose-700 active:scale-95 rounded-lg shadow-sm shadow-rose-500/10 transition-all flex items-center gap-1.5 cursor-pointer"
-                                      >
-                                        <Trash2 size={10} />
-                                        <span>হ্যাঁ, নিশ্চিত</span>
-                                      </button>
-                                    </div>
-                                    {/* Small arrow down to the clicked button */}
-                                    <div className="absolute top-full right-3 -translate-y-1 w-2.5 h-2.5 bg-white border-r-2 border-b-2 border-rose-200 rotate-45"></div>
-                                  </div>
-                                )}
-                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setDeleteConfirm({
+                                    id: entry.id,
+                                    x: rect.right,
+                                    y: rect.top
+                                  });
+                                }}
+                                className="p-1.5 rounded-md shadow-md bg-rose-600 text-white hover:bg-rose-700 transition-all duration-300"
+                                title="মুছে ফেলুন"
+                              >
+                                <Trash2 size={12} />
+                              </button>
                             </div>
                           )}
                         </td>
@@ -2081,7 +2155,123 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         </table>
       </div>
 
+      {deleteConfirm && createPortal(
+        <>
+          {/* Backdrop Click Catcher */}
+          <div 
+            className="fixed inset-0 z-[29999] bg-transparent cursor-default"
+            onClick={() => setDeleteConfirm(null)}
+          />
+          
+          {/* Popover */}
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="fixed z-[30000] w-72 p-4 bg-white border-2 border-rose-200 rounded-2xl shadow-[0_15px_40px_rgba(244,63,94,0.18)] text-left animate-in zoom-in-95 fade-in duration-200"
+            style={{ 
+              left: `${deleteConfirm.x}px`,
+              top: `${deleteConfirm.y - 12}px`,
+              transform: 'translateX(-100%) translateY(-100%)',
+              transformOrigin: "bottom right"
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center shrink-0 border border-rose-100 animate-bounce">
+                <AlertTriangle size={16} className="text-rose-600" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-[12px] font-black text-slate-800 leading-tight">
+                  তথ্য মুছে ফেলার অবগতি
+                </p>
+                <p className="text-[10px] font-medium text-slate-500 leading-relaxed">
+                  আপনি কি নিশ্চিতভাবে এই তথ্যটি মুছে ফেলতে চান? এটি আর ফিরিয়ে আনা যাবে না।
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-slate-100">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="px-3 py-1.5 text-[10px] text-slate-500 font-extrabold hover:text-slate-800 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200/60 transition-all cursor-pointer"
+              >
+                না, বাতিল
+              </button>
+              <button
+                onClick={() => {
+                  const idToDelete = deleteConfirm.id;
+                  setDeleteConfirm(null);
+                  setDeletingId(idToDelete);
+                  setTimeout(() => {
+                    onDelete?.(idToDelete);
+                    setDeletingId(null);
+                  }, 1000);
+                }}
+                className="px-3.5 py-1.5 text-[10px] text-white font-extrabold bg-rose-600 hover:bg-rose-700 active:scale-95 rounded-lg shadow-sm shadow-rose-500/10 transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 size={10} />
+                <span>হ্যাঁ, নিশ্চিত</span>
+              </button>
+            </div>
+            
+            {/* Small arrow down to the clicked button */}
+            <div className="absolute top-full right-4 -translate-y-1 w-2.5 h-2.5 bg-white border-r-2 border-b-2 border-rose-200 rotate-45"></div>
+          </div>
+        </>,
+        document.body
+      )}
 
+      {selectedCommentText !== null && createPortal(
+        <div className="fixed inset-0 z-[40000] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm cursor-default"
+            onClick={() => setSelectedCommentText(null)}
+          />
+          
+          <div 
+            className="relative z-10 w-full max-w-md p-6 bg-white border border-slate-100 rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                  <MessageSquare size={18} className="text-amber-600 fill-amber-100" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800 tracking-tight leading-none">
+                    জারিপত্র সংক্রান্ত মন্তব্য
+                  </h3>
+                  <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">
+                    জারিপত্র তথ্য অবগতি
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedCommentText(null)}
+                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg p-1 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="mt-4 p-4 bg-amber-50/40 border border-amber-100/70 rounded-xl">
+              <p className="text-xs font-bold text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {selectedCommentText}
+              </p>
+            </div>
+            
+            <div className="flex justify-end mt-5 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setSelectedCommentText(null)}
+                className="px-5 py-2 text-xs font-black text-white bg-slate-800 hover:bg-slate-900 active:scale-95 rounded-xl shadow-md transition-all cursor-pointer"
+              >
+                ঠিক আছে
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

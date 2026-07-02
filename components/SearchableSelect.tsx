@@ -14,10 +14,14 @@ interface SearchableSelectProps {
   badgeId?: string;
   isAdmin?: boolean;
   showSearch?: boolean;
+  allowCustom?: boolean;
+  hideAddNew?: boolean;
+  align?: 'left' | 'right';
 }
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({ 
-  label, value, onChange, groups, placeholder = "নির্বাচন করুন", required, isLayoutEditable = false, badgeId, isAdmin = false, showSearch = true 
+  label, value, onChange, groups, placeholder = "নির্বাচন করুন", required, isLayoutEditable = false, badgeId, isAdmin = false, showSearch = true,
+  allowCustom = false, hideAddNew = false, align = 'left'
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -130,7 +134,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       </div>
 
       {isOpen && (
-        <div className="absolute z-[200] w-full mt-2 bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600">
+        <div className={`absolute z-[200] w-full ${align === 'right' ? 'right-0' : 'left-0'} mt-2 bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600`}>
           
           {/* Search container inside the dropdown itself */}
           {showSearch && (
@@ -144,6 +148,13 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') setIsOpen(false);
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (allowCustom && searchTerm.trim()) {
+                      onChange(searchTerm.trim());
+                      setIsOpen(false);
+                    }
+                  }
                 }}
               />
               {searchTerm && (
@@ -159,6 +170,20 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
           )}
 
           <div className="max-h-72 overflow-y-auto py-3 no-scrollbar">
+            {allowCustom && searchTerm.trim() && !allOptions.some(o => o.toLowerCase() === searchTerm.trim().toLowerCase()) && (
+              <div
+                className="flex items-center justify-between px-4 py-3 mx-2 my-1 rounded-xl cursor-pointer text-[14px] font-black transition-all bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-100 animate-in fade-in duration-200"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange(searchTerm.trim());
+                  setIsOpen(false);
+                }}
+              >
+                <span>"{searchTerm.trim()}" ব্যবহার করুন</span>
+                <PlusCircle size={16} className="text-emerald-600 shrink-0" />
+              </div>
+            )}
+
             {filteredOptions.length > 0 ? filteredOptions.map((option, idx) => (
               <div
                 key={idx}
@@ -177,14 +202,16 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 {value === option && <Check size={16} className="text-white animate-in zoom-in duration-300" />}
               </div>
             )) : (
-              <div className="p-8 text-center space-y-2">
-                <div className="flex justify-center"><X size={24} className="text-slate-200" /></div>
-                <p className="text-slate-400 text-xs font-black italic">কিছু পাওয়া যায়নি</p>
-              </div>
+              !allowCustom && (
+                <div className="p-8 text-center space-y-2">
+                  <div className="flex justify-center"><X size={24} className="text-slate-200" /></div>
+                  <p className="text-slate-400 text-xs font-black italic">কিছু পাওয়া যায়নি</p>
+                </div>
+              )
             )}
           </div>
 
-          {isAdmin && (
+          {isAdmin && !hideAddNew && (
             <div className="border-t border-slate-100 bg-slate-50">
               {!isAddingCustom ? (
                 <button
