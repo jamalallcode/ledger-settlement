@@ -701,15 +701,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                               transition={{ duration: 0.2, ease: "easeInOut" }}
                               className="pl-3 py-1 space-y-1 overflow-hidden"
                             >
-                              {[1, 2, 3, 4, 5, 6].map(num => (
-                                <button 
-                                  key={num}
-                                  onClick={() => setActiveTab('return', null, `ত্রৈমাসিক রিটার্ন - ${toBengaliDigits(num.toString())}`)}
-                                  className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === `ত্রৈমাসিক রিটার্ন - ${toBengaliDigits(num.toString())}` ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
-                                >
-                                  রিটার্ন {toBengaliDigits(num.toString())}
-                                </button>
-                              ))}
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - ২')}
+                                className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'ত্রৈমাসিক রিটার্ন - ২' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                বিএসআর
+                              </button>
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - ১')}
+                                className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'ত্রৈমাসিক রিটার্ন - ১' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                দ্বিপক্ষীয়
+                              </button>
                             </motion.div>
                           )}
                         </AnimatePresence>

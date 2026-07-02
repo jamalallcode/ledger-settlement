@@ -19,8 +19,36 @@ const getEnv = (key: string) => {
   }
 };
 
-const supabaseUrl = getEnv('VITE_SUPABASE_URL');
-const supabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY');
+let supabaseUrl = getEnv('VITE_SUPABASE_URL');
+let supabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY');
+
+// Fallback to fetch credentials synchronously from server if not set in client bundle
+if (typeof window !== 'undefined') {
+  console.log("Initial Supabase URL (client bundle):", supabaseUrl ? "Present" : "Missing");
+  console.log("Initial Supabase Anon Key (client bundle):", supabaseAnonKey ? "Present" : "Missing");
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
+    try {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', '/api/supabase-config', false); // synchronous call
+      xhr.send();
+      if (xhr.status === 200) {
+        const config = JSON.parse(xhr.responseText);
+        console.log("Server Supabase Url:", config.supabaseUrl ? "Present" : "Missing");
+        console.log("Server Supabase Anon Key:", config.supabaseAnonKey ? "Present" : "Missing");
+        if (config.supabaseUrl && config.supabaseAnonKey) {
+          supabaseUrl = config.supabaseUrl;
+          supabaseAnonKey = config.supabaseAnonKey;
+          console.log("Supabase config dynamically fetched and loaded from server successfully!");
+        }
+      } else {
+        console.warn("Failed to fetch Supabase config. Server returned status:", xhr.status);
+      }
+    } catch (e) {
+      console.warn("Failed to fetch Supabase config synchronously:", e);
+    }
+  }
+}
 
 const isValidUrl = (url: string) => {
   try {
@@ -32,6 +60,7 @@ const isValidUrl = (url: string) => {
 
 // Check if actual credentials exist
 export const isSupabaseConfigured = isValidUrl(supabaseUrl) && !!supabaseAnonKey;
+console.log("Is Supabase fully configured and active:", isSupabaseConfigured);
 
 const createMockClient = () => {
   const mockAuth = {

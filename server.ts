@@ -30,6 +30,14 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  // Dynamic Supabase config endpoint for development and preview environments
+  app.get("/api/supabase-config", (req, res) => {
+    res.json({
+      supabaseUrl: process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "",
+      supabaseAnonKey: process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON || process.env.SUPABASE_ANON_KEY || ""
+    });
+  });
+
   // Temporary in-memory store for OTPs
   const resetCodesStore = new Map<string, { code: string; expires: number }>();
 

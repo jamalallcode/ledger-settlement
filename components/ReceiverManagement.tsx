@@ -776,7 +776,11 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
               return (
                 <div 
                   key={idx} 
-                  className={`group flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-2xl ${themes.borderTheme} hover:bg-blue-50/10 transition-all duration-300 ${isInactive ? 'opacity-65' : ''}`}
+                  className={`group flex items-center justify-between p-3.5 border rounded-2xl transition-all duration-300 ${
+                    isInactive 
+                      ? 'bg-rose-50/30 border-rose-100 hover:bg-rose-50/50' 
+                      : `bg-slate-50 border-slate-100 ${themes.borderTheme} hover:bg-blue-50/10`
+                  }`}
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     <div className="w-10 sm:w-11 h-10 sm:h-11 bg-white border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
@@ -790,14 +794,14 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`font-bold text-[13px] sm:text-sm truncate ${isInactive ? 'text-slate-400 line-through font-normal' : 'text-slate-700'}`}>
-                          {profile.name} {isInactive && <span className="text-rose-500 font-bold ml-1 no-underline inline-block">(বদলী হয়েছেন)</span>}
+                        <span className="font-bold text-[13px] sm:text-sm truncate text-slate-700">
+                          {profile.name} 
+                          {isInactive && (
+                            <span className="text-red-600 font-extrabold ml-1.5 text-xs sm:text-[13px] inline-block">
+                              (বদলী: {profile.transferred_to || 'অন্যত্র'})
+                            </span>
+                          )}
                         </span>
-                        {isInactive && (
-                          <span className="px-1.5 py-0.5 bg-rose-50 text-rose-600 text-[8px] font-black rounded border border-rose-100 uppercase tracking-wider shrink-0 flex items-center gap-1">
-                            বদলি / নিষ্ক্রিয় {profile.transferred_to ? `(${profile.transferred_to})` : ''}
-                          </span>
-                        )}
                         {profile.entryCount !== undefined && profile.entryCount > 0 && (
                           <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] sm:text-[9px] font-black rounded-full border border-blue-100">
                             {toBengaliDigits(profile.entryCount.toString())}টি চিঠিপত্র

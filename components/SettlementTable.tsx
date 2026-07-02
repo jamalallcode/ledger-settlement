@@ -1875,15 +1875,13 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                               </span>
                                             </p>
                                             {entry.archiveNo && (
-                                              <p className="text-[10px] leading-tight">
-                                                <span className="font-black text-purple-700">
-                                                  আর্কাইভ নং:{" "}
-                                                  <span className="font-black text-purple-600 whitespace-pre-line">
-                                                    <HighlightText
-                                                      text={formatArchiveNoForTable(entry.archiveNo)}
-                                                      searchTerm={searchTerm}
-                                                    />
-                                                  </span>
+                                              <p className="text-[10px] leading-tight font-black text-purple-700">
+                                                আর্কাইভ নং:{" "}
+                                                <span className="font-bold text-slate-800 whitespace-pre-line inline">
+                                                  <HighlightText
+                                                    text={formatArchiveNoForTable(entry.archiveNo)}
+                                                    searchTerm={searchTerm}
+                                                  />
                                                 </span>
                                               </p>
                                             )}
@@ -2142,11 +2140,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                         </span>
                                       </p>
                                       {entry.archiveNo && (
-                                        <p className="text-[10px] leading-tight">
-                                          <span className="font-black text-purple-700">
-                                            আর্কাইভ নং:
-                                          </span>{" "}
-                                          <span className="font-black text-purple-600 whitespace-pre-line">
+                                        <p className="text-[10px] leading-tight font-black text-purple-700">
+                                          আর্কাইভ নং:{" "}
+                                          <span className="font-bold text-slate-800 whitespace-pre-line inline">
                                             <HighlightText
                                               text={formatArchiveNoForTable(entry.archiveNo)}
                                               searchTerm={searchTerm}
