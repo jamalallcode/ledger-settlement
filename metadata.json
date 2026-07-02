@@ -1,5 +1,6 @@
 {
   "name": "Remix: Remix: মুল আইডিতে ফিরে আসলাম। সর্বশেষ আপডেট করা কাজ।২",
   "description": "মহাপরিচালকের কার্যালয়, বাণিজ্যিক অডিট অধিদপ্তর, খুলনা আঞ্চলিক কার্যালয়ের একটি মীমাংসা রেজিস্টার এবং রিপোর্টিং সিস্টেম। এতে অ্যাডমিন প্যানেল থেকে মডিউল ভিজিবিলিটি কন্ট্রোল করার সুবিধা রয়েছে।",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

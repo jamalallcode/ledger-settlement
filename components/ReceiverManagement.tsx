@@ -335,7 +335,19 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
           }
         }
 
-        const transferred_to = r.transferred_to || transfersMap[compKey] || '';
+        let transferred_to = r.transferred_to || transfersMap[compKey] || '';
+
+        // Specific override for Shamima Shahrin / Shamira Shahrin transfer (Non-SFI to SFI)
+        const normNoSpaces = norm.replace(/\s+/g, '');
+        if (normNoSpaces === 'শামীমাশাহরিন' || normNoSpaces === 'শামীরাশাহরিন') {
+          if (b === 'নন এসএফআই') {
+            is_active = false;
+            transferred_to = 'এসএফআই শাখা';
+          } else if (b === 'এসএফআই') {
+            is_active = true;
+            transferred_to = '';
+          }
+        }
 
         return {
           ...r,
@@ -346,8 +358,14 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
           entryDetails: entryDetails[compKey] || []
         };
       }).filter(r => {
+        const norm = normalizeName(r.name);
+        const normNoSpaces = norm.replace(/\s+/g, '');
+        const isTargetUser = normNoSpaces === 'শামীমাশাহরিন' || normNoSpaces === 'শামীরাশাহরিন';
+        if (isTargetUser && getCleanBranch(r.para_type) === 'এসএফআই') return true;
+
         if (r.source === 'database') return true;
         if (r.entryCount > 0) return true;
+        if (r.source === 'local') return true;
         return false;
       });
 
@@ -776,7 +794,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
               return (
                 <div 
                   key={idx} 
-                  className={`group flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-2xl ${themes.borderTheme} hover:bg-blue-50/10 transition-all duration-300 ${isInactive ? 'opacity-65' : ''}`}
+                  className={`group flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-300 ${isInactive ? 'bg-rose-50/45 border-rose-200 shadow-sm shadow-rose-50/20 opacity-90' : 'bg-slate-50 border-slate-100 hover:bg-blue-50/10'} ${themes.borderTheme}`}
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     <div className="w-10 sm:w-11 h-10 sm:h-11 bg-white border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden shrink-0 shadow-inner">

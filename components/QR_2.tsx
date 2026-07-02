@@ -15,10 +15,51 @@ interface QRProps {
 }
 
 const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
-  // Date calculation based on user's logic: 
-  // "তিন মাস বলতে পূর্ববর্তী মাসের ১৬ তারিখ হতে ৩য় মাসের ১৫ তারিখ পযন্ত"
-  const startDate = setDate(subMonths(activeCycle.start, 1), 16);
-  const endDate = setDate(addMonths(activeCycle.start, 2), 15);
+  // Standard calendar quarter date calculation:
+  // Quarters: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec)
+  const getQuarterInfo = (date: Date) => {
+    const cycleEndMonth = date.getMonth(); // 0 to 11
+    const year = date.getFullYear();
+    let quarterStartMonth = 0;
+    let quarterEndMonth = 2;
+    let quarterYear = year;
+
+    if (cycleEndMonth >= 0 && cycleEndMonth <= 2) {
+      quarterStartMonth = 0; // Jan
+      quarterEndMonth = 2;   // Mar
+    } else if (cycleEndMonth >= 3 && cycleEndMonth <= 5) {
+      quarterStartMonth = 3; // Apr
+      quarterEndMonth = 5;   // Jun
+    } else if (cycleEndMonth >= 6 && cycleEndMonth <= 8) {
+      quarterStartMonth = 6; // Jul
+      quarterEndMonth = 8;   // Sep
+    } else {
+      quarterStartMonth = 9; // Oct
+      quarterEndMonth = 11;  // Dec
+    }
+
+    const start = new Date(quarterStartMonth === 0 ? quarterYear - 1 : quarterYear, quarterStartMonth === 0 ? 11 : quarterStartMonth - 1, 16);
+    const end = new Date(quarterYear, quarterEndMonth, 15);
+    
+    const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
+    const startMonthName = months[quarterStartMonth];
+    const endMonthName = months[quarterEndMonth];
+    
+    const startYearShort = format(new Date(quarterYear, quarterStartMonth, 1), 'yy');
+    const endYearShort = format(new Date(quarterYear, quarterEndMonth, 1), 'yy');
+
+    const formattedRange = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
+    
+    return {
+      startDate: start,
+      endDate: end,
+      startMonthName,
+      endMonthName,
+      formattedRange
+    };
+  };
+
+  const { startDate, endDate, startMonthName, endMonthName, formattedRange } = getQuarterInfo(activeCycle.end);
 
   const downloadExcel = () => {
     const tables = document.querySelectorAll('table');
@@ -71,7 +112,7 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
         </style>
       </head>
       <body>
-        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">ত্রৈমাসিক রিটার্ন - ২</h2>
+        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">ত্রৈমাসিক রিটার্ন - ২ (ব্রডশীট)</h2>
         ${tablesHtml}
       </body>
       </html>
@@ -123,14 +164,39 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     return matchMinistry && matchSearch;
   });
 
-  const totals = filteredData.reduce((acc, curr) => ({
-    sentPara: acc.sentPara + (parseInt(toEnglishDigits(curr.meetingSentParaCount || '0')) || 0),
-    settledPara: acc.settledPara + (parseInt(toEnglishDigits(curr.meetingSettledParaCount || '0')) || 0),
-    amount: acc.amount + (curr.involvedAmount || 0),
-    recovery: acc.recovery + (curr.totalRec || 0),
-    adjustment: acc.adjustment + (curr.totalAdj || 0),
-    others: 0,
-  }), { sentPara: 0, settledPara: 0, amount: 0, recovery: 0, adjustment: 0, others: 0 });
+  const totals = filteredData.reduce((acc, curr) => {
+    const sCount = parseInt(toEnglishDigits(curr.meetingSentParaCount || '0')) || curr.paragraphs?.length || 0;
+    const setlCount = curr.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').length || parseInt(toEnglishDigits(curr.meetingSettledParaCount || '0')) || 0;
+    const unsetlCount = parseInt(toEnglishDigits(curr.meetingUnsettledParas || '0')) || Math.max(0, sCount - setlCount);
+    const unsAmount = Math.max(0, (curr.involvedAmount || 0) - (curr.totalRec || 0) - (curr.totalAdj || 0));
+    
+    return {
+      sentPara: acc.sentPara + sCount,
+      settledPara: acc.settledPara + setlCount,
+      unsettledPara: acc.unsettledPara + unsetlCount,
+      amount: acc.amount + (curr.involvedAmount || 0),
+      recovery: acc.recovery + (curr.totalRec || 0),
+      adjustment: acc.adjustment + (curr.totalAdj || 0),
+      unsettledAmount: acc.unsettledAmount + unsAmount,
+      others: 0,
+    };
+  }, { sentPara: 0, settledPara: 0, unsettledPara: 0, amount: 0, recovery: 0, adjustment: 0, unsettledAmount: 0, others: 0 });
+
+  const formatAmountBengali = (val: number | undefined | null) => {
+    if (val === undefined || val === null) return '-';
+    if (val === 0) return '-';
+    return toBengaliDigits(Math.round(val).toString()) + '/-';
+  };
+
+  const formatCountBengali = (val: number | undefined | null) => {
+    if (val === undefined || val === null) return '০';
+    return toBengaliDigits(val.toString());
+  };
+
+  const formatTextValue = (val: string | undefined | null) => {
+    if (!val || val.trim() === '') return '-';
+    return toBengaliDigits(val);
+  };
 
   const formatArchiveNoForTable = (val: string | undefined | null) => {
     if (!val || val.trim() === '') return '-';
@@ -161,9 +227,9 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     return prefix + lines.join('\n');
   };
 
-  const thCls = "border-r border-b border-slate-400 p-1 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
-  const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle";
-  const numTdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
+  const thCls = "border-r border-b border-slate-400 p-1 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center leading-normal";
+  const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle leading-normal";
+  const numTdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 text-center align-middle font-bold leading-normal";
   const footerTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-900 align-middle bg-slate-200 font-extrabold";
   const footerNumTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-200";
 
@@ -218,6 +284,8 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
           <span className="text-slate-300 hidden md:inline font-normal">|</span>
           <p><span className="text-slate-500">শাখাঃ</span> নন এসএফআই শাখা</p>
           <span className="text-slate-300 hidden md:inline font-normal">|</span>
+          <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
+          <span className="text-slate-300 hidden md:inline font-normal">|</span>
           <p><span className="text-slate-500">সময়সীমাঃ</span> {getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} খ্রিঃ</p>
         </div>
 
@@ -263,21 +331,22 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
 
       {/* Table Section */}
       <div className="table-container qr-table-container overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg">
-        <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
+        <table className="w-full border-separate border-spacing-0 min-w-[1200px] !table-auto border-l border-t border-slate-400">
           <thead className="bg-slate-100">
-            <tr className="h-[42px]">
-              <th rowSpan={2} className={`${thCls} w-[calc(5%-2px)]`}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thCls} w-[10%]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
-              <th rowSpan={2} className={thCls}>ব্রডশিট জবাবের সংখ্যা</th>
-              <th rowSpan={2} className={thCls}>পত্রের স্মারক নং ও তারিখ</th>
-              <th rowSpan={2} className={thCls}>প্রেরিত অনুচ্ছেদ সংখ্যা</th>
-              <th rowSpan={2} className={thCls}>মীমাংসিত অনুচ্ছেদ সংখ্যা</th>
-              <th rowSpan={2} className={thCls}>ডায়েরি নং ও তারিখ</th>
-              <th rowSpan={2} className={thCls}>মীমাংসাপত্র জারীর তারিখ</th>
-              <th rowSpan={2} className={thCls}>মীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
-              <th colSpan={3} className={thCls}>ব্রডশিট জবাবের প্রেক্ষিতে আদায় সমন্বয়ের পরিমাণ</th>
-              <th rowSpan={2} className={thCls}>মন্তব্য</th>
-              <th rowSpan={2} className={`${thCls} w-[calc(8%+3px)]`}>আর্কাইভ নং</th>
+            <tr className="h-[44px]">
+              <th rowSpan={2} className={`${thCls} w-[35px] rounded-none`}>ক্রঃ নং</th>
+              <th rowSpan={2} className={`${thCls} w-[180px]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
+              <th rowSpan={2} className={`${thCls} w-[60px]`}>ব্রডশিট জবাবের সংখ্যা</th>
+              <th rowSpan={2} className={`${thCls} w-[100px]`}>ডায়েরি নম্বর ও তারিখ</th>
+              <th rowSpan={2} className={`${thCls} w-[110px]`}>ব্রডশিট জবাবের স্মারক ও তারিখ</th>
+              <th rowSpan={2} className={`${thCls} w-[65px]`}>প্রেরিত অনুচ্ছেদ সংখ্যা</th>
+              <th rowSpan={2} className={`${thCls} w-[65px]`}>মীমাংসিত অনুচ্ছেদ সংখ্যা</th>
+              <th rowSpan={2} className={`${thCls} w-[110px]`}>মীমাংসা জারিপত্রের স্মারক ও তারিখ</th>
+              <th rowSpan={2} className={`${thCls} w-[85px]`}>মীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
+              <th colSpan={3} className={`${thCls}`}>ব্রডশিট জবাবের প্রেক্ষিতে আদায় সমন্বয়ের পরিমাণ</th>
+              <th rowSpan={2} className={`${thCls} w-[65px]`}>অমীমাংসিত অনুচ্ছেদ সংখ্যা</th>
+              <th rowSpan={2} className={`${thCls} w-[85px]`}>অমীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
+              <th rowSpan={2} className={`${thCls} w-[70px] rounded-none`}>আর্কাইভ নং</th>
             </tr>
             <tr className="h-[38px]">
               <th className={thCls}>আদায়</th>
@@ -285,36 +354,88 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
               <th className={thCls}>অন্যান্য</th>
             </tr>
             <tr className="h-[32px]">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(n => (
-                <th key={n} className={thCls + " text-[9px] font-bold text-slate-500"}>{toBengaliDigits(n.toString())}</th>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(n => (
+                <th key={n} className={thCls + " text-[9px] font-bold text-slate-500 py-1"}>{toBengaliDigits(n.toString())}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {filteredData.map((row, idx) => (
-              <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                <td className={numTdCls}>{toBengaliDigits((idx + 1).toString())}</td>
-                <td className={tdCls}>
-                  <HighlightText text={`${row.ministryName}, ${row.entityName} (${toBengaliDigits(row.auditYear)})`} searchTerm={searchTerm} />
-                </td>
-                <td className={numTdCls}>{toBengaliDigits("১")}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.letterNoDate || '')}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.meetingSentParaCount || '০')}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.meetingSettledParaCount || '০')}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.meetingWorkpaper || '')}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.issueLetterNoDate || '')}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.involvedAmount?.toString() || '০')}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.totalRec?.toString() || '০')}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.totalAdj?.toString() || '০')}</td>
-                <td className={numTdCls}>-</td>
-                <td className={tdCls}>{row.remarks}</td>
-                <td className={`${numTdCls} whitespace-pre-line`}>{formatArchiveNoForTable(row.archiveNo)}</td>
-              </tr>
-            ))}
+            {filteredData.map((row, idx) => {
+              const entryUnsettledAmount = Math.max(0, (row.involvedAmount || 0) - (row.totalRec || 0) - (row.totalAdj || 0));
+              const rowSentCount = parseInt(toEnglishDigits(row.meetingSentParaCount || '0')) || row.paragraphs?.length || 0;
+              const rowSettledCount = row.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').length || parseInt(toEnglishDigits(row.meetingSettledParaCount || '0')) || 0;
+              const rowUnsettledCount = parseInt(toEnglishDigits(row.meetingUnsettledParas || '0')) || Math.max(0, rowSentCount - rowSettledCount);
+
+              return (
+                <tr key={row.id} className="hover:bg-slate-50 transition-colors">
+                  <td className={numTdCls}>{toBengaliDigits((idx + 1).toString())}</td>
+                  <td className={tdCls}>
+                    <HighlightText text={row.ministryName} searchTerm={searchTerm} />
+                    {row.entityName && (
+                      <>
+                        ,<br />
+                        <HighlightText text={row.entityName} searchTerm={searchTerm} />
+                      </>
+                    )}
+                    {row.branchName && (
+                      <>
+                        ,<br />
+                        <span className="text-blue-700 font-extrabold text-[10.5px]">
+                          <HighlightText text={row.branchName} searchTerm={searchTerm} />
+                        </span>
+                      </>
+                    )}
+                    {row.auditYear && (
+                      <>
+                        <br />
+                        <span className="font-bold text-slate-800">({toBengaliDigits(row.auditYear)})</span>
+                      </>
+                    )}
+                  </td>
+                  <td className={numTdCls}>{toBengaliDigits("১")}</td>
+                  <td className={numTdCls}>
+                    <HighlightText text={formatTextValue(row.workpaperNoDate)} searchTerm={searchTerm} />
+                  </td>
+                  <td className={numTdCls}>
+                    <HighlightText text={formatTextValue(row.letterNoDate)} searchTerm={searchTerm} />
+                  </td>
+                  <td className={numTdCls}>
+                    {formatCountBengali(rowSentCount)}
+                  </td>
+                  <td className={numTdCls}>
+                    {formatCountBengali(rowSettledCount)}
+                  </td>
+                  <td className={numTdCls}>
+                    <HighlightText text={formatTextValue(row.issueLetterNoDate)} searchTerm={searchTerm} />
+                  </td>
+                  <td className={numTdCls}>
+                    {formatAmountBengali(row.involvedAmount)}
+                  </td>
+                  <td className={`${numTdCls} text-emerald-600 bg-emerald-50/10`}>
+                    {formatAmountBengali(row.totalRec)}
+                  </td>
+                  <td className={`${numTdCls} text-indigo-600 bg-indigo-50/10`}>
+                    {formatAmountBengali(row.totalAdj)}
+                  </td>
+                  <td className={numTdCls}>
+                    {formatAmountBengali(0)}
+                  </td>
+                  <td className={numTdCls}>
+                    {formatCountBengali(rowUnsettledCount)}
+                  </td>
+                  <td className={numTdCls}>
+                    {entryUnsettledAmount === 0 ? toBengaliDigits('0') + '/-' : formatAmountBengali(entryUnsettledAmount)}
+                  </td>
+                  <td className={`${numTdCls} whitespace-pre-line font-bold`}>
+                    <HighlightText text={formatArchiveNoForTable(row.archiveNo)} searchTerm={searchTerm} />
+                  </td>
+                </tr>
+              );
+            })}
             {/* Empty rows if data is sparse */}
             {filteredData.length < 5 && Array.from({ length: 5 - filteredData.length }).map((_, i) => (
               <tr key={`empty-${i}`} className="h-10">
-                {Array.from({ length: 14 }).map((_, j) => (
+                {Array.from({ length: 15 }).map((_, j) => (
                   <td key={j} className="border-r border-b border-slate-400"></td>
                 ))}
               </tr>
@@ -325,15 +446,17 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
               <td colSpan={2} className={footerTdCls}>সর্বমোট (ফিল্টারকৃত):</td>
               <td className={footerNumTdCls}>{toBengaliDigits(filteredData.length.toString())} টি</td>
               <td className={footerNumTdCls}></td>
+              <td className={footerNumTdCls}></td>
               <td className={footerNumTdCls}>{toBengaliDigits(totals.sentPara.toString())}</td>
               <td className={footerNumTdCls}>{toBengaliDigits(totals.settledPara.toString())}</td>
               <td className={footerNumTdCls}></td>
-              <td className={footerNumTdCls}></td>
-              <td className={footerNumTdCls}>{toBengaliDigits(totals.amount.toString())}</td>
-              <td className={footerNumTdCls}>{toBengaliDigits(totals.recovery.toString())}</td>
-              <td className={footerNumTdCls}>{toBengaliDigits(totals.adjustment.toString())}</td>
+              <td className={footerNumTdCls}>{totals.amount === 0 ? '-' : toBengaliDigits(Math.round(totals.amount).toString()) + "/-"}</td>
+              <td className={footerNumTdCls}>{totals.recovery === 0 ? '-' : toBengaliDigits(Math.round(totals.recovery).toString()) + "/-"}</td>
+              <td className={footerNumTdCls}>{totals.adjustment === 0 ? '-' : toBengaliDigits(Math.round(totals.adjustment).toString()) + "/-"}</td>
               <td className={footerNumTdCls}>-</td>
-              <td colSpan={2} className={footerTdCls}></td>
+              <td className={footerNumTdCls}>{toBengaliDigits(totals.unsettledPara.toString())}</td>
+              <td className={footerNumTdCls}>{totals.unsettledAmount === 0 ? '-' : toBengaliDigits(Math.round(totals.unsettledAmount).toString()) + "/-"}</td>
+              <td className={footerTdCls}></td>
             </tr>
           </tfoot>
         </table>

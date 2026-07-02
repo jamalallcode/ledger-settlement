@@ -15,10 +15,53 @@ interface QRProps {
 }
 
 const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
-  // Date calculation based on user's logic: 
-  // "তিন মাস বলতে পূর্ববর্তী মাসের ১৬ তারিখ হতে ৩য় মাসের ১৫ তারিখ পযন্ত"
-  const startDate = setDate(subMonths(activeCycle.start, 1), 16);
-  const endDate = setDate(addMonths(activeCycle.start, 2), 15);
+  // Standard calendar quarter date calculation:
+  // Quarters: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec)
+  // Each quarter start date is the 16th of the month preceding the quarter's start month.
+  // Each quarter end date is the 15th of the quarter's end month.
+  const getQuarterInfo = (date: Date) => {
+    const cycleEndMonth = date.getMonth(); // 0 to 11
+    const year = date.getFullYear();
+    let quarterStartMonth = 0;
+    let quarterEndMonth = 2;
+    let quarterYear = year;
+
+    if (cycleEndMonth >= 0 && cycleEndMonth <= 2) {
+      quarterStartMonth = 0; // Jan
+      quarterEndMonth = 2;   // Mar
+    } else if (cycleEndMonth >= 3 && cycleEndMonth <= 5) {
+      quarterStartMonth = 3; // Apr
+      quarterEndMonth = 5;   // Jun
+    } else if (cycleEndMonth >= 6 && cycleEndMonth <= 8) {
+      quarterStartMonth = 6; // Jul
+      quarterEndMonth = 8;   // Sep
+    } else {
+      quarterStartMonth = 9; // Oct
+      quarterEndMonth = 11;  // Dec
+    }
+
+    const start = new Date(quarterStartMonth === 0 ? quarterYear - 1 : quarterYear, quarterStartMonth === 0 ? 11 : quarterStartMonth - 1, 16);
+    const end = new Date(quarterYear, quarterEndMonth, 15);
+    
+    const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
+    const startMonthName = months[quarterStartMonth];
+    const endMonthName = months[quarterEndMonth];
+    
+    const startYearShort = format(new Date(quarterYear, quarterStartMonth, 1), 'yy');
+    const endYearShort = format(new Date(quarterYear, quarterEndMonth, 1), 'yy');
+
+    const formattedRange = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
+    
+    return {
+      startDate: start,
+      endDate: end,
+      startMonthName,
+      endMonthName,
+      formattedRange
+    };
+  };
+
+  const { startDate, endDate, startMonthName, endMonthName, formattedRange } = getQuarterInfo(activeCycle.end);
 
   const downloadExcel = () => {
     const tables = document.querySelectorAll('table');
@@ -185,6 +228,8 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
           <p><span className="text-slate-500">বিষয়ঃ</span> AIR এ আপত্তি নিষ্পত্তির অগ্রগতি ও সুপারিশের ত্রৈমাসিক প্রতিবেদন</p>
           <span className="text-slate-300 hidden md:inline font-normal">|</span>
           <p><span className="text-slate-500">শাখাঃ</span> নন এসএফআই শাখা</p>
+          <span className="text-slate-300 hidden md:inline font-normal">|</span>
+          <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
           <span className="text-slate-300 hidden md:inline font-normal">|</span>
           <p><span className="text-slate-500">সময়সীমাঃ</span> {formatDateBangla(startDate)} হতে {formatDateBangla(endDate)} খ্রিঃ</p>
         </div>
