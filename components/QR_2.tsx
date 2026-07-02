@@ -260,6 +260,386 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     return stats || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
   };
 
+  const [isPrevLedgerOpen, setIsPrevLedgerOpen] = React.useState(false);
+
+  const [prevLedgerData, setPrevLedgerData] = React.useState<Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }>>(() => {
+    const saved = localStorage.getItem('qr2_table1_prev_ledger_june2025');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Error parsing prev ledger data:", e);
+      }
+    }
+    
+    // Fallback/Default values derived from base prevStats
+    const defaults: Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }> = {};
+    Object.values(QR2_MINISTRY_MAP).forEach(entities => {
+      entities.forEach(entName => {
+        // Find default stats
+        const base = getEntityStats(entName);
+        defaults[entName] = {
+          june25Raised: (base?.unsettledCount || 0) + (base?.settledCount || 0),
+          june25Settled: (base?.settledCount || 0),
+          june25UnsettledAmount: (base?.unsettledAmount || 0)
+        };
+      });
+    });
+    return defaults;
+  });
+
+  const handleSavePrevLedger = (updated: typeof prevLedgerData) => {
+    setPrevLedgerData(updated);
+    localStorage.setItem('qr2_table1_prev_ledger_june2025', JSON.stringify(updated));
+  };
+
+  const handleInputChange = (entName: string, field: 'june25Raised' | 'june25Settled' | 'june25UnsettledAmount', value: number) => {
+    const updated = {
+      ...prevLedgerData,
+      [entName]: {
+        ...(prevLedgerData[entName] || { june25Raised: 0, june25Settled: 0, june25UnsettledAmount: 0 }),
+        [field]: value
+      }
+    };
+    handleSavePrevLedger(updated);
+  };
+
+  const prevLedgerRows = useMemo(() => {
+    const rows: any[] = [];
+    let sl = 1;
+    
+    Object.entries(QR2_MINISTRY_MAP).forEach(([mName, entities]) => {
+      entities.forEach(entityName => {
+        const ledger = prevLedgerData[entityName] || { june25Raised: 0, june25Settled: 0, june25UnsettledAmount: 0 };
+        
+        // Calculate transition settled from July 1, 2025 up to cycle start
+        const cycleStartStr = format(startDate, 'yyyy-MM-dd');
+        const transitionEntries = entries.filter(e => {
+          if (!isEntityMatch(e.entityName, entityName)) return false;
+          if (!isMinistryMatch(e.ministryName, mName)) return false;
+          if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
+          const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+          return entryDate !== '' && entryDate >= '2025-07-01' && entryDate < cycleStartStr;
+        });
+
+        let transitionSettledCount = 0;
+        let transitionSettledAmount = 0;
+        const processedParaIds = new Set<string>();
+
+        transitionEntries.forEach(entry => {
+          if (entry.paragraphs) {
+            entry.paragraphs.forEach(p => {
+              const cleanParaNo = String(p.paraNo || '').trim();
+              const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
+              if (p.id && !processedParaIds.has(p.id) && hasDigit) {
+                processedParaIds.add(p.id);
+                const status = robustNormalize(p.status || '');
+                const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
+                if (status === robustNormalize('পূর্ণাঙ্গ')) { 
+                  transitionSettledCount++; 
+                  transitionSettledAmount += settledAmt;
+                }
+              }
+            });
+          }
+        });
+
+        const unsettledCountJune25 = Math.max(0, ledger.june25Raised - ledger.june25Settled);
+        const totalSettledCount = ledger.june25Settled + transitionSettledCount;
+        const totalUnsettledCount = Math.max(0, ledger.june25Raised - totalSettledCount);
+        const totalUnsettledAmount = Math.max(0, ledger.june25UnsettledAmount - transitionSettledAmount);
+
+        rows.push({
+          sl,
+          ministryName: mName,
+          entityName,
+          june25Raised: ledger.june25Raised,
+          june25Settled: ledger.june25Settled,
+          unsettledCountJune25,
+          june25UnsettledAmount: ledger.june25UnsettledAmount,
+          transitionSettledCount,
+          transitionSettledAmount,
+          totalSettledCount,
+          totalUnsettledCount,
+          totalUnsettledAmount
+        });
+        
+        sl++;
+      });
+    });
+
+    return rows;
+  }, [prevLedgerData, entries, startDate]);
+
+  const prevLedgerGrandTotals = useMemo(() => {
+    return prevLedgerRows.reduce((acc, row) => {
+      acc.june25Raised += row.june25Raised;
+      acc.june25Settled += row.june25Settled;
+      acc.unsettledCountJune25 += row.unsettledCountJune25;
+      acc.june25UnsettledAmount += row.june25UnsettledAmount;
+      acc.transitionSettledCount += row.transitionSettledCount;
+      acc.transitionSettledAmount += row.transitionSettledAmount;
+      acc.totalSettledCount += row.totalSettledCount;
+      acc.totalUnsettledCount += row.totalUnsettledCount;
+      acc.totalUnsettledAmount += row.totalUnsettledAmount;
+      return acc;
+    }, {
+      june25Raised: 0,
+      june25Settled: 0,
+      unsettledCountJune25: 0,
+      june25UnsettledAmount: 0,
+      transitionSettledCount: 0,
+      transitionSettledAmount: 0,
+      totalSettledCount: 0,
+      totalUnsettledCount: 0,
+      totalUnsettledAmount: 0
+    });
+  }, [prevLedgerRows]);
+
+  const downloadPrevLedgerExcel = () => {
+    const tableElement = document.getElementById('prev-ledger-table-modal');
+    if (!tableElement) return;
+
+    const clonedTable = tableElement.cloneNode(true) as HTMLTableElement;
+    const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
+    // Replace inputs with text values in the cloned table
+    const inputs = clonedTable.querySelectorAll('input');
+    inputs.forEach(input => {
+      const parent = input.parentNode;
+      if (parent) {
+        parent.textContent = input.value;
+      }
+    });
+    interactiveElements.forEach(el => el.remove());
+
+    const filename = `পূর্ব_জের_টেবিল_১_${format(new Date(), 'yyyy-MM-dd')}.xls`;
+
+    const template = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Hind Siliguri', sans-serif; }
+          table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+          th, td { border: 1px solid #cbd5e1 !important; padding: 8px 12px !important; text-align: center; font-size: 11px; vertical-align: middle; }
+          th { background-color: #f1f5f9 !important; color: #0f172a !important; font-weight: bold !important; }
+          .bg-slate-200, thead, tfoot { background-color: #e2e8f0 !important; font-weight: bold !important; }
+          tfoot td { background-color: #0f172a !important; color: #ffffff !important; font-weight: bold !important; }
+        </style>
+      </head>
+      <body>
+        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">টেবিল-১ এর পূর্ব জের (জুলাই/২০২৫ হতে ${prevQuarterEnd.monthName}/${prevQuarterEnd.year} পর্যন্ত)</h2>
+        ${clonedTable.outerHTML}
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([template], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const renderPrevLedgerModal = () => {
+    if (!isPrevLedgerOpen) return null;
+
+    return (
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[11000] flex items-center justify-center p-4 animate-in fade-in duration-300 no-print">
+        <div className="bg-white rounded-3xl border-2 border-slate-300 w-full max-w-7xl max-h-[92vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-300">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
+            <div className="text-left">
+              <h2 className="text-[15px] font-black text-slate-900 flex items-center gap-2">
+                <Sparkles size={18} className="text-amber-500" />
+                টেবিল-১ এর পূর্ব জের সেটআপ ও গণনা তালিকা
+              </h2>
+              <p className="text-[10px] font-bold text-slate-500 mt-1">
+                ১৯৭১-৭২ হতে জুন/২০২৫ পর্যন্ত উত্থাপিত ও নিষ্পত্তিকৃত আপত্তির সংখ্যাগুলো ইনপুট দিন। জুলাই/২০২৫ হতে নিষ্পত্তি স্বয়ংক্রিয়ভাবে হিসাব হবে।
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm("আপনি কি নিশ্চিতভাবে সকল পূর্ব জের তথ্য রিসেট করতে চান?")) {
+                    localStorage.removeItem('qr2_table1_prev_ledger_june2025');
+                    const defaults: Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }> = {};
+                    Object.values(QR2_MINISTRY_MAP).forEach(entities => {
+                      entities.forEach(entName => {
+                        const base = getEntityStats(entName);
+                        defaults[entName] = {
+                          june25Raised: (base?.unsettledCount || 0) + (base?.settledCount || 0),
+                          june25Settled: (base?.settledCount || 0),
+                          june25UnsettledAmount: (base?.unsettledAmount || 0)
+                        };
+                      });
+                    });
+                    setPrevLedgerData(defaults);
+                  }
+                }}
+                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl font-black text-[10px] border border-rose-200 transition-all cursor-pointer"
+              >
+                রিসেট করুন
+              </button>
+              <button
+                type="button"
+                onClick={downloadPrevLedgerExcel}
+                className="p-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xl cursor-pointer"
+                title="এক্সেল ফাইল ডাউনলোড করুন"
+              >
+                <FileSpreadsheet size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsPrevLedgerOpen(false)}
+                className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl cursor-pointer border border-slate-200"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          {/* Table Container */}
+          <div className="flex-1 overflow-auto p-6 bg-white">
+            <table id="prev-ledger-table-modal" className="w-full border-separate border-spacing-0 border-l border-t border-slate-400 !table-auto text-center">
+              <thead className="bg-slate-100 sticky top-0 z-10">
+                <tr>
+                  <th className={`${thCls} w-[45px]`} rowSpan={2}>ক্র নং</th>
+                  <th className={`${thCls} w-[150px]`} rowSpan={2}>মন্ত্রণালয়ের নাম</th>
+                  <th className={`${thCls} w-[180px]`} rowSpan={2}>প্রতিষ্ঠানের নাম</th>
+                  <th className={`${thCls} w-[130px]`} colSpan={3}>জুন/২০২৫ পর্যন্ত প্রারম্ভিক জের (ইনপুট)</th>
+                  <th className={`${thCls} w-[240px]`} colSpan={2}>জুলাই/২০২৫ হতে ${prevQuarterEnd.monthName}/${prevQuarterEnd.year} পর্যন্ত নিষ্পত্তি (রেজিস্টার হতে)</th>
+                  <th className={`${thCls} w-[300px]`} colSpan={3}>১৯৭১-৭২ হতে ${prevQuarterEnd.monthName}/${prevQuarterEnd.year} পর্যন্ত মোট সমন্বয়কৃত পূর্ব জের</th>
+                </tr>
+                <tr>
+                  <th className={thCls}>১৯৭১-৭২ হতে জুন/২৫ উত্থাপিত</th>
+                  <th className={thCls}>১৯৭১-৭২ হতে জুন/২৫ নিষ্পত্তিকৃত</th>
+                  <th className={thCls}>জুন/২৫ অমীমাংসিত টাকা</th>
+                  <th className={thCls}>নিষ্পত্তিকৃত সংখ্যা</th>
+                  <th className={thCls}>নিষ্পত্তিকৃত টাকা</th>
+                  <th className={thCls}>মোট নিষ্পত্তিকৃত সংখ্যা</th>
+                  <th className={thCls}>মোট অনিষ্পন্ন সংখ্যা</th>
+                  <th className={thCls}>মোট অনিষ্পন্ন টাকা</th>
+                </tr>
+                <tr className="bg-slate-50 text-[9px] font-black text-slate-500">
+                  {["১", "২", "৩", "৪ (ইনপুট)", "৫ (ইনপুট)", "৬ (ইনপুট)", "৭ (মীমাংসা)", "৮ (মীমাংসা)", "৯=৫+৭", "১০=৪-৯", "১১=৬-৮"].map((l, i) => (
+                    <th key={i} className={thCls + " py-1"}>{l}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {prevLedgerRows.map((row, idx) => {
+                  const showMinistry = idx === 0 || prevLedgerRows[idx - 1].ministryName !== row.ministryName;
+                  const rowSpan = prevLedgerRows.filter(r => r.ministryName === row.ministryName).length;
+
+                  return (
+                    <tr key={row.entityName} className="hover:bg-slate-50 transition-colors">
+                      <td className={numTdCls}>{toBengaliDigits(row.sl.toString())}</td>
+                      {showMinistry && (
+                        <td rowSpan={rowSpan} className={tdCls + " text-[10px] font-black text-center bg-slate-50/10"}>
+                          {row.ministryName}
+                        </td>
+                      )}
+                      <td className={tdCls + " text-[10px] font-bold text-left"}>{row.entityName}</td>
+                      
+                      {/* Input fields */}
+                      <td className="border-r border-b border-slate-400 p-1 bg-amber-50/20">
+                        <input
+                          type="text"
+                          className="w-full text-center font-black text-xs bg-amber-50/30 hover:bg-amber-100/40 focus:bg-white border border-amber-200 hover:border-amber-300 focus:border-blue-500 rounded px-1.5 py-1 text-slate-900 outline-none transition-all"
+                          value={row.june25Raised === 0 ? '' : toBengaliDigits(row.june25Raised.toString())}
+                          placeholder="০"
+                          onChange={e => {
+                            const val = parseBengaliNumber(e.target.value);
+                            handleInputChange(row.entityName, 'june25Raised', val);
+                          }}
+                        />
+                      </td>
+                      <td className="border-r border-b border-slate-400 p-1 bg-amber-50/20">
+                        <input
+                          type="text"
+                          className="w-full text-center font-black text-xs bg-amber-50/30 hover:bg-amber-100/40 focus:bg-white border border-amber-200 hover:border-amber-300 focus:border-blue-500 rounded px-1.5 py-1 text-slate-900 outline-none transition-all"
+                          value={row.june25Settled === 0 ? '' : toBengaliDigits(row.june25Settled.toString())}
+                          placeholder="০"
+                          onChange={e => {
+                            const val = parseBengaliNumber(e.target.value);
+                            handleInputChange(row.entityName, 'june25Settled', val);
+                          }}
+                        />
+                      </td>
+                      <td className="border-r border-b border-slate-400 p-1 bg-amber-50/20">
+                        <input
+                          type="text"
+                          className="w-full text-center font-black text-xs bg-amber-50/30 hover:bg-amber-100/40 focus:bg-white border border-amber-200 hover:border-amber-300 focus:border-blue-500 rounded px-1.5 py-1 text-slate-900 outline-none transition-all"
+                          value={row.june25UnsettledAmount === 0 ? '' : toBengaliDigits(row.june25UnsettledAmount.toString())}
+                          placeholder="০"
+                          onChange={e => {
+                            const val = parseBengaliNumber(e.target.value);
+                            handleInputChange(row.entityName, 'june25UnsettledAmount', val);
+                          }}
+                        />
+                      </td>
+
+                      {/* Read only calculated transition values */}
+                      <td className={numTdCls + " bg-slate-50 text-slate-700 font-bold"}>
+                        {formatNumberSimple(row.transitionSettledCount)}
+                      </td>
+                      <td className={numTdCls + " bg-slate-50 text-emerald-700 font-extrabold"}>
+                        {row.transitionSettledAmount === 0 ? '০' : formatNumberSimple(row.transitionSettledAmount)}
+                      </td>
+
+                      {/* Cumulative balances */}
+                      <td className={numTdCls + " bg-blue-50/10 font-bold text-slate-900"}>
+                        {formatNumberSimple(row.totalSettledCount)}
+                      </td>
+                      <td className={numTdCls + " bg-blue-50/20 font-black text-blue-900"}>
+                        {formatNumberSimple(row.totalUnsettledCount)}
+                      </td>
+                      <td className={numTdCls + " bg-blue-50/30 font-extrabold text-slate-900"}>
+                        {row.totalUnsettledAmount === 0 ? '০' : formatNumberSimple(row.totalUnsettledAmount)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="bg-slate-200 font-extrabold text-[10px] text-slate-900">
+                  <td className={footerTdCls} colSpan={3}>সর্বমোট</td>
+                  <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Raised)}</td>
+                  <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Settled)}</td>
+                  <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25UnsettledAmount)}</td>
+                  <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.transitionSettledCount)}</td>
+                  <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.transitionSettledAmount)}</td>
+                  <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.totalSettledCount)}</td>
+                  <td className={footerNumTdCls + " text-blue-900"}>{formatNumberSimple(prevLedgerGrandTotals.totalUnsettledCount)}</td>
+                  <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.totalUnsettledAmount)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          {/* Footer controls */}
+          <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setIsPrevLedgerOpen(false)}
+              className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs transition-all cursor-pointer shadow-lg active:scale-95 border-b-4 border-blue-800"
+            >
+              সংরক্ষণ করুন ও বন্ধ করুন
+            </button>
+          </div>
+
+        </div>
+      </div>
+    );
+  };
+
   const formatNumberSimple = (val: number | undefined | null) => {
     if (val === undefined || val === null || val === 0) return '০';
     return toBengaliDigits(Math.round(val).toString());
@@ -276,26 +656,26 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       const matchMinistry = filterMinistry === '' || robustNormalize(mName).includes(robustNormalize(filterMinistry));
       
       const entityDataList = entities.map(entityName => {
-        const base = getEntityStats(entityName);
+        const ledger = prevLedgerData[entityName] || { june25Raised: 0, june25Settled: 0, june25UnsettledAmount: 0 };
 
-        // Filter past entries for this entity and ministry
-        const pastEntries = entries.filter(e => {
+        // Filter past entries (transition period from July 1, 2025 up to cycle start date)
+        const transitionEntries = entries.filter(e => {
           if (!isEntityMatch(e.entityName, entityName)) return false;
           if (!isMinistryMatch(e.ministryName, mName)) return false;
           if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
           const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
-          return entryDate !== '' && entryDate < cycleStartStr && entryDate >= ENTRY_START_DATE;
+          return entryDate !== '' && entryDate >= '2025-07-01' && entryDate < cycleStartStr;
         });
 
-        let pastRC = 0, pastRA = 0, pastSC = 0, pastSA = 0;
+        let transitionRC = 0, transitionRA = 0, transitionSC = 0, transitionSA = 0;
         const processedPastParaIds = new Set<string>();
 
-        pastEntries.forEach(entry => {
+        transitionEntries.forEach(entry => {
           const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
           if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
-            pastRC += parseBengaliNumber(rCountRaw);
+            transitionRC += parseBengaliNumber(rCountRaw);
           }
-          if (entry.manualRaisedAmount) pastRA += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
+          if (entry.manualRaisedAmount) transitionRA += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
 
           if (entry.paragraphs) {
             entry.paragraphs.forEach(p => {
@@ -306,8 +686,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 const status = robustNormalize(p.status || '');
                 const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
                 if (status === robustNormalize('পূর্ণাঙ্গ')) { 
-                  pastSC++; 
-                  pastSA += settledAmt;
+                  transitionSC++; 
+                  transitionSA += settledAmt;
                 }
               }
             });
@@ -355,15 +735,15 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           }
         });
 
-        const col4 = Math.max(0, (base?.unsettledCount || 0) + pastRC);
+        const col4 = ledger.june25Raised + transitionRC;
         const col5 = cCount;
         const col6 = col4 + col5;
-        const col7 = Math.max(0, (base?.settledCount || 0) + pastSC);
+        const col7 = ledger.june25Settled + transitionSC;
         const col8 = cSettled;
         const col9 = col7 + col8;
         const col10 = col6 - col9;
         const col11 = cSettledAmount;
-        const col12 = Math.max(0, (base?.unsettledAmount || 0) + pastRA + cRaisedAmount - pastSA - cSettledAmount);
+        const col12 = Math.max(0, ledger.june25UnsettledAmount + transitionRA + cRaisedAmount - transitionSA - cSettledAmount);
 
         return {
           entityName,
@@ -396,7 +776,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     });
 
     return processedGroups;
-  }, [entries, prevStats, searchTerm, filterMinistry, startDate, endDate, customTitle]);
+  }, [entries, prevLedgerData, searchTerm, filterMinistry, startDate, endDate, customTitle]);
 
   const details1Totals = useMemo(() => {
     const t = { col4: 0, col5: 0, col6: 0, col7: 0, col8: 0, col9: 0, col10: 0, col11: 0, col12: 0 };
@@ -704,10 +1084,19 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         </div>
 
         {/* Outer Visual Container / Elegant Report Title Section */}
-        <div className="flex items-center justify-between border-b-[3px] border-double border-slate-900 pb-2 mb-3 px-1">
+        <div className="flex items-center justify-between border-b-[3px] border-double border-slate-900 pb-2 mb-3 px-1 flex-wrap gap-2">
           <h1 className="text-[14px] md:text-[15px] font-black text-slate-900 leading-tight">
             {getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত অডিট আপত্তির ত্রৈমাসিক রিটার্ন
           </h1>
+          <div className="flex items-center gap-2 no-print">
+            <button
+              type="button"
+              onClick={() => setIsPrevLedgerOpen(true)}
+              className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 hover:shadow-md border border-amber-600 hover:border-amber-700 rounded-lg font-black text-xs transition-all duration-300 select-none cursor-pointer"
+            >
+              পূর্ব জের
+            </button>
+          </div>
           <span className="text-[14px] md:text-[15px] font-black text-slate-900">
             নন-এসএফআই
           </span>
@@ -897,6 +1286,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             </tfoot>
           </table>
         </div>
+        {renderPrevLedgerModal()}
       </div>
     );
   }
