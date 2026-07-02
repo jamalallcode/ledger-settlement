@@ -371,6 +371,60 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     return rows;
   }, [prevLedgerData, entries, startDate]);
 
+  const handlePaste = (
+    e: React.ClipboardEvent<HTMLInputElement>,
+    startRowIndex: number,
+    startColField: 'june25Raised' | 'june25Settled' | 'june25UnsettledAmount'
+  ) => {
+    const text = e.clipboardData.getData('text');
+    if (!text.includes('\t') && !text.includes('\n')) {
+      return;
+    }
+
+    e.preventDefault();
+
+    const pastedRows = text
+      .split(/\r?\n/)
+      .map(row => row.split('\t'))
+      .filter(row => row.length > 0 && !(row.length === 1 && row[0] === ''));
+
+    if (pastedRows.length === 0) return;
+
+    const fields: Array<'june25Raised' | 'june25Settled' | 'june25UnsettledAmount'> = [
+      'june25Raised',
+      'june25Settled',
+      'june25UnsettledAmount'
+    ];
+    const startColIndex = fields.indexOf(startColField);
+
+    const updated = { ...prevLedgerData };
+
+    for (let r = 0; r < pastedRows.length; r++) {
+      const rowIndex = startRowIndex + r;
+      if (rowIndex >= prevLedgerRows.length) break;
+
+      const entityName = prevLedgerRows[rowIndex].entityName;
+      if (!entityName) continue;
+
+      const pastedCols = pastedRows[r];
+      for (let c = 0; c < pastedCols.length; c++) {
+        const colIndex = startColIndex + c;
+        if (colIndex >= fields.length) break;
+
+        const field = fields[colIndex];
+        const rawValue = pastedCols[c].trim();
+        const value = parseBengaliNumber(rawValue);
+
+        if (!updated[entityName]) {
+          updated[entityName] = { june25Raised: 0, june25Settled: 0, june25UnsettledAmount: 0 };
+        }
+        updated[entityName][field] = value;
+      }
+    }
+
+    handleSavePrevLedger(updated);
+  };
+
   const prevLedgerGrandTotals = useMemo(() => {
     return prevLedgerRows.reduce((acc, row) => {
       acc.june25Raised += row.june25Raised;
@@ -506,122 +560,127 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           </div>
 
           {/* Table Container */}
-          <div className="flex-1 overflow-auto p-6 bg-white">
-            <table id="prev-ledger-table-modal" className="w-full border-separate border-spacing-0 border-l border-t border-slate-400 !table-auto text-center">
-              <thead className="bg-slate-100 sticky top-0 z-10">
-                <tr>
-                  <th className={`${thCls} w-[45px]`} rowSpan={2}>ক্র নং</th>
-                  <th className={`${thCls} w-[150px]`} rowSpan={2}>মন্ত্রণালয়ের নাম</th>
-                  <th className={`${thCls} w-[180px]`} rowSpan={2}>প্রতিষ্ঠানের নাম</th>
-                  <th className={`${thCls} w-[130px]`} colSpan={3}>জুন/২০২৫ পর্যন্ত প্রারম্ভিক জের (ইনপুট)</th>
-                  <th className={`${thCls} w-[240px]`} colSpan={2}>জুলাই/২০২৫ হতে ${prevQuarterEnd.monthName}/${prevQuarterEnd.year} পর্যন্ত নিষ্পত্তি (রেজিস্টার হতে)</th>
-                  <th className={`${thCls} w-[300px]`} colSpan={3}>১৯৭১-৭২ হতে ${prevQuarterEnd.monthName}/${prevQuarterEnd.year} পর্যন্ত মোট সমন্বয়কৃত পূর্ব জের</th>
-                </tr>
-                <tr>
-                  <th className={thCls}>১৯৭১-৭২ হতে জুন/২৫ উত্থাপিত</th>
-                  <th className={thCls}>১৯৭১-৭২ হতে জুন/২৫ নিষ্পত্তিকৃত</th>
-                  <th className={thCls}>জুন/২৫ অমীমাংসিত টাকা</th>
-                  <th className={thCls}>নিষ্পত্তিকৃত সংখ্যা</th>
-                  <th className={thCls}>নিষ্পত্তিকৃত টাকা</th>
-                  <th className={thCls}>মোট নিষ্পত্তিকৃত সংখ্যা</th>
-                  <th className={thCls}>মোট অনিষ্পন্ন সংখ্যা</th>
-                  <th className={thCls}>মোট অনিষ্পন্ন টাকা</th>
-                </tr>
-                <tr className="bg-slate-50 text-[9px] font-black text-slate-500">
-                  {["১", "২", "৩", "৪ (ইনপুট)", "৫ (ইনপুট)", "৬ (ইনপুট)", "৭ (মীমাংসা)", "৮ (মীমাংসা)", "৯=৫+৭", "১০=৪-৯", "১১=৬-৮"].map((l, i) => (
-                    <th key={i} className={thCls + " py-1"}>{l}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {prevLedgerRows.map((row, idx) => {
-                  const showMinistry = idx === 0 || prevLedgerRows[idx - 1].ministryName !== row.ministryName;
-                  const rowSpan = prevLedgerRows.filter(r => r.ministryName === row.ministryName).length;
+          <div className="flex-1 overflow-auto bg-white relative">
+            <div className="p-6 pt-0">
+              <table id="prev-ledger-table-modal" className="w-full border-separate border-spacing-0 border-l border-t border-slate-400 !table-auto text-center">
+                <thead className="bg-slate-100 sticky top-0 z-20 shadow-sm">
+                  <tr>
+                    <th className={`${thCls} w-[45px]`} rowSpan={2}>ক্র নং</th>
+                    <th className={`${thCls} w-[150px]`} rowSpan={2}>মন্ত্রণালয়ের নাম</th>
+                    <th className={`${thCls} w-[180px]`} rowSpan={2}>প্রতিষ্ঠানের নাম</th>
+                    <th className={`${thCls} w-[130px]`} colSpan={3}>জুন/২০২৫ পর্যন্ত প্রারম্ভিক জের (ইনপুট)</th>
+                    <th className={`${thCls} w-[240px]`} colSpan={2}>জুলাই/২০২৫ হতে ${prevQuarterEnd.monthName}/${prevQuarterEnd.year} পর্যন্ত নিষ্পত্তি (রেজিস্টার হতে)</th>
+                    <th className={`${thCls} w-[300px]`} colSpan={3}>১৯৭১-৭২ হতে ${prevQuarterEnd.monthName}/${prevQuarterEnd.year} পর্যন্ত মোট সমন্বয়কৃত পূর্ব জের</th>
+                  </tr>
+                  <tr>
+                    <th className={thCls}>১৯৭১-৭২ হতে জুন/২৫ উত্থাপিত</th>
+                    <th className={thCls}>১৯৭১-৭২ হতে জুন/২৫ নিষ্পত্তিকৃত</th>
+                    <th className={thCls}>জুন/২৫ অমীমাংসিত টাকা</th>
+                    <th className={thCls}>নিষ্পত্তিকৃত সংখ্যা</th>
+                    <th className={thCls}>নিষ্পত্তিকৃত টাকা</th>
+                    <th className={thCls}>মোট নিষ্পত্তিকৃত সংখ্যা</th>
+                    <th className={thCls}>মোট অনিষ্পন্ন সংখ্যা</th>
+                    <th className={thCls}>মোট অনিষ্পন্ন টাকা</th>
+                  </tr>
+                  <tr className="bg-slate-50 text-[9px] font-black text-slate-500">
+                    {["১", "২", "৩", "৪ (ইনপুট)", "৫ (ইনপুট)", "৬ (ইনপুট)", "৭ (মীমাংসা)", "৮ (মীমাংসা)", "৯=৫+৭", "১০=৪-৯", "১১=৬-৮"].map((l, i) => (
+                      <th key={i} className={thCls + " py-1"}>{l}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {prevLedgerRows.map((row, idx) => {
+                    const showMinistry = idx === 0 || prevLedgerRows[idx - 1].ministryName !== row.ministryName;
+                    const rowSpan = prevLedgerRows.filter(r => r.ministryName === row.ministryName).length;
 
-                  return (
-                    <tr key={row.entityName} className="hover:bg-slate-50 transition-colors">
-                      <td className={numTdCls}>{toBengaliDigits(row.sl.toString())}</td>
-                      {showMinistry && (
-                        <td rowSpan={rowSpan} className={tdCls + " text-[10px] font-black text-center bg-slate-50/10"}>
-                          {row.ministryName}
+                    return (
+                      <tr key={row.entityName} className="hover:bg-slate-50 transition-colors">
+                        <td className={numTdCls}>{toBengaliDigits(row.sl.toString())}</td>
+                        {showMinistry && (
+                          <td rowSpan={rowSpan} className={tdCls + " text-[10px] font-black text-center bg-slate-50/10"}>
+                            {row.ministryName}
+                          </td>
+                        )}
+                        <td className={tdCls + " text-[10px] font-bold text-left"}>{row.entityName}</td>
+                        
+                        {/* Input fields with copy-paste listeners */}
+                        <td className="border-r border-b border-slate-400 p-1 bg-amber-50/20">
+                          <input
+                            type="text"
+                            className="w-full text-center font-black text-xs bg-amber-50/30 hover:bg-amber-100/40 focus:bg-white border border-amber-200 hover:border-amber-300 focus:border-blue-500 rounded px-1.5 py-1 text-slate-900 outline-none transition-all"
+                            value={row.june25Raised === 0 ? '' : toBengaliDigits(row.june25Raised.toString())}
+                            placeholder="০"
+                            onChange={e => {
+                              const val = parseBengaliNumber(e.target.value);
+                              handleInputChange(row.entityName, 'june25Raised', val);
+                            }}
+                            onPaste={e => handlePaste(e, idx, 'june25Raised')}
+                          />
                         </td>
-                      )}
-                      <td className={tdCls + " text-[10px] font-bold text-left"}>{row.entityName}</td>
-                      
-                      {/* Input fields */}
-                      <td className="border-r border-b border-slate-400 p-1 bg-amber-50/20">
-                        <input
-                          type="text"
-                          className="w-full text-center font-black text-xs bg-amber-50/30 hover:bg-amber-100/40 focus:bg-white border border-amber-200 hover:border-amber-300 focus:border-blue-500 rounded px-1.5 py-1 text-slate-900 outline-none transition-all"
-                          value={row.june25Raised === 0 ? '' : toBengaliDigits(row.june25Raised.toString())}
-                          placeholder="০"
-                          onChange={e => {
-                            const val = parseBengaliNumber(e.target.value);
-                            handleInputChange(row.entityName, 'june25Raised', val);
-                          }}
-                        />
-                      </td>
-                      <td className="border-r border-b border-slate-400 p-1 bg-amber-50/20">
-                        <input
-                          type="text"
-                          className="w-full text-center font-black text-xs bg-amber-50/30 hover:bg-amber-100/40 focus:bg-white border border-amber-200 hover:border-amber-300 focus:border-blue-500 rounded px-1.5 py-1 text-slate-900 outline-none transition-all"
-                          value={row.june25Settled === 0 ? '' : toBengaliDigits(row.june25Settled.toString())}
-                          placeholder="০"
-                          onChange={e => {
-                            const val = parseBengaliNumber(e.target.value);
-                            handleInputChange(row.entityName, 'june25Settled', val);
-                          }}
-                        />
-                      </td>
-                      <td className="border-r border-b border-slate-400 p-1 bg-amber-50/20">
-                        <input
-                          type="text"
-                          className="w-full text-center font-black text-xs bg-amber-50/30 hover:bg-amber-100/40 focus:bg-white border border-amber-200 hover:border-amber-300 focus:border-blue-500 rounded px-1.5 py-1 text-slate-900 outline-none transition-all"
-                          value={row.june25UnsettledAmount === 0 ? '' : toBengaliDigits(row.june25UnsettledAmount.toString())}
-                          placeholder="০"
-                          onChange={e => {
-                            const val = parseBengaliNumber(e.target.value);
-                            handleInputChange(row.entityName, 'june25UnsettledAmount', val);
-                          }}
-                        />
-                      </td>
+                        <td className="border-r border-b border-slate-400 p-1 bg-amber-50/20">
+                          <input
+                            type="text"
+                            className="w-full text-center font-black text-xs bg-amber-50/30 hover:bg-amber-100/40 focus:bg-white border border-amber-200 hover:border-amber-300 focus:border-blue-500 rounded px-1.5 py-1 text-slate-900 outline-none transition-all"
+                            value={row.june25Settled === 0 ? '' : toBengaliDigits(row.june25Settled.toString())}
+                            placeholder="০"
+                            onChange={e => {
+                              const val = parseBengaliNumber(e.target.value);
+                              handleInputChange(row.entityName, 'june25Settled', val);
+                            }}
+                            onPaste={e => handlePaste(e, idx, 'june25Settled')}
+                          />
+                        </td>
+                        <td className="border-r border-b border-slate-400 p-1 bg-amber-50/20">
+                          <input
+                            type="text"
+                            className="w-full text-center font-black text-xs bg-amber-50/30 hover:bg-amber-100/40 focus:bg-white border border-amber-200 hover:border-amber-300 focus:border-blue-500 rounded px-1.5 py-1 text-slate-900 outline-none transition-all"
+                            value={row.june25UnsettledAmount === 0 ? '' : toBengaliDigits(row.june25UnsettledAmount.toString())}
+                            placeholder="০"
+                            onChange={e => {
+                              const val = parseBengaliNumber(e.target.value);
+                              handleInputChange(row.entityName, 'june25UnsettledAmount', val);
+                            }}
+                            onPaste={e => handlePaste(e, idx, 'june25UnsettledAmount')}
+                          />
+                        </td>
 
-                      {/* Read only calculated transition values */}
-                      <td className={numTdCls + " bg-slate-50 text-slate-700 font-bold"}>
-                        {formatNumberSimple(row.transitionSettledCount)}
-                      </td>
-                      <td className={numTdCls + " bg-slate-50 text-emerald-700 font-extrabold"}>
-                        {row.transitionSettledAmount === 0 ? '০' : formatNumberSimple(row.transitionSettledAmount)}
-                      </td>
+                        {/* Read only calculated transition values */}
+                        <td className={numTdCls + " bg-slate-50 text-slate-700 font-bold"}>
+                          {formatNumberSimple(row.transitionSettledCount)}
+                        </td>
+                        <td className={numTdCls + " bg-slate-50 text-emerald-700 font-extrabold"}>
+                          {row.transitionSettledAmount === 0 ? '০' : formatNumberSimple(row.transitionSettledAmount)}
+                        </td>
 
-                      {/* Cumulative balances */}
-                      <td className={numTdCls + " bg-blue-50/10 font-bold text-slate-900"}>
-                        {formatNumberSimple(row.totalSettledCount)}
-                      </td>
-                      <td className={numTdCls + " bg-blue-50/20 font-black text-blue-900"}>
-                        {formatNumberSimple(row.totalUnsettledCount)}
-                      </td>
-                      <td className={numTdCls + " bg-blue-50/30 font-extrabold text-slate-900"}>
-                        {row.totalUnsettledAmount === 0 ? '০' : formatNumberSimple(row.totalUnsettledAmount)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              <tfoot>
-                <tr className="bg-slate-200 font-extrabold text-[10px] text-slate-900">
-                  <td className={footerTdCls} colSpan={3}>সর্বমোট</td>
-                  <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Raised)}</td>
-                  <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Settled)}</td>
-                  <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25UnsettledAmount)}</td>
-                  <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.transitionSettledCount)}</td>
-                  <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.transitionSettledAmount)}</td>
-                  <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.totalSettledCount)}</td>
-                  <td className={footerNumTdCls + " text-blue-900"}>{formatNumberSimple(prevLedgerGrandTotals.totalUnsettledCount)}</td>
-                  <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.totalUnsettledAmount)}</td>
-                </tr>
-              </tfoot>
-            </table>
+                        {/* Cumulative balances */}
+                        <td className={numTdCls + " bg-blue-50/10 font-bold text-slate-900"}>
+                          {formatNumberSimple(row.totalSettledCount)}
+                        </td>
+                        <td className={numTdCls + " bg-blue-50/20 font-black text-blue-900"}>
+                          {formatNumberSimple(row.totalUnsettledCount)}
+                        </td>
+                        <td className={numTdCls + " bg-blue-50/30 font-extrabold text-slate-900"}>
+                          {row.totalUnsettledAmount === 0 ? '০' : formatNumberSimple(row.totalUnsettledAmount)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-slate-200 font-extrabold text-[10px] text-slate-900">
+                    <td className={footerTdCls} colSpan={3}>সর্বমোট</td>
+                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Raised)}</td>
+                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Settled)}</td>
+                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25UnsettledAmount)}</td>
+                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.transitionSettledCount)}</td>
+                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.transitionSettledAmount)}</td>
+                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.totalSettledCount)}</td>
+                    <td className={footerNumTdCls + " text-blue-900"}>{formatNumberSimple(prevLedgerGrandTotals.totalUnsettledCount)}</td>
+                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.totalUnsettledAmount)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
 
           {/* Footer controls */}
