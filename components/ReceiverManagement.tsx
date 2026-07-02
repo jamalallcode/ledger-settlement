@@ -794,14 +794,14 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-bold text-[13px] sm:text-sm truncate text-slate-700">
-                          {profile.name} 
-                          {isInactive && (
-                            <span className="text-red-600 font-extrabold ml-1.5 text-xs sm:text-[13px] inline-block">
-                              (বদলী: {profile.transferred_to || 'অন্যত্র'})
-                            </span>
-                          )}
+                        <span className={`font-bold text-[13px] sm:text-sm ${isInactive ? 'text-slate-400 line-through font-normal' : 'text-slate-700'}`}>
+                          {profile.name}
                         </span>
+                        {isInactive && (
+                          <span className="text-red-600 font-extrabold ml-1 text-xs sm:text-[13px] inline-block">
+                            (বদলী: {profile.transferred_to || 'অন্যত্র'}) (নিষ্ক্রিয়)
+                          </span>
+                        )}
                         {profile.entryCount !== undefined && profile.entryCount > 0 && (
                           <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] sm:text-[9px] font-black rounded-full border border-blue-100">
                             {toBengaliDigits(profile.entryCount.toString())}টি চিঠিপত্র
