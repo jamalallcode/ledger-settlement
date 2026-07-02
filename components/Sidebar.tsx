@@ -179,6 +179,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isSettlementExpanded, setIsSettlementExpanded] = useState(false);
   const [isOnlineExpanded, setIsOnlineExpanded] = useState(false);
   const [isQuarterlyExpanded, setIsQuarterlyExpanded] = useState(false);
+  const [isDetailedExpanded, setIsDetailedExpanded] = useState(false);
   const [isSetupExpanded, setIsSetupExpanded] = useState(false);
   
   // Auto-expand based on activeTab
@@ -186,7 +187,11 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (activeTab === 'entry') setIsEntryExpanded(true);
     if (activeTab === 'register') setIsRegisterExpanded(true);
     if (activeTab === 'return') setIsReturnExpanded(true);
-  }, [activeTab]);
+    if (reportType?.startsWith('ত্রৈমাসিক রিটার্ন - বিস্তারিত -')) {
+      setIsDetailedExpanded(true);
+      setIsQuarterlyExpanded(true);
+    }
+  }, [activeTab, reportType]);
 
   // Disable admin portal access completely if user is logged in with another account or is unauthorized
   useEffect(() => {
@@ -713,6 +718,43 @@ const Sidebar: React.FC<SidebarProps> = ({
                               >
                                 দ্বিপক্ষীয়
                               </button>
+
+                              {/* বিস্তারিত এবং এর ৬টি সাব-আইটেম */}
+                              <button 
+                                onClick={() => setIsDetailedExpanded(!isDetailedExpanded)}
+                                className={`w-full flex items-center justify-between px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${isDetailedExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                              >
+                                <div className="flex items-center gap-1.5">
+                                  <span>বিস্তারিত</span>
+                                </div>
+                                <ChevronDown size={6} className={`transition-transform duration-300 ${isDetailedExpanded ? 'rotate-180' : ''}`} />
+                              </button>
+
+                              <AnimatePresence>
+                                {isDetailedExpanded && (
+                                  <motion.div 
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                                    className="pl-3 py-1 space-y-1 overflow-hidden"
+                                  >
+                                    {['১', '২', '৩', '৪', '৫', '৬'].map((num) => {
+                                      const key = `ত্রৈমাসিক রিটার্ন - বিস্তারিত - ${num}`;
+                                      const isSelected = reportType === key;
+                                      return (
+                                        <button 
+                                          key={num}
+                                          onClick={() => setActiveTab('return', null, key)}
+                                          className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${isSelected ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                        >
+                                          বিস্তারিত - {num}
+                                        </button>
+                                      );
+                                    })}
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
                             </motion.div>
                           )}
                         </AnimatePresence>

@@ -15,9 +15,11 @@ interface QRProps {
   searchTerm?: string;
   filterMinistry?: string;
   monthPickerElement?: React.ReactNode;
+  customTitle?: string;
+  paraType?: 'এসএফআই' | 'নন এসএফআই';
 }
 
-const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', monthPickerElement }) => {
+const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', monthPickerElement, customTitle, paraType = 'এসএফআই' }) => {
   // Standard calendar quarter date calculation:
   // Quarters: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec)
   // Each quarter start date is the 16th of the month preceding the quarter's start month.
@@ -85,7 +87,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       `;
     });
 
-    const filename = `ত্রৈমাসিক_রিটার্ন_৪_${format(new Date(), 'yyyy-MM-dd')}.xls`;
+    const filename = `${(customTitle || 'ত্রৈমাসিক_রিটার্ন_৪').replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.xls`;
 
     const template = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -118,7 +120,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         </style>
       </head>
       <body>
-        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">ত্রৈমাসিক রিটার্ন - ৪</h2>
+        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">${customTitle || 'ত্রৈমাসিক রিটার্ন - ৪'}</h2>
         ${tablesHtml}
       </body>
       </html>
@@ -154,7 +156,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
   const processData = (isFI: boolean) => {
     const map = new Map<string, any>();
-    const paraType = 'এসএফআই';
+    const targetParaType = paraType;
     const cycleStartStr = dateFnsFormat(startDate, 'yyyy-MM-dd');
 
     // Initialize with all entities from MINISTRY_ENTITY_MAP
@@ -165,12 +167,12 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         const key = `${mName}|${entityName}`;
         
         // Calculate recursive opening for this entity
-        const baseMap = prevStats.entitiesSFI || {};
+        const baseMap = targetParaType === 'এসএফআই' ? (prevStats.entitiesSFI || {}) : (prevStats.entitiesNonSFI || {});
         const base = baseMap[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
         
         const pastEntries = entries.filter(e => {
           if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
-          if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
+          if (robustNormalize(e.paraType || '') !== robustNormalize(targetParaType)) return false;
           const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
           return entryDate !== '' && entryDate < cycleStartStr && entryDate >= ENTRY_START_DATE;
         });
@@ -217,7 +219,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
     // Process entries for the current range
     entries.forEach(e => {
-      if (robustNormalize(e.paraType) !== robustNormalize(paraType)) return;
+      if (robustNormalize(e.paraType) !== robustNormalize(targetParaType)) return;
       if (isFI !== isFinancialInstitution(e.ministryName)) return;
 
       const key = `${e.ministryName}|${e.entityName}`;
@@ -410,7 +412,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       <div className="text-center mb-3 pt-1 relative z-[260]">
         <div className="inline-block relative">
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">
-            ত্রৈমাসিক রিটার্ন - ৪
+            {customTitle || "ত্রৈমাসিক রিটার্ন - ৪"}
           </h1>
 
           {/* Date Range Pill */}
@@ -418,7 +420,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 border border-blue-100 rounded-full shadow-sm scale-95 origin-center">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
               <span className="text-blue-700 font-bold text-[12px]">
-                ত্রৈমাসিক রিটার্ন - ৪ | {activeCycle.label}
+                {customTitle || "ত্রৈমাসিক রিটার্ন - ৪"} | {activeCycle.label}
               </span>
             </div>
             {monthPickerElement && (
@@ -438,7 +440,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       <div className="mb-3 text-[11px] font-bold text-slate-800 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-t border-slate-200 py-1.5 px-2 bg-slate-50/50 rounded-lg">
         <p><span className="text-slate-500">বিষয়ঃ</span> অডিট আপত্তির ত্রৈমাসিক রিটার্ন</p>
         <span className="text-slate-300 hidden md:inline font-normal">|</span>
-        <p className="shrink-0"><span className="text-slate-500">কালিমাঃ</span> এসএফআই শাখা</p>
+        <p className="shrink-0"><span className="text-slate-500">কালিমাঃ</span> {paraType === 'এসএফআই' ? 'এসএফআই শাখা' : 'নন এসএফআই শাখা'}</p>
         <span className="text-slate-300 hidden md:inline font-normal">|</span>
         <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
       </div>

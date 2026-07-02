@@ -13,9 +13,11 @@ interface QRProps {
   searchTerm?: string;
   filterMinistry?: string;
   monthPickerElement?: React.ReactNode;
+  customTitle?: string;
+  paraType?: 'এসএফআই' | 'নন এসএফআই';
 }
 
-const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', monthPickerElement }) => {
+const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', monthPickerElement, customTitle, paraType = 'এসএফআই' }) => {
   // Standard calendar quarter date calculation:
   // Quarters: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec)
   // Each quarter start date is the 16th of the month preceding the quarter's start month.
@@ -82,7 +84,7 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       `;
     });
 
-    const filename = `ত্রৈমাসিক_রিটার্ন_৫_${format(new Date(), 'yyyy-MM-dd')}.xls`;
+    const filename = `${(customTitle || 'ত্রৈমাসিক_রিটার্ন_৫').replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.xls`;
 
     const template = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -115,7 +117,7 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
         </style>
       </head>
       <body>
-        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">ত্রৈমাসিক রিটার্ন - ৫</h2>
+        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">${customTitle || 'ত্রৈমাসিক রিটার্ন - ৫'}</h2>
         ${tablesHtml}
       </body>
       </html>
@@ -147,8 +149,8 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     const ministryMap = new Map<string, any>();
 
     entries.forEach(e => {
-      // Filter by SFI
-      if (robustNormalize(e.paraType) !== robustNormalize('এসএফআই')) return;
+      // Filter by SFI / Non-SFI
+      if (robustNormalize(e.paraType) !== robustNormalize(paraType)) return;
 
       // Filter by Date Range (Issue Date)
       const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
@@ -190,7 +192,7 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       const matchSearch = searchTerm === '' || robustNormalize(row.name).toLowerCase().includes(searchTerm.toLowerCase());
       return matchMinistry && matchSearch;
     });
-  }, [entries, startDate, endDate, filterMinistry, searchTerm]);
+  }, [entries, startDate, endDate, filterMinistry, searchTerm, paraType]);
 
   const totals = useMemo(() => filteredData.reduce((acc, curr) => ({
     amount: acc.amount + curr.amount,
@@ -229,7 +231,7 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       <div className="text-center mb-3 pt-1 relative z-[260]">
         <div className="inline-block relative">
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">
-            ত্রৈমাসিক রিটার্ন - ৫
+            {customTitle || "ত্রৈমাসিক রিটার্ন - ৫"}
           </h1>
 
           {/* Date Range Pill */}
@@ -237,7 +239,7 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
             <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 border border-blue-100 rounded-full shadow-sm scale-95 origin-center">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
               <span className="text-blue-700 font-bold text-[12px]">
-                ত্রৈমাসিক রিটার্ন - ৫ | {activeCycle.label}
+                {customTitle || "ত্রৈমাসিক রিটার্ন - ৫"} | {activeCycle.label}
               </span>
             </div>
             {monthPickerElement && (
@@ -257,7 +259,7 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       <div className="mb-3 text-[11px] font-bold text-slate-800 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-t border-slate-200 py-1.5 px-2 bg-slate-50/50 rounded-lg">
         <p><span className="text-slate-500">বিষয়ঃ</span> অডিট আপত্তির ফলে আদায়কৃত/সমন্বয়কৃত অর্থের ত্রৈমাসিক প্রতিবেদন</p>
         <span className="text-slate-300 hidden md:inline font-normal">|</span>
-        <p className="shrink-0"><span className="text-slate-500">শাখাঃ</span> এসএফআই শাখা</p>
+        <p className="shrink-0"><span className="text-slate-500">শাখাঃ</span> {paraType === 'এসএফআই' ? 'এসএফআই শাখা' : 'নন এসএফআই শাখা'}</p>
         <span className="text-slate-300 hidden md:inline font-normal">|</span>
         <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
       </div>

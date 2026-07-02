@@ -337,7 +337,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     const base = baseMap[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
     
     let filteredPotential = [...entries, ...correspondenceEntries];
-    if (selectedReportType?.includes('বিএসআর')) {
+    if (selectedReportType?.includes('বিএসআর') || selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১') {
       filteredPotential = filteredPotential.filter(e => {
         const meetingType = e.meetingType || e.letterType || '';
         return !e.isMeeting || meetingType.includes('বিএসআর');
@@ -461,7 +461,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           });
 
           let filteredMatching = matchingEntries;
-          if (selectedReportType.includes('বিএসআর')) {
+          if (selectedReportType.includes('বিএসআর') || selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১') {
             filteredMatching = filteredMatching.filter(e => {
               const meetingType = e.meetingType || e.letterType || '';
               return !e.isMeeting || meetingType.includes('বিএসআর');
@@ -692,7 +692,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           });
 
           let filteredMatching = matchingEntries;
-          if (targetReportType.includes('বিএসআর')) {
+          if (targetReportType.includes('বিএসআর') || targetReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১') {
             filteredMatching = filteredMatching.filter(e => {
               const meetingType = e.meetingType || e.letterType || '';
               return !e.isMeeting || meetingType.includes('বিএসআর');
@@ -1052,6 +1052,37 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     renderedContent = <QR_1 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') {
     renderedContent = <QR_2 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১') {
+    renderedContent = <QR_2 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ১" />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২') {
+    renderedContent = <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ২" />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩') {
+    renderedContent = <QR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৩" paraType="নন এসএফআই" />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৪') {
+    renderedContent = <QR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৪" paraType="এসএফআই" />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৫') {
+    renderedContent = <QR_5 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৫" paraType="নন এসএফআই" />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৬') {
+    renderedContent = <QR_6 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৬" paraType="নন এসএফআই" />;
+  } else if (selectedReportType?.startsWith('ত্রৈমাসিক রিটার্ন - বিস্তারিত -')) {
+    const num = selectedReportType.split(' - ').pop();
+    renderedContent = (
+      <div className="max-w-4xl mx-auto my-10 p-10 bg-white rounded-2xl border border-slate-100 shadow-xl text-center">
+        <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 text-amber-500 animate-pulse">
+          <Sparkles size={40} />
+        </div>
+        <h2 className="text-3xl font-black text-slate-800 mb-3">বিস্তারিত - {num}</h2>
+        <p className="text-slate-500 font-bold mb-8 max-w-md mx-auto leading-relaxed">
+          এই টেবিল বা ছকটির কাজ আপাতত বন্ধ রয়েছে। আপনার পরবর্তী নির্দেশনার অপেক্ষায় প্রস্তুত রাখা হচ্ছে। অন্য টেবিলের কাজ করতে বললে তা এখানে যুক্ত করা হবে।
+        </p>
+        <button 
+          onClick={() => setSelectedReportType(null)}
+          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-2 mx-auto cursor-pointer"
+        >
+          <ChevronLeft size={16} /> পেছনে ফিরুন
+        </button>
+      </div>
+    );
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') {
     renderedContent = <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') {

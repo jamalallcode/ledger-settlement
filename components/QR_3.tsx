@@ -15,9 +15,10 @@ interface QRProps {
   searchTerm?: string;
   filterMinistry?: string;
   monthPickerElement?: React.ReactNode;
+  customTitle?: string;
 }
 
-const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', monthPickerElement }) => {
+const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', monthPickerElement, customTitle }) => {
   // Standard calendar quarter date calculation:
   // Quarters: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec)
   // Each quarter start date is the 16th of the month preceding the quarter's start month.
@@ -85,7 +86,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       `;
     });
 
-    const filename = `ত্রৈমাসিক_রিটার্ন_৩_${format(new Date(), 'yyyy-MM-dd')}.xls`;
+    const filename = `${(customTitle || 'ত্রৈমাসিক_রিটার্ন_৩').replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.xls`;
 
     const template = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -118,7 +119,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         </style>
       </head>
       <body>
-        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">ত্রৈমাসিক রিটার্ন - ৩</h2>
+        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">${customTitle || 'ত্রৈমাসিক রিটার্ন - ৩'}</h2>
         ${tablesHtml}
       </body>
       </html>
@@ -416,7 +417,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       <div className="text-center mb-3 pt-1 relative z-[260]">
         <div className="inline-block relative">
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">
-            ত্রৈমাসিক রিটার্ন - ৩
+            {customTitle || "ত্রৈমাসিক রিটার্ন - ৩"}
           </h1>
 
           {/* Date Range Pill */}
@@ -424,7 +425,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 border border-blue-100 rounded-full shadow-sm scale-95 origin-center">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
               <span className="text-blue-700 font-bold text-[12px]">
-                ত্রৈমাসিক রিটার্ন - ৩ | {activeCycle.label}
+                {customTitle || "ত্রৈমাসিক রিটার্ন - ৩"} | {activeCycle.label}
               </span>
             </div>
             {monthPickerElement && (
