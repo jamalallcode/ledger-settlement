@@ -337,7 +337,16 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     const base = baseMap[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
     
     let filteredPotential = [...entries, ...correspondenceEntries];
-    if (selectedReportType?.includes('বিএসআর') || selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১') {
+    if (selectedReportType?.startsWith('ত্রৈমাসিক রিটার্ন')) {
+      filteredPotential = filteredPotential.filter(e => {
+        const mType = robustNormalize(e.meetingType || e.letterType || '');
+        return mType.includes(robustNormalize('বিএসআর')) || 
+               mType.includes(robustNormalize('দ্বিপক্ষীয়')) || 
+               mType.includes(robustNormalize('দ্বিপাক্ষিক')) || 
+               mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
+               e.isMeeting;
+      });
+    } else if (selectedReportType?.includes('বিএসআর')) {
       filteredPotential = filteredPotential.filter(e => {
         const meetingType = e.meetingType || e.letterType || '';
         return !e.isMeeting || meetingType.includes('বিএসআর');
@@ -461,7 +470,16 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           });
 
           let filteredMatching = matchingEntries;
-          if (selectedReportType.includes('বিএসআর') || selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১') {
+          if (selectedReportType?.startsWith('ত্রৈমাসিক রিটার্ন')) {
+            filteredMatching = filteredMatching.filter(e => {
+              const mType = robustNormalize(e.meetingType || e.letterType || '');
+              return mType.includes(robustNormalize('বিএসআর')) || 
+                     mType.includes(robustNormalize('দ্বিপক্ষীয়')) || 
+                     mType.includes(robustNormalize('দ্বিপাক্ষিক')) || 
+                     mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
+                     e.isMeeting;
+            });
+          } else if (selectedReportType.includes('বিএসআর')) {
             filteredMatching = filteredMatching.filter(e => {
               const meetingType = e.meetingType || e.letterType || '';
               return !e.isMeeting || meetingType.includes('বিএসআর');
@@ -692,7 +710,16 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           });
 
           let filteredMatching = matchingEntries;
-          if (targetReportType.includes('বিএসআর') || targetReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১') {
+          if (targetReportType?.startsWith('ত্রৈমাসিক রিটার্ন')) {
+            filteredMatching = filteredMatching.filter(e => {
+              const mType = robustNormalize(e.meetingType || e.letterType || '');
+              return mType.includes(robustNormalize('বিএসআর')) || 
+                     mType.includes(robustNormalize('দ্বিপক্ষীয়')) || 
+                     mType.includes(robustNormalize('দ্বিপাক্ষিক')) || 
+                     mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
+                     e.isMeeting;
+            });
+          } else if (targetReportType.includes('বিএসআর')) {
             filteredMatching = filteredMatching.filter(e => {
               const meetingType = e.meetingType || e.letterType || '';
               return !e.isMeeting || meetingType.includes('বিএসআর');
