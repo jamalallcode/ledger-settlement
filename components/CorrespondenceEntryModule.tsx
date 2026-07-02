@@ -687,6 +687,17 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               is_active = true;
             }
           }
+
+          // Specific override for Shamima Shahrin / Shamira Shahrin transfer (Non-SFI to SFI)
+          const normNoSpaces = norm.replace(/\s+/g, '');
+          if (normNoSpaces === 'শামীমাশাহরিন' || normNoSpaces === 'শামীরাশাহরিন') {
+            if (rBranchClean === 'নন এসএফআই') {
+              is_active = false;
+            } else if (rBranchClean === 'এসএফআই') {
+              is_active = true;
+            }
+          }
+
           return { ...r, is_active };
         }).filter(r => {
           if (r.is_active !== false) return true;
@@ -740,6 +751,17 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           } else {
             is_active = true;
           }
+
+          // Specific override for Shamima Shahrin / Shamira Shahrin transfer (Non-SFI to SFI)
+          const normNoSpaces = norm.replace(/\s+/g, '');
+          if (normNoSpaces === 'শামীমাশাহরিন' || normNoSpaces === 'শামীরাশাহরিন') {
+            if (rBranchClean === 'নন এসএফআই') {
+              is_active = false;
+            } else if (rBranchClean === 'এসএফআই') {
+              is_active = true;
+            }
+          }
+
           return { ...r, is_active };
         }).filter(r => {
           if (r.is_active !== false) return true;

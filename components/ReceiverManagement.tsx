@@ -335,7 +335,19 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
           }
         }
 
-        const transferred_to = r.transferred_to || transfersMap[compKey] || '';
+        let transferred_to = r.transferred_to || transfersMap[compKey] || '';
+
+        // Specific override for Shamima Shahrin / Shamira Shahrin transfer (Non-SFI to SFI)
+        const normNoSpaces = norm.replace(/\s+/g, '');
+        if (normNoSpaces === 'শামীমাশাহরিন' || normNoSpaces === 'শামীরাশাহরিন') {
+          if (b === 'নন এসএফআই') {
+            is_active = false;
+            transferred_to = 'এসএফআই শাখা';
+          } else if (b === 'এসএফআই') {
+            is_active = true;
+            transferred_to = '';
+          }
+        }
 
         return {
           ...r,
@@ -346,8 +358,14 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
           entryDetails: entryDetails[compKey] || []
         };
       }).filter(r => {
+        const norm = normalizeName(r.name);
+        const normNoSpaces = norm.replace(/\s+/g, '');
+        const isTargetUser = normNoSpaces === 'শামীমাশাহরিন' || normNoSpaces === 'শামীরাশাহরিন';
+        if (isTargetUser && getCleanBranch(r.para_type) === 'এসএফআই') return true;
+
         if (r.source === 'database') return true;
         if (r.entryCount > 0) return true;
+        if (r.source === 'local') return true;
         return false;
       });
 
@@ -776,11 +794,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
               return (
                 <div 
                   key={idx} 
-                  className={`group flex items-center justify-between p-3.5 border rounded-2xl transition-all duration-300 ${
-                    isInactive 
-                      ? 'bg-rose-50/30 border-rose-100 hover:bg-rose-50/50' 
-                      : `bg-slate-50 border-slate-100 ${themes.borderTheme} hover:bg-blue-50/10`
-                  }`}
+                  className={`group flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-300 ${isInactive ? 'bg-rose-50/45 border-rose-200 shadow-sm shadow-rose-50/20 opacity-90' : 'bg-slate-50 border-slate-100 hover:bg-blue-50/10'} ${themes.borderTheme}`}
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     <div className="w-10 sm:w-11 h-10 sm:h-11 bg-white border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
@@ -794,12 +808,12 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`font-bold text-[13px] sm:text-sm ${isInactive ? 'text-slate-400 line-through font-normal' : 'text-slate-700'}`}>
-                          {profile.name}
+                        <span className={`font-bold text-[13px] sm:text-sm truncate ${isInactive ? 'text-slate-400 line-through font-normal' : 'text-slate-700'}`}>
+                          {profile.name} {isInactive && <span className="text-rose-500 font-bold ml-1 no-underline inline-block">(বদলী হয়েছেন)</span>}
                         </span>
                         {isInactive && (
-                          <span className="text-red-600 font-extrabold ml-1 text-xs sm:text-[13px] inline-block">
-                            (বদলী: {profile.transferred_to || 'অন্যত্র'}) (নিষ্ক্রিয়)
+                          <span className="px-1.5 py-0.5 bg-rose-50 text-rose-600 text-[8px] font-black rounded border border-rose-100 uppercase tracking-wider shrink-0 flex items-center gap-1">
+                            বদলি / নিষ্ক্রিয় {profile.transferred_to ? `(${profile.transferred_to})` : ''}
                           </span>
                         )}
                         {profile.entryCount !== undefined && profile.entryCount > 0 && (
