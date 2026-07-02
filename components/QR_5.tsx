@@ -226,7 +226,7 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       </div>
 
       {/* Header Section */}
-      <div className="text-center mb-3 pt-1">
+      <div className="text-center mb-3 pt-1 relative z-[260]">
         <div className="inline-block relative">
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">
             ত্রৈমাসিক রিটার্ন - ৫
@@ -260,8 +260,6 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
         <p className="shrink-0"><span className="text-slate-500">শাখাঃ</span> এসএফআই শাখা</p>
         <span className="text-slate-300 hidden md:inline font-normal">|</span>
         <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
-        <span className="text-slate-300 hidden md:inline font-normal">|</span>
-        <p><span className="text-slate-500">সময়সীমাঃ</span> {getMonthNameBN(startDate)}/{formatYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatYearBN(endDate)} পর্যন্ত</p>
       </div>
 
       <div className="table-container qr-table-container overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg">

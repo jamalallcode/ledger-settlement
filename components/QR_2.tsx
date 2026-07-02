@@ -250,7 +250,7 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       </div>
 
       {/* Header Section */}
-      <div className="text-center mb-3 pt-1">
+      <div className="text-center mb-3 pt-1 relative z-[260]">
         <div className="inline-block relative">
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">
             ত্রৈমাসিক রিটার্ন - ২
@@ -291,8 +291,6 @@ const QR_2: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
           <p><span className="text-slate-500">শাখাঃ</span> নন এসএফআই শাখা</p>
           <span className="text-slate-300 hidden md:inline font-normal">|</span>
           <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
-          <span className="text-slate-300 hidden md:inline font-normal">|</span>
-          <p><span className="text-slate-500">সময়সীমাঃ</span> {getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} খ্রিঃ</p>
         </div>
 
         {/* Statistics Button (Lowered into subject bar) */}

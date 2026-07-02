@@ -407,7 +407,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       </div>
 
       {/* Header Section */}
-      <div className="text-center mb-3 pt-1">
+      <div className="text-center mb-3 pt-1 relative z-[260]">
         <div className="inline-block relative">
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">
             ত্রৈমাসিক রিটার্ন - ৪
@@ -441,8 +441,6 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         <p className="shrink-0"><span className="text-slate-500">কালিমাঃ</span> এসএফআই শাখা</p>
         <span className="text-slate-300 hidden md:inline font-normal">|</span>
         <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
-        <span className="text-slate-300 hidden md:inline font-normal">|</span>
-        <p><span className="text-slate-500">সময়সীমাঃ</span> {getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত</p>
       </div>
 
       {renderTable(filteredTable1Data, 'table-1')}
@@ -451,8 +449,6 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         <p><span className="text-slate-500">বিষয়ঃ</span> অডিট আপত্তির ত্রৈমাসিক রিটার্ন</p>
         <span className="text-slate-300 hidden md:inline font-normal">|</span>
         <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
-        <span className="text-slate-300 hidden md:inline font-normal">|</span>
-        <p><span className="text-slate-500">সময়সীমাঃ</span> {getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত</p>
       </div>
       {renderTable(filteredTable2Data, 'table-2')}
 
