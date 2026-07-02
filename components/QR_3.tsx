@@ -356,7 +356,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                         </td>
                       )}
                       <td className={tdCls}>
-                        <HighlightText text={ent.name} searchTerm={searchTerm} />
+                        <HighlightText text={ent.entityName} searchTerm={searchTerm} />
                       </td>
                       <td className={numTdCls}>{toBengaliDigits(ent.pCount.toString())}</td>
                       <td className={numTdCls}>{toBengaliDigits(ent.pAmount.toString())}</td>
