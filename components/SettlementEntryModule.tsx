@@ -37,7 +37,7 @@ const IDBadge = ({ id }: { id: string }) => (
 const SegmentedInput = ({ 
   id, icon: Icon, label, color, noValue, dayValue, monthValue, yearValue, 
   noSetter, daySetter, monthSetter, yearSetter, dayRef, monthRef, yearRef, 
-  isFocused, focusSetter, extra, error, warning 
+  isFocused, focusSetter, extra, error, warning, num 
 }: any) => {
   const datePickerRef = useRef<HTMLInputElement>(null);
   
@@ -70,7 +70,7 @@ const SegmentedInput = ({
 
   return (
     <div id={id} className={colWrapperCls + ` ${error ? 'bg-red-50 border-red-200' : (warning ? 'bg-amber-50 border-amber-200' : `bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`)}`}>
-      <label className={labelCls + " truncate"}><span className={numBadge}>{toBengaliDigits(id.split('-')[1].replace(/[ab]/g, ''))}</span> <Icon size={14} className={`${error ? 'text-red-600' : (warning ? 'text-amber-600' : `text-${color}-600`)} shrink-0`} /> <span className="truncate">{label}</span></label>
+      <label className={labelCls + " truncate"}><span className={numBadge}>{num || toBengaliDigits(id.split('-')[1].replace(/[ab]/g, ''))}</span> <Icon size={14} className={`${error ? 'text-red-600' : (warning ? 'text-amber-600' : `text-${color}-600`)} shrink-0`} /> <span className="truncate">{label}</span></label>
       <div className={`relative w-full h-[55px] flex items-center border-2 rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : (warning ? 'border-amber-400 ring-4 ring-amber-50' : (isFilled ? 'border-emerald-500 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50' : 'border-red-500 focus-within:border-red-400 focus-within:ring-4 focus-within:ring-red-50'))}`}>
         {extra}
         <div className="flex items-center w-full px-2 sm:px-4 h-full">
@@ -235,6 +235,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     isOnline: 'না',
     remarks: '',
     meetingDate: '',
+    meetingResponseDate: '',
     manualRaisedCount: null as string | null,
     manualRaisedAmount: null as number | null
   });
@@ -257,6 +258,10 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [wpMonth, setWpMonth] = useState('');
   const [wpYear, setWpYear] = useState('');
 
+  const [mrDay, setMrDay] = useState('');
+  const [mrMonth, setMrMonth] = useState('');
+  const [mrYear, setMrYear] = useState('');
+
   const [diaryNoPart, setDiaryNoPart] = useState('');
   const [diaryDay, setDiaryDay] = useState('');
   const [diaryMonth, setDiaryMonth] = useState('');
@@ -271,6 +276,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [isLetterFocused, setIsLetterFocused] = useState(false);
   const [isWpFocused, setIsWpFocused] = useState(false);
   const [isDiaryFocused, setIsDiaryFocused] = useState(false);
+  const [isMrFocused, setIsMrFocused] = useState(false);
 
   const missingNumbersWarning = useMemo(() => {
     return !letterNoPart.trim() && !diaryNoPart.trim() && !issueNoPart.trim();
@@ -328,6 +334,9 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const wpDayRef = useRef<HTMLInputElement>(null);
   const wpMonthRef = useRef<HTMLInputElement>(null);
   const wpYearRef = useRef<HTMLInputElement>(null);
+  const mrDayRef = useRef<HTMLInputElement>(null);
+  const mrMonthRef = useRef<HTMLInputElement>(null);
+  const mrYearRef = useRef<HTMLInputElement>(null);
   const diaryDayRef = useRef<HTMLInputElement>(null);
   const diaryMonthRef = useRef<HTMLInputElement>(null);
   const diaryYearRef = useRef<HTMLInputElement>(null);
@@ -388,6 +397,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         isOnline: (initialEntry as any).isOnline || initialEntry.isSentOnline || 'না',
         remarks: initialEntry.remarks || '',
         meetingDate: initialEntry.meetingDate || '',
+        meetingResponseDate: initialEntry.meetingResponseDate || '',
         manualRaisedCount: initialEntry.manualRaisedCount || null,
         manualRaisedAmount: initialEntry.manualRaisedAmount || null
       });
@@ -397,6 +407,26 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
       const f8 = extractSegments(initialEntry.meetingWorkpaper, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-');
       setWpNoPart(f8.no); setWpDay(f8.d); setWpMonth(f8.m); setWpYear(f8.y);
+
+      if (initialEntry.meetingResponseDate) {
+        const cleanDate = toEnglishDigits(initialEntry.meetingResponseDate);
+        const parts = cleanDate.split(/[\/\-]/);
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            setMrDay(toBengaliDigits(parts[2]));
+            setMrMonth(toBengaliDigits(parts[1]));
+            setMrYear(toBengaliDigits(parts[0]));
+          } else {
+            setMrDay(toBengaliDigits(parts[0]));
+            setMrMonth(toBengaliDigits(parts[1]));
+            setMrYear(toBengaliDigits(parts[2]));
+          }
+        } else {
+          setMrDay(''); setMrMonth(''); setMrYear('');
+        }
+      } else {
+        setMrDay(''); setMrMonth(''); setMrYear('');
+      }
 
       const f10 = extractSegments(initialEntry.workpaperNoDate, 'ডায়েরি নং-', 'ডায়েরির তারিখ-');
       setDiaryNoPart(f10.no); setDiaryDay(f10.d); setDiaryMonth(f10.m); setDiaryYear(f10.y);
@@ -467,6 +497,15 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   useEffect(() => {
     setFormData(prev => ({ ...prev, meetingWorkpaper: buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-') }));
   }, [wpNoPart, wpDay, wpMonth, wpYear]);
+
+  useEffect(() => {
+    const day = mrDay ? (toEnglishDigits(mrDay).length === 1 ? '0' + toEnglishDigits(mrDay) : toEnglishDigits(mrDay)) : '';
+    const month = mrMonth ? (toEnglishDigits(mrMonth).length === 1 ? '0' + toEnglishDigits(mrMonth) : toEnglishDigits(mrMonth)) : '';
+    let year = toEnglishDigits(mrYear);
+    if (year.length === 2) year = '20' + year;
+    const formattedDate = (day && month && year.length === 4) ? `${toBengaliDigits(day)}/${toBengaliDigits(month)}/${toBengaliDigits(year)}` : '';
+    setFormData(prev => ({ ...prev, meetingResponseDate: formattedDate }));
+  }, [mrDay, mrMonth, mrYear]);
 
   /* useMemo added to track values for validation */
   const currentDiaryISO = useMemo(() => getIsoFromSegments(diaryDay, diaryMonth, diaryYear), [diaryDay, diaryMonth, diaryYear]);
@@ -712,11 +751,13 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       isOnline: 'না',
       remarks: '',
       meetingDate: '',
+      meetingResponseDate: '',
       manualRaisedCount: null as string | null,
       manualRaisedAmount: null as number | null
     });
     setLetterNoPart(''); setLetterDay(''); setLetterMonth(''); setLetterYear('');
     setWpNoPart(''); setWpDay(''); setWpMonth(''); setWpYear('');
+    setMrDay(''); setMrMonth(''); setMrYear('');
     setDiaryNoPart(''); setDiaryDay(''); setDiaryMonth(''); setDiaryYear('');
     setIssueNoPart(''); setDayPart(''); setMonthPart(''); setYearPart('');
     setParagraphs([]);
@@ -1153,6 +1194,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                   />
                 </div>
                 <SegmentedInput id="field-22b" icon={FileEdit} num="২২.খ" label="কার্যপত্র তারিখ" color="purple" noValue="DATE_ONLY" dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} noSetter={()=>{}} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} isFocused={isWpFocused} focusSetter={setIsWpFocused} />
+                <SegmentedInput id="field-22c" icon={Calendar} num="২২.গ" label="কার্যবিবরণী প্রাপ্তির তারিখ" color="purple" noValue="DATE_ONLY" dayValue={mrDay} monthValue={mrMonth} yearValue={mrYear} noSetter={()=>{}} daySetter={setMrDay} monthSetter={setMrMonth} yearSetter={setMrYear} dayRef={mrDayRef} monthRef={mrMonthRef} yearRef={mrYearRef} isFocused={isMrFocused} focusSetter={setIsMrFocused} />
               </>
             )}
           </div>
