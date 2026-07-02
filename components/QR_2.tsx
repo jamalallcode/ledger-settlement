@@ -42,8 +42,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       quarterEndMonth = 11;  // Dec
     }
 
-    const start = new Date(quarterStartMonth === 0 ? quarterYear - 1 : quarterYear, quarterStartMonth === 0 ? 11 : quarterStartMonth - 1, 16);
-    const end = new Date(quarterYear, quarterEndMonth, 15);
+    const start = new Date(quarterYear, quarterStartMonth, 1);
+    const end = new Date(quarterYear, quarterEndMonth + 1, 0);
     
     const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
     const startMonthName = months[quarterStartMonth];
@@ -1192,14 +1192,14 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 <th className={`${thCls} w-[150px]`}>মন্ত্রণালয়ের নাম</th>
                 <th className={`${thCls} w-[200px]`}>প্রতিষ্ঠানের নাম</th>
                 <th className={`${thCls} w-[140px]`}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{prevQuarterEnd.year} মাস পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত মোট উত্থাপিত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{prevQuarterEnd.year} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত অডিটর ও নিরীক্ষিত প্রতিষ্ঠানের যৌথ আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[150px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত নিষ্পত্তিকৃত আপত্তিতে জড়িত টাকা</th>
-                <th className={`${thCls} w-[150px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
+                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
+                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত মোট উত্থাপিত আপত্তির সংখ্যা</th>
+                <th className={`${thCls} w-[140px]`}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{toBengaliDigits(format(startDate, 'yy'))} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
+                <th className={`${thCls} w-[150px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত নিষ্পত্তিকৃত আপত্তিতে জড়িত টাকা</th>
+                <th className={`${thCls} w-[150px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
                 <th className={`${thCls} w-[100px] rounded-none`}>মন্তব্য</th>
               </tr>
               <tr className="h-[28px]">
@@ -1277,14 +1277,14 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 <th className={`${thCls} w-[150px]`}>মন্ত্রণালয়ের নাম</th>
                 <th className={`${thCls} w-[200px]`}>প্রতিষ্ঠানের নাম</th>
                 <th className={`${thCls} w-[140px]`}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{prevQuarterEnd.year} মাস পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত মোট উত্থাপিত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{prevQuarterEnd.year} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত অডিটর ও নিরীক্ষিত প্রতিষ্ঠানের যৌথ আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[150px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত নিষ্পত্তিকৃত আপত্তিতে জড়িত টাকা</th>
-                <th className={`${thCls} w-[150px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
+                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
+                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত মোট উত্থাপিত আপত্তির সংখ্যা</th>
+                <th className={`${thCls} w-[140px]`}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{toBengaliDigits(format(startDate, 'yy'))} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
+                <th className={`${thCls} w-[150px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত নিষ্পত্তিকৃত আপত্তিতে জড়িত টাকা</th>
+                <th className={`${thCls} w-[150px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
                 <th className={`${thCls} w-[100px] rounded-none`}>মন্তব্য</th>
               </tr>
               <tr className="h-[28px]">

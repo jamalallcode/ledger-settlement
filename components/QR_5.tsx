@@ -43,8 +43,8 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       quarterEndMonth = 11;  // Dec
     }
 
-    const start = new Date(quarterStartMonth === 0 ? quarterYear - 1 : quarterYear, quarterStartMonth === 0 ? 11 : quarterStartMonth - 1, 16);
-    const end = new Date(quarterYear, quarterEndMonth, 15);
+    const start = new Date(quarterYear, quarterStartMonth, 1);
+    const end = new Date(quarterYear, quarterEndMonth + 1, 0);
     
     const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
     const startMonthName = months[quarterStartMonth];
