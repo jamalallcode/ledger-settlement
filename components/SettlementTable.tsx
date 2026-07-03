@@ -787,7 +787,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             )}
 
             {/* ADDITIONAL FIELDS - SHOWING BSR VS MEETING FIELDS SPECIFICALLY */}
-            <div className="mt-3 pt-3 border-t-2 border-dashed border-slate-300 space-y-2">
+            <div className="mt-3 space-y-2">
               <div className="bg-blue-50/50 p-2 rounded-lg border border-blue-100/80 mb-2">
                 <p className="text-[9px] font-black text-blue-800 uppercase tracking-wider flex items-center gap-1">
                   <Sparkles size={10} className="text-blue-600 animate-pulse" /> অতিরিক্ত তথ্য বিবরণী ({(entry.isMeeting || entry.meetingType !== "বিএসআর") ? "২১ ফিল্ড" : "১৭ ফিল্ড"})
@@ -1644,7 +1644,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           >
             <colgroup>
               <col className="w-[30px]" />
-              <col className="w-[170px]" />
+              <col className="w-[150px]" />
               <col className="w-[45px]" />
               <col className="w-[65px]" />
               <col className="w-[40px]" />
