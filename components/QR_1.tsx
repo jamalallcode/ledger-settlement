@@ -174,8 +174,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     
     const settledAmount = curr.paragraphs && curr.paragraphs.length > 0
       ? curr.paragraphs
-          .filter(p => p.status === 'পূর্ণাঙ্গ')
-          .reduce((sum, p) => sum + (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0), 0)
+          .reduce((sum, p) => sum + (p.status === 'পূর্ণাঙ্গ' ? (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0) : ((p.recoveredAmount + p.adjustedAmount) || 0)), 0)
       : (curr.involvedAmount || 0);
 
     return {
@@ -360,8 +359,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                   {toBengaliDigits(
                     (row.paragraphs && row.paragraphs.length > 0
                       ? row.paragraphs
-                          .filter((p: any) => p.status === 'পূর্ণাঙ্গ')
-                          .reduce((sum: number, p: any) => sum + (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0), 0)
+                          .reduce((sum: number, p: any) => sum + (p.status === 'পূর্ণাঙ্গ' ? (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0) : ((p.recoveredAmount + p.adjustedAmount) || 0)), 0)
                       : (row.involvedAmount || 0)
                     ).toString()
                   )}

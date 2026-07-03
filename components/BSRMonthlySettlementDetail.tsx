@@ -118,8 +118,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
 
       const settledAmountValue = curr.paragraphs && curr.paragraphs.length > 0
         ? curr.paragraphs
-            .filter(p => p.status === 'পূর্ণাঙ্গ')
-            .reduce((sum, p) => sum + (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0), 0)
+            .reduce((sum, p) => sum + (p.status === 'পূর্ণাঙ্গ' ? (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0) : ((p.recoveredAmount + p.adjustedAmount) || 0)), 0)
         : (curr.involvedAmount || 0);
 
       const involvedAmount = acc.involvedAmount + settledAmountValue;
@@ -604,8 +603,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                         {formatAmountBengali(
                           row.paragraphs && row.paragraphs.length > 0
                             ? row.paragraphs
-                                .filter(p => p.status === 'পূর্ণাঙ্গ')
-                                .reduce((sum, p) => sum + (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0), 0)
+                                .reduce((sum, p) => sum + (p.status === 'পূর্ণাঙ্গ' ? (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0) : ((p.recoveredAmount + p.adjustedAmount) || 0)), 0)
                             : (row.involvedAmount || 0)
                         )}
                       </td>
