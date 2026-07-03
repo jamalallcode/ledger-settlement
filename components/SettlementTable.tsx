@@ -715,7 +715,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             )}
             <p className="text-[10px] leading-tight">
               <span className="font-black text-emerald-700">{getSerial()}. শাখা ধরণ:</span>{" "}
-              <span className="font-bold text-slate-900 bg-slate-100 px-1 py-0.5 rounded">{entry.paraType || "-"}</span>
+              <span className="font-bold text-slate-900">{entry.paraType || "-"}</span>
             </p>
             <p className="text-[10px] leading-tight">
               <span className="font-black text-emerald-700">{getSerial()}. চিঠির ধরণ:</span>{" "}
