@@ -697,9 +697,9 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       const calculatedUnsettledAmount = (formData.totalInvolvedAmount || 0) - totalSettledAmount;
       
       const combinedLetter = buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear, 'পত্র নং-', 'পত্রের তারিখ-');
-      const combinedDiary = buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear, 'ডায়েরি নং-', 'ডায়েরির তারিখ-');
-      const combinedIssue = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
-      const combinedWp = buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-');
+      const combinedDiary = formData.meetingType === 'বিএসআর' ? buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear, 'ডায়েরি নং-', 'ডায়েরির তারিখ-') : '';
+      const combinedIssue = formData.meetingType === 'বিএসআর' ? buildCombinedString(issueNoPart, dayPart, monthPart, yearPart, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-') : '';
+      const combinedWp = formData.meetingType !== 'বিএসআর' ? buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-') : '';
 
       const finalData = {
         ...formData, 
@@ -707,6 +707,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         issueLetterNoDate: combinedIssue,
         workpaperNoDate: combinedDiary,
         meetingWorkpaper: combinedWp,
+        meetingDate: formData.meetingType === 'বিএসআর' ? '' : formData.meetingDate,
+        meetingResponseDate: formData.meetingType === 'বিএসআর' ? '' : formData.meetingResponseDate,
         meetingFullSettledParaCount: summaryData.fullCount.toString(),
         meetingPartialSettledParaCount: summaryData.partialCount.toString(),
         meetingSettledParaCount: summaryData.fullCount.toString(),
@@ -1029,69 +1031,73 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             </div>
             <SegmentedInput id="field-7b" icon={Calendar} label="পত্রের তারিখ" color="amber" noValue="DATE_ONLY" dayValue={letterDay} monthValue={letterMonth} yearValue={letterYear} noSetter={()=>{}} daySetter={setLetterDay} monthSetter={setLetterMonth} yearSetter={setLetterYear} dayRef={letterDayRef} monthRef={letterMonthRef} yearRef={letterYearRef} isFocused={isLetterFocused} focusSetter={setIsLetterFocused} />
 
-            <div id="field-8a" className={`${colWrapperCls} ${duplicates.diaryNo ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50/70 border-emerald-100'}`}>
-              <label className={labelCls}><span className={numBadge}>{toBengaliDigits('৮.ক')}</span> <Hash size={14} className="text-emerald-600 shrink-0" /> ডায়েরি নং:</label>
-              <input 
-                type="text" 
-                className={duplicates.diaryNo ? `${inputBaseCls} border-amber-500 ring-4 ring-amber-50` : getDynamicInputCls(diaryNoPart)} 
-                value={diaryNoPart} 
-                onChange={e => setDiaryNoPart(toBengaliDigits(e.target.value))} 
-                placeholder="নং লিখুন"
-              />
-              {duplicates.diaryNo && (
-                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center justify-between gap-1">
-                  <div className="flex items-center gap-1">
-                    <AlertCircle size={10} /> এই ডায়েরি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => navigateToEntry?.(duplicates.diaryEntryId!, 'settlement', diaryNoPart)}
-                    className="text-amber-700 hover:text-amber-900 underline underline-offset-2 flex items-center gap-1"
-                  >
-                    দেখুন <ArrowRightCircle size={10} />
-                  </button>
+            {formData.meetingType === 'বিএসআর' && (
+              <>
+                <div id="field-8a" className={`${colWrapperCls} ${duplicates.diaryNo ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50/70 border-emerald-100'}`}>
+                  <label className={labelCls}><span className={numBadge}>{toBengaliDigits('৮.ক')}</span> <Hash size={14} className="text-emerald-600 shrink-0" /> ডায়েরি নং:</label>
+                  <input 
+                    type="text" 
+                    className={duplicates.diaryNo ? `${inputBaseCls} border-amber-500 ring-4 ring-amber-50` : getDynamicInputCls(diaryNoPart)} 
+                    value={diaryNoPart} 
+                    onChange={e => setDiaryNoPart(toBengaliDigits(e.target.value))} 
+                    placeholder="নং লিখুন"
+                  />
+                  {duplicates.diaryNo && (
+                    <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1">
+                        <AlertCircle size={10} /> এই ডায়েরি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => navigateToEntry?.(duplicates.diaryEntryId!, 'settlement', diaryNoPart)}
+                        className="text-amber-700 hover:text-amber-900 underline underline-offset-2 flex items-center gap-1"
+                      >
+                        দেখুন <ArrowRightCircle size={10} />
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <SegmentedInput id="field-8b" icon={Calendar} label="ডায়েরি তারিখ" color="emerald" noValue="DATE_ONLY" dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryYear} noSetter={()=>{}} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} error={diaryDateError} />
+                <SegmentedInput id="field-8b" icon={Calendar} label="ডায়েরি তারিখ" color="emerald" noValue="DATE_ONLY" dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryYear} noSetter={()=>{}} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} error={diaryDateError} />
 
-            <div id="field-9a" className={`${colWrapperCls} ${duplicates.issueNo ? 'bg-amber-50 border-amber-200' : 'bg-amber-50/70 border-amber-100'}`}>
-              <label className={labelCls}><span className={numBadge}>{toBengaliDigits('৯.ক')}</span> <Hash size={14} className="text-amber-600 shrink-0" /> জারিপত্র নং:</label>
-              <input 
-                type="text" 
-                className={duplicates.issueNo ? `${inputBaseCls} border-amber-500 ring-4 ring-amber-50` : getDynamicInputCls(issueNoPart)} 
-                value={issueNoPart} 
-                onChange={e => setIssueNoPart(toBengaliDigits(e.target.value))} 
-                placeholder="নং লিখুন"
-              />
-              {duplicates.issueNo && (
-                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center justify-between gap-1">
-                  <div className="flex items-center gap-1">
-                    <AlertCircle size={10} /> এই জারিপত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => navigateToEntry?.(duplicates.issueEntryId!, 'settlement', issueNoPart)}
-                    className="text-amber-700 hover:text-amber-900 underline underline-offset-2 flex items-center gap-1"
-                  >
-                    দেখুন <ArrowRightCircle size={10} />
-                  </button>
+                <div id="field-9a" className={`${colWrapperCls} ${duplicates.issueNo ? 'bg-amber-50 border-amber-200' : 'bg-amber-50/70 border-amber-100'}`}>
+                  <label className={labelCls}><span className={numBadge}>{toBengaliDigits('৯.ক')}</span> <Hash size={14} className="text-amber-600 shrink-0" /> জারিপত্র নং:</label>
+                  <input 
+                    type="text" 
+                    className={duplicates.issueNo ? `${inputBaseCls} border-amber-500 ring-4 ring-amber-50` : getDynamicInputCls(issueNoPart)} 
+                    value={issueNoPart} 
+                    onChange={e => setIssueNoPart(toBengaliDigits(e.target.value))} 
+                    placeholder="নং লিখুন"
+                  />
+                  {duplicates.issueNo && (
+                    <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1">
+                        <AlertCircle size={10} /> এই জারিপত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => navigateToEntry?.(duplicates.issueEntryId!, 'settlement', issueNoPart)}
+                        className="text-amber-700 hover:text-amber-900 underline underline-offset-2 flex items-center gap-1"
+                      >
+                        দেখুন <ArrowRightCircle size={10} />
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <SegmentedInput 
-              id="field-9b" icon={Calendar} label="জারিপত্র তারিখ" color="amber" 
-              noValue="DATE_ONLY" dayValue={dayPart} monthValue={monthPart} yearValue={yearPart} 
-              noSetter={()=>{}} daySetter={setDayPart} monthSetter={setMonthPart} yearSetter={setYearPart} 
-              dayRef={issueDayRef} monthRef={issueMonthRef} yearRef={issueYearRef} 
-              isFocused={isIssueFocused} focusSetter={setIsIssueFocused}
-              error={issueDateError}
-              extra={formData.issueDateISO && (
-                <div className="absolute -right-2 -top-2 z-[310] flex items-center justify-center w-6 h-6 bg-emerald-500 text-white rounded-full shadow-lg border-2 border-white animate-in zoom-in duration-500">
-                  <Check size={14} strokeWidth={4} />
-                </div>
-              )}
-            />
+                <SegmentedInput 
+                  id="field-9b" icon={Calendar} label="জারিপত্র তারিখ" color="amber" 
+                  noValue="DATE_ONLY" dayValue={dayPart} monthValue={monthPart} yearValue={yearPart} 
+                  noSetter={()=>{}} daySetter={setDayPart} monthSetter={setMonthPart} yearSetter={setYearPart} 
+                  dayRef={issueDayRef} monthRef={issueMonthRef} yearRef={issueYearRef} 
+                  isFocused={isIssueFocused} focusSetter={setIsIssueFocused}
+                  error={issueDateError}
+                  extra={formData.issueDateISO && (
+                    <div className="absolute -right-2 -top-2 z-[310] flex items-center justify-center w-6 h-6 bg-emerald-500 text-white rounded-full shadow-lg border-2 border-white animate-in zoom-in duration-500">
+                      <Check size={14} strokeWidth={4} />
+                    </div>
+                  )}
+                />
+              </>
+            )}
 
             {/* Fields 11-15 (Audit Details) - Conditionally Rendered */}
             {showAuditDetails && (

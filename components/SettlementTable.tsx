@@ -740,18 +740,43 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                 <HighlightText text={formatLetterInfoForDisplay(entry.letterNoDate)} searchTerm={searchTerm} />
               </span>
             </p>
-            <p className="text-[10px] leading-tight">
-              <span className="font-black text-emerald-700">ডায়েরি নং ও তারিখ:</span>{" "}
-              <span className="font-bold text-slate-900">
-                <HighlightText text={formatDiaryInfoForDisplay(entry.workpaperNoDate)} searchTerm={searchTerm} />
-              </span>
-            </p>
-            <p className="text-[10px] leading-tight">
-              <span className="font-black text-emerald-700">জারিপত্র নং ও তারিখ:</span>{" "}
-              <span className="font-bold text-slate-900">
-                <HighlightText text={formatIssueInfoForDisplay(entry.issueLetterNoDate)} searchTerm={searchTerm} />
-              </span>
-            </p>
+            {(!entry.isMeeting && entry.meetingType === "বিএসআর") ? (
+              <>
+                <p className="text-[10px] leading-tight">
+                  <span className="font-black text-emerald-700">ডায়েরি নং ও তারিখ:</span>{" "}
+                  <span className="font-bold text-slate-900">
+                    <HighlightText text={formatDiaryInfoForDisplay(entry.workpaperNoDate)} searchTerm={searchTerm} />
+                  </span>
+                </p>
+                <p className="text-[10px] leading-tight">
+                  <span className="font-black text-emerald-700">জারিপত্র নং ও তারিখ:</span>{" "}
+                  <span className="font-bold text-slate-900">
+                    <HighlightText text={formatIssueInfoForDisplay(entry.issueLetterNoDate)} searchTerm={searchTerm} />
+                  </span>
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-[10px] leading-tight">
+                  <span className="font-black text-indigo-700">কার্যপত্র নং ও তারিখ:</span>{" "}
+                  <span className="font-bold text-slate-900">
+                    <HighlightText text={formatWorkpaperInfoForDisplay(entry.meetingWorkpaper) || "-"} searchTerm={searchTerm} />
+                  </span>
+                </p>
+                <p className="text-[10px] leading-tight">
+                  <span className="font-black text-indigo-700">সভার তারিখ:</span>{" "}
+                  <span className="font-bold text-slate-900">
+                    <HighlightText text={formatDateBN(entry.meetingDate) || "-"} searchTerm={searchTerm} />
+                  </span>
+                </p>
+                <p className="text-[10px] leading-tight">
+                  <span className="font-black text-indigo-700">কার্যবিবরণী প্রাপ্তির তারিখ:</span>{" "}
+                  <span className="font-bold text-slate-900">
+                    <HighlightText text={entry.meetingResponseDate || "-"} searchTerm={searchTerm} />
+                  </span>
+                </p>
+              </>
+            )}
             {entry.archiveNo && (
               <p className="text-[10px] leading-tight font-black text-purple-700">
                 আর্কাইভ নং:{" "}
@@ -897,133 +922,155 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             </div>
           )}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              {
-                label: "১. শাখা ধরণ",
-                value: entry.paraType,
-                icon: Fingerprint,
-                col: "sky",
-              },
-              {
-                label: "২. চিঠির ধরণ",
-                value: entry.isMeeting ? entry.meetingType : "বিএসআর",
-                icon: FileText,
-                col: "emerald",
-              },
-              {
-                label: "৩. মন্ত্রণালয়",
-                value: entry.ministryName,
-                icon: MapPin,
-                col: "amber",
-              },
-              {
-                label: "৪. সংস্থা",
-                value: entry.entityName,
-                icon: FileText,
-                col: "purple",
-              },
-              {
-                label: "৫. বিস্তারিত শাখা",
-                value: entry.branchName,
-                icon: MapPin,
-                col: "sky",
-              },
-              {
-                label: "৬. নিরীক্ষা সাল",
-                value: toBengaliDigits(entry.auditYear),
-                icon: Calendar,
-                col: "emerald",
-              },
-              {
-                label: "৭. পত্র নং ও তারিখ",
-                value: formatLetterInfoForDisplay(entry.letterNoDate),
-                icon: FileText,
-                col: "amber",
-              },
-              {
-                label: "৮. কার্যপত্র নং",
-                value: formatWorkpaperInfoForDisplay(entry.meetingWorkpaper),
-                icon: FileText,
-                col: "purple",
-              },
-              {
-                label: "৯. আলোচিত অনুচ্ছেদ",
-                value: toBengaliDigits(entry.meetingSentParaCount || "০"),
-                icon: ListOrdered,
-                col: "sky",
-              },
-              {
-                label: "১০. ডায়েরি নং ও তারিখ",
-                value: formatDiaryInfoForDisplay(entry.workpaperNoDate),
-                icon: FileText,
-                col: "emerald",
-              },
-              {
-                label: "১১. জারিপত্র নং",
-                value: formatIssueInfoForDisplay(entry.issueLetterNoDate),
-                icon: FileText,
-                col: "amber",
-              },
-              {
-                label: "১২. আর্কাইভ নং",
-                value: entry.archiveNo || "N/A",
-                icon: Archive,
-                col: "purple",
-              },
-              {
-                label: "১৩. প্রেরিত অনুচ্ছেদ",
-                value: toBengaliDigits(entry.meetingSentParaCount || "০"),
-                icon: ListOrdered,
-                col: "sky",
-              },
-              {
-                label: "১৪. সুপারিশকৃত অনুচ্ছেদ",
-                value: toBengaliDigits(
-                  entry.meetingRecommendedParaCount || "০",
-                ),
-                icon: CheckCircle2,
-                col: "emerald",
-              },
-              {
-                label: "১৫. মোট জড়িত টাকা",
-                value: toBengaliDigits(entry.involvedAmount ?? 0),
-                icon: Banknote,
-                col: "amber",
-              },
-              {
-                label: "১৬. অমীমাংসিত সংখ্যা",
-                value: toBengaliDigits(entry.meetingUnsettledParas || "০"),
-                icon: ListOrdered,
-                col: "purple",
-              },
-              {
-                label: "১৭. অমীমাংসিত টাকা",
-                value: toBengaliDigits(entry.meetingUnsettledAmount ?? 0),
-                icon: Banknote,
-                col: "sky",
-              },
-              {
-                label: "১৮. মীমাংসিত সংখ্যা",
-                value: toBengaliDigits(
-                  entry.paragraphs?.filter((p) => p.status === "পূর্ণাঙ্গ")
-                    .length || 0,
-                ),
-                icon: CheckCircle2,
-                col: "emerald",
-              },
-              {
-                label: "১৯. সভার তারিখ",
-                value: formatDateBN(entry.meetingDate) || "N/A",
-                icon: Calendar,
-                col: "amber",
-              },
-              {
-                label: "২০. মন্তব্য",
-                value: entry.remarks || "N/A",
-                icon: MessageSquare,
-                col: "purple",
-              },
-            ].map((item, i) => (
+            {(() => {
+              const isBSR = !entry.isMeeting && entry.meetingType === "বিএসআর";
+              const commonStart = [
+                {
+                  label: "১. শাখা ধরণ",
+                  value: entry.paraType,
+                  icon: Fingerprint,
+                  col: "sky",
+                },
+                {
+                  label: "২. চিঠির ধরণ",
+                  value: entry.isMeeting ? entry.meetingType : "বিএসআর",
+                  icon: FileText,
+                  col: "emerald",
+                },
+                {
+                  label: "৩. মন্ত্রণালয়",
+                  value: entry.ministryName,
+                  icon: MapPin,
+                  col: "amber",
+                },
+                {
+                  label: "৪. সংস্থা",
+                  value: entry.entityName,
+                  icon: FileText,
+                  col: "purple",
+                },
+                {
+                  label: "৫. বিস্তারিত শাখা",
+                  value: entry.branchName,
+                  icon: MapPin,
+                  col: "sky",
+                },
+                {
+                  label: "৬. নিরীক্ষা সাল",
+                  value: toBengaliDigits(entry.auditYear),
+                  icon: Calendar,
+                  col: "emerald",
+                },
+                {
+                  label: "৭. পত্র নং ও তারিখ",
+                  value: formatLetterInfoForDisplay(entry.letterNoDate),
+                  icon: FileText,
+                  col: "amber",
+                },
+              ];
+
+              const bsrMiddle = [
+                {
+                  label: "৮. ডায়েরি নং ও তারিখ",
+                  value: formatDiaryInfoForDisplay(entry.workpaperNoDate),
+                  icon: FileText,
+                  col: "emerald",
+                },
+                {
+                  label: "৯. জারিপত্র নং ও তারিখ",
+                  value: formatIssueInfoForDisplay(entry.issueLetterNoDate),
+                  icon: FileText,
+                  col: "amber",
+                },
+              ];
+
+              const meetingMiddle = [
+                {
+                  label: "১৯. সভার তারিখ",
+                  value: formatDateBN(entry.meetingDate) || "N/A",
+                  icon: Calendar,
+                  col: "amber",
+                },
+                {
+                  label: "২০. আলোচিত অনুচ্ছেদ",
+                  value: toBengaliDigits(entry.meetingDiscussedParaCount || "০"),
+                  icon: ListOrdered,
+                  col: "indigo",
+                },
+                {
+                  label: "২১. সুপারিশকৃত অনুচ্ছেদ",
+                  value: toBengaliDigits(entry.meetingRecommendedParaCount || "০"),
+                  icon: CheckCircle2,
+                  col: "emerald",
+                },
+                {
+                  label: "২২.ক/খ. কার্যপত্র নং ও তারিখ",
+                  value: formatWorkpaperInfoForDisplay(entry.meetingWorkpaper) || "N/A",
+                  icon: FileText,
+                  col: "purple",
+                },
+                {
+                  label: "২২.গ. কার্যবিবরণী প্রাপ্তি",
+                  value: entry.meetingResponseDate || "N/A",
+                  icon: Calendar,
+                  col: "purple",
+                },
+              ];
+
+              const commonEnd = [
+                {
+                  label: "১১. প্রেরিত অনুচ্ছেদ",
+                  value: toBengaliDigits(entry.meetingSentParaCount || "০"),
+                  icon: ListOrdered,
+                  col: "sky",
+                },
+                {
+                  label: "১২. মোট জড়িত টাকা",
+                  value: toBengaliDigits(entry.involvedAmount ?? 0),
+                  icon: Banknote,
+                  col: "amber",
+                },
+                {
+                  label: "১৩. অমীমাংসিত সংখ্যা",
+                  value: toBengaliDigits(entry.meetingUnsettledParas || "০"),
+                  icon: ListOrdered,
+                  col: "purple",
+                },
+                {
+                  label: "১৪. অমীমাংসিত টাকা",
+                  value: toBengaliDigits(entry.meetingUnsettledAmount ?? 0),
+                  icon: Banknote,
+                  col: "sky",
+                },
+                {
+                  label: "১৫. মীমাংসিত সংখ্যা",
+                  value: toBengaliDigits(
+                    entry.paragraphs?.filter((p) => p.status === "পূর্ণাঙ্গ")
+                      .length || 0,
+                  ),
+                  icon: CheckCircle2,
+                  col: "emerald",
+                },
+                {
+                  label: "১৬. আর্কাইভ নং",
+                  value: entry.archiveNo || "N/A",
+                  icon: Archive,
+                  col: "purple",
+                },
+                {
+                  label: "১৭. মন্তব্য",
+                  value: entry.remarks || "N/A",
+                  icon: MessageSquare,
+                  col: "purple",
+                },
+              ];
+
+              return [
+                ...commonStart,
+                ...(isBSR ? bsrMiddle : meetingMiddle),
+                ...commonEnd,
+              ];
+            })().map((item, i) => (
               <div
                 key={i}
                 className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3"
