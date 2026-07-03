@@ -168,14 +168,25 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     return matchMinistry && matchSearch;
   });
 
-  const totals = filteredData.reduce((acc, curr) => ({
-    sentPara: acc.sentPara + (parseInt(toEnglishDigits(curr.meetingSentParaCount || '0')) || 0),
-    settledPara: acc.settledPara + (parseInt(toEnglishDigits(curr.meetingSettledParaCount || '0')) || 0),
-    amount: acc.amount + (curr.involvedAmount || 0),
-    recovery: acc.recovery + (curr.totalRec || 0),
-    adjustment: acc.adjustment + (curr.totalAdj || 0),
-    others: acc.others + 0, // Placeholder for others if needed
-  }), { sentPara: 0, settledPara: 0, amount: 0, recovery: 0, adjustment: 0, others: 0 });
+  const totals = filteredData.reduce((acc, curr) => {
+    const discussed = parseInt(toEnglishDigits(curr.meetingDiscussedParaCount || curr.meetingSentParaCount || '0')) || 0;
+    const settled = parseInt(toEnglishDigits(curr.meetingRecommendedParaCount || curr.meetingSettledParaCount || '0')) || 0;
+    
+    const settledAmount = curr.paragraphs && curr.paragraphs.length > 0
+      ? curr.paragraphs
+          .filter(p => p.status === 'পূর্ণাঙ্গ')
+          .reduce((sum, p) => sum + (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0), 0)
+      : (curr.involvedAmount || 0);
+
+    return {
+      sentPara: acc.sentPara + discussed,
+      settledPara: acc.settledPara + settled,
+      amount: acc.amount + settledAmount,
+      recovery: acc.recovery + (curr.totalRec || 0),
+      adjustment: acc.adjustment + (curr.totalAdj || 0),
+      others: acc.others + 0,
+    };
+  }, { sentPara: 0, settledPara: 0, amount: 0, recovery: 0, adjustment: 0, others: 0 });
 
   const thCls = "border-r border-b border-slate-400 p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
   const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle";
@@ -341,11 +352,20 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                 </td>
                 <td className={`${numTdCls} w-[62px]`}>{toBengaliDigits("১")}</td>
                 <td className={numTdCls}>{toBengaliDigits(row.meetingDate || '')}</td>
-                <td className={`${numTdCls} w-[62px]`}>{toBengaliDigits(row.meetingSentParaCount || '০')}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.meetingSettledParaCount || '০')}</td>
+                <td className={`${numTdCls} w-[62px]`}>{toBengaliDigits(row.meetingDiscussedParaCount || row.meetingSentParaCount || '০')}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.meetingRecommendedParaCount || row.meetingSettledParaCount || '০')}</td>
                 <td className={numTdCls}>{toBengaliDigits(row.meetingResponseDate || '')}</td>
                 <td className={numTdCls}>{toBengaliDigits(row.issueLetterNoDate || '')}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.involvedAmount?.toString() || '০')}</td>
+                <td className={numTdCls}>
+                  {toBengaliDigits(
+                    (row.paragraphs && row.paragraphs.length > 0
+                      ? row.paragraphs
+                          .filter((p: any) => p.status === 'পূর্ণাঙ্গ')
+                          .reduce((sum: number, p: any) => sum + (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0), 0)
+                      : (row.involvedAmount || 0)
+                    ).toString()
+                  )}
+                </td>
                 <td className={numTdCls}>{toBengaliDigits(row.totalRec?.toString() || '০')}</td>
                 <td className={numTdCls}>{toBengaliDigits(row.totalAdj?.toString() || '০')}</td>
                 <td className={numTdCls}></td>
