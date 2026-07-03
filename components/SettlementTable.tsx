@@ -714,6 +714,14 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
               </p>
             )}
             <p className="text-[10px] leading-tight">
+              <span className="font-black text-emerald-700">{getSerial()}. শাখা ধরণ:</span>{" "}
+              <span className="font-bold text-slate-900 bg-slate-100 px-1 py-0.5 rounded">{entry.paraType || "-"}</span>
+            </p>
+            <p className="text-[10px] leading-tight">
+              <span className="font-black text-emerald-700">{getSerial()}. চিঠির ধরণ:</span>{" "}
+              <span className="font-bold text-slate-900">{entry.isMeeting ? entry.meetingType : "বিএসআর"}</span>
+            </p>
+            <p className="text-[10px] leading-tight">
               <span className="font-black text-emerald-700">{getSerial()}. মন্ত্রণালয়:</span>{" "}
               <span className="font-bold text-slate-900">
                 <HighlightText text={entry.ministryName} searchTerm={searchTerm} />
@@ -792,15 +800,6 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             {/* ADDITIONAL FIELDS - SHOWING BSR VS MEETING FIELDS SPECIFICALLY */}
             <div className="mt-3 space-y-2">
               <div className="flex flex-col gap-y-1.5 text-[10px] pl-1">
-                <p className="leading-tight">
-                  <span className="font-black text-emerald-700">{getSerial()}. শাখা ধরণ:</span>{" "}
-                  <span className="font-bold text-slate-900 bg-slate-100 px-1 py-0.5 rounded">{entry.paraType || "-"}</span>
-                </p>
-                <p className="leading-tight">
-                  <span className="font-black text-emerald-700">{getSerial()}. চিঠির ধরণ:</span>{" "}
-                  <span className="font-bold text-slate-900">{entry.isMeeting ? entry.meetingType : "বিএসআর"}</span>
-                </p>
-
                 {/* Common fields with BSR numbers or meeting numbers */}
                 <p className="leading-tight">
                   <span className="font-black text-emerald-700">{getSerial()}. প্রেরিত অনুচ্ছেদ:</span>{" "}
