@@ -317,7 +317,27 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
               <tr key={idx} className="hover:bg-slate-50 transition-colors">
                 <td className={numTdCls}>{toBengaliDigits((idx + 1).toString())}</td>
                 <td className={tdCls}>
-                  <HighlightText text={`${row.ministryName}, ${row.entityName} (${toBengaliDigits(row.auditYear)})`} searchTerm={searchTerm} />
+                  <HighlightText text={row.ministryName} searchTerm={searchTerm} />
+                  {row.entityName && (
+                    <>
+                      ,<br />
+                      <HighlightText text={row.entityName} searchTerm={searchTerm} />
+                    </>
+                  )}
+                  {row.branchName && (
+                    <>
+                      ,<br />
+                      <span className="text-blue-700 font-extrabold text-[10.5px]">
+                        <HighlightText text={row.branchName} searchTerm={searchTerm} />
+                      </span>
+                    </>
+                  )}
+                  {row.auditYear && (
+                    <>
+                      <br />
+                      <span className="font-bold text-slate-800">({toBengaliDigits(row.auditYear)})</span>
+                    </>
+                  )}
                 </td>
                 <td className={`${numTdCls} w-[62px]`}>{toBengaliDigits("১")}</td>
                 <td className={numTdCls}>{toBengaliDigits(row.meetingDate || '')}</td>
