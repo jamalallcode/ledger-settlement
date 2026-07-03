@@ -704,8 +704,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
       const hasNoParas = !entry.paragraphs || entry.paragraphs.length === 0;
       
       return (
-        <div className="flex items-start justify-between min-w-[280px]">
-          <div className="space-y-1 text-left flex-1">
+        <div className="w-full space-y-1 text-left">
             {hasNoParas && (
               <p className="text-[10px] leading-tight font-black text-red-600 underline underline-offset-2 tracking-tighter mb-1.5">
                 উত্থাপিত এন্ট্রি (কোন অনুচ্ছেদ নেই)
@@ -842,7 +841,6 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                 </div>
               )}
             </div>
-          </div>
         </div>
       );
     };
@@ -1590,7 +1588,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           >
             <colgroup>
               <col className="w-[30px]" />
-              <col className="w-[130px]" />
+              <col className="w-[300px]" />
               <col className="w-[45px]" />
               <col className="w-[65px]" />
               <col className="w-[40px]" />
@@ -1610,7 +1608,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                   ক্র: নং
                 </th>
                 <th rowSpan={2} className={thBase}>
-                  বিস্তারিত বিবরণ (২০ ফিল্ড দেখতে ক্লিক)
+                  বিস্তারিত বিবরণ (২০ ফিল্ড)
                 </th>
                 <th rowSpan={2} className={thBase}>
                   অনু: নং
