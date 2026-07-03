@@ -81,6 +81,7 @@ export interface SettlementEntry {
   meetingResponseDate?: string;
   meetingDate?: string;
   meetingSentParaCount?: string;
+  meetingDiscussedParaCount?: string;
   meetingRecommendedParaCount?: string; 
   meetingSettledParaCount?: string;
   meetingFullSettledParaCount?: string;
