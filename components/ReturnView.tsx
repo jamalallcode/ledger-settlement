@@ -269,48 +269,115 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     const seen = new Set<string>();
     const today = new Date();
     
-    // We want to generate past quarters.
-    // Loop back about 24 months to find all quarters in the last 2 years.
-    for (let i = -2; i < 24; i++) {
-      const refDate = addMonths(today, -i);
-      const month = refDate.getMonth(); // 0 to 11
-      const year = refDate.getFullYear();
-      
-      let quarterStartMonth = 0;
-      let quarterEndMonth = 2;
-      let quarterYear = year;
+    const isQuarterly = selectedReportType?.includes('ত্রৈমাসিক');
+    const isHalfYearly = selectedReportType?.includes('ষাণ্মাসিক');
+    const isYearly = selectedReportType?.includes('বাৎসরিক');
 
-      if (month >= 0 && month <= 2) {
-        quarterStartMonth = 0; // Jan
-        quarterEndMonth = 2;   // Mar
-      } else if (month >= 3 && month <= 5) {
-        quarterStartMonth = 3; // Apr
-        quarterEndMonth = 5;   // Jun
-      } else if (month >= 6 && month <= 8) {
-        quarterStartMonth = 6; // Jul
-        quarterEndMonth = 8;   // Sep
-      } else {
-        quarterStartMonth = 9; // Oct
-        quarterEndMonth = 11;  // Dec
+    if (isQuarterly) {
+      // Loop back about 24 months to find all quarters in the last 2 years.
+      for (let i = -2; i < 24; i++) {
+        const refDate = addMonths(today, -i);
+        const month = refDate.getMonth(); // 0 to 11
+        const year = refDate.getFullYear();
+        
+        let quarterStartMonth = 0;
+        let quarterEndMonth = 2;
+        let quarterYear = year;
+
+        if (month >= 0 && month <= 2) {
+          quarterStartMonth = 0; // Jan
+          quarterEndMonth = 2;   // Mar
+        } else if (month >= 3 && month <= 5) {
+          quarterStartMonth = 3; // Apr
+          quarterEndMonth = 5;   // Jun
+        } else if (month >= 6 && month <= 8) {
+          quarterStartMonth = 6; // Jul
+          quarterEndMonth = 8;   // Sep
+        } else {
+          quarterStartMonth = 9; // Oct
+          quarterEndMonth = 11;  // Dec
+        }
+
+        const startMonthName = BENGALI_MONTHS[quarterStartMonth];
+        const endMonthName = BENGALI_MONTHS[quarterEndMonth];
+        
+        const startYearShort = dateFnsFormat(new Date(quarterYear, quarterStartMonth, 1), 'yy');
+        const endYearShort = dateFnsFormat(new Date(quarterYear, quarterEndMonth, 1), 'yy');
+
+        const label = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
+        
+        if (!seen.has(label)) {
+          seen.add(label);
+          const reprDate = new Date(quarterYear, quarterStartMonth, 1);
+          const cycle = getCycleForDate(reprDate);
+          options.push({ date: reprDate, label, cycleLabel: cycle.label });
+        }
       }
+    } else if (isHalfYearly) {
+      // Half-Yearly: 6-month cycles (Jan to Jun, Jul to Dec)
+      for (let i = -2; i < 24; i++) {
+        const refDate = addMonths(today, -i);
+        const month = refDate.getMonth();
+        const year = refDate.getFullYear();
 
-      const startMonthName = BENGALI_MONTHS[quarterStartMonth];
-      const endMonthName = BENGALI_MONTHS[quarterEndMonth];
-      
-      const startYearShort = dateFnsFormat(new Date(quarterYear, quarterStartMonth, 1), 'yy');
-      const endYearShort = dateFnsFormat(new Date(quarterYear, quarterEndMonth, 1), 'yy');
+        let halfStartMonth = 0;
+        let halfEndMonth = 5;
+        if (month >= 6) {
+          halfStartMonth = 6;
+          halfEndMonth = 11;
+        }
 
-      const label = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
-      
-      if (!seen.has(label)) {
-        seen.add(label);
-        const reprDate = new Date(quarterYear, quarterStartMonth, 1);
-        const cycle = getCycleForDate(reprDate);
-        options.push({ date: reprDate, label, cycleLabel: cycle.label });
+        const startMonthName = BENGALI_MONTHS[halfStartMonth];
+        const endMonthName = BENGALI_MONTHS[halfEndMonth];
+
+        const startYearShort = dateFnsFormat(new Date(year, halfStartMonth, 1), 'yy');
+        const endYearShort = dateFnsFormat(new Date(year, halfEndMonth, 1), 'yy');
+
+        const label = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
+
+        if (!seen.has(label)) {
+          seen.add(label);
+          const reprDate = new Date(year, halfStartMonth, 1);
+          const cycle = getCycleForDate(reprDate);
+          options.push({ date: reprDate, label, cycleLabel: cycle.label });
+        }
+      }
+    } else if (isYearly) {
+      // Yearly: 12-month cycles (Jan to Dec)
+      for (let i = -1; i < 10; i++) {
+        const refDate = addMonths(today, -i * 12);
+        const year = refDate.getFullYear();
+
+        const label = `${BENGALI_MONTHS[0]}/${toBengaliDigits(dateFnsFormat(new Date(year, 0, 1), 'yy'))} হতে ${BENGALI_MONTHS[11]}/${toBengaliDigits(dateFnsFormat(new Date(year, 11, 1), 'yy'))}`;
+
+        if (!seen.has(label)) {
+          seen.add(label);
+          const reprDate = new Date(year, 0, 1);
+          const cycle = getCycleForDate(reprDate);
+          options.push({ date: reprDate, label, cycleLabel: cycle.label });
+        }
+      }
+    } else {
+      // Monthly!
+      // Loop back about 24 months to find all months in the last 2 years.
+      for (let i = -2; i < 24; i++) {
+        const refDate = addMonths(today, -i);
+        const month = refDate.getMonth(); // 0 to 11
+        const year = refDate.getFullYear();
+
+        const monthName = BENGALI_MONTHS[month];
+        const label = `${monthName}/${toBengaliDigits(year.toString())}`;
+
+        if (!seen.has(label)) {
+          seen.add(label);
+          const reprDate = new Date(year, month, 1);
+          const cycle = getCycleForDate(reprDate);
+          options.push({ date: reprDate, label, cycleLabel: cycle.label });
+        }
       }
     }
     return options;
-  }, []);
+  }, [selectedReportType]);
 
   const activeCycle = useMemo(() => getCycleForDate(selectedCycleDate), [selectedCycleDate]);
 
