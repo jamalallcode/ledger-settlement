@@ -223,6 +223,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     issueDateISO: '', 
     archiveNo: '',
     meetingSentParaCount: '',
+    sentParaInvolvedAmount: 0,
     meetingDiscussedParaCount: '',
     meetingRecommendedParaCount: '',
     meetingSettledParaCount: '',
@@ -385,6 +386,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         issueDateISO: initialEntry.issueDateISO || '',
         archiveNo: initialEntry.archiveNo || '',
         meetingSentParaCount: initialEntry.meetingSentParaCount || '',
+        sentParaInvolvedAmount: initialEntry.sentParaInvolvedAmount || 0,
         meetingDiscussedParaCount: initialEntry.meetingDiscussedParaCount || '',
         meetingRecommendedParaCount: initialEntry.meetingRecommendedParaCount || '',
         meetingSettledParaCount: initialEntry.meetingSettledParaCount || '',
@@ -559,7 +561,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       });
     } else if (id === 'direct') {
        setRawInputs(prev => ({ ...prev, [`direct-${field}`]: bDigits }));
-       const isNumericField = ['meetingSentParaCount', 'meetingDiscussedParaCount', 'meetingRecommendedParaCount', 'meetingSettledParaCount', 'meetingUnsettledParas', 'meetingUnsettledAmount', 'totalInvolvedAmount'].includes(field);
+       const isNumericField = ['meetingSentParaCount', 'meetingDiscussedParaCount', 'meetingRecommendedParaCount', 'meetingSettledParaCount', 'meetingUnsettledParas', 'meetingUnsettledAmount', 'totalInvolvedAmount', 'sentParaInvolvedAmount'].includes(field);
        setFormData(prev => ({ ...prev, [field]: isNumericField ? engNum : (val.includes('.') ? engNum : bDigits) } as any));
     } else {
       setRawInputs(prev => ({ ...prev, [`${id}-${field}`]: bDigits }));
@@ -741,6 +743,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       issueDateISO: '', 
       archiveNo: '',
       meetingSentParaCount: '',
+      sentParaInvolvedAmount: 0,
       meetingDiscussedParaCount: '',
       meetingRecommendedParaCount: '',
       meetingSettledParaCount: '',
@@ -1106,6 +1109,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             {showAuditDetails && (
               <>
                 <div id="field-11" className={col1Style}><label className={labelCls}><span className={numBadge}>{getSerial()}</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> প্রেরিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingSentParaCount'] || formData.meetingSentParaCount)} value={rawInputs['direct-meetingSentParaCount'] || (formData.meetingSentParaCount === '0' || formData.meetingSentParaCount === '' ? '' : toBengaliDigits(formData.meetingSentParaCount))} onChange={e => handleNumericInput('direct', 'meetingSentParaCount', e.target.value)} placeholder="০" /></div>
+                <div id="field-sent-para-involved-amount" className={col1Style}><label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Banknote size={14} className="text-emerald-600 shrink-0" /> প্রেরিত অনুচ্ছেদে মোট জড়িত টাকার পরিমান</label><input type="text" className={getDynamicInputCls(rawInputs['direct-sentParaInvolvedAmount'] || formData.sentParaInvolvedAmount)} value={rawInputs['direct-sentParaInvolvedAmount'] || (formData.sentParaInvolvedAmount === 0 || formData.sentParaInvolvedAmount === undefined || formData.sentParaInvolvedAmount === null ? '' : toBengaliDigits(formData.sentParaInvolvedAmount.toString()))} onChange={e => handleNumericInput('direct', 'sentParaInvolvedAmount', e.target.value)} placeholder="টাকা লিখুন" /></div>
               </>
             )}
             {/* Field: Online/Offline Status */}
