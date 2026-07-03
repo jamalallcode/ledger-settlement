@@ -141,7 +141,9 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   };
 
   const robustNormalize = (str: string = '') => {
-    return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+    let normalized = str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+    normalized = normalized.replace(/कर्मসংস্থান/g, "কর্মসংস্থান").replace(/कर्मसंस्थान/g, "কর্মসংস্থান");
+    return normalized;
   };
 
   const getPrevQuarterEndInfo = () => {
@@ -201,7 +203,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       "বাংলাদেশ ব্যাংক",
       "বাংলাদেশ ডেভেলপমেন্ট ব্যাংক লিঃ",
       "গৃহনির্মাণ ঋণদান সংস্থা",
-      "कर्मসংস্থান ব্যাংক",
+      "কর্মসংস্থান ব্যাংক",
       "বেসিক ব্যাংক লিঃ",
       "আনসার ভিডিপি উন্নয়ন ব্যাংক লিঃ",
       "ইনভেস্টমেন্ট কর্পোরেশন অব বাংলাদেশ",
@@ -286,7 +288,13 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     const saved = localStorage.getItem('qr2_table1_prev_ledger_june2025');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        const migrated: Record<string, any> = {};
+        Object.entries(parsed).forEach(([key, val]) => {
+          const cleanKey = key.replace(/कर्मসংস্থান/g, "কর্মসংস্থান").replace(/कर्मसंस्थान/g, "কর্মসংস্থান");
+          migrated[cleanKey] = val;
+        });
+        return migrated;
       } catch (e) {
         console.error("Error parsing prev ledger data:", e);
       }
@@ -330,7 +338,13 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     const saved = localStorage.getItem('qr2_table2_prev_ledger_june2025');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        const migrated: Record<string, any> = {};
+        Object.entries(parsed).forEach(([key, val]) => {
+          const cleanKey = key.replace(/कर्मসংস্থান/g, "কর্মসংস্থান").replace(/कर्मसंस्थान/g, "কর্মসংস্থান");
+          migrated[cleanKey] = val;
+        });
+        return migrated;
       } catch (e) {
         console.error("Error parsing prev ledger table 2 data:", e);
       }
@@ -1583,11 +1597,12 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     return prefix + lines.join('\n');
   };
 
-  const thCls = "border-r border-b border-slate-400 p-1 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center leading-normal";
-  const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle leading-normal";
-  const numTdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 text-center align-middle font-bold leading-normal";
-  const footerTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-900 align-middle bg-slate-200 font-extrabold";
-  const footerNumTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-200";
+  const thCls = "border-r border-b border-slate-400 p-0.5 md:p-1 text-[7.5px] font-black text-slate-800 bg-slate-100 align-middle text-center leading-tight break-words";
+  const thClsWithTop = thCls + " border-t border-slate-400";
+  const tdCls = "border-r border-b border-slate-400 p-1 text-[8.5px] text-slate-700 align-middle leading-tight break-words";
+  const numTdCls = "border-r border-b border-slate-400 p-1 text-[8.5px] text-slate-700 text-center align-middle font-bold leading-tight break-all";
+  const footerTdCls = "border-r border-b border-slate-400 p-1 text-[9px] text-slate-900 align-middle bg-slate-200 font-extrabold";
+  const footerNumTdCls = "border-r border-b border-slate-400 p-1 text-[9px] text-slate-900 text-center align-middle font-black bg-slate-200";
 
   if (customTitle === 'বিস্তারিত - ১') {
     return (
@@ -1617,15 +1632,15 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         </div>
 
         {/* Header Section with symmetric layout */}
-        <div className="flex flex-col gap-4 mb-6 pt-1 relative z-[260] no-print font-sans">
-          {/* Controls Area - beneath the title */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col gap-2 mb-3 pt-1 relative z-[260] no-print font-sans">
+          {/* Main symmetric row */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-2">
             {/* Left Column: Previous Ledger Setup buttons */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 w-full md:w-auto justify-start flex-wrap">
               <button
                 type="button"
                 onClick={() => setIsPrevLedgerOpen(true)}
-                className="flex items-center gap-1.5 px-3 h-[38px] bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 hover:border-amber-300 hover:shadow-sm transition-all duration-300 rounded-xl text-[11px] font-black cursor-pointer shrink-0"
+                className="flex items-center gap-1.5 px-3 h-[38px] bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 hover:border-amber-300 hover:shadow-sm transition-all duration-300 rounded-xl text-[11px] font-black cursor-pointer shrink-0"
               >
                 <Sparkles size={13} className="text-amber-500 animate-pulse" />
                 <span>পূর্ব জের (টেবিল-১)</span>
@@ -1633,29 +1648,24 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               <button
                 type="button"
                 onClick={() => setIsPrevLedgerTable2Open(true)}
-                className="flex items-center gap-1.5 px-3 h-[38px] bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 hover:border-amber-300 hover:shadow-sm transition-all duration-300 rounded-xl text-[11px] font-black cursor-pointer shrink-0"
+                className="flex items-center gap-1.5 px-3 h-[38px] bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 hover:border-amber-300 hover:shadow-sm transition-all duration-300 rounded-xl text-[11px] font-black cursor-pointer shrink-0"
               >
                 <Sparkles size={13} className="text-amber-500 animate-pulse" />
                 <span>পূর্ব জের (টেবিল-২)</span>
               </button>
             </div>
 
-            {/* Middle Column: "বিস্তারিত - ১" badge */}
-            <div className="flex justify-center items-center">
+            {/* Center Column: Title */}
+            <h1 className="text-2.5xl font-black text-slate-900 tracking-tight text-center md:absolute md:left-1/2 md:-translate-x-1/2">
+              {customTitle || "ত্রৈমাসিক রিটার্ন - ২"}
+            </h1>
+
+            {/* Right Column: Date Range Pill & Month Picker */}
+            <div className="flex items-center gap-2.5 w-full md:w-auto justify-end flex-wrap">
               <div className="inline-flex items-center gap-2 px-3.5 h-[38px] bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
                 <span className="text-blue-700 font-black text-[12.5px] whitespace-nowrap">
-                  বিস্তারিত - ১
-                </span>
-              </div>
-            </div>
-
-            {/* Right Column: Date Range Pill, Month Picker, and Badge */}
-            <div className="flex items-center gap-2.5 flex-wrap justify-start md:justify-end">
-              <div className="inline-flex items-center gap-2 px-3.5 h-[38px] bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-                <span className="text-blue-700 font-black text-[12px] whitespace-nowrap">
-                  রিপোর্ট চক্র: {activeCycle.label}
+                  {customTitle || "ত্রৈমাসিক রিটার্ন - ২"} | {activeCycle.label}
                 </span>
               </div>
               {monthPickerElement && (
@@ -1663,38 +1673,40 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                   {monthPickerElement}
                 </div>
               )}
-              <span className="inline-flex items-center px-3.5 h-[38px] bg-slate-100 border border-slate-200 text-slate-800 font-black text-[12px] rounded-xl shadow-sm whitespace-nowrap">
-                নন-এসএফআই
-              </span>
             </div>
+          </div>
+
+
+
+          {/* Elegant Info Bar */}
+          <div className="mb-1 text-[11px] font-bold text-slate-800 flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1.5 border border-slate-200 py-2.5 px-4 bg-slate-50/50 rounded-xl shadow-sm">
+            <p><span className="text-slate-500">বিষয়ঃ</span> মন্ত্রণালয়/সংস্থা ভিত্তিক অমীমাংসিত অডিট আপত্তির ত্রৈমাসিক বিবরণ</p>
+            <span className="text-slate-300 hidden md:inline font-normal">|</span>
+            <p><span className="text-slate-500">শাখাঃ</span> নন এসএফআই শাখা</p>
+            <span className="text-slate-300 hidden md:inline font-normal">|</span>
+            <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
           </div>
         </div>
 
-        {/* Table 1 Section Header */}
-        <div className="flex items-center justify-between border-b-[2px] border-slate-300 pb-1 mb-3 px-1 mt-4">
-          <span className="text-[11px] font-black text-slate-800">
-            টেবিল - ১: শিল্প, বস্ত্র ও পাট, বাণিজ্য এবং বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয়
-          </span>
-        </div>
 
         {/* Table 1 Container */}
-        <div className="table-container qr-table-container overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg mb-8">
-          <table className="w-full border-separate border-spacing-0 min-w-[1200px] !table-auto border-l border-t border-slate-400">
+        <div className="table-container qr-table-container qr2-table-container overflow-auto xl:overflow-visible shadow-sm rounded-none mb-8">
+          <table className="w-full border-separate border-spacing-0 !table-auto border-l border-slate-400">
             <thead className="bg-slate-100">
               <tr>
-                <th className={`${thCls} w-[45px] rounded-none`}>ক্র নং</th>
-                <th className={`${thCls} w-[150px]`}>মন্ত্রণালয়ের নাম</th>
-                <th className={`${thCls} w-[200px]`}>প্রতিষ্ঠানের নাম</th>
-                <th className={`${thCls} w-[140px]`}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{prevQuarterEnd.year} মাস পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত মোট উত্থাপিত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{toBengaliDigits(format(startDate, 'yy'))} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[150px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত নিষ্পত্তিকৃত আপত্তিতে জড়িত টাকা</th>
-                <th className={`${thCls} w-[150px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
-                <th className={`${thCls} w-[100px] rounded-none`}>মন্তব্য</th>
+                <th className={`${thClsWithTop} w-[35px] rounded-none`}>ক্র নং</th>
+                <th className={`${thClsWithTop} w-[90px]`}>মন্ত্রণালয়ের নাম</th>
+                <th className={`${thClsWithTop} w-[100px]`}>প্রতিষ্ঠানের নাম</th>
+                <th className={`${thClsWithTop} w-[75px]`}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{prevQuarterEnd.year} মাস পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
+                <th className={`${thClsWithTop} w-[75px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
+                <th className={`${thClsWithTop} w-[75px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত মোট উত্থাপিত আপত্তির সংখ্যা</th>
+                <th className={`${thClsWithTop} w-[75px]`}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{toBengaliDigits(format(startDate, 'yy'))} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+                <th className={`${thClsWithTop} w-[75px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+                <th className={`${thClsWithTop} w-[75px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+                <th className={`${thClsWithTop} w-[75px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
+                <th className={`${thClsWithTop} w-[85px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত নিষ্পত্তিকৃত আপত্তিতে জড়িত টাকা</th>
+                <th className={`${thClsWithTop} w-[85px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
+                <th className={`${thClsWithTop} w-[40px] rounded-none`}>মন্তব্য</th>
               </tr>
               <tr className="h-[28px]">
                 {["১", "২", "৩", "৪", "৫", "৬=৪+৫", "৭", "৮", "৯=৭+৮", "১০=৬-৯", "১১", "১২", "১৩"].map((idxLabel, i) => (
@@ -1763,23 +1775,23 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         </div>
 
         {/* Table 2 Container */}
-        <div className="table-container qr-table-container overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg">
-          <table className="w-full border-separate border-spacing-0 min-w-[1200px] !table-auto border-l border-t border-slate-400">
+        <div className="table-container qr-table-container qr2-table-container overflow-auto xl:overflow-visible shadow-sm rounded-none">
+          <table className="w-full border-separate border-spacing-0 !table-auto border-l border-slate-400">
             <thead className="bg-slate-100">
               <tr>
-                <th className={`${thCls} w-[45px] rounded-none`}>ক্র নং</th>
-                <th className={`${thCls} w-[150px]`}>মন্ত্রণালয়ের নাম</th>
-                <th className={`${thCls} w-[200px]`}>প্রতিষ্ঠানের নাম</th>
-                <th className={`${thCls} w-[140px]`}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{prevQuarterEnd.year} মাস পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত মোট উত্থাপিত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{toBengaliDigits(format(startDate, 'yy'))} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[140px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
-                <th className={`${thCls} w-[150px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত নিষ্পত্তিকৃত আপত্তিতে জড়িত টাকা</th>
-                <th className={`${thCls} w-[150px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
-                <th className={`${thCls} w-[100px] rounded-none`}>মন্তব্য</th>
+                <th className={`${thClsWithTop} w-[35px] rounded-none`}>ক্র নং</th>
+                <th className={`${thClsWithTop} w-[90px]`}>মন্ত্রণালয়ের নাম</th>
+                <th className={`${thClsWithTop} w-[100px]`}>প্রতিষ্ঠানের নাম</th>
+                <th className={`${thClsWithTop} w-[75px]`}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{prevQuarterEnd.year} মাস পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
+                <th className={`${thClsWithTop} w-[75px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
+                <th className={`${thClsWithTop} w-[75px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত মোট উত্থাপিত আপত্তির সংখ্যা</th>
+                <th className={`${thClsWithTop} w-[75px]`}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{toBengaliDigits(format(startDate, 'yy'))} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+                <th className={`${thClsWithTop} w-[75px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+                <th className={`${thClsWithTop} w-[75px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+                <th className={`${thClsWithTop} w-[75px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yy'))} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
+                <th className={`${thClsWithTop} w-[85px]`}>{getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত নিষ্পত্তিকৃত আপত্তিতে জড়িত টাকা</th>
+                <th className={`${thClsWithTop} w-[85px]`}>{getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
+                <th className={`${thClsWithTop} w-[40px] rounded-none`}>মন্তব্য</th>
               </tr>
               <tr className="h-[28px]">
                 {["১", "২", "৩", "৪", "৫", "৬=৪+৫", "৭", "৮", "৯=৭+৮", "১০=৬-৯", "১১", "১২", "১৩"].map((idxLabel, i) => (
@@ -1945,28 +1957,28 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       </div>
 
       {/* Table Section */}
-      <div className="table-container qr-table-container overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg">
-        <table className="w-full border-separate border-spacing-0 min-w-[1200px] !table-auto border-l border-t border-slate-400">
+      <div className="table-container qr-table-container qr2-table-container overflow-auto xl:overflow-visible shadow-sm rounded-none">
+        <table className="w-full border-separate border-spacing-0 !table-auto border-l border-slate-400">
           <thead className="bg-slate-100">
             <tr className="h-[44px]">
-              <th rowSpan={2} className={`${thCls} w-[35px] rounded-none`}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thCls} w-[180px]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
-              <th rowSpan={2} className={`${thCls} w-[60px]`}>ব্রডশিট জবাবের সংখ্যা</th>
-              <th rowSpan={2} className={`${thCls} w-[100px]`}>ডায়েরি নম্বর ও তারিখ</th>
-              <th rowSpan={2} className={`${thCls} w-[110px]`}>ব্রডশিট জবাবের স্মারক ও তারিখ</th>
-              <th rowSpan={2} className={`${thCls} w-[65px]`}>প্রেরিত অনুচ্ছেদ সংখ্যা</th>
-              <th rowSpan={2} className={`${thCls} w-[65px]`}>মীমাংসিত অনুচ্ছেদ সংখ্যা</th>
-              <th rowSpan={2} className={`${thCls} w-[110px]`}>মীমাংসা জারিপত্রের স্মারক ও তারিখ</th>
-              <th rowSpan={2} className={`${thCls} w-[85px]`}>মীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
-              <th colSpan={3} className={`${thCls}`}>ব্রডশিট জবাবের প্রেক্ষিতে আদায় সমন্বয়ের পরিমাণ</th>
-              <th rowSpan={2} className={`${thCls} w-[65px]`}>অমীমাংসিত অনুচ্ছেদ সংখ্যা</th>
-              <th rowSpan={2} className={`${thCls} w-[85px]`}>অমীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
-              <th rowSpan={2} className={`${thCls} w-[70px] rounded-none`}>আর্কাইভ নং</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[3%] rounded-none`}>ক্রঃ নং</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[16%]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[5%]`}>ব্রডশিট জবাবের সংখ্যা</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[8%]`}>ডায়েরি নম্বর ও তারিখ</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[9%]`}>ব্রডশিট জবাবের স্মারক ও তারিখ</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[5%]`}>প্রেরিত অনুচ্ছেদ সংখ্যা</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[5%]`}>মীমাংসিত অনুচ্ছেদ সংখ্যা</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[9%]`}>মীমাংসা জারিপত্রের স্মারক ও তারিখ</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[7%]`}>মীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
+              <th colSpan={3} className={`${thClsWithTop} w-[12%]`}>ব্রডশিট জবাবের প্রেক্ষিতে আদায় সমন্বয়ের পরিমাণ</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[5%]`}>অমীমাংসিত অনুচ্ছেদ সংখ্যা</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[11%]`}>অমীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[5%]`}>আর্কাইভ নং</th>
             </tr>
             <tr className="h-[38px]">
-              <th className={thCls}>আদায়</th>
-              <th className={thCls}>সমন্বয়</th>
-              <th className={thCls}>অন্যান্য</th>
+              <th className={`${thCls} w-[4%]`}>আদায়</th>
+              <th className={`${thCls} w-[4%]`}>সমন্বয়</th>
+              <th className={`${thCls} w-[4%]`}>অন্যান্য</th>
             </tr>
             <tr className="h-[32px]">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(n => (
