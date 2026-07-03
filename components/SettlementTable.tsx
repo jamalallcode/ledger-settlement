@@ -788,37 +788,37 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             <div className="mt-3 space-y-2">
               <div className="flex flex-col gap-y-1.5 text-[10px] pl-1">
                 <p className="leading-tight">
-                  <span className="font-black text-slate-500">১. শাখা ধরণ:</span>{" "}
+                  <span className="font-black text-emerald-700">১. শাখা ধরণ:</span>{" "}
                   <span className="font-bold text-slate-900 bg-slate-100 px-1 py-0.5 rounded">{entry.paraType || "-"}</span>
                 </p>
                 <p className="leading-tight">
-                  <span className="font-black text-slate-500">২. চিঠির ধরণ:</span>{" "}
+                  <span className="font-black text-emerald-700">২. চিঠির ধরণ:</span>{" "}
                   <span className="font-bold text-slate-900">{entry.isMeeting ? entry.meetingType : "বিএসআর"}</span>
                 </p>
 
                 {/* Common fields with BSR numbers or meeting numbers */}
                 <p className="leading-tight">
-                  <span className="font-black text-slate-500">১১. প্রেরিত অনুচ্ছেদ:</span>{" "}
+                  <span className="font-black text-emerald-700">১১. প্রেরিত অনুচ্ছেদ:</span>{" "}
                   <span className="font-bold text-slate-900">{toBengaliDigits(entry.meetingSentParaCount || "০")} টি</span>
                 </p>
                 <p className="leading-tight">
-                  <span className="font-black text-slate-500">১২. মোট জড়িত টাকা:</span>{" "}
+                  <span className="font-black text-emerald-700">১২. মোট জড়িত টাকা:</span>{" "}
                   <span className="font-bold text-amber-700">{toBengaliDigits(entry.involvedAmount || 0)} টাকা</span>
                 </p>
                 <p className="leading-tight">
-                  <span className="font-black text-slate-500">১৩. অমীমাংসিত সংখ্যা:</span>{" "}
+                  <span className="font-black text-emerald-700">১৩. অমীমাংসিত সংখ্যা:</span>{" "}
                   <span className="font-bold text-red-600">{toBengaliDigits(entry.meetingUnsettledParas || "০")} টি</span>
                 </p>
                 <p className="leading-tight">
-                  <span className="font-black text-slate-500">১৪. অমীমাংসিত টাকা:</span>{" "}
+                  <span className="font-black text-emerald-700">১৪. অমীমাংসিত টাকা:</span>{" "}
                   <span className="font-bold text-red-600">{toBengaliDigits(entry.meetingUnsettledAmount ?? 0)} টাকা</span>
                 </p>
                 <p className="leading-tight">
-                  <span className="font-black text-slate-500">১৫. মীমাংসিত সংখ্যা:</span>{" "}
+                  <span className="font-black text-emerald-700">১৫. মীমাংসিত সংখ্যা:</span>{" "}
                   <span className="font-bold text-emerald-700 bg-emerald-50 px-1 rounded">{toBengaliDigits(entry.paragraphs?.filter(p => p.status === "পূর্ণাঙ্গ").length || 0)} টি</span>
                 </p>
                 <p className="leading-tight">
-                  <span className="font-black text-slate-500">১৬. অনলাইন স্ট্যাটাস:</span>{" "}
+                  <span className="font-black text-emerald-700">১৬. অনলাইন স্ট্যাটাস:</span>{" "}
                   <span className="font-bold text-slate-900">{entry.isSentOnline || "না"}</span>
                 </p>
 
@@ -826,23 +826,23 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                 {(entry.isMeeting || entry.meetingType !== "বিএসআর") && (
                   <>
                     <p className="leading-tight">
-                      <span className="font-black text-slate-500">১৯. সভার তারিখ:</span>{" "}
+                      <span className="font-black text-emerald-700">১৯. সভার তারিখ:</span>{" "}
                       <span className="font-bold text-slate-900">{formatDateBN(entry.meetingDate) || "-"}</span>
                     </p>
                     <p className="leading-tight">
-                      <span className="font-black text-slate-500">২০. আলোচিত অনুচ্ছেদ:</span>{" "}
+                      <span className="font-black text-emerald-700">২০. আলোচিত অনুচ্ছেদ:</span>{" "}
                       <span className="font-bold text-indigo-700 bg-indigo-50 px-1 rounded">{toBengaliDigits(entry.meetingDiscussedParaCount || "০")} টি</span>
                     </p>
                     <p className="leading-tight">
-                      <span className="font-black text-slate-500">২১. সুপারিশকৃত অনুচ্ছেদ:</span>{" "}
+                      <span className="font-black text-emerald-700">২১. সুপারিশকৃত অনুচ্ছেদ:</span>{" "}
                       <span className="font-bold text-slate-900">{toBengaliDigits(entry.meetingRecommendedParaCount || "০")} টি</span>
                     </p>
                     <p className="leading-tight">
-                      <span className="font-black text-slate-500">২২.ক/খ. কার্যপত্র নং ও তারিখ:</span>{" "}
+                      <span className="font-black text-emerald-700">২২.ক/খ. কার্যপত্র নং ও তারিখ:</span>{" "}
                       <span className="font-bold text-slate-900 whitespace-pre-wrap">{formatWorkpaperInfoForDisplay(entry.meetingWorkpaper) || "-"}</span>
                     </p>
                     <p className="leading-tight">
-                      <span className="font-black text-slate-500">২২.গ. কার্যবিবরণী প্রাপ্তি:</span>{" "}
+                      <span className="font-black text-emerald-700">২২.গ. কার্যবিবরণী প্রাপ্তি:</span>{" "}
                       <span className="font-bold text-slate-900">{entry.meetingResponseDate || "-"}</span>
                     </p>
                   </>
