@@ -698,7 +698,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       
       const combinedLetter = buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear, 'পত্র নং-', 'পত্রের তারিখ-');
       const combinedDiary = formData.meetingType === 'বিএসআর' ? buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear, 'ডায়েরি নং-', 'ডায়েরির তারিখ-') : '';
-      const combinedIssue = formData.meetingType === 'বিএসআর' ? buildCombinedString(issueNoPart, dayPart, monthPart, yearPart, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-') : '';
+      const combinedIssue = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
       const combinedWp = formData.meetingType !== 'বিএসআর' ? buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-') : '';
 
       const finalData = {
