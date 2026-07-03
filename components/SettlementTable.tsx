@@ -1636,7 +1636,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           >
             <colgroup>
               <col className="w-[30px]" />
-              <col className="w-[120px]" />
+              <col className="w-[130px]" />
               <col className="w-[45px]" />
               <col className="w-[65px]" />
               <col className="w-[40px]" />
