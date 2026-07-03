@@ -1618,13 +1618,6 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
         {/* Header Section with symmetric layout */}
         <div className="flex flex-col gap-4 mb-6 pt-1 relative z-[260] no-print font-sans">
-          {/* Title Area - at the very top */}
-          <div className="text-center pb-2 border-b border-slate-100">
-            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-tight">
-              {getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত অডিট আপত্তির ত্রৈমাসিক রিটার্ন
-            </h1>
-          </div>
-
           {/* Controls Area - beneath the title */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             {/* Left Column: Previous Ledger Setup buttons */}
@@ -1645,6 +1638,16 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 <Sparkles size={13} className="text-amber-500 animate-pulse" />
                 <span>পূর্ব জের (টেবিল-২)</span>
               </button>
+            </div>
+
+            {/* Middle Column: "বিস্তারিত - ১" badge */}
+            <div className="flex justify-center items-center">
+              <div className="inline-flex items-center gap-2 px-3.5 h-[38px] bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                <span className="text-blue-700 font-black text-[12.5px] whitespace-nowrap">
+                  বিস্তারিত - ১
+                </span>
+              </div>
             </div>
 
             {/* Right Column: Date Range Pill, Month Picker, and Badge */}
