@@ -379,6 +379,9 @@ const App: React.FC = () => {
           setIsLockedMode(false); // Auto-unlock for admin
           localStorage.setItem(ADMIN_MODE_KEY, 'true');
           localStorage.removeItem('unauthorized_user_detected');
+          if (!localStorage.getItem('ledger_login_timestamp')) {
+            localStorage.setItem('ledger_login_timestamp', Date.now().toString());
+          }
         } else {
           console.log("User is guest logged in based on email");
           setUserEmail(email);
@@ -393,6 +396,9 @@ const App: React.FC = () => {
         const savedAdmin = localStorage.getItem(ADMIN_MODE_KEY);
         if (savedAdmin === 'true') {
           setIsAdmin(true);
+          if (!localStorage.getItem('ledger_login_timestamp')) {
+            localStorage.setItem('ledger_login_timestamp', Date.now().toString());
+          }
         } else {
           setIsAdmin(false);
           setIsLockedMode(true);
@@ -862,19 +868,70 @@ const App: React.FC = () => {
     return sortedBranches.length > 0 ? [{ label: 'পূর্বের শাখা তালিকা', options: sortedBranches }] : [];
   }, [entries, correspondenceEntries]);
 
+  const handleAutoLogout = async () => {
+    setIsAdmin(false);
+    localStorage.removeItem(ADMIN_MODE_KEY);
+    localStorage.removeItem('unauthorized_user_detected');
+    localStorage.removeItem('show_admin_login_portal');
+    localStorage.removeItem('ledger_login_timestamp');
+    try {
+      if (isSupabaseConfigured && supabase) {
+        await supabase.auth.signOut();
+      }
+    } catch (e) {
+      console.error("Error signing out:", e);
+    }
+    setActiveTab('landing');
+    setEntryModule(null);
+    setRegisterSubModule(null);
+    setReportType(null);
+    alert("নিরাপত্তা জনিত কারণে আপনার ২ ঘন্টার সেশন শেষ হয়েছে এবং আপনি স্বয়ংক্রিয়ভাবে লগআউট হয়েছেন।");
+  };
+
   const handleLogout = async () => {
     if (window.confirm("আপনি কি এডমিন একাউন্ট থেকে লগআউট করতে চান?")) {
       setIsAdmin(false);
       localStorage.removeItem(ADMIN_MODE_KEY);
       localStorage.removeItem('unauthorized_user_detected');
       localStorage.removeItem('show_admin_login_portal');
-      await supabase.auth.signOut();
+      localStorage.removeItem('ledger_login_timestamp');
+      try {
+        if (isSupabaseConfigured && supabase) {
+          await supabase.auth.signOut();
+        }
+      } catch (e) {
+        console.error("Error signing out:", e);
+      }
       setActiveTab('landing');
       setEntryModule(null);
       setRegisterSubModule(null);
       setReportType(null);
     }
   };
+
+  // Auto-logout background session check every 10 seconds
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const checkTimeout = () => {
+      const loginTimeStr = localStorage.getItem('ledger_login_timestamp');
+      if (loginTimeStr) {
+        const loginTime = parseInt(loginTimeStr, 10);
+        const currentTime = Date.now();
+        const duration = currentTime - loginTime;
+        // 2 hours = 7200000 ms
+        if (duration >= 7200000) {
+          handleAutoLogout();
+        }
+      } else {
+        localStorage.setItem('ledger_login_timestamp', Date.now().toString());
+      }
+    };
+
+    checkTimeout();
+    const interval = setInterval(checkTimeout, 10000);
+    return () => clearInterval(interval);
+  }, [isAdmin]);
 
   const handleExportDatabase = () => {
     try {

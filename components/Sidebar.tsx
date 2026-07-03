@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3, Settings, ArrowRight, Chrome, Landmark } from 'lucide-react';
+import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sparkles, Lock, Unlock, CheckCircle2, Download, Upload, ShieldCheck, LogOut, X, KeyRound, Fingerprint, AlertCircle, Library, Link as LinkIcon, Plus, ChevronDown, Trash2, Globe, Mail, ClipboardList, BarChart3, Settings, ArrowRight, Chrome, Landmark, Eye, EyeOff } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { signInWithGoogle } from '../lib/supabase';
 import { ModuleVisibility } from '../types';
@@ -74,6 +74,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const setShowAdminModal = setShowAdminLogin || (() => {});
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [adminEmailInput, setAdminEmailInput] = useState('');
   const [recoveryAnswer, setRecoveryAnswer] = useState('');
   const [recoveredPassword, setRecoveredPassword] = useState<string | null>(null);
@@ -229,9 +230,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       setIsAdmin(true);
       localStorage.setItem('ledger_admin_access_v1', 'true');
       localStorage.setItem('ledger_admin_email_v1', 'jamaluddinkh3424@gmail.com');
+      localStorage.setItem('ledger_login_timestamp', Date.now().toString());
       setShowAdminModal(false);
       setAdminPassword('');
       setAdminEmailInput('');
+      setShowPassword(false);
     } else {
       alert("ভুল জিমেইল আইডি অথবা পাসওয়ার্ড!");
     }
@@ -371,6 +374,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const handleLogout = () => {
     setShowAdminLoginButton(false);
     localStorage.removeItem('show_admin_login_portal');
+    localStorage.removeItem('ledger_login_timestamp');
     if (onLogout) {
       onLogout();
     } else {
@@ -834,6 +838,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
       </div>
+
       {showAdminModal && (
         <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-500">
           <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 space-y-6 animate-in zoom-in-95 duration-500 relative overflow-y-auto max-h-[90vh] group no-scrollbar">
@@ -853,7 +858,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 </div>
                 <button 
-                  onClick={() => { setShowAdminModal(false); setAdminPassword(''); }} 
+                  onClick={() => { setShowAdminModal(false); setAdminPassword(''); setShowPassword(false); }} 
                   className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all border border-white/5"
                 >
                   <X size={18} />
@@ -889,13 +894,20 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <Lock size={16} />
                       </div>
                       <input 
-                        type="password" 
+                        type={showPassword ? "text" : "password"} 
                         placeholder="••••••••" 
                         value={adminPassword} 
                         onChange={(e) => setAdminPassword(e.target.value)} 
-                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white font-bold text-sm outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-600 block" 
+                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-12 py-3 text-white font-bold text-sm outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-600 block" 
                         required
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
                     </div>
                   </div>
 
@@ -911,7 +923,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <div className="flex gap-4 pt-2">
                     <button 
                       type="button" 
-                      onClick={() => { setShowAdminModal(false); setAdminPassword(''); setAdminEmailInput(''); }} 
+                      onClick={() => { setShowAdminModal(false); setAdminPassword(''); setAdminEmailInput(''); setShowPassword(false); }} 
                       className="flex-1 py-3 bg-white/5 text-slate-300 rounded-xl font-bold text-xs hover:bg-white/15 transition-all active:scale-95 border border-white/5 cursor-pointer"
                     >
                       বাতিল
