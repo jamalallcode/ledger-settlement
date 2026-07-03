@@ -318,6 +318,10 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           if (!isEntityMatch(e.entityName, entityName)) return false;
           if (!isMinistryMatch(e.ministryName, mName)) return false;
           if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
+          
+          const mType = robustNormalize(e.meetingType || e.letterType || '');
+          if (!mType.includes(robustNormalize('বিএসআর'))) return false;
+
           const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
           return entryDate !== '' && entryDate >= '2025-07-01' && entryDate < cycleStartStr;
         });
@@ -722,6 +726,10 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           if (!isEntityMatch(e.entityName, entityName)) return false;
           if (!isMinistryMatch(e.ministryName, mName)) return false;
           if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
+
+          const mType = robustNormalize(e.meetingType || e.letterType || '');
+          if (!mType.includes(robustNormalize('বিএসআর'))) return false;
+
           const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
           return entryDate !== '' && entryDate >= '2025-07-01' && entryDate < cycleStartStr;
         });
@@ -758,6 +766,10 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           if (!isEntityMatch(e.entityName, entityName)) return false;
           if (!isMinistryMatch(e.ministryName, mName)) return false;
           if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
+
+          const mType = robustNormalize(e.meetingType || e.letterType || '');
+          if (!mType.includes(robustNormalize('বিএসআর'))) return false;
+
           const entryDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
           if (!entryDateStr) return false;
           const entryDate = new Date(entryDateStr);
@@ -893,6 +905,10 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           if (!isEntityMatch(e.entityName, entityName)) return false;
           if (!isMinistryMatch(e.ministryName, mName)) return false;
           if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
+
+          const mType = robustNormalize(e.meetingType || e.letterType || '');
+          if (!mType.includes(robustNormalize('বিএসআর'))) return false;
+
           const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
           return entryDate !== '' && entryDate < cycleStartStr && entryDate >= ENTRY_START_DATE;
         });
@@ -929,6 +945,10 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           if (!isEntityMatch(e.entityName, entityName)) return false;
           if (!isMinistryMatch(e.ministryName, mName)) return false;
           if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
+
+          const mType = robustNormalize(e.meetingType || e.letterType || '');
+          if (!mType.includes(robustNormalize('বিএসআর'))) return false;
+
           const entryDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
           if (!entryDateStr) return false;
           const entryDate = new Date(entryDateStr);
@@ -1030,13 +1050,9 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     // Filter by Non-SFI
     if (robustNormalize(e.paraType) !== robustNormalize('নন এসএফআই')) return false;
     
-    // Filter by BSR, bilateral, trilateral
+    // Filter only by BSR
     const mType = robustNormalize(e.meetingType || e.letterType || '');
-    const isValidType = mType.includes(robustNormalize('বিএসআর')) || 
-                        mType.includes(robustNormalize('দ্বিপক্ষীয়')) || 
-                        mType.includes(robustNormalize('দ্বিপাক্ষিক')) || 
-                        mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
-                        e.isMeeting;
+    const isValidType = mType.includes(robustNormalize('বিএসআর'));
     if (!isValidType) return false;
 
     // Filter by Date Range (Issue Date)

@@ -144,13 +144,10 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     // Filter by Non-SFI
     if (robustNormalize(e.paraType) !== robustNormalize('নন এসএফআই')) return false;
     
-    // Filter by BSR, bilateral, trilateral
+    // Filter only by bilateral meetings
     const mType = robustNormalize(e.meetingType || e.letterType || '');
-    const isValidType = mType.includes(robustNormalize('বিএসআর')) || 
-                        mType.includes(robustNormalize('দ্বিপক্ষীয়')) || 
-                        mType.includes(robustNormalize('দ্বিপাক্ষিক')) || 
-                        mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
-                        e.isMeeting;
+    const isValidType = mType.includes(robustNormalize('দ্বিপক্ষীয়')) || 
+                        mType.includes(robustNormalize('দ্বিপাক্ষিক'));
     if (!isValidType) return false;
 
     // Filter by Date Range (Issue Date)
