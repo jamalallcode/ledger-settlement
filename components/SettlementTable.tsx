@@ -762,96 +762,86 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
               </p>
             )}
 
-            {/* EXPANDED ADDITIONAL FIELDS */}
-            {isExpanded && (
-              <div className="mt-3 pt-3 border-t-2 border-dashed border-slate-300 space-y-2 animate-in fade-in duration-300">
-                <div className="bg-blue-50/50 p-2 rounded-lg border border-blue-100/80 mb-2">
-                  <p className="text-[9px] font-black text-blue-800 uppercase tracking-wider mb-1 flex items-center gap-1">
-                    <Sparkles size={10} className="text-blue-600 animate-pulse" /> অতিরিক্ত তথ্য বিবরণী (২০ ফিল্ড)
+            {/* ADDITIONAL FIELDS - ALWAYS SHOWING DIRECTLY LINE BY LINE */}
+            <div className="mt-3 pt-3 border-t-2 border-dashed border-slate-300 space-y-2">
+              <div className="bg-blue-50/50 p-2 rounded-lg border border-blue-100/80 mb-2">
+                <p className="text-[9px] font-black text-blue-800 uppercase tracking-wider flex items-center gap-1">
+                  <Sparkles size={10} className="text-blue-600 animate-pulse" /> অতিরিক্ত তথ্য বিবরণী (২০ ফিল্ড)
+                </p>
+              </div>
+              
+              <div className="flex flex-col gap-y-1.5 text-[10px] pl-1">
+                <p className="leading-tight">
+                  <span className="font-black text-slate-500">১. শাখা ধরণ:</span>{" "}
+                  <span className="font-bold text-slate-900 bg-slate-100 px-1 py-0.5 rounded">{entry.paraType || "-"}</span>
+                </p>
+                <p className="leading-tight">
+                  <span className="font-black text-slate-500">২. চিঠির ধরণ:</span>{" "}
+                  <span className="font-bold text-slate-900">{entry.isMeeting ? entry.meetingType : "বিএসআর"}</span>
+                </p>
+                <p className="leading-tight">
+                  <span className="font-black text-slate-500">৮. কার্যপত্র নং ও তারিখ:</span>{" "}
+                  <span className="font-bold text-slate-900 whitespace-pre-wrap">{formatWorkpaperInfoForDisplay(entry.meetingWorkpaper) || "-"}</span>
+                </p>
+                <p className="leading-tight">
+                  <span className="font-black text-slate-500">৯. আলোচিত অনুচ্ছেদ:</span>{" "}
+                  <span className="font-bold text-indigo-700 bg-indigo-50 px-1 rounded">{toBengaliDigits(entry.meetingDiscussedParaCount || "০")} টি</span>
+                </p>
+                <p className="leading-tight">
+                  <span className="font-black text-slate-500">১৩. প্রেরিত অনুচ্ছেদ:</span>{" "}
+                  <span className="font-bold text-slate-900">{toBengaliDigits(entry.meetingSentParaCount || "০")} টি</span>
+                </p>
+                <p className="leading-tight">
+                  <span className="font-black text-slate-500">১৪. সুপারিশকৃত অনুচ্ছেদ:</span>{" "}
+                  <span className="font-bold text-slate-900">{toBengaliDigits(entry.meetingRecommendedParaCount || "০")} টি</span>
+                </p>
+                <p className="leading-tight">
+                  <span className="font-black text-slate-500">১৫. মোট জড়িত টাকা:</span>{" "}
+                  <span className="font-bold text-amber-700">{toBengaliDigits(entry.involvedAmount || 0)} টাকা</span>
+                </p>
+                <p className="leading-tight">
+                  <span className="font-black text-slate-500">১৬. অমীমাংসিত সংখ্যা:</span>{" "}
+                  <span className="font-bold text-red-600">{toBengaliDigits(entry.meetingUnsettledParas || "০")} টি</span>
+                </p>
+                <p className="leading-tight">
+                  <span className="font-black text-slate-500">১৭. অমীমাংসিত টাকা:</span>{" "}
+                  <span className="font-bold text-red-600">{toBengaliDigits(entry.meetingUnsettledAmount ?? 0)} টাকা</span>
+                </p>
+                <p className="leading-tight">
+                  <span className="font-black text-slate-500">১৮. মীমাংসিত সংখ্যা:</span>{" "}
+                  <span className="font-bold text-emerald-700 bg-emerald-50 px-1 rounded">{toBengaliDigits(entry.paragraphs?.filter(p => p.status === "পূর্ণাঙ্গ").length || 0)} টি</span>
+                </p>
+                <p className="leading-tight">
+                  <span className="font-black text-slate-500">১৯. সভার তারিখ:</span>{" "}
+                  <span className="font-bold text-slate-900">{formatDateBN(entry.meetingDate) || "-"}</span>
+                </p>
+                <p className="leading-tight">
+                  <span className="font-black text-slate-500">২২.গ. কার্যবিবরণী প্রাপ্তি:</span>{" "}
+                  <span className="font-bold text-slate-900">{entry.meetingResponseDate || "-"}</span>
+                </p>
+                <p className="leading-tight">
+                  <span className="font-black text-slate-500">১৬. অনলাইন স্ট্যাটাস:</span>{" "}
+                  <span className="font-bold text-slate-900">{entry.isSentOnline || "না"}</span>
+                </p>
+                {(entry.manualRaisedCount || entry.manualRaisedAmount) ? (
+                  <p className="leading-tight">
+                    <span className="font-black text-blue-700">উত্থাপিত আপত্তি:</span>{" "}
+                    <span className="font-bold text-blue-900">
+                      {toBengaliDigits(entry.manualRaisedCount || "০")} টি ({toBengaliDigits(Math.round(entry.manualRaisedAmount || 0))} টাকা)
+                    </span>
+                  </p>
+                ) : null}
+              </div>
+
+              {entry.remarks && (
+                <div className="mt-2 p-1.5 bg-slate-50 rounded border border-slate-200">
+                  <p className="leading-tight">
+                    <span className="font-black text-slate-500">২০. মন্তব্য:</span>{" "}
+                    <span className="font-medium text-slate-800 italic whitespace-pre-wrap">{entry.remarks}</span>
                   </p>
                 </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-[10px]">
-                  <div className="space-y-1">
-                    <p className="leading-tight">
-                      <span className="font-black text-slate-500">১. শাখা ধরণ:</span>{" "}
-                      <span className="font-bold text-slate-900 bg-slate-100 px-1 py-0.5 rounded">{entry.paraType || "-"}</span>
-                    </p>
-                    <p className="leading-tight">
-                      <span className="font-black text-slate-500">২. চিঠির ধরণ:</span>{" "}
-                      <span className="font-bold text-slate-900">{entry.isMeeting ? entry.meetingType : "বিএসআর"}</span>
-                    </p>
-                    <p className="leading-tight">
-                      <span className="font-black text-slate-500">৮. কার্যপত্র নং ও তারিখ:</span>{" "}
-                      <span className="font-bold text-slate-900 whitespace-pre-wrap">{formatWorkpaperInfoForDisplay(entry.meetingWorkpaper) || "-"}</span>
-                    </p>
-                    <p className="leading-tight">
-                      <span className="font-black text-slate-500">৯. আলোচিত অনুচ্ছেদ:</span>{" "}
-                      <span className="font-bold text-indigo-700 bg-indigo-50 px-1 rounded">{toBengaliDigits(entry.meetingDiscussedParaCount || "০")} টি</span>
-                    </p>
-                    <p className="leading-tight">
-                      <span className="font-black text-slate-500">১৩. প্রেরিত অনুচ্ছেদ:</span>{" "}
-                      <span className="font-bold text-slate-900">{toBengaliDigits(entry.meetingSentParaCount || "০")} টি</span>
-                    </p>
-                    <p className="leading-tight">
-                      <span className="font-black text-slate-500">১৪. সুপারিশকৃত অনুচ্ছেদ:</span>{" "}
-                      <span className="font-bold text-slate-900">{toBengaliDigits(entry.meetingRecommendedParaCount || "০")} টি</span>
-                    </p>
-                    <p className="leading-tight">
-                      <span className="font-black text-slate-500">১৫. মোট জড়িত টাকা:</span>{" "}
-                      <span className="font-bold text-amber-700">{toBengaliDigits(entry.involvedAmount || 0)} টাকা</span>
-                    </p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <p className="leading-tight">
-                      <span className="font-black text-slate-500">১৬. অমীমাংসিত সংখ্যা:</span>{" "}
-                      <span className="font-bold text-red-600">{toBengaliDigits(entry.meetingUnsettledParas || "০")} টি</span>
-                    </p>
-                    <p className="leading-tight">
-                      <span className="font-black text-slate-500">১৭. অমীমাংসিত টাকা:</span>{" "}
-                      <span className="font-bold text-red-600">{toBengaliDigits(entry.meetingUnsettledAmount ?? 0)} টাকা</span>
-                    </p>
-                    <p className="leading-tight">
-                      <span className="font-black text-slate-500">১৮. মীমাংসিত সংখ্যা:</span>{" "}
-                      <span className="font-bold text-emerald-700 bg-emerald-50 px-1 rounded">{toBengaliDigits(entry.paragraphs?.filter(p => p.status === "পূর্ণাঙ্গ").length || 0)} টি</span>
-                    </p>
-                    <p className="leading-tight">
-                      <span className="font-black text-slate-500">১৯. সভার তারিখ:</span>{" "}
-                      <span className="font-bold text-slate-900">{formatDateBN(entry.meetingDate) || "-"}</span>
-                    </p>
-                    <p className="leading-tight">
-                      <span className="font-black text-slate-500">২২.গ. কার্যবিবরণী প্রাপ্তি:</span>{" "}
-                      <span className="font-bold text-slate-900">{entry.meetingResponseDate || "-"}</span>
-                    </p>
-                    <p className="leading-tight">
-                      <span className="font-black text-slate-500">১৬. অনলাইন স্ট্যাটাস:</span>{" "}
-                      <span className="font-bold text-slate-900">{entry.isSentOnline || "না"}</span>
-                    </p>
-                    {(entry.manualRaisedCount || entry.manualRaisedAmount) ? (
-                      <p className="leading-tight">
-                        <span className="font-black text-blue-700">উত্থাপিত আপত্তি:</span>{" "}
-                        <span className="font-bold text-blue-900">
-                          {toBengaliDigits(entry.manualRaisedCount || "০")} টি ({toBengaliDigits(Math.round(entry.manualRaisedAmount || 0))} টাকা)
-                        </span>
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-
-                {entry.remarks && (
-                  <div className="mt-2 p-1.5 bg-slate-50 rounded border border-slate-200">
-                    <p className="leading-tight">
-                      <span className="font-black text-slate-500">২০. মন্তব্য:</span>{" "}
-                      <span className="font-medium text-slate-800 italic whitespace-pre-wrap">{entry.remarks}</span>
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <div className="p-1 bg-slate-100 rounded-md text-slate-400 group-hover:text-blue-500 self-start ml-2 shadow-sm transition-all shrink-0">
-            {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              )}
+            </div>
           </div>
         </div>
       );
@@ -1938,10 +1928,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                       </td>
                                       <td
                                         rowSpan={paras.length}
-                                        onClick={() => toggleExpand(entry.id)}
                                         className={
                                           tdBase +
-                                          " cursor-pointer group-hover:bg-blue-50/50 transition-all text-left p-3"
+                                          " text-left p-3"
                                         }
                                       >
                                         {renderCellDescription(entry, isExpanded)}
@@ -2155,10 +2144,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                   {toBengaliDigits(idx + 1)}
                                 </td>
                                 <td
-                                  onClick={() => toggleExpand(entry.id)}
                                   className={
                                     tdBase +
-                                    " cursor-pointer group-hover:bg-blue-50/50 transition-all text-left p-3"
+                                    " text-left p-3"
                                   }
                                 >
                                   {renderCellDescription(entry, isExpanded)}
