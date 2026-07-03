@@ -372,7 +372,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
             ))}
           </tbody>
           <tfoot className="font-black h-[32px] qr-sticky-footer qr-sticky-footer-bottom">
-            <tr className="bg-black text-white">
+            <tr className="bg-black text-white no-hover-row">
               <td className={footerNumTdCls} colSpan={2}>মোট</td>
               <td className={`${footerNumTdCls} w-[62px]`}>
                 {toBengaliDigits(filteredData.length.toString())}
