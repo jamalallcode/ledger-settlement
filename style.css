@@ -21,7 +21,13 @@ body {
 /* Force table to fit within container at 100% zoom on desktop/laptop */
 @media (min-width: 1280px) {
   .table-container {
-    overflow: visible !important;
+    max-height: calc(100vh - 240px) !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    scrollbar-gutter: stable;
+  }
+  .qr-table-container.table-container {
+    height: calc(100vh - 240px) !important;
   }
   .table-container table {
     table-layout: fixed !important;
@@ -35,6 +41,9 @@ body {
     overflow-y: auto !important;
     overflow-x: auto !important;
     scrollbar-gutter: stable;
+  }
+  .qr-table-container.table-container {
+    height: 72vh;
   }
 }
 

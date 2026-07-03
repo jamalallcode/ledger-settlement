@@ -12,7 +12,13 @@
 
 @media (min-width: 1280px) {
   .table-container {
-    overflow: visible !important;
+    max-height: calc(100vh - 240px) !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    scrollbar-gutter: stable;
+  }
+  .qr-table-container.table-container {
+    height: calc(100vh - 240px) !important;
   }
 }
 
@@ -22,6 +28,9 @@
     overflow-y: auto !important;
     overflow-x: auto !important;
     scrollbar-gutter: stable;
+  }
+  .qr-table-container.table-container {
+    height: 72vh;
   }
 }
 

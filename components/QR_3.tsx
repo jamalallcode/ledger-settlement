@@ -1275,7 +1275,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     const totals = { pC: 0, pA: 0, cC: 0, cA: 0, tC: 0, sC: 0, sA: 0, fC: 0, fA: 0 };
 
     return (
-      <div className="table-container qr-table-container mb-10 overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg">
+      <div className="table-container qr-table-container mb-10 overflow-auto border border-slate-400 shadow-sm rounded-lg">
         <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">
@@ -1376,25 +1376,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     <div id="qr-3-container" className="w-full mx-auto py-4 px-[4px] bg-white rounded-xl relative animate-in fade-in duration-500 font-sans">
       <IDBadge id="qr-3-container" />
       
-      <div className="flex justify-between items-center mb-4 no-print gap-4">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIsPrevLedgerOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 hover:border-amber-300 rounded-xl text-[11px] font-bold transition-all cursor-pointer shadow-sm shrink-0"
-          >
-            <Sparkles size={13} className="text-amber-500 animate-pulse" />
-            <span>পূর্ব জের (টেবিল-১)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsPrevLedgerTable2Open(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 hover:border-amber-300 rounded-xl text-[11px] font-bold transition-all cursor-pointer shadow-sm shrink-0"
-          >
-            <Sparkles size={13} className="text-amber-500 animate-pulse" />
-            <span>পূর্ব জের (টেবিল-২)</span>
-          </button>
-        </div>
+      <div className="flex justify-end items-center mb-4 no-print">
         <button
           type="button"
           onClick={downloadExcel}
@@ -1405,32 +1387,56 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         </button>
       </div>
 
-      {/* Header Section */}
-      <div className="text-center mb-3 pt-1 relative z-[260]">
-        <div className="inline-block relative">
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">
-            {customTitle || "ত্রৈমাসিক রিটার্ন - ৩"}
-          </h1>
+      {/* Print-only title to ensure perfect centering in print mode */}
+      <div className="hidden print:block text-center mb-3">
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+          {customTitle || "ত্রৈমাসিক রিটার্ন - ৩"}
+        </h1>
+        <p className="text-[12px] font-bold text-slate-700 mt-1">
+          {activeCycle.label}
+        </p>
+      </div>
 
-          {/* Date Range Pill */}
-          <div className="mt-1 mb-2 flex items-center justify-center gap-3 no-print flex-wrap">
-            <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 border border-blue-100 rounded-full shadow-sm scale-95 origin-center">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-              <span className="text-blue-700 font-bold text-[12px]">
-                {customTitle || "ত্রৈমাসিক রিটার্ন - ৩"} | {activeCycle.label}
-              </span>
+      {/* Header Section with symmetric layout */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-5 pt-1 relative z-[260] no-print">
+        {/* Left Column: Previous Ledger Setup buttons */}
+        <div className="flex items-center gap-2 w-full md:w-auto justify-start">
+          <button
+            type="button"
+            onClick={() => setIsPrevLedgerOpen(true)}
+            className="flex items-center gap-1.5 px-3 h-[38px] bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 hover:border-amber-300 hover:shadow-sm transition-all duration-300 rounded-xl text-[11px] font-black cursor-pointer shrink-0"
+          >
+            <Sparkles size={13} className="text-amber-500 animate-pulse" />
+            <span>পূর্ব জের (টেবিল-১)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsPrevLedgerTable2Open(true)}
+            className="flex items-center gap-1.5 px-3 h-[38px] bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 hover:border-amber-300 hover:shadow-sm transition-all duration-300 rounded-xl text-[11px] font-black cursor-pointer shrink-0"
+          >
+            <Sparkles size={13} className="text-amber-500 animate-pulse" />
+            <span>পূর্ব জের (টেবিল-২)</span>
+          </button>
+        </div>
+
+        {/* Center Column: Title */}
+        <h1 className="text-2.5xl font-black text-slate-900 tracking-tight text-center md:absolute md:left-1/2 md:-translate-x-1/2">
+          {customTitle || "ত্রৈমাসিক রিটার্ন - ৩"}
+        </h1>
+
+        {/* Right Column: Date Range Pill & Month Picker */}
+        <div className="flex items-center gap-2.5 w-full md:w-auto justify-end flex-wrap">
+          <div className="inline-flex items-center gap-2 px-3.5 h-[38px] bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+            <span className="text-blue-700 font-black text-[12.5px] whitespace-nowrap">
+              {customTitle || "ত্রৈমাসিক রিটার্ন - ৩"} | {activeCycle.label}
+            </span>
+          </div>
+          {monthPickerElement && (
+            <div className="select-none relative z-[300]">
+              {monthPickerElement}
             </div>
-            {monthPickerElement && (
-              <div className="scale-95 origin-center select-none relative z-[300]">
-                {monthPickerElement}
-              </div>
-            )}
-          </div>
-          <div className="flex items-center justify-center gap-4">
-            <div className="h-[1px] w-10 bg-gradient-to-r from-transparent to-slate-400"></div>
-            <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
-            <div className="h-[1px] w-10 bg-gradient-to-l from-transparent to-slate-400"></div>
-          </div>
+          )}
         </div>
       </div>
 

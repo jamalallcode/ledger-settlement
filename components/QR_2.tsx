@@ -1605,45 +1605,66 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           </button>
         </div>
 
-        {/* Outer Visual Container / Elegant Report Title Section */}
-        <div className="flex items-center justify-between border-b-[3px] border-double border-slate-900 pb-2 mb-3 px-1 flex-wrap gap-2">
-          <h1 className="text-[14px] md:text-[15px] font-black text-slate-900 leading-tight">
+        {/* Print-only title to ensure perfect centering in print mode */}
+        <div className="hidden print:block text-center mb-4 border-b-[3px] border-double border-slate-900 pb-2">
+          <h1 className="text-xl font-black text-slate-900 tracking-tight">
             {getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত অডিট আপত্তির ত্রৈমাসিক রিটার্ন
           </h1>
-          <div className="flex items-center gap-2 no-print">
-            <button
-              type="button"
-              onClick={() => setIsPrevLedgerOpen(true)}
-              className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 hover:shadow-md border border-amber-600 hover:border-amber-700 rounded-lg font-black text-xs transition-all duration-300 select-none cursor-pointer"
-            >
-              পূর্ব জের (টেবিল-১)
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsPrevLedgerTable2Open(true)}
-              className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 hover:shadow-md border border-amber-600 hover:border-amber-700 rounded-lg font-black text-xs transition-all duration-300 select-none cursor-pointer"
-            >
-              পূর্ব জের (টেবিল-২)
-            </button>
+          <div className="flex justify-between items-center mt-1 text-[11px] font-bold text-slate-700">
+            <span>রিপোর্ট চক্র: {activeCycle.label}</span>
+            <span>নন-এসএফআই</span>
           </div>
-          <span className="text-[14px] md:text-[15px] font-black text-slate-900">
-            নন-এসএফআই
-          </span>
         </div>
 
-        {/* Month range selector pill for the dynamic UI */}
-        <div className="mt-1 mb-4 flex items-center justify-start gap-3 no-print flex-wrap">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-full text-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-pulse"></span>
-            <span className="text-slate-700 font-medium">
-              রিপোর্ট চক্র: {activeCycle.label}
-            </span>
+        {/* Header Section with symmetric layout */}
+        <div className="flex flex-col gap-4 mb-6 pt-1 relative z-[260] no-print font-sans">
+          {/* Title Area - at the very top */}
+          <div className="text-center pb-2 border-b border-slate-100">
+            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+              {getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত অডিট আপত্তির ত্রৈমাসিক রিটার্ন
+            </h1>
           </div>
-          {monthPickerElement && (
-            <div className="scale-95 origin-center select-none relative z-[300]">
-              {monthPickerElement}
+
+          {/* Controls Area - beneath the title */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* Left Column: Previous Ledger Setup buttons */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setIsPrevLedgerOpen(true)}
+                className="flex items-center gap-1.5 px-3 h-[38px] bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 hover:border-amber-300 hover:shadow-sm transition-all duration-300 rounded-xl text-[11px] font-black cursor-pointer shrink-0"
+              >
+                <Sparkles size={13} className="text-amber-500 animate-pulse" />
+                <span>পূর্ব জের (টেবিল-১)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsPrevLedgerTable2Open(true)}
+                className="flex items-center gap-1.5 px-3 h-[38px] bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 hover:border-amber-300 hover:shadow-sm transition-all duration-300 rounded-xl text-[11px] font-black cursor-pointer shrink-0"
+              >
+                <Sparkles size={13} className="text-amber-500 animate-pulse" />
+                <span>পূর্ব জের (টেবিল-২)</span>
+              </button>
             </div>
-          )}
+
+            {/* Right Column: Date Range Pill, Month Picker, and Badge */}
+            <div className="flex items-center gap-2.5 flex-wrap justify-start md:justify-end">
+              <div className="inline-flex items-center gap-2 px-3.5 h-[38px] bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                <span className="text-blue-700 font-black text-[12px] whitespace-nowrap">
+                  রিপোর্ট চক্র: {activeCycle.label}
+                </span>
+              </div>
+              {monthPickerElement && (
+                <div className="select-none relative z-[300]">
+                  {monthPickerElement}
+                </div>
+              )}
+              <span className="inline-flex items-center px-3.5 h-[38px] bg-slate-100 border border-slate-200 text-slate-800 font-black text-[12px] rounded-xl shadow-sm whitespace-nowrap">
+                নন-এসএফআই
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Table 1 Section Header */}
@@ -1654,7 +1675,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         </div>
 
         {/* Table 1 Container */}
-        <div className="table-container qr-table-container overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg mb-8">
+        <div className="table-container qr-table-container overflow-auto border border-slate-400 shadow-sm rounded-lg mb-8">
           <table className="w-full border-separate border-spacing-0 min-w-[1200px] !table-auto border-l border-t border-slate-400">
             <thead className="bg-slate-100">
               <tr>
@@ -1739,7 +1760,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         </div>
 
         {/* Table 2 Container */}
-        <div className="table-container qr-table-container overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg">
+        <div className="table-container qr-table-container overflow-auto border border-slate-400 shadow-sm rounded-lg">
           <table className="w-full border-separate border-spacing-0 min-w-[1200px] !table-auto border-l border-t border-slate-400">
             <thead className="bg-slate-100">
               <tr>
@@ -1921,7 +1942,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       </div>
 
       {/* Table Section */}
-      <div className="table-container qr-table-container overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg">
+      <div className="table-container qr-table-container overflow-auto border border-slate-400 shadow-sm rounded-lg">
         <table className="w-full border-separate border-spacing-0 min-w-[1200px] !table-auto border-l border-t border-slate-400">
           <thead className="bg-slate-100">
             <tr className="h-[44px]">
