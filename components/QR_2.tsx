@@ -1675,7 +1675,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         </div>
 
         {/* Table 1 Container */}
-        <div className="table-container qr-table-container overflow-auto border border-slate-400 shadow-sm rounded-lg mb-8">
+        <div className="table-container qr-table-container overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg mb-8">
           <table className="w-full border-separate border-spacing-0 min-w-[1200px] !table-auto border-l border-t border-slate-400">
             <thead className="bg-slate-100">
               <tr>
@@ -1760,7 +1760,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         </div>
 
         {/* Table 2 Container */}
-        <div className="table-container qr-table-container overflow-auto border border-slate-400 shadow-sm rounded-lg">
+        <div className="table-container qr-table-container overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg">
           <table className="w-full border-separate border-spacing-0 min-w-[1200px] !table-auto border-l border-t border-slate-400">
             <thead className="bg-slate-100">
               <tr>
@@ -1942,7 +1942,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       </div>
 
       {/* Table Section */}
-      <div className="table-container qr-table-container overflow-auto border border-slate-400 shadow-sm rounded-lg">
+      <div className="table-container qr-table-container overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg">
         <table className="w-full border-separate border-spacing-0 min-w-[1200px] !table-auto border-l border-t border-slate-400">
           <thead className="bg-slate-100">
             <tr className="h-[44px]">
