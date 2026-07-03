@@ -531,10 +531,8 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
         (acc, entry) => {
           const paras = entry.paragraphs || [];
           
-          // Count full settlements from paragraphs OR from meeting summary count
-          const pFullCount = paras.filter((p) => p.status === "পূর্ণাঙ্গ").length;
-          const mFullCount = parseBengaliNumber(entry.meetingFullSettledParaCount || "0");
-          acc.paraCount += Math.max(pFullCount, mFullCount);
+          // Count total number of paragraphs listed in the table
+          acc.paraCount += paras.length;
 
           // Use entry.involvedAmount if available as it includes meeting unsettled amounts
           acc.inv += entry.involvedAmount || paras.reduce((sum, p) => sum + (p.involvedAmount || 0), 0);
