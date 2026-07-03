@@ -18,6 +18,15 @@ interface QRProps {
   customTitle?: string;
 }
 
+const robustNormalize = (str: string = '') => {
+  return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+};
+
+// Categorization helper
+const isFinancialInstitution = (ministryName: string) => {
+  return robustNormalize(ministryName).includes(robustNormalize('আর্থিক প্রতিষ্ঠান বিভাগ'));
+};
+
 const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', monthPickerElement, customTitle }) => {
   // Standard calendar quarter date calculation:
   // Quarters: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec)
@@ -1111,15 +1120,6 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
   const formatYearBN = (date: Date) => toBengaliDigits(format(date, 'yyyy'));
   const formatShortYearBN = (date: Date) => toBengaliDigits(format(date, 'yy'));
-
-  const robustNormalize = (str: string = '') => {
-    return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
-  };
-
-  // Categorization helper
-  const isFinancialInstitution = (ministryName: string) => {
-    return robustNormalize(ministryName).includes(robustNormalize('আর্থিক প্রতিষ্ঠান বিভাগ'));
-  };
 
   const processData = (isFI: boolean) => {
     const map = new Map<string, any>();
