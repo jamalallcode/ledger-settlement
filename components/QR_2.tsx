@@ -1079,11 +1079,17 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     const unsetlCount = parseInt(toEnglishDigits(curr.meetingUnsettledParas || '0')) || Math.max(0, sCount - setlCount);
     const unsAmount = Math.max(0, (curr.involvedAmount || 0) - (curr.totalRec || 0) - (curr.totalAdj || 0));
     
+    const settledAmount = curr.paragraphs && curr.paragraphs.length > 0
+      ? curr.paragraphs
+          .filter(p => p.status === 'পূর্ণাঙ্গ')
+          .reduce((sum, p) => sum + (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0), 0)
+      : (curr.involvedAmount || 0);
+
     return {
       sentPara: acc.sentPara + sCount,
       settledPara: acc.settledPara + setlCount,
       unsettledPara: acc.unsettledPara + unsetlCount,
-      amount: acc.amount + (curr.involvedAmount || 0),
+      amount: acc.amount + settledAmount,
       recovery: acc.recovery + (curr.totalRec || 0),
       adjustment: acc.adjustment + (curr.totalAdj || 0),
       unsettledAmount: acc.unsettledAmount + unsAmount,
@@ -1545,7 +1551,13 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                     <HighlightText text={formatTextValue(row.issueLetterNoDate)} searchTerm={searchTerm} />
                   </td>
                   <td className={numTdCls}>
-                    {formatAmountBengali(row.involvedAmount)}
+                    {formatAmountBengali(
+                      row.paragraphs && row.paragraphs.length > 0
+                        ? row.paragraphs
+                            .filter(p => p.status === 'পূর্ণাঙ্গ')
+                            .reduce((sum, p) => sum + (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0), 0)
+                        : (row.involvedAmount || 0)
+                    )}
                   </td>
                   <td className={`${numTdCls} text-emerald-600 bg-emerald-50/10`}>
                     {formatAmountBengali(row.totalRec)}

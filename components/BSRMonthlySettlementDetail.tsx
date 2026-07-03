@@ -115,7 +115,14 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
 
       const sentPara = acc.sentPara + rowSentCount;
       const settledPara = acc.settledPara + rowSettledCount;
-      const involvedAmount = acc.involvedAmount + (curr.involvedAmount || 0);
+
+      const settledAmountValue = curr.paragraphs && curr.paragraphs.length > 0
+        ? curr.paragraphs
+            .filter(p => p.status === 'পূর্ণাঙ্গ')
+            .reduce((sum, p) => sum + (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0), 0)
+        : (curr.involvedAmount || 0);
+
+      const involvedAmount = acc.involvedAmount + settledAmountValue;
       const recoveredAmount = acc.recoveredAmount + (curr.totalRec || 0);
       const adjustedAmount = acc.adjustedAmount + (curr.totalAdj || 0);
       const othersAmount = 0; // Prevent redundant othersAmount in BSRMonthlySettlementDetail report
@@ -594,7 +601,13 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                         <HighlightText text={formatTextValue(row.issueLetterNoDate)} searchTerm={searchTerm} />
                       </td>
                       <td className={numTdStyle}>
-                        {formatAmountBengali(row.involvedAmount)}
+                        {formatAmountBengali(
+                          row.paragraphs && row.paragraphs.length > 0
+                            ? row.paragraphs
+                                .filter(p => p.status === 'পূর্ণাঙ্গ')
+                                .reduce((sum, p) => sum + (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0), 0)
+                            : (row.involvedAmount || 0)
+                        )}
                       </td>
                       <td className={`${numTdStyle} text-emerald-600 bg-emerald-50/10`}>
                         {formatAmountBengali(row.totalRec)}
