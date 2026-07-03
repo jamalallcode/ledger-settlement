@@ -937,7 +937,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
           <div className="p-3 bg-slate-900 rounded-2xl text-white shrink-0">
             <Layout size={24} />
           </div>
-          <div><h3 className="text-2xl font-black text-slate-900 leading-tight">মীমাংসা এন্ট্রি</h3><p className="text-slate-500 font-bold text-sm">অনুগ্রহ করে নিচের {toBengaliDigits(formData.meetingType === 'বিএসআর' ? 16 : 18)}টি ফিল্ড সঠিকভাবে পূরণ করুন</p></div>
+          <div><h3 className="text-2xl font-black text-slate-900 leading-tight">মীমাংসা এন্ট্রি</h3><p className="text-slate-500 font-bold text-sm">অনুগ্রহ করে নিচের {toBengaliDigits(formData.meetingType === 'বিএসআর' ? (showAuditDetails ? 16 : 15) : (showAuditDetails ? 20 : 19))}টি ফিল্ড সঠিকভাবে পূরণ করুন</p></div>
         </div>
         {onCancel && (
           <button 
@@ -1061,46 +1061,46 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                   )}
                 </div>
                 <SegmentedInput id="field-8b" num={getSerial()} icon={Calendar} label="ডায়েরি তারিখ" color="emerald" noValue="DATE_ONLY" dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryYear} noSetter={()=>{}} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} error={diaryDateError} />
-
-                <div id="field-9a" className={`${colWrapperCls} ${duplicates.issueNo ? 'bg-amber-50 border-amber-200' : 'bg-amber-50/70 border-amber-100'}`}>
-                  <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Hash size={14} className="text-amber-600 shrink-0" /> জারিপত্র নং:</label>
-                  <input 
-                    type="text" 
-                    className={duplicates.issueNo ? `${inputBaseCls} border-amber-500 ring-4 ring-amber-50` : getDynamicInputCls(issueNoPart)} 
-                    value={issueNoPart} 
-                    onChange={e => setIssueNoPart(toBengaliDigits(e.target.value))} 
-                    placeholder="নং লিখুন"
-                  />
-                  {duplicates.issueNo && (
-                    <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1">
-                        <AlertCircle size={10} /> এই জারিপত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => navigateToEntry?.(duplicates.issueEntryId!, 'settlement', issueNoPart)}
-                        className="text-amber-700 hover:text-amber-900 underline underline-offset-2 flex items-center gap-1"
-                      >
-                        দেখুন <ArrowRightCircle size={10} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <SegmentedInput 
-                  id="field-9b" num={getSerial()} icon={Calendar} label="জারিপত্র তারিখ" color="amber" 
-                  noValue="DATE_ONLY" dayValue={dayPart} monthValue={monthPart} yearValue={yearPart} 
-                  noSetter={()=>{}} daySetter={setDayPart} monthSetter={setMonthPart} yearSetter={setYearPart} 
-                  dayRef={issueDayRef} monthRef={issueMonthRef} yearRef={issueYearRef} 
-                  isFocused={isIssueFocused} focusSetter={setIsIssueFocused}
-                  error={issueDateError}
-                  extra={formData.issueDateISO && (
-                    <div className="absolute -right-2 -top-2 z-[310] flex items-center justify-center w-6 h-6 bg-emerald-500 text-white rounded-full shadow-lg border-2 border-white animate-in zoom-in duration-500">
-                      <Check size={14} strokeWidth={4} />
-                    </div>
-                  )}
-                />
               </>
             )}
+
+            <div id="field-9a" className={`${colWrapperCls} ${duplicates.issueNo ? 'bg-amber-50 border-amber-200' : 'bg-amber-50/70 border-amber-100'}`}>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Hash size={14} className="text-amber-600 shrink-0" /> জারিপত্র নং:</label>
+              <input 
+                type="text" 
+                className={duplicates.issueNo ? `${inputBaseCls} border-amber-500 ring-4 ring-amber-50` : getDynamicInputCls(issueNoPart)} 
+                value={issueNoPart} 
+                onChange={e => setIssueNoPart(toBengaliDigits(e.target.value))} 
+                placeholder="নং লিখুন"
+              />
+              {duplicates.issueNo && (
+                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-1">
+                    <AlertCircle size={10} /> এই জারিপত্র নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigateToEntry?.(duplicates.issueEntryId!, 'settlement', issueNoPart)}
+                    className="text-amber-700 hover:text-amber-900 underline underline-offset-2 flex items-center gap-1"
+                  >
+                    দেখুন <ArrowRightCircle size={10} />
+                  </button>
+                </div>
+              )}
+            </div>
+            <SegmentedInput 
+              id="field-9b" num={getSerial()} icon={Calendar} label="জারিপত্র তারিখ" color="amber" 
+              noValue="DATE_ONLY" dayValue={dayPart} monthValue={monthPart} yearValue={yearPart} 
+              noSetter={()=>{}} daySetter={setDayPart} monthSetter={setMonthPart} yearSetter={setYearPart} 
+              dayRef={issueDayRef} monthRef={issueMonthRef} yearRef={issueYearRef} 
+              isFocused={isIssueFocused} focusSetter={setIsIssueFocused}
+              error={issueDateError}
+              extra={formData.issueDateISO && (
+                <div className="absolute -right-2 -top-2 z-[310] flex items-center justify-center w-6 h-6 bg-emerald-500 text-white rounded-full shadow-lg border-2 border-white animate-in zoom-in duration-500">
+                  <Check size={14} strokeWidth={4} />
+                </div>
+              )}
+            />
 
             {/* Fields 11 (Audit Details) - Conditionally Rendered */}
             {showAuditDetails && (
