@@ -709,31 +709,31 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
               </p>
             )}
             <p className="text-[10px] leading-tight">
-              <span className="font-black text-emerald-700">মন্ত্রণালয়:</span>{" "}
+              <span className="font-black text-emerald-700">৩. মন্ত্রণালয়:</span>{" "}
               <span className="font-bold text-slate-900">
                 <HighlightText text={entry.ministryName} searchTerm={searchTerm} />
               </span>
             </p>
             <p className="text-[10px] leading-tight">
-              <span className="font-black text-emerald-700">এনটিটি/সংস্থা:</span>{" "}
+              <span className="font-black text-emerald-700">৪. এনটিটি/সংস্থা:</span>{" "}
               <span className="font-bold text-slate-900">
                 <HighlightText text={entry.entityName} searchTerm={searchTerm} />
               </span>
             </p>
             <p className="text-[10px] leading-tight">
-              <span className="font-black text-emerald-700">শাখা/প্রতিষ্ঠান:</span>{" "}
+              <span className="font-black text-emerald-700">৫. শাখা/প্রতিষ্ঠান:</span>{" "}
               <span className="font-bold text-slate-900">
                 <HighlightText text={entry.branchName} searchTerm={searchTerm} />
               </span>
             </p>
             <p className="text-[10px] leading-tight">
-              <span className="font-black text-emerald-700">নিরীক্ষা সাল:</span>{" "}
+              <span className="font-black text-emerald-700">৬. নিরীক্ষা সাল:</span>{" "}
               <span className="font-bold text-slate-900">
                 <HighlightText text={toBengaliDigits(entry.auditYear)} searchTerm={searchTerm} />
               </span>
             </p>
             <p className="text-[10px] leading-tight">
-              <span className="font-black text-emerald-700">পত্র নং ও তারিখ:</span>{" "}
+              <span className="font-black text-emerald-700">৭.ক/খ. পত্র নং ও তারিখ:</span>{" "}
               <span className="font-bold text-slate-900">
                 <HighlightText text={formatLetterInfoForDisplay(entry.letterNoDate)} searchTerm={searchTerm} />
               </span>
@@ -741,13 +741,13 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             {(!entry.isMeeting && entry.meetingType === "বিএসআর") ? (
               <>
                 <p className="text-[10px] leading-tight">
-                  <span className="font-black text-emerald-700">ডায়েরি নং ও তারিখ:</span>{" "}
+                  <span className="font-black text-emerald-700">৮.ক/খ. ডায়েরি নং ও তারিখ:</span>{" "}
                   <span className="font-bold text-slate-900">
                     <HighlightText text={formatDiaryInfoForDisplay(entry.workpaperNoDate)} searchTerm={searchTerm} />
                   </span>
                 </p>
                 <p className="text-[10px] leading-tight">
-                  <span className="font-black text-emerald-700">জারিপত্র নং ও তারিখ:</span>{" "}
+                  <span className="font-black text-emerald-700">৯.ক/খ. জারিপত্র নং ও তারিখ:</span>{" "}
                   <span className="font-bold text-slate-900">
                     <HighlightText text={formatIssueInfoForDisplay(entry.issueLetterNoDate)} searchTerm={searchTerm} />
                   </span>
@@ -756,19 +756,19 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             ) : (
               <>
                 <p className="text-[10px] leading-tight">
-                  <span className="font-black text-indigo-700">কার্যপত্র নং ও তারিখ:</span>{" "}
+                  <span className="font-black text-emerald-700">২২.ক/খ. কার্যপত্র নং ও তারিখ:</span>{" "}
                   <span className="font-bold text-slate-900">
                     <HighlightText text={formatWorkpaperInfoForDisplay(entry.meetingWorkpaper) || "-"} searchTerm={searchTerm} />
                   </span>
                 </p>
                 <p className="text-[10px] leading-tight">
-                  <span className="font-black text-indigo-700">সভার তারিখ:</span>{" "}
+                  <span className="font-black text-emerald-700">১৯. সভার তারিখ:</span>{" "}
                   <span className="font-bold text-slate-900">
                     <HighlightText text={formatDateBN(entry.meetingDate) || "-"} searchTerm={searchTerm} />
                   </span>
                 </p>
                 <p className="text-[10px] leading-tight">
-                  <span className="font-black text-indigo-700">কার্যবিবরণী প্রাপ্তির তারিখ:</span>{" "}
+                  <span className="font-black text-emerald-700">২২.গ. কার্যবিবরণী প্রাপ্তির তারিখ:</span>{" "}
                   <span className="font-bold text-slate-900">
                     <HighlightText text={entry.meetingResponseDate || "-"} searchTerm={searchTerm} />
                   </span>
@@ -776,8 +776,8 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
               </>
             )}
             {entry.archiveNo && (
-              <p className="text-[10px] leading-tight font-black text-purple-700">
-                আর্কাইভ নং:{" "}
+              <p className="text-[10px] leading-tight font-black text-emerald-700">
+                ১৭. আর্কাইভ নং:{" "}
                 <span className="font-bold text-slate-800 whitespace-pre-line inline">
                   <HighlightText text={formatArchiveNoForTable(entry.archiveNo)} searchTerm={searchTerm} />
                 </span>
@@ -1636,7 +1636,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           >
             <colgroup>
               <col className="w-[30px]" />
-              <col className="w-[130px]" />
+              <col className="w-[140px]" />
               <col className="w-[45px]" />
               <col className="w-[65px]" />
               <col className="w-[40px]" />
