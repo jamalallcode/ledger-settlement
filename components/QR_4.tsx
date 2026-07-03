@@ -919,7 +919,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     const totals = { pR: 0, cR: 0, tR: 0, pS: 0, cS: 0, tS: 0, pnd: 0, cSA: 0, pndA: 0 };
 
     return (
-      <div className="table-container qr-table-container mb-10 overflow-y-scroll overflow-x-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg">
+      <div className={`table-container qr-table-container ${tableId === 'table-2' ? '' : 'mb-10'} overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg`}>
         <table className="w-full border-separate border-spacing-0 min-w-[1000px] !table-auto">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">
