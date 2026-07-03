@@ -822,37 +822,6 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                 </span>
               </p>
             ))}
-
-            {/* রেজিস্টার পরিসংখ্যান বিবরণী */}
-            <div className="mt-3 pt-2.5 border-t border-dashed border-slate-200">
-              <span className="text-[10px] font-black text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">রেজিস্টার পরিসংখ্যান বিবরণী</span>
-              <div className="mt-1.5 grid grid-cols-2 gap-1.5 text-[10px] pl-1">
-                <p className="leading-tight">
-                  <span className="font-black text-slate-600">● মোট জড়িত টাকা:</span>{" "}
-                  <span className="font-bold text-amber-700">{toBengaliDigits(entry.involvedAmount || 0)} টাকা</span>
-                </p>
-                <p className="leading-tight">
-                  <span className="font-black text-slate-600">● অমীমাংসিত সংখ্যা:</span>{" "}
-                  <span className="font-bold text-red-600">{toBengaliDigits(entry.meetingUnsettledParas || "০")} টি</span>
-                </p>
-                <p className="leading-tight">
-                  <span className="font-black text-slate-600">● অমীমাংসিত টাকা:</span>{" "}
-                  <span className="font-bold text-red-600">{toBengaliDigits(entry.meetingUnsettledAmount ?? 0)} টাকা</span>
-                </p>
-                <p className="leading-tight">
-                  <span className="font-black text-slate-600">● মীমাংসিত সংখ্যা:</span>{" "}
-                  <span className="font-bold text-emerald-700 bg-emerald-50 px-1 rounded">{toBengaliDigits(entry.paragraphs?.filter(p => p.status === "পূর্ণাঙ্গ").length || 0)} টি</span>
-                </p>
-                {(entry.manualRaisedCount || entry.manualRaisedAmount) ? (
-                  <p className="leading-tight col-span-2 mt-0.5">
-                    <span className="font-black text-blue-700">● উত্থাপিত আপত্তি:</span>{" "}
-                    <span className="font-bold text-blue-900">
-                      {toBengaliDigits(entry.manualRaisedCount || "০")} টি ({toBengaliDigits(Math.round(entry.manualRaisedAmount || 0))} টাকা)
-                    </span>
-                  </p>
-                ) : null}
-              </div>
-            </div>
         </div>
       );
     };
