@@ -190,11 +190,10 @@ const Navbar: React.FC<NavbarProps> = ({
             <button 
               id="navbar-back-btn"
               onClick={onGoBack} 
-              className="flex items-center gap-1.5 px-3 py-1 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 rounded-full font-black text-[11px] shadow-[0_0_12px_rgba(245,158,11,0.4)] transition-all duration-300 animate-in zoom-in-95 shrink-0"
+              className="flex items-center justify-center w-7 h-7 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 rounded-full shadow-[0_0_12px_rgba(245,158,11,0.4)] transition-all duration-300 animate-in zoom-in-95 shrink-0"
               title="পূর্ববর্তী পেজে ফিরে যান"
             >
-              <ChevronLeft size={13} strokeWidth={3} />
-              <span>পেছনে ফিরুন</span>
+              <ChevronLeft size={14} strokeWidth={3} />
             </button>
           )}
           
