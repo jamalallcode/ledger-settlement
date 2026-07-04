@@ -266,24 +266,118 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
   const cycleOptions = useMemo(() => {
     const options = [];
-    const banglaMonths: Record<string, string> = {
-      'January': 'জানুয়ারি', 'February': 'ফেব্রুয়ারি', 'March': 'মার্চ', 'April': 'এপ্রিল',
-      'May': 'মে', 'June': 'জুন', 'July': 'জুলাই', 'August': 'আগস্ট',
-      'September': 'সেপ্টেম্বর', 'October': 'অক্টোবর', 'November': 'নভেম্বর', 'December': 'ডিসেম্বর'
-    };
-
+    const seen = new Set<string>();
     const today = new Date();
-    for (let i = -1; i < 23; i++) {
-      const refDate = addMonths(today, -i);
-      const firstOfTargetMonth = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
-      const cycle = getCycleForDate(firstOfTargetMonth);
-      const monthNameEng = dateFnsFormat(firstOfTargetMonth, 'MMMM');
-      const yearEng = dateFnsFormat(firstOfTargetMonth, 'yyyy');
-      const label = `${banglaMonths[monthNameEng]}/${toBengaliDigits(yearEng)}`;
-      options.push({ date: firstOfTargetMonth, label, cycleLabel: cycle.label });
+    
+    const isQuarterly = selectedReportType?.includes('ত্রৈমাসিক');
+    const isHalfYearly = selectedReportType?.includes('ষাণ্মাসিক');
+    const isYearly = selectedReportType?.includes('বাৎসরিক');
+
+    if (isQuarterly) {
+      // Loop back about 24 months to find all quarters in the last 2 years.
+      for (let i = -2; i < 24; i++) {
+        const refDate = addMonths(today, -i);
+        const month = refDate.getMonth(); // 0 to 11
+        const year = refDate.getFullYear();
+        
+        let quarterStartMonth = 0;
+        let quarterEndMonth = 2;
+        let quarterYear = year;
+
+        if (month >= 0 && month <= 2) {
+          quarterStartMonth = 0; // Jan
+          quarterEndMonth = 2;   // Mar
+        } else if (month >= 3 && month <= 5) {
+          quarterStartMonth = 3; // Apr
+          quarterEndMonth = 5;   // Jun
+        } else if (month >= 6 && month <= 8) {
+          quarterStartMonth = 6; // Jul
+          quarterEndMonth = 8;   // Sep
+        } else {
+          quarterStartMonth = 9; // Oct
+          quarterEndMonth = 11;  // Dec
+        }
+
+        const startMonthName = BENGALI_MONTHS[quarterStartMonth];
+        const endMonthName = BENGALI_MONTHS[quarterEndMonth];
+        
+        const startYearShort = dateFnsFormat(new Date(quarterYear, quarterStartMonth, 1), 'yy');
+        const endYearShort = dateFnsFormat(new Date(quarterYear, quarterEndMonth, 1), 'yy');
+
+        const label = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
+        
+        if (!seen.has(label)) {
+          seen.add(label);
+          const reprDate = new Date(quarterYear, quarterStartMonth, 1);
+          const cycle = getCycleForDate(reprDate);
+          options.push({ date: reprDate, label, cycleLabel: cycle.label });
+        }
+      }
+    } else if (isHalfYearly) {
+      // Half-Yearly: 6-month cycles (Jan to Jun, Jul to Dec)
+      for (let i = -2; i < 24; i++) {
+        const refDate = addMonths(today, -i);
+        const month = refDate.getMonth();
+        const year = refDate.getFullYear();
+
+        let halfStartMonth = 0;
+        let halfEndMonth = 5;
+        if (month >= 6) {
+          halfStartMonth = 6;
+          halfEndMonth = 11;
+        }
+
+        const startMonthName = BENGALI_MONTHS[halfStartMonth];
+        const endMonthName = BENGALI_MONTHS[halfEndMonth];
+
+        const startYearShort = dateFnsFormat(new Date(year, halfStartMonth, 1), 'yy');
+        const endYearShort = dateFnsFormat(new Date(year, halfEndMonth, 1), 'yy');
+
+        const label = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
+
+        if (!seen.has(label)) {
+          seen.add(label);
+          const reprDate = new Date(year, halfStartMonth, 1);
+          const cycle = getCycleForDate(reprDate);
+          options.push({ date: reprDate, label, cycleLabel: cycle.label });
+        }
+      }
+    } else if (isYearly) {
+      // Yearly: 12-month cycles (Jan to Dec)
+      for (let i = -1; i < 10; i++) {
+        const refDate = addMonths(today, -i * 12);
+        const year = refDate.getFullYear();
+
+        const label = `${BENGALI_MONTHS[0]}/${toBengaliDigits(dateFnsFormat(new Date(year, 0, 1), 'yy'))} হতে ${BENGALI_MONTHS[11]}/${toBengaliDigits(dateFnsFormat(new Date(year, 11, 1), 'yy'))}`;
+
+        if (!seen.has(label)) {
+          seen.add(label);
+          const reprDate = new Date(year, 0, 1);
+          const cycle = getCycleForDate(reprDate);
+          options.push({ date: reprDate, label, cycleLabel: cycle.label });
+        }
+      }
+    } else {
+      // Monthly!
+      // Loop back about 24 months to find all months in the last 2 years.
+      for (let i = -2; i < 24; i++) {
+        const refDate = addMonths(today, -i);
+        const month = refDate.getMonth(); // 0 to 11
+        const year = refDate.getFullYear();
+
+        const monthName = BENGALI_MONTHS[month];
+        const label = `${monthName}/${toBengaliDigits(year.toString())}`;
+
+        if (!seen.has(label)) {
+          seen.add(label);
+          const reprDate = new Date(year, month, 1);
+          const cycle = getCycleForDate(reprDate);
+          options.push({ date: reprDate, label, cycleLabel: cycle.label });
+        }
+      }
     }
     return options;
-  }, []);
+  }, [selectedReportType]);
 
   const activeCycle = useMemo(() => getCycleForDate(selectedCycleDate), [selectedCycleDate]);
 
@@ -310,7 +404,16 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     const base = baseMap[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
     
     let filteredPotential = [...entries, ...correspondenceEntries];
-    if (selectedReportType?.includes('বিএসআর')) {
+    if (selectedReportType?.startsWith('ত্রৈমাসিক রিটার্ন')) {
+      filteredPotential = filteredPotential.filter(e => {
+        const mType = robustNormalize(e.meetingType || e.letterType || '');
+        return mType.includes(robustNormalize('বিএসআর')) || 
+               mType.includes(robustNormalize('দ্বিপক্ষীয়')) || 
+               mType.includes(robustNormalize('দ্বিপাক্ষিক')) || 
+               mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
+               e.isMeeting;
+      });
+    } else if (selectedReportType?.includes('বিএসআর')) {
       filteredPotential = filteredPotential.filter(e => {
         const meetingType = e.meetingType || e.letterType || '';
         return !e.isMeeting || meetingType.includes('বিএসআর');
@@ -434,7 +537,16 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           });
 
           let filteredMatching = matchingEntries;
-          if (selectedReportType.includes('বিএসআর')) {
+          if (selectedReportType?.startsWith('ত্রৈমাসিক রিটার্ন')) {
+            filteredMatching = filteredMatching.filter(e => {
+              const mType = robustNormalize(e.meetingType || e.letterType || '');
+              return mType.includes(robustNormalize('বিএসআর')) || 
+                     mType.includes(robustNormalize('দ্বিপক্ষীয়')) || 
+                     mType.includes(robustNormalize('দ্বিপাক্ষিক')) || 
+                     mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
+                     e.isMeeting;
+            });
+          } else if (selectedReportType.includes('বিএসআর')) {
             filteredMatching = filteredMatching.filter(e => {
               const meetingType = e.meetingType || e.letterType || '';
               return !e.isMeeting || meetingType.includes('বিএসআর');
@@ -665,7 +777,16 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           });
 
           let filteredMatching = matchingEntries;
-          if (targetReportType.includes('বিএসআর')) {
+          if (targetReportType?.startsWith('ত্রৈমাসিক রিটার্ন')) {
+            filteredMatching = filteredMatching.filter(e => {
+              const mType = robustNormalize(e.meetingType || e.letterType || '');
+              return mType.includes(robustNormalize('বিএসআর')) || 
+                     mType.includes(robustNormalize('দ্বিপক্ষীয়')) || 
+                     mType.includes(robustNormalize('দ্বিপাক্ষিক')) || 
+                     mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
+                     e.isMeeting;
+            });
+          } else if (targetReportType.includes('বিএসআর')) {
             filteredMatching = filteredMatching.filter(e => {
               const meetingType = e.meetingType || e.letterType || '';
               return !e.isMeeting || meetingType.includes('বিএসআর');
@@ -844,7 +965,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   };
 
   const monthPickerElement = (
-    <div className="relative no-print" ref={dropdownRef}>
+    <div className="relative no-print z-[350]" ref={dropdownRef}>
       <div 
         onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
         className={`flex items-center gap-1.5 px-2.5 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}
@@ -1022,17 +1143,48 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       originalStats={prevStats.entitiesSFI}
     />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') {
-    renderedContent = <QR_1 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+    renderedContent = <QR_1 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') {
-    renderedContent = <QR_2 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+    renderedContent = <QR_2 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১') {
+    renderedContent = <QR_2 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ১" />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২') {
+    renderedContent = <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ২" />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩') {
+    renderedContent = <QR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৩" paraType="নন এসএফআই" />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৪') {
+    renderedContent = <QR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৪" paraType="এসএফআই" />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৫') {
+    renderedContent = <QR_5 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৫" paraType="নন এসএফআই" />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৬') {
+    renderedContent = <QR_6 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৬" paraType="নন এসএফআই" />;
+  } else if (selectedReportType?.startsWith('ত্রৈমাসিক রিটার্ন - বিস্তারিত -')) {
+    const num = selectedReportType.split(' - ').pop();
+    renderedContent = (
+      <div className="max-w-4xl mx-auto my-10 p-10 bg-white rounded-2xl border border-slate-100 shadow-xl text-center">
+        <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 text-amber-500 animate-pulse">
+          <Sparkles size={40} />
+        </div>
+        <h2 className="text-3xl font-black text-slate-800 mb-3">বিস্তারিত - {num}</h2>
+        <p className="text-slate-500 font-bold mb-8 max-w-md mx-auto leading-relaxed">
+          এই টেবিল বা ছকটির কাজ আপাতত বন্ধ রয়েছে। আপনার পরবর্তী নির্দেশনার অপেক্ষায় প্রস্তুত রাখা হচ্ছে। অন্য টেবিলের কাজ করতে বললে তা এখানে যুক্ত করা হবে।
+        </p>
+        <button 
+          onClick={() => setSelectedReportType(null)}
+          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-2 mx-auto cursor-pointer"
+        >
+          <ChevronLeft size={16} /> পেছনে ফিরুন
+        </button>
+      </div>
+    );
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') {
-    renderedContent = <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+    renderedContent = <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') {
-    renderedContent = <QR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+    renderedContent = <QR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') {
-    renderedContent = <QR_5 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+    renderedContent = <QR_5 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') {
-    renderedContent = <QR_6 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} />;
+    renderedContent = <QR_6 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
   } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' && showDetailedBsrView) {
     renderedContent = (
       <BSRMonthlySettlementDetail

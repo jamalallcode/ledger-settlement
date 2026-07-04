@@ -37,7 +37,7 @@ const IDBadge = ({ id }: { id: string }) => (
 const SegmentedInput = ({ 
   id, icon: Icon, label, color, noValue, dayValue, monthValue, yearValue, 
   noSetter, daySetter, monthSetter, yearSetter, dayRef, monthRef, yearRef, 
-  isFocused, focusSetter, extra, error, warning 
+  isFocused, focusSetter, extra, error, warning, num 
 }: any) => {
   const datePickerRef = useRef<HTMLInputElement>(null);
   
@@ -70,7 +70,7 @@ const SegmentedInput = ({
 
   return (
     <div id={id} className={colWrapperCls + ` ${error ? 'bg-red-50 border-red-200' : (warning ? 'bg-amber-50 border-amber-200' : `bg-${color}-50/70 border-${color}-100 hover:border-${color}-300`)}`}>
-      <label className={labelCls + " truncate"}><span className={numBadge}>{toBengaliDigits(id.split('-')[1].replace(/[ab]/g, ''))}</span> <Icon size={14} className={`${error ? 'text-red-600' : (warning ? 'text-amber-600' : `text-${color}-600`)} shrink-0`} /> <span className="truncate">{label}</span></label>
+      <label className={labelCls + " truncate"}><span className={numBadge}>{num || toBengaliDigits(id.split('-')[1].replace(/[ab]/g, ''))}</span> <Icon size={14} className={`${error ? 'text-red-600' : (warning ? 'text-amber-600' : `text-${color}-600`)} shrink-0`} /> <span className="truncate">{label}</span></label>
       <div className={`relative w-full h-[55px] flex items-center border-2 rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : (warning ? 'border-amber-400 ring-4 ring-amber-50' : (isFilled ? 'border-emerald-500 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50' : 'border-red-500 focus-within:border-red-400 focus-within:ring-4 focus-within:ring-red-50'))}`}>
         {extra}
         <div className="flex items-center w-full px-2 sm:px-4 h-full">
@@ -223,6 +223,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     issueDateISO: '', 
     archiveNo: '',
     meetingSentParaCount: '',
+    sentParaInvolvedAmount: 0,
     meetingDiscussedParaCount: '',
     meetingRecommendedParaCount: '',
     meetingSettledParaCount: '',
@@ -235,6 +236,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     isOnline: 'না',
     remarks: '',
     meetingDate: '',
+    meetingResponseDate: '',
     manualRaisedCount: null as string | null,
     manualRaisedAmount: null as number | null
   });
@@ -257,6 +259,10 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [wpMonth, setWpMonth] = useState('');
   const [wpYear, setWpYear] = useState('');
 
+  const [mrDay, setMrDay] = useState('');
+  const [mrMonth, setMrMonth] = useState('');
+  const [mrYear, setMrYear] = useState('');
+
   const [diaryNoPart, setDiaryNoPart] = useState('');
   const [diaryDay, setDiaryDay] = useState('');
   const [diaryMonth, setDiaryMonth] = useState('');
@@ -271,6 +277,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [isLetterFocused, setIsLetterFocused] = useState(false);
   const [isWpFocused, setIsWpFocused] = useState(false);
   const [isDiaryFocused, setIsDiaryFocused] = useState(false);
+  const [isMrFocused, setIsMrFocused] = useState(false);
 
   const missingNumbersWarning = useMemo(() => {
     return !letterNoPart.trim() && !diaryNoPart.trim() && !issueNoPart.trim();
@@ -328,6 +335,9 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const wpDayRef = useRef<HTMLInputElement>(null);
   const wpMonthRef = useRef<HTMLInputElement>(null);
   const wpYearRef = useRef<HTMLInputElement>(null);
+  const mrDayRef = useRef<HTMLInputElement>(null);
+  const mrMonthRef = useRef<HTMLInputElement>(null);
+  const mrYearRef = useRef<HTMLInputElement>(null);
   const diaryDayRef = useRef<HTMLInputElement>(null);
   const diaryMonthRef = useRef<HTMLInputElement>(null);
   const diaryYearRef = useRef<HTMLInputElement>(null);
@@ -376,6 +386,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         issueDateISO: initialEntry.issueDateISO || '',
         archiveNo: initialEntry.archiveNo || '',
         meetingSentParaCount: initialEntry.meetingSentParaCount || '',
+        sentParaInvolvedAmount: initialEntry.sentParaInvolvedAmount || 0,
         meetingDiscussedParaCount: initialEntry.meetingDiscussedParaCount || '',
         meetingRecommendedParaCount: initialEntry.meetingRecommendedParaCount || '',
         meetingSettledParaCount: initialEntry.meetingSettledParaCount || '',
@@ -388,6 +399,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         isOnline: (initialEntry as any).isOnline || initialEntry.isSentOnline || 'না',
         remarks: initialEntry.remarks || '',
         meetingDate: initialEntry.meetingDate || '',
+        meetingResponseDate: initialEntry.meetingResponseDate || '',
         manualRaisedCount: initialEntry.manualRaisedCount || null,
         manualRaisedAmount: initialEntry.manualRaisedAmount || null
       });
@@ -397,6 +409,26 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
       const f8 = extractSegments(initialEntry.meetingWorkpaper, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-');
       setWpNoPart(f8.no); setWpDay(f8.d); setWpMonth(f8.m); setWpYear(f8.y);
+
+      if (initialEntry.meetingResponseDate) {
+        const cleanDate = toEnglishDigits(initialEntry.meetingResponseDate);
+        const parts = cleanDate.split(/[\/\-]/);
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            setMrDay(toBengaliDigits(parts[2]));
+            setMrMonth(toBengaliDigits(parts[1]));
+            setMrYear(toBengaliDigits(parts[0]));
+          } else {
+            setMrDay(toBengaliDigits(parts[0]));
+            setMrMonth(toBengaliDigits(parts[1]));
+            setMrYear(toBengaliDigits(parts[2]));
+          }
+        } else {
+          setMrDay(''); setMrMonth(''); setMrYear('');
+        }
+      } else {
+        setMrDay(''); setMrMonth(''); setMrYear('');
+      }
 
       const f10 = extractSegments(initialEntry.workpaperNoDate, 'ডায়েরি নং-', 'ডায়েরির তারিখ-');
       setDiaryNoPart(f10.no); setDiaryDay(f10.d); setDiaryMonth(f10.m); setDiaryYear(f10.y);
@@ -468,6 +500,15 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     setFormData(prev => ({ ...prev, meetingWorkpaper: buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-') }));
   }, [wpNoPart, wpDay, wpMonth, wpYear]);
 
+  useEffect(() => {
+    const day = mrDay ? (toEnglishDigits(mrDay).length === 1 ? '0' + toEnglishDigits(mrDay) : toEnglishDigits(mrDay)) : '';
+    const month = mrMonth ? (toEnglishDigits(mrMonth).length === 1 ? '0' + toEnglishDigits(mrMonth) : toEnglishDigits(mrMonth)) : '';
+    let year = toEnglishDigits(mrYear);
+    if (year.length === 2) year = '20' + year;
+    const formattedDate = (day && month && year.length === 4) ? `${toBengaliDigits(day)}/${toBengaliDigits(month)}/${toBengaliDigits(year)}` : '';
+    setFormData(prev => ({ ...prev, meetingResponseDate: formattedDate }));
+  }, [mrDay, mrMonth, mrYear]);
+
   /* useMemo added to track values for validation */
   const currentDiaryISO = useMemo(() => getIsoFromSegments(diaryDay, diaryMonth, diaryYear), [diaryDay, diaryMonth, diaryYear]);
   const currentLetterISO = useMemo(() => getIsoFromSegments(letterDay, letterMonth, letterYear), [letterDay, letterMonth, letterYear]);
@@ -520,7 +561,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       });
     } else if (id === 'direct') {
        setRawInputs(prev => ({ ...prev, [`direct-${field}`]: bDigits }));
-       const isNumericField = ['meetingSentParaCount', 'meetingDiscussedParaCount', 'meetingRecommendedParaCount', 'meetingSettledParaCount', 'meetingUnsettledParas', 'meetingUnsettledAmount', 'totalInvolvedAmount'].includes(field);
+       const isNumericField = ['meetingSentParaCount', 'meetingDiscussedParaCount', 'meetingRecommendedParaCount', 'meetingSettledParaCount', 'meetingUnsettledParas', 'meetingUnsettledAmount', 'totalInvolvedAmount', 'sentParaInvolvedAmount'].includes(field);
        setFormData(prev => ({ ...prev, [field]: isNumericField ? engNum : (val.includes('.') ? engNum : bDigits) } as any));
     } else {
       setRawInputs(prev => ({ ...prev, [`${id}-${field}`]: bDigits }));
@@ -658,9 +699,9 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       const calculatedUnsettledAmount = (formData.totalInvolvedAmount || 0) - totalSettledAmount;
       
       const combinedLetter = buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear, 'পত্র নং-', 'পত্রের তারিখ-');
-      const combinedDiary = buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear, 'ডায়েরি নং-', 'ডায়েরির তারিখ-');
+      const combinedDiary = formData.meetingType === 'বিএসআর' ? buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear, 'ডায়েরি নং-', 'ডায়েরির তারিখ-') : '';
       const combinedIssue = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
-      const combinedWp = buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-');
+      const combinedWp = formData.meetingType !== 'বিএসআর' ? buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-') : '';
 
       const finalData = {
         ...formData, 
@@ -668,6 +709,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         issueLetterNoDate: combinedIssue,
         workpaperNoDate: combinedDiary,
         meetingWorkpaper: combinedWp,
+        meetingDate: formData.meetingType === 'বিএসআর' ? '' : formData.meetingDate,
+        meetingResponseDate: formData.meetingType === 'বিএসআর' ? '' : formData.meetingResponseDate,
         meetingFullSettledParaCount: summaryData.fullCount.toString(),
         meetingPartialSettledParaCount: summaryData.partialCount.toString(),
         meetingSettledParaCount: summaryData.fullCount.toString(),
@@ -700,6 +743,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       issueDateISO: '', 
       archiveNo: '',
       meetingSentParaCount: '',
+      sentParaInvolvedAmount: 0,
       meetingDiscussedParaCount: '',
       meetingRecommendedParaCount: '',
       meetingSettledParaCount: '',
@@ -712,11 +756,13 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       isOnline: 'না',
       remarks: '',
       meetingDate: '',
+      meetingResponseDate: '',
       manualRaisedCount: null as string | null,
       manualRaisedAmount: null as number | null
     });
     setLetterNoPart(''); setLetterDay(''); setLetterMonth(''); setLetterYear('');
     setWpNoPart(''); setWpDay(''); setWpMonth(''); setWpYear('');
+    setMrDay(''); setMrMonth(''); setMrYear('');
     setDiaryNoPart(''); setDiaryDay(''); setDiaryMonth(''); setDiaryYear('');
     setIssueNoPart(''); setDayPart(''); setMonthPart(''); setYearPart('');
     setParagraphs([]);
@@ -877,6 +923,9 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     );
   }
 
+  let serialCount = 1;
+  const getSerial = () => toBengaliDigits(serialCount++);
+
   return (
     <div id="form-container-settlement" className="bg-white p-4 md:p-10 rounded-[2.5rem] border border-slate-200 shadow-2xl animate-landing-premium max-w-[1880px] mx-auto overflow-x-hidden relative">
       <div id="form-header" className="flex flex-col md:flex-row justify-between items-center mb-10 pb-6 border-b border-slate-100 gap-4 relative">
@@ -891,7 +940,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
           <div className="p-3 bg-slate-900 rounded-2xl text-white shrink-0">
             <Layout size={24} />
           </div>
-          <div><h3 className="text-2xl font-black text-slate-900 leading-tight">মীমাংসা এন্ট্রি</h3><p className="text-slate-500 font-bold text-sm">অনুগ্রহ করে নিচের {toBengaliDigits(formData.meetingType === 'বিএসআর' ? 17 : 21)}টি ফিল্ড সঠিকভাবে পূরণ করুন</p></div>
+          <div><h3 className="text-2xl font-black text-slate-900 leading-tight">মীমাংসা এন্ট্রি</h3><p className="text-slate-500 font-bold text-sm">অনুগ্রহ করে নিচের {toBengaliDigits(formData.meetingType === 'বিএসআর' ? (showAuditDetails ? 16 : 15) : (showAuditDetails ? 20 : 19))}টি ফিল্ড সঠিকভাবে পূরণ করুন</p></div>
         </div>
         {onCancel && (
           <button 
@@ -955,15 +1004,15 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       <form id="form-entry" onSubmit={handleSubmit} className="space-y-10">
         <fieldset className="space-y-10 border-none p-0 m-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-6">
-            <div id="field-1" className={col1Style}><SearchableSelect label={<><span className={numBadge}>১</span> <Building2 size={14} className="text-blue-600 shrink-0" /> শাখা (SFI/Non-SFI)</>} groups={[{ label: 'শাখা ধরণ', options: ['এসএফআই', 'নন এসএফআই'] }]} value={formData.paraType} onChange={v => setFormData({ ...formData, paraType: v as ParaType })} required badgeId="select-para-type" isAdmin={isAdmin} showSearch={false} /></div>
-            <div id="field-2" className={col2Style}><SearchableSelect label={<><span className={numBadge}>২</span> <Layout size={14} className="text-emerald-600 shrink-0" /> চিঠির ধরণ</>} groups={[{ label: 'চিঠি তালিকা', options: isSFI(formData.paraType) ? ['বিএসআর', 'ত্রিপক্ষীয় সভা'] : ['বিএসআর', 'দ্বিপক্ষীয় সভা'] }]} value={formData.meetingType} onChange={v => setFormData({...formData, meetingType: v, isMeeting: v !== 'বিএসআর'})} required badgeId="select-meeting-type" isAdmin={isAdmin} showSearch={false} /></div>
-            <div id="field-3" className={col3Style}><SearchableSelect label={<><span className={numBadge}>৩</span> <Building size={14} className="text-amber-600 shrink-0" /> মন্ত্রণালয়</>} groups={MINISTRIES_LIST} value={formData.ministryName} onChange={v => setFormData(f=>({...f, ministryName: v}))} required badgeId="select-ministry" isAdmin={isAdmin} /></div>
-            <div id="field-4" className={col4Style}><SearchableSelect label={<><span className={numBadge}>৪</span> <Building2 size={14} className="text-purple-600 shrink-0" /> এনটিটি / সংস্থা</>} groups={[{label: 'এনটিটি তালিকা', options: entityOpts}]} value={formData.entityName} onChange={v => setFormData(f=>({...f, entityName: v}))} required badgeId="select-entity" isAdmin={isAdmin} align="right" /></div>
-            <div id="field-5" className={col1Style}><SearchableSelect label={<><span className={numBadge}>৫</span> <Building size={14} className="text-sky-600 shrink-0" /> শাখা (বিস্তারিত বিবরণ)</>} groups={branchOpts.length > 0 ? [{label: ' শাখা তালিকা', options: branchOpts}] : branchSuggestions} value={formData.branchName} onChange={v => setFormData(f=>({...f, branchName: v}))} required badgeId="select-branch" isAdmin={isAdmin} allowCustom={true} hideAddNew={true} /></div>
-            <div id="field-6" className={col2Style}><SearchableSelect label={<><span className={numBadge}>৬</span> <Calendar size={14} className="text-emerald-600 shrink-0" /> নিরীক্ষা সাল</>} groups={dynamicAuditYearsOptions} value={formData.auditYear} onChange={v => setFormData(f=>({...f, auditYear: v}))} required badgeId="select-audit-year" isAdmin={isAdmin} allowCustom={true} hideAddNew={true} align="right" /></div>
+            <div id="field-1" className={col1Style}><SearchableSelect label={<><span className={numBadge}>{getSerial()}</span> <Building2 size={14} className="text-blue-600 shrink-0" /> শাখা (SFI/Non-SFI)</>} groups={[{ label: 'শাখা ধরণ', options: ['এসএফআই', 'নন এসএফআই'] }]} value={formData.paraType} onChange={v => setFormData({ ...formData, paraType: v as ParaType })} required badgeId="select-para-type" isAdmin={isAdmin} showSearch={false} /></div>
+            <div id="field-2" className={col2Style}><SearchableSelect label={<><span className={numBadge}>{getSerial()}</span> <Layout size={14} className="text-emerald-600 shrink-0" /> চিঠির ধরণ</>} groups={[{ label: 'চিঠি তালিকা', options: isSFI(formData.paraType) ? ['বিএসআর', 'ত্রিপক্ষীয় সভা'] : ['বিএসআর', 'দ্বিপক্ষীয় সভা'] }]} value={formData.meetingType} onChange={v => setFormData({...formData, meetingType: v, isMeeting: v !== 'বিএসআর'})} required badgeId="select-meeting-type" isAdmin={isAdmin} showSearch={false} /></div>
+            <div id="field-3" className={col3Style}><SearchableSelect label={<><span className={numBadge}>{getSerial()}</span> <Building size={14} className="text-amber-600 shrink-0" /> মন্ত্রণালয়</>} groups={MINISTRIES_LIST} value={formData.ministryName} onChange={v => setFormData(f=>({...f, ministryName: v}))} required badgeId="select-ministry" isAdmin={isAdmin} /></div>
+            <div id="field-4" className={col4Style}><SearchableSelect label={<><span className={numBadge}>{getSerial()}</span> <Building2 size={14} className="text-purple-600 shrink-0" /> এনটিটি / সংস্থা</>} groups={[{label: 'এনটিটি তালিকা', options: entityOpts}]} value={formData.entityName} onChange={v => setFormData(f=>({...f, entityName: v}))} required badgeId="select-entity" isAdmin={isAdmin} align="right" /></div>
+            <div id="field-5" className={col1Style}><SearchableSelect label={<><span className={numBadge}>{getSerial()}</span> <Building size={14} className="text-sky-600 shrink-0" /> শাখা (বিস্তারিত বিবরণ)</>} groups={branchOpts.length > 0 ? [{label: ' শাখা তালিকা', options: branchOpts}] : branchSuggestions} value={formData.branchName} onChange={v => setFormData(f=>({...f, branchName: v}))} required badgeId="select-branch" isAdmin={isAdmin} allowCustom={true} hideAddNew={true} /></div>
+            <div id="field-6" className={col2Style}><SearchableSelect label={<><span className={numBadge}>{getSerial()}</span> <Calendar size={14} className="text-emerald-600 shrink-0" /> নিরীক্ষা সাল</>} groups={dynamicAuditYearsOptions} value={formData.auditYear} onChange={v => setFormData(f=>({...f, auditYear: v}))} required badgeId="select-audit-year" isAdmin={isAdmin} allowCustom={true} hideAddNew={true} align="right" /></div>
             
             <div id="field-7a" className={`${colWrapperCls} ${duplicates.letterNo ? 'bg-amber-50 border-amber-200' : 'bg-amber-50/70 border-amber-100'}`}>
-              <label className={labelCls}><span className={numBadge}>{toBengaliDigits('৭.ক')}</span> <Hash size={14} className="text-amber-600 shrink-0" /> পত্র নং:</label>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Hash size={14} className="text-amber-600 shrink-0" /> পত্র নং:</label>
               <input 
                 type="text" 
                 className={duplicates.letterNo ? `${inputBaseCls} border-amber-500 ring-4 ring-amber-50` : getDynamicInputCls(letterNoPart)} 
@@ -986,36 +1035,40 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                 </div>
               )}
             </div>
-            <SegmentedInput id="field-7b" icon={Calendar} label="পত্রের তারিখ" color="amber" noValue="DATE_ONLY" dayValue={letterDay} monthValue={letterMonth} yearValue={letterYear} noSetter={()=>{}} daySetter={setLetterDay} monthSetter={setLetterMonth} yearSetter={setLetterYear} dayRef={letterDayRef} monthRef={letterMonthRef} yearRef={letterYearRef} isFocused={isLetterFocused} focusSetter={setIsLetterFocused} />
+            <SegmentedInput id="field-7b" num={getSerial()} icon={Calendar} label="পত্রের তারিখ" color="amber" noValue="DATE_ONLY" dayValue={letterDay} monthValue={letterMonth} yearValue={letterYear} noSetter={()=>{}} daySetter={setLetterDay} monthSetter={setLetterMonth} yearSetter={setLetterYear} dayRef={letterDayRef} monthRef={letterMonthRef} yearRef={letterYearRef} isFocused={isLetterFocused} focusSetter={setIsLetterFocused} />
 
-            <div id="field-8a" className={`${colWrapperCls} ${duplicates.diaryNo ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50/70 border-emerald-100'}`}>
-              <label className={labelCls}><span className={numBadge}>{toBengaliDigits('৮.ক')}</span> <Hash size={14} className="text-emerald-600 shrink-0" /> ডায়েরি নং:</label>
-              <input 
-                type="text" 
-                className={duplicates.diaryNo ? `${inputBaseCls} border-amber-500 ring-4 ring-amber-50` : getDynamicInputCls(diaryNoPart)} 
-                value={diaryNoPart} 
-                onChange={e => setDiaryNoPart(toBengaliDigits(e.target.value))} 
-                placeholder="নং লিখুন"
-              />
-              {duplicates.diaryNo && (
-                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center justify-between gap-1">
-                  <div className="flex items-center gap-1">
-                    <AlertCircle size={10} /> এই ডায়েরি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => navigateToEntry?.(duplicates.diaryEntryId!, 'settlement', diaryNoPart)}
-                    className="text-amber-700 hover:text-amber-900 underline underline-offset-2 flex items-center gap-1"
-                  >
-                    দেখুন <ArrowRightCircle size={10} />
-                  </button>
+            {formData.meetingType === 'বিএসআর' && (
+              <>
+                <div id="field-8a" className={`${colWrapperCls} ${duplicates.diaryNo ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50/70 border-emerald-100'}`}>
+                  <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Hash size={14} className="text-emerald-600 shrink-0" /> ডায়েরি নং:</label>
+                  <input 
+                    type="text" 
+                    className={duplicates.diaryNo ? `${inputBaseCls} border-amber-500 ring-4 ring-amber-50` : getDynamicInputCls(diaryNoPart)} 
+                    value={diaryNoPart} 
+                    onChange={e => setDiaryNoPart(toBengaliDigits(e.target.value))} 
+                    placeholder="নং লিখুন"
+                  />
+                  {duplicates.diaryNo && (
+                    <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1">
+                        <AlertCircle size={10} /> এই ডায়েরি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => navigateToEntry?.(duplicates.diaryEntryId!, 'settlement', diaryNoPart)}
+                        className="text-amber-700 hover:text-amber-900 underline underline-offset-2 flex items-center gap-1"
+                      >
+                        দেখুন <ArrowRightCircle size={10} />
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <SegmentedInput id="field-8b" icon={Calendar} label="ডায়েরি তারিখ" color="emerald" noValue="DATE_ONLY" dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryYear} noSetter={()=>{}} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} error={diaryDateError} />
+                <SegmentedInput id="field-8b" num={getSerial()} icon={Calendar} label="ডায়েরি তারিখ" color="emerald" noValue="DATE_ONLY" dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryYear} noSetter={()=>{}} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} error={diaryDateError} />
+              </>
+            )}
 
             <div id="field-9a" className={`${colWrapperCls} ${duplicates.issueNo ? 'bg-amber-50 border-amber-200' : 'bg-amber-50/70 border-amber-100'}`}>
-              <label className={labelCls}><span className={numBadge}>{toBengaliDigits('৯.ক')}</span> <Hash size={14} className="text-amber-600 shrink-0" /> জারিপত্র নং:</label>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Hash size={14} className="text-amber-600 shrink-0" /> জারিপত্র নং:</label>
               <input 
                 type="text" 
                 className={duplicates.issueNo ? `${inputBaseCls} border-amber-500 ring-4 ring-amber-50` : getDynamicInputCls(issueNoPart)} 
@@ -1039,7 +1092,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               )}
             </div>
             <SegmentedInput 
-              id="field-9b" icon={Calendar} label="জারিপত্র তারিখ" color="amber" 
+              id="field-9b" num={getSerial()} icon={Calendar} label="জারিপত্র তারিখ" color="amber" 
               noValue="DATE_ONLY" dayValue={dayPart} monthValue={monthPart} yearValue={yearPart} 
               noSetter={()=>{}} daySetter={setDayPart} monthSetter={setMonthPart} yearSetter={setYearPart} 
               dayRef={issueDayRef} monthRef={issueMonthRef} yearRef={issueYearRef} 
@@ -1052,31 +1105,17 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               )}
             />
 
-            {/* Fields 11-15 (Audit Details) - Conditionally Rendered */}
+            {/* Fields 11 (Audit Details) - Conditionally Rendered */}
             {showAuditDetails && (
               <>
-                <div id="field-11" className={col1Style}><label className={labelCls}><span className={numBadge}>১১</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> প্রেরিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingSentParaCount'] || formData.meetingSentParaCount)} value={rawInputs['direct-meetingSentParaCount'] || (formData.meetingSentParaCount === '0' || formData.meetingSentParaCount === '' ? '' : toBengaliDigits(formData.meetingSentParaCount))} onChange={e => handleNumericInput('direct', 'meetingSentParaCount', e.target.value)} placeholder="০" /></div>
-                <div id="field-12" className={col3Style}><label className={labelCls}><span className={numBadge}>১২</span> <Banknote size={14} className="text-amber-600 shrink-0" /> মোট জড়িত টাকা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-totalInvolvedAmount'] || formData.totalInvolvedAmount)} value={rawInputs['direct-totalInvolvedAmount'] || (formData.totalInvolvedAmount === 0 ? '' : toBengaliDigits(formData.totalInvolvedAmount))} onChange={e => handleNumericInput('direct', 'totalInvolvedAmount', e.target.value)} placeholder="০" /></div>
-                <div id="field-13" className={col4Style}><label className={labelCls}><span className={numBadge}>১৩</span> <AlertCircle size={14} className="text-purple-600 shrink-0" /> অমীমাংসিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingUnsettledParas'] || formData.meetingUnsettledParas)} value={rawInputs['direct-meetingUnsettledParas'] || (formData.meetingUnsettledParas === '0' || formData.meetingUnsettledParas === '' ? '' : toBengaliDigits(formData.meetingUnsettledParas))} onChange={e => handleNumericInput('direct', 'meetingUnsettledParas', e.target.value)} placeholder="০" /></div>
-                
-                <div id="field-14" className={col1Style}>
-                  <label className={labelCls}><span className={numBadge}>১৪</span> <Banknote size={14} className="text-sky-600 shrink-0" /> অমীমাংসিত জড়িত টাকা</label>
-                  <div className="w-full h-[48px] px-4 border border-slate-200 rounded-xl font-black bg-slate-50 text-blue-700 flex items-center shadow-inner text-[16px]">
-                    {toBengaliDigits(Math.round((formData.totalInvolvedAmount || 0) - paragraphs.reduce((s, p) => s + p.recoveredAmount + p.adjustedAmount, 0)))}
-                  </div>
-                </div>
-                <div id="field-15" className={col2Style}>
-                  <label className={labelCls}><span className={numBadge}>১৫</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> মীমাংসিত অনুচ্ছেদ সংখ্যা</label>
-                  <div className="w-full h-[48px] px-4 border border-slate-200 rounded-xl font-black bg-slate-50 text-emerald-700 flex items-center shadow-inner text-[16px]">
-                    {toBengaliDigits(paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ').length)} টি
-                  </div>
-                </div>
+                <div id="field-11" className={col1Style}><label className={labelCls}><span className={numBadge}>{getSerial()}</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> প্রেরিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingSentParaCount'] || formData.meetingSentParaCount)} value={rawInputs['direct-meetingSentParaCount'] || (formData.meetingSentParaCount === '0' || formData.meetingSentParaCount === '' ? '' : toBengaliDigits(formData.meetingSentParaCount))} onChange={e => handleNumericInput('direct', 'meetingSentParaCount', e.target.value)} placeholder="০" /></div>
+                <div id="field-sent-para-involved-amount" className={col1Style}><label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Banknote size={14} className="text-emerald-600 shrink-0" /> প্রেরিত অনুচ্ছেদে মোট জড়িত টাকার পরিমান</label><input type="text" className={getDynamicInputCls(rawInputs['direct-sentParaInvolvedAmount'] || formData.sentParaInvolvedAmount)} value={rawInputs['direct-sentParaInvolvedAmount'] || (formData.sentParaInvolvedAmount === 0 || formData.sentParaInvolvedAmount === undefined || formData.sentParaInvolvedAmount === null ? '' : toBengaliDigits(formData.sentParaInvolvedAmount.toString()))} onChange={e => handleNumericInput('direct', 'sentParaInvolvedAmount', e.target.value)} placeholder="টাকা লিখুন" /></div>
               </>
             )}
             {/* Field: Online/Offline Status */}
             <div className={`${colWrapperCls} border-emerald-100`}>
               <IDBadge id="settlement-field-online" />
-              <label className={labelCls}><span className={numBadge}>১৬</span> <Globe size={14} className="text-emerald-600" /> অনলাইন/অফলাইন স্ট্যাটাস:</label>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Globe size={14} className="text-emerald-600" /> অনলাইন/অফলাইন স্ট্যাটাস:</label>
               <div className="flex items-center h-[52px]">
                 <button
                   type="button"
@@ -1114,7 +1153,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             </div>
 
             <div id="field-17" className={col4Style}>
-              <label className={labelCls}><span className={numBadge}>১৭</span> <Archive size={14} className="text-purple-600 shrink-0" /> আর্কাইভ নং</label>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Archive size={14} className="text-purple-600 shrink-0" /> আর্কাইভ নং</label>
               <input 
                 type="text" 
                 className={getDynamicInputCls(formData.archiveNo)} 
@@ -1129,21 +1168,23 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               />
             </div>
 
-            <div id="field-18" className={`${col3Style} lg:col-span-2 md:col-span-2`}>
-              <label className={labelCls}><span className={numBadge}>১৮</span> <MessageSquare size={14} className="text-purple-600" /> মন্তব্য</label>
-              <input type="text" className={getDynamicInputCls(formData.remarks)} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
-            </div>
+            {formData.meetingType === 'বিএসআর' && (
+              <div id="field-18" className={`${col3Style} lg:col-span-2 md:col-span-2`}>
+                <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <MessageSquare size={14} className="text-purple-600" /> মন্তব্য</label>
+                <input type="text" className={getDynamicInputCls(formData.remarks)} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
+              </div>
+            )}
 
             {formData.meetingType !== 'বিএসআর' && (
               <>
                 <div id="field-19" className={col1Style}>
-                  <label className={labelCls}><span className={numBadge}>১৯</span> <Calendar size={14} className="text-amber-600 shrink-0" /> সভার তারিখ</label>
+                  <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Calendar size={14} className="text-amber-600 shrink-0" /> সভার তারিখ</label>
                   <input type="date" className={getDynamicInputCls(formData.meetingDate)} value={formData.meetingDate} onChange={e => setFormData({...formData, meetingDate: e.target.value})} />
                 </div>
-                <div id="field-20" className={col3Style}><label className={labelCls}><span className={numBadge}>২০</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> আলোচিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingDiscussedParaCount'] || formData.meetingDiscussedParaCount)} value={rawInputs['direct-meetingDiscussedParaCount'] || (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount))} onChange={e => handleNumericInput('direct', 'meetingDiscussedParaCount', e.target.value)} placeholder="০" /></div>
-                <div id="field-21" className={col1Style}><label className={labelCls}><span className={numBadge}>২১</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingRecommendedParaCount'] || formData.meetingRecommendedParaCount)} value={rawInputs['direct-meetingRecommendedParaCount'] || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount))} onChange={e => handleNumericInput('direct', 'meetingRecommendedParaCount', e.target.value)} placeholder="০" /></div>
+                <div id="field-20" className={col3Style}><label className={labelCls}><span className={numBadge}>{getSerial()}</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> আলোচিত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingDiscussedParaCount'] || formData.meetingDiscussedParaCount)} value={rawInputs['direct-meetingDiscussedParaCount'] || (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount))} onChange={e => handleNumericInput('direct', 'meetingDiscussedParaCount', e.target.value)} placeholder="০" /></div>
+                <div id="field-21" className={col1Style}><label className={labelCls}><span className={numBadge}>{getSerial()}</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingRecommendedParaCount'] || formData.meetingRecommendedParaCount)} value={rawInputs['direct-meetingRecommendedParaCount'] || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount))} onChange={e => handleNumericInput('direct', 'meetingRecommendedParaCount', e.target.value)} placeholder="০" /></div>
                 <div id="field-22a" className={`${colWrapperCls} bg-purple-50/70 border-purple-100 hover:border-purple-300`}>
-                  <label className={labelCls}><span className={numBadge}>{toBengaliDigits('২২.ক')}</span> <Hash size={14} className="text-purple-600 shrink-0" /> কার্যপত্র নং:</label>
+                  <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Hash size={14} className="text-purple-600 shrink-0" /> কার্যপত্র নং:</label>
                   <input 
                     type="text" 
                     className={getDynamicInputCls(wpNoPart)} 
@@ -1152,7 +1193,13 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                     placeholder="নং লিখুন"
                   />
                 </div>
-                <SegmentedInput id="field-22b" icon={FileEdit} num="২২.খ" label="কার্যপত্র তারিখ" color="purple" noValue="DATE_ONLY" dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} noSetter={()=>{}} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} isFocused={isWpFocused} focusSetter={setIsWpFocused} />
+                <SegmentedInput id="field-22b" icon={FileEdit} num={getSerial()} label="কার্যপত্র তারিখ" color="purple" noValue="DATE_ONLY" dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} noSetter={()=>{}} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} isFocused={isWpFocused} focusSetter={setIsWpFocused} />
+                <SegmentedInput id="field-22c" icon={Calendar} num={getSerial()} label="কার্যবিবরণী প্রাপ্তির তারিখ" color="purple" noValue="DATE_ONLY" dayValue={mrDay} monthValue={mrMonth} yearValue={mrYear} noSetter={()=>{}} daySetter={setMrDay} monthSetter={setMrMonth} yearSetter={setMrYear} dayRef={mrDayRef} monthRef={mrMonthRef} yearRef={mrYearRef} isFocused={isMrFocused} focusSetter={setIsMrFocused} />
+                
+                <div id="field-18" className={`${col3Style} lg:col-span-2 md:col-span-2`}>
+                  <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <MessageSquare size={14} className="text-purple-600" /> মন্তব্য</label>
+                  <input type="text" className={getDynamicInputCls(formData.remarks)} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
+                </div>
               </>
             )}
           </div>

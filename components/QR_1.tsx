@@ -12,9 +12,10 @@ interface QRProps {
   onBack?: () => void;
   searchTerm?: string;
   filterMinistry?: string;
+  monthPickerElement?: React.ReactNode;
 }
 
-const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '', filterMinistry = '' }) => {
+const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', monthPickerElement }) => {
   // Standard calendar quarter date calculation:
   // Quarters: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec)
   // Each quarter start date is the 16th of the month preceding the quarter's start month.
@@ -40,8 +41,8 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       quarterEndMonth = 11;  // Dec
     }
 
-    const start = new Date(quarterStartMonth === 0 ? quarterYear - 1 : quarterYear, quarterStartMonth === 0 ? 11 : quarterStartMonth - 1, 16);
-    const end = new Date(quarterYear, quarterEndMonth, 15);
+    const start = new Date(quarterYear, quarterStartMonth, 1);
+    const end = new Date(quarterYear, quarterEndMonth + 1, 0);
     
     const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
     const startMonthName = months[quarterStartMonth];
@@ -143,9 +144,11 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     // Filter by Non-SFI
     if (robustNormalize(e.paraType) !== robustNormalize('নন এসএফআই')) return false;
     
-    // Filter by Bi-partite meeting
-    const mType = robustNormalize(e.meetingType || '');
-    if (!mType.includes(robustNormalize('দ্বিপক্ষীয়'))) return false;
+    // Filter only by bilateral meetings
+    const mType = robustNormalize(e.meetingType || e.letterType || '');
+    const isValidType = mType.includes(robustNormalize('দ্বিপক্ষীয়')) || 
+                        mType.includes(robustNormalize('দ্বিপাক্ষিক'));
+    if (!isValidType) return false;
 
     // Filter by Date Range (Issue Date)
     const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
@@ -165,14 +168,24 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     return matchMinistry && matchSearch;
   });
 
-  const totals = filteredData.reduce((acc, curr) => ({
-    sentPara: acc.sentPara + (parseInt(toEnglishDigits(curr.meetingSentParaCount || '0')) || 0),
-    settledPara: acc.settledPara + (parseInt(toEnglishDigits(curr.meetingSettledParaCount || '0')) || 0),
-    amount: acc.amount + (curr.involvedAmount || 0),
-    recovery: acc.recovery + (curr.totalRec || 0),
-    adjustment: acc.adjustment + (curr.totalAdj || 0),
-    others: acc.others + 0, // Placeholder for others if needed
-  }), { sentPara: 0, settledPara: 0, amount: 0, recovery: 0, adjustment: 0, others: 0 });
+  const totals = filteredData.reduce((acc, curr) => {
+    const discussed = parseInt(toEnglishDigits(curr.meetingDiscussedParaCount || curr.meetingSentParaCount || '0')) || 0;
+    const settled = parseInt(toEnglishDigits(curr.meetingRecommendedParaCount || curr.meetingSettledParaCount || '0')) || 0;
+    
+    const settledAmount = curr.paragraphs && curr.paragraphs.length > 0
+      ? curr.paragraphs
+          .reduce((sum, p) => sum + (p.status === 'পূর্ণাঙ্গ' ? (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0) : ((p.recoveredAmount + p.adjustedAmount) || 0)), 0)
+      : (curr.involvedAmount || 0);
+
+    return {
+      sentPara: acc.sentPara + discussed,
+      settledPara: acc.settledPara + settled,
+      amount: acc.amount + settledAmount,
+      recovery: acc.recovery + (curr.totalRec || 0),
+      adjustment: acc.adjustment + (curr.totalAdj || 0),
+      others: acc.others + 0,
+    };
+  }, { sentPara: 0, settledPara: 0, amount: 0, recovery: 0, adjustment: 0, others: 0 });
 
   const thCls = "border-r border-b border-slate-400 p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
   const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle";
@@ -196,20 +209,25 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       </div>
 
       {/* Header Section */}
-      <div className="text-center mb-3 pt-1">
+      <div className="text-center mb-3 pt-1 relative z-[260]">
         <div className="inline-block relative">
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">
             ত্রৈমাসিক রিটার্ন - ১
           </h1>
 
           {/* Date Range Pill */}
-          <div className="mt-1 mb-2 flex justify-center">
+          <div className="mt-1 mb-2 flex items-center justify-center gap-3 no-print flex-wrap">
             <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 border border-blue-100 rounded-full shadow-sm scale-95 origin-center">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
               <span className="text-blue-700 font-bold text-[12px]">
                 ত্রৈমাসিক রিটার্ন - ১ | {activeCycle.label}
               </span>
             </div>
+            {monthPickerElement && (
+              <div className="scale-95 origin-center select-none relative z-[300]">
+                {monthPickerElement}
+              </div>
+            )}
           </div>
           <div className="flex items-center justify-center gap-4 mb-2">
             <div className="h-[1px] w-10 bg-gradient-to-r from-transparent to-slate-400"></div>
@@ -230,8 +248,6 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
           <p><span className="text-slate-500">শাখাঃ</span> নন এসএফআই শাখা</p>
           <span className="text-slate-300 hidden md:inline font-normal">|</span>
           <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
-          <span className="text-slate-300 hidden md:inline font-normal">|</span>
-          <p><span className="text-slate-500">সময়সীমাঃ</span> {formatDateBangla(startDate)} হতে {formatDateBangla(endDate)} খ্রিঃ</p>
         </div>
 
         {/* Statistics Button (Lowered into subject bar) */}
@@ -311,32 +327,52 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
               <tr key={idx} className="hover:bg-slate-50 transition-colors">
                 <td className={numTdCls}>{toBengaliDigits((idx + 1).toString())}</td>
                 <td className={tdCls}>
-                  <HighlightText text={`${row.ministryName}, ${row.entityName} (${toBengaliDigits(row.auditYear)})`} searchTerm={searchTerm} />
+                  <HighlightText text={row.ministryName} searchTerm={searchTerm} />
+                  {row.entityName && (
+                    <>
+                      ,<br />
+                      <HighlightText text={row.entityName} searchTerm={searchTerm} />
+                    </>
+                  )}
+                  {row.branchName && (
+                    <>
+                      ,<br />
+                      <span className="text-blue-700 font-extrabold text-[10.5px]">
+                        <HighlightText text={row.branchName} searchTerm={searchTerm} />
+                      </span>
+                    </>
+                  )}
+                  {row.auditYear && (
+                    <>
+                      <br />
+                      <span className="font-bold text-slate-800">({toBengaliDigits(row.auditYear)})</span>
+                    </>
+                  )}
                 </td>
                 <td className={`${numTdCls} w-[62px]`}>{toBengaliDigits("১")}</td>
                 <td className={numTdCls}>{toBengaliDigits(row.meetingDate || '')}</td>
-                <td className={`${numTdCls} w-[62px]`}>{toBengaliDigits(row.meetingSentParaCount || '০')}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.meetingSettledParaCount || '০')}</td>
+                <td className={`${numTdCls} w-[62px]`}>{toBengaliDigits(row.meetingDiscussedParaCount || row.meetingSentParaCount || '০')}</td>
+                <td className={numTdCls}>{toBengaliDigits(row.meetingRecommendedParaCount || row.meetingSettledParaCount || '০')}</td>
                 <td className={numTdCls}>{toBengaliDigits(row.meetingResponseDate || '')}</td>
                 <td className={numTdCls}>{toBengaliDigits(row.issueLetterNoDate || '')}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.involvedAmount?.toString() || '০')}</td>
+                <td className={numTdCls}>
+                  {toBengaliDigits(
+                    (row.paragraphs && row.paragraphs.length > 0
+                      ? row.paragraphs
+                          .reduce((sum: number, p: any) => sum + (p.status === 'পূর্ণাঙ্গ' ? (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0) : ((p.recoveredAmount + p.adjustedAmount) || 0)), 0)
+                      : (row.involvedAmount || 0)
+                    ).toString()
+                  )}
+                </td>
                 <td className={numTdCls}>{toBengaliDigits(row.totalRec?.toString() || '০')}</td>
                 <td className={numTdCls}>{toBengaliDigits(row.totalAdj?.toString() || '০')}</td>
                 <td className={numTdCls}></td>
                 <td className={tdCls.replace('p-2', 'p-1') + " w-[42px]"}>{row.remarks}</td>
               </tr>
             ))}
-            {/* Empty rows if data is sparse */}
-            {filteredData.length < 5 && Array.from({ length: 5 - filteredData.length }).map((_, i) => (
-              <tr key={`empty-${i}`} className="h-10">
-                {Array.from({ length: 13 }).map((_, j) => (
-                  <td key={j} className="border-r border-b border-slate-400"></td>
-                ))}
-              </tr>
-            ))}
           </tbody>
           <tfoot className="font-black h-[32px] qr-sticky-footer qr-sticky-footer-bottom">
-            <tr className="bg-black text-white">
+            <tr className="bg-black text-white no-hover-row">
               <td className={footerNumTdCls} colSpan={2}>মোট</td>
               <td className={`${footerNumTdCls} w-[62px]`}>
                 {toBengaliDigits(filteredData.length.toString())}
