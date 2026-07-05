@@ -144,6 +144,67 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   const [isPrevLedgerOpen, setIsPrevLedgerOpen] = React.useState(false);
   const [isPrevLedgerTable2Open, setIsPrevLedgerTable2Open] = React.useState(false);
 
+  const [cutoffMonth, setCutoffMonth] = React.useState(() => {
+    return localStorage.getItem('opening_balance_cutoff_month') || '2025-06';
+  });
+
+  const getMonthOptions = () => {
+    const options = [];
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+    const startYear = 2024;
+    const monthNamesBN = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
+    
+    for (let y = currentYear; y >= startYear; y--) {
+      const maxM = (y === currentYear) ? currentMonth : 11;
+      for (let m = maxM; m >= 0; m--) {
+        const val = `${y}-${String(m + 1).padStart(2, '0')}`;
+        const lbl = `${monthNamesBN[m]}/${toBengaliDigits(y.toString())}`;
+        options.push({ value: val, label: lbl });
+      }
+    }
+    return options;
+  };
+
+  const getCutoffMonthInfo = (monthStr: string) => {
+    const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
+    const [yearNum, monthNum] = monthStr.split('-').map(Number);
+    const mIdx = monthNum - 1;
+    const monthNameBN = months[mIdx];
+    const yearBN = toBengaliDigits(yearNum.toString());
+    const yearShortBN = toBengaliDigits(String(yearNum).slice(-2));
+    
+    const nextMonthDate = new Date(yearNum, mIdx + 1, 1);
+    const nextMonthNameBN = months[nextMonthDate.getMonth()];
+    const nextMonthYearBN = toBengaliDigits(nextMonthDate.getFullYear().toString());
+    const nextMonthStrStr = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}-01`;
+
+    return {
+      monthNameBN,
+      yearBN,
+      yearShortBN,
+      formattedLong: `${monthNameBN}/${yearBN}`,
+      formattedShort: `${monthNameBN}/${yearShortBN}`,
+      nextMonthNameBN,
+      nextMonthYearBN,
+      nextMonthFormattedLong: `${nextMonthNameBN}/${nextMonthYearBN}`,
+      transitionStartStr: nextMonthStrStr
+    };
+  };
+
+  const cutoffInfo = getCutoffMonthInfo(cutoffMonth);
+
+  const getStorageKeyTable1 = (monthStr: string) => {
+    if (monthStr === '2025-06') return 'qr3_table1_prev_ledger_june2025';
+    return `qr3_table1_prev_ledger_${monthStr}`;
+  };
+
+  const getStorageKeyTable2 = (monthStr: string) => {
+    if (monthStr === '2025-06') return 'qr3_table2_prev_ledger_june2025';
+    return `qr3_table2_prev_ledger_${monthStr}`;
+  };
+
   // Helper to get base starting values from prevStats
   const getEntityStats = (entName: string) => {
     const baseMap = prevStats?.entitiesNonSFI || {};
@@ -159,7 +220,9 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   };
 
   const [prevLedgerTable1Data, setPrevLedgerTable1Data] = React.useState<Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }>>(() => {
-    const saved = localStorage.getItem('qr3_table1_prev_ledger_june2025');
+    const initialMonth = localStorage.getItem('opening_balance_cutoff_month') || '2025-06';
+    const key = initialMonth === '2025-06' ? 'qr3_table1_prev_ledger_june2025' : `qr3_table1_prev_ledger_${initialMonth}`;
+    const saved = localStorage.getItem(key);
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { console.error(e); }
     }
@@ -176,7 +239,9 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   });
 
   const [prevLedgerTable2Data, setPrevLedgerTable2Data] = React.useState<Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }>>(() => {
-    const saved = localStorage.getItem('qr3_table2_prev_ledger_june2025');
+    const initialMonth = localStorage.getItem('opening_balance_cutoff_month') || '2025-06';
+    const key = initialMonth === '2025-06' ? 'qr3_table2_prev_ledger_june2025' : `qr3_table2_prev_ledger_${initialMonth}`;
+    const saved = localStorage.getItem(key);
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { console.error(e); }
     }
@@ -194,12 +259,12 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
   const handleSavePrevLedgerTable1 = (updated: typeof prevLedgerTable1Data) => {
     setPrevLedgerTable1Data(updated);
-    localStorage.setItem('qr3_table1_prev_ledger_june2025', JSON.stringify(updated));
+    localStorage.setItem(getStorageKeyTable1(cutoffMonth), JSON.stringify(updated));
   };
 
   const handleSavePrevLedgerTable2 = (updated: typeof prevLedgerTable2Data) => {
     setPrevLedgerTable2Data(updated);
-    localStorage.setItem('qr3_table2_prev_ledger_june2025', JSON.stringify(updated));
+    localStorage.setItem(getStorageKeyTable2(cutoffMonth), JSON.stringify(updated));
   };
 
   const handleInputChangeTable1 = (entName: string, field: 'june25Raised' | 'june25Settled' | 'june25UnsettledAmount', value: number) => {
@@ -224,6 +289,52 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     handleSavePrevLedgerTable2(updated);
   };
 
+  React.useEffect(() => {
+    const key = getStorageKeyTable1(cutoffMonth);
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        setPrevLedgerTable1Data(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      const defaults: Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }> = {};
+      table1EntitiesList.forEach(({ entityName }) => {
+        const base = getEntityStats(entityName);
+        defaults[entityName] = {
+          june25Raised: (base?.unsettledCount || 0) + (base?.settledCount || 0),
+          june25Settled: (base?.settledCount || 0),
+          june25UnsettledAmount: (base?.unsettledAmount || 0)
+        };
+      });
+      setPrevLedgerTable1Data(defaults);
+    }
+  }, [cutoffMonth]);
+
+  React.useEffect(() => {
+    const key = getStorageKeyTable2(cutoffMonth);
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        setPrevLedgerTable2Data(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      const defaults: Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }> = {};
+      table2EntitiesList.forEach(({ entityName }) => {
+        const base = getEntityStats(entityName);
+        defaults[entityName] = {
+          june25Raised: (base?.unsettledCount || 0) + (base?.settledCount || 0),
+          june25Settled: (base?.settledCount || 0),
+          june25UnsettledAmount: (base?.unsettledAmount || 0)
+        };
+      });
+      setPrevLedgerTable2Data(defaults);
+    }
+  }, [cutoffMonth]);
+
   const prevLedgerRows = useMemo(() => {
     const rows: any[] = [];
     let sl = 1;
@@ -239,7 +350,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
 
         const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
-        return entryDate !== '' && entryDate >= '2025-07-01' && entryDate < cycleStartStr;
+        return entryDate !== '' && entryDate >= cutoffInfo.transitionStartStr && entryDate < cycleStartStr;
       });
 
       let transitionRaisedCount = 0;
@@ -315,7 +426,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
 
         const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
-        return entryDate !== '' && entryDate >= '2025-07-01' && entryDate < cycleStartStr;
+        return entryDate !== '' && entryDate >= cutoffInfo.transitionStartStr && entryDate < cycleStartStr;
       });
 
       let transitionRaisedCount = 0;
@@ -638,21 +749,40 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
-            <div className="text-left">
-              <h2 className="text-[15px] font-black text-slate-900 flex items-center gap-2">
-                <Sparkles size={18} className="text-amber-500" />
-                টেবিল-১ এর পূর্ব জের সেটআপ ও গণনা তালিকা
-              </h2>
-              <p className="text-[10px] font-bold text-slate-500 mt-1">
-                ১৯৭১-৭২ হতে জুন/২০২৫ পর্যন্ত উত্থাপিত ও নিষ্পত্তিকৃত আপত্তির সংখ্যাগুলো ইনপুট দিন। জুলাই/২০২৫ হতে নিষ্পত্তি স্বয়ংক্রিয়ভাবে হিসাব হবে।
-              </p>
+            <div className="text-left flex flex-col md:flex-row md:items-center gap-4">
+              <div>
+                <h2 className="text-[15px] font-black text-slate-900 flex items-center gap-2">
+                  <Sparkles size={18} className="text-amber-500" />
+                  টেবিল-১ এর পূর্ব জের সেটআপ ও গণনা তালিকা
+                </h2>
+                <p className="text-[10px] font-bold text-slate-500 mt-1">
+                  ১৯৭১-৭২ হতে {cutoffInfo.formattedLong} পর্যন্ত উত্থাপিত ও নিষ্পত্তিকৃত আপত্তির সংখ্যাগুলো ইনপুট দিন। {cutoffInfo.nextMonthFormattedLong} হতে নিষ্পত্তি স্বয়ংক্রিয়ভাবে হিসাব হবে।
+                </p>
+              </div>
+
+              {/* Dynamic Month Selector */}
+              <div className="flex items-center gap-2.5 bg-gradient-to-r from-amber-50 to-amber-100/50 border border-amber-200/80 rounded-xl px-3.5 py-1.5 shadow-sm text-xs shrink-0">
+                <span className="font-extrabold text-amber-900 tracking-wide">জেরের মাস:</span>
+                <select
+                  value={cutoffMonth}
+                  onChange={(e) => {
+                    setCutoffMonth(e.target.value);
+                    localStorage.setItem('opening_balance_cutoff_month', e.target.value);
+                  }}
+                  className="bg-white border border-amber-300 rounded-lg px-2.5 py-1 font-black text-slate-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none cursor-pointer shadow-sm hover:bg-slate-50 transition-all text-xs"
+                >
+                  {getMonthOptions().map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => {
                   if (window.confirm("আপনি কি নিশ্চিতভাবে সকল পূর্ব জের তথ্য রিসেট করতে চান?")) {
-                    localStorage.removeItem('qr3_table1_prev_ledger_june2025');
+                    localStorage.removeItem(getStorageKeyTable1(cutoffMonth));
                     const defaults: Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }> = {};
                     table1EntitiesList.forEach(({ entityName }) => {
                       const base = getEntityStats(entityName);
@@ -696,14 +826,14 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                     <th className={`${thCls} w-[45px]`} rowSpan={2}>ক্র নং</th>
                     <th className={`${thCls} w-[150px]`} rowSpan={2}>মন্ত্রণালয়ের নাম</th>
                     <th className={`${thCls} w-[180px]`} rowSpan={2}>সংস্থার নাম</th>
-                    <th className={`${thCls} w-[130px]`} colSpan={3}>জুন/২০২৫ পর্যন্ত প্রারম্ভিক জের (ইনপুট)</th>
-                    <th className={`${thCls} w-[240px]`} colSpan={4}>জুলাই/২০২৫ হতে ${prevQuarterEnd.monthName}/${prevQuarterEnd.year} পর্যন্ত সমন্বয় (রেজিস্টার হতে)</th>
-                    <th className={`${thCls} w-[300px]`} colSpan={3}>১৯৭১-৭২ হতে ${prevQuarterEnd.monthName}/${prevQuarterEnd.year} পর্যন্ত মোট সমন্বয়কৃত পূর্ব জের</th>
+                    <th className={`${thCls} w-[130px]`} colSpan={3}>{cutoffInfo.formattedLong} পর্যন্ত প্রারম্ভিক জের (ইনপুট)</th>
+                    <th className={`${thCls} w-[240px]`} colSpan={4}>{cutoffInfo.nextMonthFormattedLong} হতে {prevQuarterEnd.monthName}/{prevQuarterEnd.year} পর্যন্ত সমন্বয় (রেজিস্টার হতে)</th>
+                    <th className={`${thCls} w-[300px]`} colSpan={3}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{prevQuarterEnd.year} পর্যন্ত মোট সমন্বয়কৃত পূর্ব জের</th>
                   </tr>
                   <tr>
-                    <th className={thCls}>১৯৭১-৭২ হতে জুন/২৫ উত্থাপিত</th>
-                    <th className={thCls}>১৯৭১-৭২ হতে জুন/২৫ নিষ্পত্তিকৃত</th>
-                    <th className={thCls}>জুন/২৫ অমীমাংসিত টাকা</th>
+                    <th className={thCls}>১৯৭১-৭২ হতে {cutoffInfo.formattedShort} উত্থাপিত</th>
+                    <th className={thCls}>১৯৭১-৭২ হতে {cutoffInfo.formattedShort} নিষ্পত্তিকৃত</th>
+                    <th className={thCls}>{cutoffInfo.formattedShort} অমীমাংসিত টাকা</th>
                     <th className={thCls}>উত্থাপিত সংখ্যা</th>
                     <th className={thCls}>উত্থাপিত টাকা</th>
                     <th className={thCls}>নিষ্পত্তিকৃত সংখ্যা</th>
@@ -846,21 +976,40 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
-            <div className="text-left">
-              <h2 className="text-[15px] font-black text-slate-900 flex items-center gap-2">
-                <Sparkles size={18} className="text-amber-500" />
-                টেবিল-২ এর পূর্ব জের সেটআপ ও গণনা তালিকা
-              </h2>
-              <p className="text-[10px] font-bold text-slate-500 mt-1">
-                ১৯৭১-৭২ হতে জুন/২০২৫ পর্যন্ত উত্থাপিত ও নিষ্পত্তিকৃত আপত্তির সংখ্যাগুলো ইনপুট দিন। জুলাই/২০২৫ হতে নিষ্পত্তি স্বয়ংক্রিয়ভাবে হিসাব হবে।
-              </p>
+            <div className="text-left flex flex-col md:flex-row md:items-center gap-4">
+              <div>
+                <h2 className="text-[15px] font-black text-slate-900 flex items-center gap-2">
+                  <Sparkles size={18} className="text-amber-500" />
+                  টেবিল-২ এর পূর্ব জের সেটআপ ও গণনা তালিকা
+                </h2>
+                <p className="text-[10px] font-bold text-slate-500 mt-1">
+                  ১৯৭১-৭২ হতে {cutoffInfo.formattedLong} পর্যন্ত উত্থাপিত ও নিষ্পত্তিকৃত আপত্তির সংখ্যাগুলো ইনপুট দিন। {cutoffInfo.nextMonthFormattedLong} হতে নিষ্পত্তি স্বয়ংক্রিয়ভাবে হিসাব হবে।
+                </p>
+              </div>
+
+              {/* Dynamic Month Selector */}
+              <div className="flex items-center gap-2.5 bg-gradient-to-r from-amber-50 to-amber-100/50 border border-amber-200/80 rounded-xl px-3.5 py-1.5 shadow-sm text-xs shrink-0">
+                <span className="font-extrabold text-amber-900 tracking-wide">জেরের মাস:</span>
+                <select
+                  value={cutoffMonth}
+                  onChange={(e) => {
+                    setCutoffMonth(e.target.value);
+                    localStorage.setItem('opening_balance_cutoff_month', e.target.value);
+                  }}
+                  className="bg-white border border-amber-300 rounded-lg px-2.5 py-1 font-black text-slate-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none cursor-pointer shadow-sm hover:bg-slate-50 transition-all text-xs"
+                >
+                  {getMonthOptions().map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => {
                   if (window.confirm("আপনি কি নিশ্চিতভাবে সকল পূর্ব জের তথ্য রিসেট করতে চান?")) {
-                    localStorage.removeItem('qr3_table2_prev_ledger_june2025');
+                    localStorage.removeItem(getStorageKeyTable2(cutoffMonth));
                     const defaults: Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }> = {};
                     table2EntitiesList.forEach(({ entityName }) => {
                       const base = getEntityStats(entityName);
@@ -904,14 +1053,14 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                     <th className={`${thCls} w-[45px]`} rowSpan={2}>ক্র নং</th>
                     <th className={`${thCls} w-[150px]`} rowSpan={2}>মন্ত্রণালয়ের নাম</th>
                     <th className={`${thCls} w-[180px]`} rowSpan={2}>সংস্থার নাম</th>
-                    <th className={`${thCls} w-[130px]`} colSpan={3}>জুন/২০২৫ পর্যন্ত প্রারম্ভিক জের (ইনপুট)</th>
-                    <th className={`${thCls} w-[240px]`} colSpan={4}>জুলাই/২০২৫ হতে ${prevQuarterEnd.monthName}/${prevQuarterEnd.year} পর্যন্ত সমন্বয় (রেজিস্টার হতে)</th>
-                    <th className={`${thCls} w-[300px]`} colSpan={3}>১৯৭১-৭২ হতে ${prevQuarterEnd.monthName}/${prevQuarterEnd.year} পর্যন্ত মোট সমন্বয়কৃত পূর্ব জের</th>
+                    <th className={`${thCls} w-[130px]`} colSpan={3}>{cutoffInfo.formattedLong} পর্যন্ত প্রারম্ভিক জের (ইনপুট)</th>
+                    <th className={`${thCls} w-[240px]`} colSpan={4}>{cutoffInfo.nextMonthFormattedLong} হতে {prevQuarterEnd.monthName}/{prevQuarterEnd.year} পর্যন্ত সমন্বয় (রেজিস্টার হতে)</th>
+                    <th className={`${thCls} w-[300px]`} colSpan={3}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{prevQuarterEnd.year} পর্যন্ত মোট সমন্বয়কৃত পূর্ব জের</th>
                   </tr>
                   <tr>
-                    <th className={thCls}>১৯৭১-৭২ হতে জুন/২৫ উত্থাপিত</th>
-                    <th className={thCls}>১৯৭১-৭২ হতে জুন/২৫ নিষ্পত্তিকৃত</th>
-                    <th className={thCls}>জুন/২৫ অমীমাংসিত টাকা</th>
+                    <th className={thCls}>১৯৭১-৭২ হতে {cutoffInfo.formattedShort} উত্থাপিত</th>
+                    <th className={thCls}>১৯৭১-৭২ হতে {cutoffInfo.formattedShort} নিষ্পত্তিকৃত</th>
+                    <th className={thCls}>{cutoffInfo.formattedShort} অমীমাংসিত টাকা</th>
                     <th className={thCls}>উত্থাপিত সংখ্যা</th>
                     <th className={thCls}>উত্থাপিত টাকা</th>
                     <th className={thCls}>নিষ্পত্তিকৃত সংখ্যা</th>
