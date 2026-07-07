@@ -19,65 +19,137 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
   onBack,
   IDBadge
 }) => {
-  // Set default dates to 1/07/2025 - 30/06/2026 as requested by user's sir
   const [startDate, setStartDate] = useState('2025-07-01');
   const [endDate, setEndDate] = useState('2026-06-30');
-  const [searchTerm, setSearchTerm] = useState('');
+
+  // Segment states in Bengali digits as standard in this app
+  const [startDD, setStartDD] = useState('০১');
+  const [startMM, setStartMM] = useState('০৭');
+  const [startYYYY, setStartYYYY] = useState('২০২৫');
+
+  const [endDD, setEndDD] = useState('৩০');
+  const [endMM, setEndMM] = useState('০৬');
+  const [endYYYY, setEndYYYY] = useState('২০২৬');
+
+  const [searchTerm, setSearchTerm] = useState('সকল');
   const [filterBranch, setFilterBranch] = useState('সকল');
+
+  // Refs for auto focus and calendar popups
+  const startDayRef = useRef<HTMLInputElement>(null);
+  const startMonthRef = useRef<HTMLInputElement>(null);
+  const startYearRef = useRef<HTMLInputElement>(null);
+  const startCalendarRef = useRef<HTMLInputElement>(null);
+
+  const endDayRef = useRef<HTMLInputElement>(null);
+  const endMonthRef = useRef<HTMLInputElement>(null);
+  const endYearRef = useRef<HTMLInputElement>(null);
+  const endCalendarRef = useRef<HTMLInputElement>(null);
+
+  const handleSegmentChange = (
+    val: string, 
+    type: 'day'|'month'|'year', 
+    setter: (v: string) => void, 
+    setFullDate: (d: string) => void, 
+    otherSegments: any, 
+    nextRef?: React.RefObject<HTMLInputElement | null>
+  ) => {
+    const cleaned = toEnglishDigits(val).replace(/[^0-9]/g, '');
+    const numVal = parseInt(cleaned);
+
+    let updatedVal = toBengaliDigits(cleaned);
+    if (type === 'day') {
+      if (cleaned.length <= 2) {
+        if (cleaned.length > 0 && numVal > 31) return;
+        setter(updatedVal);
+        if (cleaned.length === 2 || (cleaned.length === 1 && numVal > 3)) {
+          nextRef?.current?.focus();
+        }
+        
+        const d = cleaned;
+        const m = toEnglishDigits(otherSegments.month);
+        const y = toEnglishDigits(otherSegments.year);
+        if (d && m && y && y.length === 4) {
+          setFullDate(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`);
+        }
+      }
+    } else if (type === 'month') {
+      if (cleaned.length <= 2) {
+        if (cleaned.length > 0 && numVal > 12) return;
+        setter(updatedVal);
+        if (cleaned.length === 2 || (cleaned.length === 1 && numVal > 1)) {
+          nextRef?.current?.focus();
+        }
+
+        const d = toEnglishDigits(otherSegments.day);
+        const m = cleaned;
+        const y = toEnglishDigits(otherSegments.year);
+        if (d && m && y && y.length === 4) {
+          setFullDate(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`);
+        }
+      }
+    } else if (type === 'year') {
+      if (cleaned.length <= 4) {
+        setter(updatedVal);
+        const d = toEnglishDigits(otherSegments.day);
+        const m = toEnglishDigits(otherSegments.month);
+        const y = cleaned;
+        if (d && m && y && y.length === 4) {
+          setFullDate(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`);
+        }
+      }
+    }
+  };
+
+  const handleSegmentBlur = (
+    val: string, 
+    type: 'day'|'month'|'year', 
+    setter: (v: string) => void, 
+    setFullDate: (d: string) => void, 
+    otherSegments: any
+  ) => {
+    const eng = toEnglishDigits(val);
+    if (!eng) return;
+    let finalEng = eng;
+    if (type === 'year') {
+      if (eng.length === 1) finalEng = '200' + eng;
+      else if (eng.length === 2) finalEng = '20' + eng;
+    } else {
+      if (eng.length === 1) finalEng = '0' + eng;
+    }
+    setter(toBengaliDigits(finalEng));
+
+    const d = type === 'day' ? finalEng : toEnglishDigits(otherSegments.day);
+    const m = type === 'month' ? finalEng : toEnglishDigits(otherSegments.month);
+    const y = type === 'year' ? finalEng : toEnglishDigits(otherSegments.year);
+    if (d && m && y && y.length === 4) {
+      setFullDate(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`);
+    }
+  };
+
+  const handleStartDateSelect = (dateStr: string) => {
+    if (!dateStr) return;
+    setStartDate(dateStr);
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      setStartDD(toBengaliDigits(parts[2]));
+      setStartMM(toBengaliDigits(parts[1]));
+      setStartYYYY(toBengaliDigits(parts[0]));
+    }
+  };
+
+  const handleEndDateSelect = (dateStr: string) => {
+    if (!dateStr) return;
+    setEndDate(dateStr);
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      setEndDD(toBengaliDigits(parts[2]));
+      setEndMM(toBengaliDigits(parts[1]));
+      setEndYYYY(toBengaliDigits(parts[0]));
+    }
+  };
 
   // Filter entries based on selected dates and other controls
   const filteredEntries = useMemo(() => {
-    // Robust normalization for Bengali and English string matching
-    const normalizeForSearch = (str: string = '') => {
-      if (!str) return '';
-      let normalized = str.normalize('NFC').toLowerCase();
-      
-      // Remove zero-width characters and special diacritics
-      normalized = normalized.replace(/[\u200B-\u200D\uFEFF]/g, '');
-      
-      // Replace Bengali digits with English digits to search numbers easily
-      const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-      const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-      for (let i = 0; i < 10; i++) {
-        normalized = normalized.replace(new RegExp(bengaliDigits[i], 'g'), englishDigits[i]);
-      }
-      
-      // Normalize common spelling typos / variations in Bengali
-      // 1. "কায" -> "কার্য" (handle Ref-less typo)
-      normalized = normalized.replace(/কায/g, 'কার্য');
-      
-      // 2. Handle 'য়' (ya-with-dot) and 'য' (ya) equivalence
-      normalized = normalized.replace(/য়/g, 'য');
-      
-      // 3. Handle 'ী' (dirgho-i) and 'ি' (hrosso-i) equivalence
-      normalized = normalized.replace(/ী/g, 'ি');
-      
-      // 4. Handle "মিলিকরণ" vs "মিলকরণ" equivalence
-      normalized = normalized.replace(/মিলিকরণ/g, 'মিলকরণ');
-
-      // 5. English term expansions for cross-lingual searching
-      if (normalized.includes('bsr')) {
-        normalized += ' বিএসআর';
-      }
-      if (normalized.includes('bilateral')) {
-        normalized += ' দ্বিপক্ষীয় দ্বিপক্ষীয় সভা';
-      }
-      if (normalized.includes('trilateral')) {
-        normalized += ' ত্রিপক্ষীয় ত্রিপক্ষীয় সভা';
-      }
-      if (normalized.includes('working') || normalized.includes('work')) {
-        normalized += ' কার্যপত্র';
-      }
-      if (normalized.includes('minutes')) {
-        normalized += ' কার্যবিবরণী';
-      }
-      if (normalized.includes('recon')) {
-        normalized += ' মিলিকরণ মিলকরণ';
-      }
-      
-      return normalized.replace(/\s+/g, ' ').trim();
-    };
-
     return entries.filter(entry => {
       // 1. Date Range Filter using diaryDate (receipt date) or letterDate if diaryDate is empty
       const entryDate = entry.diaryDate || entry.letterDate || '';
@@ -86,43 +158,35 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       const isWithinDateRange = entryDate >= startDate && entryDate <= endDate;
       if (!isWithinDateRange) return false;
 
-      // Check if search query contains any letter-type keywords
-      const lowerSearch = searchTerm.toLowerCase().trim();
-      const isLetterTypeKeyword = 
-        lowerSearch.includes('বিএসআর') || lowerSearch.includes('bsr') ||
-        lowerSearch.includes('দ্বিপক্ষ') || lowerSearch.includes('দ্বিপাক্ষ') || lowerSearch.includes('bilateral') ||
-        lowerSearch.includes('ত্রিপক্ষ') || lowerSearch.includes('ত্রিপাক্ষ') || lowerSearch.includes('trilateral') ||
-        lowerSearch.includes('কার্যপত্র') || lowerSearch.includes('কাযপত্র') || lowerSearch.includes('working') ||
-        lowerSearch.includes('কার্যবিবরণী') || lowerSearch.includes('কাযবিবরণী') || lowerSearch.includes('minutes') ||
-        lowerSearch.includes('মিলিকরণ') || lowerSearch.includes('মিলকরণ') || lowerSearch.includes('reconciliation') ||
-        lowerSearch.includes('অবগতি') || lowerSearch.includes('প্রত্যয়ন');
-
       // 2. Branch/ParaType Filter
-      // If the user searches for a specific letter-type keyword, we bypass the branch filter 
-      // so they can find the letters across SFI/Non-SFI branches easily.
-      if (filterBranch !== 'সকল' && !isLetterTypeKeyword) {
+      if (filterBranch !== 'সকল') {
         if (filterBranch === 'এসএফআই' && !isSFI(entry.paraType)) return false;
         if (filterBranch === 'নন এসএফআই' && !isNonSFI(entry.paraType)) return false;
       }
 
-      // 3. Search Term Filter
-      if (searchTerm.trim() !== '') {
-        const query = normalizeForSearch(searchTerm);
-        
-        const desc = normalizeForSearch(entry.description || '');
-        const letterNo = normalizeForSearch(entry.letterNo || '');
-        const diaryNo = normalizeForSearch(entry.diaryNo || '');
-        const letterType = normalizeForSearch(entry.letterType || '');
-        const receiver = normalizeForSearch(entry.receiverName || '');
-        const paraType = normalizeForSearch(entry.paraType || '');
+      // 3. Dropdown Search / Filter by Letter Type
+      if (searchTerm !== 'সকল') {
+        const type = (entry.letterType || '').normalize('NFC').toLowerCase();
 
-        const matches = desc.includes(query) || 
-                        letterNo.includes(query) || 
-                        diaryNo.includes(query) || 
-                        letterType.includes(query) ||
-                        receiver.includes(query) ||
-                        paraType.includes(query);
-        if (!matches) return false;
+        if (searchTerm === 'বিএসআর') {
+          if (!type.includes('বিএসআর') && !type.includes('bsr')) return false;
+        } else if (searchTerm === 'দ্বিপক্ষীয়') {
+          if (!type.includes('দ্বিপক্ষীয়') && !type.includes('দ্বিপাক্ষী') && !type.includes('bilateral')) return false;
+        } else if (searchTerm === 'ত্রিপক্ষীয়') {
+          if (!type.includes('ত্রিপক্ষীয়') && !type.includes('ত্রিপাক্ষী') && !type.includes('trilateral')) return false;
+        } else if (searchTerm === 'কাযপত্র') {
+          if (!type.includes('কার্যপত্র') && !type.includes('কাযপত্র') && !type.includes('working')) return false;
+        } else if (searchTerm === 'মিলিকরন') {
+          if (!type.includes('মিলিকরণ') && !type.includes('মিলকরণ') && !type.includes('মিলিকরন') && !type.includes('reconciliation')) return false;
+        } else if (searchTerm === 'অন্যান্য') {
+          const isMain = 
+            type.includes('বিএসআর') || type.includes('bsr') ||
+            type.includes('দ্বিপক্ষীয়') || type.includes('দ্বিপাক্ষী') || type.includes('bilateral') ||
+            type.includes('ত্রিপক্ষীয়') || type.includes('ত্রিপাক্ষী') || type.includes('trilateral') ||
+            type.includes('কার্যপত্র') || type.includes('কাযপত্র') || type.includes('working') ||
+            type.includes('মিলিকরণ') || type.includes('মিলকরণ') || type.includes('মিলিকরন') || type.includes('reconciliation');
+          if (isMain) return false;
+        }
       }
 
       return true;
@@ -301,27 +365,113 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           {/* Start Date */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
-              শুরুর তারিখ
+              শুরুর তারিখ (দিন/মাস/বছর)
             </label>
-            <input 
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full h-11 px-3 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-xs"
-            />
+            <div className="relative w-full h-11 flex items-center border-2 border-slate-200 rounded-xl bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 transition-all text-xs shadow-sm">
+              <div className="flex items-center w-full px-3 h-full justify-between">
+                <div className="flex items-center justify-center gap-1 font-bold text-slate-800">
+                  <input 
+                    ref={startDayRef}
+                    type="text"
+                    placeholder="DD"
+                    value={startDD}
+                    onChange={(e) => handleSegmentChange(e.target.value, 'day', setStartDD, setStartDate, { month: startMM, year: startYYYY }, startMonthRef)}
+                    onBlur={(e) => handleSegmentBlur(e.target.value, 'day', setStartDD, setStartDate, { month: startMM, year: startYYYY })}
+                    className="w-6 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
+                  />
+                  <span className="text-slate-300 font-black">/</span>
+                  <input 
+                    ref={startMonthRef}
+                    type="text"
+                    placeholder="MM"
+                    value={startMM}
+                    onChange={(e) => handleSegmentChange(e.target.value, 'month', setStartMM, setStartDate, { day: startDD, year: startYYYY }, startYearRef)}
+                    onBlur={(e) => handleSegmentBlur(e.target.value, 'month', setStartMM, setStartDate, { day: startDD, year: startYYYY })}
+                    className="w-6 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
+                  />
+                  <span className="text-slate-300 font-black">/</span>
+                  <input 
+                    ref={startYearRef}
+                    type="text"
+                    placeholder="YYYY"
+                    value={startYYYY}
+                    onChange={(e) => handleSegmentChange(e.target.value, 'year', setStartYYYY, setStartDate, { day: startDD, month: startMM })}
+                    onBlur={(e) => handleSegmentBlur(e.target.value, 'year', setStartYYYY, setStartDate, { day: startDD, month: startMM })}
+                    className="w-10 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
+                  />
+                </div>
+                <div className="flex items-center relative cursor-pointer">
+                  <Calendar 
+                    size={14}
+                    className="text-slate-400 hover:text-blue-500 transition-colors"
+                    onClick={() => startCalendarRef.current?.showPicker()}
+                  />
+                  <input 
+                    ref={startCalendarRef}
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => handleStartDateSelect(e.target.value)}
+                    className="absolute inset-0 opacity-0 w-5 h-5 cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* End Date */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
-              শেষের তারিখ
+              শেষের তারিখ (দিন/মাস/বছর)
             </label>
-            <input 
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full h-11 px-3 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-xs"
-            />
+            <div className="relative w-full h-11 flex items-center border-2 border-slate-200 rounded-xl bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 transition-all text-xs shadow-sm">
+              <div className="flex items-center w-full px-3 h-full justify-between">
+                <div className="flex items-center justify-center gap-1 font-bold text-slate-800">
+                  <input 
+                    ref={endDayRef}
+                    type="text"
+                    placeholder="DD"
+                    value={endDD}
+                    onChange={(e) => handleSegmentChange(e.target.value, 'day', setEndDD, setEndDate, { month: endMM, year: endYYYY }, endMonthRef)}
+                    onBlur={(e) => handleSegmentBlur(e.target.value, 'day', setEndDD, setEndDate, { month: endMM, year: endYYYY })}
+                    className="w-6 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
+                  />
+                  <span className="text-slate-300 font-black">/</span>
+                  <input 
+                    ref={endMonthRef}
+                    type="text"
+                    placeholder="MM"
+                    value={endMM}
+                    onChange={(e) => handleSegmentChange(e.target.value, 'month', setEndMM, setEndDate, { day: endDD, year: endYYYY }, endYearRef)}
+                    onBlur={(e) => handleSegmentBlur(e.target.value, 'month', setEndMM, setEndDate, { day: endDD, year: endYYYY })}
+                    className="w-6 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
+                  />
+                  <span className="text-slate-300 font-black">/</span>
+                  <input 
+                    ref={endYearRef}
+                    type="text"
+                    placeholder="YYYY"
+                    value={endYYYY}
+                    onChange={(e) => handleSegmentChange(e.target.value, 'year', setEndYYYY, setEndDate, { day: endDD, month: endMM })}
+                    onBlur={(e) => handleSegmentBlur(e.target.value, 'year', setEndYYYY, setEndDate, { day: endDD, month: endMM })}
+                    className="w-10 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
+                  />
+                </div>
+                <div className="flex items-center relative cursor-pointer">
+                  <Calendar 
+                    size={14}
+                    className="text-slate-400 hover:text-blue-500 transition-colors"
+                    onClick={() => endCalendarRef.current?.showPicker()}
+                  />
+                  <input 
+                    ref={endCalendarRef}
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => handleEndDateSelect(e.target.value)}
+                    className="absolute inset-0 opacity-0 w-5 h-5 cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Branch Filter */}
@@ -346,14 +496,25 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
               অনুসন্ধান (কীওয়ার্ড)
             </label>
             <div className="relative">
-              <input 
-                type="text"
-                placeholder="পত্র নং, বিষয় বা প্রেরক দিয়ে খুঁজুন..."
+              <select 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-11 pl-9 pr-3 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-xs"
-              />
+                className="w-full h-11 pl-9 pr-8 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-xs cursor-pointer appearance-none"
+              >
+                <option value="সকল">সকল চিঠি</option>
+                <option value="বিএসআর">বিএসআর (BSR)</option>
+                <option value="দ্বিপক্ষীয়">দ্বিপক্ষীয়</option>
+                <option value="ত্রিপক্ষীয়">ত্রিপক্ষীয়</option>
+                <option value="কাযপত্র">কাযপত্র (কার্যপত্র)</option>
+                <option value="মিলিকরন">মিলিকরন (মিলিকরণ)</option>
+                <option value="অন্যান্য">অন্যান্য</option>
+              </select>
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
