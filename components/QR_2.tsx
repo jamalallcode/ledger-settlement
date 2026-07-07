@@ -555,7 +555,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         const transitionEntries = entries.filter(e => {
           if (!isEntityMatch(e.entityName, entityName)) return false;
           if (!isMinistryMatch(e.ministryName, mName)) return false;
-          if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
+          const normalizedPType = robustNormalize(e.paraType || '');
+          if (normalizedPType !== robustNormalize('নন এসএফআই') && normalizedPType !== robustNormalize('এসএফআই')) return false;
           
           const mType = robustNormalize(e.meetingType || e.letterType || '');
           if (!mType.includes(robustNormalize('বিএসআর'))) return false;
@@ -759,7 +760,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         const transitionEntries = entries.filter(e => {
           if (!isEntityMatch(e.entityName, entityName)) return false;
           if (!isMinistryMatch(e.ministryName, mName)) return false;
-          if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
+          const normalizedPType = robustNormalize(e.paraType || '');
+          if (normalizedPType !== robustNormalize('নন এসএফআই') && normalizedPType !== robustNormalize('এসএফআই')) return false;
           
           const mType = robustNormalize(e.meetingType || e.letterType || '');
           if (!mType.includes(robustNormalize('বিএসআর'))) return false;
@@ -1352,7 +1354,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         const transitionEntries = entries.filter(e => {
           if (!isEntityMatch(e.entityName, entityName)) return false;
           if (!isMinistryMatch(e.ministryName, mName)) return false;
-          if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
+          const normalizedPType = robustNormalize(e.paraType || '');
+          if (normalizedPType !== robustNormalize('নন এসএফআই') && normalizedPType !== robustNormalize('এসএফআই')) return false;
 
           const mType = robustNormalize(e.meetingType || e.letterType || '');
           if (!mType.includes(robustNormalize('বিএসআর'))) return false;
@@ -1392,7 +1395,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         const currentEntries = entries.filter(e => {
           if (!isEntityMatch(e.entityName, entityName)) return false;
           if (!isMinistryMatch(e.ministryName, mName)) return false;
-          if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
+          const normalizedPType = robustNormalize(e.paraType || '');
+          if (normalizedPType !== robustNormalize('নন এসএফআই') && normalizedPType !== robustNormalize('এসএফআই')) return false;
 
           const mType = robustNormalize(e.meetingType || e.letterType || '');
           if (!mType.includes(robustNormalize('বিএসআর'))) return false;
@@ -1533,7 +1537,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         const transitionEntries = entries.filter(e => {
           if (!isEntityMatch(e.entityName, entityName)) return false;
           if (!isMinistryMatch(e.ministryName, mName)) return false;
-          if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
+          const normalizedPType = robustNormalize(e.paraType || '');
+          if (normalizedPType !== robustNormalize('নন এসএফআই') && normalizedPType !== robustNormalize('এসএফআই')) return false;
 
           const mType = robustNormalize(e.meetingType || e.letterType || '');
           if (!mType.includes(robustNormalize('বিএসআর'))) return false;
@@ -1573,7 +1578,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         const currentEntries = entries.filter(e => {
           if (!isEntityMatch(e.entityName, entityName)) return false;
           if (!isMinistryMatch(e.ministryName, mName)) return false;
-          if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
+          const normalizedPType = robustNormalize(e.paraType || '');
+          if (normalizedPType !== robustNormalize('নন এসএফআই') && normalizedPType !== robustNormalize('এসএফআই')) return false;
 
           const mType = robustNormalize(e.meetingType || e.letterType || '');
           if (!mType.includes(robustNormalize('বিএসআর'))) return false;
@@ -1693,8 +1699,9 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   }, [details1Table2Data]);
 
   const filteredData = entries.filter(e => {
-    // Filter by Non-SFI
-    if (robustNormalize(e.paraType) !== robustNormalize('নন এসএফআই')) return false;
+    // Filter by SFI or Non-SFI
+    const normalizedParaType = robustNormalize(e.paraType || '');
+    if (normalizedParaType !== robustNormalize('নন এসএফআই') && normalizedParaType !== robustNormalize('এসএফআই')) return false;
     
     // Filter only by BSR
     const mType = robustNormalize(e.meetingType || e.letterType || '');
@@ -1827,7 +1834,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           </h1>
           <div className="flex justify-between items-center mt-1 text-[11px] font-bold text-slate-700">
             <span>রিপোর্ট চক্র: {quarterCycleRangeFormatted}</span>
-            <span>নন-এসএফআই</span>
+            <span>এসএফআই + নন-এসএফআই</span>
           </div>
         </div>
 
@@ -1882,7 +1889,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           <div className="mb-1 text-[11px] font-bold text-slate-800 flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1.5 border border-slate-200 py-2.5 px-4 bg-slate-50/50 rounded-xl shadow-sm">
             <p><span className="text-slate-500">বিষয়ঃ</span> মন্ত্রণালয়/সংস্থা ভিত্তিক অমীমাংসিত অডিট আপত্তির ত্রৈমাসিক বিবরণ</p>
             <span className="text-slate-300 hidden md:inline font-normal">|</span>
-            <p><span className="text-slate-500">শাখাঃ</span> নন এসএফআই শাখা</p>
+            <p><span className="text-slate-500">শাখাঃ</span> এসএফআই + নন-এসএফআই শাখা</p>
             <span className="text-slate-300 hidden md:inline font-normal">|</span>
             <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
           </div>
@@ -2129,7 +2136,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           <span className="text-slate-300 hidden md:inline font-normal">|</span>
           <p><span className="text-slate-500">বিষয়ঃ</span> ব্রডশিট জবাবের বিপরীতে নিষ্পত্তির সুপারিশের ত্রৈমাসিক প্রতিবেদন</p>
           <span className="text-slate-300 hidden md:inline font-normal">|</span>
-          <p><span className="text-slate-500">শাখাঃ</span> নন এসএফআই শাখা</p>
+          <p><span className="text-slate-500">শাখাঃ</span> এসএফআই + নন-এসএফআই শাখা</p>
           <span className="text-slate-300 hidden md:inline font-normal">|</span>
           <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
         </div>
