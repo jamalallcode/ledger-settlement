@@ -283,6 +283,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   };
 
   const [isPrevLedgerOpen, setIsPrevLedgerOpen] = React.useState(false);
+  const [confirmReset, setConfirmReset] = React.useState(false);
   const [cutoffMonth, setCutoffMonth] = React.useState(() => {
     return localStorage.getItem('opening_balance_cutoff_month') || '2025-12';
   });
@@ -967,8 +968,18 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                onClick={() => setIsPrevLedgerOpen(false)}
+                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-[10px] border border-blue-700 transition-all cursor-pointer shadow-sm active:scale-95"
+              >
+                সংরক্ষণ করুন ও বন্ধ করুন
+              </button>
+              <button
+                type="button"
                 onClick={() => {
-                  if (window.confirm("আপনি কি নিশ্চিতভাবে সকল পূর্ব জের তথ্য রিসেট করতে চান?")) {
+                  if (!confirmReset) {
+                    setConfirmReset(true);
+                    setTimeout(() => setConfirmReset(false), 4000);
+                  } else {
                     localStorage.removeItem(getStorageKeyTable1(cutoffMonth));
                     const defaults: Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }> = {};
                     Object.values(QR2_MINISTRY_MAP).forEach(entities => {
@@ -982,11 +993,16 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                       });
                     });
                     setPrevLedgerData(defaults);
+                    setConfirmReset(false);
                   }
                 }}
-                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl font-black text-[10px] border border-rose-200 transition-all cursor-pointer"
+                className={`px-3 py-1.5 rounded-xl font-black text-[10px] border transition-all cursor-pointer ${
+                  confirmReset 
+                    ? "bg-rose-500 hover:bg-rose-600 text-white border-rose-600 animate-pulse" 
+                    : "bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200"
+                }`}
               >
-                রিসেট করুন
+                {confirmReset ? "নিশ্চিত করুন?" : "রিসেট করুন"}
               </button>
               <button
                 type="button"
@@ -1016,21 +1032,14 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                     <th className={`${thCls} w-[150px]`} rowSpan={2}>মন্ত্রণালয়ের নাম</th>
                     <th className={`${thCls} w-[180px]`} rowSpan={2}>প্রতিষ্ঠানের নাম</th>
                     <th className={`${thCls} w-[130px]`} colSpan={3}>{cutoffInfo.formattedLong} পর্যন্ত প্রারম্ভিক জের (ইনপুট)</th>
-                    <th className={`${thCls} w-[240px]`} colSpan={2}>{cutoffInfo.nextMonthFormattedLong} হতে {prevQuarterEnd.monthName}/{prevQuarterEnd.year} পর্যন্ত নিষ্পত্তি (রেজিস্টার হতে)</th>
-                    <th className={`${thCls} w-[300px]`} colSpan={3}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{prevQuarterEnd.year} পর্যন্ত মোট সমন্বয়কৃত পূর্ব জের</th>
                   </tr>
                   <tr>
                     <th className={thCls}>১৯৭১-৭২ হতে {cutoffInfo.formattedShort} উত্থাপিত</th>
                     <th className={thCls}>১৯৭১-৭২ হতে {cutoffInfo.formattedShort} নিষ্পত্তিকৃত</th>
                     <th className={thCls}>{cutoffInfo.formattedShort} অমীমাংসিত টাকা</th>
-                    <th className={thCls}>নিষ্পত্তিকৃত সংখ্যা</th>
-                    <th className={thCls}>নিষ্পত্তিকৃত টাকা</th>
-                    <th className={thCls}>মোট নিষ্পত্তিকৃত সংখ্যা</th>
-                    <th className={thCls}>মোট অনিষ্পন্ন সংখ্যা</th>
-                    <th className={thCls}>মোট অনিষ্পন্ন টাকা</th>
                   </tr>
                   <tr className="bg-slate-50 text-[9px] font-black text-slate-500">
-                    {["১", "২", "৩", "৪ (ইনপুট)", "৫ (ইনপুট)", "৬ (ইনপুট)", "৭ (মীমাংসা)", "৮ (মীমাংসা)", "৯=৫+৭", "১০=৪-৯", "১১=৬-৮"].map((l, i) => (
+                    {["১", "২", "৩", "৪ (ইনপুট)", "৫ (ইনপুট)", "৬ (ইনপুট)"].map((l, i) => (
                       <th key={i} className={thCls + " py-1"}>{l}</th>
                     ))}
                   </tr>
@@ -1090,25 +1099,6 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                             onPaste={e => handlePaste(e, idx, 'june25UnsettledAmount')}
                           />
                         </td>
-
-                        {/* Read only calculated transition values */}
-                        <td className={numTdCls + " bg-slate-50 text-slate-700 font-bold"}>
-                          {formatNumberSimple(row.transitionSettledCount)}
-                        </td>
-                        <td className={numTdCls + " bg-slate-50 text-emerald-700 font-extrabold"}>
-                          {row.transitionSettledAmount === 0 ? '০' : formatNumberSimple(row.transitionSettledAmount)}
-                        </td>
-
-                        {/* Cumulative balances */}
-                        <td className={numTdCls + " bg-blue-50/10 font-bold text-slate-900"}>
-                          {formatNumberSimple(row.totalSettledCount)}
-                        </td>
-                        <td className={numTdCls + " bg-blue-50/20 font-black text-blue-900"}>
-                          {formatNumberSimple(row.totalUnsettledCount)}
-                        </td>
-                        <td className={numTdCls + " bg-blue-50/30 font-extrabold text-slate-900"}>
-                          {row.totalUnsettledAmount === 0 ? '০' : formatNumberSimple(row.totalUnsettledAmount)}
-                        </td>
                       </tr>
                     );
                   })}
@@ -1119,27 +1109,13 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                     <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Raised)}</td>
                     <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Settled)}</td>
                     <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25UnsettledAmount)}</td>
-                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.transitionSettledCount)}</td>
-                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.transitionSettledAmount)}</td>
-                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.totalSettledCount)}</td>
-                    <td className={footerNumTdCls + " text-blue-900"}>{formatNumberSimple(prevLedgerGrandTotals.totalUnsettledCount)}</td>
-                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.totalUnsettledAmount)}</td>
                   </tr>
                 </tfoot>
               </table>
             </div>
           </div>
 
-          {/* Footer controls */}
-          <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end">
-            <button
-              type="button"
-              onClick={() => setIsPrevLedgerOpen(false)}
-              className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs transition-all cursor-pointer shadow-lg active:scale-95 border-b-4 border-blue-800"
-            >
-              সংরক্ষণ করুন ও বন্ধ করুন
-            </button>
-          </div>
+
 
         </div>
       </div>
@@ -1184,6 +1160,13 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsPrevLedgerTable2Open(false)}
+                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-[10px] border border-blue-700 transition-all cursor-pointer shadow-sm active:scale-95"
+              >
+                সংরক্ষণ করুন ও বন্ধ করুন
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -1235,21 +1218,14 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                     <th className={`${thCls} w-[150px]`} rowSpan={2}>মন্ত্রণালয়ের নাম</th>
                     <th className={`${thCls} w-[180px]`} rowSpan={2}>প্রতিষ্ঠানের নাম</th>
                     <th className={`${thCls} w-[130px]`} colSpan={3}>{cutoffInfo.formattedLong} পর্যন্ত প্রারম্ভিক জের (ইনপুট)</th>
-                    <th className={`${thCls} w-[240px]`} colSpan={2}>{cutoffInfo.nextMonthFormattedLong} হতে {prevQuarterEnd.monthName}/{prevQuarterEnd.year} পর্যন্ত নিষ্পত্তি (রেজিস্টার হতে)</th>
-                    <th className={`${thCls} w-[300px]`} colSpan={3}>১৯৭১-৭২ হতে {prevQuarterEnd.monthName}/{prevQuarterEnd.year} পর্যন্ত মোট সমন্বয়কৃত পূর্ব জের</th>
                   </tr>
                   <tr>
                     <th className={thCls}>১৯৭১-৭২ হতে {cutoffInfo.formattedShort} উত্থাপিত</th>
                     <th className={thCls}>১৯৭১-৭২ হতে {cutoffInfo.formattedShort} নিষ্পত্তিকৃত</th>
                     <th className={thCls}>{cutoffInfo.formattedShort} অমীমাংসিত টাকা</th>
-                    <th className={thCls}>নিষ্পত্তিকৃত সংখ্যা</th>
-                    <th className={thCls}>নিষ্পত্তিকৃত টাকা</th>
-                    <th className={thCls}>মোট নিষ্পত্তিকৃত সংখ্যা</th>
-                    <th className={thCls}>মোট অনিষ্পন্ন সংখ্যা</th>
-                    <th className={thCls}>মোট অনিষ্পন্ন টাকা</th>
                   </tr>
                   <tr className="bg-slate-50 text-[9px] font-black text-slate-500">
-                    {["১", "২", "৩", "৪ (ইনপুট)", "৫ (ইনপুট)", "৬ (ইনপুট)", "৭ (মীমাংসা)", "৮ (মীমাংসা)", "৯=৫+৭", "১০=৪-৯", "১১=৬-৮"].map((l, i) => (
+                    {["১", "২", "৩", "৪ (ইনপুট)", "৫ (ইনপুট)", "৬ (ইনপুট)"].map((l, i) => (
                       <th key={i} className={thCls + " py-1"}>{l}</th>
                     ))}
                   </tr>
@@ -1309,25 +1285,6 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                             onPaste={e => handlePasteTable2(e, idx, 'june25UnsettledAmount')}
                           />
                         </td>
-
-                        {/* Read only calculated transition values */}
-                        <td className={numTdCls + " bg-slate-50 text-slate-700 font-bold"}>
-                          {formatNumberSimple(row.transitionSettledCount)}
-                        </td>
-                        <td className={numTdCls + " bg-slate-50 text-emerald-700 font-extrabold"}>
-                          {row.transitionSettledAmount === 0 ? '০' : formatNumberSimple(row.transitionSettledAmount)}
-                        </td>
-
-                        {/* Cumulative balances */}
-                        <td className={numTdCls + " bg-blue-50/10 font-bold text-slate-900"}>
-                          {formatNumberSimple(row.totalSettledCount)}
-                        </td>
-                        <td className={numTdCls + " bg-blue-50/20 font-black text-blue-900"}>
-                          {formatNumberSimple(row.totalUnsettledCount)}
-                        </td>
-                        <td className={numTdCls + " bg-blue-50/30 font-extrabold text-slate-900"}>
-                          {row.totalUnsettledAmount === 0 ? '০' : formatNumberSimple(row.totalUnsettledAmount)}
-                        </td>
                       </tr>
                     );
                   })}
@@ -1338,27 +1295,13 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                     <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerTable2GrandTotals.june25Raised)}</td>
                     <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerTable2GrandTotals.june25Settled)}</td>
                     <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerTable2GrandTotals.june25UnsettledAmount)}</td>
-                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerTable2GrandTotals.transitionSettledCount)}</td>
-                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerTable2GrandTotals.transitionSettledAmount)}</td>
-                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerTable2GrandTotals.totalSettledCount)}</td>
-                    <td className={footerNumTdCls + " text-blue-900"}>{formatNumberSimple(prevLedgerTable2GrandTotals.totalUnsettledCount)}</td>
-                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerTable2GrandTotals.totalUnsettledAmount)}</td>
                   </tr>
                 </tfoot>
               </table>
             </div>
           </div>
 
-          {/* Footer controls */}
-          <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end">
-            <button
-              type="button"
-              onClick={() => setIsPrevLedgerTable2Open(false)}
-              className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs transition-all cursor-pointer shadow-lg active:scale-95 border-b-4 border-blue-800"
-            >
-              সংরক্ষণ করুন ও বন্ধ করুন
-            </button>
-          </div>
+
 
         </div>
       </div>
@@ -1421,8 +1364,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
                 if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                   transitionSC++; 
-                  transitionSA += settledAmt;
                 }
+                transitionSA += settledAmt;
               }
             });
           }
@@ -1466,35 +1409,38 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
                 if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                   cSettled++; 
-                  cSettledAmount += settledAmt;
                 }
+                cSettledAmount += settledAmt;
               }
             });
           }
         });
 
-        const unsettledCountPrior = ledger.june25Raised + transitionRC - transitionSC;
-        const unsettledAmountPrior = Math.max(0, ledger.june25Settled + transitionRA - transitionSA);
+        const raisedPrior = ledger.june25Raised + transitionRC;
         const raisedCountCurr = cCount;
-        const raisedAmountCurr = cRaisedAmount;
-        const totalCount = unsettledCountPrior + raisedCountCurr;
-        const totalAmount = unsettledAmountPrior + raisedAmountCurr;
+        const totalRaised = raisedPrior + raisedCountCurr;
+
+        const resolvedPrior = ledger.june25Settled + transitionSC;
         const settledCountCurr = cSettled;
+        const totalResolved = resolvedPrior + settledCountCurr;
+
+        const unsettledCountEnd = totalRaised - totalResolved;
+
         const settledAmountCurr = cSettledAmount;
-        const unsettledCountEnd = totalCount - settledCountCurr;
-        const unsettledAmountEnd = Math.max(0, unsettledAmountPrior + raisedAmountCurr - settledAmountCurr);
+        const unsettledAmountPrior = Math.max(0, ledger.june25UnsettledAmount + transitionRA - transitionSA);
+        const unsettledAmountEnd = Math.max(0, unsettledAmountPrior + cRaisedAmount - settledAmountCurr);
 
         return {
           entityName,
-          unsettledCountPrior,
-          unsettledAmountPrior,
+          raisedPrior,
           raisedCountCurr,
-          raisedAmountCurr,
-          totalCount,
-          totalAmount,
+          totalRaised,
+          resolvedPrior,
           settledCountCurr,
-          settledAmountCurr,
+          totalResolved,
           unsettledCountEnd,
+          settledAmountCurr,
+          unsettledAmountPrior,
           unsettledAmountEnd
         };
       });
@@ -1520,29 +1466,29 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
   const details1Totals = useMemo(() => {
     const t = { 
-      unsettledCountPrior: 0, 
-      unsettledAmountPrior: 0, 
+      raisedPrior: 0, 
       raisedCountCurr: 0, 
-      raisedAmountCurr: 0, 
-      totalCount: 0, 
-      totalAmount: 0,
+      totalRaised: 0, 
+      resolvedPrior: 0, 
       settledCountCurr: 0, 
-      settledAmountCurr: 0, 
+      totalResolved: 0, 
       unsettledCountEnd: 0, 
+      settledAmountCurr: 0, 
+      unsettledAmountPrior: 0, 
       unsettledAmountEnd: 0 
     };
     details1Data.forEach(g => {
       g.entities.forEach((ent: any) => {
-        t.unsettledCountPrior += ent.unsettledCountPrior;
-        t.unsettledAmountPrior += ent.unsettledAmountPrior;
-        t.raisedCountCurr += ent.raisedCountCurr;
-        t.raisedAmountCurr += ent.raisedAmountCurr;
-        t.totalCount += ent.totalCount;
-        t.totalAmount += ent.totalAmount;
-        t.settledCountCurr += ent.settledCountCurr;
-        t.settledAmountCurr += ent.settledAmountCurr;
-        t.unsettledCountEnd += ent.unsettledCountEnd;
-        t.unsettledAmountEnd += ent.unsettledAmountEnd;
+        t.raisedPrior += (ent.raisedPrior || 0);
+        t.raisedCountCurr += (ent.raisedCountCurr || 0);
+        t.totalRaised += (ent.totalRaised || 0);
+        t.resolvedPrior += (ent.resolvedPrior || 0);
+        t.settledCountCurr += (ent.settledCountCurr || 0);
+        t.totalResolved += (ent.totalResolved || 0);
+        t.unsettledCountEnd += (ent.unsettledCountEnd || 0);
+        t.settledAmountCurr += (ent.settledAmountCurr || 0);
+        t.unsettledAmountPrior += (ent.unsettledAmountPrior || 0);
+        t.unsettledAmountEnd += (ent.unsettledAmountEnd || 0);
       });
     });
     return t;
@@ -1599,8 +1545,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
                 if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                   transitionSC++; 
-                  transitionSA += settledAmt;
                 }
+                transitionSA += settledAmt;
               }
             });
           }
@@ -1644,35 +1590,38 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
                 if (status === robustNormalize('পূর্ণাঙ্গ')) { 
                   cSettled++; 
-                  cSettledAmount += settledAmt;
                 }
+                cSettledAmount += settledAmt;
               }
             });
           }
         });
 
-        const unsettledCountPrior = ledger.june25Raised + transitionRC - transitionSC;
-        const unsettledAmountPrior = Math.max(0, ledger.june25Settled + transitionRA - transitionSA);
+        const raisedPrior = ledger.june25Raised + transitionRC;
         const raisedCountCurr = cCount;
-        const raisedAmountCurr = cRaisedAmount;
-        const totalCount = unsettledCountPrior + raisedCountCurr;
-        const totalAmount = unsettledAmountPrior + raisedAmountCurr;
+        const totalRaised = raisedPrior + raisedCountCurr;
+
+        const resolvedPrior = ledger.june25Settled + transitionSC;
         const settledCountCurr = cSettled;
+        const totalResolved = resolvedPrior + settledCountCurr;
+
+        const unsettledCountEnd = totalRaised - totalResolved;
+
         const settledAmountCurr = cSettledAmount;
-        const unsettledCountEnd = totalCount - settledCountCurr;
-        const unsettledAmountEnd = Math.max(0, unsettledAmountPrior + raisedAmountCurr - settledAmountCurr);
+        const unsettledAmountPrior = Math.max(0, ledger.june25UnsettledAmount + transitionRA - transitionSA);
+        const unsettledAmountEnd = Math.max(0, unsettledAmountPrior + cRaisedAmount - settledAmountCurr);
 
         return {
           entityName,
-          unsettledCountPrior,
-          unsettledAmountPrior,
+          raisedPrior,
           raisedCountCurr,
-          raisedAmountCurr,
-          totalCount,
-          totalAmount,
+          totalRaised,
+          resolvedPrior,
           settledCountCurr,
-          settledAmountCurr,
+          totalResolved,
           unsettledCountEnd,
+          settledAmountCurr,
+          unsettledAmountPrior,
           unsettledAmountEnd
         };
       });
@@ -1698,29 +1647,29 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
   const details1Table2Totals = useMemo(() => {
     const t = { 
-      unsettledCountPrior: 0, 
-      unsettledAmountPrior: 0, 
+      raisedPrior: 0, 
       raisedCountCurr: 0, 
-      raisedAmountCurr: 0, 
-      totalCount: 0, 
-      totalAmount: 0,
+      totalRaised: 0, 
+      resolvedPrior: 0, 
       settledCountCurr: 0, 
-      settledAmountCurr: 0, 
+      totalResolved: 0, 
       unsettledCountEnd: 0, 
+      settledAmountCurr: 0, 
+      unsettledAmountPrior: 0, 
       unsettledAmountEnd: 0 
     };
     details1Table2Data.forEach(g => {
       g.entities.forEach((ent: any) => {
-        t.unsettledCountPrior += ent.unsettledCountPrior;
-        t.unsettledAmountPrior += ent.unsettledAmountPrior;
-        t.raisedCountCurr += ent.raisedCountCurr;
-        t.raisedAmountCurr += ent.raisedAmountCurr;
-        t.totalCount += ent.totalCount;
-        t.totalAmount += ent.totalAmount || 0;
-        t.settledCountCurr += ent.settledCountCurr;
-        t.settledAmountCurr += ent.settledAmountCurr;
-        t.unsettledCountEnd += ent.unsettledCountEnd;
-        t.unsettledAmountEnd += ent.unsettledAmountEnd;
+        t.raisedPrior += (ent.raisedPrior || 0);
+        t.raisedCountCurr += (ent.raisedCountCurr || 0);
+        t.totalRaised += (ent.totalRaised || 0);
+        t.resolvedPrior += (ent.resolvedPrior || 0);
+        t.settledCountCurr += (ent.settledCountCurr || 0);
+        t.totalResolved += (ent.totalResolved || 0);
+        t.unsettledCountEnd += (ent.unsettledCountEnd || 0);
+        t.settledAmountCurr += (ent.settledAmountCurr || 0);
+        t.unsettledAmountPrior += (ent.unsettledAmountPrior || 0);
+        t.unsettledAmountEnd += (ent.unsettledAmountEnd || 0);
       });
     });
     return t;
@@ -1735,11 +1684,12 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     const isValidType = mType.includes(robustNormalize('বিএসআর'));
     if (!isValidType) return false;
 
-    // Filter by Date Range (Issue Date)
+    // Filter by Date Range (Issue Date) matching activeCycle
     const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
     if (!issueDateStr) return false;
-    const issueDate = new Date(issueDateStr);
-    if (issueDate < startDate || issueDate > endDate) return false;
+    const cycleStartStr = format(activeCycle.start, 'yyyy-MM-dd');
+    const cycleEndStr = format(activeCycle.end, 'yyyy-MM-dd');
+    if (issueDateStr < cycleStartStr || issueDateStr > cycleEndStr) return false;
 
     // Filter by Ministry
     const matchMinistry = filterMinistry === '' || robustNormalize(e.ministryName).includes(robustNormalize(filterMinistry));
@@ -1934,12 +1884,11 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 <th className={`${thClsWithTop} w-[160px]`} rowSpan={2}>সংস্থার নাম</th>
                 <th className={`${thClsWithTop}`} colSpan={2}>{priorMonthFormatted} পর্যন্ত অমীমাংসিত অডিট আপত্তির</th>
                 <th className={`${thClsWithTop}`} colSpan={2}>{currentQuarterFormatted} পর্যন্ত উত্থাপিত অডিট আপত্তির</th>
-                <th className={`${thClsWithTop}`} colSpan={2}>
-                  <div>মোট অডিট আপত্তির</div>
-                </th>
+                <th className={`${thClsWithTop}`} rowSpan={2}>মোট অডিট আপত্তির (সংখ্যা)</th>
                 <th className={`${thClsWithTop}`} colSpan={2}>{currentQuarterFormatted} পর্যন্ত মীমাংসিত অডিট আপত্তির</th>
+                <th className={`${thClsWithTop} w-[80px]`} rowSpan={2}>মন্তব্য</th>
+                <th className={`${thClsWithTop}`} rowSpan={2}>মোট অডিট আপত্তির (টাকা)</th>
                 <th className={`${thClsWithTop}`} colSpan={2}>{endMonthFormatted} পর্যন্ত অমীমাংসিত অডিট আপত্তির</th>
-                <th className={`${thClsWithTop} w-[80px] rounded-none`} rowSpan={2}>মন্তব্য</th>
               </tr>
               <tr>
                 <th className={thCls}>সংখ্যা</th>
@@ -1950,11 +1899,9 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 <th className={thCls}>টাকা</th>
                 <th className={thCls}>সংখ্যা</th>
                 <th className={thCls}>টাকা</th>
-                <th className={thCls}>সংখ্যা</th>
-                <th className={thCls}>টাকা</th>
               </tr>
               <tr className="h-[28px]">
-                {["১", "২", "৩", "৪", "৫", "৬", "৭", "৮=৪+৬", "৯=৫+৭", "১০", "১১", "১২=৮-১০", "১৩=৯-১১", "১৪"].map((idxLabel, i) => (
+                {["১", "২", "৩", "৪", "৫", "৬", "৭", "৮=৪+৬", "৯", "১০", "১১", "১২=৫+৭", "১৩=৮-৯", "১৪=১২-১০"].map((idxLabel, i) => (
                   <th key={i} className={thCls + " text-[9px] font-bold text-slate-500 py-1"}>{idxLabel}</th>
                 ))}
               </tr>
@@ -1982,12 +1929,12 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                       <td className={numTdCls + " bg-slate-50/30"}>{formatCountBengali(ent.raisedCountCurr)}</td>
                       <td className={numTdCls}>{formatAmountBengali(ent.raisedAmountCurr)}</td>
                       <td className={numTdCls + " font-black text-slate-900 bg-slate-50/40"}>{formatCountBengali(ent.totalCount)}</td>
-                      <td className={numTdCls + " font-black text-slate-900 bg-slate-50/40"}>{formatAmountBengali(ent.totalAmount)}</td>
                       <td className={numTdCls}>{formatCountBengali(ent.settledCountCurr)}</td>
                       <td className={numTdCls}>{formatAmountBengali(ent.settledAmountCurr)}</td>
+                      <td className={tdCls}></td>
+                      <td className={numTdCls + " font-black text-slate-900 bg-slate-50/40"}>{formatAmountBengali(ent.totalAmount)}</td>
                       <td className={numTdCls + " font-black text-blue-900 bg-blue-50/5"}>{formatCountBengali(ent.unsettledCountEnd)}</td>
                       <td className={numTdCls + " text-slate-900 font-black bg-slate-50/5"}>{formatAmountBengali(ent.unsettledAmountEnd)}</td>
-                      <td className={tdCls}></td>
                     </tr>
                   );
                 });
@@ -2003,12 +1950,12 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 <td className={footerNumTdCls}>{formatCountBengali(details1Totals.raisedCountCurr)}</td>
                 <td className={footerNumTdCls}>{formatAmountBengali(details1Totals.raisedAmountCurr)}</td>
                 <td className={footerNumTdCls}>{formatCountBengali(details1Totals.totalCount)}</td>
-                <td className={footerNumTdCls}>{formatAmountBengali(details1Totals.totalAmount)}</td>
                 <td className={footerNumTdCls}>{formatCountBengali(details1Totals.settledCountCurr)}</td>
                 <td className={footerNumTdCls}>{formatAmountBengali(details1Totals.settledAmountCurr)}</td>
+                <td className={footerTdCls}></td>
+                <td className={footerNumTdCls}>{formatAmountBengali(details1Totals.totalAmount)}</td>
                 <td className={footerNumTdCls}>{formatCountBengali(details1Totals.unsettledCountEnd)}</td>
                 <td className={footerNumTdCls}>{formatAmountBengali(details1Totals.unsettledAmountEnd)}</td>
-                <td className={footerTdCls}></td>
               </tr>
             </tfoot>
           </table>
@@ -2031,12 +1978,11 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 <th className={`${thClsWithTop} w-[160px]`} rowSpan={2}>সংস্থার নাম</th>
                 <th className={`${thClsWithTop}`} colSpan={2}>{priorMonthFormatted} পর্যন্ত অমীমাংসিত অডিট আপত্তির</th>
                 <th className={`${thClsWithTop}`} colSpan={2}>{currentQuarterFormatted} পর্যন্ত উত্থাপিত অডিট আপত্তির</th>
-                <th className={`${thClsWithTop}`} colSpan={2}>
-                  <div>মোট অডিট আপত্তির</div>
-                </th>
+                <th className={`${thClsWithTop}`} rowSpan={2}>মোট অডিট আপত্তির (সংখ্যা)</th>
                 <th className={`${thClsWithTop}`} colSpan={2}>{currentQuarterFormatted} পর্যন্ত মীমাংসিত অডিট আপত্তির</th>
+                <th className={`${thClsWithTop} w-[80px]`} rowSpan={2}>মন্তব্য</th>
+                <th className={`${thClsWithTop}`} rowSpan={2}>মোট অডিট আপত্তির (টাকা)</th>
                 <th className={`${thClsWithTop}`} colSpan={2}>{endMonthFormatted} পর্যন্ত অমীমাংসিত অডিট আপত্তির</th>
-                <th className={`${thClsWithTop} w-[80px] rounded-none`} rowSpan={2}>মন্তব্য</th>
               </tr>
               <tr>
                 <th className={thCls}>সংখ্যা</th>
@@ -2047,11 +1993,9 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 <th className={thCls}>টাকা</th>
                 <th className={thCls}>সংখ্যা</th>
                 <th className={thCls}>টাকা</th>
-                <th className={thCls}>সংখ্যা</th>
-                <th className={thCls}>টাকা</th>
               </tr>
               <tr className="h-[28px]">
-                {["১", "২", "৩", "৪", "৫", "৬", "৭", "৮=৪+৬", "৯=৫+৭", "১০", "১১", "১২=৮-১০", "১৩=৯-১১", "১৪"].map((idxLabel, i) => (
+                {["১", "২", "৩", "৪", "৫", "৬", "৭", "৮=৪+৬", "৯", "১০", "১১", "১২=৫+৭", "১৩=৮-৯", "১৪=১২-১০"].map((idxLabel, i) => (
                   <th key={i} className={thCls + " text-[9px] font-bold text-slate-500 py-1"}>{idxLabel}</th>
                 ))}
               </tr>
@@ -2079,12 +2023,12 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                       <td className={numTdCls + " bg-slate-50/30"}>{formatCountBengali(ent.raisedCountCurr)}</td>
                       <td className={numTdCls}>{formatAmountBengali(ent.raisedAmountCurr)}</td>
                       <td className={numTdCls + " font-black text-slate-900 bg-slate-50/40"}>{formatCountBengali(ent.totalCount)}</td>
-                      <td className={numTdCls + " font-black text-slate-900 bg-slate-50/40"}>{formatAmountBengali(ent.totalAmount)}</td>
                       <td className={numTdCls}>{formatCountBengali(ent.settledCountCurr)}</td>
                       <td className={numTdCls}>{formatAmountBengali(ent.settledAmountCurr)}</td>
+                      <td className={tdCls}></td>
+                      <td className={numTdCls + " font-black text-slate-900 bg-slate-50/40"}>{formatAmountBengali(ent.totalAmount)}</td>
                       <td className={numTdCls + " font-black text-blue-900 bg-blue-50/5"}>{formatCountBengali(ent.unsettledCountEnd)}</td>
                       <td className={numTdCls + " text-slate-900 font-black bg-slate-50/5"}>{formatAmountBengali(ent.unsettledAmountEnd)}</td>
-                      <td className={tdCls}></td>
                     </tr>
                   );
                 });
@@ -2100,12 +2044,12 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 <td className={footerNumTdCls}>{formatCountBengali(details1Table2Totals.raisedCountCurr)}</td>
                 <td className={footerNumTdCls}>{formatAmountBengali(details1Table2Totals.raisedAmountCurr)}</td>
                 <td className={footerNumTdCls}>{formatCountBengali(details1Table2Totals.totalCount)}</td>
-                <td className={footerNumTdCls}>{formatAmountBengali(details1Table2Totals.totalAmount)}</td>
                 <td className={footerNumTdCls}>{formatCountBengali(details1Table2Totals.settledCountCurr)}</td>
                 <td className={footerNumTdCls}>{formatAmountBengali(details1Table2Totals.settledAmountCurr)}</td>
+                <td className={footerTdCls}></td>
+                <td className={footerNumTdCls}>{formatAmountBengali(details1Table2Totals.totalAmount)}</td>
                 <td className={footerNumTdCls}>{formatCountBengali(details1Table2Totals.unsettledCountEnd)}</td>
                 <td className={footerNumTdCls}>{formatAmountBengali(details1Table2Totals.unsettledAmountEnd)}</td>
-                <td className={footerTdCls}></td>
               </tr>
             </tfoot>
           </table>
