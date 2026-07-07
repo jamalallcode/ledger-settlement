@@ -33,6 +33,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
   const [searchTerm, setSearchTerm] = useState('সকল');
   const [filterBranch, setFilterBranch] = useState('সকল');
+  const [keywordSearch, setKeywordSearch] = useState('');
 
   // Refs for auto focus and calendar popups
   const startDayRef = useRef<HTMLInputElement>(null);
@@ -150,9 +151,35 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
   // Filter entries based on selected dates and other controls
   const filteredEntries = useMemo(() => {
+    // Robust normalization for Bengali and English string matching
+    const normalizeForSearch = (str: string = '') => {
+      if (!str) return '';
+      let normalized = str.normalize('NFC').toLowerCase();
+      
+      // Remove zero-width characters and special diacritics
+      normalized = normalized.replace(/[\u200B-\u200D\uFEFF]/g, '');
+      
+      // Replace Bengali digits with English digits to search numbers easily
+      const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+      const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+      for (let i = 0; i < 10; i++) {
+        normalized = normalized.replace(new RegExp(bengaliDigits[i], 'g'), englishDigits[i]);
+      }
+      
+      // Normalize common spelling variations/typos in Bengali
+      normalized = normalized.replace(/ী/g, 'ি'); // 'ী' (dirgho-i) -> 'ি' (hrosso-i)
+      normalized = normalized.replace(/ূ/g, 'ু'); // 'ূ' -> 'ু'
+      normalized = normalized.replace(/ণ/g, 'ন'); // 'ণ' -> 'ন'
+      normalized = normalized.replace(/য়/g, 'য'); // 'য়' -> 'য'
+      normalized = normalized.replace(/ষ/g, 'স'); // 'ষ' -> 'স'
+      normalized = normalized.replace(/শ/g, 'স'); // 'শ' -> 'স'
+      
+      return normalized.replace(/\s+/g, ' ').trim();
+    };
+
     return entries.filter(entry => {
-      // 1. Date Range Filter using diaryDate (receipt date) or letterDate if diaryDate is empty
-      const entryDate = entry.diaryDate || entry.letterDate || '';
+      // 1. Date Range Filter strictly using diaryDate (diary date) as requested by user
+      const entryDate = entry.diaryDate || '';
       if (!entryDate) return false;
 
       const isWithinDateRange = entryDate >= startDate && entryDate <= endDate;
@@ -189,9 +216,28 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
         }
       }
 
+      // 4. Keyword / Institution Search
+      if (keywordSearch.trim() !== '') {
+        const query = normalizeForSearch(keywordSearch);
+        const desc = normalizeForSearch(entry.description || '');
+        const letterNo = normalizeForSearch(entry.letterNo || '');
+        const diaryNo = normalizeForSearch(entry.diaryNo || '');
+        const letterType = normalizeForSearch(entry.letterType || '');
+        const receiver = normalizeForSearch(entry.receiverName || '');
+        const paraType = normalizeForSearch(entry.paraType || '');
+
+        const matches = desc.includes(query) || 
+                        letterNo.includes(query) || 
+                        diaryNo.includes(query) || 
+                        letterType.includes(query) ||
+                        receiver.includes(query) ||
+                        paraType.includes(query);
+        if (!matches) return false;
+      }
+
       return true;
     });
-  }, [entries, startDate, endDate, filterBranch, searchTerm]);
+  }, [entries, startDate, endDate, filterBranch, searchTerm, keywordSearch]);
 
   // Calculate statistics for BSR, Bilateral meetings, and Working papers
   const stats = useMemo(() => {
@@ -361,7 +407,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           <h3 className="font-black text-slate-800 text-sm uppercase tracking-wide">রিপোর্ট ফিল্টারিং ও সময়কাল নির্বাচন</h3>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Start Date */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
@@ -490,10 +536,10 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
             </select>
           </div>
 
-          {/* Search Term */}
+          {/* Search Term / Letter Type */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
-              অনুসন্ধান (কীওয়ার্ড)
+              চিঠির ধরন নির্বাচন
             </label>
             <div className="relative">
               <select 
@@ -509,12 +555,29 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                 <option value="মিলিকরন">মিলিকরন (মিলিকরণ)</option>
                 <option value="অন্যান্য">অন্যান্য</option>
               </select>
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
                   <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
                 </svg>
               </div>
+            </div>
+          </div>
+
+          {/* Keyword Search / Institution */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
+              প্রতিষ্ঠান / কীওয়ার্ড অনুসন্ধান
+            </label>
+            <div className="relative">
+              <input 
+                type="text"
+                placeholder="সোনালী ব্যাংক, অগ্রণী ব্যাংক বা ডায়রি নং..."
+                value={keywordSearch}
+                onChange={(e) => setKeywordSearch(e.target.value)}
+                className="w-full h-11 pl-9 pr-3 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-xs placeholder:text-slate-400"
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
             </div>
           </div>
         </div>
