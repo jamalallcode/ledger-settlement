@@ -21,6 +21,7 @@ import BSRMonthlySettlementDetail from './BSRMonthlySettlementDetail';
 import BilateralMonthlySettlementDetail from './BilateralMonthlySettlementDetail';
 import BSRMonthlyOnlineReceiptDetail from './BSRMonthlyOnlineReceiptDetail';
 import BilateralMonthlyOnlineReceiptDetail from './BilateralMonthlyOnlineReceiptDetail';
+import { CustomPeriodReceiptReport } from './CustomPeriodReceiptReport';
 
 const BENGALI_MONTHS = [
   'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
@@ -1123,7 +1124,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
   let renderedContent;
 
-  if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
+  if (selectedReportType === 'চাহিদা মোতাবেক প্রাপ্তি রিপোর্ট') {
+    renderedContent = <CustomPeriodReceiptReport entries={correspondenceEntries || []} onBack={() => setSelectedReportType(null)} IDBadge={IDBadge} />;
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
     renderedContent = <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
   } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
     renderedContent = <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={() => null} IDBadge={IDBadge} showFilters={showFilters} />;

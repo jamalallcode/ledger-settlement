@@ -779,6 +779,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                           <span>বাৎসরিক</span>
                         </button>
 
+                        {/* ৫. চাহিদা মোতাবেক */}
+                        <button 
+                          onClick={() => setActiveTab('return', null, 'চাহিদা মোতাবেক প্রাপ্তি রিপোর্ট')}
+                          className={getSubItemCls(reportType === 'চাহিদা মোতাবেক প্রাপ্তি রিপোর্ট')}
+                        >
+                          <span>চাহিদা মোতাবেক</span>
+                        </button>
+
                         {/* ৫. সেটআপ (Toggle) */}
                         {isAdmin && (
                           <>
