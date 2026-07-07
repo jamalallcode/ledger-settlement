@@ -67,6 +67,23 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
   const { startDate, endDate, startMonthName, endMonthName, formattedRange, quarterStartMonth, quarterYear } = getQuarterInfo(activeCycle.end);
 
+  // Calculate the 16th-to-15th quarterly reporting cycle range
+  const quarterEndMonth = quarterStartMonth + 2;
+  let qCycleStartMonth = quarterStartMonth - 1;
+  let qCycleStartYear = quarterYear;
+  if (qCycleStartMonth < 0) {
+    qCycleStartMonth = 11;
+    qCycleStartYear -= 1;
+  }
+  const quarterCycleStartDate = new Date(qCycleStartYear, qCycleStartMonth, 16);
+  const quarterCycleEndDate = new Date(quarterYear, quarterEndMonth, 15);
+  quarterCycleStartDate.setHours(0, 0, 0, 0);
+  quarterCycleEndDate.setHours(23, 59, 59, 999);
+
+  const quarterCycleStartDateStr = format(quarterCycleStartDate, 'yyyy-MM-dd');
+  const quarterCycleEndDateStr = format(quarterCycleEndDate, 'yyyy-MM-dd');
+  const quarterCycleRangeFormatted = `${toBengaliDigits(format(quarterCycleStartDate, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(format(quarterCycleEndDate, 'dd/MM/yyyy'))}`;
+
   const downloadExcel = () => {
     const tables = document.querySelectorAll('table');
     if (tables.length === 0) return;
@@ -534,7 +551,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         };
         
         // Calculate transition settled from July 1, 2025 up to cycle start
-        const cycleStartStr = format(startDate, 'yyyy-MM-dd');
+        const cycleStartStr = quarterCycleStartDateStr;
         const transitionEntries = entries.filter(e => {
           if (!isEntityMatch(e.entityName, entityName)) return false;
           if (!isMinistryMatch(e.ministryName, mName)) return false;
@@ -738,7 +755,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         };
         
         // Calculate transition settled from July 1, 2025 up to cycle start
-        const cycleStartStr = format(startDate, 'yyyy-MM-dd');
+        const cycleStartStr = quarterCycleStartDateStr;
         const transitionEntries = entries.filter(e => {
           if (!isEntityMatch(e.entityName, entityName)) return false;
           if (!isMinistryMatch(e.ministryName, mName)) return false;
@@ -1316,7 +1333,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   const details1Data = useMemo(() => {
     if (customTitle !== 'বিস্তারিত - ১') return [];
 
-    const cycleStartStr = format(startDate, 'yyyy-MM-dd');
+    const cycleStartStr = quarterCycleStartDateStr;
 
     const processedGroups: any[] = [];
 
@@ -1383,7 +1400,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           const entryDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
           if (!entryDateStr) return false;
           const entryDate = new Date(entryDateStr);
-          return entryDate >= startDate && entryDate <= endDate;
+          return entryDate >= quarterCycleStartDate && entryDate <= quarterCycleEndDate;
         });
 
         let cCount = 0;
@@ -1497,7 +1514,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   const details1Table2Data = useMemo(() => {
     if (customTitle !== 'বিস্তারিত - ১') return [];
 
-    const cycleStartStr = format(startDate, 'yyyy-MM-dd');
+    const cycleStartStr = quarterCycleStartDateStr;
 
     const processedGroups: any[] = [];
 
@@ -1564,7 +1581,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           const entryDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
           if (!entryDateStr) return false;
           const entryDate = new Date(entryDateStr);
-          return entryDate >= startDate && entryDate <= endDate;
+          return entryDate >= quarterCycleStartDate && entryDate <= quarterCycleEndDate;
         });
 
         let cCount = 0;
@@ -1684,12 +1701,10 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     const isValidType = mType.includes(robustNormalize('বিএসআর'));
     if (!isValidType) return false;
 
-    // Filter by Date Range (Issue Date) matching activeCycle
+    // Filter by Date Range (Issue Date) matching quarterly cycle range
     const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
     if (!issueDateStr) return false;
-    const cycleStartStr = format(activeCycle.start, 'yyyy-MM-dd');
-    const cycleEndStr = format(activeCycle.end, 'yyyy-MM-dd');
-    if (issueDateStr < cycleStartStr || issueDateStr > cycleEndStr) return false;
+    if (issueDateStr < quarterCycleStartDateStr || issueDateStr > quarterCycleEndDateStr) return false;
 
     // Filter by Ministry
     const matchMinistry = filterMinistry === '' || robustNormalize(e.ministryName).includes(robustNormalize(filterMinistry));
@@ -1811,7 +1826,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             {getMonthNameBN(startDate)}/{toBengaliDigits(format(startDate, 'yyyy'))} হতে {getMonthNameBN(endDate)}/{toBengaliDigits(format(endDate, 'yyyy'))} পর্যন্ত অডিট আপত্তির ত্রৈমাসিক রিটার্ন
           </h1>
           <div className="flex justify-between items-center mt-1 text-[11px] font-bold text-slate-700">
-            <span>রিপোর্ট চক্র: {activeCycle.label}</span>
+            <span>রিপোর্ট চক্র: {quarterCycleRangeFormatted}</span>
             <span>নন-এসএফআই</span>
           </div>
         </div>
@@ -1850,7 +1865,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               <div className="inline-flex items-center gap-2 px-3.5 h-[38px] bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
                 <span className="text-blue-700 font-black text-[12.5px] whitespace-nowrap">
-                  {customTitle || "ত্রৈমাসিক রিটার্ন - ২"} | {activeCycle.label}
+                  {customTitle || "ত্রৈমাসিক রিটার্ন - ২"} | {quarterCycleRangeFormatted}
                 </span>
               </div>
               {monthPickerElement && (
@@ -2087,7 +2102,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 border border-blue-100 rounded-full shadow-sm scale-95 origin-center">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
               <span className="text-blue-700 font-bold text-[12px]">
-                {customTitle || "ত্রৈমাসিক রিটার্ন - ২"} | {activeCycle.label}
+                {customTitle || "ত্রৈমাসিক রিটার্ন - ২"} | {quarterCycleRangeFormatted}
               </span>
             </div>
             {monthPickerElement && (
