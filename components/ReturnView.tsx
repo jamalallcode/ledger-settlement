@@ -598,15 +598,17 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                     if (isSFI) {
                       curSFIC++;
                       if (normLT.includes(robustNormalize('বিএসআর'))) sfiBSR++;
-                      else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়'))) {
-                        if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !!entry.meetingType) sfiTriMin++;
+                      else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়')) || normLT.includes(robustNormalize('ত্রি-সভা'))) {
+                        if (normLT.includes(robustNormalize('কার্যপত্র'))) sfiTriWork++;
+                        else if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !!entry.meetingType) sfiTriMin++;
                         else sfiTriWork++;
                       } else if (normLT.includes(robustNormalize('মিলিকরণ'))) sfiRecon++;
                     } else {
                       curNonSFIC++;
                       if (normLT.includes(robustNormalize('বিএসআর'))) nonSfiBSR++;
-                      else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়'))) {
-                        if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !!entry.meetingType) nonSfiBiMin++;
+                      else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়')) || normLT.includes(robustNormalize('দ্বি-সভা'))) {
+                        if (normLT.includes(robustNormalize('কার্যপত্র'))) nonSfiBiWork++;
+                        else if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !!entry.meetingType) nonSfiBiMin++;
                         else nonSfiBiWork++;
                       } else if (normLT.includes(robustNormalize('মিলিকরণ'))) nonSfiRecon++;
                     }
@@ -830,15 +832,17 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                       if (isSFI) {
                         curSFIC++;
                         if (normLT.includes(robustNormalize('বিএসআর'))) sfiBSR++;
-                        else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়'))) {
-                          if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !entry.meetingType) sfiTriMin++;
+                        else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়')) || normLT.includes(robustNormalize('ত্রি-সভা'))) {
+                          if (normLT.includes(robustNormalize('কার্যপত্র'))) sfiTriWork++;
+                          else if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !entry.meetingType) sfiTriMin++;
                           else sfiTriWork++;
                         } else if (normLT.includes(robustNormalize('মিলিকরণ'))) sfiRecon++;
                       } else {
                         curNonSFIC++;
                         if (normLT.includes(robustNormalize('বিএসআর'))) nonSfiBSR++;
-                        else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়'))) {
-                          if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !entry.meetingType) nonSfiBiMin++;
+                        else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়')) || normLT.includes(robustNormalize('দ্বি-সভা'))) {
+                          if (normLT.includes(robustNormalize('কার্যপত্র'))) nonSfiBiWork++;
+                          else if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !entry.meetingType) nonSfiBiMin++;
                           else nonSfiBiWork++;
                         } else if (normLT.includes(robustNormalize('মিলিকরণ'))) nonSfiRecon++;
                       }

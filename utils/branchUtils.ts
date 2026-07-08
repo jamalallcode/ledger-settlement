@@ -63,3 +63,17 @@ export const getBranchVariations = (type: string): string[] => {
   
   return Array.from(new Set(variations.map(v => v.trim())));
 };
+
+/**
+ * Utility functions for clean display and mapping of letter types (broadsheet, bilateral, trilateral, etc.)
+ */
+export const getCleanLetterTypeDisplay = (type: string | null | undefined): string => {
+  if (!type) return '';
+  const t = type.trim();
+  if (t === 'দ্বিপক্ষীয় সভা (কার্যপত্র)') return 'কার্যপত্র (দ্বি-সভা)';
+  if (t === 'ত্রিপক্ষীয় সভা (কার্যপত্র)') return 'কার্যপত্র (ত্রি-সভা)';
+  if (t === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)') return 'দ্বিপক্ষীয় সভা';
+  if (t === 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)') return 'ত্রিপক্ষীয় সভা';
+  return t;
+};
+

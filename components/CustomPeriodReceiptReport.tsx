@@ -5,7 +5,7 @@ import {
   ShieldCheck, Mail, Info, FileEdit
 } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
-import { isSFI, isNonSFI } from '../utils/branchUtils';
+import { isSFI, isNonSFI, getCleanLetterTypeDisplay } from '../utils/branchUtils';
 import { format } from 'date-fns';
 
 interface CustomPeriodReceiptReportProps {
@@ -201,10 +201,10 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           if (!type.includes('দ্বিপক্ষীয়') && !type.includes('দ্বিপাক্ষী') && !type.includes('bilateral')) return false;
         } else if (searchTerm === 'ত্রিপক্ষীয়') {
           if (!type.includes('ত্রিপক্ষীয়') && !type.includes('ত্রিপাক্ষী') && !type.includes('trilateral')) return false;
-        } else if (searchTerm === 'কাযপত্র') {
-          if (!type.includes('কার্যপত্র') && !type.includes('কাযপত্র') && !type.includes('working')) return false;
-        } else if (searchTerm === 'মিলিকরন') {
-          if (!type.includes('মিলিকরণ') && !type.includes('মিলকরণ') && !type.includes('মিলিকরন') && !type.includes('reconciliation')) return false;
+        } else if (searchTerm === 'কার্যপত্র (দ্বি-সভা)') {
+          if (type !== 'কার্যপত্র (দ্বি-সভা)' && !type.includes('দ্বিপক্ষীয় সভা (কার্যপত্র)')) return false;
+        } else if (searchTerm === 'কার্যপত্র (ত্রি-সভা)') {
+          if (type !== 'কার্যপত্র (ত্রি-সভা)' && !type.includes('ত্রিপক্ষীয় সভা (কার্যপত্র)')) return false;
         } else if (searchTerm === 'অন্যান্য') {
           const isMain = 
             type.includes('বিএসআর') || type.includes('bsr') ||
@@ -549,10 +549,10 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
               >
                 <option value="সকল">সকল চিঠি</option>
                 <option value="বিএসআর">বিএসআর (BSR)</option>
-                <option value="দ্বিপক্ষীয়">দ্বিপক্ষীয়</option>
-                <option value="ত্রিপক্ষীয়">ত্রিপক্ষীয়</option>
-                <option value="কাযপত্র">কাযপত্র (কার্যপত্র)</option>
-                <option value="মিলিকরন">মিলিকরন (মিলিকরণ)</option>
+                <option value="দ্বিপক্ষীয়">দ্বিপক্ষীয় সভা</option>
+                <option value="ত্রিপক্ষীয়">ত্রিপক্ষীয় সভা</option>
+                <option value="কার্যপত্র (দ্বি-সভা)">কার্যপত্র (দ্বি-সভা)</option>
+                <option value="কার্যপত্র (ত্রি-সভা)">কার্যপত্র (ত্রি-সভা)</option>
                 <option value="অন্যান্য">অন্যান্য</option>
               </select>
               <FileText className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
@@ -710,7 +710,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                               {entry.paraType}
                             </span>
                             <span className="block font-black text-slate-900 text-[10.5px]">
-                              {entry.letterType}
+                              {getCleanLetterTypeDisplay(entry.letterType)}
                             </span>
                           </div>
                         </td>
