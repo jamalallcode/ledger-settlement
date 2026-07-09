@@ -1266,6 +1266,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       statsGrandTotals={statsGrandTotals}
       isSearchExpanded={isSearchExpanded}
       onDownloadExcel={downloadExcel}
+      correspondenceEntries={correspondenceEntries}
       onToggleDetailedView={
         selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়'
           ? () => setShowDetailedBilateralView(true)
