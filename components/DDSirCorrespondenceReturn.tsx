@@ -443,7 +443,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       if (lType.includes('কার্যপত্র')) {
         grouped[auditor].karyapatra[durationKey]++;
         grouped[auditor].karyapatra[lettersKey].push(entry);
-      } else if (lType.includes('কার্যবিবরণী')) {
+      } else if (lType.includes('কার্যবিবরণী') || lType === 'দ্বিপক্ষীয় সভা' || lType === 'ত্রিপক্ষীয় সভা') {
         grouped[auditor].karyabibarani[durationKey]++;
         grouped[auditor].karyabibarani[lettersKey].push(entry);
       } else if (lType === 'বিএসআর') {
@@ -512,14 +512,14 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         stats.sfi.paras += paras;
         if (e.letterType === 'বিএসআর') stats.sfi.bsr++;
         if (e.letterType?.includes('কার্যপত্র')) stats.sfi.kp++;
-        if (e.letterType?.includes('কার্যবিবরণী')) stats.sfi.kb++;
+        if (e.letterType?.includes('কার্যবিবরণী') || e.letterType === 'দ্বিপক্ষীয় সভা' || e.letterType === 'ত্রিপক্ষীয় সভা') stats.sfi.kb++;
         if (e.letterType === 'মিলিকরণ') stats.sfi.reconciliation++;
       } else if (e.paraType === 'নন এসএফআই') {
         stats.nonSfi.total++;
         stats.nonSfi.paras += paras;
         if (e.letterType === 'বিএসআর') stats.nonSfi.bsr++;
         if (e.letterType?.includes('কার্যপত্র')) stats.nonSfi.kp++;
-        if (e.letterType?.includes('কার্যবিবরণী')) stats.nonSfi.kb++;
+        if (e.letterType?.includes('কার্যবিবরণী') || e.letterType === 'দ্বিপক্ষীয় সভা' || e.letterType === 'ত্রিপক্ষীয় সভা') stats.nonSfi.kb++;
         if (e.letterType === 'মিলিকরণ') stats.nonSfi.reconciliation++;
       }
     });

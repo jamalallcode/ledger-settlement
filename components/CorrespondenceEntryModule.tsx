@@ -33,38 +33,53 @@ const sectionHeaderCls = "col-span-full mt-6 mb-2 py-2 border-b border-slate-100
 const sectionTitleCls = "text-[12px] font-black text-slate-400 uppercase tracking-[0.2em]";
 
 /**
- * Premium Multi-level Dropdown for Letter Type
+ * Premium Dropdown for Letter Type (Flat Structure, Conditional based on paraType)
  */
-const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }: any) => {
+const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, paraType }: any) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const mainOptions = [
-    { id: 'broadsheet', label: 'বিএসআর', value: 'বিএসআর', icon: FileText, color: 'emerald' },
-    { id: 'bilateral', label: 'দ্বিপক্ষীয় সভা', hasSub: true, icon: User, color: 'blue' },
-    { id: 'trilateral', label: 'ত্রিপক্ষীয় সভা', hasSub: true, icon: Layout, color: 'indigo' },
-    { id: 'reconciliation', label: 'মিলিকরণ', value: 'মিলিকরণ', icon: Sparkles, color: 'amber' },
-    { id: 'acknowledgement', label: 'অবগতি পত্র', value: 'অবগতি পত্র', icon: Mail, color: 'teal' },
-    { id: 'certificate', label: 'প্রত্যয়ন পত্র', value: 'প্রত্যয়ন পত্র', icon: ShieldCheck, color: 'purple' },
-    { id: 'others', label: 'অন্যান্য', value: 'অন্যান্য', icon: BookOpen, color: 'sky' },
-  ];
+  const getOptions = () => {
+    const isSfiBranch = isSFI(paraType);
+    const isNonSfiBranch = isNonSFI(paraType);
+    const isAdministration = isAdminBranch(paraType) || (!isSfiBranch && !isNonSfiBranch);
 
-  const subOptions = [
-    { label: 'কার্যপত্র', suffix: '(কার্যপত্র)', icon: FileEdit },
-    { label: 'কার্যবিবরণী', suffix: '(কার্যবিবরণী)', icon: ClipboardCheck },
-  ];
+    const opts = [
+      { id: 'broadsheet', label: 'বিএসআর', value: 'বিএসআর', icon: FileText, color: 'emerald' },
+    ];
+
+    if (isNonSfiBranch || isAdministration) {
+      opts.push(
+        { id: 'bilateral', label: 'দ্বিপক্ষীয় সভা', value: 'দ্বিপক্ষীয় সভা', icon: User, color: 'blue' },
+        { id: 'bilateral_work', label: 'কার্যপত্র (দ্বি-সভা)', value: 'কার্যপত্র (দ্বি-সভা)', icon: FileEdit, color: 'sky' }
+      );
+    }
+
+    if (isSfiBranch || isAdministration) {
+      opts.push(
+        { id: 'trilateral', label: 'ত্রিপক্ষীয় সভা', value: 'ত্রিপক্ষীয় সভা', icon: Layout, color: 'indigo' },
+        { id: 'trilateral_work', label: 'কার্যপত্র (ত্রি-সভা)', value: 'কার্যপত্র (ত্রি-সভা)', icon: ClipboardCheck, color: 'violet' }
+      );
+    }
+
+    opts.push(
+      { id: 'others', label: 'অন্যান্য', value: 'অন্যান্য', icon: BookOpen, color: 'slate' }
+    );
+
+    return opts;
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsOpen(false);
-        setHoveredItem(null);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const options = getOptions();
 
   return (
     <div className="relative w-full" ref={dropdownRef}>
@@ -94,85 +109,44 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge }:
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+6px)] left-0 w-[60%] min-w-[220px] bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-visible animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
+        <div className="absolute top-[calc(100%+6px)] left-0 w-[60%] min-w-[220px] bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
           <div className="p-1.5 space-y-0.5">
             <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
                 <Sparkles size={11} className="text-emerald-500" /> ক্যাটাগরি নির্বাচন করুন
               </span>
             </div>
-            {mainOptions.map((opt) => (
+            {options.map((opt) => (
               <div 
                 key={opt.id}
-                onMouseEnter={() => setHoveredItem(opt.hasSub ? opt.id : null)}
                 onClick={() => {
-                  if (!opt.hasSub) {
-                    onChange(opt.value);
-                    setIsOpen(false);
-                  }
+                  onChange(opt.value);
+                  setIsOpen(false);
                 }}
                 className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
-                  (opt.hasSub && hoveredItem === opt.id) || (!opt.hasSub && value === opt.value)
+                  value === opt.value
                     ? `bg-${opt.color}-50 text-${opt.color}-700 shadow-sm` 
                     : 'hover:bg-slate-50 text-slate-600'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
                   <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                    (opt.hasSub && hoveredItem === opt.id) || (!opt.hasSub && value === opt.value)
+                    value === opt.value
                       ? `bg-${opt.color}-600 text-white`
                       : 'bg-slate-100 text-slate-400'
                   }`}>
                     <opt.icon size={14} />
                   </div>
                   <span className={`text-[12.5px] font-black transition-colors ${
-                    (opt.hasSub && hoveredItem === opt.id) || (!opt.hasSub && value === opt.value)
+                    value === opt.value
                       ? `text-${opt.color}-700`
                       : 'text-slate-700'
                   }`}>{opt.label}</span>
                 </div>
                 
-                {opt.hasSub ? (
-                  <div className="flex items-center gap-1.5">
-                    <ArrowRight size={13} className="text-slate-300 group-hover:text-emerald-500 transition-all group-hover:translate-x-0.5" />
-                  </div>
-                ) : (
-                  value === opt.value && <div className={`w-5 h-5 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300`}><Check size={12} strokeWidth={3} /></div>
-                )}
-
-                {opt.hasSub && hoveredItem === opt.id && (
-                  <div className="absolute left-[calc(100%+8px)] top-0 w-56 bg-white border border-slate-200 rounded-xl shadow-lg z-[1001] overflow-hidden animate-in fade-in slide-in-from-left-2 duration-300 border-l-4 border-l-emerald-600">
-                    <div className="p-1.5 space-y-0.5">
-                      <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100">
-                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5">
-                          <Layout size={11} /> {opt.label}
-                        </span>
-                      </div>
-                      {subOptions.map((sub) => {
-                        const fullVal = `${opt.label} ${sub.suffix}`;
-                        const isSelected = value === fullVal;
-                        return (
-                          <div 
-                            key={sub.label}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onChange(fullVal);
-                              setIsOpen(false);
-                              setHoveredItem(null);
-                            }}
-                            className={`px-3 py-1.5 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group/sub ${
-                              isSelected ? 'bg-emerald-600 text-white shadow-sm' : 'hover:bg-emerald-50 text-slate-700'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                               <sub.icon size={13} className={isSelected ? 'text-white' : 'text-slate-400 group-hover/sub:text-emerald-500'} />
-                               <span className="text-[12px] font-black">{sub.label}</span>
-                            </div>
-                            {isSelected && <Check size={12} strokeWidth={3} className="animate-in zoom-in duration-300" />}
-                          </div>
-                        );
-                      })}
-                    </div>
+                {value === opt.value && (
+                  <div className={`w-5 h-5 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300`}>
+                    <Check size={12} strokeWidth={3} />
                   </div>
                 )}
               </div>
@@ -904,6 +878,19 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     }
   }, [formData.paraType]);
 
+  // Automatically adjust letterType if branch (paraType) changes and it's no longer valid
+  useEffect(() => {
+    if (isSFI(formData.paraType)) {
+      if (formData.letterType === 'দ্বিপক্ষীয় সভা' || formData.letterType === 'কার্যপত্র (দ্বি-সভা)') {
+        setFormData(prev => ({ ...prev, letterType: 'বিএসআর' }));
+      }
+    } else if (isNonSFI(formData.paraType)) {
+      if (formData.letterType === 'ত্রিপক্ষীয় সভা' || formData.letterType === 'কার্যপত্র (ত্রি-সভা)') {
+        setFormData(prev => ({ ...prev, letterType: 'বিএসআর' }));
+      }
+    }
+  }, [formData.paraType, formData.letterType]);
+
   const handleManualDateSelect = (iso: string, type: string) => {
     if (!iso) return;
     if (type === 'letter') setSegmentsFromDate(iso, setLd, setLm, setLy);
@@ -1408,6 +1395,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 onChange={(val: string) => setFormData({...formData, letterType: val})}
                 isLayoutEditable={isLayoutEditable}
                 IDBadge={IDBadge}
+                paraType={formData.paraType}
               />
             </div>
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Printer, FileSpreadsheet, Sparkles } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
@@ -170,6 +170,63 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
   }, [paraType]);
 
   const [isPrevLedgerOpen, setIsPrevLedgerOpen] = useState(false);
+
+  const [cutoffMonth, setCutoffMonth] = useState(() => {
+    return localStorage.getItem('opening_balance_cutoff_month') || '2025-06';
+  });
+
+  const getMonthOptions = () => {
+    const options = [];
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+    const startYear = 2024;
+    const monthNamesBN = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
+    
+    for (let y = currentYear; y >= startYear; y--) {
+      const maxM = (y === currentYear) ? currentMonth : 11;
+      for (let m = maxM; m >= 0; m--) {
+        const val = `${y}-${String(m + 1).padStart(2, '0')}`;
+        const lbl = `${monthNamesBN[m]}/${toBengaliDigits(y.toString())}`;
+        options.push({ value: val, label: lbl });
+      }
+    }
+    return options;
+  };
+
+  const getCutoffMonthInfo = (monthStr: string) => {
+    const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
+    const [yearNum, monthNum] = monthStr.split('-').map(Number);
+    const mIdx = monthNum - 1;
+    const monthNameBN = months[mIdx];
+    const yearBN = toBengaliDigits(yearNum.toString());
+    const yearShortBN = toBengaliDigits(String(yearNum).slice(-2));
+    
+    const nextMonthDate = new Date(yearNum, mIdx + 1, 1);
+    const nextMonthNameBN = months[nextMonthDate.getMonth()];
+    const nextMonthYearBN = toBengaliDigits(nextMonthDate.getFullYear().toString());
+    const nextMonthStrStr = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}-01`;
+
+    return {
+      monthNameBN,
+      yearBN,
+      yearShortBN,
+      formattedLong: `${monthNameBN}/${yearBN}`,
+      formattedShort: `${monthNameBN}/${yearShortBN}`,
+      nextMonthNameBN,
+      nextMonthYearBN,
+      nextMonthFormattedLong: `${nextMonthNameBN}/${nextMonthYearBN}`,
+      transitionStartStr: nextMonthStrStr
+    };
+  };
+
+  const cutoffInfo = getCutoffMonthInfo(cutoffMonth);
+
+  const getStorageKey = (monthStr: string) => {
+    if (monthStr === '2025-06') return `qr5_prev_ledger_june2025_${paraType}`;
+    return `qr5_prev_ledger_${monthStr}_${paraType}`;
+  };
+
   const [prevLedgerData, setPrevLedgerData] = useState<Record<string, {
     june25Amount: number;
     june25AuditRec: number;
@@ -179,13 +236,29 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     june25OldRec: number;
     june25OldAdj: number;
   }>>(() => {
-    const storageKey = `qr5_prev_ledger_june2025_${paraType}`;
-    const saved = localStorage.getItem(storageKey);
+    const initialMonth = localStorage.getItem('opening_balance_cutoff_month') || '2025-06';
+    const key = initialMonth === '2025-06' ? `qr5_prev_ledger_june2025_${paraType}` : `qr5_prev_ledger_${initialMonth}_${paraType}`;
+    const saved = localStorage.getItem(key);
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { console.error(e); }
     }
     return {};
   });
+
+  // Load and sync from localStorage when cutoffMonth changes
+  useEffect(() => {
+    const key = getStorageKey(cutoffMonth);
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        setPrevLedgerData(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      setPrevLedgerData({});
+    }
+  }, [cutoffMonth, paraType]);
 
   // Ensure every entity has defaults
   const normalizedPrevLedgerData = useMemo(() => {
@@ -208,8 +281,8 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
 
   const handleSavePrevLedger = (updated: typeof prevLedgerData) => {
     setPrevLedgerData(updated);
-    const storageKey = `qr5_prev_ledger_june2025_${paraType}`;
-    localStorage.setItem(storageKey, JSON.stringify(updated));
+    const key = getStorageKey(cutoffMonth);
+    localStorage.setItem(key, JSON.stringify(updated));
   };
 
   const handleInputChange = (entName: string, field: string, value: number) => {
@@ -254,7 +327,7 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
         if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
 
         const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
-        return entryDate !== '' && entryDate >= '2025-07-01' && entryDate < cycleStartStr;
+        return entryDate !== '' && entryDate >= cutoffInfo.transitionStartStr && entryDate < cycleStartStr;
       });
 
       let transAmount = 0;
@@ -500,22 +573,40 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
           
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
-            <div className="text-left">
-              <h2 className="text-[15px] font-black text-slate-900 flex items-center gap-2">
-                <Sparkles size={18} className="text-amber-500 animate-pulse" />
-                {paraType} শাখা - পূর্ব জের সেটআপ ও গণনা তালিকা (বিস্তারিত-৫)
-              </h2>
-              <p className="text-[10px] font-bold text-slate-500 mt-1">
-                ১৯৭১-৭২ হতে জুন/২০২৫ পর্যন্ত আদায় ও সমন্বয়ের সংখ্যা ও টাকা ইনপুট দিন। জুলাই/২০২৫ হতে তথ্য রেজিস্টার থেকে স্বয়ংক্রিয়ভাবে হিসাব হবে।
-              </p>
+            <div className="text-left flex flex-col md:flex-row md:items-center gap-4">
+              <div>
+                <h2 className="text-[15px] font-black text-slate-900 flex items-center gap-2">
+                  <Sparkles size={18} className="text-amber-500 animate-pulse" />
+                  {paraType} শাখা - পূর্ব জের সেটআপ ও গণনা তালিকা (বিস্তারিত-৫)
+                </h2>
+                <p className="text-[10px] font-bold text-slate-500 mt-1">
+                  ১৯৭১-৭২ হতে {cutoffInfo.formattedLong} পর্যন্ত আদায় ও সমন্বয়ের সংখ্যা ও টাকা ইনপুট দিন। {cutoffInfo.nextMonthFormattedLong} হতে তথ্য রেজিস্টার থেকে স্বয়ংক্রিয়ভাবে হিসাব হবে।
+                </p>
+              </div>
+
+              {/* Dynamic Month Selector */}
+              <div className="flex items-center gap-2.5 bg-gradient-to-r from-amber-50 to-amber-100/50 border border-amber-200/80 rounded-xl px-3.5 py-1.5 shadow-sm text-xs shrink-0">
+                <span className="font-extrabold text-amber-900 tracking-wide">জেরের মাস:</span>
+                <select
+                  value={cutoffMonth}
+                  onChange={(e) => {
+                    setCutoffMonth(e.target.value);
+                    localStorage.setItem('opening_balance_cutoff_month', e.target.value);
+                  }}
+                  className="bg-white border border-amber-300 rounded-lg px-2.5 py-1 font-black text-slate-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none cursor-pointer shadow-sm hover:bg-slate-50 transition-all text-xs"
+                >
+                  {getMonthOptions().map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => {
                   if (window.confirm("আপনি কি নিশ্চিতভাবে সকল পূর্ব জের তথ্য রিসেট করতে চান?")) {
-                    const storageKey = `qr5_prev_ledger_june2025_${paraType}`;
-                    localStorage.removeItem(storageKey);
+                    localStorage.removeItem(getStorageKey(cutoffMonth));
                     const defaults: Record<string, any> = {};
                     entitiesList.forEach(({ entityName }) => {
                       defaults[entityName] = {
@@ -554,8 +645,8 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                     <th className="border-r border-b border-slate-300 p-2 text-center" rowSpan={2}>ক্র নং</th>
                     <th className="border-r border-b border-slate-300 p-2 text-center" rowSpan={2}>মন্ত্রণালয়ের নাম</th>
                     <th className="border-r border-b border-slate-300 p-2 text-center" rowSpan={2}>সংস্থার নাম</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center" colSpan={7}>জুন/২০২৫ পর্যন্ত প্রারম্ভিক জের (ইনপুট)</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center" colSpan={7}>জুলাই/২০২৫ হতে Active Quarter এর আগের মাস পর্যন্ত সমন্বয় (রেজিস্টার হতে)</th>
+                    <th className="border-r border-b border-slate-300 p-2 text-center" colSpan={7}>{cutoffInfo.formattedLong} পর্যন্ত প্রারম্ভিক জের (ইনপুট)</th>
+                    <th className="border-r border-b border-slate-300 p-2 text-center" colSpan={7}>{cutoffInfo.nextMonthFormattedLong} হতে Active Quarter এর আগের মাস পর্যন্ত সমন্বয় (রেজিস্টার হতে)</th>
                     <th className="border-r border-b border-slate-300 p-2 text-center" colSpan={7}>১৯৭১-৭২ হতে মোট সমন্বয়কৃত পূর্ব জের</th>
                   </tr>
                   <tr>
