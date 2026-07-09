@@ -88,8 +88,8 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   };
 
   const bsrReceiptEntries = useMemo(() => {
-    // 1. Filter existing correspondence entries
-    const filtered = (correspondenceEntries || []).filter((e) => {
+    // Filter existing correspondence entries strictly from Correspondence Register
+    return (correspondenceEntries || []).filter((e) => {
       const paraType = robustNormalize(e.paraType || '');
       if (!paraType.includes(robustNormalize('নন এসএফআই'))) return false;
 
@@ -107,78 +107,6 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
         return false;
       }
     });
-
-    // 2. Mock / fallback entries for June 2026 reporting cycle to ensure perfect out-of-the-box display matching the user's screenshot
-    const demoEntriesForCycle = [
-      {
-        id: 'demo-1',
-        diaryNo: '232',
-        diaryDate: '2026-05-19',
-        letterNo: '411',
-        letterDate: '2026-05-18',
-        description: 'কার্পেটিং জুট মিলস লিঃ খুলনা। (২০১০-১১)',
-        totalParas: '2',
-        letterType: 'বিএসআর',
-        archiveNo: 'KG-0746',
-        paraType: 'নন এসএফআই'
-      },
-      {
-        id: 'demo-2',
-        diaryNo: '233',
-        diaryDate: '2026-05-19',
-        letterNo: '412',
-        letterDate: '2026-05-18',
-        description: 'আলীম জুট মিলস লিঃ আটরা, খুলনা। (২০১০-১১, ২০১২-১৩)',
-        totalParas: '2',
-        letterType: 'বিএসআর',
-        archiveNo: 'KG-0738,0737',
-        paraType: 'নন এসএফআই'
-      },
-      {
-        id: 'demo-3',
-        diaryNo: '234',
-        diaryDate: '2026-05-19',
-        letterNo: '413',
-        letterDate: '2026-05-18',
-        description: 'ইস্টার্ণ জুট মিলস লিঃ খুলনা। (২০১৪-১৫)',
-        totalParas: '1',
-        letterType: 'বিএসআর',
-        archiveNo: 'KG-0680',
-        paraType: 'নন এসএফআই'
-      },
-      {
-        id: 'demo-4',
-        diaryNo: '235',
-        diaryDate: '2026-05-19',
-        letterNo: '414',
-        letterDate: '2026-05-18',
-        description: 'প্লাটিনাম জুট মিলস লিঃ খুলনা। (২০১৫-১৬)',
-        totalParas: '1',
-        letterType: 'বিএসআর',
-        archiveNo: 'KG-0784',
-        paraType: 'নন এসএফআই'
-      }
-    ];
-
-    // Filter demo entries to see if they are in the active cycle
-    const matchedDemos = demoEntriesForCycle.filter(d => {
-      try {
-        const startStr = activeCycle.start ? dateFnsFormat(new Date(activeCycle.start), 'yyyy-MM-dd') : '';
-        const endStr = activeCycle.end ? dateFnsFormat(new Date(activeCycle.end), 'yyyy-MM-dd') : '';
-        return d.diaryDate >= startStr && d.diaryDate <= endStr;
-      } catch (e) {
-        return false;
-      }
-    });
-
-    // Merge matchedDemos with database entries
-    const merged = [...matchedDemos];
-    filtered.forEach(item => {
-      if (!merged.some(m => m.id === item.id || m.diaryNo === item.diaryNo)) {
-        merged.push(item);
-      }
-    });
-    return merged;
   }, [correspondenceEntries, activeCycle]);
 
   const downloadBsrReceiptExcel = () => {
