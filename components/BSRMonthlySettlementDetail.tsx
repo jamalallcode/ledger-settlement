@@ -118,8 +118,8 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
 
       const settledAmountValue = curr.paragraphs && curr.paragraphs.length > 0
         ? curr.paragraphs
-            .reduce((sum, p) => sum + (p.status === 'পূর্ণাঙ্গ' ? (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0) : ((p.recoveredAmount + p.adjustedAmount) || 0)), 0)
-        : (curr.involvedAmount || 0);
+            .reduce((sum, p) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0)
+        : ((curr.totalRec || 0) + (curr.totalAdj || 0));
 
       const involvedAmount = acc.involvedAmount + settledAmountValue;
       const recoveredAmount = acc.recoveredAmount + (curr.totalRec || 0);
@@ -552,8 +552,8 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
               ) : (
                 filteredEntries.map((row, idx) => {
                   const col9Amount = row.paragraphs && row.paragraphs.length > 0
-                    ? row.paragraphs.reduce((sum, p) => sum + (p.status === 'পূর্ণাঙ্গ' ? (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0) : ((p.recoveredAmount + p.adjustedAmount) || 0)), 0)
-                    : (row.involvedAmount || 0);
+                    ? row.paragraphs.reduce((sum, p) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0)
+                    : ((row.totalRec || 0) + (row.totalAdj || 0));
                   const entryUnsettledAmount = row.sentParaInvolvedAmount && row.sentParaInvolvedAmount > 0
                     ? Math.max(0, row.sentParaInvolvedAmount - col9Amount)
                     : Math.max(0, (row.involvedAmount || 0) - (row.totalRec || 0) - (row.totalAdj || 0));

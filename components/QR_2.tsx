@@ -374,9 +374,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             const pRecAmt = parseBengaliNumber(String(p.recoveredAmount || '0'));
             const pAdjAmt = parseBengaliNumber(String(p.adjustedAmount || '0'));
             
-            const pSettledAmt = status === robustNormalize('পূর্ণাঙ্গ')
-              ? (pInvAmt || (pRecAmt + pAdjAmt) || 0)
-              : ((pRecAmt + pAdjAmt) || 0);
+            const pSettledAmt = (pRecAmt + pAdjAmt) || 0;
 
             if (status === robustNormalize('পূর্ণাঙ্গ')) {
               settledCount++;
@@ -1744,8 +1742,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     
     const settledAmount = curr.paragraphs && curr.paragraphs.length > 0
       ? curr.paragraphs
-          .reduce((sum, p) => sum + (p.status === 'পূর্ণাঙ্গ' ? (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0) : ((p.recoveredAmount + p.adjustedAmount) || 0)), 0)
-      : (curr.involvedAmount || 0);
+          .reduce((sum, p) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0)
+      : ((curr.totalRec || 0) + (curr.totalAdj || 0));
 
     return {
       sentPara: acc.sentPara + sCount,
@@ -2290,8 +2288,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                     {formatAmountBengali(
                       row.paragraphs && row.paragraphs.length > 0
                         ? row.paragraphs
-                            .reduce((sum, p) => sum + (p.status === 'পূর্ণাঙ্গ' ? (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0) : ((p.recoveredAmount + p.adjustedAmount) || 0)), 0)
-                        : (row.involvedAmount || 0)
+                            .reduce((sum, p) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0)
+                        : ((row.totalRec || 0) + (row.totalAdj || 0))
                     )}
                   </td>
                   <td className={`${numTdCls} text-emerald-600 bg-emerald-50/10`}>

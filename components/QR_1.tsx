@@ -174,8 +174,8 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     
     const settledAmount = curr.paragraphs && curr.paragraphs.length > 0
       ? curr.paragraphs
-          .reduce((sum, p) => sum + (p.status === 'পূর্ণাঙ্গ' ? (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0) : ((p.recoveredAmount + p.adjustedAmount) || 0)), 0)
-      : (curr.involvedAmount || 0);
+          .reduce((sum, p) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0)
+      : ((curr.totalRec || 0) + (curr.totalAdj || 0));
 
     return {
       sentPara: acc.sentPara + discussed,
@@ -359,8 +359,8 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                   {toBengaliDigits(
                     (row.paragraphs && row.paragraphs.length > 0
                       ? row.paragraphs
-                          .reduce((sum: number, p: any) => sum + (p.status === 'পূর্ণাঙ্গ' ? (p.involvedAmount || (p.recoveredAmount + p.adjustedAmount) || 0) : ((p.recoveredAmount + p.adjustedAmount) || 0)), 0)
-                      : (row.involvedAmount || 0)
+                          .reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0)
+                      : ((row.totalRec || 0) + (row.totalAdj || 0))
                     ).toString()
                   )}
                 </td>
