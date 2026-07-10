@@ -308,6 +308,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         const label = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
         
         if (!seen.has(label)) {
+          if (quarterYear < 2026 || (quarterYear === 2026 && quarterStartMonth < 3)) {
+            continue;
+          }
           seen.add(label);
           const reprDate = new Date(quarterYear, quarterStartMonth, 1);
           const cycle = getCycleForDate(reprDate);
@@ -337,6 +340,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         const label = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
 
         if (!seen.has(label)) {
+          if (year < 2026 || (year === 2026 && halfStartMonth < 3)) {
+            continue;
+          }
           seen.add(label);
           const reprDate = new Date(year, halfStartMonth, 1);
           const cycle = getCycleForDate(reprDate);
@@ -352,6 +358,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         const label = `${BENGALI_MONTHS[0]}/${toBengaliDigits(dateFnsFormat(new Date(year, 0, 1), 'yy'))} হতে ${BENGALI_MONTHS[11]}/${toBengaliDigits(dateFnsFormat(new Date(year, 11, 1), 'yy'))}`;
 
         if (!seen.has(label)) {
+          if (year < 2026) {
+            continue;
+          }
           seen.add(label);
           const reprDate = new Date(year, 0, 1);
           const cycle = getCycleForDate(reprDate);
@@ -370,6 +379,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         const label = `${monthName}/${toBengaliDigits(year.toString())}`;
 
         if (!seen.has(label)) {
+          if (year < 2026 || (year === 2026 && month < 3)) {
+            continue;
+          }
           seen.add(label);
           const reprDate = new Date(year, month, 1);
           const cycle = getCycleForDate(reprDate);
