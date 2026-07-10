@@ -1123,10 +1123,10 @@ const App: React.FC = () => {
             activeTab === 'landing' 
               ? 'overflow-y-auto flex flex-col items-center justify-center p-[10px] landing-main-container' 
               : activeTab === 'return' 
-                ? 'overflow-y-auto overflow-x-auto return-main-container' 
+                ? 'overflow-y-auto overflow-x-hidden return-main-container' 
                 : activeTab === 'register'
-                  ? 'overflow-y-auto overflow-x-auto register-main-container' 
-                  : 'overflow-y-auto overflow-x-auto'
+                  ? 'overflow-y-auto overflow-x-hidden register-main-container' 
+                  : 'overflow-y-auto overflow-x-hidden'
           } relative scroll-smooth bg-white`} 
           style={{ 
             scrollbarGutter: 'stable'
