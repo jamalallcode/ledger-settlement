@@ -78,6 +78,17 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   const quarterCycleEndDateStr = format(quarterCycleEndDate, 'yyyy-MM-dd');
   const quarterCycleRangeFormatted = `${toBengaliDigits(format(quarterCycleStartDate, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(format(quarterCycleEndDate, 'dd/MM/yyyy'))}`;
 
+  // Settlement cycle starts from the 16th of the month BEFORE the quarter start month
+  let settlementStartMonth = quarterStartMonth - 1;
+  let settlementStartYear = quarterYear;
+  if (settlementStartMonth < 0) {
+    settlementStartMonth = 11;
+    settlementStartYear -= 1;
+  }
+  const settlementCycleStartDate = new Date(settlementStartYear, settlementStartMonth, 16);
+  settlementCycleStartDate.setHours(0, 0, 0, 0);
+  const settlementCycleStartDateStr = format(settlementCycleStartDate, 'yyyy-MM-dd');
+
   const downloadExcel = () => {
     const tables = document.querySelectorAll('table');
     if (tables.length === 0) return;
@@ -670,7 +681,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           entityName,
           mName,
           cutoffInfo.transitionStartStr,
-          quarterCycleStartDateStr,
+          settlementCycleStartDateStr,
           true, // isExclusiveEnd
           true  // isTransition
         );
@@ -849,7 +860,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           entityName,
           mName,
           cutoffInfo.transitionStartStr,
-          quarterCycleStartDateStr,
+          settlementCycleStartDateStr,
           true, // isExclusiveEnd
           true  // isTransition
         );
@@ -1410,7 +1421,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           entityName,
           mName,
           cutoffInfo.transitionStartStr,
-          quarterCycleStartDateStr,
+          settlementCycleStartDateStr,
           true, // isExclusiveEnd
           true  // isTransition
         );
@@ -1446,7 +1457,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           entries,
           entityName,
           mName,
-          quarterCycleStartDateStr,
+          settlementCycleStartDateStr,
           quarterCycleEndDateStr,
           false, // isExclusiveEnd
           false  // isTransition
@@ -1577,7 +1588,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           entityName,
           mName,
           cutoffInfo.transitionStartStr,
-          quarterCycleStartDateStr,
+          settlementCycleStartDateStr,
           true, // isExclusiveEnd
           true  // isTransition
         );
@@ -1613,7 +1624,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           entries,
           entityName,
           mName,
-          quarterCycleStartDateStr,
+          settlementCycleStartDateStr,
           quarterCycleEndDateStr,
           false, // isExclusiveEnd
           false  // isTransition
