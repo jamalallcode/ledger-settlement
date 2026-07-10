@@ -547,8 +547,6 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     handleSavePrevLedger(updated);
   };
 
-  const [isPrevLedgerTable2Open, setIsPrevLedgerTable2Open] = React.useState(false);
-
   const [prevLedgerTable2Data, setPrevLedgerTable2Data] = React.useState<Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }>>(() => {
     const initialMonth = localStorage.getItem('opening_balance_cutoff_month') || '2026-03';
     const key = initialMonth === '2025-06' ? 'qr2_table2_prev_ledger_june2025' : `qr2_table2_prev_ledger_${initialMonth}`;
@@ -790,55 +788,6 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     });
   }, [prevLedgerTable2Rows]);
 
-  const downloadPrevLedgerTable2Excel = () => {
-    const tableElement = document.getElementById('prev-ledger-table-2-modal');
-    if (!tableElement) return;
-
-    const clonedTable = tableElement.cloneNode(true) as HTMLTableElement;
-    const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
-    // Replace inputs with text values in the cloned table
-    const inputs = clonedTable.querySelectorAll('input');
-    inputs.forEach(input => {
-      const parent = input.parentNode;
-      if (parent) {
-        parent.textContent = input.value;
-      }
-    });
-    interactiveElements.forEach(el => el.remove());
-
-    const filename = `পূর্ব_জের_টেবিল_২_${format(new Date(), 'yyyy-MM-dd')}.xls`;
-
-    const template = `
-      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-      <head>
-        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
-        <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Hind Siliguri', sans-serif; }
-          table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
-          th, td { border: 1px solid #cbd5e1 !important; padding: 8px 12px !important; text-align: center; font-size: 11px; vertical-align: middle; }
-          th { background-color: #f1f5f9 !important; color: #0f172a !important; font-weight: bold !important; }
-          .bg-slate-200, thead, tfoot { background-color: #e2e8f0 !important; font-weight: bold !important; }
-          tfoot td { background-color: #0f172a !important; color: #ffffff !important; font-weight: bold !important; }
-        </style>
-      </head>
-      <body>
-        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">টেবিল-২ এর পূর্ব জের (জুলাই/২০২৫ হতে ${prevQuarterEnd.monthName}/${prevQuarterEnd.year} পর্যন্ত)</h2>
-        ${clonedTable.outerHTML}
-      </body>
-      </html>
-    `;
-
-    const blob = new Blob([template], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   const prevLedgerRows = useMemo(() => {
     const rows: any[] = [];
     let sl = 1;
@@ -1031,10 +980,10 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               <div>
                 <h2 className="text-[15px] font-black text-slate-900 flex items-center gap-2">
                   <Sparkles size={18} className="text-amber-500" />
-                  টেবিল-১ এর পূর্ব জের সেটআপ ও গণনা তালিকা
+                  পূর্ব জের সেটআপ ও গণনা তালিকা
                 </h2>
                 <p className="text-[10px] font-bold text-slate-500 mt-1">
-                  ১৯৭১-৭২ হতে {cutoffInfo.formattedLong} পর্যন্ত উত্থাপিত ও নিষ্পত্তিকৃত আপত্তির সংখ্যাগুলো ইনপুট দিন। {cutoffInfo.nextMonthFormattedLong} হতে নিষ্পত্তি স্বয়ংক্রিয়ভাবে হিসাব হবে।
+                  ১৯৭১-৭২ হতে {cutoffInfo.formattedLong} পর্যন্ত উত্থাপিত ও নিষ্পত্তিকৃত আপত্তির সংখ্যা ও টাকা ইনপুট দিন। {cutoffInfo.nextMonthFormattedLong} হতে নিষ্পত্তি স্বয়ংক্রিয়ভাবে হিসাব হবে।
                 </p>
               </div>
 
@@ -1071,18 +1020,34 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                     setTimeout(() => setConfirmReset(false), 4000);
                   } else {
                     localStorage.removeItem(getStorageKeyTable1(cutoffMonth));
-                    const defaults: Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }> = {};
+                    localStorage.removeItem(getStorageKeyTable2(cutoffMonth));
+                    
+                    const defaults1: Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }> = {};
                     Object.values(QR2_MINISTRY_MAP).forEach(entities => {
                       entities.forEach(entName => {
                         const base = getEntityStats(entName);
-                        defaults[entName] = {
+                        defaults1[entName] = {
                           june25Raised: (base?.unsettledCount || 0) + (base?.settledCount || 0),
                           june25Settled: (base?.settledCount || 0),
                           june25UnsettledAmount: (base?.unsettledAmount || 0)
                         };
                       });
                     });
-                    setPrevLedgerData(defaults);
+                    setPrevLedgerData(defaults1);
+
+                    const defaults2: Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }> = {};
+                    Object.values(QR2_MINISTRY_MAP_TABLE2).forEach(entities => {
+                      entities.forEach(entName => {
+                        const base = getEntityStats(entName);
+                        defaults2[entName] = {
+                          june25Raised: (base?.unsettledCount || 0) + (base?.settledCount || 0),
+                          june25Settled: (base?.settledCount || 0),
+                          june25UnsettledAmount: (base?.unsettledAmount || 0)
+                        };
+                      });
+                    });
+                    setPrevLedgerTable2Data(defaults2);
+                    
                     setConfirmReset(false);
                   }
                 }}
@@ -1120,7 +1085,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                   <tr>
                     <th className={`${thCls} w-[45px]`} rowSpan={2}>ক্র নং</th>
                     <th className={`${thCls} w-[150px]`} rowSpan={2}>মন্ত্রণালয়ের নাম</th>
-                    <th className={`${thCls} w-[180px]`} rowSpan={2}>প্রতিষ্ঠানের নাম</th>
+                    <th className={`${thCls} w-[180px]`} rowSpan={2}>সংস্থার নাম</th>
                     <th className={`${thCls} w-[130px]`} colSpan={2}>{cutoffInfo.formattedShort} পর্যন্ত অমীমাংসিত অডিট আপত্তির</th>
                   </tr>
                   <tr>
@@ -1134,13 +1099,14 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                   </tr>
                 </thead>
                 <tbody>
+                  {/* Table 1 Rows */}
                   {prevLedgerRows.map((row, idx) => {
                     const showMinistry = idx === 0 || prevLedgerRows[idx - 1].ministryName !== row.ministryName;
                     const rowSpan = prevLedgerRows.filter(r => r.ministryName === row.ministryName).length;
 
                     return (
                       <tr key={row.entityName} className="hover:bg-slate-50 transition-colors">
-                        <td className={numTdCls}>{toBengaliDigits(row.sl.toString())}</td>
+                        <td className={numTdCls}>{toBengaliDigits((idx + 1).toString())}</td>
                         {showMinistry && (
                           <td rowSpan={rowSpan} className={tdCls + " text-[10px] font-black text-center bg-slate-50/10"}>
                             {row.ministryName}
@@ -1178,140 +1144,22 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                       </tr>
                     );
                   })}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-slate-200 font-extrabold text-[10px] text-slate-900">
-                    <td className={footerTdCls} colSpan={3}>সর্বমোট</td>
-                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Raised)}</td>
-                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Settled)}</td>
+
+                  {/* Section divider for Table 2 */}
+                  <tr className="bg-slate-100/90 font-extrabold text-[10.5px] text-slate-800">
+                    <td colSpan={5} className="border-r border-b border-slate-400 p-2 text-left bg-slate-100 font-extrabold text-[11px] tracking-wide">
+                      টেবিল - ২: আর্থিক প্রতিষ্ঠান বিভাগ
+                    </td>
                   </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
 
-
-
-        </div>
-      </div>
-    );
-  };
-
-  const renderPrevLedgerTable2Modal = () => {
-    if (!isPrevLedgerTable2Open) return null;
-
-    return (
-      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[11000] flex items-center justify-center p-4 animate-in fade-in duration-300 no-print">
-        <div className="bg-white rounded-3xl border-2 border-slate-300 w-full max-w-7xl max-h-[92vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-300">
-          
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
-            <div className="text-left flex flex-col md:flex-row md:items-center gap-4">
-              <div>
-                <h2 className="text-[15px] font-black text-slate-900 flex items-center gap-2">
-                  <Sparkles size={18} className="text-amber-500" />
-                  টেবিল-২ এর পূর্ব জের সেটআপ ও গণনা তালিকা
-                </h2>
-                <p className="text-[10px] font-bold text-slate-500 mt-1">
-                  ১৯৭১-৭২ হতে {cutoffInfo.formattedLong} পর্যন্ত উত্থাপিত ও নিষ্পত্তিকৃত আপত্তির সংখ্যাগুলো ইনপুট দিন। {cutoffInfo.nextMonthFormattedLong} হতে নিষ্পত্তি স্বয়ংক্রিয়ভাবে হিসাব হবে।
-                </p>
-              </div>
-
-              {/* Dynamic Month Selector */}
-              <div className="flex items-center gap-2.5 bg-gradient-to-r from-amber-50 to-amber-100/50 border border-amber-200/80 rounded-xl px-3.5 py-1.5 shadow-sm text-xs shrink-0">
-                <span className="font-extrabold text-amber-900 tracking-wide">জেরের মাস:</span>
-                <select
-                  value={cutoffMonth}
-                  onChange={(e) => {
-                    setCutoffMonth(e.target.value);
-                    localStorage.setItem('opening_balance_cutoff_month', e.target.value);
-                  }}
-                  className="bg-white border border-amber-300 rounded-lg px-2.5 py-1 font-black text-slate-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none cursor-pointer shadow-sm hover:bg-slate-50 transition-all text-xs"
-                >
-                  {getMonthOptions().map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setIsPrevLedgerTable2Open(false)}
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-[10px] border border-blue-700 transition-all cursor-pointer shadow-sm active:scale-95"
-              >
-                সংরক্ষণ করুন ও বন্ধ করুন
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.confirm("আপনি কি নিশ্চিতভাবে সকল পূর্ব জের তথ্য রিসেট করতে চান?")) {
-                    localStorage.removeItem(getStorageKeyTable2(cutoffMonth));
-                    const defaults: Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }> = {};
-                    Object.values(QR2_MINISTRY_MAP_TABLE2).forEach(entities => {
-                      entities.forEach(entName => {
-                        const base = getEntityStats(entName);
-                        defaults[entName] = {
-                          june25Raised: (base?.unsettledCount || 0) + (base?.settledCount || 0),
-                          june25Settled: (base?.settledCount || 0),
-                          june25UnsettledAmount: (base?.unsettledAmount || 0)
-                        };
-                      });
-                    });
-                    setPrevLedgerTable2Data(defaults);
-                  }
-                }}
-                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl font-black text-[10px] border border-rose-200 transition-all cursor-pointer"
-              >
-                রিসেট করুন
-              </button>
-              <button
-                type="button"
-                onClick={downloadPrevLedgerTable2Excel}
-                className="p-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xl cursor-pointer"
-                title="এক্সেল ফাইল ডাউনলোড করুন"
-              >
-                <FileSpreadsheet size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsPrevLedgerTable2Open(false)}
-                className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl cursor-pointer border border-slate-200"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-
-          {/* Table Container */}
-          <div className="flex-1 overflow-auto bg-white relative">
-            <div className="p-6 pt-0">
-              <table id="prev-ledger-table-2-modal" className="w-full border-separate border-spacing-0 border-l border-t border-slate-400 !table-auto text-center">
-                <thead className="bg-slate-100 sticky top-0 z-20 shadow-sm">
-                  <tr>
-                    <th className={`${thCls} w-[45px]`} rowSpan={2}>ক্র নং</th>
-                    <th className={`${thCls} w-[150px]`} rowSpan={2}>মন্ত্রণালয়ের নাম</th>
-                    <th className={`${thCls} w-[180px]`} rowSpan={2}>প্রতিষ্ঠানের নাম</th>
-                    <th className={`${thCls} w-[130px]`} colSpan={2}>{cutoffInfo.formattedShort} পর্যন্ত অমীমাংসিত অডিট আপত্তির</th>
-                  </tr>
-                  <tr>
-                    <th className={thCls}>সংখ্যা</th>
-                    <th className={thCls}>টাকা</th>
-                  </tr>
-                  <tr className="bg-slate-50 text-[9px] font-black text-slate-500">
-                    {["১", "২", "৩", "৪ (ইনপুট)", "৫ (ইনপুট)"].map((l, i) => (
-                      <th key={i} className={thCls + " py-1"}>{l}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
+                  {/* Table 2 Rows */}
                   {prevLedgerTable2Rows.map((row, idx) => {
                     const showMinistry = idx === 0 || prevLedgerTable2Rows[idx - 1].ministryName !== row.ministryName;
                     const rowSpan = prevLedgerTable2Rows.filter(r => r.ministryName === row.ministryName).length;
 
                     return (
-                      <tr key={row.entityName} className="hover:bg-slate-50 transition-colors">
-                        <td className={numTdCls}>{toBengaliDigits(row.sl.toString())}</td>
+                      <tr key={`table2-${row.entityName}`} className="hover:bg-slate-50 transition-colors">
+                        <td className={numTdCls}>{toBengaliDigits((prevLedgerRows.length + idx + 1).toString())}</td>
                         {showMinistry && (
                           <td rowSpan={rowSpan} className={tdCls + " text-[10px] font-black text-center bg-slate-50/10"}>
                             {row.ministryName}
@@ -1351,10 +1199,20 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                   })}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-slate-200 font-extrabold text-[10px] text-slate-900">
-                    <td className={footerTdCls} colSpan={3}>সর্বমোট</td>
+                  <tr className="bg-slate-100 font-bold text-[10px] text-slate-800">
+                    <td className={footerTdCls} colSpan={3}>মোট (টেবিল-১)</td>
+                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Raised)}</td>
+                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Settled)}</td>
+                  </tr>
+                  <tr className="bg-slate-100 font-bold text-[10px] text-slate-800">
+                    <td className={footerTdCls} colSpan={3}>মোট (টেবিল-২)</td>
                     <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerTable2GrandTotals.june25Raised)}</td>
                     <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerTable2GrandTotals.june25Settled)}</td>
+                  </tr>
+                  <tr className="bg-slate-200 font-extrabold text-[10.5px] text-slate-900">
+                    <td className={footerTdCls} colSpan={3}>সর্বমোট</td>
+                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Raised + prevLedgerTable2GrandTotals.june25Raised)}</td>
+                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Settled + prevLedgerTable2GrandTotals.june25Settled)}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -1861,7 +1719,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         <div className="flex flex-col gap-2 mb-3 pt-1 relative z-[260] no-print font-sans">
           {/* Main symmetric row */}
           <div className="flex flex-col xl:flex-row items-center justify-between gap-4 mb-2">
-            {/* Left Column: Previous Ledger Setup buttons */}
+            {/* Left Column: Previous Ledger Setup button */}
             <div className="flex items-center gap-2 w-full xl:w-auto justify-start flex-wrap">
               <button
                 type="button"
@@ -1869,15 +1727,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 className="flex items-center gap-1.5 px-3 h-[38px] bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 hover:border-amber-300 hover:shadow-sm transition-all duration-300 rounded-xl text-[11px] font-black cursor-pointer shrink-0"
               >
                 <Sparkles size={13} className="text-amber-500 animate-pulse" />
-                <span>পূর্ব জের (টেবিল-১)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsPrevLedgerTable2Open(true)}
-                className="flex items-center gap-1.5 px-3 h-[38px] bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 hover:border-amber-300 hover:shadow-sm transition-all duration-300 rounded-xl text-[11px] font-black cursor-pointer shrink-0"
-              >
-                <Sparkles size={13} className="text-amber-500 animate-pulse" />
-                <span>পূর্ব জের (টেবিল-২)</span>
+                <span>পূর্ব জের</span>
               </button>
             </div>
 
@@ -1915,7 +1765,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         </div>
 
 
-        {/* Table 1 Container */}
+        {/* Unified Table Container */}
         <div className="table-container qr-table-container qr2-table-container overflow-auto xl:overflow-visible shadow-sm rounded-none mb-8">
           <table className="w-full border-separate border-spacing-0 !table-auto border-l border-slate-400">
             <colgroup>
@@ -1963,6 +1813,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               </tr>
             </thead>
             <tbody>
+              {/* Table 1 rows */}
               {details1Data.map((mGroup, mIdx) => {
                 return mGroup.entities.map((ent: any, eIdx: number) => {
                   return (
@@ -1994,82 +1845,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                   );
                 });
               })}
-            </tbody>
-            <tfoot className="qr-sticky-footer-bottom">
-              <tr className="h-[36px]">
-                <td className={`${footerTdCls} w-[30px] min-w-[30px] max-w-[30px]`}></td>
-                <td className={`${footerTdCls} w-[75px] min-w-[75px] max-w-[75px]`}></td>
-                <td className={`${footerTdCls} text-center font-black w-[95px] min-w-[95px] max-w-[95px] text-[11px]`}>মোট</td>
-                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.unsettledCountPrior)}</td>
-                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.unsettledAmountPrior)}</td>
-                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.raisedCountCurr)}</td>
-                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.raisedAmountCurr)}</td>
-                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.totalCount)}</td>
-                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.totalAmount)}</td>
-                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.settledCountCurr)}</td>
-                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.settledAmountCurr)}</td>
-                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.unsettledCountEnd)}</td>
-                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.unsettledAmountEnd)}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
 
-        {/* Table 2 Section Header */}
-        <div className="flex items-center justify-between border-b-[2px] border-slate-300 pb-1 mb-3 px-1 mt-8">
-          <span className="text-[12.5px] font-black text-slate-800">
-            টেবিল - ২: আর্থিক প্রতিষ্ঠান বিভাগ
-          </span>
-        </div>
-
-        {/* Table 2 Container */}
-        <div className="table-container qr-table-container qr2-table-container overflow-auto xl:overflow-visible shadow-sm rounded-none">
-          <table className="w-full border-separate border-spacing-0 !table-auto border-l border-slate-400">
-            <colgroup>
-              <col style={{ width: '30px', minWidth: '30px' }} />
-              <col style={{ width: '75px', minWidth: '75px' }} />
-              <col style={{ width: '95px', minWidth: '95px' }} />
-              <col style={{ width: '35px', minWidth: '35px' }} />
-              <col style={{ width: '110px', minWidth: '110px' }} />
-              <col style={{ width: '35px', minWidth: '35px' }} />
-              <col style={{ width: '110px', minWidth: '110px' }} />
-              <col style={{ width: '35px', minWidth: '35px' }} />
-              <col style={{ width: '110px', minWidth: '110px' }} />
-              <col style={{ width: '35px', minWidth: '35px' }} />
-              <col style={{ width: '110px', minWidth: '110px' }} />
-              <col style={{ width: '35px', minWidth: '35px' }} />
-              <col style={{ width: '110px', minWidth: '110px' }} />
-            </colgroup>
-            <thead className="bg-slate-100">
-              <tr>
-                <th className={`${thClsWithTop} w-[30px] min-w-[30px] max-w-[30px]`} rowSpan={2}>ক্রঃ নং</th>
-                <th className={`${thClsWithTop} w-[75px] min-w-[75px] max-w-[75px]`} rowSpan={2}>মন্ত্রণালয়ের নাম</th>
-                <th className={`${thClsWithTop} w-[95px] min-w-[95px] max-w-[95px]`} rowSpan={2}>সংস্থার নাম</th>
-                <th className={`${thClsWithTop}`} colSpan={2}>{priorMonthFormatted} পর্যন্ত অমীমাংসিত অডিট আপত্তির</th>
-                <th className={`${thClsWithTop}`} colSpan={2}>{currentQuarterFormatted} পর্যন্ত উত্থাপিত অডিট আপত্তির</th>
-                <th className={`${thClsWithTop}`} colSpan={2}>মোট অডিট আপত্তি</th>
-                <th className={`${thClsWithTop}`} colSpan={2}>{currentQuarterFormatted} পর্যন্ত মীমাংসিত অডিট আপত্তির</th>
-                <th className={`${thClsWithTop}`} colSpan={2}>{endMonthFormatted} পর্যন্ত অমীমাংসিত অডিট আপত্তির</th>
-              </tr>
-              <tr>
-                <th className={`${thCls} w-[35px] min-w-[35px] max-w-[35px]`}>সংখ্যা</th>
-                <th className={`${thCls} w-[110px] min-w-[110px] max-w-[110px]`}>টাকা</th>
-                <th className={`${thCls} w-[35px] min-w-[35px] max-w-[35px]`}>সংখ্যা</th>
-                <th className={`${thCls} w-[110px] min-w-[110px] max-w-[110px]`}>টাকা</th>
-                <th className={`${thCls} w-[35px] min-w-[35px] max-w-[35px]`}>সংখ্যা</th>
-                <th className={`${thCls} w-[110px] min-w-[110px] max-w-[110px]`}>টাকা</th>
-                <th className={`${thCls} w-[35px] min-w-[35px] max-w-[35px]`}>সংখ্যা</th>
-                <th className={`${thCls} w-[110px] min-w-[110px] max-w-[110px]`}>টাকা</th>
-                <th className={`${thCls} w-[35px] min-w-[35px] max-w-[35px]`}>সংখ্যা</th>
-                <th className={`${thCls} w-[110px] min-w-[110px] max-w-[110px]`}>টাকা</th>
-              </tr>
-              <tr className="h-[28px]">
-                {["১", "২", "৩", "৪", "৫", "৬", "৭", "৮=৪+৬", "৯=৫+৭", "১০", "১১", "১২=৮-১০", "১৩=৯-১১"].map((idxLabel, i) => (
-                  <th key={i} className={`${thCls} text-[10px] font-bold text-slate-500 py-1 ${getColWidthClass(i)}`}>{idxLabel}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
+              {/* Table 2 rows (Financial Institutions Division) */}
               {details1Table2Data.map((mGroup, mIdx) => {
                 return mGroup.entities.map((ent: any, eIdx: number) => {
                   return (
@@ -2106,7 +1883,22 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               <tr className="h-[36px]">
                 <td className={`${footerTdCls} w-[30px] min-w-[30px] max-w-[30px]`}></td>
                 <td className={`${footerTdCls} w-[75px] min-w-[75px] max-w-[75px]`}></td>
-                <td className={`${footerTdCls} text-center font-black w-[95px] min-w-[95px] max-w-[95px] text-[11px]`}>মোট</td>
+                <td className={`${footerTdCls} text-center font-black w-[95px] min-w-[95px] max-w-[95px] text-[11px]`}>মোট (টেবিল-১)</td>
+                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.unsettledCountPrior)}</td>
+                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.unsettledAmountPrior)}</td>
+                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.raisedCountCurr)}</td>
+                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.raisedAmountCurr)}</td>
+                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.totalCount)}</td>
+                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.totalAmount)}</td>
+                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.settledCountCurr)}</td>
+                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.settledAmountCurr)}</td>
+                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.unsettledCountEnd)}</td>
+                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.unsettledAmountEnd)}</td>
+              </tr>
+              <tr className="h-[36px]">
+                <td className={`${footerTdCls} w-[30px] min-w-[30px] max-w-[30px]`}></td>
+                <td className={`${footerTdCls} w-[75px] min-w-[75px] max-w-[75px]`}></td>
+                <td className={`${footerTdCls} text-center font-black w-[95px] min-w-[95px] max-w-[95px] text-[11px]`}>মোট (টেবিল-২)</td>
                 <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Table2Totals.unsettledCountPrior)}</td>
                 <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.unsettledAmountPrior)}</td>
                 <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Table2Totals.raisedCountCurr)}</td>
@@ -2137,7 +1929,6 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           </table>
         </div>
         {renderPrevLedgerModal()}
-        {renderPrevLedgerTable2Modal()}
       </div>
     );
   }
