@@ -1422,6 +1422,16 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       const qStartDateStr = format(qStartDate, 'yyyy-MM-dd');
       const qEndDateStr = format(qEndDate, 'yyyy-MM-dd');
 
+      // Calculate the settlement start date for this quarter (16th of the preceding month)
+      let qSettleStartMonth = currentQuarterStartMonth - 1;
+      let qSettleStartYear = currentQuarterYear;
+      if (qSettleStartMonth < 0) {
+        qSettleStartMonth = 11;
+        qSettleStartYear -= 1;
+      }
+      const qSettleStartDate = new Date(qSettleStartYear, qSettleStartMonth, 16);
+      const qSettleStartDateStr = format(qSettleStartDate, 'yyyy-MM-dd');
+
       if (isCurrentQuarterActive) {
         const currentBSRRaisedEntries = entries.filter(e => {
           if (!isEntityMatch(e.entityName, entityName)) return false;
@@ -1451,7 +1461,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           entries,
           entityName,
           ministryName,
-          qStartDateStr,
+          qSettleStartDateStr,
           qEndDateStr,
           false,
           false
@@ -1497,7 +1507,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         entries,
         entityName,
         ministryName,
-        qStartDateStr,
+        qSettleStartDateStr,
         qEndDateStr,
         false,
         false
