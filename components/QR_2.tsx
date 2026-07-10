@@ -422,7 +422,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         return saved;
       }
     }
-    return '2025-12';
+    return '2026-03';
   });
 
   // Automatically sync cutoffMonth with the month preceding the active quarter's startDate
@@ -498,7 +498,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   };
 
   const [prevLedgerData, setPrevLedgerData] = React.useState<Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }>>(() => {
-    const initialMonth = localStorage.getItem('opening_balance_cutoff_month') || '2025-12';
+    const initialMonth = localStorage.getItem('opening_balance_cutoff_month') || '2026-03';
     const key = initialMonth === '2025-06' ? 'qr2_table1_prev_ledger_june2025' : `qr2_table1_prev_ledger_${initialMonth}`;
     const saved = localStorage.getItem(key);
     if (saved) {
@@ -550,7 +550,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   const [isPrevLedgerTable2Open, setIsPrevLedgerTable2Open] = React.useState(false);
 
   const [prevLedgerTable2Data, setPrevLedgerTable2Data] = React.useState<Record<string, { june25Raised: number; june25Settled: number; june25UnsettledAmount: number }>>(() => {
-    const initialMonth = localStorage.getItem('opening_balance_cutoff_month') || '2025-12';
+    const initialMonth = localStorage.getItem('opening_balance_cutoff_month') || '2026-03';
     const key = initialMonth === '2025-06' ? 'qr2_table2_prev_ledger_june2025' : `qr2_table2_prev_ledger_${initialMonth}`;
     const saved = localStorage.getItem(key);
     if (saved) {
@@ -1373,61 +1373,59 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     return toBengaliDigits(Math.round(val).toString());
   };
 
-  const details1Data = useMemo(() => {
-    if (customTitle !== 'বিস্তারিত - ১') return [];
+  const getDynamicBalances = (entityName: string, ministryName: string, isTable2: boolean = false) => {
+    const rawLedger = isTable2 
+      ? (prevLedgerTable2Data[entityName] || { june25Raised: 0, june25Settled: 0, june25UnsettledAmount: 0 })
+      : (prevLedgerData[entityName] || { june25Raised: 0, june25Settled: 0, june25UnsettledAmount: 0 });
 
-    const cycleStartStr = quarterCycleStartDateStr;
+    const masterUnsettledCount = parseBengaliNumber(rawLedger.june25Raised);
+    const masterUnsettledAmount = parseBengaliNumber(rawLedger.june25Settled);
 
-    const processedGroups: any[] = [];
+    const [cutoffYear, cutoffMonthNum] = cutoffMonth.split('-').map(Number);
+    const cutoffMonthIdx = cutoffMonthNum - 1;
 
-    Object.entries(QR2_MINISTRY_MAP).forEach(([mName, entities]) => {
-      const matchMinistry = filterMinistry === '' || robustNormalize(mName).includes(robustNormalize(filterMinistry));
+    let cutoffQuarterStartMonth = 0;
+    if (cutoffMonthIdx >= 0 && cutoffMonthIdx <= 2) cutoffQuarterStartMonth = 0;
+    else if (cutoffMonthIdx >= 3 && cutoffMonthIdx <= 5) cutoffQuarterStartMonth = 3;
+    else if (cutoffMonthIdx >= 6 && cutoffMonthIdx <= 8) cutoffQuarterStartMonth = 6;
+    else cutoffQuarterStartMonth = 9;
+
+    let currentQuarterYear = cutoffYear;
+    let currentQuarterStartMonth = cutoffQuarterStartMonth + 3;
+    if (currentQuarterStartMonth > 11) {
+      currentQuarterStartMonth = 0;
+      currentQuarterYear += 1;
+    }
+
+    const activeEndMonth = activeCycle.end.getMonth();
+    const activeYear = activeCycle.end.getFullYear();
+    let activeQuarterStartMonth = 0;
+    if (activeEndMonth >= 0 && activeEndMonth <= 2) activeQuarterStartMonth = 0;
+    else if (activeEndMonth >= 3 && activeEndMonth <= 5) activeQuarterStartMonth = 3;
+    else if (activeEndMonth >= 6 && activeEndMonth <= 8) activeQuarterStartMonth = 6;
+    else activeQuarterStartMonth = 9;
+
+    let unsettledCount = masterUnsettledCount;
+    let unsettledAmount = masterUnsettledAmount;
+
+    while (true) {
+      if (currentQuarterYear > activeYear || (currentQuarterYear === activeYear && currentQuarterStartMonth > activeQuarterStartMonth)) {
+        break;
+      }
+
+      const isCurrentQuarterActive = (currentQuarterYear === activeYear && currentQuarterStartMonth === activeQuarterStartMonth);
+
+      const qEndMonth = currentQuarterStartMonth + 2;
+      const qStartDate = new Date(currentQuarterYear, currentQuarterStartMonth, 16);
+      const qEndDate = new Date(currentQuarterYear, qEndMonth, 15);
       
-      const entityDataList = entities.map(entityName => {
-        const rawLedger = prevLedgerData[entityName] || { june25Raised: 0, june25Settled: 0, june25UnsettledAmount: 0 };
-        const ledger = {
-          june25Raised: parseBengaliNumber(rawLedger.june25Raised),
-          june25Settled: parseBengaliNumber(rawLedger.june25Settled),
-          june25UnsettledAmount: parseBengaliNumber(rawLedger.june25UnsettledAmount)
-        };
+      const qStartDateStr = format(qStartDate, 'yyyy-MM-dd');
+      const qEndDateStr = format(qEndDate, 'yyyy-MM-dd');
 
-        // Filter past entries (transition period from July 1, 2025 up to cycle start date)
-        const transitionEntries = entries.filter(e => {
+      if (isCurrentQuarterActive) {
+        const currentBSRRaisedEntries = entries.filter(e => {
           if (!isEntityMatch(e.entityName, entityName)) return false;
-          if (!isMinistryMatch(e.ministryName, mName)) return false;
-          const normalizedPType = robustNormalize(e.paraType || '');
-          if (normalizedPType !== robustNormalize('নন এসএফআই')) return false;
-
-          const mType = robustNormalize(e.meetingType || e.letterType || '');
-          if (!mType.includes(robustNormalize('বিএসআর'))) return false;
-
-          const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
-          return entryDate !== '' && entryDate >= cutoffInfo.transitionStartStr && entryDate < cycleStartStr;
-        });
-
-        let transitionRC = 0, transitionRA = 0;
-        transitionEntries.forEach(entry => {
-          const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
-          if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
-            transitionRC += parseBengaliNumber(rCountRaw);
-          }
-          if (entry.manualRaisedAmount) transitionRA += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
-        });
-
-        const { settledCount: transitionSC, settledAmount: transitionSA } = getSettlementStats(
-          entries,
-          entityName,
-          mName,
-          cutoffInfo.transitionStartStr,
-          settlementCycleStartDateStr,
-          true, // isExclusiveEnd
-          true  // isTransition
-        );
-
-        // Filter current entries for this entity and ministry
-        const currentEntries = entries.filter(e => {
-          if (!isEntityMatch(e.entityName, entityName)) return false;
-          if (!isMinistryMatch(e.ministryName, mName)) return false;
+          if (!isMinistryMatch(e.ministryName, ministryName)) return false;
           const normalizedPType = robustNormalize(e.paraType || '');
           if (normalizedPType !== robustNormalize('নন এসএফআই')) return false;
 
@@ -1436,58 +1434,119 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
           const entryDateStr = (e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '')).trim();
           if (!entryDateStr) return false;
-          return entryDateStr >= quarterCycleStartDateStr && entryDateStr <= quarterCycleEndDateStr;
+          return entryDateStr >= qStartDateStr && entryDateStr <= qEndDateStr;
         });
 
-        let cCount = 0;
-        let cRaisedAmount = 0;
-
-        currentEntries.forEach(e => {
+        let raisedCount = 0;
+        let raisedAmount = 0;
+        currentBSRRaisedEntries.forEach(e => {
           const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
           if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
-            cCount += parseBengaliNumber(rCountRaw);
+            raisedCount += parseBengaliNumber(rCountRaw);
           }
-          if (e.manualRaisedAmount) cRaisedAmount += parseBengaliNumber(String(e.manualRaisedAmount || '0'));
+          if (e.manualRaisedAmount) raisedAmount += parseBengaliNumber(String(e.manualRaisedAmount || '0'));
         });
 
-        // Calculate settlement (Columns 10 & 11) for SFI + Non-SFI and BSR + Bilateral + Trilateral meetings
-        const { settledCount: cSettled, settledAmount: cSettledAmount } = getSettlementStats(
+        const { settledCount: sCount, settledAmount: sAmount } = getSettlementStats(
           entries,
           entityName,
-          mName,
-          settlementCycleStartDateStr,
-          quarterCycleEndDateStr,
-          false, // isExclusiveEnd
-          false  // isTransition
+          ministryName,
+          qStartDateStr,
+          qEndDateStr,
+          false,
+          false
         );
 
-        const unsettledCountPrior = Math.max(0, ledger.june25Raised + transitionRC - transitionSC);
-        const unsettledAmountPrior = Math.max(0, ledger.june25Settled + transitionRA - transitionSA);
+        return {
+          unsettledCountPrior: unsettledCount,
+          unsettledAmountPrior: unsettledAmount,
+          raisedCountCurr: raisedCount,
+          raisedAmountCurr: raisedAmount,
+          settledCountCurr: sCount,
+          settledAmountCurr: sAmount,
+          unsettledCountEnd: Math.max(0, unsettledCount + raisedCount - sCount),
+          unsettledAmountEnd: Math.max(0, unsettledAmount + raisedAmount - sAmount)
+        };
+      }
 
-        const raisedCountCurr = cCount;
-        const raisedAmountCurr = cRaisedAmount;
+      const currentBSRRaisedEntries = entries.filter(e => {
+        if (!isEntityMatch(e.entityName, entityName)) return false;
+        if (!isMinistryMatch(e.ministryName, ministryName)) return false;
+        const normalizedPType = robustNormalize(e.paraType || '');
+        if (normalizedPType !== robustNormalize('নন এসএফআই')) return false;
 
-        const totalCount = unsettledCountPrior + raisedCountCurr;
-        const totalAmount = unsettledAmountPrior + raisedAmountCurr;
+        const mType = robustNormalize(e.meetingType || e.letterType || '');
+        if (!mType.includes(robustNormalize('বিএসআর'))) return false;
 
-        const settledCountCurr = cSettled;
-        const settledAmountCurr = cSettledAmount;
+        const entryDateStr = (e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '')).trim();
+        if (!entryDateStr) return false;
+        return entryDateStr >= qStartDateStr && entryDateStr <= qEndDateStr;
+      });
 
-        const unsettledCountEnd = Math.max(0, totalCount - settledCountCurr);
-        const unsettledAmountEnd = Math.max(0, totalAmount - settledAmountCurr);
+      let raisedCount = 0;
+      let raisedAmount = 0;
+      currentBSRRaisedEntries.forEach(e => {
+        const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
+        if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
+          raisedCount += parseBengaliNumber(rCountRaw);
+        }
+        if (e.manualRaisedAmount) raisedAmount += parseBengaliNumber(String(e.manualRaisedAmount || '0'));
+      });
 
+      const { settledCount: sCount, settledAmount: sAmount } = getSettlementStats(
+        entries,
+        entityName,
+        ministryName,
+        qStartDateStr,
+        qEndDateStr,
+        false,
+        false
+      );
+
+      unsettledCount = Math.max(0, unsettledCount + raisedCount - sCount);
+      unsettledAmount = Math.max(0, unsettledAmount + raisedAmount - sAmount);
+
+      currentQuarterStartMonth += 3;
+      if (currentQuarterStartMonth > 11) {
+        currentQuarterStartMonth = 0;
+        currentQuarterYear += 1;
+      }
+    }
+
+    return {
+      unsettledCountPrior: unsettledCount,
+      unsettledAmountPrior: unsettledAmount,
+      raisedCountCurr: 0,
+      raisedAmountCurr: 0,
+      settledCountCurr: 0,
+      settledAmountCurr: 0,
+      unsettledCountEnd: unsettledCount,
+      unsettledAmountEnd: unsettledAmount
+    };
+  };
+
+  const details1Data = useMemo(() => {
+    if (customTitle !== 'বিস্তারিত - ১') return [];
+
+    const processedGroups: any[] = [];
+
+    Object.entries(QR2_MINISTRY_MAP).forEach(([mName, entities]) => {
+      const matchMinistry = filterMinistry === '' || robustNormalize(mName).includes(robustNormalize(filterMinistry));
+      
+      const entityDataList = entities.map(entityName => {
+        const dyn = getDynamicBalances(entityName, mName, false);
         return {
           entityName,
-          unsettledCountPrior,
-          unsettledAmountPrior,
-          raisedCountCurr,
-          raisedAmountCurr,
-          totalCount,
-          totalAmount,
-          settledCountCurr,
-          settledAmountCurr,
-          unsettledCountEnd,
-          unsettledAmountEnd
+          unsettledCountPrior: dyn.unsettledCountPrior,
+          unsettledAmountPrior: dyn.unsettledAmountPrior,
+          raisedCountCurr: dyn.raisedCountCurr,
+          raisedAmountCurr: dyn.raisedAmountCurr,
+          totalCount: dyn.unsettledCountPrior + dyn.raisedCountCurr,
+          totalAmount: dyn.unsettledAmountPrior + dyn.raisedAmountCurr,
+          settledCountCurr: dyn.settledCountCurr,
+          settledAmountCurr: dyn.settledAmountCurr,
+          unsettledCountEnd: dyn.unsettledCountEnd,
+          unsettledAmountEnd: dyn.unsettledAmountEnd
         };
       });
 
@@ -1508,7 +1567,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     });
 
     return processedGroups;
-  }, [entries, prevLedgerData, searchTerm, filterMinistry, startDate, endDate, customTitle, cutoffMonth]);
+  }, [entries, prevLedgerData, searchTerm, filterMinistry, startDate, endDate, customTitle, cutoffMonth, activeCycle]);
 
   const details1Totals = useMemo(() => {
     const t = { 
@@ -1543,118 +1602,25 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   const details1Table2Data = useMemo(() => {
     if (customTitle !== 'বিস্তারিত - ১') return [];
 
-    const cycleStartStr = quarterCycleStartDateStr;
-
     const processedGroups: any[] = [];
 
     Object.entries(QR2_MINISTRY_MAP_TABLE2).forEach(([mName, entities]) => {
       const matchMinistry = filterMinistry === '' || robustNormalize(mName).includes(robustNormalize(filterMinistry));
       
       const entityDataList = entities.map(entityName => {
-        const rawLedger = prevLedgerTable2Data[entityName] || { june25Raised: 0, june25Settled: 0, june25UnsettledAmount: 0 };
-        const ledger = {
-          june25Raised: parseBengaliNumber(rawLedger.june25Raised),
-          june25Settled: parseBengaliNumber(rawLedger.june25Settled),
-          june25UnsettledAmount: parseBengaliNumber(rawLedger.june25UnsettledAmount)
-        };
-
-        // Filter past entries (transition period from July 1, 2025 up to cycle start date)
-        const transitionEntries = entries.filter(e => {
-          if (!isEntityMatch(e.entityName, entityName)) return false;
-          if (!isMinistryMatch(e.ministryName, mName)) return false;
-          const normalizedPType = robustNormalize(e.paraType || '');
-          if (normalizedPType !== robustNormalize('নন এসএফআই')) return false;
-
-          const mType = robustNormalize(e.meetingType || e.letterType || '');
-          if (!mType.includes(robustNormalize('বিএসআর'))) return false;
-
-          const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
-          return entryDate !== '' && entryDate >= cutoffInfo.transitionStartStr && entryDate < cycleStartStr;
-        });
-
-        let transitionRC = 0, transitionRA = 0;
-        transitionEntries.forEach(entry => {
-          const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
-          if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
-            transitionRC += parseBengaliNumber(rCountRaw);
-          }
-          if (entry.manualRaisedAmount) transitionRA += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
-        });
-
-        const { settledCount: transitionSC, settledAmount: transitionSA } = getSettlementStats(
-          entries,
-          entityName,
-          mName,
-          cutoffInfo.transitionStartStr,
-          settlementCycleStartDateStr,
-          true, // isExclusiveEnd
-          true  // isTransition
-        );
-
-        // Filter current entries for this entity and ministry
-        const currentEntries = entries.filter(e => {
-          if (!isEntityMatch(e.entityName, entityName)) return false;
-          if (!isMinistryMatch(e.ministryName, mName)) return false;
-          const normalizedPType = robustNormalize(e.paraType || '');
-          if (normalizedPType !== robustNormalize('নন এসএফআই')) return false;
-
-          const mType = robustNormalize(e.meetingType || e.letterType || '');
-          if (!mType.includes(robustNormalize('বিএসআর'))) return false;
-
-          const entryDateStr = (e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '')).trim();
-          if (!entryDateStr) return false;
-          return entryDateStr >= quarterCycleStartDateStr && entryDateStr <= quarterCycleEndDateStr;
-        });
-
-        let cCount = 0;
-        let cRaisedAmount = 0;
-
-        currentEntries.forEach(e => {
-          const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
-          if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
-            cCount += parseBengaliNumber(rCountRaw);
-          }
-          if (e.manualRaisedAmount) cRaisedAmount += parseBengaliNumber(String(e.manualRaisedAmount || '0'));
-        });
-
-        // Calculate settlement (Columns 10 & 11) for SFI + Non-SFI and BSR + Bilateral + Trilateral meetings
-        const { settledCount: cSettled, settledAmount: cSettledAmount } = getSettlementStats(
-          entries,
-          entityName,
-          mName,
-          settlementCycleStartDateStr,
-          quarterCycleEndDateStr,
-          false, // isExclusiveEnd
-          false  // isTransition
-        );
-
-        const unsettledCountPrior = Math.max(0, ledger.june25Raised + transitionRC - transitionSC);
-        const unsettledAmountPrior = Math.max(0, ledger.june25Settled + transitionRA - transitionSA);
-
-        const raisedCountCurr = cCount;
-        const raisedAmountCurr = cRaisedAmount;
-
-        const totalCount = unsettledCountPrior + raisedCountCurr;
-        const totalAmount = unsettledAmountPrior + raisedAmountCurr;
-
-        const settledCountCurr = cSettled;
-        const settledAmountCurr = cSettledAmount;
-
-        const unsettledCountEnd = Math.max(0, totalCount - settledCountCurr);
-        const unsettledAmountEnd = Math.max(0, totalAmount - settledAmountCurr);
-
+        const dyn = getDynamicBalances(entityName, mName, true);
         return {
           entityName,
-          unsettledCountPrior,
-          unsettledAmountPrior,
-          raisedCountCurr,
-          raisedAmountCurr,
-          totalCount,
-          totalAmount,
-          settledCountCurr,
-          settledAmountCurr,
-          unsettledCountEnd,
-          unsettledAmountEnd
+          unsettledCountPrior: dyn.unsettledCountPrior,
+          unsettledAmountPrior: dyn.unsettledAmountPrior,
+          raisedCountCurr: dyn.raisedCountCurr,
+          raisedAmountCurr: dyn.raisedAmountCurr,
+          totalCount: dyn.unsettledCountPrior + dyn.raisedCountCurr,
+          totalAmount: dyn.unsettledAmountPrior + dyn.raisedAmountCurr,
+          settledCountCurr: dyn.settledCountCurr,
+          settledAmountCurr: dyn.settledAmountCurr,
+          unsettledCountEnd: dyn.unsettledCountEnd,
+          unsettledAmountEnd: dyn.unsettledAmountEnd
         };
       });
 
@@ -1675,7 +1641,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     });
 
     return processedGroups;
-  }, [entries, prevLedgerTable2Data, searchTerm, filterMinistry, startDate, endDate, customTitle, cutoffMonth]);
+  }, [entries, prevLedgerTable2Data, searchTerm, filterMinistry, startDate, endDate, customTitle, cutoffMonth, activeCycle]);
 
   const details1Table2Totals = useMemo(() => {
     const t = { 
