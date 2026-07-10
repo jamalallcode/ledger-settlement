@@ -69,13 +69,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
   // Calculate the 16th-to-15th quarterly reporting cycle range
   const quarterEndMonth = quarterStartMonth + 2;
-  let qCycleStartMonth = quarterStartMonth - 1;
-  let qCycleStartYear = quarterYear;
-  if (qCycleStartMonth < 0) {
-    qCycleStartMonth = 11;
-    qCycleStartYear -= 1;
-  }
-  const quarterCycleStartDate = new Date(qCycleStartYear, qCycleStartMonth, 16);
+  const quarterCycleStartDate = new Date(quarterYear, quarterStartMonth, 16);
   const quarterCycleEndDate = new Date(quarterYear, quarterEndMonth, 15);
   quarterCycleStartDate.setHours(0, 0, 0, 0);
   quarterCycleEndDate.setHours(23, 59, 59, 999);
