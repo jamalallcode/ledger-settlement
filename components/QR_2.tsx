@@ -267,8 +267,28 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     if (normTarget === robustNormalize("রসায়ন শিল্প") && (normEntry === robustNormalize("রসায়ন শিল্প সংস্থা") || normEntry.includes("রসায়ন") || normEntry.includes("রসায়ন"))) return true;
     
     // General equivalent matches for Jute/Patkol
-    if (normTarget === robustNormalize("পাটকল সংস্থা") && (normEntry.includes("পাটকল") || normEntry.includes("বিজেএমসি") || normEntry.includes("জুট") || normEntry.includes("পাট"))) return true;
-    if (normEntry === robustNormalize("পাটকল সংস্থা") && (normTarget.includes("পাটকল") || normTarget.includes("বিজেএমসি") || normTarget.includes("জুট") || normTarget.includes("পাট"))) return true;
+    const isPatkolTarget = normTarget === robustNormalize("পাটকল সংস্থা");
+    const isPatTarget = normTarget === robustNormalize("পাট সংস্থা");
+    
+    const isPatkolEntry = normEntry === robustNormalize("পাটকল সংস্থা") || normEntry.includes("পাটকল") || normEntry.includes("বিজেএমসি") || normEntry.includes("জুট");
+    const isPatEntry = normEntry === robustNormalize("পাট সংস্থা") || (normEntry.includes("পাট") && !normEntry.includes("পাটকল") && !normEntry.includes("বিজেএমসি") && !normEntry.includes("জুট"));
+
+    if (isPatkolTarget) {
+      return isPatkolEntry;
+    }
+    if (isPatTarget) {
+      return isPatEntry && !isPatkolEntry;
+    }
+
+    const isPatkolEntryDirect = normEntry === robustNormalize("পাটকল সংস্থা");
+    const isPatEntryDirect = normEntry === robustNormalize("পাট সংস্থা");
+
+    if (isPatkolEntryDirect) {
+      return normTarget.includes("পাটকল") || normTarget.includes("বিজেএমসি") || normTarget.includes("জুট");
+    }
+    if (isPatEntryDirect) {
+      return normTarget.includes("পাট") && !normTarget.includes("পাটকল") && !normTarget.includes("বিজেএমসি") && !normTarget.includes("জুট");
+    }
 
     // Financial institutions equivalents to prevent typo mismatches
     if (normTarget.includes("বাংলাদেশ ডেভেলপমেন্ট ব্যাংক") && normEntry.includes("বাংলাদেশ ডেভেলপমেন্ট ব্যাংক")) return true;
