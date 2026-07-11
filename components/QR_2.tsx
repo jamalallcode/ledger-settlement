@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Printer, Sparkles, ChevronDown, BarChart3, FileSpreadsheet } from 'lucide-react';
+import { Printer, Sparkles, ChevronDown, BarChart3, FileSpreadsheet, Lock } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
@@ -413,6 +413,35 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   };
 
   const [isPrevLedgerOpen, setIsPrevLedgerOpen] = React.useState(false);
+  const [clickCount, setClickCount] = React.useState(0);
+  const clickTimeoutRef = React.useRef<any>(null);
+
+  const handlePrevLedgerClick = () => {
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+    }
+
+    setClickCount(prev => {
+      const nextCount = prev + 1;
+      if (nextCount >= 20) {
+        setIsPrevLedgerOpen(true);
+        return 0;
+      }
+      return nextCount;
+    });
+
+    clickTimeoutRef.current = setTimeout(() => {
+      setClickCount(0);
+    }, 2000);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
+    };
+  }, []);
   const [confirmReset, setConfirmReset] = React.useState(false);
   const [cutoffMonth, setCutoffMonth] = React.useState(() => {
     const saved = localStorage.getItem('opening_balance_cutoff_month');
@@ -1723,11 +1752,11 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             <div className="flex items-center gap-2 w-full xl:w-auto justify-start flex-wrap">
               <button
                 type="button"
-                onClick={() => setIsPrevLedgerOpen(true)}
-                className="flex items-center gap-1.5 px-3 h-[38px] bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 hover:border-amber-300 hover:shadow-sm transition-all duration-300 rounded-xl text-[11px] font-black cursor-pointer shrink-0"
+                onClick={handlePrevLedgerClick}
+                className="flex items-center gap-1.5 px-3 h-[38px] bg-slate-100 hover:bg-slate-200 text-slate-500 border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all duration-300 rounded-xl text-[11px] font-black cursor-pointer shrink-0 relative"
               >
-                <Sparkles size={13} className="text-amber-500 animate-pulse" />
-                <span>পূর্ব জের</span>
+                <Lock size={12} className="text-slate-400" />
+                <span>পূর্ব জের (লকড)</span>
               </button>
             </div>
 
