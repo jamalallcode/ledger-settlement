@@ -592,36 +592,55 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
       if (isSupabaseConfigured) {
         let error;
         if (editingId && !editingId.toString().startsWith('local-')) {
-          // Attempt update with is_active and transferred_to
+          // Attempt update with is_active, transferred_to and transferred_at
           const { error: updateError } = await supabase
             .from('receivers')
             .update(profileData)
             .eq('id', editingId);
           error = updateError;
           
-          // Fallback if columns do not exist
+          // Fallback if transferred_at column does not exist
           if (error && (error.message?.includes('column') || error.code === '42703')) {
-            const { is_active, transferred_to, ...rest } = profileData;
+            const { transferred_at, ...withTransferredTo } = profileData;
             const { error: retryError } = await supabase
               .from('receivers')
-              .update(rest)
+              .update(withTransferredTo)
               .eq('id', editingId);
             error = retryError;
           }
+
+          // Fallback if is_active or transferred_to columns also do not exist
+          if (error && (error.message?.includes('column') || error.code === '42703')) {
+            const { is_active, transferred_to, transferred_at, ...rest } = profileData;
+            const { error: finalRetryError } = await supabase
+              .from('receivers')
+              .update(rest)
+              .eq('id', editingId);
+            error = finalRetryError;
+          }
         } else {
-          // Attempt insert with is_active and transferred_to
+          // Attempt insert with is_active, transferred_to and transferred_at
           const { error: insertError } = await supabase
             .from('receivers')
             .insert([profileData]);
           error = insertError;
 
-          // Fallback if columns do not exist
+          // Fallback if transferred_at column does not exist
           if (error && (error.message?.includes('column') || error.code === '42703')) {
-            const { is_active, transferred_to, ...rest } = profileData;
+            const { transferred_at, ...withTransferredTo } = profileData;
             const { error: retryError } = await supabase
               .from('receivers')
-              .insert([rest]);
+              .insert([withTransferredTo]);
             error = retryError;
+          }
+
+          // Fallback if is_active or transferred_to columns also do not exist
+          if (error && (error.message?.includes('column') || error.code === '42703')) {
+            const { is_active, transferred_to, transferred_at, ...rest } = profileData;
+            const { error: finalRetryError } = await supabase
+              .from('receivers')
+              .insert([rest]);
+            error = finalRetryError;
           }
         }
         
