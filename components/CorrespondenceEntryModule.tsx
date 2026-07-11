@@ -501,6 +501,13 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           .normalize('NFC');                     // Normalize Unicode to canonical form
       };
 
+      const getCleanBranch = (type: string | null | undefined): string => {
+        if (!type) return 'এসএফআই';
+        if (type.includes('প্রশাসন') || type === 'ADMIN' || type === 'admin') return 'প্রশাসন';
+        if (type.includes('নন') || type.toUpperCase().includes('NON')) return 'নন এসএফআই';
+        return 'এসএফআই';
+      };
+
       try {
         let finalReceivers: any[] = [];
         const uniqueVariations = getBranchVariations(formData.paraType);
@@ -522,7 +529,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           }
         }
 
-        // 2. Fetch ALL receivers to build a Global Master List of names
+        // 2. Fetch ALL receivers to build a Global Master List of names and collect all profiles
+        const allSystemProfiles: any[] = [];
         const globalSavedNames = new Map<string, any>();
         if (isSupabaseConfigured) {
           const { data: allData, error: allError } = await supabase
@@ -530,11 +538,36 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             .select('*');
           if (!allError && allData) {
             allData.forEach(r => {
+              allSystemProfiles.push(r);
               const norm = normalizeName(r.name);
               if (norm) globalSavedNames.set(norm, { ...r, source: 'database' });
             });
           }
         }
+
+        // Always populate allSystemProfiles from local storage to have a complete master registry
+        ['ledger_correspondence_receivers_admin', 'ledger_correspondence_receivers_nonsfi', 'ledger_correspondence_receivers_sfi'].forEach(key => {
+          const saved = localStorage.getItem(key);
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved);
+              const branch = key.includes('admin') ? 'প্রশাসন' : key.includes('nonsfi') ? 'নন এসএফআই' : 'এসএফআই';
+              parsed.forEach((p: any) => {
+                const profile = typeof p === 'string' ? { name: p, designation: 'অডিটর' } : p;
+                const norm = normalizeName(profile.name);
+                const exists = allSystemProfiles.some(sp => normalizeName(sp.name) === norm && getCleanBranch(sp.para_type) === getCleanBranch(profile.para_type || branch));
+                if (!exists) {
+                  allSystemProfiles.push({
+                    ...profile,
+                    para_type: profile.para_type || branch
+                  });
+                }
+              });
+            } catch (e) {
+              console.error('Error parsing local receivers for master list:', e);
+            }
+          }
+        });
 
         // If Supabase failed or is not configured, try LocalStorage
         if (!isSupabaseConfigured || supabaseError || finalReceivers.length === 0) {
@@ -634,41 +667,78 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           }
         };
 
-        const getCleanBranch = (type: string | null | undefined): string => {
-          if (!type) return 'এসএফআই';
-          if (type.includes('প্রশাসন') || type === 'ADMIN' || type === 'admin') return 'প্রশাসন';
-          if (type.includes('নন') || type.toUpperCase().includes('NON')) return 'নন এসএফআই';
-          return 'এসএফআই';
+        const getTransfersMap = (): Record<string, string> => {
+          try {
+            const saved = localStorage.getItem('ledger_transfers_map_v1');
+            return saved ? JSON.parse(saved) : {};
+          } catch {
+            return {};
+          }
         };
 
         const inactiveListRaw = getInactiveList();
         const inactiveKeysSet = new Set(inactiveListRaw.map(item => normalizeName(item)));
+        const transfersMap = getTransfersMap();
         const currentReceiverNormalized = normalizeName(formData.receiverName || initialEntry?.receiverName);
+        const currentFormBranchClean = getCleanBranch(formData.paraType);
 
         const filteredReceivers = finalReceivers.map(r => {
           const norm = normalizeName(r.name);
-          const rBranchClean = getCleanBranch(r.para_type || formData.paraType);
-          const compKey = `${norm}_${rBranchClean}`;
+          const currentCompKey = `${norm}_${currentFormBranchClean}`;
           
-          let is_active = r.is_active;
-          if (is_active === undefined || is_active === null) {
-            if (inactiveKeysSet.has(compKey)) {
+          // Check explicit deactivation and transfer status
+          const isLInactive = inactiveKeysSet.has(currentCompKey);
+          const hasTransfer = (r.transferred_to && r.transferred_to.trim() !== '') || 
+                              (transfersMap[currentCompKey] && transfersMap[currentCompKey].trim() !== '');
+
+          let is_active = true;
+
+          // Check for Shamima/Shamira hardcoded transfers
+          const normNoSpaces = norm.replace(/\s+/g, '');
+          const isShamimaTransfer = normNoSpaces === 'শামীমাশাহরিন' || normNoSpaces === 'শামীরাশাহরিন';
+
+          if (isShamimaTransfer) {
+            if (currentFormBranchClean === 'নন এসএফআই') {
               is_active = false;
-            } else if (inactiveKeysSet.has(norm)) {
-              const hasBranchSpecificKey = Array.from(inactiveKeysSet).some(k => k.startsWith(`${norm}_`));
-              is_active = !hasBranchSpecificKey;
-            } else {
+            } else if (currentFormBranchClean === 'এসএফআই') {
               is_active = true;
             }
-          }
+          } else if (r.is_active === false || isLInactive || hasTransfer) {
+            is_active = false;
+          } else {
+            // Find any profiles for this person in the master system profiles list
+            const matches = allSystemProfiles.filter(p => normalizeName(p.name) === norm);
+            const branchMatch = matches.find(p => getCleanBranch(p.para_type) === currentFormBranchClean);
 
-          // Specific override for Shamima Shahrin / Shamira Shahrin transfer (Non-SFI to SFI)
-          const normNoSpaces = norm.replace(/\s+/g, '');
-          if (normNoSpaces === 'শামীমাশাহরিন' || normNoSpaces === 'শামীরাশাহরিন') {
-            if (rBranchClean === 'নন এসএফআই') {
-              is_active = false;
-            } else if (rBranchClean === 'এসএফআই') {
-              is_active = true;
+            if (branchMatch) {
+              const isBranchLInactive = inactiveKeysSet.has(currentCompKey);
+              const branchHasTransfer = (branchMatch.transferred_to && branchMatch.transferred_to.trim() !== '') ||
+                                        (transfersMap[currentCompKey] && transfersMap[currentCompKey].trim() !== '');
+              if (branchMatch.is_active === false || isBranchLInactive || branchHasTransfer) {
+                is_active = false;
+              } else {
+                is_active = true;
+              }
+            } else if (matches.length > 0) {
+              // If they have profiles in other branches, check if they are active in ANY of those other branches
+              const activeInOtherBranch = matches.some(p => {
+                const pBranchClean = getCleanBranch(p.para_type);
+                const pCompKey = `${norm}_${pBranchClean}`;
+                const isPInactive = inactiveKeysSet.has(pCompKey);
+                const pHasTransfer = (p.transferred_to && p.transferred_to.trim() !== '') ||
+                                     (transfersMap[pCompKey] && transfersMap[pCompKey].trim() !== '');
+                return p.is_active !== false && !isPInactive && !pHasTransfer;
+              });
+              if (activeInOtherBranch) {
+                // Since they are active in another branch and not configured for this branch, they are not active in this branch
+                is_active = false;
+              } else {
+                // Not active anywhere else, let's check local deactivation/transfer list
+                is_active = !isLInactive && !hasTransfer;
+              }
+            } else {
+              // No profiles at all, check local deactivation/transfer lists
+              is_active = !isLInactive && !hasTransfer;
             }
           }
 
@@ -690,6 +760,30 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                             isSFI(formData.paraType) ? SFI_RECEIVERS : NONSFI_RECEIVERS;
         const mappedList = initialList.map(name => ({ name, designation: 'অডিটর' }));
         
+        const allSystemProfiles: any[] = [];
+        ['ledger_correspondence_receivers_admin', 'ledger_correspondence_receivers_nonsfi', 'ledger_correspondence_receivers_sfi'].forEach(key => {
+          const saved = localStorage.getItem(key);
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved);
+              const branch = key.includes('admin') ? 'প্রশাসন' : key.includes('nonsfi') ? 'নন এসএফআই' : 'এসএফআই';
+              parsed.forEach((p: any) => {
+                const profile = typeof p === 'string' ? { name: p, designation: 'অডিটর' } : p;
+                const norm = normalizeName(profile.name);
+                const exists = allSystemProfiles.some(sp => normalizeName(sp.name) === norm && getCleanBranch(sp.para_type) === getCleanBranch(profile.para_type || branch));
+                if (!exists) {
+                  allSystemProfiles.push({
+                    ...profile,
+                    para_type: profile.para_type || branch
+                  });
+                }
+              });
+            } catch (e) {
+              console.error('Error parsing local receivers for master list in catch:', e);
+            }
+          }
+        });
+
         const INACTIVE_STORAGE_KEY = 'ledger_inactive_receivers_v1';
         const getInactiveList = (): string[] => {
           try {
@@ -700,39 +794,78 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           }
         };
 
-        const getCleanBranch = (type: string | null | undefined): string => {
-          if (!type) return 'এসএফআই';
-          if (type.includes('প্রশাসন') || type === 'ADMIN' || type === 'admin') return 'প্রশাসন';
-          if (type.includes('নন') || type.toUpperCase().includes('NON')) return 'নন এসএফআই';
-          return 'এসএফআই';
+        const getTransfersMap = (): Record<string, string> => {
+          try {
+            const saved = localStorage.getItem('ledger_transfers_map_v1');
+            return saved ? JSON.parse(saved) : {};
+          } catch {
+            return {};
+          }
         };
 
         const inactiveListRaw = getInactiveList();
         const inactiveKeysSet = new Set(inactiveListRaw.map(item => normalizeName(item)));
+        const transfersMap = getTransfersMap();
         const currentReceiverNormalized = normalizeName(formData.receiverName || initialEntry?.receiverName);
+        const currentFormBranchClean = getCleanBranch(formData.paraType);
 
-        const filtered = mappedList.map(r => {
+        const filtered = (mappedList as any[]).map(r => {
           const norm = normalizeName(r.name);
-          const rBranchClean = getCleanBranch(formData.paraType);
-          const compKey = `${norm}_${rBranchClean}`;
+          const currentCompKey = `${norm}_${currentFormBranchClean}`;
           
-          let is_active;
-          if (inactiveKeysSet.has(compKey)) {
-            is_active = false;
-          } else if (inactiveKeysSet.has(norm)) {
-            const hasBranchSpecificKey = Array.from(inactiveKeysSet).some(k => k.startsWith(`${norm}_`));
-            is_active = !hasBranchSpecificKey;
-          } else {
-            is_active = true;
-          }
+          // Check explicit deactivation and transfer status
+          const isLInactive = inactiveKeysSet.has(currentCompKey);
+          const hasTransfer = (r.transferred_to && r.transferred_to.trim() !== '') || 
+                              (transfersMap[currentCompKey] && transfersMap[currentCompKey].trim() !== '');
 
-          // Specific override for Shamima Shahrin / Shamira Shahrin transfer (Non-SFI to SFI)
+          let is_active = true;
+
+          // Check for Shamima/Shamira hardcoded transfers
           const normNoSpaces = norm.replace(/\s+/g, '');
-          if (normNoSpaces === 'শামীমাশাহরিন' || normNoSpaces === 'শামীরাশাহরিন') {
-            if (rBranchClean === 'নন এসএফআই') {
+          const isShamimaTransfer = normNoSpaces === 'শামীমাশাহরিন' || normNoSpaces === 'শামীরাশাহরিন';
+
+          if (isShamimaTransfer) {
+            if (currentFormBranchClean === 'নন এসএফআই') {
               is_active = false;
-            } else if (rBranchClean === 'এসএফআই') {
+            } else if (currentFormBranchClean === 'এসএফআই') {
               is_active = true;
+            }
+          } else if (r.is_active === false || isLInactive || hasTransfer) {
+            is_active = false;
+          } else {
+            // Find any profiles for this person in the master system profiles list
+            const matches = allSystemProfiles.filter(p => normalizeName(p.name) === norm);
+            const branchMatch = matches.find(p => getCleanBranch(p.para_type) === currentFormBranchClean);
+
+            if (branchMatch) {
+              const isBranchLInactive = inactiveKeysSet.has(currentCompKey);
+              const branchHasTransfer = (branchMatch.transferred_to && branchMatch.transferred_to.trim() !== '') ||
+                                        (transfersMap[currentCompKey] && transfersMap[currentCompKey].trim() !== '');
+              if (branchMatch.is_active === false || isBranchLInactive || branchHasTransfer) {
+                is_active = false;
+              } else {
+                is_active = true;
+              }
+            } else if (matches.length > 0) {
+              // If they have profiles in other branches, check if they are active in ANY of those other branches
+              const activeInOtherBranch = matches.some(p => {
+                const pBranchClean = getCleanBranch(p.para_type);
+                const pCompKey = `${norm}_${pBranchClean}`;
+                const isPInactive = inactiveKeysSet.has(pCompKey);
+                const pHasTransfer = (p.transferred_to && p.transferred_to.trim() !== '') ||
+                                     (transfersMap[pCompKey] && transfersMap[pCompKey].trim() !== '');
+                return p.is_active !== false && !isPInactive && !pHasTransfer;
+              });
+              if (activeInOtherBranch) {
+                // Since they are active in another branch and not configured for this branch, they are not active in this branch
+                is_active = false;
+              } else {
+                // Not active anywhere else, let's check local deactivation/transfer list
+                is_active = !isLInactive && !hasTransfer;
+              }
+            } else {
+              // No profiles at all, check local deactivation/transfer lists
+              is_active = !isLInactive && !hasTransfer;
             }
           }
 
