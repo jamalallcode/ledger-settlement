@@ -943,13 +943,23 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                       >
                         <FileEdit size={14} />
                       </button>
-                      <button 
-                        onClick={() => handleDelete(profile)}
-                        className="p-2 bg-white text-red-600 border border-red-100 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm active:scale-95 shrink-0"
-                        title="মুছে ফেলুন"
-                      >
-                        <Trash size={14} />
-                      </button>
+                      {profile.entryCount !== undefined && profile.entryCount > 0 ? (
+                        <button 
+                          disabled
+                          className="p-2 bg-slate-100 text-slate-300 border border-slate-200 rounded-xl cursor-not-allowed shrink-0"
+                          title="চিঠিপত্র বা ডায়েরি এন্ট্রি থাকায় উনাকে ডিলিট করা সম্ভব নয়"
+                        >
+                          <Trash size={14} />
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => handleDelete(profile)}
+                          className="p-2 bg-white text-red-600 border border-red-100 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm active:scale-95 shrink-0"
+                          title="মুছে ফেলুন"
+                        >
+                          <Trash size={14} />
+                        </button>
+                      )}
                     </>
                   )}
                 </div>
