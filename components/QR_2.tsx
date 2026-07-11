@@ -1722,17 +1722,6 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       <div id="qr-2-container" className="w-full mx-auto py-4 px-[4px] bg-white rounded-xl relative animate-in fade-in duration-500 font-sans">
         <IDBadge id="qr-2-container" />
 
-        <div className="flex justify-end mb-4 no-print">
-          <button
-            type="button"
-            onClick={downloadExcel}
-            className="flex items-center justify-center w-10 h-10 bg-emerald-50 text-emerald-700 hover:text-emerald-800 border border-emerald-100 hover:border-emerald-300 hover:bg-white hover:shadow-md transition-all duration-300 rounded-xl cursor-pointer shrink-0"
-            title="এক্সেল ফাইল ডাউনলোড করুন"
-          >
-            <FileSpreadsheet size={16} className="stroke-[2.5]" />
-          </button>
-        </div>
-
         {/* Print-only title to ensure perfect centering in print mode */}
         <div className="hidden print:block text-center mb-4 border-b-[3px] border-double border-slate-900 pb-2">
           <h1 className="text-xl font-black text-slate-900 tracking-tight">
@@ -1760,10 +1749,20 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               </button>
             </div>
 
-            {/* Center Column: Title */}
-            <h1 className="text-2.5xl font-black text-slate-900 tracking-tight text-center py-1">
-              {customTitle || "ত্রৈমাসিক রিটার্ন - ২"}
-            </h1>
+            {/* Center Column: Title & Excel Button */}
+            <div className="flex items-center gap-3 justify-center py-1">
+              <h1 className="text-2.5xl font-black text-slate-900 tracking-tight text-center">
+                {customTitle || "ত্রৈমাসিক রিটার্ন - ২"}
+              </h1>
+              <button
+                type="button"
+                onClick={downloadExcel}
+                className="flex items-center justify-center w-[38px] h-[38px] bg-emerald-50 text-emerald-700 hover:text-emerald-800 border border-emerald-100 hover:border-emerald-300 hover:bg-white hover:shadow-md transition-all duration-300 rounded-xl cursor-pointer shrink-0"
+                title="এক্সেল ফাইল ডাউনলোড করুন"
+              >
+                <FileSpreadsheet size={16} className="stroke-[2.5]" />
+              </button>
+            </div>
 
             {/* Right Column: Date Range Pill & Month Picker */}
             <div className="flex items-center gap-2.5 w-full xl:w-auto justify-end flex-wrap">
