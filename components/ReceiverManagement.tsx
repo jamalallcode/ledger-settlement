@@ -26,6 +26,7 @@ interface ReceiverProfile {
   is_voter?: boolean;
   is_active?: boolean;
   transferred_to?: string;
+  transferred_at?: string;
 }
 
 const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
@@ -73,6 +74,51 @@ const saveTransfersMap = (map: Record<string, string>) => {
   } catch (e) {
     console.error(e);
   }
+};
+
+const TRANSFER_TIMES_STORAGE_KEY = 'ledger_receiver_transfer_times_v1';
+
+const getTransferTimesMap = (): Record<string, string> => {
+  try {
+    const saved = localStorage.getItem(TRANSFER_TIMES_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveTransferTimesMap = (map: Record<string, string>) => {
+  try {
+    localStorage.setItem(TRANSFER_TIMES_STORAGE_KEY, JSON.stringify(map));
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const getBengaliDateTimeString = (dateInput?: Date): string => {
+  const date = dateInput || new Date();
+  const day = toBengaliDigits(String(date.getDate()).padStart(2, '0'));
+  const month = toBengaliDigits(String(date.getMonth() + 1).padStart(2, '0'));
+  const year = toBengaliDigits(String(date.getFullYear()));
+  
+  let hours = date.getHours();
+  const minutes = toBengaliDigits(String(date.getMinutes()).padStart(2, '0'));
+  
+  let period = 'সকাল';
+  if (hours >= 12) {
+    if (hours < 16) period = 'দুপুর';
+    else if (hours < 18) period = 'বিকাল';
+    else if (hours < 20) period = 'সন্ধ্যা';
+    else period = 'রাত';
+  } else {
+    if (hours < 5) period = 'রাত';
+    else if (hours < 6) period = 'ভোর';
+  }
+  
+  const displayHours = hours % 12 || 12;
+  const bengaliHours = toBengaliDigits(String(displayHours).padStart(2, '0'));
+  
+  return `${day}/${month}/${year} (${period} ${bengaliHours}:${minutes})`;
 };
 
 const getBranchFromTransferName = (name: string): string | null => {
@@ -316,6 +362,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
       const inactiveListRaw = getInactiveList();
       const inactiveKeysSet = new Set(inactiveListRaw.map(item => normalizeName(item)));
       const transfersMap = getTransfersMap();
+      const transferTimesMap = getTransferTimesMap();
 
       // Map counts and active status
       const receiversWithCounts = finalReceivers.map(r => {
@@ -336,6 +383,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
         }
 
         let transferred_to = r.transferred_to || transfersMap[compKey] || '';
+        let transferred_at = r.transferred_at || transferTimesMap[compKey] || '';
 
         // Specific override for Shamima Shahrin / Shamira Shahrin transfer (Non-SFI to SFI)
         const normNoSpaces = norm.replace(/\s+/g, '');
@@ -343,9 +391,11 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
           if (b === 'নন এসএফআই') {
             is_active = false;
             transferred_to = 'এসএফআই শাখা';
+            transferred_at = '১১/০৭/২০২৬ (সকাল ০৭:১৯)';
           } else if (b === 'এসএফআই') {
             is_active = true;
             transferred_to = '';
+            transferred_at = '';
           }
         }
 
@@ -354,6 +404,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
           para_type: b,
           is_active,
           transferred_to,
+          transferred_at,
           entryCount: entryCounts[compKey] || 0,
           entryDetails: entryDetails[compKey] || []
         };
@@ -408,15 +459,6 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
     if (!tempName.trim()) return;
     setIsSaving(true);
     
-    const profileData = {
-      name: tempName.trim(),
-      designation: tempDesignation.trim() || null,
-      image: tempImage || null,
-      para_type: selectedParaType,
-      is_active: tempIsActive,
-      transferred_to: tempIsActive ? '' : tempTransferredTo
-    };
-
     const normalizeName = (name: string | null | undefined) => {
       if (!name) return '';
       return name
@@ -467,12 +509,31 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
 
     // Save transfer mapping locally
     const transfersMap = getTransfersMap();
+    const transferTimesMap = getTransferTimesMap();
+    
+    let transferTime = '';
     if (tempIsActive) {
       delete transfersMap[currentCompKey];
+      delete transferTimesMap[currentCompKey];
     } else {
       transfersMap[currentCompKey] = tempTransferredTo;
+      if (!transferTimesMap[currentCompKey]) {
+        transferTimesMap[currentCompKey] = getBengaliDateTimeString();
+      }
+      transferTime = transferTimesMap[currentCompKey];
     }
     saveTransfersMap(transfersMap);
+    saveTransferTimesMap(transferTimesMap);
+
+    const profileData = {
+      name: tempName.trim(),
+      designation: tempDesignation.trim() || null,
+      image: tempImage || null,
+      para_type: selectedParaType,
+      is_active: tempIsActive,
+      transferred_to: tempIsActive ? '' : tempTransferredTo,
+      transferred_at: tempIsActive ? '' : transferTime
+    };
 
     // Check for automatic internal branch transfer
     const targetBranch = getBranchFromTransferName(tempTransferredTo);
@@ -674,7 +735,12 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
       return;
     }
 
-    if (!window.confirm(`আপনি কি নিশ্চিতভাবে "${profile.name}" নামটিকে রিসেপশন বা মুছতে চান?`)) return;
+    const confirmMessage = `আপনি কি নিশ্চিতভাবে "${profile.name}"-কে এই শাখা (${profile.para_type}) হতে ডিলিট করতে চান?\n\n` +
+      `সতর্কতা: ডিলিট করলে ইনি শুধুমাত্র এই শাখা হতে ডিলিট হবেন, সম্পূর্ণ সিস্টেম হতে নয়। ` +
+      `যদি উনাকে অন্য কোন শাখায় বদলি করা হয়ে থাকে, তবে সেই শাখায় উনার প্রোফাইলটি সম্পূর্ণ সুরক্ষিত থাকবে। ` +
+      `টেস্ট করার জন্য আপনি যে কাউকে এক শাখা থেকে অন্য শাখায় বদলি করলেও এখান থেকে ডিলিট করলে অন্য শাখার তথ্য মুছে যাবে না।`;
+
+    if (!window.confirm(confirmMessage)) return;
     
     try {
       const normalizeName = (name: string | null | undefined) => {
@@ -695,6 +761,11 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
         return itemNorm !== norm && itemNorm !== compKey;
       });
       saveInactiveList(inactiveList);
+
+      // Also clean up local transfer time if any
+      const transferTimesMap = getTransferTimesMap();
+      delete transferTimesMap[compKey];
+      saveTransferTimesMap(transferTimesMap);
 
       if (isSupabaseConfigured && profile.id && !profile.id.toString().startsWith('local-')) {
         const { error } = await supabase
@@ -824,6 +895,11 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                       </div>
                       {profile.designation && (
                         <span className="text-[10px] font-bold text-slate-400 truncate block mt-0.5 uppercase tracking-wider">{profile.designation}</span>
+                      )}
+                      {isInactive && profile.transferred_at && (
+                        <span className="text-[10px] font-extrabold text-rose-500 block mt-0.5">
+                          বদলির সময়কাল: {profile.transferred_at}
+                        </span>
                       )}
                     </div>
                   </div>

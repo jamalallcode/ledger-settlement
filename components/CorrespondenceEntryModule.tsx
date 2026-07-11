@@ -809,7 +809,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         const currentReceiverNormalized = normalizeName(formData.receiverName || initialEntry?.receiverName);
         const currentFormBranchClean = getCleanBranch(formData.paraType);
 
-        const filtered = mappedList.map(r => {
+        const filtered = (mappedList as any[]).map(r => {
           const norm = normalizeName(r.name);
           const currentCompKey = `${norm}_${currentFormBranchClean}`;
           
