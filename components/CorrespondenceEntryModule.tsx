@@ -667,8 +667,18 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           }
         };
 
+        const getTransfersMap = (): Record<string, string> => {
+          try {
+            const saved = localStorage.getItem('ledger_transfers_map_v1');
+            return saved ? JSON.parse(saved) : {};
+          } catch {
+            return {};
+          }
+        };
+
         const inactiveListRaw = getInactiveList();
         const inactiveKeysSet = new Set(inactiveListRaw.map(item => normalizeName(item)));
+        const transfersMap = getTransfersMap();
         const currentReceiverNormalized = normalizeName(formData.receiverName || initialEntry?.receiverName);
         const currentFormBranchClean = getCleanBranch(formData.paraType);
 
@@ -676,41 +686,60 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           const norm = normalizeName(r.name);
           const currentCompKey = `${norm}_${currentFormBranchClean}`;
           
-          // Determine if inactive in current branch (either in DB profile, or in inactiveKeysSet)
+          // Check explicit deactivation and transfer status
+          const isLInactive = inactiveKeysSet.has(currentCompKey);
+          const hasTransfer = (r.transferred_to && r.transferred_to.trim() !== '') || 
+                              (transfersMap[currentCompKey] && transfersMap[currentCompKey].trim() !== '');
+
           let is_active = true;
 
-          // Find any profiles for this person in the master system profiles list
-          const matches = allSystemProfiles.filter(p => normalizeName(p.name) === norm);
-          const branchMatch = matches.find(p => getCleanBranch(p.para_type) === currentFormBranchClean);
+          // Check for Shamima/Shamira hardcoded transfers
+          const normNoSpaces = norm.replace(/\s+/g, '');
+          const isShamimaTransfer = normNoSpaces === 'শামীমাশাহরিন' || normNoSpaces === 'শামীরাশাহরিন';
 
-          if (branchMatch) {
-            // If they have a profile specifically for this branch, respect its status
-            const isLInactive = inactiveKeysSet.has(currentCompKey);
-            if (branchMatch.is_active === false || isLInactive) {
+          if (isShamimaTransfer) {
+            if (currentFormBranchClean === 'নন এসএফআই') {
               is_active = false;
-            } else {
+            } else if (currentFormBranchClean === 'এসএফআই') {
               is_active = true;
             }
-          } else if (matches.length > 0) {
-            // If they have profiles in other branches, check if they are active in ANY of those other branches
-            const activeInOtherBranch = matches.some(p => {
-              const pBranchClean = getCleanBranch(p.para_type);
-              const pCompKey = `${norm}_${pBranchClean}`;
-              const isLInactive = inactiveKeysSet.has(pCompKey);
-              return p.is_active !== false && !isLInactive;
-            });
-            if (activeInOtherBranch) {
-              // Since they are active in another branch and not configured for this branch, they are not active in this branch
-              is_active = false;
-            } else {
-              // Not active anywhere else, let's check local deactivation list
-              const isLInactive = inactiveKeysSet.has(currentCompKey);
-              is_active = !isLInactive;
-            }
+          } else if (r.is_active === false || isLInactive || hasTransfer) {
+            is_active = false;
           } else {
-            // No profiles at all, check local deactivation lists
-            const isLInactive = inactiveKeysSet.has(currentCompKey);
-            is_active = !isLInactive;
+            // Find any profiles for this person in the master system profiles list
+            const matches = allSystemProfiles.filter(p => normalizeName(p.name) === norm);
+            const branchMatch = matches.find(p => getCleanBranch(p.para_type) === currentFormBranchClean);
+
+            if (branchMatch) {
+              const isBranchLInactive = inactiveKeysSet.has(currentCompKey);
+              const branchHasTransfer = (branchMatch.transferred_to && branchMatch.transferred_to.trim() !== '') ||
+                                        (transfersMap[currentCompKey] && transfersMap[currentCompKey].trim() !== '');
+              if (branchMatch.is_active === false || isBranchLInactive || branchHasTransfer) {
+                is_active = false;
+              } else {
+                is_active = true;
+              }
+            } else if (matches.length > 0) {
+              // If they have profiles in other branches, check if they are active in ANY of those other branches
+              const activeInOtherBranch = matches.some(p => {
+                const pBranchClean = getCleanBranch(p.para_type);
+                const pCompKey = `${norm}_${pBranchClean}`;
+                const isPInactive = inactiveKeysSet.has(pCompKey);
+                const pHasTransfer = (p.transferred_to && p.transferred_to.trim() !== '') ||
+                                     (transfersMap[pCompKey] && transfersMap[pCompKey].trim() !== '');
+                return p.is_active !== false && !isPInactive && !pHasTransfer;
+              });
+              if (activeInOtherBranch) {
+                // Since they are active in another branch and not configured for this branch, they are not active in this branch
+                is_active = false;
+              } else {
+                // Not active anywhere else, let's check local deactivation/transfer list
+                is_active = !isLInactive && !hasTransfer;
+              }
+            } else {
+              // No profiles at all, check local deactivation/transfer lists
+              is_active = !isLInactive && !hasTransfer;
+            }
           }
 
           return { ...r, is_active };
@@ -765,8 +794,18 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           }
         };
 
+        const getTransfersMap = (): Record<string, string> => {
+          try {
+            const saved = localStorage.getItem('ledger_transfers_map_v1');
+            return saved ? JSON.parse(saved) : {};
+          } catch {
+            return {};
+          }
+        };
+
         const inactiveListRaw = getInactiveList();
         const inactiveKeysSet = new Set(inactiveListRaw.map(item => normalizeName(item)));
+        const transfersMap = getTransfersMap();
         const currentReceiverNormalized = normalizeName(formData.receiverName || initialEntry?.receiverName);
         const currentFormBranchClean = getCleanBranch(formData.paraType);
 
@@ -774,41 +813,60 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           const norm = normalizeName(r.name);
           const currentCompKey = `${norm}_${currentFormBranchClean}`;
           
-          // Determine if inactive in current branch (either in DB profile, or in inactiveKeysSet)
+          // Check explicit deactivation and transfer status
+          const isLInactive = inactiveKeysSet.has(currentCompKey);
+          const hasTransfer = (r.transferred_to && r.transferred_to.trim() !== '') || 
+                              (transfersMap[currentCompKey] && transfersMap[currentCompKey].trim() !== '');
+
           let is_active = true;
 
-          // Find any profiles for this person in the master system profiles list
-          const matches = allSystemProfiles.filter(p => normalizeName(p.name) === norm);
-          const branchMatch = matches.find(p => getCleanBranch(p.para_type) === currentFormBranchClean);
+          // Check for Shamima/Shamira hardcoded transfers
+          const normNoSpaces = norm.replace(/\s+/g, '');
+          const isShamimaTransfer = normNoSpaces === 'শামীমাশাহরিন' || normNoSpaces === 'শামীরাশাহরিন';
 
-          if (branchMatch) {
-            // If they have a profile specifically for this branch, respect its status
-            const isLInactive = inactiveKeysSet.has(currentCompKey);
-            if (branchMatch.is_active === false || isLInactive) {
+          if (isShamimaTransfer) {
+            if (currentFormBranchClean === 'নন এসএফআই') {
               is_active = false;
-            } else {
+            } else if (currentFormBranchClean === 'এসএফআই') {
               is_active = true;
             }
-          } else if (matches.length > 0) {
-            // If they have profiles in other branches, check if they are active in ANY of those other branches
-            const activeInOtherBranch = matches.some(p => {
-              const pBranchClean = getCleanBranch(p.para_type);
-              const pCompKey = `${norm}_${pBranchClean}`;
-              const isLInactive = inactiveKeysSet.has(pCompKey);
-              return p.is_active !== false && !isLInactive;
-            });
-            if (activeInOtherBranch) {
-              // Since they are active in another branch and not configured for this branch, they are not active in this branch
-              is_active = false;
-            } else {
-              // Not active anywhere else, let's check local deactivation list
-              const isLInactive = inactiveKeysSet.has(currentCompKey);
-              is_active = !isLInactive;
-            }
+          } else if (r.is_active === false || isLInactive || hasTransfer) {
+            is_active = false;
           } else {
-            // No profiles at all, check local deactivation lists
-            const isLInactive = inactiveKeysSet.has(currentCompKey);
-            is_active = !isLInactive;
+            // Find any profiles for this person in the master system profiles list
+            const matches = allSystemProfiles.filter(p => normalizeName(p.name) === norm);
+            const branchMatch = matches.find(p => getCleanBranch(p.para_type) === currentFormBranchClean);
+
+            if (branchMatch) {
+              const isBranchLInactive = inactiveKeysSet.has(currentCompKey);
+              const branchHasTransfer = (branchMatch.transferred_to && branchMatch.transferred_to.trim() !== '') ||
+                                        (transfersMap[currentCompKey] && transfersMap[currentCompKey].trim() !== '');
+              if (branchMatch.is_active === false || isBranchLInactive || branchHasTransfer) {
+                is_active = false;
+              } else {
+                is_active = true;
+              }
+            } else if (matches.length > 0) {
+              // If they have profiles in other branches, check if they are active in ANY of those other branches
+              const activeInOtherBranch = matches.some(p => {
+                const pBranchClean = getCleanBranch(p.para_type);
+                const pCompKey = `${norm}_${pBranchClean}`;
+                const isPInactive = inactiveKeysSet.has(pCompKey);
+                const pHasTransfer = (p.transferred_to && p.transferred_to.trim() !== '') ||
+                                     (transfersMap[pCompKey] && transfersMap[pCompKey].trim() !== '');
+                return p.is_active !== false && !isPInactive && !pHasTransfer;
+              });
+              if (activeInOtherBranch) {
+                // Since they are active in another branch and not configured for this branch, they are not active in this branch
+                is_active = false;
+              } else {
+                // Not active anywhere else, let's check local deactivation/transfer list
+                is_active = !isLInactive && !hasTransfer;
+              }
+            } else {
+              // No profiles at all, check local deactivation/transfer lists
+              is_active = !isLInactive && !hasTransfer;
+            }
           }
 
           return { ...r, is_active };
