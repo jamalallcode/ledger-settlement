@@ -145,7 +145,14 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   const [isPrevLedgerTable2Open, setIsPrevLedgerTable2Open] = React.useState(false);
 
   const [cutoffMonth, setCutoffMonth] = React.useState(() => {
-    return localStorage.getItem('opening_balance_cutoff_month') || '2025-06';
+    const saved = localStorage.getItem('opening_balance_cutoff_month');
+    if (saved) {
+      const [y, m] = saved.split('-').map(Number);
+      if (y > 2025 || (y === 2025 && m >= 12)) {
+        return saved;
+      }
+    }
+    return '2026-03';
   });
 
   const getMonthOptions = () => {
@@ -159,6 +166,9 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     for (let y = currentYear; y >= startYear; y--) {
       const maxM = (y === currentYear) ? currentMonth : 11;
       for (let m = maxM; m >= 0; m--) {
+        if (y < 2026 || (y === 2026 && m < 2)) {
+          continue;
+        }
         const val = `${y}-${String(m + 1).padStart(2, '0')}`;
         const lbl = `${monthNamesBN[m]}/${toBengaliDigits(y.toString())}`;
         options.push({ value: val, label: lbl });
