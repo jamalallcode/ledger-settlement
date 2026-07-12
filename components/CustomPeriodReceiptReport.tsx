@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Calendar, FileText, User, Printer, Search, RefreshCw, 
   ChevronLeft, LayoutGrid, Sparkles, FileSpreadsheet, ArrowRight,
@@ -45,6 +45,19 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     "বিমান ও পর্যটন মন্ত্রণালয়",
     "বাণিজ্য মন্ত্রণালয়"
   ], []);
+
+  // Sync effect to clear invalid letter type selections when switching branches
+  useEffect(() => {
+    if (filterBranch === 'এসএফআই') {
+      if (searchTerm === 'দ্বিপক্ষীয়' || searchTerm === 'কার্যপত্র (দ্বি-সভা)') {
+        setSearchTerm('সকল');
+      }
+    } else if (filterBranch === 'নন এসএফআই') {
+      if (searchTerm === 'ত্রিপক্ষীয়' || searchTerm === 'কার্যপত্র (ত্রি-সভা)') {
+        setSearchTerm('সকল');
+      }
+    }
+  }, [filterBranch, searchTerm]);
 
   // Refs for auto focus and calendar popups
   const startDayRef = useRef<HTMLInputElement>(null);
@@ -677,10 +690,18 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
               >
                 <option value="সকল">সকল চিঠি</option>
                 <option value="বিএসআর">বিএসআর (BSR)</option>
-                <option value="দ্বিপক্ষীয়">দ্বিপক্ষীয় সভা</option>
-                <option value="ত্রিপক্ষীয়">ত্রিপক্ষীয় সভা</option>
-                <option value="কার্যপত্র (দ্বি-সভা)">কার্যপত্র (দ্বি-সভা)</option>
-                <option value="কার্যপত্র (ত্রি-সভা)">কার্যপত্র (ত্রি-সভা)</option>
+                {filterBranch !== 'এসএফআই' && (
+                  <>
+                    <option value="দ্বিপক্ষীয়">দ্বিপক্ষীয় সভা</option>
+                    <option value="কার্যপত্র (দ্বি-সভা)">কার্যপত্র (দ্বি-সভা)</option>
+                  </>
+                )}
+                {filterBranch !== 'নন এসএফআই' && (
+                  <>
+                    <option value="ত্রিপক্ষীয়">ত্রিপক্ষীয় সভা</option>
+                    <option value="কার্যপত্র (ত্রি-সভা)">কার্যপত্র (ত্রি-সভা)</option>
+                  </>
+                )}
                 <option value="অন্যান্য">অন্যান্য</option>
               </select>
               <FileText className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
