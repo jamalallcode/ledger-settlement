@@ -447,6 +447,18 @@ const App: React.FC = () => {
           if (!localStorage.getItem('ledger_login_timestamp')) {
             localStorage.setItem('ledger_login_timestamp', Date.now().toString());
           }
+          // Sync existing previous ledgers to Supabase if any exist locally
+          let hasLocalLedgers = false;
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('qr2_') || key.startsWith('qr3_') || key.startsWith('qr4_') || key.startsWith('qr5_') || key.startsWith('qr6_'))) {
+              hasLocalLedgers = true;
+              break;
+            }
+          }
+          if (hasLocalLedgers) {
+            triggerPrevLedgersSync();
+          }
         } else {
           console.log("User is guest logged in based on email");
           setUserEmail(email);
@@ -463,6 +475,18 @@ const App: React.FC = () => {
           setIsAdmin(true);
           if (!localStorage.getItem('ledger_login_timestamp')) {
             localStorage.setItem('ledger_login_timestamp', Date.now().toString());
+          }
+          // Sync existing previous ledgers to Supabase if any exist locally
+          let hasLocalLedgers = false;
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('qr2_') || key.startsWith('qr3_') || key.startsWith('qr4_') || key.startsWith('qr5_') || key.startsWith('qr6_'))) {
+              hasLocalLedgers = true;
+              break;
+            }
+          }
+          if (hasLocalLedgers) {
+            triggerPrevLedgersSync();
           }
         } else {
           setIsAdmin(false);
