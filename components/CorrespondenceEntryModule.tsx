@@ -1433,6 +1433,21 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           return;
         }
       }
+
+      // Ministry mismatch validation
+      const descLower = desc.toLowerCase();
+      const hasBank = descLower.includes('ব্যাংক') || descLower.includes('bank');
+      const hasMillsOrJute = descLower.includes('মিল') || descLower.includes('মিলস') || descLower.includes('জুট') || descLower.includes('mill') || descLower.includes('mills') || descLower.includes('jute');
+
+      if (hasBank && formData.ministryName !== "আর্থিক প্রতিষ্ঠান বিভাগ") {
+        if (!window.confirm("আপনি কি সঠিক মন্ত্রণালয় সিলেক্ট করেছেন?")) {
+          return;
+        }
+      } else if (hasMillsOrJute && formData.ministryName !== "পাট মন্ত্রণালয়") {
+        if (!window.confirm("আপনি কি সঠিক মন্ত্রণালয় সিলেক্ট করেছেন?")) {
+          return;
+        }
+      }
     }
     
     // Defer heavy work to next tick to avoid blocking UI (INP fix)
