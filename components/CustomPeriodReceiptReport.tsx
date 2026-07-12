@@ -864,15 +864,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
             <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-inner">
               <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                 <colgroup>
-                  <col className="w-[4%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[10%]" />
-                  <col className="w-[27%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[10%]" />
+                  <col className="w-[3%]" />
                   <col className="w-[11%]" />
-                  <col className="w-[6%] no-print" />
+                  <col className="w-[11%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[24%]" />
+                  <col className="w-[7%]" />
+                  <col className="w-[9%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[10%] no-print" />
                 </colgroup>
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-700">
@@ -934,10 +934,10 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                               e.stopPropagation();
                               if (onEdit) onEdit(entry);
                             }}
-                            className="inline-flex items-center gap-1.5 px-2 py-1 bg-sky-50 text-sky-700 hover:bg-sky-100 hover:text-sky-800 rounded-lg transition-all duration-200 font-bold text-[10.5px] shadow-sm active:scale-95 border border-sky-100 cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-all duration-200 font-bold text-[10.5px] shadow-sm active:scale-95 border border-slate-200 cursor-pointer whitespace-nowrap"
                             title="এডিট করুন"
                           >
-                            <FileEdit size={12} className="text-sky-600" />
+                            <FileEdit size={12} className="text-blue-500 shrink-0" />
                             এডিট
                           </button>
                         </td>
