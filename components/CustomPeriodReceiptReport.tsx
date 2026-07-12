@@ -34,6 +34,16 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
   const [searchTerm, setSearchTerm] = useState('সকল');
   const [filterBranch, setFilterBranch] = useState('সকল');
   const [keywordSearch, setKeywordSearch] = useState('');
+  const [filterMinistry, setFilterMinistry] = useState('সকল');
+
+  const MINISTRIES = useMemo(() => [
+    "আর্থিক প্রতিষ্ঠান বিভাগ",
+    "পাট মন্ত্রণালয়",
+    "বস্ত্র মন্ত্রণালয়",
+    "শিল্প মন্ত্রণালয়",
+    "বিমান ও পর্যটন মন্ত্রণালয়",
+    "বাণিজ্য মন্ত্রণালয়"
+  ], []);
 
   // Refs for auto focus and calendar popups
   const startDayRef = useRef<HTMLInputElement>(null);
@@ -191,6 +201,13 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
         if (filterBranch === 'নন এসএফআই' && !isNonSFI(entry.paraType)) return false;
       }
 
+      // 2.5 Ministry Filter
+      if (filterMinistry !== 'সকল') {
+        const entryMin = (entry.ministryName || '').normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+        const filterMin = filterMinistry.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+        if (entryMin !== filterMin) return false;
+      }
+
       // 3. Dropdown Search / Filter by Letter Type
       if (searchTerm !== 'সকল') {
         const type = (entry.letterType || '').normalize('NFC').toLowerCase();
@@ -237,7 +254,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
       return true;
     });
-  }, [entries, startDate, endDate, filterBranch, searchTerm, keywordSearch]);
+  }, [entries, startDate, endDate, filterBranch, searchTerm, keywordSearch, filterMinistry]);
 
   // Calculate statistics for BSR, Bilateral meetings, and Working papers
   const stats = useMemo(() => {
@@ -407,7 +424,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           <h3 className="font-black text-slate-800 text-sm uppercase tracking-wide">রিপোর্ট ফিল্টারিং ও সময়কাল নির্বাচন</h3>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           {/* Start Date */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
@@ -580,6 +597,31 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
             </div>
           </div>
+
+          {/* Ministry Filter */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
+              মন্ত্রণালয় নির্বাচন
+            </label>
+            <div className="relative">
+              <select 
+                value={filterMinistry}
+                onChange={(e) => setFilterMinistry(e.target.value)}
+                className="w-full h-11 pl-9 pr-8 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-xs cursor-pointer appearance-none"
+              >
+                <option value="সকল">সকল মন্ত্রণালয়</option>
+                {MINISTRIES.map((min, idx) => (
+                  <option key={idx} value={min}>{min}</option>
+                ))}
+              </select>
+              <LayoutGrid className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -668,8 +710,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
               <h3 className="font-black text-slate-800 text-sm uppercase">প্রাপ্ত তথ্যের তালিকা ({toBengaliDigits(filteredEntries.length)} টি)</h3>
             </div>
             
-            <div className="text-[11px] font-black text-blue-700 bg-blue-50 px-3 py-1 rounded-lg">
-              সময়কাল: {formatDateBN(startDate)} হতে {formatDateBN(endDate)}
+            <div className="flex gap-2 items-center">
+              {filterMinistry !== 'সকল' && (
+                <div className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-3 py-1 rounded-lg">
+                  মন্ত্রণালয়: {filterMinistry}
+                </div>
+              )}
+              <div className="text-[11px] font-black text-blue-700 bg-blue-50 px-3 py-1 rounded-lg">
+                সময়কাল: {formatDateBN(startDate)} হতে {formatDateBN(endDate)}
+              </div>
             </div>
           </div>
 
