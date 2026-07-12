@@ -864,15 +864,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
             <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-inner">
               <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                 <colgroup>
-                  <col className="w-[6%]" />
+                  <col className="w-[8%]" />
                   <col className="w-[11%]" />
                   <col className="w-[11%]" />
                   <col className="w-[11%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[7%]" />
-                  <col className="w-[12%]" />
+                  <col className="w-[19%]" />
+                  <col className="w-[8%]" />
                   <col className="w-[11%]" />
-                  <col className="w-[17%] no-print" />
+                  <col className="w-[11%]" />
+                  <col className="w-[14%] no-print" />
                 </colgroup>
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-700">
