@@ -862,17 +862,17 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           {/* TABLE */}
           {filteredEntries.length > 0 ? (
             <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-inner">
-              <table id="custom-period-report-table" className="w-full min-w-[1200px] text-left border-collapse table-fixed">
+              <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                 <colgroup>
-                  <col className="w-[55px]" />
-                  <col className="w-[140px]" />
-                  <col className="w-[140px]" />
-                  <col className="w-[115px]" />
-                  <col className="w-[310px]" />
-                  <col className="w-[95px]" />
-                  <col className="w-[110px]" />
-                  <col className="w-[145px]" />
-                  <col className="w-[90px] no-print" />
+                  <col className="w-[4%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[27%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[6%] no-print" />
                 </colgroup>
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-700">
