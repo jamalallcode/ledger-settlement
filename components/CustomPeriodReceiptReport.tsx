@@ -9,6 +9,124 @@ import { isSFI, isNonSFI, getCleanLetterTypeDisplay } from '../utils/branchUtils
 import { format } from 'date-fns';
 import { MINISTRY_ENTITY_MAP } from '../constants';
 
+const STATIC_MINISTRIES = [
+  "আর্থিক প্রতিষ্ঠান বিভাগ",
+  "পাট মন্ত্রণালয়",
+  "বস্ত্র মন্ত্রণালয়",
+  "শিল্প মন্ত্রণালয়",
+  "বিমান ও পর্যটন মন্ত্রণালয়",
+  "বাণিজ্য মন্ত্রণালয়"
+];
+
+const normalizeForSearch = (str: string = '') => {
+  if (!str) return '';
+  let normalized = str.normalize('NFC').toLowerCase();
+  
+  // Remove zero-width characters and special diacritics
+  normalized = normalized.replace(/[\u200B-\u200D\uFEFF]/g, '');
+  
+  // Replace Bengali digits with English digits to search numbers easily
+  const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  for (let i = 0; i < 10; i++) {
+    normalized = normalized.replace(new RegExp(bengaliDigits[i], 'g'), englishDigits[i]);
+  }
+  
+  // Normalize common spelling variations/typos in Bengali
+  normalized = normalized.replace(/ী/g, 'ি'); // 'ী' (dirgho-i) -> 'ি' (hrosso-i)
+  normalized = normalized.replace(/ূ/g, 'ু'); // 'ূ' -> 'ু'
+  normalized = normalized.replace(/ণ/g, 'ন'); // 'ণ' -> 'ন'
+  normalized = normalized.replace(/য়/g, 'য'); // 'য়' -> 'য'
+  normalized = normalized.replace(/ষ/g, 'স'); // 'ষ' -> 'স'
+  normalized = normalized.replace(/শ/g, 'স'); // 'শ' -> 'স'
+  
+  return normalized.replace(/\s+/g, ' ').trim();
+};
+
+const getEntryMinistry = (ent: any): string => {
+  if (ent.ministryName) {
+    return ent.ministryName;
+  }
+  const desc = ent.description || '';
+  const descNorm = normalizeForSearch(desc);
+  if (!descNorm) return '';
+
+  // 1. Check exact or partial match with STATIC_MINISTRIES list using normalized strings
+  for (const mName of STATIC_MINISTRIES) {
+    const normM = normalizeForSearch(mName);
+    if (descNorm.includes(normM) || normM.includes(descNorm)) {
+      return mName;
+    }
+  }
+
+  // 2. Check entities map using normalized strings
+  for (const [mName, entities] of Object.entries(MINISTRY_ENTITY_MAP)) {
+    for (const entity of entities) {
+      const normE = normalizeForSearch(entity);
+      const cleanNormE = normE.replace(/(পিএলসি|লি\.|লিমিটেড|গ্রুপ|шаха|জোন|বিভাগ|কর্পোরেশন|সংস্থা|বোর্ড)/g, '').trim();
+      const cleanDesc = descNorm.replace(/(পিএলসি|লি\.|লিমিটেড|গ্রুপ|шаха|জোন|বিভাগ|কর্পোরেশন|সংস্থা|বোর্ড)/g, '').trim();
+      if (
+        descNorm.includes(normE) || 
+        normE.includes(descNorm) ||
+        (cleanNormE.length > 2 && cleanDesc.includes(cleanNormE)) ||
+        (cleanDesc.length > 2 && cleanNormE.includes(cleanDesc))
+      ) {
+        return mName;
+      }
+    }
+  }
+
+  // 3. Fallback keyword checks using normalized keywords
+  if (
+    descNorm.includes(normalizeForSearch('সোনালী')) ||
+    descNorm.includes(normalizeForSearch('জনতা')) ||
+    descNorm.includes(normalizeForSearch('অগ্রণী')) ||
+    descNorm.includes(normalizeForSearch('কৃষি')) ||
+    descNorm.includes(normalizeForSearch('রূপালী')) ||
+    descNorm.includes(normalizeForSearch('বাংলাদেশ ব্যাংক')) ||
+    descNorm.includes(normalizeForSearch('বীমা')) ||
+    descNorm.includes(normalizeForSearch('আর্থিক')) ||
+    descNorm.includes(normalizeForSearch('ব্যাংক')) ||
+    descNorm.includes(normalizeForSearch('বেসিক')) ||
+    descNorm.includes(normalizeForSearch('कर्मসংস্থান')) ||
+    descNorm.includes(normalizeForSearch('আইসিবি')) ||
+    descNorm.includes(normalizeForSearch('ইনভেস্টমেন্ট'))
+  ) {
+    return 'আর্থিক প্রতিষ্ঠান বিভাগ';
+  }
+  if (descNorm.includes(normalizeForSearch('পাট')) || descNorm.includes(normalizeForSearch('পাটকল'))) {
+    return 'পাট মন্ত্রণালয়';
+  }
+  if (descNorm.includes(normalizeForSearch('বস্ত্র')) || descNorm.includes(normalizeForSearch('রেশম'))) {
+    return 'বস্ত্র মন্ত্রণালয়';
+  }
+  if (
+    descNorm.includes(normalizeForSearch('শিল্প')) ||
+    descNorm.includes(normalizeForSearch('চিনি')) ||
+    descNorm.includes(normalizeForSearch('বিটাক')) ||
+    descNorm.includes(normalizeForSearch('রসায়ন')) ||
+    descNorm.includes(normalizeForSearch('কুটির'))
+  ) {
+    return 'শিল্প মন্ত্রণালয়';
+  }
+  if (
+    descNorm.includes(normalizeForSearch('বিমান')) ||
+    descNorm.includes(normalizeForSearch('পর্যটন')) ||
+    descNorm.includes(normalizeForSearch('বেসামরিক'))
+  ) {
+    return 'বিমান ও পর্যটন মন্ত্রণালয়';
+  }
+  if (
+    descNorm.includes(normalizeForSearch('বাণিজ্য')) ||
+    descNorm.includes(normalizeForSearch('টিসিবি')) ||
+    descNorm.includes(normalizeForSearch('আমদানি')) ||
+    descNorm.includes(normalizeForSearch('রপ্তানি'))
+  ) {
+    return 'বাণিজ্য মন্ত্রণালয়';
+  }
+  return '';
+};
+
 interface CustomPeriodReceiptReportProps {
   entries: any[]; // These are approved correspondenceEntries passed from ReturnView
   onBack: () => void;
@@ -37,14 +155,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
   const [keywordSearch, setKeywordSearch] = useState('');
   const [filterMinistry, setFilterMinistry] = useState('সকল');
 
-  const MINISTRIES = useMemo(() => [
-    "আর্থিক প্রতিষ্ঠান বিভাগ",
-    "পাট মন্ত্রণালয়",
-    "বস্ত্র মন্ত্রণালয়",
-    "শিল্প মন্ত্রণালয়",
-    "বিমান ও পর্যটন মন্ত্রণালয়",
-    "বাণিজ্য মন্ত্রণালয়"
-  ], []);
+  const MINISTRIES = STATIC_MINISTRIES;
 
   // Sync effect to clear invalid letter type selections when switching branches
   useEffect(() => {
@@ -175,116 +286,6 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
   // Filter entries based on selected dates and other controls
   const filteredEntries = useMemo(() => {
-    // Robust normalization for Bengali and English string matching
-    const normalizeForSearch = (str: string = '') => {
-      if (!str) return '';
-      let normalized = str.normalize('NFC').toLowerCase();
-      
-      // Remove zero-width characters and special diacritics
-      normalized = normalized.replace(/[\u200B-\u200D\uFEFF]/g, '');
-      
-      // Replace Bengali digits with English digits to search numbers easily
-      const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-      const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-      for (let i = 0; i < 10; i++) {
-        normalized = normalized.replace(new RegExp(bengaliDigits[i], 'g'), englishDigits[i]);
-      }
-      
-      // Normalize common spelling variations/typos in Bengali
-      normalized = normalized.replace(/ী/g, 'ি'); // 'ী' (dirgho-i) -> 'ি' (hrosso-i)
-      normalized = normalized.replace(/ূ/g, 'ু'); // 'ূ' -> 'ু'
-      normalized = normalized.replace(/ণ/g, 'ন'); // 'ণ' -> 'ন'
-      normalized = normalized.replace(/য়/g, 'য'); // 'য়' -> 'য'
-      normalized = normalized.replace(/ষ/g, 'স'); // 'ষ' -> 'স'
-      normalized = normalized.replace(/শ/g, 'স'); // 'শ' -> 'স'
-      
-      return normalized.replace(/\s+/g, ' ').trim();
-    };
-
-    const getEntryMinistry = (ent: any): string => {
-      if (ent.ministryName) {
-        return ent.ministryName;
-      }
-      const desc = ent.description || '';
-      const descNorm = normalizeForSearch(desc);
-      if (!descNorm) return '';
-
-      // 1. Check exact or partial match with MINISTRIES list using normalized strings
-      for (const mName of MINISTRIES) {
-        const normM = normalizeForSearch(mName);
-        if (descNorm.includes(normM) || normM.includes(descNorm)) {
-          return mName;
-        }
-      }
-
-      // 2. Check entities map using normalized strings
-      for (const [mName, entities] of Object.entries(MINISTRY_ENTITY_MAP)) {
-        for (const entity of entities) {
-          const normE = normalizeForSearch(entity);
-          const cleanNormE = normE.replace(/(পিএলসি|লি\.|লিমিটেড|গ্রুপ|শাখা|জোন|বিভাগ|কর্পোরেশন|সংস্থা|বোর্ড)/g, '').trim();
-          const cleanDesc = descNorm.replace(/(পিএলসি|লি\.|লিমিটেড|গ্রুপ|শাখা|জোন|বিভাগ|কর্পোরেশন|সংস্থা|বোর্ড)/g, '').trim();
-          if (
-            descNorm.includes(normE) || 
-            normE.includes(descNorm) ||
-            (cleanNormE.length > 2 && cleanDesc.includes(cleanNormE)) ||
-            (cleanDesc.length > 2 && cleanNormE.includes(cleanDesc))
-          ) {
-            return mName;
-          }
-        }
-      }
-
-      // 3. Fallback keyword checks using normalized keywords
-      if (
-        descNorm.includes(normalizeForSearch('সোনালী')) ||
-        descNorm.includes(normalizeForSearch('জনতা')) ||
-        descNorm.includes(normalizeForSearch('অগ্রণী')) ||
-        descNorm.includes(normalizeForSearch('কৃষি')) ||
-        descNorm.includes(normalizeForSearch('রূপালী')) ||
-        descNorm.includes(normalizeForSearch('বাংলাদেশ ব্যাংক')) ||
-        descNorm.includes(normalizeForSearch('বীমা')) ||
-        descNorm.includes(normalizeForSearch('আর্থিক')) ||
-        descNorm.includes(normalizeForSearch('ব্যাংক')) ||
-        descNorm.includes(normalizeForSearch('বেসিক')) ||
-        descNorm.includes(normalizeForSearch('কর্মসংস্থান')) ||
-        descNorm.includes(normalizeForSearch('আইসিবি')) ||
-        descNorm.includes(normalizeForSearch('ইনভেস্টমেন্ট'))
-      ) {
-        return 'আর্থিক প্রতিষ্ঠান বিভাগ';
-      }
-      if (descNorm.includes(normalizeForSearch('পাট')) || descNorm.includes(normalizeForSearch('পাটকল'))) {
-        return 'পাট মন্ত্রণালয়';
-      }
-      if (descNorm.includes(normalizeForSearch('বস্ত্র')) || descNorm.includes(normalizeForSearch('রেশম'))) {
-        return 'বস্ত্র মন্ত্রণালয়';
-      }
-      if (
-        descNorm.includes(normalizeForSearch('শিল্প')) ||
-        descNorm.includes(normalizeForSearch('চিনি')) ||
-        descNorm.includes(normalizeForSearch('বিটাক')) ||
-        descNorm.includes(normalizeForSearch('রসায়ন')) ||
-        descNorm.includes(normalizeForSearch('কুটির'))
-      ) {
-        return 'শিল্প মন্ত্রণালয়';
-      }
-      if (
-        descNorm.includes(normalizeForSearch('বিমান')) ||
-        descNorm.includes(normalizeForSearch('পর্যটন')) ||
-        descNorm.includes(normalizeForSearch('বেসামরিক'))
-      ) {
-        return 'বিমান ও পর্যটন মন্ত্রণালয়';
-      }
-      if (
-        descNorm.includes(normalizeForSearch('বাণিজ্য')) ||
-        descNorm.includes(normalizeForSearch('টিসিবি')) ||
-        descNorm.includes(normalizeForSearch('আমদানি')) ||
-        descNorm.includes(normalizeForSearch('রপ্তানি'))
-      ) {
-        return 'বাণিজ্য মন্ত্রণালয়';
-      }
-      return '';
-    };
-
     return entries.filter(entry => {
       // 1. Date Range Filter strictly using diaryDate (diary date) as requested by user
       const entryDate = entry.diaryDate || '';
@@ -861,12 +862,13 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-700">
                     <th className="px-4 py-3 text-center text-xs font-black w-[60px] border-r border-slate-200">ক্র: নং</th>
-                    <th className="px-4 py-3 text-center text-xs font-black w-[100px] border-r border-slate-200">প্রাপ্তির তারিখ</th>
+                    <th className="px-4 py-3 text-left text-xs font-black w-[150px] border-r border-slate-200">পত্র নং ও তারিখ</th>
                     <th className="px-4 py-3 text-left text-xs font-black w-[150px] border-r border-slate-200">ডায়রি নং ও তারিখ</th>
                     <th className="px-4 py-3 text-left text-xs font-black w-[120px] border-r border-slate-200">শাখা ও পত্রের ধরন</th>
                     <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">বিষয় / বিবরণ</th>
                     <th className="px-4 py-3 text-center text-xs font-black w-[100px] border-r border-slate-200">অনুচ্ছেদ সংখ্যা</th>
-                    <th className="px-4 py-3 text-right text-xs font-black w-[130px]">জড়িত টাকা (টাকা)</th>
+                    <th className="px-4 py-3 text-right text-xs font-black w-[130px] border-r border-slate-200">জড়িত টাকা (টাকা)</th>
+                    <th className="px-4 py-3 text-left text-xs font-black w-[150px]">মন্ত্রণালয়</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -876,8 +878,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                         <td className="px-4 py-3 text-center text-[11px] font-black text-slate-800 border-r border-slate-200">
                           {toBengaliDigits(index + 1)}
                         </td>
-                        <td className="px-4 py-3 text-center text-[11px] font-bold text-slate-600 border-r border-slate-200">
-                          {formatDateBN(entry.diaryDate || entry.letterDate)}
+                        <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
+                          <div className="flex flex-col">
+                            <span className="font-black text-slate-900">পত্র নং: {entry.letterNo ? toBengaliDigits(entry.letterNo) : '-'}</span>
+                            <span className="text-[10px] text-slate-500">তারিখ: {formatDateBN(entry.letterDate)}</span>
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
                           <div className="flex flex-col">
@@ -901,8 +906,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                         <td className="px-4 py-3 text-center text-[11px] font-black text-slate-700 border-r border-slate-200">
                           {toBengaliDigits(entry.totalParas || '০')} টি
                         </td>
-                        <td className="px-4 py-3 text-right text-[11.5px] font-black text-slate-900">
+                        <td className="px-4 py-3 text-right text-[11.5px] font-black text-slate-900 border-r border-slate-200">
                           {toBengaliDigits(entry.totalAmount || '০')}
+                        </td>
+                        <td className="px-4 py-3 text-left text-[11px] font-semibold text-slate-800">
+                          {getEntryMinistry(entry) || '-'}
                         </td>
                       </tr>
                     );
