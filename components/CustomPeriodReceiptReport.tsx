@@ -192,22 +192,27 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       if (ent.ministryName) {
         return ent.ministryName;
       }
-      const desc = (ent.description || '').normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
-      if (!desc) return '';
+      const desc = ent.description || '';
+      const descNorm = normalizeForSearch(desc);
+      if (!descNorm) return '';
+
+      // 1. Check exact or partial match with MINISTRIES list using normalized strings
       for (const mName of MINISTRIES) {
-        const normM = mName.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
-        if (desc.includes(normM) || normM.includes(desc)) {
+        const normM = normalizeForSearch(mName);
+        if (descNorm.includes(normM) || normM.includes(descNorm)) {
           return mName;
         }
       }
+
+      // 2. Check entities map using normalized strings
       for (const [mName, entities] of Object.entries(MINISTRY_ENTITY_MAP)) {
         for (const entity of entities) {
-          const normE = entity.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
-          const cleanNormE = normE.replace(/(পিএলসি|লি\.|লিমিটেড|গ্রুপ|শাখা|জোন|বিভাগ)/g, '').trim();
-          const cleanDesc = desc.replace(/(পিএলসি|লি\.|লিমিটেড|গ্রুপ|শাখা|জোন|বিভাগ)/g, '').trim();
+          const normE = normalizeForSearch(entity);
+          const cleanNormE = normE.replace(/(পিএলসি|লি\.|লিমিটেড|গ্রুপ|শাখা|জোন|বিভাগ|কর্পোরেশন|সংস্থা|বোর্ড)/g, '').trim();
+          const cleanDesc = descNorm.replace(/(পিএলসি|লি\.|লিমিটেড|গ্রুপ|শাখা|জোন|বিভাগ|কর্পোরেশন|সংস্থা|বোর্ড)/g, '').trim();
           if (
-            desc.includes(normE) || 
-            normE.includes(desc) ||
+            descNorm.includes(normE) || 
+            normE.includes(descNorm) ||
             (cleanNormE.length > 2 && cleanDesc.includes(cleanNormE)) ||
             (cleanDesc.length > 2 && cleanNormE.includes(cleanDesc))
           ) {
@@ -215,23 +220,53 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           }
         }
       }
-      const descLower = desc.toLowerCase();
-      if (descLower.includes('সোনালী') || descLower.includes('জনতা') || descLower.includes('অগ্রণী') || descLower.includes('কৃষি') || descLower.includes('রূপালী') || descLower.includes('বাংলাদেশ ব্যাংক') || descLower.includes('বীমা') || descLower.includes('আর্থিক') || descLower.includes('ব্যাংক') || descLower.includes('বেসিক') || descLower.includes('কর্মসংস্থান') || descLower.includes('আইসিবি') || descLower.includes('ইনভেস্টমেন্ট')) {
+
+      // 3. Fallback keyword checks using normalized keywords
+      if (
+        descNorm.includes(normalizeForSearch('সোনালী')) ||
+        descNorm.includes(normalizeForSearch('জনতা')) ||
+        descNorm.includes(normalizeForSearch('অগ্রণী')) ||
+        descNorm.includes(normalizeForSearch('কৃষি')) ||
+        descNorm.includes(normalizeForSearch('রূপালী')) ||
+        descNorm.includes(normalizeForSearch('বাংলাদেশ ব্যাংক')) ||
+        descNorm.includes(normalizeForSearch('বীমা')) ||
+        descNorm.includes(normalizeForSearch('আর্থিক')) ||
+        descNorm.includes(normalizeForSearch('ব্যাংক')) ||
+        descNorm.includes(normalizeForSearch('বেসিক')) ||
+        descNorm.includes(normalizeForSearch('কর্মসংস্থান')) ||
+        descNorm.includes(normalizeForSearch('আইসিবি')) ||
+        descNorm.includes(normalizeForSearch('ইনভেস্টমেন্ট'))
+      ) {
         return 'আর্থিক প্রতিষ্ঠান বিভাগ';
       }
-      if (descLower.includes('পাট') || descLower.includes('পাটকল')) {
+      if (descNorm.includes(normalizeForSearch('পাট')) || descNorm.includes(normalizeForSearch('পাটকল'))) {
         return 'পাট মন্ত্রণালয়';
       }
-      if (descLower.includes('বস্ত্র') || descLower.includes('রেশম')) {
+      if (descNorm.includes(normalizeForSearch('বস্ত্র')) || descNorm.includes(normalizeForSearch('রেশম'))) {
         return 'বস্ত্র মন্ত্রণালয়';
       }
-      if (descLower.includes('শিল্প') || descLower.includes('চিনি') || descLower.includes('বিটাক') || descLower.includes('রসায়ন') || descLower.includes('কুটির')) {
+      if (
+        descNorm.includes(normalizeForSearch('শিল্প')) ||
+        descNorm.includes(normalizeForSearch('চিনি')) ||
+        descNorm.includes(normalizeForSearch('বিটাক')) ||
+        descNorm.includes(normalizeForSearch('রসায়ন')) ||
+        descNorm.includes(normalizeForSearch('কুটির'))
+      ) {
         return 'শিল্প মন্ত্রণালয়';
       }
-      if (descLower.includes('বিমান') || descLower.includes('পর্যটন') || descLower.includes('বেসামরিক')) {
+      if (
+        descNorm.includes(normalizeForSearch('বিমান')) ||
+        descNorm.includes(normalizeForSearch('পর্যটন')) ||
+        descNorm.includes(normalizeForSearch('বেসামরিক'))
+      ) {
         return 'বিমান ও পর্যটন মন্ত্রণালয়';
       }
-      if (descLower.includes('বাণিজ্য') || descLower.includes('টিসিবি') || descLower.includes('আমদানি') || descLower.includes('রপ্তানি')) {
+      if (
+        descNorm.includes(normalizeForSearch('বাণিজ্য')) ||
+        descNorm.includes(normalizeForSearch('টিসিবি')) ||
+        descNorm.includes(normalizeForSearch('আমদানি')) ||
+        descNorm.includes(normalizeForSearch('রপ্তানি'))
+      ) {
         return 'বাণিজ্য মন্ত্রণালয়';
       }
       return '';
