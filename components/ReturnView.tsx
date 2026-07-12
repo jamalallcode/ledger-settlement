@@ -50,6 +50,7 @@ interface ReturnViewProps {
   activeTab?: string;
   periodOpeningBalances: any[];
   setPeriodOpeningBalances: (balances: any[]) => void;
+  onEdit?: (entry: any) => void;
 }
 
 const ReturnView: React.FC<ReturnViewProps> = ({ 
@@ -58,7 +59,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   selectedReportType, setSelectedReportType,
   showFilters, setShowFilters,
   activeTab,
-  periodOpeningBalances, setPeriodOpeningBalances
+  periodOpeningBalances, setPeriodOpeningBalances,
+  onEdit
 }) => {
   const [isSetupMode, setIsSetupMode] = useState(false);
   const [isEditingSetup, setIsEditingSetup] = useState(false);
@@ -1141,7 +1143,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   let renderedContent;
 
   if (selectedReportType === 'চাহিদা মোতাবেক প্রাপ্তি রিপোর্ট') {
-    renderedContent = <CustomPeriodReceiptReport entries={correspondenceEntries || []} onBack={() => setSelectedReportType(null)} IDBadge={IDBadge} />;
+    renderedContent = <CustomPeriodReceiptReport entries={correspondenceEntries || []} onBack={() => setSelectedReportType(null)} IDBadge={IDBadge} onEdit={onEdit} isAdmin={isAdmin} />;
   } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
     renderedContent = <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
   } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {

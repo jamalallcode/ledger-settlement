@@ -131,12 +131,16 @@ interface CustomPeriodReceiptReportProps {
   entries: any[]; // These are approved correspondenceEntries passed from ReturnView
   onBack: () => void;
   IDBadge: React.FC<{ id: string }>;
+  onEdit?: (entry: any) => void;
+  isAdmin?: boolean;
 }
 
 export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps> = ({
   entries = [],
   onBack,
-  IDBadge
+  IDBadge,
+  onEdit,
+  isAdmin
 }) => {
   const [startDate, setStartDate] = useState('2025-07-01');
   const [endDate, setEndDate] = useState('2026-06-30');
@@ -868,7 +872,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">বিষয় / বিবরণ</th>
                     <th className="px-4 py-3 text-center text-xs font-black w-[100px] border-r border-slate-200">অনুচ্ছেদ সংখ্যা</th>
                     <th className="px-4 py-3 text-right text-xs font-black w-[130px] border-r border-slate-200">জড়িত টাকা (টাকা)</th>
-                    <th className="px-4 py-3 text-left text-xs font-black w-[150px]">মন্ত্রণালয়</th>
+                    <th className="px-4 py-3 text-left text-xs font-black w-[150px] border-r border-slate-200">মন্ত্রণালয়</th>
+                    <th className="px-4 py-3 text-center text-xs font-black w-[100px] no-print">অ্যাকশন</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -909,8 +914,21 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                         <td className="px-4 py-3 text-right text-[11.5px] font-black text-slate-900 border-r border-slate-200">
                           {toBengaliDigits(entry.totalAmount || '০')}
                         </td>
-                        <td className="px-4 py-3 text-left text-[11px] font-semibold text-slate-800">
+                        <td className="px-4 py-3 text-left text-[11px] font-semibold text-slate-800 border-r border-slate-200">
                           {getEntryMinistry(entry) || '-'}
+                        </td>
+                        <td className="px-4 py-3 text-center text-[11px] no-print">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onEdit) onEdit(entry);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-2 py-1 bg-sky-50 text-sky-700 hover:bg-sky-100 hover:text-sky-800 rounded-lg transition-all duration-200 font-bold text-[10.5px] shadow-sm active:scale-95 border border-sky-100 cursor-pointer"
+                            title="এডিট করুন"
+                          >
+                            <FileEdit size={12} className="text-sky-600" />
+                            এডিট
+                          </button>
                         </td>
                       </tr>
                     );

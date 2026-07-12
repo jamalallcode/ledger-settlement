@@ -1431,6 +1431,7 @@ const App: React.FC = () => {
                   activeTab={activeTab}
                   periodOpeningBalances={[]}
                   setPeriodOpeningBalances={() => {}}
+                  onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }}
                 />
               )}
               
