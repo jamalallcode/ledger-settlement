@@ -177,6 +177,71 @@ const App: React.FC = () => {
 
   const mainScrollRef = useRef<HTMLElement>(null);
 
+  const isSyncPausedRef = useRef(false);
+  const syncTimeoutRef = useRef<any>(null);
+
+  const triggerPrevLedgersSync = () => {
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+    syncTimeoutRef.current = setTimeout(async () => {
+      if (!isSupabaseConfigured || !navigator.onLine) return;
+      
+      const ledgers: Record<string, string> = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('qr2_') || key.startsWith('qr3_') || key.startsWith('qr4_') || key.startsWith('qr5_') || key.startsWith('qr6_'))) {
+          const val = localStorage.getItem(key);
+          if (val) ledgers[key] = val;
+        }
+      }
+      const cutoffMonth = localStorage.getItem('opening_balance_cutoff_month') || '';
+
+      try {
+        await supabase.from('settlement_entries').upsert({
+          id: 'system_metadata_prev_ledgers',
+          content: {
+            opening_balance_cutoff_month: cutoffMonth,
+            ledgers
+          }
+        });
+      } catch (err) {
+        console.error("Error syncing previous ledgers to Supabase:", err);
+      }
+    }, 1000);
+  };
+
+  useEffect(() => {
+    const originalSetItem = localStorage.setItem;
+    const originalRemoveItem = localStorage.removeItem;
+
+    (localStorage as any).setItem = function(key: string, value: string) {
+      originalSetItem.apply(this, [key, value]);
+      if (!isSyncPausedRef.current) {
+        if (key === 'opening_balance_cutoff_month' || key.startsWith('qr2_') || key.startsWith('qr3_') || key.startsWith('qr4_') || key.startsWith('qr5_') || key.startsWith('qr6_')) {
+          triggerPrevLedgersSync();
+        }
+      }
+    };
+
+    (localStorage as any).removeItem = function(key: string) {
+      originalRemoveItem.apply(this, [key]);
+      if (!isSyncPausedRef.current) {
+        if (key === 'opening_balance_cutoff_month' || key.startsWith('qr2_') || key.startsWith('qr3_') || key.startsWith('qr4_') || key.startsWith('qr5_') || key.startsWith('qr6_')) {
+          triggerPrevLedgersSync();
+        }
+      }
+    };
+
+    return () => {
+      (localStorage as any).setItem = originalSetItem;
+      (localStorage as any).removeItem = originalRemoveItem;
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const [navHistory, setNavHistory] = useState<any[]>([]);
 
   const pushHistory = (customPrevState?: any) => {
@@ -572,6 +637,17 @@ const App: React.FC = () => {
                 setAllPrevStats(migrated);
                 localStorage.setItem(PREV_STATS_KEY, JSON.stringify(migrated));
               }
+            } else if (row.id === 'system_metadata_prev_ledgers') {
+              isSyncPausedRef.current = true;
+              if (content.opening_balance_cutoff_month) {
+                localStorage.setItem('opening_balance_cutoff_month', content.opening_balance_cutoff_month);
+              }
+              if (content.ledgers) {
+                Object.entries(content.ledgers).forEach(([k, v]) => {
+                  localStorage.setItem(k, v as string);
+                });
+              }
+              isSyncPausedRef.current = false;
             } else if (!row.id.startsWith('doc_')) {
               // Distinguish between entry types - robust check
               const isCorrespondence = content.type === 'correspondence' || (content.description !== undefined && content.description !== null);
@@ -935,6 +1011,16 @@ const App: React.FC = () => {
 
   const handleExportDatabase = () => {
     try {
+      const ledgers: Record<string, string> = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('qr2_') || key.startsWith('qr3_') || key.startsWith('qr4_') || key.startsWith('qr5_') || key.startsWith('qr6_'))) {
+          const val = localStorage.getItem(key);
+          if (val) ledgers[key] = val;
+        }
+      }
+      const cutoffMonth = localStorage.getItem('opening_balance_cutoff_month') || '';
+
       const exportData = {
         exportedAt: new Date().toISOString(),
         version: "1.0.0",
@@ -942,6 +1028,10 @@ const App: React.FC = () => {
         correspondenceEntries: correspondenceEntries,
         allPrevStats: allPrevStats,
         moduleVisibility: moduleVisibility,
+        prevLedgers: {
+          opening_balance_cutoff_month: cutoffMonth,
+          ledgers
+        }
       };
 
       const jsonString = JSON.stringify(exportData, null, 2);
@@ -975,6 +1065,7 @@ const App: React.FC = () => {
       const importedCorrespondence = Array.isArray(importData.correspondenceEntries) ? importData.correspondenceEntries : [];
       const importedPrevStats = importData.allPrevStats;
       const importedVisibility = importData.moduleVisibility;
+      const importedPrevLedgers = importData.prevLedgers;
 
       if (importedSettlements.length === 0 && importedCorrespondence.length === 0) {
         if (!window.confirm("ইমপোর্ট করা ফাইলে কোনো এন্ট্রি পাওয়া যায়নি। আপনি কি তবুও শূন্য ডাটাবেস দিয়ে বর্তমান ডাটা প্রতিস্থাপন করতে চান?")) {
@@ -992,6 +1083,18 @@ const App: React.FC = () => {
       if (importedPrevStats) {
         setAllPrevStats(importedPrevStats);
         localStorage.setItem(PREV_STATS_KEY, JSON.stringify(importedPrevStats));
+      }
+      if (importedPrevLedgers) {
+        isSyncPausedRef.current = true;
+        if (importedPrevLedgers.opening_balance_cutoff_month) {
+          localStorage.setItem('opening_balance_cutoff_month', importedPrevLedgers.opening_balance_cutoff_month);
+        }
+        if (importedPrevLedgers.ledgers) {
+          Object.entries(importedPrevLedgers.ledgers).forEach(([k, v]) => {
+            localStorage.setItem(k, v as string);
+          });
+        }
+        isSyncPausedRef.current = false;
       }
       if (importedVisibility) {
         setModuleVisibility(importedVisibility);
@@ -1014,6 +1117,9 @@ const App: React.FC = () => {
         });
         if (importedPrevStats) {
           allSystemRows.push({ id: 'system_metadata_prev_stats', content: importedPrevStats });
+        }
+        if (importedPrevLedgers) {
+          allSystemRows.push({ id: 'system_metadata_prev_ledgers', content: importedPrevLedgers });
         }
 
         // Upload in background chunk by chunk to prevent overload
