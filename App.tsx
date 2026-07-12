@@ -729,7 +729,7 @@ const App: React.FC = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [userEmail, isAdmin]);
 
   // Sync state changes back to local storage cache immediately when data has loaded
   useEffect(() => {
