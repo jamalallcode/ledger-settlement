@@ -296,25 +296,39 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
       // 3. Dropdown Search / Filter by Letter Type
       if (searchTerm !== 'সকল') {
-        const type = (entry.letterType || '').normalize('NFC').toLowerCase();
+        const typeNorm = normalizeForSearch(entry.letterType || '');
 
         if (searchTerm === 'বিএসআর') {
-          if (!type.includes('বিএসআর') && !type.includes('bsr')) return false;
+          if (!typeNorm.includes(normalizeForSearch('বিএসআর')) && !typeNorm.includes('bsr')) return false;
         } else if (searchTerm === 'দ্বিপক্ষীয়') {
-          if (!type.includes('দ্বিপক্ষীয়') && !type.includes('দ্বিপাক্ষী') && !type.includes('bilateral')) return false;
+          if (
+            !typeNorm.includes(normalizeForSearch('দ্বিপক্ষীয়')) && 
+            !typeNorm.includes(normalizeForSearch('দ্বিপাক্ষী')) && 
+            !typeNorm.includes('bilateral')
+          ) return false;
         } else if (searchTerm === 'ত্রিপক্ষীয়') {
-          if (!type.includes('ত্রিপক্ষীয়') && !type.includes('ত্রিপাক্ষী') && !type.includes('trilateral')) return false;
+          if (
+            !typeNorm.includes(normalizeForSearch('ত্রিপক্ষীয়')) && 
+            !typeNorm.includes(normalizeForSearch('ত্রিপাক্ষী')) && 
+            !typeNorm.includes('trilateral')
+          ) return false;
         } else if (searchTerm === 'কার্যপত্র (দ্বি-সভা)') {
-          if (type !== 'কার্যপত্র (দ্বি-সভা)' && !type.includes('দ্বিপক্ষীয় সভা (কার্যপত্র)')) return false;
+          if (
+            typeNorm !== normalizeForSearch('কার্যপত্র (দ্বি-সভা)') && 
+            !typeNorm.includes(normalizeForSearch('দ্বিপক্ষীয় সভা (কার্যপত্র)'))
+          ) return false;
         } else if (searchTerm === 'কার্যপত্র (ত্রি-সভা)') {
-          if (type !== 'কার্যপত্র (ত্রি-সভা)' && !type.includes('ত্রিপক্ষীয় সভা (কার্যপত্র)')) return false;
+          if (
+            typeNorm !== normalizeForSearch('কার্যপত্র (ত্রি-সভা)') && 
+            !typeNorm.includes(normalizeForSearch('ত্রিপক্ষীয় সভা (কার্যপত্র)'))
+          ) return false;
         } else if (searchTerm === 'অন্যান্য') {
           const isMain = 
-            type.includes('বিএসআর') || type.includes('bsr') ||
-            type.includes('দ্বিপক্ষীয়') || type.includes('দ্বিপাক্ষী') || type.includes('bilateral') ||
-            type.includes('ত্রিপক্ষীয়') || type.includes('ত্রিপাক্ষী') || type.includes('trilateral') ||
-            type.includes('কার্যপত্র') || type.includes('কাযপত্র') || type.includes('working') ||
-            type.includes('মিলিকরণ') || type.includes('মিলকরণ') || type.includes('মিলিকরন') || type.includes('reconciliation');
+            typeNorm.includes(normalizeForSearch('বিএসআর')) || typeNorm.includes('bsr') ||
+            typeNorm.includes(normalizeForSearch('দ্বিপক্ষীয়')) || typeNorm.includes(normalizeForSearch('দ্বিপাক্ষী')) || typeNorm.includes('bilateral') ||
+            typeNorm.includes(normalizeForSearch('ত্রিপক্ষীয়')) || typeNorm.includes(normalizeForSearch('ত্রিপাক্ষী')) || typeNorm.includes('trilateral') ||
+            typeNorm.includes(normalizeForSearch('কার্যপত্র')) || typeNorm.includes(normalizeForSearch('কাযপত্র')) || typeNorm.includes('working') ||
+            typeNorm.includes(normalizeForSearch('মিলিকরণ')) || typeNorm.includes(normalizeForSearch('মিলকরণ')) || typeNorm.includes(normalizeForSearch('মিলিকরন')) || typeNorm.includes('reconciliation');
           if (isMain) return false;
         }
       }
@@ -348,21 +362,32 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     let bilateralCount = 0;
     let workingPaperCount = 0;
 
+    const robustNormalize = (str: string = '') => {
+      if (!str) return '';
+      let normalized = str.normalize('NFC').toLowerCase().replace(/[\u200B-\u200D\uFEFF]/g, '');
+      normalized = normalized.replace(/ী/g, 'ি');
+      normalized = normalized.replace(/য়/g, 'য');
+      normalized = normalized.replace(/ণ/g, 'ন');
+      normalized = normalized.replace(/ষ/g, 's');
+      normalized = normalized.replace(/শ/g, 's');
+      return normalized.replace(/\s+/g, ' ').trim();
+    };
+
     filteredEntries.forEach(entry => {
-      const type = entry.letterType || '';
+      const type = robustNormalize(entry.letterType || '');
       
       // BSR count (বিএসআর)
-      if (type === 'বিএসআর' || type.includes('বিএসআর')) {
+      if (type.includes(robustNormalize('বিএসআর')) || type.includes('bsr')) {
         bsrCount++;
       }
       
       // Bilateral count (দ্বিপক্ষীয় সভা)
-      if (type.includes('দ্বিপক্ষীয়')) {
+      if (type.includes(robustNormalize('দ্বিপক্ষীয়')) || type.includes(robustNormalize('দ্বিপাক্ষী')) || type.includes('bilateral')) {
         bilateralCount++;
       }
 
       // Working papers count (কার্যপত্র)
-      if (type.includes('কার্যপত্র')) {
+      if (type.includes(robustNormalize('কার্যপত্র')) || type.includes(robustNormalize('কাযপত্র')) || type.includes('working')) {
         workingPaperCount++;
       }
     });
