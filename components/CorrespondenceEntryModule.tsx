@@ -1419,22 +1419,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       return;
     }
 
-    // Audit Year validation
+    // Audit Year and Ministry mismatch validations
     const desc = (formData.description || '').trim();
     if (desc) {
-      const yearRegex = /[0-9]{4}|[০-৯]{4}/;
-      if (!yearRegex.test(desc)) {
-        if (!hasWarnedAuditYear) {
-          setShowAuditYearWarning(true);
-          alert("আপনি নিরীক্ষা সাল উল্লেখ করেন নি");
-          descriptionInputRef.current?.focus();
-          descriptionInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          setHasWarnedAuditYear(true);
-          return;
-        }
-      }
-
-      // Ministry mismatch validation
+      // 1. Ministry mismatch validation (Check this first as requested by the user)
       const descLower = desc.toLowerCase();
       const hasBank = descLower.includes('ব্যাংক') || descLower.includes('bank');
       const hasMillsOrJute = descLower.includes('মিল') || descLower.includes('মিলস') || descLower.includes('জুট') || descLower.includes('mill') || descLower.includes('mills') || descLower.includes('jute');
@@ -1445,6 +1433,19 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         }
       } else if (hasMillsOrJute && formData.ministryName !== "পাট মন্ত্রণালয়") {
         if (!window.confirm("আপনি কি সঠিক মন্ত্রণালয় সিলেক্ট করেছেন?")) {
+          return;
+        }
+      }
+
+      // 2. Audit Year validation
+      const yearRegex = /[0-9]{4}|[০-৯]{4}/;
+      if (!yearRegex.test(desc)) {
+        if (!hasWarnedAuditYear) {
+          setShowAuditYearWarning(true);
+          alert("আপনি নিরীক্ষা সাল উল্লেখ করেন নি");
+          descriptionInputRef.current?.focus();
+          descriptionInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setHasWarnedAuditYear(true);
           return;
         }
       }
@@ -1642,7 +1643,23 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               </label>
               <PremiumMinistrySelect 
                 value={formData.ministryName}
-                onChange={(val: string) => setFormData({...formData, ministryName: val})}
+                onChange={(val: string) => {
+                  const desc = (formData.description || '').trim();
+                  const descLower = desc.toLowerCase();
+                  const hasBank = descLower.includes('ব্যাংক') || descLower.includes('bank');
+                  const hasMillsOrJute = descLower.includes('মিল') || descLower.includes('মিলস') || descLower.includes('জুট') || descLower.includes('mill') || descLower.includes('mills') || descLower.includes('jute');
+
+                  if (hasBank && val !== "আর্থিক প্রতিষ্ঠান বিভাগ") {
+                    if (!window.confirm("আপনি কি সঠিক মন্ত্রণালয় সিলেক্ট করেছেন?")) {
+                      return;
+                    }
+                  } else if (hasMillsOrJute && val !== "পাট মন্ত্রণালয়") {
+                    if (!window.confirm("আপনি কি সঠিক মন্ত্রণালয় সিলেক্ট করেছেন?")) {
+                      return;
+                    }
+                  }
+                  setFormData({...formData, ministryName: val});
+                }}
                 IDBadge={IDBadge}
               />
             </div>
