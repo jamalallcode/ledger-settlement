@@ -320,15 +320,21 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           if (!typeNorm.includes(normalizeForSearch('বিএসআর')) && !typeNorm.includes('bsr')) return false;
         } else if (searchTerm === 'দ্বিপক্ষীয়') {
           if (
-            !typeNorm.includes(normalizeForSearch('দ্বিপক্ষীয়')) && 
-            !typeNorm.includes(normalizeForSearch('দ্বিপাক্ষী')) && 
-            !typeNorm.includes('bilateral')
+            (!typeNorm.includes(normalizeForSearch('দ্বিপক্ষীয়')) && 
+             !typeNorm.includes(normalizeForSearch('দ্বিপাক্ষী')) && 
+             !typeNorm.includes('bilateral')) ||
+            typeNorm.includes(normalizeForSearch('কার্যপত্র')) ||
+            typeNorm.includes(normalizeForSearch('কাযপত্র')) ||
+            typeNorm.includes('working')
           ) return false;
         } else if (searchTerm === 'ত্রিপক্ষীয়') {
           if (
-            !typeNorm.includes(normalizeForSearch('ত্রিপক্ষীয়')) && 
-            !typeNorm.includes(normalizeForSearch('ত্রিপাক্ষী')) && 
-            !typeNorm.includes('trilateral')
+            (!typeNorm.includes(normalizeForSearch('ত্রিপক্ষীয়')) && 
+             !typeNorm.includes(normalizeForSearch('ত্রিপাক্ষী')) && 
+             !typeNorm.includes('trilateral')) ||
+            typeNorm.includes(normalizeForSearch('কার্যপত্র')) ||
+            typeNorm.includes(normalizeForSearch('কাযপত্র')) ||
+            typeNorm.includes('working')
           ) return false;
         } else if (searchTerm === 'কার্যপত্র (দ্বি-সভা)') {
           if (
@@ -400,7 +406,10 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       }
       
       // Bilateral count (দ্বিপক্ষীয় সভা)
-      if (type.includes(robustNormalize('দ্বিপক্ষীয়')) || type.includes(robustNormalize('দ্বিপাক্ষী')) || type.includes('bilateral')) {
+      if (
+        (type.includes(robustNormalize('দ্বিপক্ষীয়')) || type.includes(robustNormalize('দ্বিপাক্ষী')) || type.includes('bilateral')) &&
+        !type.includes(robustNormalize('কার্যপত্র')) && !type.includes(robustNormalize('কাযপত্র')) && !type.includes('working')
+      ) {
         bilateralCount++;
       }
 
