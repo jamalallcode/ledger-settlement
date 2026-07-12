@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   Mail, X, FileText, Calendar, Hash, Banknote, BookOpen, 
   Inbox, Computer, User, CheckCircle2, Layout, Sparkles, 
-  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash2, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send, FileEdit, ClipboardCheck, Globe
+  ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash2, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send, FileEdit, ClipboardCheck, Globe,
+  Building
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { getCycleForDate } from '../utils/cycleHelper';
@@ -11,6 +12,7 @@ import { SFI_RECEIVERS } from '../utils/sfi';
 import { NONSFI_RECEIVERS } from '../utils/nonsfi';
 import { isSFI, isNonSFI, isAdminBranch, getBranchVariations } from '../utils/branchUtils';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { MINISTRY_ENTITY_MAP } from '../constants';
 
 /**
  * @security-protocol LOCKED_MODE
@@ -241,6 +243,104 @@ const PremiumParaTypeSelect = ({ value, onChange, IDBadge }: any) => {
 };
 
 /**
+ * Premium Dropdown for Ministry Selection
+ */
+const PremiumMinistrySelect = ({ value, onChange, IDBadge }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Define options based on MINISTRY_ENTITY_MAP keys
+  const options = Object.keys(MINISTRY_ENTITY_MAP).map((m, idx) => ({
+    id: `ministry-opt-${idx}`,
+    label: m,
+    value: m,
+    icon: Building,
+    color: 'sky'
+  }));
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOpt = options.find(opt => opt.value === value);
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <IDBadge id="corr-field-ministry-custom" />
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`${inputCls} flex items-center justify-between cursor-pointer group hover:border-sky-400 hover:ring-4 hover:ring-sky-50 transition-all duration-300 ${isOpen ? 'border-sky-500 ring-4 ring-sky-50 bg-white shadow-md' : (value ? 'border-emerald-500 shadow-sm' : 'border-red-500 shadow-sm')}`}
+      >
+        <div className="flex items-center gap-3">
+          {selectedOpt ? (
+            <>
+              <div className="w-8 h-8 bg-sky-100 text-sky-600 rounded-lg flex items-center justify-center shadow-sm">
+                <Building size={16} />
+              </div>
+              <span className="text-slate-900 font-black">{selectedOpt.label}</span>
+            </>
+          ) : (
+            <>
+              <div className="w-8 h-8 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center">
+                <Building size={16} />
+              </div>
+              <span className="text-slate-400 font-bold">মন্ত্রণালয় বাছুন...</span>
+            </>
+          )}
+        </div>
+        <ChevronDown size={18} className={`text-slate-400 transition-transform duration-500 ${isOpen ? 'rotate-180 text-sky-600' : 'group-hover:text-sky-500'}`} />
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-sky-600">
+          <div className="p-1.5 space-y-0.5">
+            <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Sparkles size={11} className="text-sky-500" /> মন্ত্রণালয় নির্বাচন করুন
+              </span>
+            </div>
+            <div className="max-h-60 overflow-y-auto no-scrollbar">
+              {options.map((opt) => (
+                <div 
+                  key={opt.id}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                  className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
+                    value === opt.value ? `bg-sky-50 text-sky-700 shadow-sm` : 'hover:bg-slate-50 text-slate-600'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                      value === opt.value ? `bg-sky-600 text-white` : 'bg-slate-100 text-slate-400'
+                    }`}>
+                      <Building size={14} />
+                    </div>
+                    <span className={`text-[12.5px] font-black transition-colors ${value === opt.value ? `text-sky-700` : 'text-slate-700'}`}>{opt.label}</span>
+                  </div>
+                  {value === opt.value && (
+                    <div className="w-5 h-5 bg-sky-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300">
+                      <Check size={12} strokeWidth={3} />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
  * Segmented Date Input Component (Mirrored from Settlement Module Logic)
  * Handles auto-padding, max limits, smart year expansion, and auto-focus jump.
  */
@@ -385,6 +485,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   
   const [formData, setFormData] = useState({
     description: '',
+    ministryName: '',
     paraType: 'এসএফআই',
     letterType: 'বিএসআর',
     letterNo: '',
@@ -954,6 +1055,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     if (initialEntry) {
       setFormData({
         description: initialEntry.description || '',
+        ministryName: initialEntry.ministryName || '',
         paraType: initialEntry.paraType || 'এসএফআই',
         letterType: initialEntry.letterType || 'বিএসআর',
         letterNo: initialEntry.letterNo || '',
@@ -1214,6 +1316,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const resetForm = () => {
     setFormData({
       description: '',
+      ministryName: '',
       paraType: 'এসএফআই',
       letterType: 'বিএসআর',
       letterNo: '',
@@ -1308,6 +1411,11 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       } else {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
+      return;
+    }
+
+    if (!formData.ministryName) {
+      alert("দয়া করে মন্ত্রণালয় নির্বাচন করুন");
       return;
     }
 
@@ -1508,6 +1616,20 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             <div className={sectionHeaderCls}>
                <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
                <h4 className={sectionTitleCls}>পত্রের অন্যান্য তথ্য</h4>
+            </div>
+
+            {/* Field Ministry */}
+            <div className={`${colWrapper} border-sky-100`}>
+              <label className={labelCls}>
+                <span className={numBadge}>ম</span> 
+                <Building size={14} className="text-sky-600" /> 
+                মন্ত্রণালয়:
+              </label>
+              <PremiumMinistrySelect 
+                value={formData.ministryName}
+                onChange={(val: string) => setFormData({...formData, ministryName: val})}
+                IDBadge={IDBadge}
+              />
             </div>
 
             {/* Field 2 */}
