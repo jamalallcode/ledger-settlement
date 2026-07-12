@@ -7,6 +7,7 @@ import {
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { isSFI, isNonSFI, getCleanLetterTypeDisplay } from '../utils/branchUtils';
 import { format } from 'date-fns';
+import { MINISTRY_ENTITY_MAP } from '../constants';
 
 interface CustomPeriodReceiptReportProps {
   entries: any[]; // These are approved correspondenceEntries passed from ReturnView
@@ -187,6 +188,90 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       return normalized.replace(/\s+/g, ' ').trim();
     };
 
+    const getEntryMinistry = (ent: any): string => {
+      if (ent.ministryName) {
+        return ent.ministryName;
+      }
+      const desc = ent.description || '';
+      const descNorm = normalizeForSearch(desc);
+      if (!descNorm) return '';
+
+      // 1. Check exact or partial match with MINISTRIES list using normalized strings
+      for (const mName of MINISTRIES) {
+        const normM = normalizeForSearch(mName);
+        if (descNorm.includes(normM) || normM.includes(descNorm)) {
+          return mName;
+        }
+      }
+
+      // 2. Check entities map using normalized strings
+      for (const [mName, entities] of Object.entries(MINISTRY_ENTITY_MAP)) {
+        for (const entity of entities) {
+          const normE = normalizeForSearch(entity);
+          const cleanNormE = normE.replace(/(পিএলসি|লি\.|লিমিটেড|গ্রুপ|শাখা|জোন|বিভাগ|কর্পোরেশন|সংস্থা|বোর্ড)/g, '').trim();
+          const cleanDesc = descNorm.replace(/(পিএলসি|লি\.|লিমিটেড|গ্রুপ|শাখা|জোন|বিভাগ|কর্পোরেশন|সংস্থা|বোর্ড)/g, '').trim();
+          if (
+            descNorm.includes(normE) || 
+            normE.includes(descNorm) ||
+            (cleanNormE.length > 2 && cleanDesc.includes(cleanNormE)) ||
+            (cleanDesc.length > 2 && cleanNormE.includes(cleanDesc))
+          ) {
+            return mName;
+          }
+        }
+      }
+
+      // 3. Fallback keyword checks using normalized keywords
+      if (
+        descNorm.includes(normalizeForSearch('সোনালী')) ||
+        descNorm.includes(normalizeForSearch('জনতা')) ||
+        descNorm.includes(normalizeForSearch('অগ্রণী')) ||
+        descNorm.includes(normalizeForSearch('কৃষি')) ||
+        descNorm.includes(normalizeForSearch('রূপালী')) ||
+        descNorm.includes(normalizeForSearch('বাংলাদেশ ব্যাংক')) ||
+        descNorm.includes(normalizeForSearch('বীমা')) ||
+        descNorm.includes(normalizeForSearch('আর্থিক')) ||
+        descNorm.includes(normalizeForSearch('ব্যাংক')) ||
+        descNorm.includes(normalizeForSearch('বেসিক')) ||
+        descNorm.includes(normalizeForSearch('কর্মসংস্থান')) ||
+        descNorm.includes(normalizeForSearch('আইসিবি')) ||
+        descNorm.includes(normalizeForSearch('ইনভেস্টমেন্ট'))
+      ) {
+        return 'আর্থিক প্রতিষ্ঠান বিভাগ';
+      }
+      if (descNorm.includes(normalizeForSearch('পাট')) || descNorm.includes(normalizeForSearch('পাটকল'))) {
+        return 'পাট মন্ত্রণালয়';
+      }
+      if (descNorm.includes(normalizeForSearch('বস্ত্র')) || descNorm.includes(normalizeForSearch('রেশম'))) {
+        return 'বস্ত্র মন্ত্রণালয়';
+      }
+      if (
+        descNorm.includes(normalizeForSearch('শিল্প')) ||
+        descNorm.includes(normalizeForSearch('চিনি')) ||
+        descNorm.includes(normalizeForSearch('বিটাক')) ||
+        descNorm.includes(normalizeForSearch('রসায়ন')) ||
+        descNorm.includes(normalizeForSearch('কুটির'))
+      ) {
+        return 'শিল্প মন্ত্রণালয়';
+      }
+      if (
+        descNorm.includes(normalizeForSearch('বিমান')) ||
+        descNorm.includes(normalizeForSearch('পর্যটন')) ||
+        descNorm.includes(normalizeForSearch('বেসামরিক'))
+      ) {
+        return 'বিমান ও পর্যটন মন্ত্রণালয়';
+      }
+      if (
+        descNorm.includes(normalizeForSearch('বাণিজ্য')) ||
+        descNorm.includes(normalizeForSearch('টিসিবি')) ||
+        descNorm.includes(normalizeForSearch('আমদানি')) ||
+        descNorm.includes(normalizeForSearch('রপ্তানি'))
+      ) {
+        return 'বাণিজ্য মন্ত্রণালয়';
+      }
+      return '';
+    };
+
     return entries.filter(entry => {
       // 1. Date Range Filter strictly using diaryDate (diary date) as requested by user
       const entryDate = entry.diaryDate || '';
@@ -203,7 +288,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
       // 2.5 Ministry Filter
       if (filterMinistry !== 'সকল') {
-        const entryMin = (entry.ministryName || '').normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+        const entMin = getEntryMinistry(entry);
+        const entryMin = entMin.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
         const filterMin = filterMinistry.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
         if (entryMin !== filterMin) return false;
       }

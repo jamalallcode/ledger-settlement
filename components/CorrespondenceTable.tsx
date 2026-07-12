@@ -1675,7 +1675,16 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                         <td className={tdCls}>
                           <div className="space-y-2">
                             <div className="flex flex-col">
-                              <span className={labelCls}>১. শাখার ধরণ:</span>
+                              <span className={labelCls}>১. মন্ত্রণালয়:</span>
+                              <span className={valCls + " pl-3"}>
+                                <HighlightText
+                                  text={entry.ministryName || 'প্রযোজ্য নয়'}
+                                  searchTerm={searchTerm}
+                                />
+                              </span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className={labelCls}>২. শাখার ধরণ:</span>
                               <span className={valCls + " pl-3"}>
                                 <HighlightText
                                   text={entry.paraType}
@@ -1684,7 +1693,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               </span>
                             </div>
                             <div className="flex flex-col">
-                              <span className={labelCls}>২. পত্রের ধরণ:</span>
+                              <span className={labelCls}>৩. পত্রের ধরণ:</span>
                               <span className={valCls + " pl-3"}>
                                 <HighlightText
                                   text={getCleanLetterTypeDisplay(entry.letterType)}
@@ -1694,7 +1703,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                             </div>
                             <div className="flex flex-col">
                               <span className={labelCls}>
-                                ৩. পত্র নং ও তারিখ:
+                                ৪. পত্র নং ও তারিখ:
                               </span>
                               <span className={valCls + " pl-3"}>
                                 <HighlightText
@@ -1705,7 +1714,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                             </div>
                             <div className="flex flex-col">
                               <span className={labelCls}>
-                                ৪. প্রেরিত অনু: সংখ্যা:
+                                ৫. প্রেরিত অনু: সংখ্যা:
                               </span>
                               <span className={valCls + " pl-3"}>
                                 <HighlightText
@@ -1716,7 +1725,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                             </div>
                             <div className="flex flex-col">
                               <span className={labelCls}>
-                                ৫. মোট জড়িত টাকা:
+                                ৬. মোট জড়িত টাকা:
                               </span>
                               <span className={valCls + " pl-3"}>
                                 <HighlightText
