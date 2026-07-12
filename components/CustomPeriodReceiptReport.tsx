@@ -862,18 +862,29 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           {/* TABLE */}
           {filteredEntries.length > 0 ? (
             <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-inner">
-              <table id="custom-period-report-table" className="w-full text-left border-collapse">
+              <table id="custom-period-report-table" className="w-full min-w-[1200px] text-left border-collapse table-fixed">
+                <colgroup>
+                  <col className="w-[55px]" />
+                  <col className="w-[140px]" />
+                  <col className="w-[140px]" />
+                  <col className="w-[115px]" />
+                  <col className="w-[310px]" />
+                  <col className="w-[95px]" />
+                  <col className="w-[110px]" />
+                  <col className="w-[145px]" />
+                  <col className="w-[90px] no-print" />
+                </colgroup>
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-700">
-                    <th className="px-4 py-3 text-center text-xs font-black w-[60px] border-r border-slate-200">ক্র: নং</th>
-                    <th className="px-4 py-3 text-left text-xs font-black w-[150px] border-r border-slate-200">পত্র নং ও তারিখ</th>
-                    <th className="px-4 py-3 text-left text-xs font-black w-[150px] border-r border-slate-200">ডায়রি নং ও তারিখ</th>
-                    <th className="px-4 py-3 text-left text-xs font-black w-[120px] border-r border-slate-200">শাখা ও পত্রের ধরন</th>
+                    <th className="px-4 py-3 text-center text-xs font-black border-r border-slate-200">ক্র: নং</th>
+                    <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">পত্র নং ও তারিখ</th>
+                    <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">ডায়রি নং ও তারিখ</th>
+                    <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">শাখা ও পত্রের ধরন</th>
                     <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">বিষয় / বিবরণ</th>
-                    <th className="px-4 py-3 text-center text-xs font-black w-[100px] border-r border-slate-200">অনুচ্ছেদ সংখ্যা</th>
-                    <th className="px-4 py-3 text-right text-xs font-black w-[130px] border-r border-slate-200">জড়িত টাকা (টাকা)</th>
-                    <th className="px-4 py-3 text-left text-xs font-black w-[150px] border-r border-slate-200">মন্ত্রণালয়</th>
-                    <th className="px-4 py-3 text-center text-xs font-black w-[100px] no-print">অ্যাকশন</th>
+                    <th className="px-4 py-3 text-center text-xs font-black border-r border-slate-200">অনুচ্ছেদ সংখ্যা</th>
+                    <th className="px-4 py-3 text-right text-xs font-black border-r border-slate-200">জড়িত টাকা (টাকা)</th>
+                    <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">মন্ত্রণালয়</th>
+                    <th className="px-4 py-3 text-center text-xs font-black no-print">অ্যাকশন</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
