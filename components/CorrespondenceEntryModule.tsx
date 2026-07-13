@@ -805,7 +805,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
           let is_active = true;
 
-          if (r.is_active === false || isLInactive || hasTransfer) {
+          // STRICT BRANCH ISOLATION: Ensure receivers from other branches are not shown
+          if (r.para_type && getCleanBranch(r.para_type) !== currentFormBranchClean) {
+            is_active = false;
+          } else if (r.is_active === false || isLInactive || hasTransfer) {
             is_active = false;
           } else {
             // Find any profiles for this person in the master system profiles list
@@ -922,7 +925,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
           let is_active = true;
 
-          if (r.is_active === false || isLInactive || hasTransfer) {
+          // STRICT BRANCH ISOLATION: Ensure receivers from other branches are not shown
+          if (r.para_type && getCleanBranch(r.para_type) !== currentFormBranchClean) {
+            is_active = false;
+          } else if (r.is_active === false || isLInactive || hasTransfer) {
             is_active = false;
           } else {
             // Find any profiles for this person in the master system profiles list
