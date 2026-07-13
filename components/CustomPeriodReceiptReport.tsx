@@ -131,12 +131,16 @@ interface CustomPeriodReceiptReportProps {
   entries: any[]; // These are approved correspondenceEntries passed from ReturnView
   onBack: () => void;
   IDBadge: React.FC<{ id: string }>;
+  onEdit?: (entry: any) => void;
+  isAdmin?: boolean;
 }
 
 export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps> = ({
   entries = [],
   onBack,
-  IDBadge
+  IDBadge,
+  onEdit,
+  isAdmin
 }) => {
   const [startDate, setStartDate] = useState('2025-07-01');
   const [endDate, setEndDate] = useState('2026-06-30');
@@ -316,15 +320,21 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           if (!typeNorm.includes(normalizeForSearch('বিএসআর')) && !typeNorm.includes('bsr')) return false;
         } else if (searchTerm === 'দ্বিপক্ষীয়') {
           if (
-            !typeNorm.includes(normalizeForSearch('দ্বিপক্ষীয়')) && 
-            !typeNorm.includes(normalizeForSearch('দ্বিপাক্ষী')) && 
-            !typeNorm.includes('bilateral')
+            (!typeNorm.includes(normalizeForSearch('দ্বিপক্ষীয়')) && 
+             !typeNorm.includes(normalizeForSearch('দ্বিপাক্ষী')) && 
+             !typeNorm.includes('bilateral')) ||
+            typeNorm.includes(normalizeForSearch('কার্যপত্র')) ||
+            typeNorm.includes(normalizeForSearch('কাযপত্র')) ||
+            typeNorm.includes('working')
           ) return false;
         } else if (searchTerm === 'ত্রিপক্ষীয়') {
           if (
-            !typeNorm.includes(normalizeForSearch('ত্রিপক্ষীয়')) && 
-            !typeNorm.includes(normalizeForSearch('ত্রিপাক্ষী')) && 
-            !typeNorm.includes('trilateral')
+            (!typeNorm.includes(normalizeForSearch('ত্রিপক্ষীয়')) && 
+             !typeNorm.includes(normalizeForSearch('ত্রিপাক্ষী')) && 
+             !typeNorm.includes('trilateral')) ||
+            typeNorm.includes(normalizeForSearch('কার্যপত্র')) ||
+            typeNorm.includes(normalizeForSearch('কাযপত্র')) ||
+            typeNorm.includes('working')
           ) return false;
         } else if (searchTerm === 'কার্যপত্র (দ্বি-সভা)') {
           if (
@@ -396,7 +406,10 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       }
       
       // Bilateral count (দ্বিপক্ষীয় সভা)
-      if (type.includes(robustNormalize('দ্বিপক্ষীয়')) || type.includes(robustNormalize('দ্বিপাক্ষী')) || type.includes('bilateral')) {
+      if (
+        (type.includes(robustNormalize('দ্বিপক্ষীয়')) || type.includes(robustNormalize('দ্বিপাক্ষী')) || type.includes('bilateral')) &&
+        !type.includes(robustNormalize('কার্যপত্র')) && !type.includes(robustNormalize('কাযপত্র')) && !type.includes('working')
+      ) {
         bilateralCount++;
       }
 
@@ -858,17 +871,29 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           {/* TABLE */}
           {filteredEntries.length > 0 ? (
             <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-inner">
-              <table id="custom-period-report-table" className="w-full text-left border-collapse">
+              <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
+                <colgroup>
+                  <col className="w-[8%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[19%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[14%] no-print" />
+                </colgroup>
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-700">
-                    <th className="px-4 py-3 text-center text-xs font-black w-[60px] border-r border-slate-200">ক্র: নং</th>
-                    <th className="px-4 py-3 text-left text-xs font-black w-[150px] border-r border-slate-200">পত্র নং ও তারিখ</th>
-                    <th className="px-4 py-3 text-left text-xs font-black w-[150px] border-r border-slate-200">ডায়রি নং ও তারিখ</th>
-                    <th className="px-4 py-3 text-left text-xs font-black w-[120px] border-r border-slate-200">শাখা ও পত্রের ধরন</th>
+                    <th className="px-4 py-3 text-center text-xs font-black border-r border-slate-200">ক্র: নং</th>
+                    <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">পত্র নং ও তারিখ</th>
+                    <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">ডায়রি নং ও তারিখ</th>
+                    <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">শাখা ও পত্রের ধরন</th>
                     <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">বিষয় / বিবরণ</th>
-                    <th className="px-4 py-3 text-center text-xs font-black w-[100px] border-r border-slate-200">অনুচ্ছেদ সংখ্যা</th>
-                    <th className="px-4 py-3 text-right text-xs font-black w-[130px] border-r border-slate-200">জড়িত টাকা (টাকা)</th>
-                    <th className="px-4 py-3 text-left text-xs font-black w-[150px]">মন্ত্রণালয়</th>
+                    <th className="px-4 py-3 text-center text-xs font-black border-r border-slate-200">অনুচ্ছেদ সংখ্যা</th>
+                    <th className="px-4 py-3 text-right text-xs font-black border-r border-slate-200">জড়িত টাকা (টাকা)</th>
+                    <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">মন্ত্রণালয়</th>
+                    <th className="px-4 py-3 text-center text-xs font-black no-print">অ্যাকশন</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -909,8 +934,21 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                         <td className="px-4 py-3 text-right text-[11.5px] font-black text-slate-900 border-r border-slate-200">
                           {toBengaliDigits(entry.totalAmount || '০')}
                         </td>
-                        <td className="px-4 py-3 text-left text-[11px] font-semibold text-slate-800">
+                        <td className="px-4 py-3 text-left text-[11px] font-semibold text-slate-800 border-r border-slate-200">
                           {getEntryMinistry(entry) || '-'}
+                        </td>
+                        <td className="px-4 py-3 text-center text-[11px] no-print">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onEdit) onEdit(entry);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-all duration-200 font-bold text-[10.5px] shadow-sm active:scale-95 border border-slate-200 cursor-pointer whitespace-nowrap"
+                            title="এডিট করুন"
+                          >
+                            <FileEdit size={12} className="text-blue-500 shrink-0" />
+                            এডিট
+                          </button>
                         </td>
                       </tr>
                     );
