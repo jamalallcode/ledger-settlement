@@ -407,6 +407,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
           entryDetails: entryDetails[compKey] || []
         };
       }).filter(r => {
+        if (!r.name || !r.name.trim()) return false;
         if (r.source === 'database') return true;
         if (r.entryCount > 0) return true;
         if (r.source === 'local') return true;
@@ -773,7 +774,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
   };
 
   const renderBranchColumn = (branch: 'প্রশাসন' | 'এসএফআই' | 'নন এসএফআই', label: string) => {
-    const list = receiversList.filter(r => getCleanBranch(r.para_type) === branch);
+    const list = receiversList.filter(r => r.name && r.name.trim() && getCleanBranch(r.para_type) === branch);
 
     const themes = {
       'প্রশাসন': {
