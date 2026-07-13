@@ -629,6 +629,30 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
         localStorage.setItem(key, JSON.stringify(items));
       }
 
+      // Sync local deactivation storage
+      let inactiveList = getInactiveList();
+
+      // Filter out any existing entries for this person in the inactive list
+      inactiveList = inactiveList.filter(n => {
+        const itemNorm = normalizeName(n);
+        if (itemNorm === matchNorm || itemNorm === currentNorm) return false;
+        if (itemNorm.startsWith(`${matchNorm}_`) || itemNorm.startsWith(`${currentNorm}_`)) return false;
+        return true;
+      });
+
+      // Add back any unselected branches where they have files
+      for (const b of allBranches) {
+        const isSelected = selectedBranches.includes(b);
+        const existingRec = existingRecords.find(r => getCleanBranch(r.para_type) === b);
+        const hasFiles = existingRec && existingRec.entryCount && existingRec.entryCount > 0;
+        
+        if (!isSelected && hasFiles) {
+          inactiveList.push(`${currentNorm}_${b}`);
+        }
+      }
+
+      saveInactiveList(inactiveList);
+
       window.dispatchEvent(new Event('storage'));
       setIsModalOpen(false);
       resetForm();
