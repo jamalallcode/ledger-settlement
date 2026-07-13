@@ -31,6 +31,16 @@ interface ReceiverProfile {
 
 const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
 
+const normalizeName = (name: string | null | undefined): string => {
+  if (!name) return '';
+  return name
+    .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/[:ঃ।\.\-]/g, '')
+    .normalize('NFC');
+};
+
 const getCleanBranch = (type: string | null | undefined): string => {
   if (!type) return 'এসএফআই';
   if (type.includes('প্রশাসন') || type === 'ADMIN' || type === 'admin') return 'প্রশাসন';
@@ -139,7 +149,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [selectedParaType, setSelectedParaType] = useState<string>('এসএফআই');
+  const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
   const [tempName, setTempName] = useState('');
   const [tempDesignation, setTempDesignation] = useState('');
   const [tempImage, setTempImage] = useState<string | null>(null);
@@ -151,15 +161,6 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
     setLoading(true);
     try {
       let finalReceivers: ReceiverProfile[] = [];
-      const normalizeName = (name: string | null | undefined) => {
-        if (!name) return '';
-        return name
-          .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
-          .trim()
-          .replace(/\s+/g, ' ')
-          .replace(/[:ঃ।\.\-]/g, '')
-          .normalize('NFC');
-      };
 
       // 1. Fetch from database (Supabase)
       if (isSupabaseConfigured) {
@@ -385,20 +386,6 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
         let transferred_to = r.transferred_to || transfersMap[compKey] || '';
         let transferred_at = r.transferred_at || transferTimesMap[compKey] || '';
 
-        // Specific override for Shamima Shahrin / Shamira Shahrin transfer (Non-SFI to SFI)
-        const normNoSpaces = norm.replace(/\s+/g, '');
-        if (normNoSpaces === 'শামীমাশাহরিন' || normNoSpaces === 'শামীরাশাহরিন') {
-          if (b === 'নন এসএফআই') {
-            is_active = false;
-            transferred_to = 'এসএফআই শাখা';
-            transferred_at = '১১/০৭/২০২৬ (সকাল ০৭:১৯)';
-          } else if (b === 'এসএফআই') {
-            is_active = true;
-            transferred_to = '';
-            transferred_at = '';
-          }
-        }
-
         return {
           ...r,
           para_type: b,
@@ -409,11 +396,6 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
           entryDetails: entryDetails[compKey] || []
         };
       }).filter(r => {
-        const norm = normalizeName(r.name);
-        const normNoSpaces = norm.replace(/\s+/g, '');
-        const isTargetUser = normNoSpaces === 'শামীমাশাহরিন' || normNoSpaces === 'শামীরাশাহরিন';
-        if (isTargetUser && getCleanBranch(r.para_type) === 'এসএফআই') return true;
-
         if (r.source === 'database') return true;
         if (r.entryCount > 0) return true;
         if (r.source === 'local') return true;
@@ -435,274 +417,154 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
 
   const openAddModal = (branch: string) => {
     setEditingId(null);
-    setSelectedParaType(branch);
     setTempName('');
     setTempDesignation('');
     setTempImage(null);
     setTempIsActive(true);
     setTempTransferredTo('');
+    setSelectedBranches([getCleanBranch(branch)]);
     setIsModalOpen(true);
   };
 
   const openEditModal = (profile: ReceiverProfile) => {
+    const norm = normalizeName(profile.name);
     setEditingId(profile.id || profile.name);
-    setSelectedParaType(getCleanBranch(profile.para_type));
     setTempName(profile.name);
     setTempDesignation(profile.designation || '');
     setTempImage(profile.image || null);
     setTempIsActive(profile.is_active !== false);
     setTempTransferredTo(profile.transferred_to || '');
+
+    // Get all branches where this worker is currently present and active
+    const activeBranches = receiversList
+      .filter(r => normalizeName(r.name) === norm)
+      .map(r => getCleanBranch(r.para_type));
+
+    setSelectedBranches(activeBranches);
     setIsModalOpen(true);
   };
 
   const handleAddOrEdit = async () => {
     if (!tempName.trim()) return;
+    if (selectedBranches.length === 0) {
+      alert("অন্তত একটি শাখা নির্বাচন করুন।");
+      return;
+    }
     setIsSaving(true);
     
-    const normalizeName = (name: string | null | undefined) => {
-      if (!name) return '';
-      return name
-        .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
-        .trim()
-        .replace(/\s+/g, ' ')
-        .replace(/[:ঃ।\.\-]/g, '')
-        .normalize('NFC');
-    };
-
-    // Update the local inactive storage key (branch-specific)
-    const currentNorm = normalizeName(tempName.trim());
-    const currentBranchClean = getCleanBranch(selectedParaType);
-    const currentCompKey = `${currentNorm}_${currentBranchClean}`;
-    let inactiveList = getInactiveList();
-
-    if (editingId) {
-      // If we are editing, check if the name was changed and clean up the old name/keys from inactive list
-      const oldProfile = receiversList.find(r => r.id === editingId || r.name === editingId);
-      if (oldProfile) {
-        const oldNorm = normalizeName(oldProfile.name);
-        const oldBranchClean = getCleanBranch(oldProfile.para_type);
-        const oldCompKey = `${oldNorm}_${oldBranchClean}`;
-        if (oldProfile.name !== tempName.trim() || oldBranchClean !== currentBranchClean) {
-          inactiveList = inactiveList.filter(n => {
-            const normItem = normalizeName(n);
-            return normItem !== oldCompKey && normItem !== oldNorm;
-          });
-        }
-      }
-    }
-
-    if (tempIsActive) {
-      inactiveList = inactiveList.filter(n => {
-        const normItem = normalizeName(n);
-        return normItem !== currentCompKey && normItem !== currentNorm;
-      });
-    } else {
-      // Clean up simple global inactive name if it exists, to avoid global block
-      inactiveList = inactiveList.filter(n => normalizeName(n) !== currentNorm);
-      
-      const existsComp = inactiveList.some(n => normalizeName(n) === currentCompKey);
-      if (!existsComp) {
-        inactiveList.push(currentCompKey); // Save exact branch combination (e.g. "শামীমা শাহরিন_নন এসএফআই")
-      }
-    }
-    saveInactiveList(inactiveList);
-
-    // Save transfer mapping locally
-    const transfersMap = getTransfersMap();
-    const transferTimesMap = getTransferTimesMap();
-    
-    let transferTime = '';
-    if (tempIsActive) {
-      delete transfersMap[currentCompKey];
-      delete transferTimesMap[currentCompKey];
-    } else {
-      transfersMap[currentCompKey] = tempTransferredTo;
-      if (!transferTimesMap[currentCompKey]) {
-        transferTimesMap[currentCompKey] = getBengaliDateTimeString();
-      }
-      transferTime = transferTimesMap[currentCompKey];
-    }
-    saveTransfersMap(transfersMap);
-    saveTransferTimesMap(transferTimesMap);
-
-    const profileData = {
-      name: tempName.trim(),
-      designation: tempDesignation.trim() || null,
-      image: tempImage || null,
-      para_type: selectedParaType,
-      is_active: tempIsActive,
-      transferred_to: tempIsActive ? '' : tempTransferredTo,
-      transferred_at: tempIsActive ? '' : transferTime
-    };
-
-    // Check for automatic internal branch transfer
-    const targetBranch = getBranchFromTransferName(tempTransferredTo);
-    if (!tempIsActive && targetBranch && targetBranch !== getCleanBranch(selectedParaType)) {
-      const alreadyExists = receiversList.some(r => {
-        return normalizeName(r.name) === currentNorm && getCleanBranch(r.para_type) === targetBranch;
-      });
-
-      if (!alreadyExists) {
-        const newBranchProfile = {
-          name: tempName.trim(),
-          designation: tempDesignation.trim() || null,
-          image: tempImage || null,
-          para_type: targetBranch,
-          is_active: true
-        };
-
-        if (isSupabaseConfigured) {
-          try {
-            const { error: insErr } = await supabase
-              .from('receivers')
-              .insert([newBranchProfile]);
-            
-            if (insErr && (insErr.message?.includes('column') || insErr.code === '42703')) {
-              const { is_active, ...rest } = newBranchProfile;
-              await supabase.from('receivers').insert([rest]);
-            }
-          } catch (e) {
-            console.error('Auto branch copy failed in Supabase:', e);
-          }
-        }
-
-        try {
-          const targetKey = targetBranch === 'প্রশাসন' ? 'ledger_correspondence_receivers_admin' :
-                            targetBranch === 'নন এসএফআই' ? 'ledger_correspondence_receivers_nonsfi' :
-                            'ledger_correspondence_receivers_sfi';
-          const savedTarget = localStorage.getItem(targetKey);
-          let targetItems = [];
-          if (savedTarget) {
-            try { targetItems = JSON.parse(savedTarget); } catch (e) {}
-          }
-          if (!targetItems.some((it: any) => normalizeName(it.name) === currentNorm)) {
-            targetItems.push({
-              ...newBranchProfile,
-              id: 'local-' + Date.now() + '-copy'
-            });
-            localStorage.setItem(targetKey, JSON.stringify(targetItems));
-          }
-        } catch (e) {
-          console.error('Auto branch copy failed in LocalStorage:', e);
-        }
-      }
-    }
-
     try {
-      if (isSupabaseConfigured) {
-        let error;
-        if (editingId && !editingId.toString().startsWith('local-')) {
-          // Attempt update with is_active, transferred_to and transferred_at
-          const { error: updateError } = await supabase
-            .from('receivers')
-            .update(profileData)
-            .eq('id', editingId);
-          error = updateError;
-          
-          // Fallback if transferred_at column does not exist
-          if (error && (error.message?.includes('column') || error.code === '42703')) {
-            const { transferred_at, ...withTransferredTo } = profileData;
-            const { error: retryError } = await supabase
-              .from('receivers')
-              .update(withTransferredTo)
-              .eq('id', editingId);
-            error = retryError;
-          }
-
-          // Fallback if is_active or transferred_to columns also do not exist
-          if (error && (error.message?.includes('column') || error.code === '42703')) {
-            const { is_active, transferred_to, transferred_at, ...rest } = profileData;
-            const { error: finalRetryError } = await supabase
-              .from('receivers')
-              .update(rest)
-              .eq('id', editingId);
-            error = finalRetryError;
-          }
-        } else {
-          // Attempt insert with is_active, transferred_to and transferred_at
-          const { error: insertError } = await supabase
-            .from('receivers')
-            .insert([profileData]);
-          error = insertError;
-
-          // Fallback if transferred_at column does not exist
-          if (error && (error.message?.includes('column') || error.code === '42703')) {
-            const { transferred_at, ...withTransferredTo } = profileData;
-            const { error: retryError } = await supabase
-              .from('receivers')
-              .insert([withTransferredTo]);
-            error = retryError;
-          }
-
-          // Fallback if is_active or transferred_to columns also do not exist
-          if (error && (error.message?.includes('column') || error.code === '42703')) {
-            const { is_active, transferred_to, transferred_at, ...rest } = profileData;
-            const { error: finalRetryError } = await supabase
-              .from('receivers')
-              .insert([rest]);
-            error = finalRetryError;
-          }
+      const currentNorm = normalizeName(tempName.trim());
+      let oldName = '';
+      if (editingId) {
+        const oldProfile = receiversList.find(r => r.id === editingId || r.name === editingId);
+        if (oldProfile) {
+          oldName = oldProfile.name.trim();
         }
-        
-        if (error) {
-          console.error('Supabase save error:', error);
-          if (error.code === 'PGRST116' || error.message?.includes('relation') || error.message?.includes('does not exist')) {
-            throw new Error('TABLE_MISSING');
-          }
-          throw error;
-        }
-        
-        await fetchReceivers();
-      } else {
-        throw new Error('SUPABASE_NOT_CONFIGURED');
       }
-      window.dispatchEvent(new Event('storage'));
-      setIsModalOpen(false);
-      resetForm();
-    } catch (err: any) {
-      console.error('Error saving receiver (falling back to LocalStorage):', err);
-      
-      try {
-        const key = selectedParaType === 'প্রশাসন' ? 'ledger_correspondence_receivers_admin' :
-                    selectedParaType === 'নন এসএফআই' ? 'ledger_correspondence_receivers_nonsfi' :
+
+      const nameToMatch = oldName || tempName.trim();
+      const matchNorm = normalizeName(nameToMatch);
+
+      // Find all existing branch records for this person in the receiversList
+      const existingRecords = receiversList.filter(r => normalizeName(r.name) === matchNorm);
+
+      const allBranches: Array<'প্রশাসন' | 'এসএফআই' | 'নন এসএফআই'> = ['প্রশাসন', 'এসএফআই', 'নন এসএফআই'];
+
+      // Validate that we aren't unselecting a branch that has active files
+      for (const b of allBranches) {
+        const isSelected = selectedBranches.includes(b);
+        const existingRec = existingRecords.find(r => getCleanBranch(r.para_type) === b);
+        
+        if (!isSelected && existingRec && existingRec.entryCount && existingRec.entryCount > 0) {
+          alert(`"${tempName.trim()}" এর "${b}" শাখায় চিঠিপত্র বিতরণ করা থাকায় ওনাকে এই শাখা থেকে বাদ দেওয়া সম্ভব নয়।`);
+          setIsSaving(false);
+          return;
+        }
+      }
+
+      // Save to Supabase if configured
+      if (isSupabaseConfigured) {
+        for (const b of allBranches) {
+          const isSelected = selectedBranches.includes(b);
+          const existingRec = existingRecords.find(r => getCleanBranch(r.para_type) === b);
+
+          if (isSelected) {
+            const profileData = {
+              name: tempName.trim(),
+              designation: tempDesignation.trim() || null,
+              image: tempImage || null,
+              para_type: b,
+              is_active: true,
+              transferred_to: '',
+              transferred_at: ''
+            };
+
+            if (existingRec && existingRec.id && !existingRec.id.toString().startsWith('local-')) {
+              // Update existing db row
+              const { error } = await supabase
+                .from('receivers')
+                .update(profileData)
+                .eq('id', existingRec.id);
+              if (error) throw error;
+            } else {
+              // Insert new db row
+              const { error } = await supabase
+                .from('receivers')
+                .insert([profileData]);
+              if (error) throw error;
+            }
+          } else {
+            // Unselected. If record exists in database, delete it since they have no files in it
+            if (existingRec && existingRec.id && !existingRec.id.toString().startsWith('local-')) {
+              const { error } = await supabase
+                .from('receivers')
+                .delete()
+                .eq('id', existingRec.id);
+              if (error) throw error;
+            }
+          }
+        }
+      }
+
+      // Sync and save to local storage (for fallback or direct tracking)
+      for (const b of allBranches) {
+        const isSelected = selectedBranches.includes(b);
+        const existingRec = existingRecords.find(r => getCleanBranch(r.para_type) === b);
+
+        const key = b === 'প্রশাসন' ? 'ledger_correspondence_receivers_admin' :
+                    b === 'নন এসএফআই' ? 'ledger_correspondence_receivers_nonsfi' :
                     'ledger_correspondence_receivers_sfi';
 
         const saved = localStorage.getItem(key);
-        let items = [];
-        if (saved) {
-          try { items = JSON.parse(saved); } catch (e) {}
-        }
+        let items = saved ? JSON.parse(saved) : [];
 
-        const fallbackProfile = {
-          ...profileData,
-          id: editingId && editingId.toString().startsWith('local-') ? editingId : 'local-' + Date.now()
-        };
+        // Remove old records for this person in this branch's storage
+        items = items.filter((it: any) => normalizeName(it.name) !== matchNorm && it.id !== editingId);
 
-        if (editingId) {
-          const idx = items.findIndex((it: any) => it.id === editingId || it.name === tempName);
-          if (idx !== -1) {
-            items[idx] = fallbackProfile;
-          } else {
-            items.push(fallbackProfile);
-          }
-        } else {
-          items.push(fallbackProfile);
+        if (isSelected) {
+          const newId = existingRec?.id || 'local-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+          items.push({
+            id: newId,
+            name: tempName.trim(),
+            designation: tempDesignation.trim() || null,
+            image: tempImage || null,
+            para_type: b,
+            is_active: true,
+            transferred_to: '',
+            transferred_at: ''
+          });
         }
 
         localStorage.setItem(key, JSON.stringify(items));
-        window.dispatchEvent(new Event('storage'));
-        await fetchReceivers();
-        
-        setIsModalOpen(false);
-        resetForm();
-
-        if (isSupabaseConfigured) {
-          alert('সুপাবেজ (Supabase) এ তথ্য সংরক্ষণ করা যায়নি, তবে ব্রাউজারে (LocalStorage) এটি সফলভাবে সংরক্ষিত হয়েছে।');
-        }
-      } catch (localErr) {
-        console.error('LocalStorage fallback failed:', localErr);
-        alert('তথ্য সংরক্ষণ করতে সমস্যা হয়েছে।');
       }
+
+      window.dispatchEvent(new Event('storage'));
+      setIsModalOpen(false);
+      resetForm();
+      await fetchReceivers();
+    } catch (err: any) {
+      console.error('Error saving receiver branches:', err);
+      alert('কর্মী তথ্য পরিবর্তন বা সংরক্ষণ করতে সমস্যা হয়েছে।');
     } finally {
       setIsSaving(false);
     }
@@ -715,6 +577,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
     setTempIsActive(true);
     setTempTransferredTo('');
     setEditingId(null);
+    setSelectedBranches([]);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -755,9 +618,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
     }
 
     const confirmMessage = `আপনি কি নিশ্চিতভাবে "${profile.name}"-কে এই শাখা (${profile.para_type}) হতে ডিলিট করতে চান?\n\n` +
-      `সতর্কতা: ডিলিট করলে ইনি শুধুমাত্র এই শাখা হতে ডিলিট হবেন, সম্পূর্ণ সিস্টেম হতে নয়। ` +
-      `যদি উনাকে অন্য কোন শাখায় বদলি করা হয়ে থাকে, তবে সেই শাখায় উনার প্রোফাইলটি সম্পূর্ণ সুরক্ষিত থাকবে। ` +
-      `টেস্ট করার জন্য আপনি যে কাউকে এক শাখা থেকে অন্য শাখায় বদলি করলেও এখান থেকে ডিলিট করলে অন্য শাখার তথ্য মুছে যাবে না।`;
+      `সতর্কতা: ডিলিট করলে ইনি শুধুমাত্র এই শাখা হতে ডিলিট হবেন। ` +
+      `যদি উনাকে একাধিক শাখায় সক্রিয় রাখা হয়ে থাকে, তবে অন্যান্য শাখায় উনার প্রোফাইলটি সম্পূর্ণ সুরক্ষিত থাকবে।`;
 
     if (!window.confirm(confirmMessage)) return;
     
@@ -1097,53 +959,54 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                   />
                 </div>
 
-                {/* Branch Selection Selector */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">শাখা নির্ধারণ</label>
-                  <select 
-                    value={selectedParaType}
-                    onChange={(e) => setSelectedParaType(e.target.value)}
-                    className="w-full h-[54px] px-5 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all text-sm shadow-sm"
-                  >
-                    <option value="প্রশাসন">১. প্রশাসন শাখা</option>
-                    <option value="এসএফআই">২. এসএফআই শাখা</option>
-                    <option value="নন এসএফআই">৩. নন এসএফআই শাখা</option>
-                  </select>
-                </div>
+                {/* Branch Selection Selector with Checkboxes */}
+                <div className="space-y-3">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 block">শাখা নির্ধারণ (এক বা একাধিক নির্বাচন করুন)</label>
+                  <div className="grid grid-cols-1 gap-2 bg-slate-50 p-4 rounded-2xl border-2 border-slate-100">
+                    {['প্রশাসন', 'এসএফআই', 'নন এসএফআই'].map((branch) => {
+                      const isChecked = selectedBranches.includes(branch);
+                      
+                      // Check if they have files in this branch
+                      const currentNorm = normalizeName(tempName.trim());
+                      const existingRec = receiversList.find(r => normalizeName(r.name) === currentNorm && getCleanBranch(r.para_type) === branch);
+                      const hasFiles = existingRec && existingRec.entryCount && existingRec.entryCount > 0;
 
-                {/* Active Status Selector */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">সক্রিয়তা / বদলি অবস্থা</label>
-                  <select 
-                    value={tempIsActive ? "active" : "inactive"}
-                    onChange={(e) => {
-                      const val = e.target.value === "active";
-                      setTempIsActive(val);
-                      if (val) setTempTransferredTo('');
-                    }}
-                    className="w-full h-[54px] px-5 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all text-sm shadow-sm"
-                  >
-                    <option value="active">সক্রিয় (Active)</option>
-                    <option value="inactive">বদলি / নিষ্ক্রিয় (Transferred / Inactive)</option>
-                  </select>
-                </div>
-
-                {!tempIsActive && (
-                  <div className="space-y-2 animate-in fade-in slide-in-from-top-3 duration-200">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">বদলি স্থলী নির্ধারণ করুন</label>
-                    <select 
-                      value={tempTransferredTo}
-                      onChange={(e) => setTempTransferredTo(e.target.value)}
-                      className="w-full h-[54px] px-5 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all text-sm shadow-sm"
-                    >
-                      <option value="">-- বদলির শাখা/স্থান নির্ধারণ করুন --</option>
-                      <option value="প্রশাসন শাখা">১. প্রশাসন শাখা</option>
-                      <option value="এসএফআই শাখা">২. এসএফআই শাখা</option>
-                      <option value="নন এসএফআই শাখা">৩. নন এসএফআই শাখা</option>
-                      <option value="অন্যান্য দপ্তর / অন্যত্র">অন্যান্য দপ্তর / অন্যত্র</option>
-                    </select>
+                      return (
+                        <label 
+                          key={branch}
+                          className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 cursor-pointer transition-all select-none ${
+                            isChecked 
+                              ? 'bg-blue-50/50 border-blue-500/50 text-blue-700 font-bold' 
+                              : 'bg-white border-slate-100 hover:border-slate-300 text-slate-600'
+                          } ${hasFiles ? 'cursor-not-allowed opacity-80' : ''}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input 
+                              type="checkbox"
+                              checked={isChecked}
+                              disabled={hasFiles}
+                              onChange={(e) => {
+                                if (hasFiles) return;
+                                if (e.target.checked) {
+                                  setSelectedBranches(prev => [...prev, branch]);
+                                } else {
+                                  setSelectedBranches(prev => prev.filter(b => b !== branch));
+                                }
+                              }}
+                              className="w-4.5 h-4.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                            />
+                            <span className="text-xs sm:text-sm">{branch === 'প্রশাসন' ? '১. প্রশাসন শাখা' : branch === 'এসএফআই' ? '২. এসএফআই শাখা' : '৩. নন এসএফআই শাখা'}</span>
+                          </div>
+                          {hasFiles && (
+                            <span className="text-[9px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200 font-bold">
+                              চিঠিপত্র আছে
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
                   </div>
-                )}
+                </div>
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-3">
