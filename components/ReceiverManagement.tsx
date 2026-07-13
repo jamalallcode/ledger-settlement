@@ -484,6 +484,58 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
 
       // Save to Supabase if configured
       if (isSupabaseConfigured) {
+        const saveToDbWithFallback = async (data: any, id?: any) => {
+          let error;
+          if (id) {
+            const { error: updateError } = await supabase
+              .from('receivers')
+              .update(data)
+              .eq('id', id);
+            error = updateError;
+
+            if (error && (error.message?.includes('column') || error.code === '42703')) {
+              const { transferred_at, ...withTransferredTo } = data;
+              const { error: retryError } = await supabase
+                .from('receivers')
+                .update(withTransferredTo)
+                .eq('id', id);
+              error = retryError;
+            }
+
+            if (error && (error.message?.includes('column') || error.code === '42703')) {
+              const { is_active, transferred_to, transferred_at, ...rest } = data;
+              const { error: finalRetryError } = await supabase
+                .from('receivers')
+                .update(rest)
+                .eq('id', id);
+              error = finalRetryError;
+            }
+          } else {
+            const { error: insertError } = await supabase
+              .from('receivers')
+              .insert([data]);
+            error = insertError;
+
+            if (error && (error.message?.includes('column') || error.code === '42703')) {
+              const { transferred_at, ...withTransferredTo } = data;
+              const { error: retryError } = await supabase
+                .from('receivers')
+                .insert([withTransferredTo]);
+              error = retryError;
+            }
+
+            if (error && (error.message?.includes('column') || error.code === '42703')) {
+              const { is_active, transferred_to, transferred_at, ...rest } = data;
+              const { error: finalRetryError } = await supabase
+                .from('receivers')
+                .insert([rest]);
+              error = finalRetryError;
+            }
+          }
+
+          if (error) throw error;
+        };
+
         for (const b of allBranches) {
           const isSelected = selectedBranches.includes(b);
           const existingRec = existingRecords.find(r => getCleanBranch(r.para_type) === b);
@@ -500,18 +552,11 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
             };
 
             if (existingRec && existingRec.id && !existingRec.id.toString().startsWith('local-')) {
-              // Update existing db row
-              const { error } = await supabase
-                .from('receivers')
-                .update(profileData)
-                .eq('id', existingRec.id);
-              if (error) throw error;
+              // Update existing db row with fallback handling
+              await saveToDbWithFallback(profileData, existingRec.id);
             } else {
-              // Insert new db row
-              const { error } = await supabase
-                .from('receivers')
-                .insert([profileData]);
-              if (error) throw error;
+              // Insert new db row with fallback handling
+              await saveToDbWithFallback(profileData);
             }
           } else {
             // Unselected. If record exists in database, delete it since they have no files in it
