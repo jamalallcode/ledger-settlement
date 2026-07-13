@@ -33,12 +33,23 @@ const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
 
 const normalizeName = (name: string | null | undefined): string => {
   if (!name) return '';
-  return name
+  let n = name
     .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
     .trim()
     .replace(/\s+/g, ' ')
     .replace(/[:ঃ।\.\-]/g, '')
     .normalize('NFC');
+
+  // Strip common prefixes like "জনাব", "জনাবা", "ডাঃ", "ডা", "ড", "ডক্টর"
+  n = n.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '');
+
+  // Normalize common spelling variations in Bengali vowels for matching
+  n = n.replace(/ী/g, 'ি')
+       .replace(/ূ/g, 'ু')
+       .replace(/ষ/g, 'স')
+       .replace(/শ/g, 'স');
+
+  return n;
 };
 
 const getCleanBranch = (type: string | null | undefined): string => {
@@ -719,16 +730,6 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
     if (!window.confirm(confirmMessage)) return;
     
     try {
-      const normalizeName = (name: string | null | undefined) => {
-        if (!name) return '';
-        return name
-          .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
-          .trim()
-          .replace(/\s+/g, ' ')
-          .replace(/[:ঃ।\.\-]/g, '')
-          .normalize('NFC');
-      };
-      
       const norm = normalizeName(profile.name);
       const branchClean = getCleanBranch(profile.para_type);
       const compKey = `${norm}_${branchClean}`;

@@ -594,12 +594,23 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     const loadReceivers = async () => {
       const normalizeName = (name: string | null | undefined) => {
         if (!name) return '';
-        return name
+        let n = name
           .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '') // Remove all possible invisible characters and non-breaking spaces
           .trim()
           .replace(/\s+/g, ' ')                  // Normalize internal whitespace to a single space
           .replace(/[:ঃ।\.\-]/g, '')             // Remove punctuation for comparison
           .normalize('NFC');                     // Normalize Unicode to canonical form
+
+        // Strip common prefixes like "জনাব", "জনাবা", "ডাঃ", "ডা", "ড", "ডক্টর"
+        n = n.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '');
+
+        // Normalize common spelling variations in Bengali vowels for matching
+        n = n.replace(/ী/g, 'ি')
+             .replace(/ূ/g, 'ু')
+             .replace(/ষ/g, 'স')
+             .replace(/শ/g, 'স');
+
+        return n;
       };
 
       const getCleanBranch = (type: string | null | undefined): string => {
