@@ -794,17 +794,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
           let is_active = true;
 
-          // Check for Shamima/Shamira hardcoded transfers
-          const normNoSpaces = norm.replace(/\s+/g, '');
-          const isShamimaTransfer = normNoSpaces === 'শামীমাশাহরিন' || normNoSpaces === 'শামীরাশাহরিন';
-
-          if (isShamimaTransfer) {
-            if (currentFormBranchClean === 'নন এসএফআই') {
-              is_active = false;
-            } else if (currentFormBranchClean === 'এসএফআই') {
-              is_active = true;
-            }
-          } else if (r.is_active === false || isLInactive || hasTransfer) {
+          if (r.is_active === false || isLInactive || hasTransfer) {
             is_active = false;
           } else {
             // Find any profiles for this person in the master system profiles list
@@ -921,17 +911,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
           let is_active = true;
 
-          // Check for Shamima/Shamira hardcoded transfers
-          const normNoSpaces = norm.replace(/\s+/g, '');
-          const isShamimaTransfer = normNoSpaces === 'শামীমাশাহরিন' || normNoSpaces === 'শামীরাশাহরিন';
-
-          if (isShamimaTransfer) {
-            if (currentFormBranchClean === 'নন এসএফআই') {
-              is_active = false;
-            } else if (currentFormBranchClean === 'এসএফআই') {
-              is_active = true;
-            }
-          } else if (r.is_active === false || isLInactive || hasTransfer) {
+          if (r.is_active === false || isLInactive || hasTransfer) {
             is_active = false;
           } else {
             // Find any profiles for this person in the master system profiles list

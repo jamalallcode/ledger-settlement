@@ -435,9 +435,9 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
     setTempIsActive(profile.is_active !== false);
     setTempTransferredTo(profile.transferred_to || '');
 
-    // Get all branches where this worker is currently present and active
+    // Get all branches where this worker is currently active
     const activeBranches = receiversList
-      .filter(r => normalizeName(r.name) === norm)
+      .filter(r => normalizeName(r.name) === norm && r.is_active !== false)
       .map(r => getCleanBranch(r.para_type));
 
     setSelectedBranches(activeBranches);
@@ -470,17 +470,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
 
       const allBranches: Array<'প্রশাসন' | 'এসএফআই' | 'নন এসএফআই'> = ['প্রশাসন', 'এসএফআই', 'নন এসএফআই'];
 
-      // Validate that we aren't unselecting a branch that has active files
-      for (const b of allBranches) {
-        const isSelected = selectedBranches.includes(b);
-        const existingRec = existingRecords.find(r => getCleanBranch(r.para_type) === b);
-        
-        if (!isSelected && existingRec && existingRec.entryCount && existingRec.entryCount > 0) {
-          alert(`"${tempName.trim()}" এর "${b}" শাখায় চিঠিপত্র বিতরণ করা থাকায় ওনাকে এই শাখা থেকে বাদ দেওয়া সম্ভব নয়।`);
-          setIsSaving(false);
-          return;
-        }
-      }
+
 
       // Save to Supabase if configured
       if (isSupabaseConfigured) {
@@ -559,13 +549,33 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
               await saveToDbWithFallback(profileData);
             }
           } else {
-            // Unselected. If record exists in database, delete it since they have no files in it
-            if (existingRec && existingRec.id && !existingRec.id.toString().startsWith('local-')) {
-              const { error } = await supabase
-                .from('receivers')
-                .delete()
-                .eq('id', existingRec.id);
-              if (error) throw error;
+            // Unselected. If they have files, set them to inactive instead of deleting
+            const hasFiles = existingRec && existingRec.entryCount && existingRec.entryCount > 0;
+            if (hasFiles) {
+              const profileData = {
+                name: tempName.trim(),
+                designation: tempDesignation.trim() || null,
+                image: tempImage || null,
+                para_type: b,
+                is_active: false,
+                transferred_to: 'অন্যান্য শাখা',
+                transferred_at: getBengaliDateTimeString()
+              };
+
+              if (existingRec && existingRec.id && !existingRec.id.toString().startsWith('local-')) {
+                await saveToDbWithFallback(profileData, existingRec.id);
+              } else {
+                await saveToDbWithFallback(profileData);
+              }
+            } else {
+              // No files in this branch, delete it from the database since they are completely removed
+              if (existingRec && existingRec.id && !existingRec.id.toString().startsWith('local-')) {
+                const { error } = await supabase
+                  .from('receivers')
+                  .delete()
+                  .eq('id', existingRec.id);
+                if (error) throw error;
+              }
             }
           }
         }
@@ -598,6 +608,22 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
             transferred_to: '',
             transferred_at: ''
           });
+        } else {
+          // If they have files, keep them as inactive
+          const hasFiles = existingRec && existingRec.entryCount && existingRec.entryCount > 0;
+          if (hasFiles) {
+            const newId = existingRec?.id || 'local-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+            items.push({
+              id: newId,
+              name: tempName.trim(),
+              designation: tempDesignation.trim() || null,
+              image: tempImage || null,
+              para_type: b,
+              is_active: false,
+              transferred_to: 'অন্যান্য শাখা',
+              transferred_at: getBengaliDateTimeString()
+            });
+          }
         }
 
         localStorage.setItem(key, JSON.stringify(items));
@@ -1023,15 +1049,13 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                             isChecked 
                               ? 'bg-blue-50/50 border-blue-500/50 text-blue-700 font-bold' 
                               : 'bg-white border-slate-100 hover:border-slate-300 text-slate-600'
-                          } ${hasFiles ? 'cursor-not-allowed opacity-80' : ''}`}
+                          }`}
                         >
                           <div className="flex items-center gap-3">
                             <input 
                               type="checkbox"
                               checked={isChecked}
-                              disabled={hasFiles}
                               onChange={(e) => {
-                                if (hasFiles) return;
                                 if (e.target.checked) {
                                   setSelectedBranches(prev => [...prev, branch]);
                                 } else {
