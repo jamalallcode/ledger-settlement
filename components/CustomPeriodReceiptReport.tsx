@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
-  Calendar, FileText, User, Printer, Search, RefreshCw, 
+  Calendar, FileText, User, Users, BookOpen, Printer, Search, RefreshCw, 
   ChevronLeft, LayoutGrid, Sparkles, FileSpreadsheet, ArrowRight,
   ShieldCheck, Mail, Info, FileEdit
 } from 'lucide-react';
@@ -380,11 +380,13 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     });
   }, [entries, startDate, endDate, filterBranch, searchTerm, keywordSearch, filterMinistry]);
 
-  // Calculate statistics for BSR, Bilateral meetings, and Working papers
+  // Calculate statistics for BSR, Bilateral meetings, Trilateral meetings, Working papers, and Others
   const stats = useMemo(() => {
     let bsrCount = 0;
     let bilateralCount = 0;
+    let trilateralCount = 0;
     let workingPaperCount = 0;
+    let othersCount = 0;
 
     const robustNormalize = (str: string = '') => {
       if (!str) return '';
@@ -400,29 +402,34 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     filteredEntries.forEach(entry => {
       const type = robustNormalize(entry.letterType || '');
       
-      // BSR count (বিএসআর)
-      if (type.includes(robustNormalize('বিএসআর')) || type.includes('bsr')) {
-        bsrCount++;
-      }
-      
-      // Bilateral count (দ্বিপক্ষীয় সভা)
-      if (
-        (type.includes(robustNormalize('দ্বিপক্ষীয়')) || type.includes(robustNormalize('দ্বিপাক্ষী')) || type.includes('bilateral')) &&
-        !type.includes(robustNormalize('কার্যপত্র')) && !type.includes(robustNormalize('কাযপত্র')) && !type.includes('working')
-      ) {
-        bilateralCount++;
-      }
-
-      // Working papers count (কার্যপত্র)
+      // 1. Working papers count (কার্যপত্র)
       if (type.includes(robustNormalize('কার্যপত্র')) || type.includes(robustNormalize('কাযপত্র')) || type.includes('working')) {
         workingPaperCount++;
+      }
+      // 2. BSR count (বিএসআর)
+      else if (type.includes(robustNormalize('বিএসআর')) || type.includes('bsr')) {
+        bsrCount++;
+      }
+      // 3. Bilateral count (দ্বিপক্ষীয় সভা)
+      else if (type.includes(robustNormalize('দ্বিপক্ষীয়')) || type.includes(robustNormalize('দ্বিপাক্ষী')) || type.includes('bilateral')) {
+        bilateralCount++;
+      }
+      // 4. Trilateral count (ত্রিপক্ষীয় সভা)
+      else if (type.includes(robustNormalize('ত্রিপক্ষীয়')) || type.includes(robustNormalize('ত্রিপাক্ষী')) || type.includes('trilateral')) {
+        trilateralCount++;
+      }
+      // 5. Others count (অন্যান্য)
+      else {
+        othersCount++;
       }
     });
 
     return {
       bsr: bsrCount,
       bilateral: bilateralCount,
+      trilateral: trilateralCount,
       workingPaper: workingPaperCount,
+      others: othersCount,
       total: filteredEntries.length
     };
   }, [filteredEntries]);
@@ -489,8 +496,16 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
             <td style="padding: 6px; text-align: center; font-weight: bold; border: 1px solid #cbd5e1;">${toBengaliDigits(stats.bilateral)} টি</td>
           </tr>
           <tr>
+            <td style="padding: 6px; border: 1px solid #cbd5e1;">মোট ত্রিপক্ষীয় সভা</td>
+            <td style="padding: 6px; text-align: center; font-weight: bold; border: 1px solid #cbd5e1;">${toBengaliDigits(stats.trilateral)} টি</td>
+          </tr>
+          <tr>
             <td style="padding: 6px; border: 1px solid #cbd5e1;">মোট কার্যপত্র</td>
             <td style="padding: 6px; text-align: center; font-weight: bold; border: 1px solid #cbd5e1;">${toBengaliDigits(stats.workingPaper)} টি</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px; border: 1px solid #cbd5e1;">অন্যান্য চিঠিপত্র</td>
+            <td style="padding: 6px; text-align: center; font-weight: bold; border: 1px solid #cbd5e1;">${toBengaliDigits(stats.others)} টি</td>
           </tr>
           <tr style="background-color: #f8fafc; font-weight: bold;">
             <td style="padding: 6px; border: 1px solid #cbd5e1;">সর্বমোট প্রাপ্ত পত্র</td>
@@ -772,7 +787,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       </div>
 
       {/* STATISTICS CARDS (Bento Grid Style) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {/* BSR Card */}
         <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
@@ -783,7 +798,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           </div>
           <div className="mt-4 space-y-1">
             <p className="text-[11px] font-bold text-emerald-600">মোট বিএসআর সংখ্যা</p>
-            <p className="text-3xl md:text-4xl font-black text-slate-900">
+            <p className="text-2xl md:text-3xl font-black text-slate-900">
               {toBengaliDigits(stats.bsr)} <span className="text-sm font-black text-slate-500">টি</span>
             </p>
           </div>
@@ -799,8 +814,24 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           </div>
           <div className="mt-4 space-y-1">
             <p className="text-[11px] font-bold text-blue-600">মোট দ্বিপক্ষীয় সভা</p>
-            <p className="text-3xl md:text-4xl font-black text-slate-900">
+            <p className="text-2xl md:text-3xl font-black text-slate-900">
               {toBengaliDigits(stats.bilateral)} <span className="text-sm font-black text-slate-500">টি</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Trilateral Meetings Card */}
+        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black text-indigo-800 uppercase tracking-widest bg-indigo-100 px-2 py-1 rounded-md">Trilateral</span>
+            <div className="w-9 h-9 bg-indigo-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
+              <Users size={18} />
+            </div>
+          </div>
+          <div className="mt-4 space-y-1">
+            <p className="text-[11px] font-bold text-indigo-600">মোট ত্রিপক্ষীয় সভা</p>
+            <p className="text-2xl md:text-3xl font-black text-slate-900">
+              {toBengaliDigits(stats.trilateral)} <span className="text-sm font-black text-slate-500">টি</span>
             </p>
           </div>
         </div>
@@ -815,8 +846,24 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           </div>
           <div className="mt-4 space-y-1">
             <p className="text-[11px] font-bold text-violet-600">মোট কার্যপত্র</p>
-            <p className="text-3xl md:text-4xl font-black text-slate-900">
+            <p className="text-2xl md:text-3xl font-black text-slate-900">
               {toBengaliDigits(stats.workingPaper)} <span className="text-sm font-black text-slate-500">টি</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Others Card */}
+        <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black text-amber-800 uppercase tracking-widest bg-amber-100 px-2 py-1 rounded-md">Others</span>
+            <div className="w-9 h-9 bg-amber-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-amber-200">
+              <BookOpen size={18} />
+            </div>
+          </div>
+          <div className="mt-4 space-y-1">
+            <p className="text-[11px] font-bold text-amber-600">অন্যান্য চিঠিপত্র</p>
+            <p className="text-2xl md:text-3xl font-black text-slate-900">
+              {toBengaliDigits(stats.others)} <span className="text-sm font-black text-slate-500">টি</span>
             </p>
           </div>
         </div>
@@ -831,7 +878,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           </div>
           <div className="mt-4 space-y-1">
             <p className="text-[11px] font-bold text-slate-400">সর্বমোট প্রাপ্ত পত্র</p>
-            <p className="text-3xl md:text-4xl font-black text-white">
+            <p className="text-2xl md:text-3xl font-black text-white">
               {toBengaliDigits(stats.total)} <span className="text-sm font-black text-slate-400">টি</span>
             </p>
           </div>
