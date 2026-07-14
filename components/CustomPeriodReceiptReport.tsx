@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Calendar, FileText, User, Users, BookOpen, Printer, Search, RefreshCw, 
   ChevronLeft, LayoutGrid, Sparkles, FileSpreadsheet, ArrowRight,
-  ShieldCheck, Mail, Info, FileEdit
+  ShieldCheck, Mail, Info, FileEdit, ArrowUpDown
 } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { isSFI, isNonSFI, getCleanLetterTypeDisplay } from '../utils/branchUtils';
@@ -158,6 +158,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
   const [filterBranch, setFilterBranch] = useState('সকল');
   const [keywordSearch, setKeywordSearch] = useState('');
   const [filterMinistry, setFilterMinistry] = useState('সকল');
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
   const MINISTRIES = STATIC_MINISTRIES;
 
@@ -290,7 +291,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
   // Filter entries based on selected dates and other controls
   const filteredEntries = useMemo(() => {
-    return entries.filter(entry => {
+    const filtered = entries.filter(entry => {
       // 1. Date Range Filter strictly using diaryDate (diary date) as requested by user
       const entryDate = entry.diaryDate || '';
       if (!entryDate) return false;
@@ -378,7 +379,31 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
       return true;
     });
-  }, [entries, startDate, endDate, filterBranch, searchTerm, keywordSearch, filterMinistry]);
+
+    // Apply sorting date-wise (diaryDate) as requested
+    return [...filtered].sort((a, b) => {
+      const dateA = a.diaryDate || '';
+      const dateB = b.diaryDate || '';
+      if (dateA !== dateB) {
+        return sortOrder === 'asc' 
+          ? dateA.localeCompare(dateB) 
+          : dateB.localeCompare(dateA);
+      }
+      // If diary dates are equal, sort by diaryNo or letterDate secondary
+      const letterA = a.letterDate || '';
+      const letterB = b.letterDate || '';
+      if (letterA !== letterB) {
+        return sortOrder === 'asc' 
+          ? letterA.localeCompare(letterB) 
+          : letterB.localeCompare(letterA);
+      }
+      const diaryNoA = String(a.diaryNo || '');
+      const diaryNoB = String(b.diaryNo || '');
+      return sortOrder === 'asc'
+        ? diaryNoA.localeCompare(diaryNoB)
+        : diaryNoB.localeCompare(diaryNoA);
+    });
+  }, [entries, startDate, endDate, filterBranch, searchTerm, keywordSearch, filterMinistry, sortOrder]);
 
   // Calculate statistics for BSR, Bilateral meetings, Trilateral meetings, Working papers, and Others
   const stats = useMemo(() => {
@@ -897,10 +922,30 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
         </div>
 
         <div className="p-4 md:p-6">
-          <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3 no-print">
-            <div className="flex items-center gap-2">
-              <LayoutGrid size={18} className="text-blue-600" />
-              <h3 className="font-black text-slate-800 text-sm uppercase">প্রাপ্ত তথ্যের তালিকা ({toBengaliDigits(filteredEntries.length)} টি)</h3>
+          <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3 no-print flex-wrap gap-y-2">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <LayoutGrid size={18} className="text-blue-600" />
+                <h3 className="font-black text-slate-800 text-sm uppercase">প্রাপ্ত তথ্যের তালিকা ({toBengaliDigits(filteredEntries.length)} টি)</h3>
+              </div>
+              
+              {/* সাজানোর ক্রমানুসার */}
+              <div className="relative">
+                <select 
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
+                  className="h-8 pl-8 pr-7 border-2 border-slate-200 rounded-lg font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 transition-all text-xs cursor-pointer appearance-none"
+                >
+                  <option value="desc">নতুন থেকে পুরানো</option>
+                  <option value="asc">পুরানো থেকে নতুন</option>
+                </select>
+                <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                  <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
+                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                  </svg>
+                </div>
+              </div>
             </div>
             
             <div className="flex gap-2 items-center">
