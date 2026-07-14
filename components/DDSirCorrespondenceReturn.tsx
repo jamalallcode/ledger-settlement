@@ -114,8 +114,9 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
   const [receiverImages, setReceiverImages] = useState<Record<string, string>>({});
   const [receiverDesignations, setReceiverDesignations] = useState<Record<string, string>>({});
+  const [receiversList, setReceiversList] = useState<any[]>([]);
 
-  const normalizeName = (name: string | null | undefined) => {
+  const normalizeName = (name: string | null | undefined): string => {
     if (!name) return 'অনির্ধারিত';
     return name
       .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '') // Remove all possible invisible characters and non-breaking spaces
@@ -129,6 +130,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     const fetchReceiverProfiles = async () => {
       const imagesMap: Record<string, string> = {};
       const designationsMap: Record<string, string> = {};
+      let finalReceivers: any[] = [];
 
       const addProfile = (name: string, img: string | null, desig: string | null) => {
         if (!name) return;
@@ -144,15 +146,36 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         }
       };
 
+      const getCleanBranch = (type: string | null | undefined): string => {
+        if (!type) return 'এসএফআই';
+        if (type.includes('প্রশাসন') || type === 'ADMIN' || type === 'admin') return 'প্রশাসন';
+        if (type.includes('নন') || type.toUpperCase().includes('NON')) return 'নন এসএফআই';
+        return 'এসএফআই';
+      };
+
+      const getInactiveList = (): string[] => {
+        try {
+          const saved = localStorage.getItem('ledger_inactive_receivers_v1');
+          return saved ? JSON.parse(saved) : [];
+        } catch {
+          return [];
+        }
+      };
+
       // 1. Fetch from database (Supabase)
       if (isSupabaseConfigured) {
         try {
           const { data: dbReceivers } = await supabase
             .from('receivers')
-            .select('name, image, designation');
+            .select('*');
           if (dbReceivers) {
             dbReceivers.forEach(r => {
               addProfile(r.name, r.image, r.designation);
+              finalReceivers.push({
+                ...r,
+                name: r.name ? r.name.trim() : '',
+                source: 'database'
+              });
             });
           }
         } catch (err) {
@@ -162,28 +185,69 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
       // 2. Fetch from local storage keys
       const localKeys = [
-        'ledger_correspondence_receivers_admin',
-        'ledger_correspondence_receivers_sfi',
-        'ledger_correspondence_receivers_nonsfi'
+        { key: 'ledger_correspondence_receivers_admin', branch: 'প্রশাসন' },
+        { key: 'ledger_correspondence_receivers_sfi', branch: 'এসএফআই' },
+        { key: 'ledger_correspondence_receivers_nonsfi', branch: 'নন এসএফআই' }
       ];
-      localKeys.forEach(key => {
+      localKeys.forEach(({ key, branch }) => {
         try {
           const saved = localStorage.getItem(key);
           if (saved) {
             const items = JSON.parse(saved);
             if (Array.isArray(items)) {
+              const existingIds = new Set(finalReceivers.map(r => r.id));
+              const existingNormalizedNames = new Set(finalReceivers.map(r => normalizeName(r.name) + '_' + getCleanBranch(r.para_type)));
+
               items.forEach((item: any) => {
                 addProfile(item.name, item.image, item.designation);
+                const b = getCleanBranch(item.para_type || branch);
+                const compositeKey = normalizeName(item.name) + '_' + b;
+                if (!existingIds.has(item.id) && !existingNormalizedNames.has(compositeKey)) {
+                  finalReceivers.push({
+                    ...item,
+                    para_type: b,
+                    source: 'local'
+                  });
+                  existingNormalizedNames.add(compositeKey);
+                }
               });
             }
           }
         } catch (e) {
-          console.error("Error parsing local receivers:", e);
+          console.error("Error parsing local receivers in DD Sir Return:", e);
         }
+      });
+
+      const inactiveListRaw = getInactiveList();
+      const inactiveKeysSet = new Set(inactiveListRaw.map(item => normalizeName(item)));
+
+      const receiversWithCounts = finalReceivers.map(r => {
+        const b = getCleanBranch(r.para_type);
+        const norm = normalizeName(r.name);
+        const compKey = `${norm}_${b}`;
+        
+        let is_active = r.is_active;
+        if (is_active === undefined || is_active === null) {
+          if (inactiveKeysSet.has(compKey)) {
+            is_active = false;
+          } else if (inactiveKeysSet.has(norm)) {
+            const hasBranchSpecificKey = Array.from(inactiveKeysSet).some(k => k.startsWith(`${norm}_`));
+            is_active = !hasBranchSpecificKey;
+          } else {
+            is_active = true;
+          }
+        }
+
+        return {
+          ...r,
+          para_type: b,
+          is_active
+        };
       });
 
       setReceiverImages(imagesMap);
       setReceiverDesignations(designationsMap);
+      setReceiversList(receiversWithCounts);
     };
 
     fetchReceiverProfiles();
@@ -221,15 +285,40 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   }, [isStatsOpen]);
 
   const auditorOptions = useMemo(() => {
-    let filteredForOptions = entries || [];
+    // 1. Get active auditors of selected branch
+    let activeInBranch = receiversList.filter(r => r.is_active !== false);
     if (filterBranch !== 'সকল') {
-      filteredForOptions = entries.filter(e => e.paraType === filterBranch);
+      activeInBranch = activeInBranch.filter(r => r.para_type === filterBranch);
     }
-    const unique = Array.from(new Set(filteredForOptions.map(e => normalizeName(e.receiverName || e.presentedToName)).filter(name => 
-      name !== 'অনির্ধারিত'
-    )));
-    return ['সকল', ...unique];
-  }, [entries, filterBranch]);
+    const activeNames = activeInBranch.map(r => normalizeName(r.name)).filter(name => name !== 'অনির্ধারিত' && name !== '');
+
+    let finalUnique: string[];
+
+    if (filterBranch === 'সকল') {
+      const entriesAuditors = (entries || []).map(e => normalizeName(e.receiverName || e.presentedToName)).filter(name => name !== 'অনির্ধারিত' && name !== '');
+      finalUnique = Array.from(new Set([...activeNames, ...entriesAuditors]));
+    } else {
+      finalUnique = Array.from(new Set(activeNames));
+    }
+
+    // Map normalized names back to display names
+    const displayNameMap = new Map<string, string>();
+    receiversList.forEach(r => {
+      if (r.name) {
+        displayNameMap.set(normalizeName(r.name), r.name.trim());
+      }
+    });
+    (entries || []).forEach(e => {
+      const name = e.receiverName || e.presentedToName;
+      if (name) {
+        displayNameMap.set(normalizeName(name), name.trim());
+      }
+    });
+
+    const displayUnique = finalUnique.map(name => displayNameMap.get(name) || name).sort((a, b) => a.localeCompare(b));
+
+    return ['সকল', ...displayUnique];
+  }, [entries, filterBranch, receiversList]);
 
   useEffect(() => {
     if (filterAuditor !== 'সকল' && !auditorOptions.includes(filterAuditor)) {

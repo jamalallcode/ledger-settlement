@@ -13,12 +13,22 @@ const AnimatedPremiumBg: React.FC = () => {
   }));
 
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0 bg-gradient-to-tr from-[#93c5fd] via-[#e0f2fe] to-[#bae6fd]">
-      {/* 1. Sky Blue Soft Gradient Background */}
+    <div 
+      className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0"
+      style={{
+        background: 'linear-gradient(135deg, var(--landing-bg-start, #93c5fd) 0%, var(--landing-bg-mid, #e0f2fe) 50%, var(--landing-bg-end, #bae6fd) 100%)'
+      }}
+    >
+      {/* 1. Theme-Adaptive Soft Gradient Background */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#7dd3fc] via-[#f0f9ff] to-[#e0f2fe] opacity-100" />
+        <div 
+          className="absolute inset-0 opacity-100"
+          style={{
+            background: 'linear-gradient(135deg, var(--landing-bg-inner-start, #7dd3fc) 0%, var(--landing-bg-inner-mid, #f0f9ff) 50%, var(--landing-bg-inner-end, #e0f2fe) 100%)'
+          }}
+        />
         {/* Soft elegant radial shine in the center to highlight content */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.7)_0%,rgba(255,255,255,0)_80%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.75)_0%,rgba(255,255,255,0)_80%)]" />
       </div>
 
       {/* 2. Premium Light Soft Grid Overlay (very light, elegant) */}
@@ -28,13 +38,13 @@ const AnimatedPremiumBg: React.FC = () => {
       <svg className="absolute inset-0 w-full h-full z-15 opacity-[0.12]" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="gradient-wave-1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#2563eb" />
-            <stop offset="50%" stopColor="#0d9488" />
-            <stop offset="100%" stopColor="#4f46e5" />
+            <stop offset="0%" stopColor="var(--primary-theme-start, #2563eb)" />
+            <stop offset="50%" stopColor="var(--primary-theme-color, #0d9488)" />
+            <stop offset="100%" stopColor="var(--primary-theme-end, #4f46e5)" />
           </linearGradient>
           <linearGradient id="gradient-wave-2" x1="100%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#10b981" />
-            <stop offset="100%" stopColor="#3b82f6" />
+            <stop offset="0%" stopColor="var(--primary-theme-hover, #10b981)" />
+            <stop offset="100%" stopColor="var(--primary-theme-start, #3b82f6)" />
           </linearGradient>
         </defs>
         
