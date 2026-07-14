@@ -591,6 +591,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   }, [formData, ld, lm, ly, dd, dm, dy, rd, rm, ry, rcd, rcm, rcy, isSuccess]);
 
   useEffect(() => {
+    let active = true;
     const loadReceivers = async () => {
       const normalizeName = (name: string | null | undefined) => {
         if (!name) return '';
@@ -690,9 +691,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           if (savedNames) {
             try {
               const parsed = JSON.parse(savedNames);
-              const localReceivers = (parsed.length > 0 && typeof parsed[0] === 'string')
-                ? parsed.map((name: string) => ({ name, designation: 'অডিটর' }))
-                : parsed;
+              const localReceivers = parsed.map((p: any) => {
+                if (typeof p === 'string') {
+                  return { name: p, designation: 'অডিটর' };
+                }
+                return p;
+              }).filter(Boolean);
               
               // Merge with what we might have got from Supabase
               const existingNames = new Set(finalReceivers.map(r => r.name));
@@ -857,7 +861,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         });
 
         filteredReceivers.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-        setReceiverSuggestions(filteredReceivers);
+        if (active) {
+          setReceiverSuggestions(filteredReceivers);
+        }
 
       } catch (err) {
         console.error('Error loading receivers:', err);
@@ -976,14 +982,18 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           return false;
         });
 
-        setReceiverSuggestions(filtered);
+        if (active) {
+          setReceiverSuggestions(filtered);
+        }
       }
     };
 
     loadReceivers();
 
     const handleStorageChange = () => {
-      loadReceivers();
+      if (active) {
+        loadReceivers();
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -991,7 +1001,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     const savedDescriptions = localStorage.getItem('ledger_correspondence_descriptions');
     if (savedDescriptions) setDescriptionSuggestions(JSON.parse(savedDescriptions));
 
-    return () => window.removeEventListener('storage', handleStorageChange);
+    return () => {
+      active = false;
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [formData.paraType, formData.receiverName, initialEntry]);
 
   const formatDateSegments = (d: string, m: string, y: string) => {
@@ -1454,9 +1467,56 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         const key = isAdminBranch(formData.paraType) ? 'ledger_correspondence_receivers_admin' :
                     isNonSFI(formData.paraType) ? 'ledger_correspondence_receivers_nonsfi' :
                     'ledger_correspondence_receivers_sfi';
-        const updatedNames = Array.from(new Set([formData.receiverName.trim(), ...receiverSuggestions]));
-        setReceiverSuggestions(updatedNames);
-        localStorage.setItem(key, JSON.stringify(updatedNames));
+        
+        const newReceiverName = formData.receiverName.trim();
+        const normalizeNameHelper = (name: string) => {
+          return name
+            .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
+            .trim()
+            .replace(/\s+/g, ' ')
+            .replace(/[:ঃ।\.\-]/g, '')
+            .normalize('NFC')
+            .replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '')
+            .replace(/ী/g, 'ি')
+            .replace(/ূ/g, 'u')
+            .replace(/ষ/g, 'স')
+            .replace(/শ/g, 'স');
+        };
+
+        const newNorm = normalizeNameHelper(newReceiverName);
+
+        // Standardize existing receiverSuggestions into objects
+        const existingObjects = receiverSuggestions.map(r => {
+          if (!r) return null;
+          if (typeof r === 'string') {
+            return { name: r, designation: 'অডিটর', para_type: formData.paraType };
+          }
+          return r;
+        }).filter(Boolean);
+
+        // Find if the new receiver already exists (matching by normalized name)
+        const exists = existingObjects.some(r => normalizeNameHelper(r.name) === newNorm);
+
+        let updated: any[];
+        if (!exists) {
+          const newObj = {
+            id: 'local-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+            name: newReceiverName,
+            designation: 'অডিটর',
+            para_type: formData.paraType,
+            is_active: true
+          };
+          updated = [newObj, ...existingObjects];
+        } else {
+          // If it already exists, move it to the beginning of the list
+          const matchIndex = existingObjects.findIndex(r => normalizeNameHelper(r.name) === newNorm);
+          const matched = existingObjects[matchIndex];
+          const remaining = existingObjects.filter((_, idx) => idx !== matchIndex);
+          updated = [matched, ...remaining];
+        }
+
+        setReceiverSuggestions(updated);
+        localStorage.setItem(key, JSON.stringify(updated));
       }
       
       if (formData.description.trim()) {
