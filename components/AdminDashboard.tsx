@@ -21,6 +21,9 @@ interface AdminDashboardProps {
   setModuleVisibility: (val: ModuleVisibility) => void;
   contactLink?: string;
   onUpdateContactLink?: (newLink: string) => void;
+  activeThemeId?: string;
+  onThemeChange?: (themeId: string) => void;
+  themes?: any[];
 }
 
 const colorClasses: Record<string, any> = {
@@ -42,7 +45,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   moduleVisibility,
   setModuleVisibility,
   contactLink = 'https://wa.me/8801700000000',
-  onUpdateContactLink
+  onUpdateContactLink,
+  activeThemeId = 'royal-blue',
+  onThemeChange,
+  themes = []
 }) => {
   if (!isAdmin) return null;
 
@@ -378,6 +384,46 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               >
                 বিস্তারিত দেখুন <ArrowRight size={14} />
               </button>
+            </div>
+          </div>
+
+          {/* Premium Theme Selector */}
+          <div className="p-6 rounded-[2rem] bg-white border border-slate-200/60 shadow-[0_4px_20px_rgba(0,0,0,0.015)] space-y-4 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-2xl rounded-full"></div>
+            <div className="flex items-center gap-2">
+              <Sparkles className="text-blue-600" size={16} />
+              <h3 className="font-black text-slate-800 text-xs uppercase tracking-wider">প্রিমিয়াম থিম ও কালার স্কিম</h3>
+            </div>
+            <p className="text-[10px] font-bold text-slate-400 leading-normal">
+              আপনার ড্যাশবোর্ড ও সমগ্র অ্যাপ্লিকেশনের জন্য আপনার পছন্দের প্রফেশনাল কালার কম্বিনেশন সিলেক্ট করুন:
+            </p>
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              {themes.map((theme: any) => {
+                const isActive = theme.id === activeThemeId;
+                return (
+                  <button
+                    key={theme.id}
+                    onClick={() => onThemeChange && onThemeChange(theme.id)}
+                    className={`flex items-center gap-2 p-2 rounded-xl border text-left transition-all active:scale-95 duration-200 ${
+                      isActive 
+                        ? 'border-blue-500 bg-blue-50/20 shadow-xs' 
+                        : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-200'
+                    }`}
+                  >
+                    <div 
+                      className="w-3.5 h-3.5 rounded-full border border-white shrink-0 flex items-center justify-center shadow-xs"
+                      style={{ backgroundColor: theme.primary }}
+                    >
+                      {isActive && (
+                        <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                      )}
+                    </div>
+                    <span className={`text-[10px] font-black tracking-tight transition-colors truncate ${isActive ? 'text-blue-700' : 'text-slate-600'}`}>
+                      {theme.name}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

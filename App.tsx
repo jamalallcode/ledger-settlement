@@ -24,6 +24,79 @@ import { toBengaliDigits } from './utils/numberUtils';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ArrowRight, BellRing, Sparkles, Mail, ClipboardList, ArrowRightCircle, ChevronLeft } from 'lucide-react';
 
+export const THEMES = [
+  {
+    id: 'royal-blue',
+    name: 'রাজকীয় নীল (Royal Blue)',
+    primary: '#2563eb', // Blue 600
+    hover: '#1d4ed8',   // Blue 700
+    light: '#eff6ff',   // Blue 50
+    gradientStart: '#3b82f6',
+    gradientEnd: '#1d4ed8'
+  },
+  {
+    id: 'elite-emerald',
+    name: 'অভিজাত সবুজ (Elite Emerald)',
+    primary: '#059669', // Emerald 600
+    hover: '#047857',   // Emerald 700
+    light: '#ecfdf5',   // Emerald 50
+    gradientStart: '#10b981',
+    gradientEnd: '#047857'
+  },
+  {
+    id: 'cosmic-purple',
+    name: 'কসমিক বেগুনি (Cosmic Purple)',
+    primary: '#7c3aed', // Violet 600
+    hover: '#6d28d9',   // Violet 700
+    light: '#f5f3ff',   // Violet 50
+    gradientStart: '#8b5cf6',
+    gradientEnd: '#6d28d9'
+  },
+  {
+    id: 'velvet-rose',
+    name: 'অভিজাত গোলাপী (Velvet Rose)',
+    primary: '#e11d48', // Rose 600
+    hover: '#be123c',   // Rose 700
+    light: '#fff1f2',   // Rose 50
+    gradientStart: '#f43f5e',
+    gradientEnd: '#be123c'
+  },
+  {
+    id: 'ocean-teal',
+    name: 'মহাসাগরীয় নীল (Ocean Teal)',
+    primary: '#0d9488', // Teal 600
+    hover: '#0f766e',   // Teal 700
+    light: '#f0fdfa',   // Teal 50
+    gradientStart: '#14b8a6',
+    gradientEnd: '#0f766e'
+  },
+  {
+    id: 'luxury-gold',
+    name: 'সোনালী জাফরান (Luxury Gold)',
+    primary: '#d97706', // Amber 600
+    hover: '#b45309',   // Amber 700
+    light: '#fef3c7',   // Amber 50
+    gradientStart: '#f59e0b',
+    gradientEnd: '#b45309'
+  },
+  {
+    id: 'slate-iron',
+    name: 'লৌহ স্লেট (Slate Iron)',
+    primary: '#475569', // Slate 600
+    hover: '#334155',   // Slate 700
+    light: '#f1f5f9',   // Slate 50
+    gradientStart: '#64748b',
+    gradientEnd: '#334155'
+  }
+];
+
+const hexToRgb = (hex: string): string => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `${r}, ${g}, ${b}`;
+};
+
 const STORAGE_KEY = 'ledger_settlement_v10_stable';
 const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
 const PREV_STATS_KEY = 'ledger_prev_stats_v1';
@@ -112,6 +185,14 @@ const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     return localStorage.getItem('is_dark_mode') === 'true';
   });
+
+  const [themeId, setThemeId] = useState<string>(() => {
+    return localStorage.getItem('app_theme_id') || 'royal-blue';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('app_theme_id', themeId);
+  }, [themeId]);
 
   useEffect(() => {
     if (darkMode) {
@@ -1170,9 +1251,131 @@ const App: React.FC = () => {
 
   const isDirectMode = viewMode === 'vote' || viewMode === 'poll';
 
+  const currentTheme = useMemo(() => {
+    return THEMES.find(t => t.id === themeId) || THEMES[0];
+  }, [themeId]);
+
+  const dynamicThemeCSS = useMemo(() => {
+    const primaryRgb = hexToRgb(currentTheme.primary);
+    const hoverRgb = hexToRgb(currentTheme.hover);
+    return `
+      :root {
+        --primary-theme-color: ${currentTheme.primary};
+        --primary-theme-hover: ${currentTheme.hover};
+        --primary-theme-light: ${currentTheme.light};
+        --primary-theme-start: ${currentTheme.gradientStart};
+        --primary-theme-end: ${currentTheme.gradientEnd};
+        --primary-theme-rgb: ${primaryRgb};
+        --primary-theme-hover-rgb: ${hoverRgb};
+        --landing-bg-start: rgba(${primaryRgb}, 0.12);
+        --landing-bg-mid: rgba(${primaryRgb}, 0.04);
+        --landing-bg-end: rgba(${primaryRgb}, 0.08);
+        --landing-bg-inner-start: rgba(${primaryRgb}, 0.15);
+        --landing-bg-inner-mid: rgba(${primaryRgb}, 0.02);
+        --landing-bg-inner-end: rgba(${primaryRgb}, 0.06);
+      }
+
+      /* Core overrides for primary/indigo colors */
+      .bg-blue-600, .bg-indigo-600, .bg-gradient-to-tr.from-indigo-500.via-blue-600.to-indigo-700 {
+        background-color: var(--primary-theme-color) !important;
+        background-image: none !important;
+      }
+      .bg-gradient-to-br.from-blue-600.to-indigo-700,
+      .bg-gradient-to-r.from-blue-600.to-indigo-600 {
+        background: linear-gradient(135deg, var(--primary-theme-start), var(--primary-theme-end)) !important;
+      }
+      .hover\\:bg-blue-500:hover, .hover\\:bg-indigo-500:hover, .hover\\:bg-blue-600:hover, .hover\\:bg-indigo-600:hover {
+        background-color: var(--primary-theme-hover) !important;
+      }
+      .text-blue-600, .text-indigo-600, .text-blue-700, .text-indigo-700 {
+        color: var(--primary-theme-color) !important;
+      }
+      .hover\\:text-blue-600:hover, .hover\\:text-indigo-600:hover {
+        color: var(--primary-theme-color) !important;
+      }
+      .border-blue-500, .border-indigo-500, .border-blue-600, .border-indigo-600 {
+        border-color: var(--primary-theme-color) !important;
+      }
+      .bg-blue-50, .bg-indigo-50 {
+        background-color: var(--primary-theme-light) !important;
+        color: var(--primary-theme-hover) !important;
+      }
+      .bg-blue-500\\/5, .bg-indigo-500\\/5, .bg-blue-600\\/5, .bg-indigo-600\\/5 {
+        background-color: rgba(${primaryRgb}, 0.05) !important;
+      }
+      .bg-blue-500\\/10, .bg-indigo-500\\/10, .bg-blue-600\\/10, .bg-indigo-600\\/10 {
+        background-color: rgba(${primaryRgb}, 0.1) !important;
+      }
+      .shadow-blue-500\\/10, .shadow-indigo-500\\/10 {
+        --tw-shadow-color: rgba(${primaryRgb}, 0.1) !important;
+      }
+      .shadow-blue-900\\/20, .shadow-indigo-900\\/20 {
+        --tw-shadow-color: rgba(${hoverRgb}, 0.2) !important;
+      }
+      .from-blue-600, .from-indigo-600, .from-indigo-500 {
+        --tw-gradient-from: var(--primary-theme-start) !important;
+        --tw-gradient-stops: var(--primary-theme-start), var(--primary-theme-end) !important;
+      }
+      .via-blue-600, .via-indigo-600 {
+        --tw-gradient-stops: var(--primary-theme-start), var(--primary-theme-color), var(--primary-theme-end) !important;
+      }
+      .to-blue-700, .to-indigo-700 {
+        --tw-gradient-to: var(--primary-theme-end) !important;
+      }
+      
+      /* Overrides for dynamic components */
+      .text-indigo-600\\/70 {
+        color: rgba(${primaryRgb}, 0.7) !important;
+      }
+      .border-indigo-100, .border-blue-100 {
+        border-color: rgba(${primaryRgb}, 0.2) !important;
+      }
+      .hover\\:border-indigo-100:hover, .hover\\:border-blue-100:hover {
+        border-color: rgba(${primaryRgb}, 0.4) !important;
+      }
+
+      /* Premium Landing Page Theme Integrations */
+      .landing-main-container,
+      .dark .landing-main-container {
+        background-color: var(--primary-theme-light) !important;
+      }
+
+      .landing-hero-card {
+        background: linear-gradient(180deg, rgba(${primaryRgb}, 0.15) 0%, rgba(${primaryRgb}, 0.04) 100%), #ffffff !important;
+        border: 1px solid rgba(${primaryRgb}, 0.18) !important;
+        box-shadow: 
+          0 4px 6px -1px rgba(0, 0, 0, 0.005),
+          0 12px 24px -6px rgba(${hoverRgb}, 0.04),
+          0 25px 50px -12px rgba(${hoverRgb}, 0.035),
+          inset 0 1px 1px rgba(255, 255, 255, 0.95) !important;
+      }
+
+      .landing-tag-intro {
+        background: linear-gradient(90deg, rgba(${primaryRgb}, 0.08) 0%, rgba(${primaryRgb}, 0.15) 100%) !important;
+        color: var(--primary-theme-color) !important;
+        border: 1px solid rgba(${primaryRgb}, 0.2) !important;
+      }
+
+      .landing-sector-text {
+        color: var(--primary-theme-hover) !important;
+        background: linear-gradient(135deg, rgba(${primaryRgb}, 0.06) 0%, rgba(${primaryRgb}, 0.15) 100%) !important;
+        border: 1.5px solid rgba(${primaryRgb}, 0.28) !important;
+        box-shadow: 
+          0 2px 4px rgba(${primaryRgb}, 0.05),
+          0 8px 16px -4px rgba(${primaryRgb}, 0.03),
+          inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+      }
+
+      .landing-shield-bg {
+        background: linear-gradient(135deg, var(--primary-theme-start), var(--primary-theme-end)) !important;
+      }
+    `;
+  }, [currentTheme]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <style>{dynamicThemeCSS}</style>
         <div className="relative">
           <div className="w-20 h-20 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
           <div className="absolute inset-0 flex items-center justify-center">
@@ -1189,6 +1392,7 @@ const App: React.FC = () => {
   if (isDirectMode) {
     return (
       <div className="min-h-screen bg-slate-50 p-4 md:p-8 flex items-center justify-center font-bengali">
+        <style>{dynamicThemeCSS}</style>
         <div className="w-full max-w-6xl">
           <VotingSystem isAdmin={false} initialTab={viewMode === 'poll' ? 'poll' : 'vote'} />
         </div>
@@ -1198,6 +1402,7 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-bengali">
+      <style>{dynamicThemeCSS}</style>
       <div className={`no-print h-full relative z-[10000] transition-all duration-300 ease-in-out overflow-hidden ${isSidebarOpen ? 'w-[126px]' : 'w-0'}`}>
         <Sidebar 
           activeTab={activeTab} setActiveTab={handleTabChange} 
@@ -1459,6 +1664,9 @@ const App: React.FC = () => {
                   setModuleVisibility={setModuleVisibility}
                   contactLink={contactLink}
                   onUpdateContactLink={handleUpdateContactLink}
+                  activeThemeId={themeId}
+                  onThemeChange={setThemeId}
+                  themes={THEMES}
                 />
               )}
             </div>
