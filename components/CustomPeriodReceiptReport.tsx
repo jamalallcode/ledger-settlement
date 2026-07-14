@@ -602,7 +602,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           <h3 className="font-black text-slate-800 text-sm uppercase tracking-wide">রিপোর্ট ফিল্টারিং ও সময়কাল নির্বাচন</h3>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           {/* Start Date */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
@@ -808,29 +808,6 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
               </div>
             </div>
           </div>
-
-          {/* Sort Order */}
-          <div className="space-y-1.5">
-            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
-              সাজানোর ক্রমানুসার
-            </label>
-            <div className="relative">
-              <select 
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
-                className="w-full h-11 pl-9 pr-8 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-xs cursor-pointer appearance-none"
-              >
-                <option value="desc">নতুন থেকে পুরানো</option>
-                <option value="asc">পুরানো থেকে নতুন</option>
-              </select>
-              <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -945,10 +922,30 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
         </div>
 
         <div className="p-4 md:p-6">
-          <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3 no-print">
-            <div className="flex items-center gap-2">
-              <LayoutGrid size={18} className="text-blue-600" />
-              <h3 className="font-black text-slate-800 text-sm uppercase">প্রাপ্ত তথ্যের তালিকা ({toBengaliDigits(filteredEntries.length)} টি)</h3>
+          <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3 no-print flex-wrap gap-y-2">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <LayoutGrid size={18} className="text-blue-600" />
+                <h3 className="font-black text-slate-800 text-sm uppercase">প্রাপ্ত তথ্যের তালিকা ({toBengaliDigits(filteredEntries.length)} টি)</h3>
+              </div>
+              
+              {/* সাজানোর ক্রমানুসার */}
+              <div className="relative">
+                <select 
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
+                  className="h-8 pl-8 pr-7 border-2 border-slate-200 rounded-lg font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 transition-all text-xs cursor-pointer appearance-none"
+                >
+                  <option value="desc">নতুন থেকে পুরানো</option>
+                  <option value="asc">পুরানো থেকে নতুন</option>
+                </select>
+                <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                  <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
+                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                  </svg>
+                </div>
+              </div>
             </div>
             
             <div className="flex gap-2 items-center">
