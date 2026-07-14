@@ -118,12 +118,23 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
   const normalizeName = (name: string | null | undefined): string => {
     if (!name) return 'অনির্ধারিত';
-    return name
+    let n = name
       .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '') // Remove all possible invisible characters and non-breaking spaces
       .trim()
       .replace(/\s+/g, ' ')                  // Normalize internal whitespace to a single space
       .replace(/[:ঃ।\.\-]/g, '')             // Remove punctuation for comparison
       .normalize('NFC');                     // Normalize Unicode to canonical form
+
+    // Strip common prefixes like "জনাব", "জনাবা", "ডাঃ", "ডা", "ড", "ডক্টর"
+    n = n.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '');
+
+    // Normalize common spelling variations in Bengali vowels for matching
+    n = n.replace(/ী/g, 'ি')
+         .replace(/ূ/g, 'ু')
+         .replace(/ষ/g, 'স')
+         .replace(/শ/g, 'স');
+
+    return n;
   };
 
   useEffect(() => {
@@ -195,14 +206,14 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           if (saved) {
             const items = JSON.parse(saved);
             if (Array.isArray(items)) {
-              const existingIds = new Set(finalReceivers.map(r => r.id));
               const existingNormalizedNames = new Set(finalReceivers.map(r => normalizeName(r.name) + '_' + getCleanBranch(r.para_type)));
 
               items.forEach((item: any) => {
                 addProfile(item.name, item.image, item.designation);
                 const b = getCleanBranch(item.para_type || branch);
                 const compositeKey = normalizeName(item.name) + '_' + b;
-                if (!existingIds.has(item.id) && !existingNormalizedNames.has(compositeKey)) {
+                const hasSameIdInBranch = item.id && finalReceivers.some(r => r.id === item.id && getCleanBranch(r.para_type) === b);
+                if (!hasSameIdInBranch && !existingNormalizedNames.has(compositeKey)) {
                   finalReceivers.push({
                     ...item,
                     para_type: b,
