@@ -1486,6 +1486,10 @@ const App: React.FC = () => {
                   onBack={() => handleTabChange('landing')}
                   entries={entries}
                   correspondenceEntries={correspondenceEntries}
+                  onUpdateEntries={(newEntries, newCorrEntries) => {
+                    setEntries(newEntries);
+                    setCorrespondenceEntries(newCorrEntries);
+                  }}
                 />
               )}
 
