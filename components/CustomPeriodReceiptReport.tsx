@@ -523,17 +523,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                !meetingTypeNorm.includes(normalizeForSearch('ত্রিপাক্ষী')) && 
                !meetingTypeNorm.includes('trilateral'))) return false;
         } else if (searchTerm === 'কার্যপত্র (দ্বি-সভা)') {
-          if (!entry.isMeeting || 
-              (!meetingTypeNorm.includes(normalizeForSearch('দ্বিপক্ষীয়')) && 
-               !meetingTypeNorm.includes(normalizeForSearch('দ্বিপাক্ষী')) && 
-               !meetingTypeNorm.includes('bilateral'))) return false;
+          return false;
         } else if (searchTerm === 'কার্যপত্র (ত্রি-সভা)') {
-          if (!entry.isMeeting || 
-              (!meetingTypeNorm.includes(normalizeForSearch('ত্রিপক্ষীয়')) && 
-               !meetingTypeNorm.includes(normalizeForSearch('ত্রিপাক্ষী')) && 
-               !meetingTypeNorm.includes('trilateral'))) return false;
+          return false;
         } else if (searchTerm === 'অন্যান্য') {
-          if (entry.isMeeting) return false;
+          return false;
         }
       }
 
