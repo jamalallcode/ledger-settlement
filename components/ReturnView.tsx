@@ -1143,7 +1143,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   let renderedContent;
 
   if (selectedReportType === 'চাহিদা মোতাবেক প্রাপ্তি রিপোর্ট') {
-    renderedContent = <CustomPeriodReceiptReport entries={correspondenceEntries || []} onBack={() => setSelectedReportType(null)} IDBadge={IDBadge} onEdit={onEdit} isAdmin={isAdmin} />;
+    renderedContent = <CustomPeriodReceiptReport entries={correspondenceEntries || []} settlementEntries={entries || []} onBack={() => setSelectedReportType(null)} IDBadge={IDBadge} onEdit={onEdit} isAdmin={isAdmin} />;
   } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
     renderedContent = <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
   } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
