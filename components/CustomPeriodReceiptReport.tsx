@@ -57,6 +57,15 @@ const cleanAndFormat = (info: string | undefined, label: string) => {
   return `${label}: ${toBengaliDigits(cleaned)}`;
 };
 
+const renderMeetingType = (meetingType: string | undefined) => {
+  if (!meetingType) return '';
+  const trimmed = meetingType.trim();
+  if (trimmed.endsWith('সভা')) {
+    return trimmed;
+  }
+  return `${trimmed} সভা`;
+};
+
 const getEntryMinistry = (ent: any): string => {
   if (ent.ministryName) {
     return ent.ministryName;
@@ -502,13 +511,27 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       if (searchTerm !== 'সকল') {
         const meetingTypeNorm = normalizeForSearch(entry.meetingType || '');
         if (searchTerm === 'বিএসআর') {
-          if (entry.isMeeting && meetingTypeNorm !== normalizeForSearch('বিএসআর')) return false;
+          if (entry.isMeeting && !meetingTypeNorm.includes(normalizeForSearch('বিএসআর')) && !meetingTypeNorm.includes('bsr')) return false;
         } else if (searchTerm === 'দ্বিপক্ষীয়') {
-          if (!entry.isMeeting || meetingTypeNorm !== normalizeForSearch('দ্বিপক্ষীয়')) return false;
+          if (!entry.isMeeting || 
+              (!meetingTypeNorm.includes(normalizeForSearch('দ্বিপক্ষীয়')) && 
+               !meetingTypeNorm.includes(normalizeForSearch('দ্বিপাক্ষী')) && 
+               !meetingTypeNorm.includes('bilateral'))) return false;
         } else if (searchTerm === 'ত্রিপক্ষীয়') {
-          if (!entry.isMeeting || meetingTypeNorm !== normalizeForSearch('ত্রিপক্ষীয়')) return false;
-        } else if (searchTerm === 'কার্যপত্র (দ্বি-সভা)' || searchTerm === 'কার্যপত্র (ত্রি-সভা)') {
-          if (!entry.isMeeting) return false;
+          if (!entry.isMeeting || 
+              (!meetingTypeNorm.includes(normalizeForSearch('ত্রিপক্ষীয়')) && 
+               !meetingTypeNorm.includes(normalizeForSearch('ত্রিপাক্ষী')) && 
+               !meetingTypeNorm.includes('trilateral'))) return false;
+        } else if (searchTerm === 'কার্যপত্র (দ্বি-সভা)') {
+          if (!entry.isMeeting || 
+              (!meetingTypeNorm.includes(normalizeForSearch('দ্বিপক্ষীয়')) && 
+               !meetingTypeNorm.includes(normalizeForSearch('দ্বিপাক্ষী')) && 
+               !meetingTypeNorm.includes('bilateral'))) return false;
+        } else if (searchTerm === 'কার্যপত্র (ত্রি-সভা)') {
+          if (!entry.isMeeting || 
+              (!meetingTypeNorm.includes(normalizeForSearch('ত্রিপক্ষীয়')) && 
+               !meetingTypeNorm.includes(normalizeForSearch('ত্রিপাক্ষী')) && 
+               !meetingTypeNorm.includes('trilateral'))) return false;
         } else if (searchTerm === 'অন্যান্য') {
           if (entry.isMeeting) return false;
         }
@@ -1308,7 +1331,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                 {entry.paraType}
                               </span>
                               <span className="block font-black text-slate-900 text-[10.5px]">
-                                {entry.isMeeting ? `${entry.meetingType || ''} সভা` : 'সাধারণ নিষ্পত্তি'}
+                                {entry.isMeeting ? renderMeetingType(entry.meetingType) : 'সাধারণ নিষ্পত্তি'}
                               </span>
                             </div>
                           </td>
