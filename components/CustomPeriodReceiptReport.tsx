@@ -1273,9 +1273,10 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                             {toBengaliDigits(index + 1)}
                           </td>
                           <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
-                            <div className="flex flex-col">
-                              <span className="font-black text-slate-900">স্মারক: {entry.issueLetterNoDate ? toBengaliDigits(entry.issueLetterNoDate) : '-'}</span>
-                              <span className="text-[10px] text-slate-500">তারিখ: {entry.issueDateISO ? formatDateBN(entry.issueDateISO) : '-'}</span>
+                            <div className="flex flex-col space-y-1">
+                              <span className="font-bold text-slate-900 block">স্মারক নং ও তারিখ: {entry.letterNoDate ? toBengaliDigits(entry.letterNoDate) : '-'}</span>
+                              <span className="text-[10px] text-slate-600 block">ডায়েরি নং ও তারিখ: {entry.workpaperNoDate ? toBengaliDigits(entry.workpaperNoDate) : '-'}</span>
+                              <span className="text-[10px] text-slate-600 block">জারিপত্র নং ও তারিখ: {entry.issueLetterNoDate ? toBengaliDigits(entry.issueLetterNoDate) : '-'}</span>
                             </div>
                           </td>
                           <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
