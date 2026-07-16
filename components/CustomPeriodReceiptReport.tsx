@@ -43,6 +43,20 @@ const normalizeForSearch = (str: string = '') => {
   return normalized.replace(/\s+/g, ' ').trim();
 };
 
+const cleanAndFormat = (info: string | undefined, label: string) => {
+  if (!info || info === '-') return `${label}: -`;
+  
+  const cleaned = info
+    .replace(/(পত্র নং|ডায়েরি নং|জারিপত্র নং)[-\s:]*/g, '')
+    .replace(/(পত্রের তারিখ|ডায়েরির তারিখ|জারিপত্রের তারিখ)[-\s:]*/g, '')
+    .trim();
+  
+  const checkClean = cleaned.replace(/[\s,\-]/g, '');
+  if (!checkClean) return `${label}: -`;
+  
+  return `${label}: ${toBengaliDigits(cleaned)}`;
+};
+
 const getEntryMinistry = (ent: any): string => {
   if (ent.ministryName) {
     return ent.ministryName;
@@ -1274,9 +1288,9 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           </td>
                           <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
                             <div className="flex flex-col space-y-1">
-                              <span className="font-bold text-slate-900 block">স্মারক নং ও তারিখ: {entry.letterNoDate ? toBengaliDigits(entry.letterNoDate) : '-'}</span>
-                              <span className="text-[10px] text-slate-600 block">ডায়েরি নং ও তারিখ: {entry.workpaperNoDate ? toBengaliDigits(entry.workpaperNoDate) : '-'}</span>
-                              <span className="text-[10px] text-slate-600 block">জারিপত্র নং ও তারিখ: {entry.issueLetterNoDate ? toBengaliDigits(entry.issueLetterNoDate) : '-'}</span>
+                              <span className="font-bold text-slate-900 block">{cleanAndFormat(entry.letterNoDate, "পত্র নং ও তারিখ")}</span>
+                              <span className="text-[10px] text-slate-600 block">{cleanAndFormat(entry.workpaperNoDate, "ডায়েরি নং ও তারিখ")}</span>
+                              <span className="text-[10px] text-slate-600 block">{cleanAndFormat(entry.issueLetterNoDate, "জারিপত্র নং ও তারিখ")}</span>
                             </div>
                           </td>
                           <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
