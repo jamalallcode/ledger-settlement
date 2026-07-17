@@ -239,7 +239,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
 
   const filteredSettlementEntries = useMemo(() => {
     return (entries || []).filter(entry => {
-      const entryDate = entry.diaryDate || '';
+      const entryDate = entry.issueDateISO || (entry.createdAt ? entry.createdAt.split('T')[0] : '');
       if (!entryDate) return false;
       
       try {
