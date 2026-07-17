@@ -528,31 +528,37 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50">
                     <th 
+                      style={{ width: '21.67%' }}
                       className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-left"
                     >
                       অডিটরের নাম
                     </th>
                     <th 
+                      style={{ width: '15.67%' }}
                       className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200"
                     >
                       মোট চিঠি
                     </th>
                     <th 
+                      style={{ width: '15.67%' }}
                       className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200"
                     >
                       মোট অনুচ্ছেদ
                     </th>
                     <th 
+                      style={{ width: '15.67%' }}
                       className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200"
                     >
                       নিষ্পন্নকৃত অনুচ্ছেদ
                     </th>
                     <th 
+                      style={{ width: '15.67%' }}
                       className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200"
                     >
                       নিষ্পত্তির হার (%)
                     </th>
                     <th 
+                      style={{ width: '15.67%' }}
                       className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest text-right border border-slate-200"
                     >
                       অ্যাকশন
