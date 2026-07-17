@@ -749,7 +749,6 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                           <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200">পত্র ও ডায়েরি বিবরণ</th>
                           <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200">বিষয়</th>
                           <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200">অনুচ্ছেদ</th>
-                          <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest text-right border border-slate-200">উৎস</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200">
@@ -766,18 +765,13 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                               </div>
                             </td>
                             <td className="px-6 py-4 border border-slate-200">
-                              <p className="text-xs font-bold text-slate-600 max-w-md line-clamp-2">{item.subject || '---'}</p>
+                              <p className="text-xs font-bold text-slate-600 max-w-md line-clamp-2">{item.description || '---'}</p>
                             </td>
                             <td className="px-6 py-4 text-center border border-slate-200">
                               <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
                                 selectedAuditorDetails.type === 'paragraphs' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
                               }`}>
                                 {toBengaliDigits(item.totalParas || '০')} টি
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-right border border-slate-200">
-                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                {item.senderName || '---'}
                               </span>
                             </td>
                           </tr>
