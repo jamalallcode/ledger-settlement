@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { toBengaliDigits, parseBengaliNumber, formatDateBN } from '../../utils/numberUtils';
+import { toBengaliDigits, parseBengaliNumber, formatDateBN, toEnglishDigits } from '../../utils/numberUtils';
 import { 
   BarChart3, Calendar, Users, FileText, 
   ArrowRight, Search, Download, Filter,
@@ -9,6 +9,111 @@ import {
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+
+const formatCustomDate = (dateStr: string | undefined | null): string => {
+  if (!dateStr || dateStr.trim() === '' || dateStr.startsWith('0000')) return '---';
+  
+  const cleanStr = dateStr.trim();
+  
+  // Try parsing standard YYYY-MM-DD
+  const matchIso = cleanStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (matchIso) {
+    const [_, y, m, d] = matchIso;
+    return toBengaliDigits(`${d}/${m}/${y}`);
+  }
+  
+  // Try parsing DD/MM/YYYY (English or Bengali digits)
+  const engStr = toEnglishDigits(cleanStr);
+  const matchSlash = engStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (matchSlash) {
+    const [_, d, m, y] = matchSlash;
+    const paddedD = d.padStart(2, '0');
+    const paddedM = m.padStart(2, '0');
+    return toBengaliDigits(`${paddedD}/${paddedM}/${y}`);
+  }
+
+  // Try parsing YYYY/MM/DD
+  const matchSlashY = engStr.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+  if (matchSlashY) {
+    const [_, y, m, d] = matchSlashY;
+    const paddedD = d.padStart(2, '0');
+    const paddedM = m.padStart(2, '0');
+    return toBengaliDigits(`${paddedD}/${paddedM}/${y}`);
+  }
+
+  // Try parsing ISO Date with timezone / time info
+  if (cleanStr.includes('T') || cleanStr.includes(':') || cleanStr.includes('-')) {
+    try {
+      const date = new Date(engStr);
+      if (!isNaN(date.getTime())) {
+        const d = date.getDate().toString().padStart(2, '0');
+        const m = (date.getMonth() + 1).toString().padStart(2, '0');
+        const y = date.getFullYear().toString();
+        return toBengaliDigits(`${d}/${m}/${y}`);
+      }
+    } catch (e) {}
+  }
+
+  // Fallback: if it has / or -, just replace - with / and convert to Bengali
+  return toBengaliDigits(cleanStr.replace(/-/g, '/'));
+};
+
+const findLetterForSettlement = (
+  settlementEntry: any,
+  allCorrespondence: any[]
+): any | null => {
+  if (!settlementEntry || !settlementEntry.letterNoDate) return null;
+  
+  const rawLetterNoDate = settlementEntry.letterNoDate;
+  const engNoDate = toEnglishDigits(rawLetterNoDate).toLowerCase();
+  
+  for (const c of allCorrespondence) {
+    if (!c.letterNo) continue;
+    const cLetterNoEng = toEnglishDigits(c.letterNo).toLowerCase().trim();
+    if (!cLetterNoEng) continue;
+
+    const escaped = cLetterNoEng.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const pattern = new RegExp(`(?:^|[^0-9a-zA-Z])${escaped}(?:$|[^0-9a-zA-Z])`);
+    
+    if (pattern.test(engNoDate)) {
+      if (settlementEntry.ministryName && c.ministryName) {
+        const sMin = settlementEntry.ministryName.replace(/[\s\-\,]/g, '');
+        const cMin = c.ministryName.replace(/[\s\-\,]/g, '');
+        if (sMin && cMin && sMin === cMin) {
+          return c;
+        }
+      }
+    }
+  }
+
+  for (const c of allCorrespondence) {
+    if (!c.letterNo) continue;
+    const cLetterNoEng = toEnglishDigits(c.letterNo).toLowerCase().trim();
+    if (!cLetterNoEng) continue;
+
+    const escaped = cLetterNoEng.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const pattern = new RegExp(`(?:^|[^0-9a-zA-Z])${escaped}(?:$|[^0-9a-zA-Z])`);
+    if (pattern.test(engNoDate)) {
+      return c;
+    }
+  }
+
+  return null;
+};
+
+const getAuditorForSettlement = (entry: any, correspondenceList: any[]): string => {
+  const directName = entry.receiverName || entry.presentedToName;
+  if (directName && directName.trim() !== '') {
+    return directName;
+  }
+  
+  const matchedLetter = findLetterForSettlement(entry, correspondenceList);
+  if (matchedLetter) {
+    return matchedLetter.receiverName || matchedLetter.presentedToName || 'অনির্ধারিত (Unassigned)';
+  }
+  
+  return 'অনির্ধারিত (Unassigned)';
+};
 
 interface AdminAnalyticsProps {
   entries: any[];
@@ -24,7 +129,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
   const [showStats, setShowStats] = useState(false);
   const [selectedAuditorDetails, setSelectedAuditorDetails] = useState<{
     name: string;
-    type: 'letters' | 'paragraphs';
+    type: 'letters' | 'paragraphs' | 'settled_paragraphs';
     data: any[];
   } | null>(null);
 
@@ -132,8 +237,25 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     });
   }, [correspondenceEntries, startDate, endDate]);
 
+  const filteredSettlementEntries = useMemo(() => {
+    return (entries || []).filter(entry => {
+      const entryDate = entry.issueDateISO || (entry.createdAt ? entry.createdAt.split('T')[0] : '');
+      if (!entryDate) return false;
+      
+      try {
+        const parsedDate = parseISO(entryDate);
+        return isWithinInterval(parsedDate, {
+          start: parseISO(startDate),
+          end: parseISO(endDate + 'T23:59:59')
+        });
+      } catch (e) {
+        return entryDate >= startDate && entryDate <= endDate;
+      }
+    });
+  }, [entries, startDate, endDate]);
+
   const auditorStats = useMemo(() => {
-    const stats: Record<string, { name: string, letterCount: number, paraCount: number, designation?: string, image?: string }> = {};
+    const stats: Record<string, { name: string, letterCount: number, paraCount: number, settledCount: number, designation?: string, image?: string }> = {};
 
     filteredData.forEach(entry => {
       const rawName = entry.receiverName || 'অনির্ধারিত (Unassigned)';
@@ -146,6 +268,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           name: rawName, 
           letterCount: 0, 
           paraCount: 0,
+          settledCount: 0,
           designation: profile.designation,
           image: profile.image
         };
@@ -157,8 +280,31 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       stats[nameKey].paraCount += parseBengaliNumber(entry.totalParas || '0');
     });
 
+    filteredSettlementEntries.forEach(entry => {
+      const rawName = getAuditorForSettlement(entry, correspondenceEntries);
+      const normName = normalizeName(rawName);
+      const nameKey = rawName === 'অনির্ধারিত (Unassigned)' ? 'অনির্ধারিত (Unassigned)' : normName;
+
+      if (!stats[nameKey]) {
+        const profile = receiverProfiles[rawName] || receiverProfiles[normName] || {};
+        stats[nameKey] = { 
+          name: rawName, 
+          letterCount: 0, 
+          paraCount: 0,
+          settledCount: 0,
+          designation: profile.designation,
+          image: profile.image
+        };
+      }
+
+      const rowSettledCount = entry.paragraphs?.filter((p: any) => p.status === 'পূর্ণাঙ্গ').length 
+        || parseInt(toEnglishDigits(entry.meetingSettledParaCount || '0')) 
+        || 0;
+      stats[nameKey].settledCount += rowSettledCount;
+    });
+
     return Object.values(stats).sort((a, b) => b.letterCount - a.letterCount);
-  }, [filteredData, receiverProfiles]);
+  }, [filteredData, filteredSettlementEntries, receiverProfiles, correspondenceEntries]);
 
   const filteredAuditorStats = useMemo(() => {
     if (!searchQuery.trim()) return auditorStats;
@@ -172,8 +318,26 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
   const totalLetters = filteredAuditorStats.reduce((sum, s) => sum + s.letterCount, 0);
   const totalParas = filteredAuditorStats.reduce((sum, s) => sum + s.paraCount, 0);
 
-  const handleShowDetails = (auditorName: string, type: 'letters' | 'paragraphs') => {
-    const data = filteredData.filter(entry => (entry.receiverName || 'অনির্ধারিত (Unassigned)') === auditorName);
+  const getPercentage = (settled: number, total: number) => {
+    if (total === 0) return 0;
+    return Math.round((settled / total) * 100 * 10) / 10;
+  };
+
+  const handleShowDetails = (auditorName: string, type: 'letters' | 'paragraphs' | 'settled_paragraphs') => {
+    let data: any[] = [];
+    if (type === 'settled_paragraphs') {
+      data = filteredSettlementEntries.filter(entry => {
+        const rawName = getAuditorForSettlement(entry, correspondenceEntries);
+        const normName = normalizeName(rawName);
+        return rawName === auditorName || normName === normalizeName(auditorName);
+      });
+    } else {
+      data = filteredData.filter(entry => {
+        const rawName = entry.receiverName || 'অনির্ধারিত (Unassigned)';
+        const normName = normalizeName(rawName);
+        return rawName === auditorName || normName === normalizeName(auditorName);
+      });
+    }
     setSelectedAuditorDetails({ name: auditorName, type, data });
   };
 
@@ -353,36 +517,46 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       >
         <div className="pt-2 md:pt-3 pb-1.5 px-2 md:px-3">
           {viewMode === 'table' ? (
-            <div className="overflow-x-auto md:overflow-visible rounded-none border border-slate-100 bg-white">
-              <table className="w-full text-left border-collapse">
+            <div className="overflow-x-auto md:overflow-visible rounded-none border border-slate-200 bg-white shadow-sm">
+              <table className="w-full text-left border-collapse border border-slate-200">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50">
+                  <tr className="border-b border-slate-200 bg-slate-50">
                     <th 
-                      className="bg-slate-50 px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest shadow-sm"
+                      className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-left"
                     >
                       অডিটরের নাম
                     </th>
                     <th 
-                      className="bg-slate-50 px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center shadow-sm"
+                      className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200"
                     >
                       মোট চিঠি
                     </th>
                     <th 
-                      className="bg-slate-50 px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center shadow-sm"
+                      className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200"
                     >
                       মোট অনুচ্ছেদ
                     </th>
                     <th 
-                      className="bg-slate-50 px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right shadow-sm"
+                      className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200"
+                    >
+                      নিষ্পন্নকৃত অনুচ্ছেদ
+                    </th>
+                    <th 
+                      className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200"
+                    >
+                      নিষ্পত্তির হার (%)
+                    </th>
+                    <th 
+                      className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest text-right border border-slate-200"
                     >
                       অ্যাকশন
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-slate-200">
                   {filteredAuditorStats.map((stat, idx) => (
                     <tr key={idx} className="hover:bg-blue-50/30 transition-colors group">
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 border border-slate-200">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm">
                             {stat.image ? (
@@ -399,7 +573,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-3 text-center border border-slate-200">
                         <button 
                           onClick={() => handleShowDetails(stat.name, 'letters')}
                           className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-sm font-black hover:bg-blue-100 transition-colors cursor-pointer"
@@ -407,7 +581,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                           {toBengaliDigits(stat.letterCount.toString())}
                         </button>
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-3 text-center border border-slate-200">
                         <button 
                           onClick={() => handleShowDetails(stat.name, 'paragraphs')}
                           className="px-4 py-1.5 bg-purple-50 text-purple-600 rounded-full text-sm font-black hover:bg-purple-100 transition-colors cursor-pointer"
@@ -415,8 +589,25 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                           {toBengaliDigits(stat.paraCount.toString())}
                         </button>
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        <button className="p-2 text-slate-300 hover:text-blue-600 transition-colors">
+                      <td className="px-4 py-3 text-center border border-slate-200">
+                        <button 
+                          onClick={() => handleShowDetails(stat.name, 'settled_paragraphs')}
+                          className="px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-sm font-black hover:bg-emerald-100 transition-colors cursor-pointer"
+                        >
+                          {toBengaliDigits(stat.settledCount.toString())}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3 text-center font-black text-slate-700 border border-slate-200">
+                        <span className="px-3 py-1.5 bg-slate-50 text-slate-700 rounded-full text-sm font-black border border-slate-100">
+                          {toBengaliDigits(getPercentage(stat.settledCount, stat.paraCount).toString())}%
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right border border-slate-200">
+                        <button 
+                          onClick={() => handleShowDetails(stat.name, 'settled_paragraphs')}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all cursor-pointer active:scale-95"
+                          title="বিস্তারিত বিবরণ"
+                        >
                           <ArrowRight size={18} />
                         </button>
                       </td>
@@ -424,7 +615,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                   ))}
                   {filteredAuditorStats.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-8 py-20 text-center">
+                      <td colSpan={6} className="px-8 py-20 text-center border border-slate-200">
                         <div className="flex flex-col items-center gap-4">
                           <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-200">
                             <Search size={40} />
@@ -466,18 +657,31 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                     <div className="grid grid-cols-2 gap-4">
                       <button 
                         onClick={() => handleShowDetails(stat.name, 'letters')}
-                        className="p-4 bg-white rounded-2xl border border-slate-100 hover:border-blue-300 transition-all text-left"
+                        className="p-3 bg-white rounded-2xl border border-slate-100 hover:border-blue-300 transition-all text-left cursor-pointer"
                       >
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">চিঠি</p>
-                        <p className="text-2xl font-black text-slate-800">{toBengaliDigits(stat.letterCount.toString())}</p>
+                        <p className="text-xl font-black text-slate-800">{toBengaliDigits(stat.letterCount.toString())}</p>
                       </button>
                       <button 
                         onClick={() => handleShowDetails(stat.name, 'paragraphs')}
-                        className="p-4 bg-white rounded-2xl border border-slate-100 hover:border-purple-300 transition-all text-left"
+                        className="p-3 bg-white rounded-2xl border border-slate-100 hover:border-purple-300 transition-all text-left cursor-pointer"
                       >
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">অনুচ্ছেদ</p>
-                        <p className="text-2xl font-black text-slate-800">{toBengaliDigits(stat.paraCount.toString())}</p>
+                        <p className="text-xl font-black text-slate-800">{toBengaliDigits(stat.paraCount.toString())}</p>
                       </button>
+                      <button 
+                        onClick={() => handleShowDetails(stat.name, 'settled_paragraphs')}
+                        className="p-3 bg-white rounded-2xl border border-slate-100 hover:border-emerald-300 transition-all text-left cursor-pointer"
+                      >
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">নিষ্পন্নকৃত</p>
+                        <p className="text-xl font-black text-emerald-600">{toBengaliDigits(stat.settledCount.toString())}</p>
+                      </button>
+                      <div 
+                        className="p-3 bg-white rounded-2xl border border-slate-100 text-left"
+                      >
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">হার (%)</p>
+                        <p className="text-xl font-black text-emerald-600">{toBengaliDigits(getPercentage(stat.settledCount, stat.paraCount).toString())}%</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -529,57 +733,120 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
               {/* Modal Content */}
               <div className="flex-1 overflow-y-auto p-6 md:p-8">
                 <div className="overflow-x-auto rounded-2xl border border-slate-100">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-slate-100">
-                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">ডায়েরি নম্বর</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">তারিখ</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">বিষয়</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">অনুচ্ছেদ</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">উৎস</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                      {selectedAuditorDetails.data.map((item, i) => (
-                        <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
-                          <td className="px-6 py-4">
-                            <span className="text-xs font-black text-slate-700">{toBengaliDigits(item.diaryNo || '---')}</span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="text-[11px] font-bold text-slate-500">
-                              {formatDateBN(item.receivedDate || item.diaryDate || item.createdAt)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <p className="text-xs font-bold text-slate-600 max-w-md line-clamp-2">{item.subject || '---'}</p>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
-                              selectedAuditorDetails.type === 'paragraphs' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
-                            }`}>
-                              {toBengaliDigits(item.totalParas || '০')} টি
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                              {item.senderName || '---'}
-                            </span>
-                          </td>
+                  {selectedAuditorDetails.type === 'settled_paragraphs' ? (
+                    <table className="w-full text-left border-collapse border border-slate-200">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200">
+                          <th className="px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-center">ক্র: নং</th>
+                          <th className="px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-left">স্মারক ও তারিখ</th>
+                          <th className="px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-left">মন্ত্রণালয় ও প্রতিষ্ঠান</th>
+                          <th className="px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-center">অডিট বছর</th>
+                          <th className="px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-left">শাখা ও নিষ্পত্তির ধরন</th>
+                          <th className="px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-center">নিষ্পন্নকৃত অনুচ্ছেদ</th>
+                          <th className="px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-right">নিষ্পত্তিকৃত টাকা</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {selectedAuditorDetails.data.map((item, i) => {
+                          const rowSettledCount = item.paragraphs?.filter((p: any) => p.status === 'পূর্ণাঙ্গ').length 
+                            || parseInt(toEnglishDigits(item.meetingSettledParaCount || '0')) 
+                            || 0;
+
+                          const rowSettledAmount = item.paragraphs && item.paragraphs.length > 0 
+                            ? item.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0) 
+                            : ((item.totalRec || 0) + (item.totalAdj || 0));
+
+                          return (
+                            <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
+                              <td className="px-4 py-3 text-center border border-slate-200">
+                                <span className="text-xs font-black text-slate-700">{toBengaliDigits(i + 1)}</span>
+                              </td>
+                              <td className="px-4 py-3 text-left border border-slate-200">
+                                <div className="flex flex-col space-y-0.5">
+                                  <span className="text-xs font-bold text-slate-700">{item.letterNoDate || '---'}</span>
+                                  {item.workpaperNoDate && <span className="text-[10px] text-slate-500">{item.workpaperNoDate}</span>}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-left border border-slate-200">
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-black text-slate-800">{item.ministryName}</span>
+                                  <span className="text-[10px] text-slate-400">{item.entityName} ({item.branchName})</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-center border border-slate-200">
+                                <span className="text-xs font-bold text-slate-600">{toBengaliDigits(item.auditYear)}</span>
+                              </td>
+                              <td className="px-4 py-3 text-left border border-slate-200">
+                                <div className="flex flex-col space-y-0.5">
+                                  <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-black text-slate-600 self-start">
+                                    {item.paraType}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-slate-700">
+                                    {item.isMeeting ? (item.meetingType || 'ত্রিপক্ষীয় সভা') : 'সাধারণ নিষ্পত্তি'}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-center border border-slate-200">
+                                <span className="px-3 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700">
+                                  {toBengaliDigits(rowSettledCount)} টি
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-right border border-slate-200">
+                                <span className="text-xs font-black text-slate-800">{toBengaliDigits(rowSettledAmount || '০')}</span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <table className="w-full text-left border-collapse border border-slate-200">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200">
+                          <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200">পত্র ও ডায়েরি বিবরণ</th>
+                          <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200">বিষয়</th>
+                          <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200">অনুচ্ছেদ</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {selectedAuditorDetails.data.map((item, i) => (
+                          <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
+                            <td className="px-6 py-4 border border-slate-200">
+                              <div className="flex flex-col space-y-1.5">
+                                <div className="text-xs font-black text-blue-600">
+                                  <span>পত্র নং:</span> {toBengaliDigits(item.letterNo || '---')} | <span>তারিখ:</span> {formatCustomDate(item.letterDate)}
+                                </div>
+                                <div className="text-xs font-bold text-slate-700">
+                                  <span>ডায়েরি নং:</span> {toBengaliDigits(item.diaryNo || '---')} | <span>তারিখ:</span> {formatCustomDate(item.receivedDate || item.diaryDate || item.createdAt)}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 border border-slate-200">
+                              <p className="text-xs font-bold text-slate-600 max-w-md line-clamp-2">{item.description || '---'}</p>
+                            </td>
+                            <td className="px-6 py-4 text-center border border-slate-200">
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
+                                selectedAuditorDetails.type === 'paragraphs' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
+                              }`}>
+                                {toBengaliDigits(item.totalParas || '০')} টি
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
 
               {/* Modal Footer */}
-              <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between shrink-0">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  মোট: {toBengaliDigits(selectedAuditorDetails.data.length.toString())} টি চিঠি
+              <div className="p-6 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  {selectedAuditorDetails.type === 'settled_paragraphs' ? 'মোট নিষ্পত্তিকৃত চিঠিপত্র:' : 'মোট:'} {toBengaliDigits(selectedAuditorDetails.data.length.toString())} টি
                 </p>
                 <button 
                   onClick={() => setSelectedAuditorDetails(null)}
-                  className="px-6 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition-all active:scale-95"
+                  className="px-6 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition-all active:scale-95 cursor-pointer"
                 >
                   বন্ধ করুন
                 </button>
