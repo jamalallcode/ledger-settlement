@@ -10,6 +10,54 @@ import { format, isWithinInterval, parseISO } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 
+const formatCustomDate = (dateStr: string | undefined | null): string => {
+  if (!dateStr || dateStr.trim() === '' || dateStr.startsWith('0000')) return '---';
+  
+  const cleanStr = dateStr.trim();
+  
+  // Try parsing standard YYYY-MM-DD
+  const matchIso = cleanStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (matchIso) {
+    const [_, y, m, d] = matchIso;
+    return toBengaliDigits(`${d}/${m}/${y}`);
+  }
+  
+  // Try parsing DD/MM/YYYY (English or Bengali digits)
+  const engStr = toEnglishDigits(cleanStr);
+  const matchSlash = engStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (matchSlash) {
+    const [_, d, m, y] = matchSlash;
+    const paddedD = d.padStart(2, '0');
+    const paddedM = m.padStart(2, '0');
+    return toBengaliDigits(`${paddedD}/${paddedM}/${y}`);
+  }
+
+  // Try parsing YYYY/MM/DD
+  const matchSlashY = engStr.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+  if (matchSlashY) {
+    const [_, y, m, d] = matchSlashY;
+    const paddedD = d.padStart(2, '0');
+    const paddedM = m.padStart(2, '0');
+    return toBengaliDigits(`${paddedD}/${paddedM}/${y}`);
+  }
+
+  // Try parsing ISO Date with timezone / time info
+  if (cleanStr.includes('T') || cleanStr.includes(':') || cleanStr.includes('-')) {
+    try {
+      const date = new Date(engStr);
+      if (!isNaN(date.getTime())) {
+        const d = date.getDate().toString().padStart(2, '0');
+        const m = (date.getMonth() + 1).toString().padStart(2, '0');
+        const y = date.getFullYear().toString();
+        return toBengaliDigits(`${d}/${m}/${y}`);
+      }
+    } catch (e) {}
+  }
+
+  // Fallback: if it has / or -, just replace - with / and convert to Bengali
+  return toBengaliDigits(cleanStr.replace(/-/g, '/'));
+};
+
 interface AdminAnalyticsProps {
   entries: any[];
   correspondenceEntries: any[];
@@ -698,8 +746,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                     <table className="w-full text-left border-collapse border border-slate-200">
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-200">
-                          <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200">ডায়েরি নম্বর</th>
-                          <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200">তারিখ</th>
+                          <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200">পত্র ও ডায়েরি বিবরণ</th>
                           <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200">বিষয়</th>
                           <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200">অনুচ্ছেদ</th>
                           <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest text-right border border-slate-200">উৎস</th>
@@ -709,12 +756,14 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                         {selectedAuditorDetails.data.map((item, i) => (
                           <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
                             <td className="px-6 py-4 border border-slate-200">
-                              <span className="text-xs font-black text-slate-700">{toBengaliDigits(item.diaryNo || '---')}</span>
-                            </td>
-                            <td className="px-6 py-4 border border-slate-200">
-                              <span className="text-[11px] font-bold text-slate-500">
-                                {formatDateBN(item.receivedDate || item.diaryDate || item.createdAt)}
-                              </span>
+                              <div className="flex flex-col space-y-1.5">
+                                <div className="text-xs font-black text-blue-600">
+                                  <span>পত্র নং:</span> {toBengaliDigits(item.letterNo || '---')} | <span>তারিখ:</span> {formatCustomDate(item.letterDate)}
+                                </div>
+                                <div className="text-xs font-bold text-slate-700">
+                                  <span>ডায়েরি নং:</span> {toBengaliDigits(item.diaryNo || '---')} | <span>তারিখ:</span> {formatCustomDate(item.receivedDate || item.diaryDate || item.createdAt)}
+                                </div>
+                              </div>
                             </td>
                             <td className="px-6 py-4 border border-slate-200">
                               <p className="text-xs font-bold text-slate-600 max-w-md line-clamp-2">{item.subject || '---'}</p>
