@@ -379,13 +379,16 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           <div className="flex flex-wrap items-center gap-3">
             {/* Premium Date Range Picker in Header */}
             <div className="flex items-center gap-1 p-1 bg-slate-50 border border-slate-200 rounded-xl shadow-inner group/date">
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-white rounded-lg border border-slate-100 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
-                <Calendar size={12} className="text-blue-500" />
+              <div className="relative flex items-center gap-1.5 px-2 py-1 bg-white rounded-lg border border-slate-100 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all cursor-pointer">
+                <Calendar size={12} className="text-blue-500 pointer-events-none" />
+                <span className="text-[11px] font-black text-slate-700 pointer-events-none min-w-[72px] text-center select-none">
+                  {formatCustomDate(startDate)}
+                </span>
                 <input 
                   type="date" 
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-transparent border-none outline-none text-[10px] font-black text-slate-700 w-24 cursor-pointer"
+                  className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                 />
               </div>
               
@@ -393,13 +396,16 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                 <div className="w-3 h-[2px] bg-slate-300 rounded-full"></div>
               </div>
 
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-white rounded-lg border border-slate-100 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
-                <Calendar size={12} className="text-indigo-500" />
+              <div className="relative flex items-center gap-1.5 px-2 py-1 bg-white rounded-lg border border-slate-100 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all cursor-pointer">
+                <Calendar size={12} className="text-indigo-500 pointer-events-none" />
+                <span className="text-[11px] font-black text-slate-700 pointer-events-none min-w-[72px] text-center select-none">
+                  {formatCustomDate(endDate)}
+                </span>
                 <input 
                   type="date" 
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-transparent border-none outline-none text-[10px] font-black text-slate-700 w-24 cursor-pointer"
+                  className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                 />
               </div>
             </div>
