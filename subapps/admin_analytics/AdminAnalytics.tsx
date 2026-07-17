@@ -388,6 +388,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                   type="date" 
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                  onClick={(e) => { try { e.currentTarget.showPicker(); } catch (err) {} }}
                   className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                 />
               </div>
@@ -405,6 +406,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                   type="date" 
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
+                  onClick={(e) => { try { e.currentTarget.showPicker(); } catch (err) {} }}
                   className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                 />
               </div>
