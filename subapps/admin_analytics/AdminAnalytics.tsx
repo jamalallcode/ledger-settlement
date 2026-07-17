@@ -58,6 +58,63 @@ const formatCustomDate = (dateStr: string | undefined | null): string => {
   return toBengaliDigits(cleanStr.replace(/-/g, '/'));
 };
 
+const findLetterForSettlement = (
+  settlementEntry: any,
+  allCorrespondence: any[]
+): any | null => {
+  if (!settlementEntry || !settlementEntry.letterNoDate) return null;
+  
+  const rawLetterNoDate = settlementEntry.letterNoDate;
+  const engNoDate = toEnglishDigits(rawLetterNoDate).toLowerCase();
+  
+  for (const c of allCorrespondence) {
+    if (!c.letterNo) continue;
+    const cLetterNoEng = toEnglishDigits(c.letterNo).toLowerCase().trim();
+    if (!cLetterNoEng) continue;
+
+    const escaped = cLetterNoEng.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const pattern = new RegExp(`(?:^|[^0-9a-zA-Z])${escaped}(?:$|[^0-9a-zA-Z])`);
+    
+    if (pattern.test(engNoDate)) {
+      if (settlementEntry.ministryName && c.ministryName) {
+        const sMin = settlementEntry.ministryName.replace(/[\s\-\,]/g, '');
+        const cMin = c.ministryName.replace(/[\s\-\,]/g, '');
+        if (sMin && cMin && sMin === cMin) {
+          return c;
+        }
+      }
+    }
+  }
+
+  for (const c of allCorrespondence) {
+    if (!c.letterNo) continue;
+    const cLetterNoEng = toEnglishDigits(c.letterNo).toLowerCase().trim();
+    if (!cLetterNoEng) continue;
+
+    const escaped = cLetterNoEng.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const pattern = new RegExp(`(?:^|[^0-9a-zA-Z])${escaped}(?:$|[^0-9a-zA-Z])`);
+    if (pattern.test(engNoDate)) {
+      return c;
+    }
+  }
+
+  return null;
+};
+
+const getAuditorForSettlement = (entry: any, correspondenceList: any[]): string => {
+  const directName = entry.receiverName || entry.presentedToName;
+  if (directName && directName.trim() !== '') {
+    return directName;
+  }
+  
+  const matchedLetter = findLetterForSettlement(entry, correspondenceList);
+  if (matchedLetter) {
+    return matchedLetter.receiverName || matchedLetter.presentedToName || 'অনির্ধারিত (Unassigned)';
+  }
+  
+  return 'অনির্ধারিত (Unassigned)';
+};
+
 interface AdminAnalyticsProps {
   entries: any[];
   correspondenceEntries: any[];
@@ -224,7 +281,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     });
 
     filteredSettlementEntries.forEach(entry => {
-      const rawName = entry.receiverName || entry.presentedToName || 'অনির্ধারিত (Unassigned)';
+      const rawName = getAuditorForSettlement(entry, correspondenceEntries);
       const normName = normalizeName(rawName);
       const nameKey = rawName === 'অনির্ধারিত (Unassigned)' ? 'অনির্ধারিত (Unassigned)' : normName;
 
@@ -247,7 +304,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     });
 
     return Object.values(stats).sort((a, b) => b.letterCount - a.letterCount);
-  }, [filteredData, filteredSettlementEntries, receiverProfiles]);
+  }, [filteredData, filteredSettlementEntries, receiverProfiles, correspondenceEntries]);
 
   const filteredAuditorStats = useMemo(() => {
     if (!searchQuery.trim()) return auditorStats;
@@ -270,7 +327,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     let data: any[] = [];
     if (type === 'settled_paragraphs') {
       data = filteredSettlementEntries.filter(entry => {
-        const rawName = entry.receiverName || entry.presentedToName || 'অনির্ধারিত (Unassigned)';
+        const rawName = getAuditorForSettlement(entry, correspondenceEntries);
         const normName = normalizeName(rawName);
         return rawName === auditorName || normName === normalizeName(auditorName);
       });
