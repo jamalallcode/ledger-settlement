@@ -12,6 +12,7 @@ interface ReceiverManagementProps {
   onBack?: () => void;
   entries?: any[];
   correspondenceEntries?: any[];
+  onUpdateEntries?: (newEntries: any[], newCorrEntries: any[]) => void;
 }
 
 interface ReceiverProfile {
@@ -37,7 +38,7 @@ const normalizeName = (name: string | null | undefined): string => {
     .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
     .trim()
     .replace(/\s+/g, ' ')
-    .replace(/[:ঃ।\.\-]/g, '')
+    .replace(/[:ঃ।\.\-\u09CD]/g, '')
     .normalize('NFC');
 
   // Strip common prefixes like "জনাব", "জনাবা", "ডাঃ", "ডা", "ড", "ডক্টর"
@@ -154,7 +155,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
   onViewEntries, 
   onBack,
   entries,
-  correspondenceEntries
+  correspondenceEntries,
+  onUpdateEntries
 }) => {
   const [receiversList, setReceiversList] = useState<ReceiverProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -168,9 +170,11 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
   const [tempTransferredTo, setTempTransferredTo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const fetchReceivers = async () => {
+  const fetchReceivers = async (customEntries?: any[], customCorrEntries?: any[]) => {
     setLoading(true);
     try {
+      const activeEntries = customEntries || entries || [];
+      const activeCorrEntries = customCorrEntries || correspondenceEntries || [];
       let finalReceivers: ReceiverProfile[] = [];
 
       // 1. Fetch from database (Supabase)
@@ -231,12 +235,12 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
       let entryCounts: Record<string, number> = {};
       let entryDetails: Record<string, any[]> = {};
 
-      const hasPassedProps = (Array.isArray(entries) && entries.length > 0) || (Array.isArray(correspondenceEntries) && correspondenceEntries.length > 0);
+      const hasPassedProps = (Array.isArray(activeEntries) && activeEntries.length > 0) || (Array.isArray(activeCorrEntries) && activeCorrEntries.length > 0);
 
       if (hasPassedProps) {
         const combined = [
-          ...(entries || []),
-          ...(correspondenceEntries || [])
+          ...activeEntries,
+          ...activeCorrEntries
         ];
         combined.forEach(item => {
           if (!item) return;
@@ -482,6 +486,134 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
 
       const allBranches: Array<'প্রশাসন' | 'এসএফআই' | 'নন এসএফআই'> = ['প্রশাসন', 'এসএফআই', 'নন এসএফআই'];
 
+      // Propagate name change if name has changed
+      if (oldName && oldName.trim() !== tempName.trim()) {
+        const newNameClean = tempName.trim();
+        // 1. Supabase propagation
+        if (isSupabaseConfigured) {
+          try {
+            // Update receivers table for all matching records
+            const { data: dbRecs, error: recErr } = await supabase
+              .from('receivers')
+              .select('id, name');
+            if (!recErr && dbRecs) {
+              const matchedDbRecs = dbRecs.filter(r => normalizeName(r.name) === matchNorm);
+              for (const r of matchedDbRecs) {
+                await supabase
+                  .from('receivers')
+                  .update({ name: newNameClean })
+                  .eq('id', r.id);
+              }
+            }
+
+            // Update settlement_entries table
+            const { data: dbEntries, error: entriesError } = await supabase
+              .from('settlement_entries')
+              .select('id, content');
+            if (!entriesError && dbEntries) {
+              for (const row of dbEntries) {
+                let content = row.content;
+                if (typeof content === 'string') {
+                  try { content = JSON.parse(content); } catch (e) { continue; }
+                }
+                if (content && content.receiverName && normalizeName(content.receiverName) === matchNorm) {
+                  content.receiverName = newNameClean;
+                  await supabase
+                    .from('settlement_entries')
+                    .update({ content: content })
+                    .eq('id', row.id);
+                }
+              }
+            }
+          } catch (err) {
+            console.error('Error propagating name change in Supabase:', err);
+          }
+        }
+
+        // 2. Local Storage propagation
+        const receiverKeys = [
+          'ledger_correspondence_receivers_admin',
+          'ledger_correspondence_receivers_sfi',
+          'ledger_correspondence_receivers_nonsfi'
+        ];
+        receiverKeys.forEach(key => {
+          const saved = localStorage.getItem(key);
+          if (saved) {
+            try {
+              let items = JSON.parse(saved);
+              let updated = false;
+              items = items.map((it: any) => {
+                if (it && it.name && normalizeName(it.name) === matchNorm) {
+                  updated = true;
+                  return { ...it, name: newNameClean };
+                }
+                return it;
+              });
+              if (updated) {
+                localStorage.setItem(key, JSON.stringify(items));
+              }
+            } catch (e) {
+              console.error('Error propagating in local receivers key:', key, e);
+            }
+          }
+        });
+
+        // Update ledger_correspondence_entries (CORR_STORAGE_KEY)
+        const savedCorr = localStorage.getItem(CORR_STORAGE_KEY);
+        if (savedCorr) {
+          try {
+            let dbEntries = JSON.parse(savedCorr);
+            let updated = false;
+            dbEntries = dbEntries.map((entry: any) => {
+              if (entry && entry.receiverName && normalizeName(entry.receiverName) === matchNorm) {
+                updated = true;
+                return { ...entry, receiverName: newNameClean };
+              }
+              return entry;
+            });
+            if (updated) {
+              localStorage.setItem(CORR_STORAGE_KEY, JSON.stringify(dbEntries));
+            }
+          } catch (e) {
+            console.error('Error propagating in local corr entries:', e);
+          }
+        }
+
+        // Update transfersMap
+        const transfers = getTransfersMap();
+        const updatedTransfers: Record<string, string> = {};
+        let transfersUpdated = false;
+        for (const [key, val] of Object.entries(transfers)) {
+          if (key.startsWith(`${matchNorm}_`)) {
+            transfersUpdated = true;
+            const branchSuffix = key.substring(matchNorm.length);
+            updatedTransfers[`${currentNorm}${branchSuffix}`] = val;
+          } else {
+            updatedTransfers[key] = val;
+          }
+        }
+        if (transfersUpdated) {
+          saveTransfersMap(updatedTransfers);
+        }
+
+        // Update transferTimesMap
+        const transferTimes = getTransferTimesMap();
+        const updatedTransferTimes: Record<string, string> = {};
+        let transferTimesUpdated = false;
+        for (const [key, val] of Object.entries(transferTimes)) {
+          if (key.startsWith(`${matchNorm}_`)) {
+            transferTimesUpdated = true;
+            const branchSuffix = key.substring(matchNorm.length);
+            updatedTransferTimes[`${currentNorm}${branchSuffix}`] = val;
+          } else {
+            updatedTransferTimes[key] = val;
+          }
+        }
+        if (transferTimesUpdated) {
+          saveTransferTimesMap(updatedTransferTimes);
+        }
+      }
+
 
 
       // Save to Supabase if configured
@@ -665,10 +797,42 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
 
       saveInactiveList(inactiveList);
 
+      let updatedEntries = entries ? [...entries] : [];
+      let updatedCorrEntries = correspondenceEntries ? [...correspondenceEntries] : [];
+      let entriesChanged = false;
+
+      if (oldName && oldName.trim() !== tempName.trim()) {
+        const newNameClean = tempName.trim();
+        
+        updatedEntries = updatedEntries.map(entry => {
+          if (entry && entry.receiverName && normalizeName(entry.receiverName) === matchNorm) {
+            entriesChanged = true;
+            return { ...entry, receiverName: newNameClean };
+          }
+          return entry;
+        });
+
+        updatedCorrEntries = updatedCorrEntries.map(entry => {
+          if (entry && entry.receiverName && normalizeName(entry.receiverName) === matchNorm) {
+            entriesChanged = true;
+            return { ...entry, receiverName: newNameClean };
+          }
+          return entry;
+        });
+
+        if (entriesChanged) {
+          localStorage.setItem('cached_settlement_entries', JSON.stringify(updatedEntries));
+          localStorage.setItem('cached_correspondence_entries', JSON.stringify(updatedCorrEntries));
+          if (onUpdateEntries) {
+            onUpdateEntries(updatedEntries, updatedCorrEntries);
+          }
+        }
+      }
+
       window.dispatchEvent(new Event('storage'));
       setIsModalOpen(false);
       resetForm();
-      await fetchReceivers();
+      await fetchReceivers(updatedEntries, updatedCorrEntries);
     } catch (err: any) {
       console.error('Error saving receiver branches:', err);
       alert('কর্মী তথ্য পরিবর্তন বা সংরক্ষণ করতে সমস্যা হয়েছে।');

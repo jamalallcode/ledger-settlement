@@ -43,6 +43,29 @@ const normalizeForSearch = (str: string = '') => {
   return normalized.replace(/\s+/g, ' ').trim();
 };
 
+const cleanAndFormat = (info: string | undefined, label: string) => {
+  if (!info || info === '-') return `${label}: -`;
+  
+  const cleaned = info
+    .replace(/(পত্র নং|ডায়েরি নং|জারিপত্র নং)[-\s:]*/g, '')
+    .replace(/(পত্রের তারিখ|ডায়েরির তারিখ|জারিপত্রের তারিখ)[-\s:]*/g, '')
+    .trim();
+  
+  const checkClean = cleaned.replace(/[\s,\-]/g, '');
+  if (!checkClean) return `${label}: -`;
+  
+  return `${label}: ${toBengaliDigits(cleaned)}`;
+};
+
+const renderMeetingType = (meetingType: string | undefined) => {
+  if (!meetingType) return '';
+  const trimmed = meetingType.trim();
+  if (trimmed.endsWith('সভা')) {
+    return trimmed;
+  }
+  return `${trimmed} সভা`;
+};
+
 const getEntryMinistry = (ent: any): string => {
   if (ent.ministryName) {
     return ent.ministryName;
@@ -129,6 +152,7 @@ const getEntryMinistry = (ent: any): string => {
 
 interface CustomPeriodReceiptReportProps {
   entries: any[]; // These are approved correspondenceEntries passed from ReturnView
+  settlementEntries?: any[]; // Approved settlement entries from ReturnView
   onBack: () => void;
   IDBadge: React.FC<{ id: string }>;
   onEdit?: (entry: any) => void;
@@ -137,6 +161,7 @@ interface CustomPeriodReceiptReportProps {
 
 export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps> = ({
   entries = [],
+  settlementEntries = [],
   onBack,
   IDBadge,
   onEdit,
@@ -159,6 +184,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
   const [keywordSearch, setKeywordSearch] = useState('');
   const [filterMinistry, setFilterMinistry] = useState('সকল');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [activeReportMode, setActiveReportMode] = useState<'correspondence' | 'settlement'>('correspondence');
 
   const MINISTRIES = STATIC_MINISTRIES;
 
@@ -459,6 +485,97 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     };
   }, [filteredEntries]);
 
+  const filteredSettlementEntries = useMemo(() => {
+    const filtered = (settlementEntries || []).filter(entry => {
+      // 1. Date Range Filter using entry.issueDateISO or entry.createdAt
+      const entryDate = entry.issueDateISO || (entry.createdAt ? entry.createdAt.split('T')[0] : '');
+      if (!entryDate) return false;
+
+      const isWithinDateRange = entryDate >= startDate && entryDate <= endDate;
+      if (!isWithinDateRange) return false;
+
+      // 2. Branch Filter (paraType)
+      if (filterBranch !== 'সকল') {
+        if (filterBranch === 'এসএফআই' && !isSFI(entry.paraType)) return false;
+        if (filterBranch === 'নন এসএফআই' && !isNonSFI(entry.paraType)) return false;
+      }
+
+      // 3. Ministry Filter
+      if (filterMinistry !== 'সকল') {
+        const entryMin = (entry.ministryName || '').normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+        const filterMin = filterMinistry.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+        if (entryMin !== filterMin) return false;
+      }
+
+      // 4. Letters / Meetings Type Filter
+      if (searchTerm !== 'সকল') {
+        const meetingTypeNorm = normalizeForSearch(entry.meetingType || '');
+        if (searchTerm === 'বিএসআর') {
+          if (entry.isMeeting && !meetingTypeNorm.includes(normalizeForSearch('বিএসআর')) && !meetingTypeNorm.includes('bsr')) return false;
+        } else if (searchTerm === 'দ্বিপক্ষীয়') {
+          if (!entry.isMeeting || 
+              (!meetingTypeNorm.includes(normalizeForSearch('দ্বিপক্ষীয়')) && 
+               !meetingTypeNorm.includes(normalizeForSearch('দ্বিপাক্ষী')) && 
+               !meetingTypeNorm.includes('bilateral'))) return false;
+        } else if (searchTerm === 'ত্রিপক্ষীয়') {
+          if (!entry.isMeeting || 
+              (!meetingTypeNorm.includes(normalizeForSearch('ত্রিপক্ষীয়')) && 
+               !meetingTypeNorm.includes(normalizeForSearch('ত্রিপাক্ষী')) && 
+               !meetingTypeNorm.includes('trilateral'))) return false;
+        } else if (searchTerm === 'কার্যপত্র (দ্বি-সভা)') {
+          return false;
+        } else if (searchTerm === 'কার্যপত্র (ত্রি-সভা)') {
+          return false;
+        } else if (searchTerm === 'অন্যান্য') {
+          return false;
+        }
+      }
+
+      // 5. Keyword search
+      if (keywordSearch.trim() !== '') {
+        const query = normalizeForSearch(keywordSearch);
+        const desc = normalizeForSearch(entry.remarks || '');
+        const letterNo = normalizeForSearch(entry.issueLetterNoDate || '');
+        const ministry = normalizeForSearch(entry.ministryName || '');
+        const entity = normalizeForSearch(entry.entityName || '');
+        const branch = normalizeForSearch(entry.branchName || '');
+
+        const matches = desc.includes(query) || 
+                        letterNo.includes(query) || 
+                        ministry.includes(query) || 
+                        entity.includes(query) || 
+                        branch.includes(query);
+        if (!matches) return false;
+      }
+
+      return true;
+    });
+
+    return [...filtered].sort((a, b) => {
+      const dateA = a.issueDateISO || (a.createdAt ? a.createdAt.split('T')[0] : '');
+      const dateB = b.issueDateISO || (b.createdAt ? b.createdAt.split('T')[0] : '');
+      return sortOrder === 'desc' 
+        ? dateB.localeCompare(dateA) 
+        : dateA.localeCompare(dateB);
+    });
+  }, [settlementEntries, startDate, endDate, filterBranch, filterMinistry, searchTerm, keywordSearch, sortOrder]);
+
+  const { totalSettledCountSum, totalSettledAmountSum } = useMemo(() => {
+    let countSum = 0;
+    let amountSum = 0;
+    filteredSettlementEntries.forEach(entry => {
+      const count = entry.paragraphs?.filter((p: any) => p.status === 'পূর্ণাঙ্গ').length 
+        || parseInt(toEnglishDigits(entry.meetingSettledParaCount || '0')) 
+        || 0;
+      const amount = entry.paragraphs && entry.paragraphs.length > 0 
+        ? entry.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0) 
+        : ((entry.totalRec || 0) + (entry.totalAdj || 0));
+      countSum += count;
+      amountSum += amount;
+    });
+    return { totalSettledCountSum: countSum, totalSettledAmountSum: amountSum };
+  }, [filteredSettlementEntries]);
+
   // Print function
   const handlePrint = () => {
     window.print();
@@ -473,7 +590,13 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
     interactiveElements.forEach(el => el.remove());
 
-    const filename = `চাহিদা_মোতাবেক_প্রাপ্তি_রিপোর্ট_${startDate}_হতে_${endDate}.xls`;
+    const filename = activeReportMode === 'correspondence'
+      ? `চাহিদা_মোতাবেক_প্রাপ্তি_রিপোর্ট_${startDate}_হতে_${endDate}.xls`
+      : `চাহিদা_মোতাবেক_মীমাংসিত_অনুচ্ছেদ_রিপোর্ট_${startDate}_হতে_${endDate}.xls`;
+
+    const titleText = activeReportMode === 'correspondence'
+      ? 'চাহিদা মোতাবেক প্রাপ্তি রিপোর্ট'
+      : 'চাহিদা মোতাবেক নিষ্পন্নকৃত অডিট অনুচ্ছেদ ও টাকার রিপোর্ট';
 
     const template = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -503,10 +626,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
         </style>
       </head>
       <body>
-        <h2 style="text-align: center; margin-bottom: 5px; color: #1e3a8a;">চাহিদা মোতাবেক প্রাপ্তি রিপোর্ট</h2>
+        <h2 style="text-align: center; margin-bottom: 5px; color: #1e3a8a;">${titleText}</h2>
         <p style="text-align: center; margin-top: 0; font-size: 14px; color: #475569;">
           সময়কাল: ${formatDateBN(startDate)} হতে ${formatDateBN(endDate)}
         </p>
+        ${activeReportMode === 'correspondence' ? `
         <table style="width: 50%; margin: 10px auto; border: 1px solid #cbd5e1;">
           <tr style="background-color: #e2e8f0;">
             <th style="padding: 6px; text-align: left; color: #000; background: #e2e8f0 !important; border: 1px solid #cbd5e1;">পত্রের প্রকারভেদ</th>
@@ -537,6 +661,21 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
             <td style="padding: 6px; text-align: center; border: 1px solid #cbd5e1;">${toBengaliDigits(stats.total)} টি</td>
           </tr>
         </table>
+        ` : `
+        <table style="width: 50%; margin: 10px auto; border: 1px solid #cbd5e1;">
+          <tr style="background-color: #e2e8f0;">
+            <th colSpan="2" style="padding: 8px; text-align: center; color: #000; background: #e2e8f0 !important; border: 1px solid #cbd5e1;">মীমাংসার সারসংক্ষেপ</th>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold;">মোট নিষ্পত্তি হওয়া অনুচ্ছেদের সংখ্যা</td>
+            <td style="padding: 8px; text-align: center; font-weight: bold; border: 1px solid #cbd5e1; color: #1e3a8a;">${toBengaliDigits(totalSettledCountSum)} টি</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold;">মোট নিষ্পত্তিকৃত টাকা</td>
+            <td style="padding: 8px; text-align: center; font-weight: bold; border: 1px solid #cbd5e1; color: #1e3a8a;">${toBengaliDigits(totalSettledAmountSum)} টাকা</td>
+          </tr>
+        </table>
+        `}
         ${clonedTable.outerHTML}
       </body>
       </html>
@@ -812,121 +951,186 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       </div>
 
       {/* STATISTICS CARDS (Bento Grid Style) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        {/* BSR Card */}
-        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest bg-emerald-100 px-2 py-1 rounded-md">BSR</span>
-            <div className="w-9 h-9 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-emerald-200">
-              <FileText size={18} />
+      {activeReportMode === 'correspondence' ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {/* BSR Card */}
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest bg-emerald-100 px-2 py-1 rounded-md">BSR</span>
+              <div className="w-9 h-9 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-emerald-200">
+                <FileText size={18} />
+              </div>
+            </div>
+            <div className="mt-4 space-y-1">
+              <p className="text-[11px] font-bold text-emerald-600">মোট বিএসআর সংখ্যা</p>
+              <p className="text-2xl md:text-3xl font-black text-slate-900">
+                {toBengaliDigits(stats.bsr)} <span className="text-sm font-black text-slate-500">টি</span>
+              </p>
             </div>
           </div>
-          <div className="mt-4 space-y-1">
-            <p className="text-[11px] font-bold text-emerald-600">মোট বিএসআর সংখ্যা</p>
-            <p className="text-2xl md:text-3xl font-black text-slate-900">
-              {toBengaliDigits(stats.bsr)} <span className="text-sm font-black text-slate-500">টি</span>
-            </p>
-          </div>
-        </div>
 
-        {/* Bilateral Meetings Card */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black text-blue-800 uppercase tracking-widest bg-blue-100 px-2 py-1 rounded-md">Bilateral</span>
-            <div className="w-9 h-9 bg-blue-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
-              <User size={18} />
+          {/* Bilateral Meetings Card */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-blue-800 uppercase tracking-widest bg-blue-100 px-2 py-1 rounded-md">Bilateral</span>
+              <div className="w-9 h-9 bg-blue-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+                <User size={18} />
+              </div>
+            </div>
+            <div className="mt-4 space-y-1">
+              <p className="text-[11px] font-bold text-blue-600">মোট দ্বিপক্ষীয় সভা</p>
+              <p className="text-2xl md:text-3xl font-black text-slate-900">
+                {toBengaliDigits(stats.bilateral)} <span className="text-sm font-black text-slate-500">টি</span>
+              </p>
             </div>
           </div>
-          <div className="mt-4 space-y-1">
-            <p className="text-[11px] font-bold text-blue-600">মোট দ্বিপক্ষীয় সভা</p>
-            <p className="text-2xl md:text-3xl font-black text-slate-900">
-              {toBengaliDigits(stats.bilateral)} <span className="text-sm font-black text-slate-500">টি</span>
-            </p>
-          </div>
-        </div>
 
-        {/* Trilateral Meetings Card */}
-        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black text-indigo-800 uppercase tracking-widest bg-indigo-100 px-2 py-1 rounded-md">Trilateral</span>
-            <div className="w-9 h-9 bg-indigo-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
-              <Users size={18} />
+          {/* Trilateral Meetings Card */}
+          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-indigo-800 uppercase tracking-widest bg-indigo-100 px-2 py-1 rounded-md">Trilateral</span>
+              <div className="w-9 h-9 bg-indigo-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
+                <Users size={18} />
+              </div>
+            </div>
+            <div className="mt-4 space-y-1">
+              <p className="text-[11px] font-bold text-indigo-600">মোট ত্রিপক্ষীয় সভা</p>
+              <p className="text-2xl md:text-3xl font-black text-slate-900">
+                {toBengaliDigits(stats.trilateral)} <span className="text-sm font-black text-slate-500">টি</span>
+              </p>
             </div>
           </div>
-          <div className="mt-4 space-y-1">
-            <p className="text-[11px] font-bold text-indigo-600">মোট ত্রিপক্ষীয় সভা</p>
-            <p className="text-2xl md:text-3xl font-black text-slate-900">
-              {toBengaliDigits(stats.trilateral)} <span className="text-sm font-black text-slate-500">টি</span>
-            </p>
-          </div>
-        </div>
 
-        {/* Working Papers Card */}
-        <div className="bg-gradient-to-br from-violet-50 to-fuchsia-50 border border-violet-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black text-violet-800 uppercase tracking-widest bg-violet-100 px-2 py-1 rounded-md">Working Paper</span>
-            <div className="w-9 h-9 bg-violet-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-violet-200">
-              <FileEdit size={18} />
+          {/* Working Papers Card */}
+          <div className="bg-gradient-to-br from-violet-50 to-fuchsia-50 border border-violet-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-violet-800 uppercase tracking-widest bg-violet-100 px-2 py-1 rounded-md">Working Paper</span>
+              <div className="w-9 h-9 bg-violet-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-violet-200">
+                <FileEdit size={18} />
+              </div>
+            </div>
+            <div className="mt-4 space-y-1">
+              <p className="text-[11px] font-bold text-violet-600">মোট কার্যপত্র</p>
+              <p className="text-2xl md:text-3xl font-black text-slate-900">
+                {toBengaliDigits(stats.workingPaper)} <span className="text-sm font-black text-slate-500">টি</span>
+              </p>
             </div>
           </div>
-          <div className="mt-4 space-y-1">
-            <p className="text-[11px] font-bold text-violet-600">মোট কার্যপত্র</p>
-            <p className="text-2xl md:text-3xl font-black text-slate-900">
-              {toBengaliDigits(stats.workingPaper)} <span className="text-sm font-black text-slate-500">টি</span>
-            </p>
-          </div>
-        </div>
 
-        {/* Others Card */}
-        <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black text-amber-800 uppercase tracking-widest bg-amber-100 px-2 py-1 rounded-md">Others</span>
-            <div className="w-9 h-9 bg-amber-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-amber-200">
-              <BookOpen size={18} />
+          {/* Others Card */}
+          <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-amber-800 uppercase tracking-widest bg-amber-100 px-2 py-1 rounded-md">Others</span>
+              <div className="w-9 h-9 bg-amber-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-amber-200">
+                <BookOpen size={18} />
+              </div>
+            </div>
+            <div className="mt-4 space-y-1">
+              <p className="text-[11px] font-bold text-amber-600">অন্যান্য চিঠিপত্র</p>
+              <p className="text-2xl md:text-3xl font-black text-slate-900">
+                {toBengaliDigits(stats.others)} <span className="text-sm font-black text-slate-500">টি</span>
+              </p>
             </div>
           </div>
-          <div className="mt-4 space-y-1">
-            <p className="text-[11px] font-bold text-amber-600">অন্যান্য চিঠিপত্র</p>
-            <p className="text-2xl md:text-3xl font-black text-slate-900">
-              {toBengaliDigits(stats.others)} <span className="text-sm font-black text-slate-500">টি</span>
-            </p>
-          </div>
-        </div>
 
-        {/* Total Card */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-950 rounded-3xl p-5 md:p-6 shadow-xl text-white flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest bg-white/10 px-2 py-1 rounded-md">Total</span>
-            <div className="w-9 h-9 bg-white text-slate-900 rounded-xl flex items-center justify-center shadow-lg">
-              <Mail size={18} />
+          {/* Total Card */}
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-950 rounded-3xl p-5 md:p-6 shadow-xl text-white flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest bg-white/10 px-2 py-1 rounded-md">Total</span>
+              <div className="w-9 h-9 bg-white text-slate-900 rounded-xl flex items-center justify-center shadow-lg">
+                <Mail size={18} />
+              </div>
+            </div>
+            <div className="mt-4 space-y-1">
+              <p className="text-[11px] font-bold text-slate-400">সর্বমোট প্রাপ্ত পত্র</p>
+              <p className="text-2xl md:text-3xl font-black text-white">
+                {toBengaliDigits(stats.total)} <span className="text-sm font-black text-slate-400">টি</span>
+              </p>
             </div>
           </div>
-          <div className="mt-4 space-y-1">
-            <p className="text-[11px] font-bold text-slate-400">সর্বমোট প্রাপ্ত পত্র</p>
-            <p className="text-2xl md:text-3xl font-black text-white">
-              {toBengaliDigits(stats.total)} <span className="text-sm font-black text-slate-400">টি</span>
-            </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl">
+          {/* Total Settled Paragraphs */}
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest bg-emerald-100 px-2 py-1 rounded-md">Resolved Paras</span>
+              <div className="w-10 h-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-emerald-200">
+                <ShieldCheck size={20} />
+              </div>
+            </div>
+            <div className="mt-4 space-y-1">
+              <p className="text-[11px] font-bold text-emerald-600">মোট নিষ্পত্তি হওয়া অনুচ্ছেদের সংখ্যা</p>
+              <p className="text-2xl md:text-3xl font-black text-slate-900">
+                {toBengaliDigits(totalSettledCountSum)} <span className="text-sm font-black text-slate-500">টি</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Total Settled Amount */}
+          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-indigo-800 uppercase tracking-widest bg-indigo-100 px-2 py-1 rounded-md">Settled Amount</span>
+              <div className="w-10 h-10 bg-indigo-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
+                <FileSpreadsheet size={20} />
+              </div>
+            </div>
+            <div className="mt-4 space-y-1">
+              <p className="text-[11px] font-bold text-indigo-600">মোট নিষ্পত্তিকৃত টাকা</p>
+              <p className="text-2xl md:text-3xl font-black text-slate-900">
+                {toBengaliDigits(totalSettledAmountSum)} <span className="text-sm font-black text-slate-500">টাকা</span>
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* PRINT BANNER / REPORT CARD (Visible both on screen and print) */}
       <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-xl overflow-hidden">
         {/* Print Header */}
         <div className="hidden print:block text-center space-y-2 p-6 border-b border-slate-300">
           <h1 className="text-2xl font-black text-slate-900 uppercase">হিসাব মহানিয়ন্ত্রক এর কার্যালয়</h1>
-          <p className="text-xs font-bold text-slate-600">প্রাপ্ত চিঠিপত্র ও সভার সারসংক্ষেপ রিপোর্ট</p>
+          <p className="text-xs font-bold text-slate-600">
+            {activeReportMode === 'correspondence' ? 'প্রাপ্ত চিঠিপত্র ও সভার সারসংক্ষেপ রিপোর্ট' : 'নিষ্পন্নকৃত অডিট অনুচ্ছেদ ও টাকার রিপোর্ট'}
+          </p>
           <div className="text-[11px] font-bold text-slate-700 bg-slate-100 py-1.5 px-4 rounded-lg inline-block">
             সময়কাল: {formatDateBN(startDate)} হতে {formatDateBN(endDate)}
           </div>
         </div>
 
         <div className="p-4 md:p-6">
+          {/* Toggle Report Mode Control */}
+          <div className="flex items-center gap-2 p-1 bg-slate-100 border border-slate-200 rounded-2xl w-fit mb-6 no-print">
+            <button
+              onClick={() => setActiveReportMode('correspondence')}
+              className={`px-5 py-2.5 rounded-xl text-[11.5px] font-black transition-all cursor-pointer ${
+                activeReportMode === 'correspondence'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              চিঠিপত্র প্রাপ্তি রিপোর্ট ({toBengaliDigits(filteredEntries.length)} টি)
+            </button>
+            <button
+              onClick={() => setActiveReportMode('settlement')}
+              className={`px-5 py-2.5 rounded-xl text-[11.5px] font-black transition-all cursor-pointer ${
+                activeReportMode === 'settlement'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              মীমাংসিত অনুচ্ছেদ রিপোর্ট ({toBengaliDigits(filteredSettlementEntries.length)} টি)
+            </button>
+          </div>
+
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3 no-print flex-wrap gap-y-2">
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2">
                 <LayoutGrid size={18} className="text-blue-600" />
-                <h3 className="font-black text-slate-800 text-sm uppercase">প্রাপ্ত তথ্যের তালিকা ({toBengaliDigits(filteredEntries.length)} টি)</h3>
+                <h3 className="font-black text-slate-800 text-sm uppercase">
+                  {activeReportMode === 'correspondence' ? 'প্রাপ্ত তথ্যের তালিকা' : 'মীমাংসিত অনুচ্ছেদের তালিকা'} 
+                  ({toBengaliDigits(activeReportMode === 'correspondence' ? filteredEntries.length : filteredSettlementEntries.length)} টি)
+                </h3>
               </div>
               
               {/* সাজানোর ক্রমানুসার */}
@@ -961,99 +1165,217 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           </div>
 
           {/* TABLE */}
-          {filteredEntries.length > 0 ? (
-            <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-inner">
-              <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
-                <colgroup>
-                  <col className="w-[8%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[19%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[14%] no-print" />
-                </colgroup>
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-700">
-                    <th className="px-4 py-3 text-center text-xs font-black border-r border-slate-200">ক্র: নং</th>
-                    <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">পত্র নং ও তারিখ</th>
-                    <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">ডায়রি নং ও তারিখ</th>
-                    <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">শাখা ও পত্রের ধরন</th>
-                    <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">বিষয় / বিবরণ</th>
-                    <th className="px-4 py-3 text-center text-xs font-black border-r border-slate-200">অনুচ্ছেদ সংখ্যা</th>
-                    <th className="px-4 py-3 text-right text-xs font-black border-r border-slate-200">জড়িত টাকা (টাকা)</th>
-                    <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">মন্ত্রণালয়</th>
-                    <th className="px-4 py-3 text-center text-xs font-black no-print">অ্যাকশন</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredEntries.map((entry, index) => {
-                    return (
-                      <tr key={entry.id || index} className="hover:bg-blue-50/20 transition-colors">
-                        <td className="px-4 py-3 text-center text-[11px] font-black text-slate-800 border-r border-slate-200">
-                          {toBengaliDigits(index + 1)}
-                        </td>
-                        <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
-                          <div className="flex flex-col">
-                            <span className="font-black text-slate-900">পত্র নং: {entry.letterNo ? toBengaliDigits(entry.letterNo) : '-'}</span>
-                            <span className="text-[10px] text-slate-500">তারিখ: {formatDateBN(entry.letterDate)}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
-                          <div className="flex flex-col">
-                            <span className="font-black text-slate-900">ডায়রি: {toBengaliDigits(entry.diaryNo)}</span>
-                            <span className="text-[10px] text-slate-500">তারিখ: {formatDateBN(entry.diaryDate)}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-700 border-r border-slate-200">
-                          <div className="space-y-1">
-                            <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-black text-slate-600">
-                              {entry.paraType}
-                            </span>
-                            <span className="block font-black text-slate-900 text-[10.5px]">
-                              {getCleanLetterTypeDisplay(entry.letterType)}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-left text-[11px] font-semibold text-slate-800 leading-relaxed border-r border-slate-200">
-                          {entry.description}
-                        </td>
-                        <td className="px-4 py-3 text-center text-[11px] font-black text-slate-700 border-r border-slate-200">
-                          {toBengaliDigits(entry.totalParas || '০')} টি
-                        </td>
-                        <td className="px-4 py-3 text-right text-[11.5px] font-black text-slate-900 border-r border-slate-200">
-                          {toBengaliDigits(entry.totalAmount || '০')}
-                        </td>
-                        <td className="px-4 py-3 text-left text-[11px] font-semibold text-slate-800 border-r border-slate-200">
-                          {getEntryMinistry(entry) || '-'}
-                        </td>
-                        <td className="px-4 py-3 text-center text-[11px] no-print">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (onEdit) onEdit(entry);
-                            }}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-all duration-200 font-bold text-[10.5px] shadow-sm active:scale-95 border border-slate-200 cursor-pointer whitespace-nowrap"
-                            title="এডিট করুন"
-                          >
-                            <FileEdit size={12} className="text-blue-500 shrink-0" />
-                            এডিট
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+          {activeReportMode === 'correspondence' ? (
+            filteredEntries.length > 0 ? (
+              <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-inner">
+                <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
+                  <colgroup>
+                    <col className="w-[8%]" />
+                    <col className="w-[11%]" />
+                    <col className="w-[11%]" />
+                    <col className="w-[11%]" />
+                    <col className="w-[19%]" />
+                    <col className="w-[8%]" />
+                    <col className="w-[11%]" />
+                    <col className="w-[11%]" />
+                    <col className="w-[14%] no-print" />
+                  </colgroup>
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-700">
+                      <th className="px-4 py-3 text-center text-xs font-black border-r border-slate-200">ক্র: নং</th>
+                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">পত্র নং ও তারিখ</th>
+                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">ডায়রি নং ও তারিখ</th>
+                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">শাখা ও পত্রের ধরন</th>
+                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">বিষয় / বিবরণ</th>
+                      <th className="px-4 py-3 text-center text-xs font-black border-r border-slate-200">অনুচ্ছেদ সংখ্যা</th>
+                      <th className="px-4 py-3 text-right text-xs font-black border-r border-slate-200">জড়িত টাকা (টাকা)</th>
+                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">মন্ত্রণালয়</th>
+                      <th className="px-4 py-3 text-center text-xs font-black no-print">অ্যাকশন</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredEntries.map((entry, index) => {
+                      return (
+                        <tr key={entry.id || index} className="hover:bg-blue-50/20 transition-colors">
+                          <td className="px-4 py-3 text-center text-[11px] font-black text-slate-800 border-r border-slate-200">
+                            {toBengaliDigits(index + 1)}
+                          </td>
+                          <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
+                            <div className="flex flex-col">
+                              <span className="font-black text-slate-900">পত্র নং: {entry.letterNo ? toBengaliDigits(entry.letterNo) : '-'}</span>
+                              <span className="text-[10px] text-slate-500">তারিখ: {formatDateBN(entry.letterDate)}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
+                            <div className="flex flex-col">
+                              <span className="font-black text-slate-900">ডায়রি: {toBengaliDigits(entry.diaryNo)}</span>
+                              <span className="text-[10px] text-slate-500">তারিখ: {formatDateBN(entry.diaryDate)}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-700 border-r border-slate-200">
+                            <div className="space-y-1">
+                              <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-black text-slate-600">
+                                {entry.paraType}
+                              </span>
+                              <span className="block font-black text-slate-900 text-[10.5px]">
+                                {getCleanLetterTypeDisplay(entry.letterType)}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-left text-[11px] font-semibold text-slate-800 leading-relaxed border-r border-slate-200">
+                            {entry.description}
+                          </td>
+                          <td className="px-4 py-3 text-center text-[11px] font-black text-slate-700 border-r border-slate-200">
+                            {toBengaliDigits(entry.totalParas || '০')} টি
+                          </td>
+                          <td className="px-4 py-3 text-right text-[11.5px] font-black text-slate-900 border-r border-slate-200">
+                            {toBengaliDigits(entry.totalAmount || '০')}
+                          </td>
+                          <td className="px-4 py-3 text-left text-[11px] font-semibold text-slate-800 border-r border-slate-200">
+                            {getEntryMinistry(entry) || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-center text-[11px] no-print">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onEdit) onEdit(entry);
+                              }}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-all duration-200 font-bold text-[10.5px] shadow-sm active:scale-95 border border-slate-200 cursor-pointer whitespace-nowrap"
+                              title="এডিট করুন"
+                            >
+                              <FileEdit size={12} className="text-blue-500 shrink-0" />
+                              এডিট
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="py-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-3">
+                <Info className="mx-auto text-slate-400" size={32} />
+                <p className="text-slate-500 font-bold text-sm">নির্বাচিত সময়কাল এবং ফিল্টার অনুযায়ী কোনো চিঠি পাওয়া যায়নি।</p>
+                <p className="text-[11px] text-slate-400">অনুগ্রহ করে সময়কাল বা ফিল্টার অপশন পরিবর্তন করে পুনরায় চেষ্টা করুন।</p>
+              </div>
+            )
           ) : (
-            <div className="py-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-3">
-              <Info className="mx-auto text-slate-400" size={32} />
-              <p className="text-slate-500 font-bold text-sm">নির্বাচিত সময়কাল এবং ফিল্টার অনুযায়ী কোনো চিঠি পাওয়া যায়নি।</p>
-              <p className="text-[11px] text-slate-400">অনুগ্রহ করে সময়কাল বা ফিল্টার অপশন পরিবর্তন করে পুনরায় চেষ্টা করুন।</p>
-            </div>
+            filteredSettlementEntries.length > 0 ? (
+              <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-inner">
+                <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
+                  <colgroup>
+                    <col className="w-[6%]" />
+                    <col className="w-[14%]" />
+                    <col className="w-[18%]" />
+                    <col className="w-[10%]" />
+                    <col className="w-[14%]" />
+                    <col className="w-[11%]" />
+                    <col className="w-[11%]" />
+                    <col className="w-[16%]" />
+                    <col className="w-[10%] no-print" />
+                  </colgroup>
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-700">
+                      <th className="px-4 py-3 text-center text-xs font-black border-r border-slate-200">ক্র: নং</th>
+                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">স্মারক ও তারিখ</th>
+                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">মন্ত্রণালয় ও প্রতিষ্ঠান</th>
+                      <th className="px-4 py-3 text-center text-xs font-black border-r border-slate-200">অডিট বছর</th>
+                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">শাখা ও নিষ্পত্তির ধরন</th>
+                      <th className="px-4 py-3 text-center text-xs font-black border-r border-slate-200">নিষ্পন্নকৃত অনুচ্ছেদের সংখ্যা</th>
+                      <th className="px-4 py-3 text-right text-xs font-black border-r border-slate-200">নিষ্পত্তিকৃত টাকা (টাকা)</th>
+                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">মন্তব্য</th>
+                      <th className="px-4 py-3 text-center text-xs font-black no-print">অ্যাকশন</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredSettlementEntries.map((entry, index) => {
+                      const rowSettledCount = entry.paragraphs?.filter((p: any) => p.status === 'পূর্ণাঙ্গ').length 
+                        || parseInt(toEnglishDigits(entry.meetingSettledParaCount || '0')) 
+                        || 0;
+
+                      const rowSettledAmount = entry.paragraphs && entry.paragraphs.length > 0 
+                        ? entry.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0) 
+                        : ((entry.totalRec || 0) + (entry.totalAdj || 0));
+
+                      return (
+                        <tr key={entry.id || index} className="hover:bg-blue-50/20 transition-colors">
+                          <td className="px-4 py-3 text-center text-[11px] font-black text-slate-800 border-r border-slate-200">
+                            {toBengaliDigits(index + 1)}
+                          </td>
+                          <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
+                            <div className="flex flex-col space-y-1">
+                              <span className="font-bold text-slate-900 block">{cleanAndFormat(entry.letterNoDate, "পত্র নং ও তারিখ")}</span>
+                              <span className="text-[10px] text-slate-600 block">{cleanAndFormat(entry.workpaperNoDate, "ডায়েরি নং ও তারিখ")}</span>
+                              <span className="text-[10px] text-slate-600 block">{cleanAndFormat(entry.issueLetterNoDate, "জারিপত্র নং ও তারিখ")}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
+                            <div className="flex flex-col">
+                              <span className="font-black text-slate-900">{entry.ministryName}</span>
+                              <span className="text-[10px] text-slate-500">{entry.entityName} ({entry.branchName})</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center text-[11px] font-semibold text-slate-800 border-r border-slate-200">
+                            {toBengaliDigits(entry.auditYear)}
+                          </td>
+                          <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-700 border-r border-slate-200">
+                            <div className="space-y-1">
+                              <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-black text-slate-600">
+                                {entry.paraType}
+                              </span>
+                              <span className="block font-black text-slate-900 text-[10.5px]">
+                                {entry.isMeeting ? renderMeetingType(entry.meetingType) : 'সাধারণ নিষ্পত্তি'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center text-[11px] font-black text-slate-700 border-r border-slate-200">
+                            {toBengaliDigits(rowSettledCount)} টি
+                          </td>
+                          <td className="px-4 py-3 text-right text-[11.5px] font-black text-slate-900 border-r border-slate-200">
+                            {toBengaliDigits(rowSettledAmount || '০')}
+                          </td>
+                          <td className="px-4 py-3 text-left text-[11px] font-semibold text-slate-800 border-r border-slate-200">
+                            {entry.remarks || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-center text-[11px] no-print">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onEdit) onEdit(entry);
+                              }}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-all duration-200 font-bold text-[10.5px] shadow-sm active:scale-95 border border-slate-200 cursor-pointer whitespace-nowrap"
+                              title="এডিট করুন"
+                            >
+                              <FileEdit size={12} className="text-blue-500 shrink-0" />
+                              এডিট
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-slate-100 font-black text-slate-900 border-t-2 border-slate-300">
+                      <td colSpan={5} className="px-4 py-3 text-right text-xs border-r border-slate-200 font-black">সর্বমোট:</td>
+                      <td className="px-4 py-3 text-center text-[11px] border-r border-slate-200 font-black">
+                        {toBengaliDigits(totalSettledCountSum)} টি
+                      </td>
+                      <td className="px-4 py-3 text-right text-[11.5px] border-r border-slate-200 font-black">
+                        {toBengaliDigits(totalSettledAmountSum || '০')}
+                      </td>
+                      <td colSpan={2} className="px-4 py-3 border-r border-slate-200"></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            ) : (
+              <div className="py-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-3">
+                <Info className="mx-auto text-slate-400" size={32} />
+                <p className="text-slate-500 font-bold text-sm">নির্বাচিত সময়কাল এবং ফিল্টার অনুযায়ী কোনো মীমাংসিত অনুচ্ছেদ পাওয়া যায়নি।</p>
+                <p className="text-[11px] text-slate-400">অনুগ্রহ করে সময়কাল বা ফিল্টার অপশন পরিবর্তন করে পুনরায় চেষ্টা করুন।</p>
+              </div>
+            )
           )}
         </div>
       </div>

@@ -520,6 +520,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
   const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
   const [receiverSuggestions, setReceiverSuggestions] = useState<any[]>([]);
+  const [receiverSearchQuery, setReceiverSearchQuery] = useState('');
   const [descriptionSuggestions, setDescriptionSuggestions] = useState<string[]>([]);
   const [showReceiverDropdown, setShowReceiverDropdown] = useState(false);
   const [showDescriptionDropdown, setShowDescriptionDropdown] = useState(false);
@@ -599,7 +600,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '') // Remove all possible invisible characters and non-breaking spaces
           .trim()
           .replace(/\s+/g, ' ')                  // Normalize internal whitespace to a single space
-          .replace(/[:ঃ।\.\-]/g, '')             // Remove punctuation for comparison
+          .replace(/[:ঃ।\.\-\u09CD]/g, '')         // Remove punctuation and hasant for comparison
           .normalize('NFC');                     // Normalize Unicode to canonical form
 
         // Strip common prefixes like "জনাব", "জনাবা", "ডাঃ", "ডা", "ড", "ডক্টর"
@@ -682,31 +683,31 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           }
         });
 
-        // If Supabase failed or is not configured, try LocalStorage
-        if (!isSupabaseConfigured || supabaseError || finalReceivers.length === 0) {
-          const key = isAdminBranch(formData.paraType) ? 'ledger_correspondence_receivers_admin' :
-                      isNonSFI(formData.paraType) ? 'ledger_correspondence_receivers_nonsfi' :
-                      'ledger_correspondence_receivers_sfi';
-          const savedNames = localStorage.getItem(key);
-          if (savedNames) {
-            try {
-              const parsed = JSON.parse(savedNames);
-              const localReceivers = parsed.map((p: any) => {
-                if (typeof p === 'string') {
-                  return { name: p, designation: 'অডিটর' };
-                }
-                return p;
-              }).filter(Boolean);
-              
-              // Merge with what we might have got from Supabase
-              const existingNames = new Set(finalReceivers.map(r => r.name));
-              localReceivers.forEach((lr: any) => {
-                if (!existingNames.has(lr.name)) {
-                  finalReceivers.push(lr);
-                }
-              });
-            } catch (e) { console.error('Error parsing local receivers:', e); }
-          }
+        // Always load and merge LocalStorage receivers to ensure newly added/moved receivers in dashboard show up here
+        const key = isAdminBranch(formData.paraType) ? 'ledger_correspondence_receivers_admin' :
+                    isNonSFI(formData.paraType) ? 'ledger_correspondence_receivers_nonsfi' :
+                    'ledger_correspondence_receivers_sfi';
+        const savedNames = localStorage.getItem(key);
+        if (savedNames) {
+          try {
+            const parsed = JSON.parse(savedNames);
+            const localReceivers = parsed.map((p: any) => {
+              if (typeof p === 'string') {
+                return { name: p, designation: 'অডিটর' };
+              }
+              return p;
+            }).filter(Boolean);
+            
+            // Merge with what we might have got from Supabase using normalized names to prevent duplicates
+            const existingNormalized = new Set(finalReceivers.map(r => normalizeName(r.name)));
+            localReceivers.forEach((lr: any) => {
+              const norm = normalizeName(lr.name);
+              if (norm && !existingNormalized.has(norm)) {
+                finalReceivers.push(lr);
+                existingNormalized.add(norm);
+              }
+            });
+          } catch (e) { console.error('Error parsing local receivers:', e); }
         }
 
         // 2. Fetch unique names from correspondence entries to ensure they are suggested
@@ -785,7 +786,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
         const getTransfersMap = (): Record<string, string> => {
           try {
-            const saved = localStorage.getItem('ledger_transfers_map_v1');
+            const saved = localStorage.getItem('ledger_receiver_transfers_v2');
             return saved ? JSON.parse(saved) : {};
           } catch {
             return {};
@@ -907,7 +908,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
         const getTransfersMap = (): Record<string, string> => {
           try {
-            const saved = localStorage.getItem('ledger_transfers_map_v1');
+            const saved = localStorage.getItem('ledger_receiver_transfers_v2');
             return saved ? JSON.parse(saved) : {};
           } catch {
             return {};
@@ -1474,11 +1475,11 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
             .trim()
             .replace(/\s+/g, ' ')
-            .replace(/[:ঃ।\.\-]/g, '')
+            .replace(/[:ঃ।\.\-\u09CD]/g, '')
             .normalize('NFC')
             .replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '')
             .replace(/ী/g, 'ি')
-            .replace(/ূ/g, 'u')
+            .replace(/ূ/g, 'ু')
             .replace(/ষ/g, 'স')
             .replace(/শ/g, 'স');
         };
@@ -1905,10 +1906,11 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                     <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2"><Sparkles size={12} /> গ্রহীতার তালিকা</span>
                     </div>
-                    <div className="max-h-52 overflow-y-auto no-scrollbar py-2">
+                    {/* Scrollable list (visible scrollbar) */}
+                    <div className="max-h-52 overflow-y-auto py-2">
                       {receiverSuggestions.length === 0 ? (
                         <div className="px-5 py-4 text-center text-slate-400 font-bold text-sm">
-                          কোন নাম পাওয়া যায়নি। প্লাস (+) বাটনে ক্লিক করে যোগ করুন।
+                          কোন নাম পাওয়া যায়নি।
                         </div>
                       ) : (
                         receiverSuggestions.map((profile, idx) => (
