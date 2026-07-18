@@ -394,7 +394,7 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
         setVoterList(uniqVoters);
         localStorage.setItem('voting_voter_list', JSON.stringify(uniqVoters));
       } else {
-        setVoterList(EMPLOYEES);
+        setVoterList([]);
       }
     } catch (errGlobal) {
       console.error("Global error loading voters in voting system:", errGlobal);

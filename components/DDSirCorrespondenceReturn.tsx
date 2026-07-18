@@ -118,11 +118,46 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
   const normalizeName = (name: string | null | undefined): string => {
     if (!name) return 'অনির্ধারিত';
-    return name
-      .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '') // Remove all possible invisible characters and non-breaking spaces
+    let n = name
+      .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
       .trim()
-      .replace(/\s+/g, ' ')                  // Normalize internal whitespace to a single space
-      .normalize('NFC');                     // Normalize Unicode to canonical form
+      .replace(/\s+/g, ' ')
+      .replace(/[:ঃ।\.\-\u09CD]/g, '')
+      .normalize('NFC');
+
+    // Strip common prefixes like "জনাব", "জনাবা", "ডাঃ", "ডা", "ড", "ডক্টর"
+    n = n.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '');
+
+    // Normalize common spelling variations in Bengali vowels for matching
+    n = n.replace(/ী/g, 'ি')
+         .replace(/ূ/g, 'ু')
+         .replace(/ষ/g, 'স')
+         .replace(/শ/g, 'স');
+
+    return n;
+  };
+
+  const getDisplayName = (name: string | null | undefined): string => {
+    if (!name) return 'অনির্ধারিত';
+    const norm = normalizeName(name);
+    if (norm === 'অনির্ধারিত') return 'অনির্ধারিত';
+    
+    const match = receiversList.find(r => normalizeName(r.name) === norm);
+    return match ? match.name : name;
+  };
+
+  const getDisplayDesignation = (name: string | null | undefined): string => {
+    if (!name) return 'অডিটর';
+    const norm = normalizeName(name);
+    const match = receiversList.find(r => normalizeName(r.name) === norm);
+    return match && match.designation ? match.designation : (receiverDesignations[name] || receiverDesignations[norm] || "অডিটর");
+  };
+
+  const getDisplayImage = (name: string | null | undefined): string | null => {
+    if (!name) return null;
+    const norm = normalizeName(name);
+    const match = receiversList.find(r => normalizeName(r.name) === norm);
+    return match && match.image ? match.image : (receiverImages[name] || receiverImages[norm] || null);
   };
 
   useEffect(() => {
@@ -1022,7 +1057,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 {reportTableData.length > 0 ? reportTableData.map((row, idx) => (
                   <tr key={idx} className="no-hover-row group bg-white hover:bg-blue-100/50 transition-all duration-200">
                     <td className={tdStyle}>{toBengaliDigits(idx + 1)}</td>
-                    <td className={tdStyle + " text-left text-[11px] font-bold group-hover:bg-blue-50/30"}>{row.name}</td>
+                    <td className={tdStyle + " text-left text-[11px] font-bold group-hover:bg-blue-50/30"}>{getDisplayName(row.name)}</td>
                     <td 
                       className={`${tdStyle} ${row.karyapatra.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - কার্যপত্র (১ মাস-)`)}`}
                       onClick={() => handleCountClick(`${row.name} - কার্যপত্র (১ মাস-)`, row.karyapatra.lessLetters)}
@@ -1185,7 +1220,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                           <td rowSpan={group.rows.length} className={stickyTdStyle + " bg-slate-50/50 group-hover:bg-blue-200/40 transition-colors"}>
                             <div className="flex items-center justify-center h-full">
                               <div className="font-bold text-slate-900 text-[11px] leading-tight [writing-mode:vertical-rl] rotate-180 whitespace-nowrap py-2">
-                                {group.auditor}
+                                {getDisplayName(group.auditor)}
                               </div>
                             </div>
                           </td>
@@ -1285,22 +1320,22 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                       <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
                         <td className={`border border-slate-200 ${isDetailsModalOpen ? 'p-0.5' : 'px-1 py-2'} text-center align-middle`}>
                           <div className={`flex flex-col items-center justify-center gap-1 w-full mx-auto ${isDetailsModalOpen ? 'max-w-[65px]' : 'min-w-[80px]'}`}>
-                            {receiverImages[stat.name] || receiverImages[normalizeName(stat.name)] ? (
+                            {getDisplayImage(stat.name) ? (
                               <img 
-                                      src={receiverImages[stat.name] || receiverImages[normalizeName(stat.name)]} 
-                                alt={stat.name} 
+                                      src={getDisplayImage(stat.name)!} 
+                                alt={getDisplayName(stat.name)} 
                                 className={`${isDetailsModalOpen ? 'w-6 h-6 sm:w-7 sm:h-7 rounded-lg' : 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl'} object-cover border border-slate-100 shrink-0 shadow-sm`} 
                                 referrerPolicy="no-referrer"
                               />
                             ) : (
                               <div className={`${isDetailsModalOpen ? 'w-6 h-6 sm:w-7 sm:h-7 text-[8px] rounded-lg' : 'w-9 h-9 sm:w-10 sm:h-10 text-xs rounded-xl'} bg-blue-50 text-blue-600 flex items-center justify-center font-black shrink-0 uppercase shadow-sm`}>
-                                {stat.name.slice(0, 2)}
+                                {getDisplayName(stat.name).slice(0, 2)}
                               </div>
                             )}
                             <div className="flex flex-col items-center min-w-0 w-full">
-                              <span className={`${isDetailsModalOpen ? 'text-[7.5px] sm:text-[8px] tracking-tight' : 'text-[10px] sm:text-[11.5px]'} font-extrabold text-slate-800 leading-tight text-center break-words w-full`}>{stat.name}</span>
+                              <span className={`${isDetailsModalOpen ? 'text-[7.5px] sm:text-[8px] tracking-tight' : 'text-[10px] sm:text-[11.5px]'} font-extrabold text-slate-800 leading-tight text-center break-words w-full`}>{getDisplayName(stat.name)}</span>
                               <span className={`${isDetailsModalOpen ? 'text-[6.5px] sm:text-[7px]' : 'text-[8px] sm:text-[9.5px]'} font-bold text-slate-400 leading-none mt-0.5 text-center break-words w-full`}>
-                                {receiverDesignations[stat.name] || receiverDesignations[normalizeName(stat.name)] || "অডিটর"}
+                                {getDisplayDesignation(stat.name)}
                               </span>
                             </div>
                           </div>

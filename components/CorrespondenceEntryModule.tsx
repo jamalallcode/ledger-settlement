@@ -527,13 +527,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const [showAuditYearWarning, setShowAuditYearWarning] = useState(false);
   const [hasWarnedAuditYear, setHasWarnedAuditYear] = useState(false);
   
-  // New states for recipient management
-  const [isManagingReceivers, setIsManagingReceivers] = useState(false);
-  const [editingReceiverIdx, setEditingReceiverIdx] = useState<number | null>(null);
-  const [tempReceiverName, setTempReceiverName] = useState('');
-  const [tempReceiverDesignation, setTempReceiverDesignation] = useState('');
-  const [tempReceiverImage, setTempReceiverImage] = useState<string | null>(null);
-  
   const bottomRef = useRef<HTMLDivElement>(null);
   const receiverRef = useRef<HTMLDivElement>(null);
   const descriptionRef = useRef<HTMLDivElement>(null);
@@ -710,68 +703,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           } catch (e) { console.error('Error parsing local receivers:', e); }
         }
 
-        // 2. Fetch unique names from correspondence entries to ensure they are suggested
-        let correspondenceNames: string[] = [];
-        const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
-        
-        if (isSupabaseConfigured) {
-          // Query settlement_entries for receiverName in content with server-side filtering
-          const { data: entries, error: entriesError } = await supabase
-            .from('settlement_entries')
-            .select('content')
-            .not('content->>receiverName', 'is', null)
-            .filter('content->>paraType', 'in', `(${uniqueVariations.map(v => `"${v}"`).join(',')})`);
-          
-          if (!entriesError && entries) {
-            entries.forEach(row => {
-              let content = row.content;
-              if (typeof content === 'string') {
-                try { content = JSON.parse(content); } catch (e) { return; }
-              }
-              if (!content) return;
-              
-              // Robust check for correspondence: either has type 'correspondence' or has a description (which only letters have)
-              const isCorr = content.type === 'correspondence' || 
-                            (content.description !== undefined && content.description !== null && content.description !== '');
-              
-              if (isCorr && content.receiverName) {
-                const trimmedName = content.receiverName.trim();
-                if (trimmedName) correspondenceNames.push(trimmedName);
-              }
-            });
-          }
-        } else {
-          const savedCorr = localStorage.getItem(CORR_STORAGE_KEY);
-          if (savedCorr) {
-            try {
-              const entries = JSON.parse(savedCorr);
-              entries.forEach((entry: any) => {
-                const entryPara = entry.paraType?.replace('-', ' ');
-                const currentPara = formData.paraType.replace('-', ' ');
-                if (entryPara === currentPara && entry.receiverName) {
-                  correspondenceNames.push(entry.receiverName);
-                }
-              });
-            } catch (e) { console.error(e); }
-          }
-        }
-
-        // 4. Merge unique names from correspondence into finalReceivers if they don't exist
+        // To ensure "Recipient Management" is the only source of truth, we do not fetch or merge any names from old correspondence entries.
         const existingNormalizedNames = new Set(finalReceivers.map(r => normalizeName(r.name)));
-        
-        correspondenceNames.forEach(name => {
-          const originalName = name.trim();
-          const normalizedName = normalizeName(originalName);
-          if (normalizedName && !existingNormalizedNames.has(normalizedName)) {
-            const globalMatch = globalSavedNames.get(normalizedName);
-            if (globalMatch) {
-              finalReceivers.push({ ...globalMatch, source: 'database' });
-            } else {
-              finalReceivers.push({ name: originalName, designation: 'অডিটর', source: 'correspondence' });
-            }
-            existingNormalizedNames.add(normalizedName);
-          }
-        });
 
         // 4. Sort final list and filter out inactive receivers unless they are the currently selected one
         const INACTIVE_STORAGE_KEY = 'ledger_inactive_receivers_v1';
@@ -1179,135 +1112,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     }));
   };
 
-  const handleAddReceiver = async () => {
-    if (!isReceiverAdmin) return;
-    if (tempReceiverName.trim()) {
-      const profileData = {
-        name: tempReceiverName.trim(),
-        designation: tempReceiverDesignation.trim() || null,
-        image: tempReceiverImage || null,
-        para_type: formData.paraType
-      };
-
-      try {
-        if (isSupabaseConfigured) {
-          const { error } = await supabase.from('receivers').insert([profileData]);
-          if (error) throw error;
-        } else {
-          const key = isAdminBranch(formData.paraType) ? 'ledger_correspondence_receivers_admin' :
-                      isNonSFI(formData.paraType) ? 'ledger_correspondence_receivers_nonsfi' :
-                      'ledger_correspondence_receivers_sfi';
-          const updated = [...receiverSuggestions, profileData];
-          setReceiverSuggestions(updated);
-          localStorage.setItem(key, JSON.stringify(updated));
-        }
-        resetReceiverForm();
-        setIsManagingReceivers(false);
-        // Trigger reload
-        const event = new Event('storage');
-        window.dispatchEvent(event);
-      } catch (err) {
-        console.error('Error adding receiver:', err);
-        alert('তথ্য যোগ করতে সমস্যা হয়েছে।');
-      }
-    }
-  };
-
-  const handleEditReceiver = async (idx: number) => {
-    if (!isReceiverAdmin) return;
-    if (tempReceiverName.trim()) {
-      const profileData = {
-        name: tempReceiverName.trim(),
-        designation: tempReceiverDesignation.trim() || null,
-        image: tempReceiverImage || null,
-        para_type: formData.paraType
-      };
-
-      try {
-        if (isSupabaseConfigured && receiverSuggestions[idx]?.id) {
-          const { error } = await supabase
-            .from('receivers')
-            .update(profileData)
-            .eq('id', receiverSuggestions[idx].id);
-          if (error) throw error;
-        } else {
-          const key = isAdminBranch(formData.paraType) ? 'ledger_correspondence_receivers_admin' :
-                      isNonSFI(formData.paraType) ? 'ledger_correspondence_receivers_nonsfi' :
-                      'ledger_correspondence_receivers_sfi';
-          const updated = [...receiverSuggestions];
-          updated[idx] = profileData;
-          setReceiverSuggestions(updated);
-          localStorage.setItem(key, JSON.stringify(updated));
-        }
-        setEditingReceiverIdx(null);
-        resetReceiverForm();
-        setIsManagingReceivers(false);
-        // Trigger reload
-        const event = new Event('storage');
-        window.dispatchEvent(event);
-      } catch (err) {
-        console.error('Error editing receiver:', err);
-        alert('তথ্য পরিবর্তন করতে সমস্যা হয়েছে।');
-      }
-    }
-  };
-
-  const resetReceiverForm = () => {
-    setTempReceiverName('');
-    setTempReceiverDesignation('');
-    setTempReceiverImage(null);
-  };
-
-  const handleReceiverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 1024 * 1024) {
-        alert("ছবির সাইজ ১ মেগাবাইটের কম হতে হবে।");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setTempReceiverImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleDeleteReceiver = async (idx: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isReceiverAdmin) return;
-    if (!window.confirm("আপনি কি নিশ্চিতভাবে এই নামটি মুছে ফেলতে চান?")) return;
-
-    try {
-      const profileToDelete = receiverSuggestions[idx];
-      if (isSupabaseConfigured && profileToDelete?.id) {
-        const { error } = await supabase
-          .from('receivers')
-          .delete()
-          .eq('id', profileToDelete.id);
-        if (error) throw error;
-      } else {
-        const key = isAdminBranch(formData.paraType) ? 'ledger_correspondence_receivers_admin' :
-                    isNonSFI(formData.paraType) ? 'ledger_correspondence_receivers_nonsfi' :
-                    'ledger_correspondence_receivers_sfi';
-        const updated = receiverSuggestions.filter((_, i) => i !== idx);
-        setReceiverSuggestions(updated);
-        localStorage.setItem(key, JSON.stringify(updated));
-      }
-
-      if (formData.receiverName === profileToDelete.name) {
-        setFormData(prev => ({ ...prev, receiverName: '' }));
-      }
-      
-      // Trigger reload
-      const event = new Event('storage');
-      window.dispatchEvent(event);
-    } catch (err) {
-      console.error('Error deleting receiver:', err);
-      alert('তথ্য মুছতে সমস্যা হয়েছে।');
-    }
-  };
-
   const checkAuditYear = (value: string) => {
     const desc = value.trim();
     if (!desc) {
@@ -1433,7 +1237,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     // Audit Year and Ministry mismatch validations
     const desc = (formData.description || '').trim();
     if (desc) {
-      // 1. Ministry mismatch validation (Check this first as requested by the user)
+      // 1. Ministry mismatch validation
       const descLower = desc.toLowerCase();
       const hasBank = descLower.includes('ব্যাংক') || descLower.includes('bank');
       const hasMillsOrJute = descLower.includes('মিল') || descLower.includes('মিলস') || descLower.includes('জুট') || descLower.includes('mill') || descLower.includes('mills') || descLower.includes('jute');
@@ -1464,62 +1268,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     
     // Defer heavy work to next tick to avoid blocking UI (INP fix)
     setTimeout(() => {
-      if (isReceiverAdmin && formData.receiverName.trim()) {
-        const key = isAdminBranch(formData.paraType) ? 'ledger_correspondence_receivers_admin' :
-                    isNonSFI(formData.paraType) ? 'ledger_correspondence_receivers_nonsfi' :
-                    'ledger_correspondence_receivers_sfi';
-        
-        const newReceiverName = formData.receiverName.trim();
-        const normalizeNameHelper = (name: string) => {
-          return name
-            .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
-            .trim()
-            .replace(/\s+/g, ' ')
-            .replace(/[:ঃ।\.\-\u09CD]/g, '')
-            .normalize('NFC')
-            .replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '')
-            .replace(/ী/g, 'ি')
-            .replace(/ূ/g, 'ু')
-            .replace(/ষ/g, 'স')
-            .replace(/শ/g, 'স');
-        };
-
-        const newNorm = normalizeNameHelper(newReceiverName);
-
-        // Standardize existing receiverSuggestions into objects
-        const existingObjects = receiverSuggestions.map(r => {
-          if (!r) return null;
-          if (typeof r === 'string') {
-            return { name: r, designation: 'অডিটর', para_type: formData.paraType };
-          }
-          return r;
-        }).filter(Boolean);
-
-        // Find if the new receiver already exists (matching by normalized name)
-        const exists = existingObjects.some(r => normalizeNameHelper(r.name) === newNorm);
-
-        let updated: any[];
-        if (!exists) {
-          const newObj = {
-            id: 'local-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-            name: newReceiverName,
-            designation: 'অডিটর',
-            para_type: formData.paraType,
-            is_active: true
-          };
-          updated = [newObj, ...existingObjects];
-        } else {
-          // If it already exists, move it to the beginning of the list
-          const matchIndex = existingObjects.findIndex(r => normalizeNameHelper(r.name) === newNorm);
-          const matched = existingObjects[matchIndex];
-          const remaining = existingObjects.filter((_, idx) => idx !== matchIndex);
-          updated = [matched, ...remaining];
-        }
-
-        setReceiverSuggestions(updated);
-        localStorage.setItem(key, JSON.stringify(updated));
-      }
-      
       if (formData.description.trim()) {
         const updatedDesc = Array.from(new Set([formData.description.trim(), ...descriptionSuggestions]));
         setDescriptionSuggestions(updatedDesc);
@@ -1948,95 +1696,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 )}
               </div>
 
-              {/* Recipient Management Modal */}
-              {isManagingReceivers && (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[2000] flex items-center justify-center p-4 animate-in fade-in duration-300">
-                  <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-300">
-                    <div className="p-8">
-                      <div className="flex justify-between items-center mb-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-100">
-                            {editingReceiverIdx !== null ? <FileEdit size={24} /> : <Plus size={24} />}
-                          </div>
-                          <div>
-                            <h4 className="text-xl font-black text-slate-900">{editingReceiverIdx !== null ? 'নাম পরিবর্তন করুন' : 'নতুন গ্রহীতা যোগ করুন'}</h4>
-                            <p className="text-sm font-bold text-slate-500">গ্রহীতার নাম নির্ভুলভাবে লিখুন</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setIsManagingReceivers(false)}
-                          className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors"
-                        >
-                          <X size={20} />
-                        </button>
-                      </div>
-
-                      <div className="space-y-6">
-                        <div className="flex justify-center mb-4">
-                          <div className="relative group">
-                            <div className="w-24 h-24 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl flex items-center justify-center overflow-hidden group-hover:border-blue-400 transition-all">
-                              {tempReceiverImage ? (
-                                <img src={tempReceiverImage} alt="Preview" className="w-full h-full object-cover" />
-                              ) : (
-                                <User size={32} className="text-slate-300" />
-                              )}
-                              <input 
-                                type="file" 
-                                accept="image/*"
-                                onChange={handleReceiverImageUpload}
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                              />
-                            </div>
-                            <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg pointer-events-none">
-                              <Plus size={16} />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">গ্রহীতার নাম</label>
-                          <input 
-                            type="text"
-                            autoFocus
-                            className={inputCls}
-                            value={tempReceiverName}
-                            onChange={(e) => setTempReceiverName(e.target.value)}
-                            placeholder="এখানে নাম লিখুন..."
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">পদবি</label>
-                          <input 
-                            type="text"
-                            className={inputCls}
-                            value={tempReceiverDesignation}
-                            onChange={(e) => setTempReceiverDesignation(e.target.value)}
-                            placeholder="পদবি লিখুন..."
-                          />
-                        </div>
-
-                        <div className="flex gap-3 pt-2">
-                          <button 
-                            onClick={() => {
-                              setIsManagingReceivers(false);
-                              resetReceiverForm();
-                            }}
-                            className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all"
-                          >বাতিল</button>
-                          <button 
-                            onClick={editingReceiverIdx !== null ? () => handleEditReceiver(editingReceiverIdx) : handleAddReceiver}
-                            disabled={!tempReceiverName.trim()}
-                            className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {editingReceiverIdx !== null ? 'আপডেট করুন' : 'সংরক্ষণ করুন'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Recipient Dropdown is managed exclusively from Receiver Management */}
             </div>
 
             {/* Field 11 - Smart Segmented Date */}
