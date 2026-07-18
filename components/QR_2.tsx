@@ -1631,9 +1631,10 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       recovery: acc.recovery + (curr.totalRec || 0),
       adjustment: acc.adjustment + (curr.totalAdj || 0),
       unsettledAmount: acc.unsettledAmount + unsAmount,
+      involvedAmount: acc.involvedAmount + (curr.involvedAmount || 0),
       others: 0,
     };
-  }, { sentPara: 0, settledPara: 0, unsettledPara: 0, amount: 0, recovery: 0, adjustment: 0, unsettledAmount: 0, others: 0 });
+  }, { sentPara: 0, settledPara: 0, unsettledPara: 0, amount: 0, recovery: 0, adjustment: 0, unsettledAmount: 0, involvedAmount: 0, others: 0 });
 
   const formatAmountBengali = (val: number | undefined | null) => {
     if (val === undefined || val === null) return '-';
@@ -2039,20 +2040,28 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               </div>
               <div className="space-y-1.5 text-slate-700 text-[11px] font-bold leading-normal">
                 <div className="flex justify-between">
-                  <span>সর্বমোট আলোচিত অনুচ্ছেদ:</span>
+                  <span>সর্বমোট প্রেরিত অনুচ্ছেদ সংখ্যা:</span>
                   <span className="text-blue-700">{toBengaliDigits(totals.sentPara ?? 0)} টি</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>সর্বমোট সুপারিশকৃত অনুচ্ছেদ:</span>
+                  <span>সর্বমোট নিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা:</span>
                   <span className="text-emerald-600">{toBengaliDigits(totals.settledPara ?? 0)} টি</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>জড়িত মোট টাকা:</span>
-                  <span className="text-slate-900">{toBengaliDigits(Math.round(totals.amount ?? 0))} টাকা</span>
+                  <span>সর্বমোট আদায়:</span>
+                  <span className="text-emerald-700">{toBengaliDigits(Math.round(totals.recovery ?? 0))} টাকা</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>মোট আদায় সমন্বয়ের পরিমাণ:</span>
-                  <span className="text-emerald-700">{toBengaliDigits(Math.round((totals.recovery ?? 0) + (totals.adjustment ?? 0)))} টাকা</span>
+                  <span>সর্বমোট সমন্বয়:</span>
+                  <span className="text-indigo-600">{toBengaliDigits(Math.round(totals.adjustment ?? 0))} টাকা</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>মোট জড়িত টাকা:</span>
+                  <span className="text-slate-900">{toBengaliDigits(Math.round(totals.involvedAmount ?? 0))} টাকা</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>মোট নিষ্পন্ন টাকা:</span>
+                  <span className="text-teal-700">{toBengaliDigits(Math.round(totals.amount ?? 0))} টাকা</span>
                 </div>
               </div>
             </div>
