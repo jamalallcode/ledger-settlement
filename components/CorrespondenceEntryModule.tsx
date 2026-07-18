@@ -2021,7 +2021,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                
                <div className="flex flex-col md:flex-row items-center gap-4 mt-2">
                   <button 
-                    onClick={() => setIsSuccess(false)}
+                    onClick={() => {
+                      setIsSuccess(false);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
                     className="px-8 py-4 bg-white text-emerald-600 border-2 border-emerald-600 rounded-2xl font-black text-lg shadow-lg hover:bg-emerald-50 transition-all flex items-center gap-3 active:scale-95 group cursor-pointer"
                   >
                     নতুন চিঠি এন্ট্রি দিন <Plus size={20} />
