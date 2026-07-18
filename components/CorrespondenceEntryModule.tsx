@@ -2021,7 +2021,34 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                
                <div className="flex flex-col md:flex-row items-center gap-4 mt-2">
                   <button 
-                    onClick={() => setIsSuccess(false)}
+                    onClick={() => {
+                      setIsSuccess(false);
+                      
+                      // Scroll to container top first
+                      const container = document.getElementById('form-container-correspondence');
+                      if (container) {
+                        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      } else {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }
+
+                      // Also scroll the main container which has the actual overflow scroll in App.tsx
+                      const mainContainer = document.querySelector('main');
+                      if (mainContainer) {
+                        mainContainer.scrollTo({ top: 0, behavior: 'smooth' });
+                      }
+
+                      // Apply a timeout fallback so that as the DOM recalculates heights after state change, it fully scrolls to top
+                      setTimeout(() => {
+                        const containerAgain = document.getElementById('form-container-correspondence');
+                        if (containerAgain) {
+                          containerAgain.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                        if (mainContainer) {
+                          mainContainer.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                      }, 100);
+                    }}
                     className="px-8 py-4 bg-white text-emerald-600 border-2 border-emerald-600 rounded-2xl font-black text-lg shadow-lg hover:bg-emerald-50 transition-all flex items-center gap-3 active:scale-95 group cursor-pointer"
                   >
                     নতুন চিঠি এন্ট্রি দিন <Plus size={20} />
