@@ -41,6 +41,18 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, p
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const [customOptions, setCustomOptions] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('custom_letter_types');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+
   const getOptions = () => {
     const isSfiBranch = isSFI(paraType);
     const isNonSfiBranch = isNonSFI(paraType);
@@ -64,6 +76,16 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, p
       );
     }
 
+    customOptions.forEach((cOpt, index) => {
+      opts.push({
+        id: `custom-letter-type-${index}`,
+        label: cOpt,
+        value: cOpt,
+        icon: FileText,
+        color: 'indigo'
+      });
+    });
+
     opts.push(
       { id: 'others', label: 'অন্যান্য', value: 'অন্যান্য', icon: BookOpen, color: 'slate' }
     );
@@ -75,11 +97,30 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, p
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsOpen(false);
+        setIsAddingNew(false);
+        setNewItemName('');
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleAddNewLetterType = () => {
+    const cleanName = newItemName.trim();
+    if (!cleanName) return;
+    const allOptions = getOptions();
+    if (allOptions.some(opt => opt.value === cleanName)) {
+      alert("এই প্রকারটি ইতিমধ্যে রয়েছে।");
+      return;
+    }
+    const next = [...customOptions, cleanName];
+    setCustomOptions(next);
+    localStorage.setItem('custom_letter_types', JSON.stringify(next));
+    onChange(cleanName);
+    setIsAddingNew(false);
+    setNewItemName('');
+    setIsOpen(false);
+  };
 
   const options = getOptions();
 
@@ -111,49 +152,90 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, p
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+6px)] left-0 w-[60%] min-w-[220px] bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
-          <div className="p-1.5 space-y-0.5">
-            <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Sparkles size={11} className="text-emerald-500" /> ক্যাটাগরি নির্বাচন করুন
-              </span>
+        <div className="absolute top-[calc(100%+6px)] left-0 w-[60%] min-w-[220px] bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600 animate-out duration-200">
+          {isAddingNew ? (
+            <div className="p-3 space-y-3">
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Sparkles size={11} className="text-emerald-500" /> নতুন পত্রের ধরণ যুক্ত করুন
+              </div>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-emerald-500"
+                placeholder="ধরণ লিখুন..."
+                value={newItemName}
+                onChange={e => setNewItemName(e.target.value)}
+                autoFocus
+              />
+              <div className="flex gap-2 justify-end">
+                <button 
+                  type="button"
+                  onClick={() => { setIsAddingNew(false); setNewItemName(''); }}
+                  className="px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black hover:bg-slate-200"
+                >বাতিল</button>
+                <button 
+                  type="button"
+                  onClick={handleAddNewLetterType}
+                  className="px-2.5 py-1.5 bg-emerald-600 text-white rounded-lg text-[10px] font-black hover:bg-emerald-700"
+                >সংরক্ষণ</button>
+              </div>
             </div>
-            {options.map((opt) => (
+          ) : (
+            <div className="p-1.5 space-y-0.5">
+              <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <Sparkles size={11} className="text-emerald-500" /> ক্যাটাগরি নির্বাচন করুন
+                </span>
+              </div>
+              <div className="max-h-60 overflow-y-auto no-scrollbar space-y-0.5">
+                {options.map((opt) => (
+                  <div 
+                    key={opt.id}
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
+                      value === opt.value
+                        ? `bg-${opt.color}-50 text-${opt.color}-700 shadow-sm` 
+                        : 'hover:bg-slate-50 text-slate-600'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                        value === opt.value
+                          ? `bg-${opt.color}-600 text-white`
+                          : 'bg-slate-100 text-slate-400'
+                      }`}>
+                        <opt.icon size={14} />
+                      </div>
+                      <span className={`text-[12.5px] font-black transition-colors ${
+                        value === opt.value
+                          ? `text-${opt.color}-700`
+                          : 'text-slate-700'
+                      }`}>{opt.label}</span>
+                    </div>
+                    
+                    {value === opt.value && (
+                      <div className={`w-5 h-5 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300`}>
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
               <div 
-                key={opt.id}
-                onClick={() => {
-                  onChange(opt.value);
-                  setIsOpen(false);
-                }}
-                className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
-                  value === opt.value
-                    ? `bg-${opt.color}-50 text-${opt.color}-700 shadow-sm` 
-                    : 'hover:bg-slate-50 text-slate-600'
-                }`}
+                onClick={() => setIsAddingNew(true)}
+                className="px-3 py-2.5 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all hover:bg-emerald-50 text-emerald-600 font-black border-t border-dashed border-slate-100 mt-1 shrink-0"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                    value === opt.value
-                      ? `bg-${opt.color}-600 text-white`
-                      : 'bg-slate-100 text-slate-400'
-                  }`}>
-                    <opt.icon size={14} />
+                  <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                    <Plus size={14} />
                   </div>
-                  <span className={`text-[12.5px] font-black transition-colors ${
-                    value === opt.value
-                      ? `text-${opt.color}-700`
-                      : 'text-slate-700'
-                  }`}>{opt.label}</span>
+                  <span className="text-[12.5px] font-black">নতুন যুক্ত করুন</span>
                 </div>
-                
-                {value === opt.value && (
-                  <div className={`w-5 h-5 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300`}>
-                    <Check size={12} strokeWidth={3} />
-                  </div>
-                )}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -167,21 +249,62 @@ const PremiumParaTypeSelect = ({ value, onChange, IDBadge }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const options = [
+  const [customParaTypes, setCustomParaTypes] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('custom_para_types');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+
+  const defaultOptions = [
     { id: 'admin', label: 'প্রশাসন', value: 'প্রশাসন', icon: User, color: 'emerald' },
     { id: 'sfi', label: 'এসএফআই', value: 'এসএফআই', icon: ShieldCheck, color: 'blue' },
     { id: 'nonsfi', label: 'নন এসএফআই', value: 'নন এসএফআই', icon: Layout, color: 'indigo' },
+  ];
+
+  const options = [
+    ...defaultOptions,
+    ...customParaTypes.map((pt, index) => ({
+      id: `custom-para-type-${index}`,
+      label: pt,
+      value: pt,
+      icon: ShieldCheck,
+      color: 'sky' as const
+    }))
   ];
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsOpen(false);
+        setIsAddingNew(false);
+        setNewItemName('');
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleAddNewParaType = () => {
+    const cleanName = newItemName.trim();
+    if (!cleanName) return;
+    if (options.some(opt => opt.value === cleanName)) {
+      alert("এই শাখার ধরণটি ইতিমধ্যে রয়েছে।");
+      return;
+    }
+    const next = [...customParaTypes, cleanName];
+    setCustomParaTypes(next);
+    localStorage.setItem('custom_para_types', JSON.stringify(next));
+    onChange(cleanName);
+    setIsAddingNew(false);
+    setNewItemName('');
+    setIsOpen(false);
+  };
 
   const selectedOpt = options.find(opt => opt.value === value) || options[0];
 
@@ -202,40 +325,81 @@ const PremiumParaTypeSelect = ({ value, onChange, IDBadge }: any) => {
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600">
-          <div className="p-1.5 space-y-0.5">
-            <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Sparkles size={11} className="text-blue-500" /> শাখা নির্বাচন করুন
-              </span>
+        <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600 animate-out duration-200">
+          {isAddingNew ? (
+            <div className="p-3 space-y-3">
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Sparkles size={11} className="text-blue-500" /> নতুন শাখার ধরণ যুক্ত করুন
+              </div>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-blue-500"
+                placeholder="শাখার নাম..."
+                value={newItemName}
+                onChange={e => setNewItemName(e.target.value)}
+                autoFocus
+              />
+              <div className="flex gap-2 justify-end">
+                <button 
+                  type="button"
+                  onClick={() => { setIsAddingNew(false); setNewItemName(''); }}
+                  className="px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black hover:bg-slate-200"
+                >বাতিল</button>
+                <button 
+                  type="button"
+                  onClick={handleAddNewParaType}
+                  className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-black hover:bg-blue-700"
+                >সংরক্ষণ</button>
+              </div>
             </div>
-            {options.map((opt) => (
+          ) : (
+            <div className="p-1.5 space-y-0.5">
+              <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <Sparkles size={11} className="text-blue-500" /> শাখা নির্বাচন করুন
+                </span>
+              </div>
+              <div className="max-h-60 overflow-y-auto no-scrollbar space-y-0.5">
+                {options.map((opt) => (
+                  <div 
+                    key={opt.id}
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
+                      value === opt.value ? `bg-${opt.color}-50 text-${opt.color}-700 shadow-sm` : 'hover:bg-slate-50 text-slate-600'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                        value === opt.value ? `bg-${opt.color}-600 text-white` : 'bg-slate-100 text-slate-400'
+                      }`}>
+                        <opt.icon size={14} />
+                      </div>
+                      <span className={`text-[12.5px] font-black transition-colors ${value === opt.value ? `text-${opt.color}-700` : 'text-slate-700'}`}>{opt.label}</span>
+                    </div>
+                    {value === opt.value && (
+                      <div className={`w-5 h-5 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300`}>
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
               <div 
-                key={opt.id}
-                onClick={() => {
-                  onChange(opt.value);
-                  setIsOpen(false);
-                }}
-                className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
-                  value === opt.value ? `bg-${opt.color}-50 text-${opt.color}-700 shadow-sm` : 'hover:bg-slate-50 text-slate-600'
-                }`}
+                onClick={() => setIsAddingNew(true)}
+                className="px-3 py-2.5 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all hover:bg-blue-50 text-blue-600 font-black border-t border-dashed border-slate-100 mt-1 shrink-0"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                    value === opt.value ? `bg-${opt.color}-600 text-white` : 'bg-slate-100 text-slate-400'
-                  }`}>
-                    <opt.icon size={14} />
+                  <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                    <Plus size={14} />
                   </div>
-                  <span className={`text-[12.5px] font-black transition-colors ${value === opt.value ? `text-${opt.color}-700` : 'text-slate-700'}`}>{opt.label}</span>
+                  <span className="text-[12.5px] font-black">নতুন যুক্ত করুন</span>
                 </div>
-                {value === opt.value && (
-                  <div className={`w-5 h-5 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300`}>
-                    <Check size={12} strokeWidth={3} />
-                  </div>
-                )}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -249,8 +413,20 @@ const PremiumMinistrySelect = ({ value, onChange, IDBadge }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const [customMinistries, setCustomMinistries] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('custom_ministries');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+
   // Define options based on MINISTRY_ENTITY_MAP keys
-  const options = Object.keys(MINISTRY_ENTITY_MAP).map((m, idx) => ({
+  const defaultOptions = Object.keys(MINISTRY_ENTITY_MAP).map((m, idx) => ({
     id: `ministry-opt-${idx}`,
     label: m,
     value: m,
@@ -258,15 +434,44 @@ const PremiumMinistrySelect = ({ value, onChange, IDBadge }: any) => {
     color: 'sky'
   }));
 
+  const options = [
+    ...defaultOptions,
+    ...customMinistries.map((cm, idx) => ({
+      id: `custom-ministry-opt-${idx}`,
+      label: cm,
+      value: cm,
+      icon: Building,
+      color: 'sky'
+    }))
+  ];
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsOpen(false);
+        setIsAddingNew(false);
+        setNewItemName('');
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleAddNewMinistry = () => {
+    const cleanName = newItemName.trim();
+    if (!cleanName) return;
+    if (options.some(opt => opt.value === cleanName)) {
+      alert("এই মন্ত্রণালয়টি ইতিমধ্যে রয়েছে।");
+      return;
+    }
+    const next = [...customMinistries, cleanName];
+    setCustomMinistries(next);
+    localStorage.setItem('custom_ministries', JSON.stringify(next));
+    onChange(cleanName);
+    setIsAddingNew(false);
+    setNewItemName('');
+    setIsOpen(false);
+  };
 
   const selectedOpt = options.find(opt => opt.value === value);
 
@@ -298,42 +503,81 @@ const PremiumMinistrySelect = ({ value, onChange, IDBadge }: any) => {
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-sky-600">
-          <div className="p-1.5 space-y-0.5">
-            <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Sparkles size={11} className="text-sky-500" /> মন্ত্রণালয় নির্বাচন করুন
-              </span>
+        <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-sky-600 animate-out duration-200">
+          {isAddingNew ? (
+            <div className="p-3 space-y-3">
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Sparkles size={11} className="text-sky-500" /> নতুন মন্ত্রণালয় যুক্ত করুন
+              </div>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-sky-500"
+                placeholder="মন্ত্রণালয়ের নাম..."
+                value={newItemName}
+                onChange={e => setNewItemName(e.target.value)}
+                autoFocus
+              />
+              <div className="flex gap-2 justify-end">
+                <button 
+                  type="button"
+                  onClick={() => { setIsAddingNew(false); setNewItemName(''); }}
+                  className="px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black hover:bg-slate-200"
+                >বাতিল</button>
+                <button 
+                  type="button"
+                  onClick={handleAddNewMinistry}
+                  className="px-2.5 py-1.5 bg-sky-600 text-white rounded-lg text-[10px] font-black hover:bg-sky-700"
+                >সংরক্ষণ</button>
+              </div>
             </div>
-            <div className="max-h-60 overflow-y-auto no-scrollbar">
-              {options.map((opt) => (
-                <div 
-                  key={opt.id}
-                  onClick={() => {
-                    onChange(opt.value);
-                    setIsOpen(false);
-                  }}
-                  className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
-                    value === opt.value ? `bg-sky-50 text-sky-700 shadow-sm` : 'hover:bg-slate-50 text-slate-600'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                      value === opt.value ? `bg-sky-600 text-white` : 'bg-slate-100 text-slate-400'
-                    }`}>
-                      <Building size={14} />
+          ) : (
+            <div className="p-1.5 space-y-0.5">
+              <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <Sparkles size={11} className="text-sky-500" /> মন্ত্রণালয় নির্বাচন করুন
+                </span>
+              </div>
+              <div className="max-h-60 overflow-y-auto no-scrollbar space-y-0.5">
+                {options.map((opt) => (
+                  <div 
+                    key={opt.id}
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
+                      value === opt.value ? `bg-sky-50 text-sky-700 shadow-sm` : 'hover:bg-slate-50 text-slate-600'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                        value === opt.value ? `bg-sky-600 text-white` : 'bg-slate-100 text-slate-400'
+                      }`}>
+                        <Building size={14} />
+                      </div>
+                      <span className={`text-[12.5px] font-black transition-colors ${value === opt.value ? `text-sky-700` : 'text-slate-700'}`}>{opt.label}</span>
                     </div>
-                    <span className={`text-[12.5px] font-black transition-colors ${value === opt.value ? `text-sky-700` : 'text-slate-700'}`}>{opt.label}</span>
+                    {value === opt.value && (
+                      <div className="w-5 h-5 bg-sky-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300">
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                    )}
                   </div>
-                  {value === opt.value && (
-                    <div className="w-5 h-5 bg-sky-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300">
-                      <Check size={12} strokeWidth={3} />
-                    </div>
-                  )}
+                ))}
+              </div>
+              <div 
+                onClick={() => setIsAddingNew(true)}
+                className="px-3 py-2.5 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all hover:bg-sky-50 text-sky-600 font-black border-t border-dashed border-slate-100 mt-1 shrink-0"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center">
+                    <Plus size={14} />
+                  </div>
+                  <span className="text-[12.5px] font-black">নতুন যুক্ত করুন</span>
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>
@@ -527,13 +771,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const [showAuditYearWarning, setShowAuditYearWarning] = useState(false);
   const [hasWarnedAuditYear, setHasWarnedAuditYear] = useState(false);
   
-  // New states for recipient management
-  const [isManagingReceivers, setIsManagingReceivers] = useState(false);
-  const [editingReceiverIdx, setEditingReceiverIdx] = useState<number | null>(null);
-  const [tempReceiverName, setTempReceiverName] = useState('');
-  const [tempReceiverDesignation, setTempReceiverDesignation] = useState('');
-  const [tempReceiverImage, setTempReceiverImage] = useState<string | null>(null);
-  
   const bottomRef = useRef<HTMLDivElement>(null);
   const receiverRef = useRef<HTMLDivElement>(null);
   const descriptionRef = useRef<HTMLDivElement>(null);
@@ -710,68 +947,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
           } catch (e) { console.error('Error parsing local receivers:', e); }
         }
 
-        // 2. Fetch unique names from correspondence entries to ensure they are suggested
-        let correspondenceNames: string[] = [];
-        const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
-        
-        if (isSupabaseConfigured) {
-          // Query settlement_entries for receiverName in content with server-side filtering
-          const { data: entries, error: entriesError } = await supabase
-            .from('settlement_entries')
-            .select('content')
-            .not('content->>receiverName', 'is', null)
-            .filter('content->>paraType', 'in', `(${uniqueVariations.map(v => `"${v}"`).join(',')})`);
-          
-          if (!entriesError && entries) {
-            entries.forEach(row => {
-              let content = row.content;
-              if (typeof content === 'string') {
-                try { content = JSON.parse(content); } catch (e) { return; }
-              }
-              if (!content) return;
-              
-              // Robust check for correspondence: either has type 'correspondence' or has a description (which only letters have)
-              const isCorr = content.type === 'correspondence' || 
-                            (content.description !== undefined && content.description !== null && content.description !== '');
-              
-              if (isCorr && content.receiverName) {
-                const trimmedName = content.receiverName.trim();
-                if (trimmedName) correspondenceNames.push(trimmedName);
-              }
-            });
-          }
-        } else {
-          const savedCorr = localStorage.getItem(CORR_STORAGE_KEY);
-          if (savedCorr) {
-            try {
-              const entries = JSON.parse(savedCorr);
-              entries.forEach((entry: any) => {
-                const entryPara = entry.paraType?.replace('-', ' ');
-                const currentPara = formData.paraType.replace('-', ' ');
-                if (entryPara === currentPara && entry.receiverName) {
-                  correspondenceNames.push(entry.receiverName);
-                }
-              });
-            } catch (e) { console.error(e); }
-          }
-        }
-
-        // 4. Merge unique names from correspondence into finalReceivers if they don't exist
+        // To ensure "Recipient Management" is the only source of truth, we do not fetch or merge any names from old correspondence entries.
         const existingNormalizedNames = new Set(finalReceivers.map(r => normalizeName(r.name)));
-        
-        correspondenceNames.forEach(name => {
-          const originalName = name.trim();
-          const normalizedName = normalizeName(originalName);
-          if (normalizedName && !existingNormalizedNames.has(normalizedName)) {
-            const globalMatch = globalSavedNames.get(normalizedName);
-            if (globalMatch) {
-              finalReceivers.push({ ...globalMatch, source: 'database' });
-            } else {
-              finalReceivers.push({ name: originalName, designation: 'অডিটর', source: 'correspondence' });
-            }
-            existingNormalizedNames.add(normalizedName);
-          }
-        });
 
         // 4. Sort final list and filter out inactive receivers unless they are the currently selected one
         const INACTIVE_STORAGE_KEY = 'ledger_inactive_receivers_v1';
@@ -1179,135 +1356,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     }));
   };
 
-  const handleAddReceiver = async () => {
-    if (!isReceiverAdmin) return;
-    if (tempReceiverName.trim()) {
-      const profileData = {
-        name: tempReceiverName.trim(),
-        designation: tempReceiverDesignation.trim() || null,
-        image: tempReceiverImage || null,
-        para_type: formData.paraType
-      };
-
-      try {
-        if (isSupabaseConfigured) {
-          const { error } = await supabase.from('receivers').insert([profileData]);
-          if (error) throw error;
-        } else {
-          const key = isAdminBranch(formData.paraType) ? 'ledger_correspondence_receivers_admin' :
-                      isNonSFI(formData.paraType) ? 'ledger_correspondence_receivers_nonsfi' :
-                      'ledger_correspondence_receivers_sfi';
-          const updated = [...receiverSuggestions, profileData];
-          setReceiverSuggestions(updated);
-          localStorage.setItem(key, JSON.stringify(updated));
-        }
-        resetReceiverForm();
-        setIsManagingReceivers(false);
-        // Trigger reload
-        const event = new Event('storage');
-        window.dispatchEvent(event);
-      } catch (err) {
-        console.error('Error adding receiver:', err);
-        alert('তথ্য যোগ করতে সমস্যা হয়েছে।');
-      }
-    }
-  };
-
-  const handleEditReceiver = async (idx: number) => {
-    if (!isReceiverAdmin) return;
-    if (tempReceiverName.trim()) {
-      const profileData = {
-        name: tempReceiverName.trim(),
-        designation: tempReceiverDesignation.trim() || null,
-        image: tempReceiverImage || null,
-        para_type: formData.paraType
-      };
-
-      try {
-        if (isSupabaseConfigured && receiverSuggestions[idx]?.id) {
-          const { error } = await supabase
-            .from('receivers')
-            .update(profileData)
-            .eq('id', receiverSuggestions[idx].id);
-          if (error) throw error;
-        } else {
-          const key = isAdminBranch(formData.paraType) ? 'ledger_correspondence_receivers_admin' :
-                      isNonSFI(formData.paraType) ? 'ledger_correspondence_receivers_nonsfi' :
-                      'ledger_correspondence_receivers_sfi';
-          const updated = [...receiverSuggestions];
-          updated[idx] = profileData;
-          setReceiverSuggestions(updated);
-          localStorage.setItem(key, JSON.stringify(updated));
-        }
-        setEditingReceiverIdx(null);
-        resetReceiverForm();
-        setIsManagingReceivers(false);
-        // Trigger reload
-        const event = new Event('storage');
-        window.dispatchEvent(event);
-      } catch (err) {
-        console.error('Error editing receiver:', err);
-        alert('তথ্য পরিবর্তন করতে সমস্যা হয়েছে।');
-      }
-    }
-  };
-
-  const resetReceiverForm = () => {
-    setTempReceiverName('');
-    setTempReceiverDesignation('');
-    setTempReceiverImage(null);
-  };
-
-  const handleReceiverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 1024 * 1024) {
-        alert("ছবির সাইজ ১ মেগাবাইটের কম হতে হবে।");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setTempReceiverImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleDeleteReceiver = async (idx: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isReceiverAdmin) return;
-    if (!window.confirm("আপনি কি নিশ্চিতভাবে এই নামটি মুছে ফেলতে চান?")) return;
-
-    try {
-      const profileToDelete = receiverSuggestions[idx];
-      if (isSupabaseConfigured && profileToDelete?.id) {
-        const { error } = await supabase
-          .from('receivers')
-          .delete()
-          .eq('id', profileToDelete.id);
-        if (error) throw error;
-      } else {
-        const key = isAdminBranch(formData.paraType) ? 'ledger_correspondence_receivers_admin' :
-                    isNonSFI(formData.paraType) ? 'ledger_correspondence_receivers_nonsfi' :
-                    'ledger_correspondence_receivers_sfi';
-        const updated = receiverSuggestions.filter((_, i) => i !== idx);
-        setReceiverSuggestions(updated);
-        localStorage.setItem(key, JSON.stringify(updated));
-      }
-
-      if (formData.receiverName === profileToDelete.name) {
-        setFormData(prev => ({ ...prev, receiverName: '' }));
-      }
-      
-      // Trigger reload
-      const event = new Event('storage');
-      window.dispatchEvent(event);
-    } catch (err) {
-      console.error('Error deleting receiver:', err);
-      alert('তথ্য মুছতে সমস্যা হয়েছে।');
-    }
-  };
-
   const checkAuditYear = (value: string) => {
     const desc = value.trim();
     if (!desc) {
@@ -1433,7 +1481,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     // Audit Year and Ministry mismatch validations
     const desc = (formData.description || '').trim();
     if (desc) {
-      // 1. Ministry mismatch validation (Check this first as requested by the user)
+      // 1. Ministry mismatch validation
       const descLower = desc.toLowerCase();
       const hasBank = descLower.includes('ব্যাংক') || descLower.includes('bank');
       const hasMillsOrJute = descLower.includes('মিল') || descLower.includes('মিলস') || descLower.includes('জুট') || descLower.includes('mill') || descLower.includes('mills') || descLower.includes('jute');
@@ -1464,62 +1512,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     
     // Defer heavy work to next tick to avoid blocking UI (INP fix)
     setTimeout(() => {
-      if (isReceiverAdmin && formData.receiverName.trim()) {
-        const key = isAdminBranch(formData.paraType) ? 'ledger_correspondence_receivers_admin' :
-                    isNonSFI(formData.paraType) ? 'ledger_correspondence_receivers_nonsfi' :
-                    'ledger_correspondence_receivers_sfi';
-        
-        const newReceiverName = formData.receiverName.trim();
-        const normalizeNameHelper = (name: string) => {
-          return name
-            .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
-            .trim()
-            .replace(/\s+/g, ' ')
-            .replace(/[:ঃ।\.\-\u09CD]/g, '')
-            .normalize('NFC')
-            .replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '')
-            .replace(/ী/g, 'ি')
-            .replace(/ূ/g, 'ু')
-            .replace(/ষ/g, 'স')
-            .replace(/শ/g, 'স');
-        };
-
-        const newNorm = normalizeNameHelper(newReceiverName);
-
-        // Standardize existing receiverSuggestions into objects
-        const existingObjects = receiverSuggestions.map(r => {
-          if (!r) return null;
-          if (typeof r === 'string') {
-            return { name: r, designation: 'অডিটর', para_type: formData.paraType };
-          }
-          return r;
-        }).filter(Boolean);
-
-        // Find if the new receiver already exists (matching by normalized name)
-        const exists = existingObjects.some(r => normalizeNameHelper(r.name) === newNorm);
-
-        let updated: any[];
-        if (!exists) {
-          const newObj = {
-            id: 'local-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-            name: newReceiverName,
-            designation: 'অডিটর',
-            para_type: formData.paraType,
-            is_active: true
-          };
-          updated = [newObj, ...existingObjects];
-        } else {
-          // If it already exists, move it to the beginning of the list
-          const matchIndex = existingObjects.findIndex(r => normalizeNameHelper(r.name) === newNorm);
-          const matched = existingObjects[matchIndex];
-          const remaining = existingObjects.filter((_, idx) => idx !== matchIndex);
-          updated = [matched, ...remaining];
-        }
-
-        setReceiverSuggestions(updated);
-        localStorage.setItem(key, JSON.stringify(updated));
-      }
-      
       if (formData.description.trim()) {
         const updatedDesc = Array.from(new Set([formData.description.trim(), ...descriptionSuggestions]));
         setDescriptionSuggestions(updatedDesc);
@@ -1948,95 +1940,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 )}
               </div>
 
-              {/* Recipient Management Modal */}
-              {isManagingReceivers && (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[2000] flex items-center justify-center p-4 animate-in fade-in duration-300">
-                  <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-300">
-                    <div className="p-8">
-                      <div className="flex justify-between items-center mb-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-100">
-                            {editingReceiverIdx !== null ? <FileEdit size={24} /> : <Plus size={24} />}
-                          </div>
-                          <div>
-                            <h4 className="text-xl font-black text-slate-900">{editingReceiverIdx !== null ? 'নাম পরিবর্তন করুন' : 'নতুন গ্রহীতা যোগ করুন'}</h4>
-                            <p className="text-sm font-bold text-slate-500">গ্রহীতার নাম নির্ভুলভাবে লিখুন</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setIsManagingReceivers(false)}
-                          className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors"
-                        >
-                          <X size={20} />
-                        </button>
-                      </div>
-
-                      <div className="space-y-6">
-                        <div className="flex justify-center mb-4">
-                          <div className="relative group">
-                            <div className="w-24 h-24 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl flex items-center justify-center overflow-hidden group-hover:border-blue-400 transition-all">
-                              {tempReceiverImage ? (
-                                <img src={tempReceiverImage} alt="Preview" className="w-full h-full object-cover" />
-                              ) : (
-                                <User size={32} className="text-slate-300" />
-                              )}
-                              <input 
-                                type="file" 
-                                accept="image/*"
-                                onChange={handleReceiverImageUpload}
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                              />
-                            </div>
-                            <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg pointer-events-none">
-                              <Plus size={16} />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">গ্রহীতার নাম</label>
-                          <input 
-                            type="text"
-                            autoFocus
-                            className={inputCls}
-                            value={tempReceiverName}
-                            onChange={(e) => setTempReceiverName(e.target.value)}
-                            placeholder="এখানে নাম লিখুন..."
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">পদবি</label>
-                          <input 
-                            type="text"
-                            className={inputCls}
-                            value={tempReceiverDesignation}
-                            onChange={(e) => setTempReceiverDesignation(e.target.value)}
-                            placeholder="পদবি লিখুন..."
-                          />
-                        </div>
-
-                        <div className="flex gap-3 pt-2">
-                          <button 
-                            onClick={() => {
-                              setIsManagingReceivers(false);
-                              resetReceiverForm();
-                            }}
-                            className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all"
-                          >বাতিল</button>
-                          <button 
-                            onClick={editingReceiverIdx !== null ? () => handleEditReceiver(editingReceiverIdx) : handleAddReceiver}
-                            disabled={!tempReceiverName.trim()}
-                            className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {editingReceiverIdx !== null ? 'আপডেট করুন' : 'সংরক্ষণ করুন'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Recipient Dropdown is managed exclusively from Receiver Management */}
             </div>
 
             {/* Field 11 - Smart Segmented Date */}

@@ -5,6 +5,7 @@ import { NONSFI_RECEIVERS } from '../utils/nonsfi';
 import { isSFI, isNonSFI, isAdminBranch, getBranchVariations } from '../utils/branchUtils';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { toBengaliDigits } from '../utils/numberUtils';
+import { EMPLOYEES } from '../constants';
 
 interface ReceiverManagementProps {
   isAdmin: boolean;
@@ -226,6 +227,35 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
         }
       });
 
+      // If no receivers exist in either DB or local storage, pre-populate from EMPLOYEES to bootstrap Receiver Management as source of truth
+      if (finalReceivers.length === 0) {
+        const bootstrapped: ReceiverProfile[] = [];
+        EMPLOYEES.forEach((fullName, idx) => {
+          let designation = 'অডিটর';
+          let cleanName = fullName;
+          
+          if (fullName.includes('(')) {
+            const parts = fullName.split('(');
+            cleanName = parts[0].trim();
+            const rawDesig = parts[1].replace(')', '').trim();
+            designation = rawDesig || 'অডিটর';
+          }
+          
+          bootstrapped.push({
+            id: `init-${idx}-${Date.now()}`,
+            name: cleanName,
+            designation: designation,
+            para_type: 'এসএফআই',
+            is_active: true,
+            source: 'local'
+          });
+        });
+        
+        // Save SFI list to local storage
+        localStorage.setItem('ledger_correspondence_receivers_sfi', JSON.stringify(bootstrapped));
+        finalReceivers = bootstrapped;
+      }
+
       // 3. Scan correspondence entries to find recipient names that are added on descriptions but not saved in database
       let correspondenceNamesByBranch: Record<string, string[]> = {
         'প্রশাসন': [],
@@ -354,26 +384,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
         }
       }
 
-      // Merge correspondence receivers in
+      // Stop merging correspondence names directly into finalReceivers to enforce that ReceiverManagement is the only source of truth
       const existingNormalizedNames = new Set(finalReceivers.map(r => normalizeName(r.name) + '_' + getCleanBranch(r.para_type)));
-      
-      const branches: Array<'প্রশাসন' | 'এসএফআই' | 'নন এসএফআই'> = ['প্রশাসন', 'এসএফআই', 'নন এসএফআই'];
-      branches.forEach(b => {
-        correspondenceNamesByBranch[b].forEach(name => {
-          const originalName = name.trim();
-          const normalizedName = normalizeName(originalName);
-          const compKey = `${normalizedName}_${b}`;
-          if (!existingNormalizedNames.has(compKey)) {
-            finalReceivers.push({ 
-              name: originalName, 
-              para_type: b,
-              designation: 'অডিটর',
-              source: 'correspondence'
-            });
-            existingNormalizedNames.add(compKey);
-          }
-        });
-      });
 
       const inactiveListRaw = getInactiveList();
       const inactiveKeysSet = new Set(inactiveListRaw.map(item => normalizeName(item)));
