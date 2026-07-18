@@ -41,6 +41,18 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, p
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const [customOptions, setCustomOptions] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('custom_letter_types');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+
   const getOptions = () => {
     const isSfiBranch = isSFI(paraType);
     const isNonSfiBranch = isNonSFI(paraType);
@@ -64,6 +76,16 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, p
       );
     }
 
+    customOptions.forEach((cOpt, index) => {
+      opts.push({
+        id: `custom-letter-type-${index}`,
+        label: cOpt,
+        value: cOpt,
+        icon: FileText,
+        color: 'indigo'
+      });
+    });
+
     opts.push(
       { id: 'others', label: 'অন্যান্য', value: 'অন্যান্য', icon: BookOpen, color: 'slate' }
     );
@@ -75,11 +97,30 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, p
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsOpen(false);
+        setIsAddingNew(false);
+        setNewItemName('');
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleAddNewLetterType = () => {
+    const cleanName = newItemName.trim();
+    if (!cleanName) return;
+    const allOptions = getOptions();
+    if (allOptions.some(opt => opt.value === cleanName)) {
+      alert("এই প্রকারটি ইতিমধ্যে রয়েছে।");
+      return;
+    }
+    const next = [...customOptions, cleanName];
+    setCustomOptions(next);
+    localStorage.setItem('custom_letter_types', JSON.stringify(next));
+    onChange(cleanName);
+    setIsAddingNew(false);
+    setNewItemName('');
+    setIsOpen(false);
+  };
 
   const options = getOptions();
 
@@ -111,49 +152,90 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, p
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+6px)] left-0 w-[60%] min-w-[220px] bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
-          <div className="p-1.5 space-y-0.5">
-            <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Sparkles size={11} className="text-emerald-500" /> ক্যাটাগরি নির্বাচন করুন
-              </span>
+        <div className="absolute top-[calc(100%+6px)] left-0 w-[60%] min-w-[220px] bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600 animate-out duration-200">
+          {isAddingNew ? (
+            <div className="p-3 space-y-3">
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Sparkles size={11} className="text-emerald-500" /> নতুন পত্রের ধরণ যুক্ত করুন
+              </div>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-emerald-500"
+                placeholder="ধরণ লিখুন..."
+                value={newItemName}
+                onChange={e => setNewItemName(e.target.value)}
+                autoFocus
+              />
+              <div className="flex gap-2 justify-end">
+                <button 
+                  type="button"
+                  onClick={() => { setIsAddingNew(false); setNewItemName(''); }}
+                  className="px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black hover:bg-slate-200"
+                >বাতিল</button>
+                <button 
+                  type="button"
+                  onClick={handleAddNewLetterType}
+                  className="px-2.5 py-1.5 bg-emerald-600 text-white rounded-lg text-[10px] font-black hover:bg-emerald-700"
+                >সংরক্ষণ</button>
+              </div>
             </div>
-            {options.map((opt) => (
+          ) : (
+            <div className="p-1.5 space-y-0.5">
+              <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <Sparkles size={11} className="text-emerald-500" /> ক্যাটাগরি নির্বাচন করুন
+                </span>
+              </div>
+              <div className="max-h-60 overflow-y-auto no-scrollbar space-y-0.5">
+                {options.map((opt) => (
+                  <div 
+                    key={opt.id}
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
+                      value === opt.value
+                        ? `bg-${opt.color}-50 text-${opt.color}-700 shadow-sm` 
+                        : 'hover:bg-slate-50 text-slate-600'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                        value === opt.value
+                          ? `bg-${opt.color}-600 text-white`
+                          : 'bg-slate-100 text-slate-400'
+                      }`}>
+                        <opt.icon size={14} />
+                      </div>
+                      <span className={`text-[12.5px] font-black transition-colors ${
+                        value === opt.value
+                          ? `text-${opt.color}-700`
+                          : 'text-slate-700'
+                      }`}>{opt.label}</span>
+                    </div>
+                    
+                    {value === opt.value && (
+                      <div className={`w-5 h-5 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300`}>
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
               <div 
-                key={opt.id}
-                onClick={() => {
-                  onChange(opt.value);
-                  setIsOpen(false);
-                }}
-                className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
-                  value === opt.value
-                    ? `bg-${opt.color}-50 text-${opt.color}-700 shadow-sm` 
-                    : 'hover:bg-slate-50 text-slate-600'
-                }`}
+                onClick={() => setIsAddingNew(true)}
+                className="px-3 py-2.5 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all hover:bg-emerald-50 text-emerald-600 font-black border-t border-dashed border-slate-100 mt-1 shrink-0"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                    value === opt.value
-                      ? `bg-${opt.color}-600 text-white`
-                      : 'bg-slate-100 text-slate-400'
-                  }`}>
-                    <opt.icon size={14} />
+                  <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                    <Plus size={14} />
                   </div>
-                  <span className={`text-[12.5px] font-black transition-colors ${
-                    value === opt.value
-                      ? `text-${opt.color}-700`
-                      : 'text-slate-700'
-                  }`}>{opt.label}</span>
+                  <span className="text-[12.5px] font-black">নতুন যুক্ত করুন</span>
                 </div>
-                
-                {value === opt.value && (
-                  <div className={`w-5 h-5 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300`}>
-                    <Check size={12} strokeWidth={3} />
-                  </div>
-                )}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -167,21 +249,62 @@ const PremiumParaTypeSelect = ({ value, onChange, IDBadge }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const options = [
+  const [customParaTypes, setCustomParaTypes] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('custom_para_types');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+
+  const defaultOptions = [
     { id: 'admin', label: 'প্রশাসন', value: 'প্রশাসন', icon: User, color: 'emerald' },
     { id: 'sfi', label: 'এসএফআই', value: 'এসএফআই', icon: ShieldCheck, color: 'blue' },
     { id: 'nonsfi', label: 'নন এসএফআই', value: 'নন এসএফআই', icon: Layout, color: 'indigo' },
+  ];
+
+  const options = [
+    ...defaultOptions,
+    ...customParaTypes.map((pt, index) => ({
+      id: `custom-para-type-${index}`,
+      label: pt,
+      value: pt,
+      icon: ShieldCheck,
+      color: 'sky' as const
+    }))
   ];
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsOpen(false);
+        setIsAddingNew(false);
+        setNewItemName('');
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleAddNewParaType = () => {
+    const cleanName = newItemName.trim();
+    if (!cleanName) return;
+    if (options.some(opt => opt.value === cleanName)) {
+      alert("এই শাখার ধরণটি ইতিমধ্যে রয়েছে।");
+      return;
+    }
+    const next = [...customParaTypes, cleanName];
+    setCustomParaTypes(next);
+    localStorage.setItem('custom_para_types', JSON.stringify(next));
+    onChange(cleanName);
+    setIsAddingNew(false);
+    setNewItemName('');
+    setIsOpen(false);
+  };
 
   const selectedOpt = options.find(opt => opt.value === value) || options[0];
 
@@ -202,40 +325,81 @@ const PremiumParaTypeSelect = ({ value, onChange, IDBadge }: any) => {
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600">
-          <div className="p-1.5 space-y-0.5">
-            <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Sparkles size={11} className="text-blue-500" /> শাখা নির্বাচন করুন
-              </span>
+        <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-blue-600 animate-out duration-200">
+          {isAddingNew ? (
+            <div className="p-3 space-y-3">
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Sparkles size={11} className="text-blue-500" /> নতুন শাখার ধরণ যুক্ত করুন
+              </div>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-blue-500"
+                placeholder="শাখার নাম..."
+                value={newItemName}
+                onChange={e => setNewItemName(e.target.value)}
+                autoFocus
+              />
+              <div className="flex gap-2 justify-end">
+                <button 
+                  type="button"
+                  onClick={() => { setIsAddingNew(false); setNewItemName(''); }}
+                  className="px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black hover:bg-slate-200"
+                >বাতিল</button>
+                <button 
+                  type="button"
+                  onClick={handleAddNewParaType}
+                  className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-black hover:bg-blue-700"
+                >সংরক্ষণ</button>
+              </div>
             </div>
-            {options.map((opt) => (
+          ) : (
+            <div className="p-1.5 space-y-0.5">
+              <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <Sparkles size={11} className="text-blue-500" /> শাখা নির্বাচন করুন
+                </span>
+              </div>
+              <div className="max-h-60 overflow-y-auto no-scrollbar space-y-0.5">
+                {options.map((opt) => (
+                  <div 
+                    key={opt.id}
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
+                      value === opt.value ? `bg-${opt.color}-50 text-${opt.color}-700 shadow-sm` : 'hover:bg-slate-50 text-slate-600'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                        value === opt.value ? `bg-${opt.color}-600 text-white` : 'bg-slate-100 text-slate-400'
+                      }`}>
+                        <opt.icon size={14} />
+                      </div>
+                      <span className={`text-[12.5px] font-black transition-colors ${value === opt.value ? `text-${opt.color}-700` : 'text-slate-700'}`}>{opt.label}</span>
+                    </div>
+                    {value === opt.value && (
+                      <div className={`w-5 h-5 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300`}>
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
               <div 
-                key={opt.id}
-                onClick={() => {
-                  onChange(opt.value);
-                  setIsOpen(false);
-                }}
-                className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
-                  value === opt.value ? `bg-${opt.color}-50 text-${opt.color}-700 shadow-sm` : 'hover:bg-slate-50 text-slate-600'
-                }`}
+                onClick={() => setIsAddingNew(true)}
+                className="px-3 py-2.5 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all hover:bg-blue-50 text-blue-600 font-black border-t border-dashed border-slate-100 mt-1 shrink-0"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                    value === opt.value ? `bg-${opt.color}-600 text-white` : 'bg-slate-100 text-slate-400'
-                  }`}>
-                    <opt.icon size={14} />
+                  <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                    <Plus size={14} />
                   </div>
-                  <span className={`text-[12.5px] font-black transition-colors ${value === opt.value ? `text-${opt.color}-700` : 'text-slate-700'}`}>{opt.label}</span>
+                  <span className="text-[12.5px] font-black">নতুন যুক্ত করুন</span>
                 </div>
-                {value === opt.value && (
-                  <div className={`w-5 h-5 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300`}>
-                    <Check size={12} strokeWidth={3} />
-                  </div>
-                )}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -249,8 +413,20 @@ const PremiumMinistrySelect = ({ value, onChange, IDBadge }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const [customMinistries, setCustomMinistries] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('custom_ministries');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+
   // Define options based on MINISTRY_ENTITY_MAP keys
-  const options = Object.keys(MINISTRY_ENTITY_MAP).map((m, idx) => ({
+  const defaultOptions = Object.keys(MINISTRY_ENTITY_MAP).map((m, idx) => ({
     id: `ministry-opt-${idx}`,
     label: m,
     value: m,
@@ -258,15 +434,44 @@ const PremiumMinistrySelect = ({ value, onChange, IDBadge }: any) => {
     color: 'sky'
   }));
 
+  const options = [
+    ...defaultOptions,
+    ...customMinistries.map((cm, idx) => ({
+      id: `custom-ministry-opt-${idx}`,
+      label: cm,
+      value: cm,
+      icon: Building,
+      color: 'sky'
+    }))
+  ];
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsOpen(false);
+        setIsAddingNew(false);
+        setNewItemName('');
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleAddNewMinistry = () => {
+    const cleanName = newItemName.trim();
+    if (!cleanName) return;
+    if (options.some(opt => opt.value === cleanName)) {
+      alert("এই মন্ত্রণালয়টি ইতিমধ্যে রয়েছে।");
+      return;
+    }
+    const next = [...customMinistries, cleanName];
+    setCustomMinistries(next);
+    localStorage.setItem('custom_ministries', JSON.stringify(next));
+    onChange(cleanName);
+    setIsAddingNew(false);
+    setNewItemName('');
+    setIsOpen(false);
+  };
 
   const selectedOpt = options.find(opt => opt.value === value);
 
@@ -298,42 +503,81 @@ const PremiumMinistrySelect = ({ value, onChange, IDBadge }: any) => {
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-sky-600">
-          <div className="p-1.5 space-y-0.5">
-            <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Sparkles size={11} className="text-sky-500" /> মন্ত্রণালয় নির্বাচন করুন
-              </span>
+        <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-sky-600 animate-out duration-200">
+          {isAddingNew ? (
+            <div className="p-3 space-y-3">
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Sparkles size={11} className="text-sky-500" /> নতুন মন্ত্রণালয় যুক্ত করুন
+              </div>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-sky-500"
+                placeholder="মন্ত্রণালয়ের নাম..."
+                value={newItemName}
+                onChange={e => setNewItemName(e.target.value)}
+                autoFocus
+              />
+              <div className="flex gap-2 justify-end">
+                <button 
+                  type="button"
+                  onClick={() => { setIsAddingNew(false); setNewItemName(''); }}
+                  className="px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black hover:bg-slate-200"
+                >বাতিল</button>
+                <button 
+                  type="button"
+                  onClick={handleAddNewMinistry}
+                  className="px-2.5 py-1.5 bg-sky-600 text-white rounded-lg text-[10px] font-black hover:bg-sky-700"
+                >সংরক্ষণ</button>
+              </div>
             </div>
-            <div className="max-h-60 overflow-y-auto no-scrollbar">
-              {options.map((opt) => (
-                <div 
-                  key={opt.id}
-                  onClick={() => {
-                    onChange(opt.value);
-                    setIsOpen(false);
-                  }}
-                  className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
-                    value === opt.value ? `bg-sky-50 text-sky-700 shadow-sm` : 'hover:bg-slate-50 text-slate-600'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                      value === opt.value ? `bg-sky-600 text-white` : 'bg-slate-100 text-slate-400'
-                    }`}>
-                      <Building size={14} />
+          ) : (
+            <div className="p-1.5 space-y-0.5">
+              <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <Sparkles size={11} className="text-sky-500" /> মন্ত্রণালয় নির্বাচন করুন
+                </span>
+              </div>
+              <div className="max-h-60 overflow-y-auto no-scrollbar space-y-0.5">
+                {options.map((opt) => (
+                  <div 
+                    key={opt.id}
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
+                      value === opt.value ? `bg-sky-50 text-sky-700 shadow-sm` : 'hover:bg-slate-50 text-slate-600'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                        value === opt.value ? `bg-sky-600 text-white` : 'bg-slate-100 text-slate-400'
+                      }`}>
+                        <Building size={14} />
+                      </div>
+                      <span className={`text-[12.5px] font-black transition-colors ${value === opt.value ? `text-sky-700` : 'text-slate-700'}`}>{opt.label}</span>
                     </div>
-                    <span className={`text-[12.5px] font-black transition-colors ${value === opt.value ? `text-sky-700` : 'text-slate-700'}`}>{opt.label}</span>
+                    {value === opt.value && (
+                      <div className="w-5 h-5 bg-sky-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300">
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                    )}
                   </div>
-                  {value === opt.value && (
-                    <div className="w-5 h-5 bg-sky-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300">
-                      <Check size={12} strokeWidth={3} />
-                    </div>
-                  )}
+                ))}
+              </div>
+              <div 
+                onClick={() => setIsAddingNew(true)}
+                className="px-3 py-2.5 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all hover:bg-sky-50 text-sky-600 font-black border-t border-dashed border-slate-100 mt-1 shrink-0"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center">
+                    <Plus size={14} />
+                  </div>
+                  <span className="text-[12.5px] font-black">নতুন যুক্ত করুন</span>
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>
