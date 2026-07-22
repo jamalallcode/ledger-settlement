@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Printer, Sparkles, ChevronDown, BarChart3, FileSpreadsheet, Lock } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
@@ -19,6 +19,18 @@ interface QRProps {
 }
 
 const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', monthPickerElement, customTitle }) => {
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const statsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (statsRef.current && !statsRef.current.contains(event.target as Node)) {
+        setIsStatsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   // Standard calendar quarter date calculation:
   // Quarters: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec)
   const getQuarterInfo = (date: Date) => {
@@ -1765,8 +1777,164 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               </button>
             </div>
 
-            {/* Right Column: Interactive Date Range Pill Dropdown */}
+            {/* Right Column: Interactive Date Range Pill Dropdown & Statistics Button */}
             <div className="flex items-center gap-2.5 w-full xl:w-auto justify-end flex-wrap">
+              {/* Statistics Dropdown */}
+              <div className="relative no-print shrink-0" ref={statsRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsStatsOpen(prev => !prev)}
+                  className="flex items-center gap-1.5 px-3 h-[38px] bg-sky-50 text-sky-800 hover:bg-sky-100/80 rounded-xl font-bold text-[12px] border border-sky-100 hover:border-sky-300 transition-all duration-300 shadow-sm cursor-pointer shrink-0 leading-none select-none"
+                >
+                  <Sparkles size={14} className="text-sky-600 animate-pulse shrink-0" />
+                  <span>পরিসংখ্যান</span>
+                  <ChevronDown size={13} className={`text-sky-600 transition-transform duration-300 shrink-0 ${isStatsOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isStatsOpen && (
+                  <div 
+                    onWheel={(e) => e.stopPropagation()}
+                    onTouchMove={(e) => e.stopPropagation()}
+                    className="absolute top-full right-0 mt-2 w-[340px] sm:w-[420px] bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 sm:p-5 z-[9999] text-left max-h-[80vh] overflow-y-auto overscroll-contain scrollbar-thin animate-in fade-in zoom-in-95 duration-200"
+                  >
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center">
+                          <BarChart3 size={18} />
+                        </div>
+                        <div className="flex flex-col text-left">
+                          <span className="text-slate-900 font-black text-[14px]">শাখাভিত্তিক রিপোর্ট পরিসংখ্যান</span>
+                          <span className="text-slate-500 font-bold text-[11px]">এসএফআই + নন-এসএফআই শাখা</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {customTitle === 'বিস্তারিত - ১' ? (
+                      <>
+                        {/* এসএফআই শাখা */}
+                        <div className="bg-sky-50/80 border border-sky-100 rounded-xl p-3 space-y-2 mb-3">
+                          <div className="flex items-center justify-between border-b border-sky-200/60 pb-1.5">
+                            <span className="text-sky-900 font-extrabold text-[12px] flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-sky-600"></span>
+                              এসএফআই শাখা (টেবিল-১)
+                            </span>
+                            <span className="text-sky-800 font-black text-[11px] bg-sky-200/60 px-2 py-0.5 rounded-md">
+                              মোট: {toBengaliDigits(details1Totals.totalCount)} টি
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-700">
+                            <div className="bg-white/90 p-2 rounded-lg border border-sky-100">
+                              <span className="text-slate-500 block text-[10px]">পূর্বে অমীমাংসিত</span>
+                              <span className="text-slate-800 font-black">{toBengaliDigits(details1Totals.unsettledCountPrior)} টি</span>
+                              <span className="text-slate-500 block text-[9.5px] truncate">{formatAmountBengali(details1Totals.unsettledAmountPrior)} টাকা</span>
+                            </div>
+                            <div className="bg-white/90 p-2 rounded-lg border border-sky-100">
+                              <span className="text-slate-500 block text-[10px]">উত্থাপিত আপত্তি</span>
+                              <span className="text-blue-700 font-black">{toBengaliDigits(details1Totals.raisedCountCurr)} টি</span>
+                              <span className="text-slate-500 block text-[9.5px] truncate">{formatAmountBengali(details1Totals.raisedAmountCurr)} টাকা</span>
+                            </div>
+                            <div className="bg-white/90 p-2 rounded-lg border border-sky-100">
+                              <span className="text-slate-500 block text-[10px]">মীমাংসিত আপত্তি</span>
+                              <span className="text-emerald-700 font-black">{toBengaliDigits(details1Totals.settledCountCurr)} টি</span>
+                              <span className="text-emerald-600 block text-[9.5px] truncate">{formatAmountBengali(details1Totals.settledAmountCurr)} টাকা</span>
+                            </div>
+                            <div className="bg-white/90 p-2 rounded-lg border border-sky-100">
+                              <span className="text-slate-500 block text-[10px]">অমীমাংসিত আপত্তি</span>
+                              <span className="text-amber-700 font-black">{toBengaliDigits(details1Totals.unsettledCountEnd)} টি</span>
+                              <span className="text-slate-500 block text-[9.5px] truncate">{formatAmountBengali(details1Totals.unsettledAmountEnd)} টাকা</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* নন-এসএফআই শাখা */}
+                        <div className="bg-indigo-50/80 border border-indigo-100 rounded-xl p-3 space-y-2 mb-3">
+                          <div className="flex items-center justify-between border-b border-indigo-200/60 pb-1.5">
+                            <span className="text-indigo-900 font-extrabold text-[12px] flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                              নন-এসএফআই শাখা (টেবিল-২)
+                            </span>
+                            <span className="text-indigo-800 font-black text-[11px] bg-indigo-200/60 px-2 py-0.5 rounded-md">
+                              মোট: {toBengaliDigits(details1Table2Totals.totalCount)} টি
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-700">
+                            <div className="bg-white/90 p-2 rounded-lg border border-indigo-100">
+                              <span className="text-slate-500 block text-[10px]">পূর্বে অমীমাংসিত</span>
+                              <span className="text-slate-800 font-black">{toBengaliDigits(details1Table2Totals.unsettledCountPrior)} টি</span>
+                              <span className="text-slate-500 block text-[9.5px] truncate">{formatAmountBengali(details1Table2Totals.unsettledAmountPrior)} টাকা</span>
+                            </div>
+                            <div className="bg-white/90 p-2 rounded-lg border border-indigo-100">
+                              <span className="text-slate-500 block text-[10px]">উত্থাপিত আপত্তি</span>
+                              <span className="text-blue-700 font-black">{toBengaliDigits(details1Table2Totals.raisedCountCurr)} টি</span>
+                              <span className="text-slate-500 block text-[9.5px] truncate">{formatAmountBengali(details1Table2Totals.raisedAmountCurr)} টাকা</span>
+                            </div>
+                            <div className="bg-white/90 p-2 rounded-lg border border-indigo-100">
+                              <span className="text-slate-500 block text-[10px]">মীমাংসিত আপত্তি</span>
+                              <span className="text-emerald-700 font-black">{toBengaliDigits(details1Table2Totals.settledCountCurr)} টি</span>
+                              <span className="text-emerald-600 block text-[9.5px] truncate">{formatAmountBengali(details1Table2Totals.settledAmountCurr)} টাকা</span>
+                            </div>
+                            <div className="bg-white/90 p-2 rounded-lg border border-indigo-100">
+                              <span className="text-slate-500 block text-[10px]">অমীমাংসিত আপত্তি</span>
+                              <span className="text-amber-700 font-black">{toBengaliDigits(details1Table2Totals.unsettledCountEnd)} টি</span>
+                              <span className="text-slate-500 block text-[9.5px] truncate">{formatAmountBengali(details1Table2Totals.unsettledAmountEnd)} টাকা</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* সর্বমোট summary */}
+                        <div className="bg-slate-900 text-white rounded-xl p-3.5 space-y-2">
+                          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                            <span className="text-slate-200 font-black text-[12px]">সর্বমোট (এসএফআই + নন-এসএফআই)</span>
+                            <span className="text-amber-400 font-black text-[12px]">
+                              মোট: {toBengaliDigits(details1GrandTotals.totalCount)} টি
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-[11px] font-bold">
+                            <div className="bg-slate-800/90 p-2 rounded-lg border border-slate-700">
+                              <span className="text-slate-400 block text-[10px]">সর্বমোট মীমাংসিত</span>
+                              <span className="text-emerald-400 font-black text-[12px]">{toBengaliDigits(details1GrandTotals.settledCountCurr)} টি</span>
+                              <span className="text-slate-300 block text-[9.5px] truncate">{formatAmountBengali(details1GrandTotals.settledAmountCurr)} টাকা</span>
+                            </div>
+                            <div className="bg-slate-800/90 p-2 rounded-lg border border-slate-700">
+                              <span className="text-slate-400 block text-[10px]">সর্বমোট অমীমাংসিত</span>
+                              <span className="text-amber-400 font-black text-[12px]">{toBengaliDigits(details1GrandTotals.unsettledCountEnd)} টি</span>
+                              <span className="text-slate-300 block text-[9.5px] truncate">{formatAmountBengali(details1GrandTotals.unsettledAmountEnd)} টাকা</span>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="space-y-1.5 text-slate-700 text-[11px] font-bold leading-normal">
+                        <div className="flex justify-between py-1 border-b border-slate-100">
+                          <span>সর্বমোট প্রেরিত অনুচ্ছেদ:</span>
+                          <span className="text-blue-700 font-black">{toBengaliDigits(totals.sentPara ?? 0)} টি</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-slate-100">
+                          <span>সর্বমোট নিষ্পত্তিকৃত অনুচ্ছেদ:</span>
+                          <span className="text-emerald-600 font-black">{toBengaliDigits(totals.settledPara ?? 0)} টি</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-slate-100">
+                          <span>সর্বমোট আদায়:</span>
+                          <span className="text-emerald-700 font-black">{toBengaliDigits(Math.round(totals.recovery ?? 0))} টাকা</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-slate-100">
+                          <span>সর্বমোট সমন্বয়:</span>
+                          <span className="text-indigo-600 font-black">{toBengaliDigits(Math.round(totals.adjustment ?? 0))} টাকা</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-slate-100">
+                          <span>মোট জড়িত টাকা:</span>
+                          <span className="text-slate-900 font-black">{toBengaliDigits(Math.round(totals.involvedAmount ?? 0))} টাকা</span>
+                        </div>
+                        <div className="flex justify-between py-1">
+                          <span>মোট নিষ্পন্ন টাকা:</span>
+                          <span className="text-teal-700 font-black">{toBengaliDigits(Math.round(totals.amount ?? 0))} টাকা</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {monthPickerElement ? (
                 <div className="select-none relative z-[300]">
                   {monthPickerElement}
