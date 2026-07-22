@@ -1765,17 +1765,18 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               </button>
             </div>
 
-            {/* Right Column: Date Range Pill & Month Picker */}
+            {/* Right Column: Interactive Date Range Pill Dropdown */}
             <div className="flex items-center gap-2.5 w-full xl:w-auto justify-end flex-wrap">
-              <div className="inline-flex items-center gap-2 px-3.5 h-[38px] bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-                <span className="text-blue-700 font-black text-[12.5px] whitespace-nowrap">
-                  {customTitle || "ত্রৈমাসিক রিটার্ন - ২"} | {quarterCycleRangeFormatted}
-                </span>
-              </div>
-              {monthPickerElement && (
+              {monthPickerElement ? (
                 <div className="select-none relative z-[300]">
                   {monthPickerElement}
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-3.5 h-[38px] bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                  <span className="text-blue-700 font-black text-[12.5px] whitespace-nowrap">
+                    {customTitle || "ত্রৈমাসিক রিটার্ন - ২"} | {quarterCycleRangeFormatted}
+                  </span>
                 </div>
               )}
             </div>
@@ -1986,15 +1987,16 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
           {/* Date Range Pill */}
           <div className="mt-1 mb-2 flex items-center justify-center gap-3 no-print flex-wrap">
-            <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 border border-blue-100 rounded-full shadow-sm scale-95 origin-center">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-              <span className="text-blue-700 font-bold text-[12px]">
-                {customTitle || "ত্রৈমাসিক রিটার্ন - ২"} | {quarterCycleRangeFormatted}
-              </span>
-            </div>
-            {monthPickerElement && (
+            {monthPickerElement ? (
               <div className="scale-95 origin-center select-none relative z-[300]">
                 {monthPickerElement}
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 border border-blue-100 rounded-full shadow-sm scale-95 origin-center">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                <span className="text-blue-700 font-bold text-[12px]">
+                  {customTitle || "ত্রৈমাসিক রিটার্ন - ২"} | {quarterCycleRangeFormatted}
+                </span>
               </div>
             )}
           </div>

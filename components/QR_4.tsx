@@ -1589,15 +1589,16 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
         {/* Right Column: Date Range Pill & Month Picker */}
         <div className="flex items-center gap-2.5 w-full md:w-auto justify-end flex-wrap">
-          <div className="inline-flex items-center gap-2 px-3.5 h-[38px] bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-            <span className="text-blue-700 font-black text-[12.5px] whitespace-nowrap">
-              {customTitle || "ত্রৈমাসিক রিটার্ন - ৪"} | {activeCycle.label}
-            </span>
-          </div>
-          {monthPickerElement && (
+          {monthPickerElement ? (
             <div className="select-none relative z-[300]">
               {monthPickerElement}
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-2 px-3.5 h-[38px] bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+              <span className="text-blue-700 font-black text-[12.5px] whitespace-nowrap">
+                {customTitle || "ত্রৈমাসিক রিটার্ন - ৪"} | {activeCycle.label}
+              </span>
             </div>
           )}
         </div>
