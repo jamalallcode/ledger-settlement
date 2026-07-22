@@ -205,6 +205,23 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   const prevQuarterEnd = getPrevQuarterEndInfo();
 
   const QR2_MINISTRY_MAP: Record<string, string[]> = {
+    "আর্থিক প্রতিষ্ঠান বিভাগ": [
+      "সোনালী ব্যাংক পিএলসি",
+      "জনতা ব্যাংক পিএলসি",
+      "অগ্রণী ব্যাংক পিএলসি",
+      "বাংলাদেশ কৃষি ব্যাংক",
+      "রূপালী ব্যাংক পিএলসি",
+      "বাংলাদেশ ব্যাংক",
+      "বাংলাদেশ ডেভেলপমেন্ট ব্যাংক লিঃ",
+      "গৃহনির্মাণ ঋণদান সংস্থা",
+      "কর্মসংস্থান ব্যাংক",
+      "বেসিক ব্যাংক লিঃ",
+      "আনসার ভিডিপি উন্নয়ন ব্যাংক লিঃ",
+      "ইনভেস্টমেন্ট কর্পোরেশন অব বাংলাদেশ",
+      "সাধারণ বীমা কর্পোরেশন",
+      "জীবন বীমা কর্পোরেশন",
+      "প্রবাসী কল্যাণ ব্যাংক"
+    ],
     "শিল্প মন্ত্রণালয়": [
       "চিনি ও খাদ্য সংস্থা",
       "হস্ত ও কুটির শিল্প সংস্থা",
@@ -244,6 +261,26 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       "সাধারণ বীমা কর্পোরেশন",
       "জীবন বীমা কর্পোরেশন",
       "প্রবাসী কল্যাণ ব্যাংক"
+    ],
+    "শিল্প মন্ত্রণালয়": [
+      "চিনি ও খাদ্য সংস্থা",
+      "হস্ত ও কুটির শিল্প সংস্থা",
+      "বিটাক",
+      "রসায়ন শিল্প সংস্থা"
+    ],
+    "বস্ত্র ও পাট মন্ত্রণালয়": [
+      "পাটকল সংস্থা",
+      "পাট সংস্থা",
+      "বস্ত্রকল সংস্থা",
+      "রেশম বোর্ড"
+    ],
+    "বাণিজ্য মন্ত্রণালয়": [
+      "টিসিবি",
+      "আমদানি ও রপ্তানি"
+    ],
+    "বেসামরিক বিমান পরিবহন ও পর্যটন": [
+      "বাংলাদেশ বিমান",
+      "পর্যটন কর্পোরেশন"
     ]
   };
 
@@ -1597,6 +1634,47 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     };
   }, [details1Totals, details1Table2Totals]);
 
+  const getMinistryTotals = (group: any) => {
+    let unsettledCountPrior = 0;
+    let unsettledAmountPrior = 0;
+    let raisedCountCurr = 0;
+    let raisedAmountCurr = 0;
+    let settledCountCurr = 0;
+    let settledAmountCurr = 0;
+    let unsettledCountEnd = 0;
+    let unsettledAmountEnd = 0;
+    let totalCount = 0;
+    let totalAmount = 0;
+
+    if (group && group.entities) {
+      group.entities.forEach((ent: any) => {
+        unsettledCountPrior += (ent.unsettledCountPrior || 0);
+        unsettledAmountPrior += (ent.unsettledAmountPrior || 0);
+        raisedCountCurr += (ent.raisedCountCurr || 0);
+        raisedAmountCurr += (ent.raisedAmountCurr || 0);
+        settledCountCurr += (ent.settledCountCurr || 0);
+        settledAmountCurr += (ent.settledAmountCurr || 0);
+        unsettledCountEnd += (ent.unsettledCountEnd || 0);
+        unsettledAmountEnd += (ent.unsettledAmountEnd || 0);
+        totalCount += (ent.totalCount || 0);
+        totalAmount += (ent.totalAmount || 0);
+      });
+    }
+
+    return {
+      unsettledCountPrior,
+      unsettledAmountPrior,
+      raisedCountCurr,
+      raisedAmountCurr,
+      settledCountCurr,
+      settledAmountCurr,
+      unsettledCountEnd,
+      unsettledAmountEnd,
+      totalCount,
+      totalAmount
+    };
+  };
+
   const filteredData = entries.filter(e => {
     // Filter by SFI or Non-SFI
     const normalizedParaType = robustNormalize(e.paraType || '');
@@ -1844,6 +1922,43 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                               <span className="text-slate-500 block text-[9.5px] truncate">{formatAmountBengali(details1Totals.unsettledAmountEnd)} টাকা</span>
                             </div>
                           </div>
+
+                          {/* Ministry Breakdown for SFI */}
+                          {details1Data.length > 0 && (
+                            <div className="mt-2.5 pt-2 border-t border-sky-200/60 space-y-1.5">
+                              <div className="flex items-center justify-between text-sky-950 font-extrabold text-[11px]">
+                                <span>মন্ত্রণালয় ভিত্তিক তথ্য (SFI):</span>
+                                <span className="text-[10px] text-sky-800 font-bold bg-sky-200/60 px-1.5 py-0.5 rounded">
+                                  {toBengaliDigits(details1Data.length)} টি মন্ত্রণালয়
+                                </span>
+                              </div>
+                              <div className="space-y-1.5 max-h-[170px] overflow-y-auto pr-0.5 scrollbar-thin">
+                                {details1Data.map((g: any, idx: number) => {
+                                  const mTotals = getMinistryTotals(g);
+                                  return (
+                                    <div key={idx} className="bg-white/95 rounded-lg p-2 border border-sky-100 shadow-2xs">
+                                      <div className="flex items-center justify-between text-[11px] font-extrabold text-slate-800">
+                                        <span className="truncate pr-1 text-slate-900">{g.ministryName}</span>
+                                        <span className="text-sky-800 font-black shrink-0 bg-sky-50 px-1.5 py-0.5 rounded text-[10px]">
+                                          মোট: {toBengaliDigits(mTotals.totalCount)} টি ({toBengaliDigits(g.entities.length)}টি সংস্থা)
+                                        </span>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-1.5 mt-1 pt-1 border-t border-slate-100 text-[10px]">
+                                        <div className="flex items-center justify-between text-emerald-800 font-semibold bg-emerald-50/60 px-1.5 py-0.5 rounded">
+                                          <span>মীমাংসিত:</span>
+                                          <span className="font-bold">{toBengaliDigits(mTotals.settledCountCurr)} টি</span>
+                                        </div>
+                                        <div className="flex items-center justify-between text-amber-800 font-semibold bg-amber-50/60 px-1.5 py-0.5 rounded">
+                                          <span>অমীমাংসিত:</span>
+                                          <span className="font-bold">{toBengaliDigits(mTotals.unsettledCountEnd)} টি</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         {/* নন-এসএফআই শাখা */}
@@ -1879,6 +1994,43 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                               <span className="text-slate-500 block text-[9.5px] truncate">{formatAmountBengali(details1Table2Totals.unsettledAmountEnd)} টাকা</span>
                             </div>
                           </div>
+
+                          {/* Ministry Breakdown for Non-SFI */}
+                          {details1Table2Data.length > 0 && (
+                            <div className="mt-2.5 pt-2 border-t border-indigo-200/60 space-y-1.5">
+                              <div className="flex items-center justify-between text-indigo-950 font-extrabold text-[11px]">
+                                <span>মন্ত্রণালয় ভিত্তিক তথ্য (Non-SFI):</span>
+                                <span className="text-[10px] text-indigo-800 font-bold bg-indigo-200/60 px-1.5 py-0.5 rounded">
+                                  {toBengaliDigits(details1Table2Data.length)} টি বিভাগ
+                                </span>
+                              </div>
+                              <div className="space-y-1.5 max-h-[170px] overflow-y-auto pr-0.5 scrollbar-thin">
+                                {details1Table2Data.map((g: any, idx: number) => {
+                                  const mTotals = getMinistryTotals(g);
+                                  return (
+                                    <div key={idx} className="bg-white/95 rounded-lg p-2 border border-indigo-100 shadow-2xs">
+                                      <div className="flex items-center justify-between text-[11px] font-extrabold text-slate-800">
+                                        <span className="truncate pr-1 text-slate-900">{g.ministryName}</span>
+                                        <span className="text-indigo-800 font-black shrink-0 bg-indigo-50 px-1.5 py-0.5 rounded text-[10px]">
+                                          মোট: {toBengaliDigits(mTotals.totalCount)} টি ({toBengaliDigits(g.entities.length)}টি সংস্থা)
+                                        </span>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-1.5 mt-1 pt-1 border-t border-slate-100 text-[10px]">
+                                        <div className="flex items-center justify-between text-emerald-800 font-semibold bg-emerald-50/60 px-1.5 py-0.5 rounded">
+                                          <span>মীমাংসিত:</span>
+                                          <span className="font-bold">{toBengaliDigits(mTotals.settledCountCurr)} টি</span>
+                                        </div>
+                                        <div className="flex items-center justify-between text-amber-800 font-semibold bg-amber-50/60 px-1.5 py-0.5 rounded">
+                                          <span>অমীমাংসিত:</span>
+                                          <span className="font-bold">{toBengaliDigits(mTotals.unsettledCountEnd)} টি</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         {/* সর্বমোট summary */}
