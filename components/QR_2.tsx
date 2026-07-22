@@ -1430,7 +1430,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   };
 
   const details1Data = useMemo(() => {
-    if (customTitle !== 'বিস্তারিত - ১') return [];
+    if (customTitle !== 'বিস্তারিত - ১' && customTitle !== 'ত্রৈমাসিক - ১') return [];
 
     const processedGroups: any[] = [];
 
@@ -1504,7 +1504,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   }, [details1Data]);
 
   const details1Table2Data = useMemo(() => {
-    if (customTitle !== 'বিস্তারিত - ১') return [];
+    if (customTitle !== 'বিস্তারিত - ১' && customTitle !== 'ত্রৈমাসিক - ১') return [];
 
     const processedGroups: any[] = [];
 
@@ -1738,7 +1738,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   const footerTdCls = "border-r border-b border-slate-400 p-1 text-[9px] text-slate-900 align-middle bg-slate-200 font-extrabold";
   const footerNumTdCls = "border-r border-b border-slate-400 p-1 text-[9px] text-slate-900 text-center align-middle font-black bg-slate-200";
 
-  if (customTitle === 'বিস্তারিত - ১') {
+  if (customTitle === 'বিস্তারিত - ১' || customTitle === 'ত্রৈমাসিক - ১') {
     const priorMonthIdx = (quarterStartMonth - 1 + 12) % 12;
     const priorYear = quarterStartMonth === 0 ? quarterYear - 1 : quarterYear;
     const monthsList = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];

@@ -1004,7 +1004,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
   const quarterlyPillTitle = useMemo(() => {
     if (!selectedReportType) return "ত্রৈমাসিক রিটার্ন";
-    if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১') return "বিস্তারিত - ১";
+    if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১') return "ত্রৈমাসিক - ১";
     if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২') return "বিস্তারিত - ২";
     if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩') return "বিস্তারিত - ৩";
     if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৪') return "বিস্তারিত - ৪";
@@ -1216,7 +1216,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') {
     renderedContent = <QR_2 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১') {
-    renderedContent = <QR_2 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ১" />;
+    renderedContent = <QR_2 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="ত্রৈমাসিক - ১" />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২') {
     renderedContent = <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ২" />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩') {
