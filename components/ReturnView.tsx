@@ -309,17 +309,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
         const label = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
         
-        const qStart = new Date(quarterYear, quarterStartMonth, 16);
-        const qEnd = new Date(quarterYear, quarterEndMonth, 15);
-        const qCycleLabel = `${toBengaliDigits(dateFnsFormat(qStart, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(dateFnsFormat(qEnd, 'dd/MM/yyyy'))}`;
-
         if (!seen.has(label)) {
           if (quarterYear < 2026 || (quarterYear === 2026 && quarterStartMonth < 3)) {
             continue;
           }
           seen.add(label);
           const reprDate = new Date(quarterYear, quarterStartMonth, 1);
-          options.push({ date: reprDate, label, cycleLabel: qCycleLabel });
+          const cycle = getCycleForDate(reprDate);
+          options.push({ date: reprDate, label, cycleLabel: cycle.label });
         }
       }
     } else if (isHalfYearly) {
@@ -986,74 +983,32 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   };
 
-  const currentQuarterRangeFormatted = useMemo(() => {
-    const cycleEnd = activeCycle.end;
-    const month = cycleEnd.getMonth();
-    const year = cycleEnd.getFullYear();
-    let qStartMonth = 0;
-    if (month >= 0 && month <= 2) qStartMonth = 0;
-    else if (month >= 3 && month <= 5) qStartMonth = 3;
-    else if (month >= 6 && month <= 8) qStartMonth = 6;
-    else qStartMonth = 9;
-
-    const qEndMonth = qStartMonth + 2;
-    const qStart = new Date(year, qStartMonth, 16);
-    const qEnd = new Date(year, qEndMonth, 15);
-    return `${toBengaliDigits(dateFnsFormat(qStart, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(dateFnsFormat(qEnd, 'dd/MM/yyyy'))}`;
-  }, [activeCycle]);
-
-  const quarterlyPillTitle = useMemo(() => {
-    if (!selectedReportType) return "ত্রৈমাসিক রিটার্ন";
-    if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১') return "ত্রৈমাসিক - ১";
-    if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২') return "বিস্তারিত - ২";
-    if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩') return "বিস্তারিত - ৩";
-    if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৪') return "বিস্তারিত - ৪";
-    if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৫') return "বিস্তারিত - ৫";
-    if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৬') return "বিস্তারিত - ৬";
-    return selectedReportType;
-  }, [selectedReportType]);
-
-  const isQuarterlyReport = selectedReportType?.includes('ত্রৈমাসিক');
-
   const monthPickerElement = (
     <div className="relative no-print z-[350]" ref={dropdownRef}>
-      {isQuarterlyReport ? (
-        <div 
-          onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
-          className={`inline-flex items-center gap-2 px-3.5 h-[38px] bg-sky-50 text-sky-800 rounded-xl text-[12px] sm:text-[12.5px] font-black border shadow-md cursor-pointer transition-all duration-300 hover:bg-sky-100/80 hover:border-sky-300 group shrink-0 leading-none select-none ${isCycleDropdownOpen ? 'border-sky-400 ring-2 ring-sky-100 bg-sky-100' : 'border-sky-100'}`}
-        >
-           <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse shrink-0"></span>
-           <span className="text-sky-900 font-extrabold shrink-0 whitespace-nowrap">
-             {quarterlyPillTitle} | {currentQuarterRangeFormatted}
-           </span>
-           <ChevronDown size={14} className={`text-sky-600 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-sky-800' : ''}`} />
-        </div>
-      ) : (
-        <div 
-          onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
-          className={`inline-flex items-center gap-1.5 px-2.5 h-[38px] bg-sky-50 text-sky-800 rounded-xl text-[11px] sm:text-[11.5px] font-bold border shadow-md cursor-pointer transition-all duration-300 hover:bg-sky-100/80 hover:border-sky-300 group shrink-0 leading-none select-none ${isCycleDropdownOpen ? 'border-sky-400 ring-2 ring-sky-100 bg-sky-100' : 'border-sky-100'}`}
-        >
-           <span className="text-sky-600 font-bold shrink-0">সাইকেল:</span> 
-           <span className="text-sky-900 font-extrabold shrink-0">{toBengaliDigits(activeCycle.label)}</span>
-           <ChevronDown size={13} className={`text-sky-600 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-sky-800' : ''}`} />
-        </div>
-      )}
+      <div 
+        onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
+        className={`flex items-center gap-1.5 px-2.5 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}
+      >
+         <CalendarDays size={14} className="text-blue-600 shrink-0" />
+         <span className="font-extrabold text-[11px] sm:text-[11.5px] text-slate-800 tracking-tight shrink-0 leading-none">
+           {cycleOptions.find(o => o.cycleLabel === activeCycle.label)?.label || toBengaliDigits(activeCycle.label)}
+         </span>
+         <ChevronDown size={13} className={`text-slate-400 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-blue-500' : ''}`} />
+      </div>
       {isCycleDropdownOpen && (
         <div 
           onWheel={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
-          className="absolute top-[calc(100%+4px)] right-0 lg:left-0 w-[270px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-3 animate-in fade-in slide-in-from-top-2 duration-200"
+          className="absolute top-[calc(100%+4px)] right-0 lg:left-0 w-[240px] bg-white border border-slate-200 rounded-3xl shadow-2xl z-[9999] p-3 animate-in fade-in slide-in-from-top-2 duration-200"
         >
           <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-[10] mb-2">
-            <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest flex items-center gap-1.5">
-              <CalendarDays size={11} className="text-sky-500" /> সাইকেল (সময়কাল) নির্বাচন করুন
+            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
+              <CalendarDays size={11} className="text-blue-500" /> সাইকেল নির্বাচন করুন
             </span>
           </div>
           <div className="max-h-[260px] overflow-y-auto overscroll-contain space-y-1 p-0.5 scrollbar-thin">
             {cycleOptions.map((opt, idx) => {
-              const matchesActive = isQuarterlyReport
-                ? opt.cycleLabel === currentQuarterRangeFormatted
-                : opt.cycleLabel === activeCycle.label;
+              const matchesActive = opt.cycleLabel === activeCycle.label;
               return (
                 <div
                   key={idx}
@@ -1064,15 +1019,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   }}
                   className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 ${
                     matchesActive 
-                      ? "bg-sky-600 text-white font-extrabold shadow-md"
-                      : "hover:bg-sky-50 text-slate-700 hover:text-sky-700 font-bold bg-white"
+                      ? "bg-blue-600 text-white font-extrabold shadow-md"
+                      : "hover:bg-slate-50 text-slate-700 hover:text-blue-600 font-bold bg-white"
                   }`}
                 >
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-[12px] font-black">{isQuarterlyReport ? opt.cycleLabel : opt.label}</span>
-                    <span className={`text-[10px] ${matchesActive ? 'text-sky-100' : 'text-slate-500'}`}>{isQuarterlyReport ? opt.label : toBengaliDigits(opt.cycleLabel)}</span>
-                  </div>
-                  {matchesActive && <Check size={14} className="text-white stroke-[3.5] shrink-0" />}
+                  <span className="text-[12px]">{opt.label}</span>
+                  {matchesActive && <Check size={13} className="text-white stroke-[3.5]" />}
                 </div>
               );
             })}
@@ -1216,7 +1168,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') {
     renderedContent = <QR_2 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১') {
-    renderedContent = <QR_2 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="ত্রৈমাসিক - ১" />;
+    renderedContent = <QR_2 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ১" />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২') {
     renderedContent = <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ২" />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩') {

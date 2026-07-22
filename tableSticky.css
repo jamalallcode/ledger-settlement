@@ -119,82 +119,49 @@
   top: 80px !important;
 }
 
-/* Sticky Footer Container (General tfoot) */
-.table-container tfoot,
-tfoot.qr-sticky-footer,
-tfoot.qr-sticky-footer-bottom {
-  position: sticky !important;
-  bottom: 0 !important;
-  z-index: 220 !important;
-  background-color: #000000 !important;
+/* Sticky Footer (General) */
+.table-container tfoot {
+  position: sticky;
+  bottom: 0;
+  z-index: 250;
 }
 
-/* Ensure tfoot cells do NOT stick individually to bottom: 0, preventing multi-row footer collapse */
 .table-container tfoot td, 
-.table-container tfoot th,
-tfoot.qr-sticky-footer td,
-tfoot.qr-sticky-footer th,
-tfoot.qr-sticky-footer-bottom td,
-tfoot.qr-sticky-footer-bottom th,
-tfoot.qr-sticky-footer-offset td,
-tfoot.qr-sticky-footer-offset th {
-  position: static !important;
-  bottom: auto !important;
-  z-index: auto !important;
-  background-color: #000000 !important;
-  color: #ffffff !important;
-  border: none !important;
-  /* 1px clean border using inset shadow to prevent double border buildup */
-  box-shadow: inset 0 -1px 0 #334155, inset -1px 0 0 #334155 !important;
-}
-
-/* Top border ONLY on the first row of tfoot to separate tfoot cleanly from tbody */
-.table-container tfoot tr:first-child td,
-.table-container tfoot tr:first-child th,
-tfoot.qr-sticky-footer tr:first-child td,
-tfoot.qr-sticky-footer-bottom tr:first-child td {
-  box-shadow: inset 0 1px 0 #475569, inset 0 -1px 0 #334155, inset -1px 0 0 #334155 !important;
-}
-
-/* Left-most cell of tfoot gets left border */
-.table-container tfoot td:first-child,
-.table-container tfoot th:first-child,
-tfoot td:first-child {
-  box-shadow: inset 0 -1px 0 #334155, inset -1px 0 0 #334155, inset 1px 0 0 #334155 !important;
-}
-
-.table-container tfoot tr:first-child td:first-child,
-.table-container tfoot tr:first-child th:first-child,
-tfoot tr:first-child td:first-child {
-  box-shadow: inset 0 1px 0 #475569, inset 0 -1px 0 #334155, inset -1px 0 0 #334155, inset 1px 0 0 #334155 !important;
-}
-
-/* Sticky Footer Rows inside tbody (for tables where total rows live inside tbody) */
-tbody tr.qr-sticky-footer td,
-tbody tr.qr-sticky-footer-bottom td {
+.table-container tfoot th {
   position: sticky !important;
   bottom: 0 !important;
-  z-index: 220 !important;
+  z-index: 240 !important;
   background-color: #000000 !important;
-  color: #ffffff !important;
-  border: none !important;
-  box-shadow: inset 0 1px 0 #475569, inset 0 -1px 0 #334155, inset -1px 0 0 #334155 !important;
+  color: white !important;
+  box-shadow: inset 0 1px 0 #1e293b, inset -1px 0 0 #1e293b !important;
 }
 
-tbody tr.qr-sticky-footer-offset td {
+/* QR Specific Sticky Footer (for rows inside tbody) */
+.qr-sticky-footer td {
   position: sticky !important;
-  bottom: 28px !important;
-  z-index: 210 !important;
-  background-color: #000000 !important;
-  color: #ffffff !important;
-  border: none !important;
-  box-shadow: inset 0 1px 0 #475569, inset 0 -1px 0 #334155, inset -1px 0 0 #334155 !important;
+  background-clip: padding-box !important;
+  background-color: white; /* Default solid background */
+  /* Normal 1px borders using inset shadow to survive stickiness without looking thick */
+  box-shadow: inset 0 1px 0 #94a3b8, inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8 !important;
 }
 
-tbody tr.qr-sticky-footer td:first-child,
-tbody tr.qr-sticky-footer-bottom td:first-child,
-tbody tr.qr-sticky-footer-offset td:first-child {
-  box-shadow: inset 0 1px 0 #475569, inset 0 -1px 0 #334155, inset -1px 0 0 #334155, inset 1px 0 0 #334155 !important;
+/* Base sticky footer (usually for the bottom-most row like 'Grand Total') */
+.qr-sticky-footer-bottom td {
+  bottom: 0 !important;
+  z-index: 220 !important; /* Higher than regular rows, lower than thead (250) */
+  background-color: #000000 !important; /* Black background */
+  color: #ffffff !important; /* White text */
+  /* Add a distinct top border for the grand total row */
+  box-shadow: inset 0 1px 0 #1e293b, inset 0 -1px 0 #1e293b, inset -1px 0 0 #1e293b !important;
+}
+
+/* Offset sticky footer (for the 'Total' row when it sits above 'Grand Total') */
+.qr-sticky-footer-offset td {
+  bottom: 28px !important; /* Matches the h-[28px] of the row below it */
+  z-index: 210 !important; /* Higher than regular rows, lower than bottom footer */
+  background-color: #000000 !important; /* Black background */
+  color: #ffffff !important; /* White text */
+  box-shadow: inset 0 1px 0 #1e293b, inset 0 -1px 0 #1e293b, inset -1px 0 0 #1e293b !important;
 }
 
 /* Disable hover background changes for Total/Grand Total rows and any tfoot rows */

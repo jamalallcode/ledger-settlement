@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Printer, Sparkles, ChevronDown, FileSpreadsheet, Lock } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Printer, Sparkles, ChevronDown, BarChart3, FileSpreadsheet, Lock } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
@@ -19,7 +19,6 @@ interface QRProps {
 }
 
 const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', monthPickerElement, customTitle }) => {
-
   // Standard calendar quarter date calculation:
   // Quarters: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec)
   const getQuarterInfo = (date: Date) => {
@@ -258,14 +257,6 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
              normEntry.includes("বিমান") || normEntry.includes("পর্যটন");
     }
 
-    if (normTarget === robustNormalize("আর্থিক প্রতিষ্ঠান বিভাগ") || normTarget.includes("আর্থিক প্রতিষ্ঠান")) {
-      return normEntry === robustNormalize("আর্থিক প্রতিষ্ঠান বিভাগ") ||
-             normEntry.includes("আর্থিক") ||
-             normEntry.includes("অর্থ") ||
-             normEntry.includes("ব্যাংক") ||
-             normEntry === "";
-    }
-
     return normEntry.includes(normTarget) || normTarget.includes(normEntry);
   };
 
@@ -312,15 +303,13 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     if (normTarget.includes("আনসার ভিডিপি") && normEntry.includes("আনসার ভিডিপি")) return true;
     if (normTarget.includes("সোনালী ব্যাংক") && normEntry.includes("সোনালী ব্যাংক")) return true;
     if (normTarget.includes("জনতা ব্যাংক") && normEntry.includes("জনতা ব্যাংক")) return true;
-    if (normTarget.includes("অগ্রণী ব্যাংক") && normEntry.includes("অগ্রণী ব্যাংক")) return true;
+    if (normTarget.includes(" can ") || normTarget.includes("অগ্রণী ব্যাংক") && normEntry.includes("অগ্রণী ব্যাংক")) return true;
     if (normTarget.includes("রূপালী ব্যাংক") && normEntry.includes("রূপালী ব্যাংক")) return true;
     if (normTarget.includes("কৃষি ব্যাংক") && normEntry.includes("কৃষি ব্যাংক")) return true;
     if (normTarget.includes("কর্মসংস্থান") && normEntry.includes("কর্মসংস্থান")) return true;
     if (normTarget.includes("সাধারণ বীমা") && normEntry.includes("সাধারণ বীমা")) return true;
     if (normTarget.includes("জীবন বীমা") && normEntry.includes("জীবন বীমা")) return true;
-    if (normTarget.includes("প্রবাসী কল্যাণ") && normEntry.includes("প্রবাসী কল্যাণ")) return true;
-    if ((normTarget.includes("সমবায়") || normTarget.includes("সমবায়")) && (normEntry.includes("সমবায়") || normEntry.includes("সমবায়"))) return true;
-    if (normTarget.includes("গৃহনির্মাণ") && (normEntry.includes("গৃহনির্মাণ") || normEntry.includes("গৃহ নির্মাণ"))) return true;
+    if (normTarget.includes(" can ") || normTarget.includes("কো-অপারেটিভ") || normTarget.includes("সমবায়") || normTarget.includes("সমবায়") || normTarget.includes("প্রবাসী কল্যাণ") && normEntry.includes("প্রবাসী কল্যাণ")) return true;
 
     return normEntry.includes(normTarget) || normTarget.includes(normEntry);
   };
@@ -332,24 +321,21 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     startStr: string,
     endStr: string,
     isExclusiveEnd: boolean = false,
-    isTransition: boolean = false,
-    targetBranch?: string
+    isTransition: boolean = false
   ) => {
     const filtered = entriesList.filter(e => {
       if (!isEntityMatch(e.entityName, entityName)) return false;
-      if (mName !== "আর্থিক প্রতিষ্ঠান বিভাগ" && !isMinistryMatch(e.ministryName, mName)) return false;
+      if (!isMinistryMatch(e.ministryName, mName)) return false;
 
-      const entryAny = e as any;
-      const normalizedPType = robustNormalize(e.paraType || entryAny.branchType || '');
-      if (targetBranch) {
-        const normTarget = robustNormalize(targetBranch);
-        if (normTarget.includes('নন') && !normalizedPType.includes('নন')) return false;
-        if (!normTarget.includes('নন') && normalizedPType.includes('নন')) return false;
-      } else if (isTransition) {
-        if (!normalizedPType.includes('নন')) return false;
+      const normalizedPType = robustNormalize(e.paraType || '');
+      if (isTransition) {
+        if (normalizedPType !== robustNormalize('নন এসএফআই')) return false;
+      } else {
+        const isBranchMatch = normalizedPType === robustNormalize('নন এসএফআই') || normalizedPType === robustNormalize('এসএফআই');
+        if (!isBranchMatch) return false;
       }
 
-      const mType = robustNormalize(e.meetingType || entryAny.letterType || entryAny.type || entryAny.meetingSubject || '');
+      const mType = robustNormalize(e.meetingType || '');
       if (isTransition) {
         if (!mType.includes(robustNormalize('বিএসআর'))) return false;
       } else {
@@ -357,8 +343,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                                mType.includes(robustNormalize('দ্বিপক্ষীয়')) ||
                                mType.includes(robustNormalize('দ্বিপাক্ষিক')) ||
                                mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
-                               mType.includes(robustNormalize('ত্রিপাক্ষিক')) ||
-                               mType === '';
+                               mType.includes(robustNormalize('ত্রিপাক্ষিক'));
         if (!isValidMeeting) return false;
       }
 
@@ -391,14 +376,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             
             const pSettledAmt = (pRecAmt + pAdjAmt) || 0;
 
-            const isSettled = status === robustNormalize('পূর্ণাঙ্গ') ||
-                              status.includes('পূর্ণাঙ্গ') ||
-                              status.includes('মীমাংসিত') ||
-                              status.includes('নিষ্পন্ন') ||
-                              status === 'settled' ||
-                              status === 'full';
-
-            if (isSettled) {
+            if (status === robustNormalize('পূর্ণাঙ্গ')) {
               settledCount++;
             }
             settledAmount += pSettledAmt;
@@ -1283,7 +1261,6 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   };
 
   const getDynamicBalances = (entityName: string, ministryName: string, isTable2: boolean = false) => {
-    const targetParaType = isTable2 ? 'নন এসএফআই' : 'এসএফআই';
     const rawLedger = isTable2 
       ? (prevLedgerTable2Data[entityName] || { june25Raised: 0, june25Settled: 0, june25UnsettledAmount: 0 })
       : (prevLedgerData[entityName] || { june25Raised: 0, june25Settled: 0, june25UnsettledAmount: 0 });
@@ -1345,9 +1322,9 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       if (isCurrentQuarterActive) {
         const currentBSRRaisedEntries = entries.filter(e => {
           if (!isEntityMatch(e.entityName, entityName)) return false;
-          if (ministryName !== "আর্থিক প্রতিষ্ঠান বিভাগ" && !isMinistryMatch(e.ministryName, ministryName)) return false;
+          if (!isMinistryMatch(e.ministryName, ministryName)) return false;
           const normalizedPType = robustNormalize(e.paraType || '');
-          if (normalizedPType !== robustNormalize(targetParaType)) return false;
+          if (normalizedPType !== robustNormalize('নন এসএফআই')) return false;
 
           const mType = robustNormalize(e.meetingType || e.letterType || '');
           if (!mType.includes(robustNormalize('বিএসআর'))) return false;
@@ -1374,8 +1351,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           qSettleStartDateStr,
           qEndDateStr,
           false,
-          false,
-          targetParaType
+          false
         );
 
         return {
@@ -1392,9 +1368,9 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
       const currentBSRRaisedEntries = entries.filter(e => {
         if (!isEntityMatch(e.entityName, entityName)) return false;
-        if (ministryName !== "আর্থিক প্রতিষ্ঠান বিভাগ" && !isMinistryMatch(e.ministryName, ministryName)) return false;
+        if (!isMinistryMatch(e.ministryName, ministryName)) return false;
         const normalizedPType = robustNormalize(e.paraType || '');
-        if (normalizedPType !== robustNormalize(targetParaType)) return false;
+        if (normalizedPType !== robustNormalize('নন এসএফআই')) return false;
 
         const mType = robustNormalize(e.meetingType || e.letterType || '');
         if (!mType.includes(robustNormalize('বিএসআর'))) return false;
@@ -1421,8 +1397,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         qSettleStartDateStr,
         qEndDateStr,
         false,
-        false,
-        targetParaType
+        false
       );
 
       unsettledCount = Math.max(0, unsettledCount + raisedCount - sCount);
@@ -1448,7 +1423,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   };
 
   const details1Data = useMemo(() => {
-    if (customTitle !== 'বিস্তারিত - ১' && customTitle !== 'ত্রৈমাসিক - ১') return [];
+    if (customTitle !== 'বিস্তারিত - ১') return [];
 
     const processedGroups: any[] = [];
 
@@ -1522,7 +1497,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   }, [details1Data]);
 
   const details1Table2Data = useMemo(() => {
-    if (customTitle !== 'বিস্তারিত - ১' && customTitle !== 'ত্রৈমাসিক - ১') return [];
+    if (customTitle !== 'বিস্তারিত - ১') return [];
 
     const processedGroups: any[] = [];
 
@@ -1609,47 +1584,6 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       unsettledAmountEnd: details1Totals.unsettledAmountEnd + details1Table2Totals.unsettledAmountEnd
     };
   }, [details1Totals, details1Table2Totals]);
-
-  const getMinistryTotals = (group: any) => {
-    let unsettledCountPrior = 0;
-    let unsettledAmountPrior = 0;
-    let raisedCountCurr = 0;
-    let raisedAmountCurr = 0;
-    let settledCountCurr = 0;
-    let settledAmountCurr = 0;
-    let unsettledCountEnd = 0;
-    let unsettledAmountEnd = 0;
-    let totalCount = 0;
-    let totalAmount = 0;
-
-    if (group && group.entities) {
-      group.entities.forEach((ent: any) => {
-        unsettledCountPrior += (ent.unsettledCountPrior || 0);
-        unsettledAmountPrior += (ent.unsettledAmountPrior || 0);
-        raisedCountCurr += (ent.raisedCountCurr || 0);
-        raisedAmountCurr += (ent.raisedAmountCurr || 0);
-        settledCountCurr += (ent.settledCountCurr || 0);
-        settledAmountCurr += (ent.settledAmountCurr || 0);
-        unsettledCountEnd += (ent.unsettledCountEnd || 0);
-        unsettledAmountEnd += (ent.unsettledAmountEnd || 0);
-        totalCount += (ent.totalCount || 0);
-        totalAmount += (ent.totalAmount || 0);
-      });
-    }
-
-    return {
-      unsettledCountPrior,
-      unsettledAmountPrior,
-      raisedCountCurr,
-      raisedAmountCurr,
-      settledCountCurr,
-      settledAmountCurr,
-      unsettledCountEnd,
-      unsettledAmountEnd,
-      totalCount,
-      totalAmount
-    };
-  };
 
   const filteredData = entries.filter(e => {
     // Filter by SFI or Non-SFI
@@ -1756,7 +1690,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   const footerTdCls = "border-r border-b border-slate-400 p-1 text-[9px] text-slate-900 align-middle bg-slate-200 font-extrabold";
   const footerNumTdCls = "border-r border-b border-slate-400 p-1 text-[9px] text-slate-900 text-center align-middle font-black bg-slate-200";
 
-  if (customTitle === 'বিস্তারিত - ১' || customTitle === 'ত্রৈমাসিক - ১') {
+  if (customTitle === 'বিস্তারিত - ১') {
     const priorMonthIdx = (quarterStartMonth - 1 + 12) % 12;
     const priorYear = quarterStartMonth === 0 ? quarterYear - 1 : quarterYear;
     const monthsList = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
@@ -1831,18 +1765,17 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               </button>
             </div>
 
-            {/* Right Column: Interactive Date Range Pill Dropdown */}
+            {/* Right Column: Date Range Pill & Month Picker */}
             <div className="flex items-center gap-2.5 w-full xl:w-auto justify-end flex-wrap">
-              {monthPickerElement ? (
+              <div className="inline-flex items-center gap-2 px-3.5 h-[38px] bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                <span className="text-blue-700 font-black text-[12.5px] whitespace-nowrap">
+                  {customTitle || "ত্রৈমাসিক রিটার্ন - ২"} | {quarterCycleRangeFormatted}
+                </span>
+              </div>
+              {monthPickerElement && (
                 <div className="select-none relative z-[300]">
                   {monthPickerElement}
-                </div>
-              ) : (
-                <div className="inline-flex items-center gap-2 px-3.5 h-[38px] bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-                  <span className="text-blue-700 font-black text-[12.5px] whitespace-nowrap">
-                    {customTitle || "ত্রৈমাসিক রিটার্ন - ২"} | {quarterCycleRangeFormatted}
-                  </span>
                 </div>
               )}
             </div>
@@ -2053,16 +1986,15 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
           {/* Date Range Pill */}
           <div className="mt-1 mb-2 flex items-center justify-center gap-3 no-print flex-wrap">
-            {monthPickerElement ? (
+            <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 border border-blue-100 rounded-full shadow-sm scale-95 origin-center">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+              <span className="text-blue-700 font-bold text-[12px]">
+                {customTitle || "ত্রৈমাসিক রিটার্ন - ২"} | {quarterCycleRangeFormatted}
+              </span>
+            </div>
+            {monthPickerElement && (
               <div className="scale-95 origin-center select-none relative z-[300]">
                 {monthPickerElement}
-              </div>
-            ) : (
-              <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 border border-blue-100 rounded-full shadow-sm scale-95 origin-center">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-                <span className="text-blue-700 font-bold text-[12px]">
-                  {customTitle || "ত্রৈমাসিক রিটার্ন - ২"} | {quarterCycleRangeFormatted}
-                </span>
               </div>
             )}
           </div>
@@ -2089,6 +2021,52 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
         </div>
 
+        {/* Statistics Button (Lowered into subject bar) */}
+        <div className="relative group no-print shrink-0">
+          <button
+            type="button"
+            className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 rounded-lg font-black text-[11px] border border-blue-100 transition-all duration-300 hover:bg-blue-100 hover:border-blue-200"
+          >
+            <Sparkles size={13} className="text-blue-500" />
+            পরিসংখ্যান
+            <ChevronDown size={11} className="text-blue-400 transition-transform duration-300 group-hover:rotate-180" />
+          </button>
+          
+          <div className="absolute top-[calc(100%+4px)] right-0 w-[330px] bg-white rounded-xl shadow-xl border border-slate-200 p-4 z-[1000] opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-1 group-hover:translate-y-0 transition-all duration-300 pointer-events-auto text-left">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                <BarChart3 size={16} className="text-blue-600" />
+                <span className="text-blue-900 font-black text-[13px]">ত্রৈমাসিক রিপোর্ট পরিসংখ্যান</span>
+              </div>
+              <div className="space-y-1.5 text-slate-700 text-[11px] font-bold leading-normal">
+                <div className="flex justify-between">
+                  <span>সর্বমোট প্রেরিত অনুচ্ছেদ সংখ্যা:</span>
+                  <span className="text-blue-700">{toBengaliDigits(totals.sentPara ?? 0)} টি</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>সর্বমোট নিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা:</span>
+                  <span className="text-emerald-600">{toBengaliDigits(totals.settledPara ?? 0)} টি</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>সর্বমোট আদায়:</span>
+                  <span className="text-emerald-700">{toBengaliDigits(Math.round(totals.recovery ?? 0))} টাকা</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>সর্বমোট সমন্বয়:</span>
+                  <span className="text-indigo-600">{toBengaliDigits(Math.round(totals.adjustment ?? 0))} টাকা</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>মোট জড়িত টাকা:</span>
+                  <span className="text-slate-900">{toBengaliDigits(Math.round(totals.involvedAmount ?? 0))} টাকা</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>মোট নিষ্পন্ন টাকা:</span>
+                  <span className="text-teal-700">{toBengaliDigits(Math.round(totals.amount ?? 0))} টাকা</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Table Section */}
