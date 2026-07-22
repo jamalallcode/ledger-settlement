@@ -987,23 +987,21 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     <div className="relative no-print z-[350]" ref={dropdownRef}>
       <div 
         onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
-        className={`flex items-center gap-1.5 px-2.5 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}
+        className={`inline-flex items-center gap-1.5 px-2.5 h-[38px] bg-sky-50 text-sky-800 rounded-xl text-[11px] sm:text-[11.5px] font-bold border shadow-md cursor-pointer transition-all duration-300 hover:bg-sky-100/80 hover:border-sky-300 group shrink-0 leading-none select-none ${isCycleDropdownOpen ? 'border-sky-400 ring-2 ring-sky-100 bg-sky-100' : 'border-sky-100'}`}
       >
-         <CalendarDays size={14} className="text-blue-600 shrink-0" />
-         <span className="font-extrabold text-[11px] sm:text-[11.5px] text-slate-800 tracking-tight shrink-0 leading-none">
-           {cycleOptions.find(o => o.cycleLabel === activeCycle.label)?.label || toBengaliDigits(activeCycle.label)}
-         </span>
-         <ChevronDown size={13} className={`text-slate-400 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-blue-500' : ''}`} />
+         <span className="text-sky-600 font-bold shrink-0">সাইকেল:</span> 
+         <span className="text-sky-900 font-extrabold shrink-0">{toBengaliDigits(activeCycle.label)}</span>
+         <ChevronDown size={13} className={`text-sky-600 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-sky-800' : ''}`} />
       </div>
       {isCycleDropdownOpen && (
         <div 
           onWheel={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
-          className="absolute top-[calc(100%+4px)] right-0 lg:left-0 w-[240px] bg-white border border-slate-200 rounded-3xl shadow-2xl z-[9999] p-3 animate-in fade-in slide-in-from-top-2 duration-200"
+          className="absolute top-[calc(100%+4px)] right-0 lg:left-0 w-[270px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-3 animate-in fade-in slide-in-from-top-2 duration-200"
         >
           <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-[10] mb-2">
-            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
-              <CalendarDays size={11} className="text-blue-500" /> সাইকেল নির্বাচন করুন
+            <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest flex items-center gap-1.5">
+              <CalendarDays size={11} className="text-sky-500" /> সাইকেল (সময়কাল) নির্বাচন করুন
             </span>
           </div>
           <div className="max-h-[260px] overflow-y-auto overscroll-contain space-y-1 p-0.5 scrollbar-thin">
@@ -1019,12 +1017,15 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   }}
                   className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 ${
                     matchesActive 
-                      ? "bg-blue-600 text-white font-extrabold shadow-md"
-                      : "hover:bg-slate-50 text-slate-700 hover:text-blue-600 font-bold bg-white"
+                      ? "bg-sky-600 text-white font-extrabold shadow-md"
+                      : "hover:bg-sky-50 text-slate-700 hover:text-sky-700 font-bold bg-white"
                   }`}
                 >
-                  <span className="text-[12px]">{opt.label}</span>
-                  {matchesActive && <Check size={13} className="text-white stroke-[3.5]" />}
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[12px] font-black">{opt.label}</span>
+                    <span className={`text-[10px] ${matchesActive ? 'text-sky-100' : 'text-slate-500'}`}>{toBengaliDigits(opt.cycleLabel)}</span>
+                  </div>
+                  {matchesActive && <Check size={14} className="text-white stroke-[3.5] shrink-0" />}
                 </div>
               );
             })}

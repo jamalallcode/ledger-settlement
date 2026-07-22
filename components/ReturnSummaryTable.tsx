@@ -338,18 +338,17 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
               <span>প্রাপ্ত বিএসআর</span>
             </button>
 
-            {/* Cycle / Reporting Period badge */}
-            <div className="flex items-center justify-center shrink-0">
-              <div className="inline-flex items-center gap-1.5 px-2.5 bg-sky-50 text-sky-800 rounded-xl text-[11px] sm:text-[11.5px] font-bold border border-sky-100 shadow-md h-[38px] leading-none">
-                <span className="text-sky-600">সাইকেল:</span> 
-                <span className="text-sky-900 font-extrabold">{toBengaliDigits(activeCycle.label)}</span>
-              </div>
-            </div>
-
-            {/* Month/Time Picker Dropdown */}
-            {monthPickerElement && (
+            {/* Interactive Cycle / Reporting Period Picker */}
+            {monthPickerElement ? (
               <div className="shrink-0">
                 {monthPickerElement}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center shrink-0">
+                <div className="inline-flex items-center gap-1.5 px-2.5 bg-sky-50 text-sky-800 rounded-xl text-[11px] sm:text-[11.5px] font-bold border border-sky-100 shadow-md h-[38px] leading-none">
+                  <span className="text-sky-600">সাইকেল:</span> 
+                  <span className="text-sky-900 font-extrabold">{toBengaliDigits(activeCycle.label)}</span>
+                </div>
               </div>
             )}
 
