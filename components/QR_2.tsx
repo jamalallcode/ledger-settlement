@@ -258,6 +258,14 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
              normEntry.includes("বিমান") || normEntry.includes("পর্যটন");
     }
 
+    if (normTarget === robustNormalize("আর্থিক প্রতিষ্ঠান বিভাগ") || normTarget.includes("আর্থিক প্রতিষ্ঠান")) {
+      return normEntry === robustNormalize("আর্থিক প্রতিষ্ঠান বিভাগ") ||
+             normEntry.includes("আর্থিক") ||
+             normEntry.includes("অর্থ") ||
+             normEntry.includes("ব্যাংক") ||
+             normEntry === "";
+    }
+
     return normEntry.includes(normTarget) || normTarget.includes(normEntry);
   };
 
@@ -304,13 +312,15 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     if (normTarget.includes("আনসার ভিডিপি") && normEntry.includes("আনসার ভিডিপি")) return true;
     if (normTarget.includes("সোনালী ব্যাংক") && normEntry.includes("সোনালী ব্যাংক")) return true;
     if (normTarget.includes("জনতা ব্যাংক") && normEntry.includes("জনতা ব্যাংক")) return true;
-    if (normTarget.includes(" can ") || normTarget.includes("অগ্রণী ব্যাংক") && normEntry.includes("অগ্রণী ব্যাংক")) return true;
+    if (normTarget.includes("অগ্রণী ব্যাংক") && normEntry.includes("অগ্রণী ব্যাংক")) return true;
     if (normTarget.includes("রূপালী ব্যাংক") && normEntry.includes("রূপালী ব্যাংক")) return true;
     if (normTarget.includes("কৃষি ব্যাংক") && normEntry.includes("কৃষি ব্যাংক")) return true;
     if (normTarget.includes("কর্মসংস্থান") && normEntry.includes("কর্মসংস্থান")) return true;
     if (normTarget.includes("সাধারণ বীমা") && normEntry.includes("সাধারণ বীমা")) return true;
     if (normTarget.includes("জীবন বীমা") && normEntry.includes("জীবন বীমা")) return true;
-    if (normTarget.includes(" can ") || normTarget.includes("কো-অপারেটিভ") || normTarget.includes("সমবায়") || normTarget.includes("সমবায়") || normTarget.includes("প্রবাসী কল্যাণ") && normEntry.includes("প্রবাসী কল্যাণ")) return true;
+    if (normTarget.includes("প্রবাসী কল্যাণ") && normEntry.includes("প্রবাসী কল্যাণ")) return true;
+    if ((normTarget.includes("সমবায়") || normTarget.includes("সমবায়")) && (normEntry.includes("সমবায়") || normEntry.includes("সমবায়"))) return true;
+    if (normTarget.includes("গৃহনির্মাণ") && (normEntry.includes("গৃহনির্মাণ") || normEntry.includes("গৃহ নির্মাণ"))) return true;
 
     return normEntry.includes(normTarget) || normTarget.includes(normEntry);
   };
@@ -327,19 +337,19 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   ) => {
     const filtered = entriesList.filter(e => {
       if (!isEntityMatch(e.entityName, entityName)) return false;
-      if (!isMinistryMatch(e.ministryName, mName)) return false;
+      if (mName !== "আর্থিক প্রতিষ্ঠান বিভাগ" && !isMinistryMatch(e.ministryName, mName)) return false;
 
-      const normalizedPType = robustNormalize(e.paraType || '');
+      const entryAny = e as any;
+      const normalizedPType = robustNormalize(e.paraType || entryAny.branchType || '');
       if (targetBranch) {
-        if (normalizedPType !== robustNormalize(targetBranch)) return false;
+        const normTarget = robustNormalize(targetBranch);
+        if (normTarget.includes('নন') && !normalizedPType.includes('নন')) return false;
+        if (!normTarget.includes('নন') && normalizedPType.includes('নন')) return false;
       } else if (isTransition) {
-        if (normalizedPType !== robustNormalize('নন এসএফআই')) return false;
-      } else {
-        const isBranchMatch = normalizedPType === robustNormalize('নন এসএফআই') || normalizedPType === robustNormalize('এসএফআই');
-        if (!isBranchMatch) return false;
+        if (!normalizedPType.includes('নন')) return false;
       }
 
-      const mType = robustNormalize(e.meetingType || '');
+      const mType = robustNormalize(e.meetingType || entryAny.letterType || entryAny.type || entryAny.meetingSubject || '');
       if (isTransition) {
         if (!mType.includes(robustNormalize('বিএসআর'))) return false;
       } else {
@@ -347,7 +357,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                                mType.includes(robustNormalize('দ্বিপক্ষীয়')) ||
                                mType.includes(robustNormalize('দ্বিপাক্ষিক')) ||
                                mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
-                               mType.includes(robustNormalize('ত্রিপাক্ষিক'));
+                               mType.includes(robustNormalize('ত্রিপাক্ষিক')) ||
+                               mType === '';
         if (!isValidMeeting) return false;
       }
 
@@ -380,7 +391,14 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             
             const pSettledAmt = (pRecAmt + pAdjAmt) || 0;
 
-            if (status === robustNormalize('পূর্ণাঙ্গ')) {
+            const isSettled = status === robustNormalize('পূর্ণাঙ্গ') ||
+                              status.includes('পূর্ণাঙ্গ') ||
+                              status.includes('মীমাংসিত') ||
+                              status.includes('নিষ্পন্ন') ||
+                              status === 'settled' ||
+                              status === 'full';
+
+            if (isSettled) {
               settledCount++;
             }
             settledAmount += pSettledAmt;
@@ -1327,7 +1345,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       if (isCurrentQuarterActive) {
         const currentBSRRaisedEntries = entries.filter(e => {
           if (!isEntityMatch(e.entityName, entityName)) return false;
-          if (!isMinistryMatch(e.ministryName, ministryName)) return false;
+          if (ministryName !== "আর্থিক প্রতিষ্ঠান বিভাগ" && !isMinistryMatch(e.ministryName, ministryName)) return false;
           const normalizedPType = robustNormalize(e.paraType || '');
           if (normalizedPType !== robustNormalize(targetParaType)) return false;
 
@@ -1374,7 +1392,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
       const currentBSRRaisedEntries = entries.filter(e => {
         if (!isEntityMatch(e.entityName, entityName)) return false;
-        if (!isMinistryMatch(e.ministryName, ministryName)) return false;
+        if (ministryName !== "আর্থিক প্রতিষ্ঠান বিভাগ" && !isMinistryMatch(e.ministryName, ministryName)) return false;
         const normalizedPType = robustNormalize(e.paraType || '');
         if (normalizedPType !== robustNormalize(targetParaType)) return false;
 
