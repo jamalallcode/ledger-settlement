@@ -329,25 +329,39 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
       const normalizedPType = robustNormalize(e.paraType || '');
       if (isTransition) {
-        if (normalizedPType !== robustNormalize('নন এসএফআই')) return false;
+        if (normalizedPType && normalizedPType !== robustNormalize('নন এসএফআই')) return false;
       } else {
-        const isBranchMatch = normalizedPType === robustNormalize('নন এসএফআই') || normalizedPType === robustNormalize('এসএফআই');
-        if (!isBranchMatch) return false;
+        if (normalizedPType) {
+          const isBranchMatch = normalizedPType === robustNormalize('নন এসএফআই') || normalizedPType === robustNormalize('এসএফআই');
+          if (!isBranchMatch) return false;
+        }
       }
 
-      const mType = robustNormalize(e.meetingType || '');
+      const mType = robustNormalize(e.meetingType || e.letterType || '');
       if (isTransition) {
-        if (!mType.includes(robustNormalize('বিএসআর'))) return false;
+        if (mType && !mType.includes(robustNormalize('বিএসআর'))) return false;
       } else {
-        const isValidMeeting = mType.includes(robustNormalize('বিএসআর')) ||
-                               mType.includes(robustNormalize('দ্বিপক্ষীয়')) ||
-                               mType.includes(robustNormalize('দ্বিপাক্ষিক')) ||
-                               mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
-                               mType.includes(robustNormalize('ত্রিপাক্ষিক'));
-        if (!isValidMeeting) return false;
+        if (mType) {
+          const isValidMeeting = mType.includes(robustNormalize('বিএসআর')) ||
+                                 mType.includes(robustNormalize('দ্বিপক্ষীয়')) ||
+                                 mType.includes(robustNormalize('দ্বিপাক্ষিক')) ||
+                                 mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
+                                 mType.includes(robustNormalize('ত্রিপাক্ষিক'));
+          if (!isValidMeeting) return false;
+        }
       }
 
-      const entryDateStr = (e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '')).trim();
+      let entryDateStr = (e.issueDateISO || '').split('T')[0].trim();
+      if (!entryDateStr && (e.issueLetterNoDate || e.workpaperNoDate)) {
+        const str = e.issueLetterNoDate || e.workpaperNoDate || '';
+        const match = str.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+        if (match) {
+          entryDateStr = `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
+        }
+      }
+      if (!entryDateStr && e.createdAt) {
+        entryDateStr = e.createdAt.split('T')[0].trim();
+      }
       if (!entryDateStr) return false;
       
       if (isExclusiveEnd) {
@@ -373,13 +387,32 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             const pInvAmt = parseBengaliNumber(String(p.involvedAmount || '0'));
             const pRecAmt = parseBengaliNumber(String(p.recoveredAmount || '0'));
             const pAdjAmt = parseBengaliNumber(String(p.adjustedAmount || '0'));
-            
-            const pSettledAmt = (pRecAmt + pAdjAmt) || 0;
+            const pOthRec = parseBengaliNumber(String(p.othersRec || '0'));
+            const pOthAdj = parseBengaliNumber(String(p.othersAdj || '0'));
+            const pVatRec = parseBengaliNumber(String(p.vatRec || '0'));
+            const pVatAdj = parseBengaliNumber(String(p.vatAdj || '0'));
+            const pItRec = parseBengaliNumber(String(p.itRec || '0'));
+            const pItAdj = parseBengaliNumber(String(p.itAdj || '0'));
 
-            if (status === robustNormalize('পূর্ণাঙ্গ')) {
+            const normFull = robustNormalize('পূর্ণাঙ্গ');
+            const normMimansa = robustNormalize('মীমাংসিত');
+            const normSampurna = robustNormalize('সম্পূর্ণ');
+
+            const isSettled = status.includes(normFull) || 
+                              status.includes(normMimansa) || 
+                              status.includes(normSampurna) || 
+                              status === 'settled' || 
+                              status === 'full';
+
+            const sumPaidOrAdjusted = pRecAmt + pAdjAmt + pOthRec + pOthAdj + pVatRec + pVatAdj + pItRec + pItAdj;
+
+            if (isSettled) {
               settledCount++;
+              const pSettledAmt = sumPaidOrAdjusted > 0 ? sumPaidOrAdjusted : pInvAmt;
+              settledAmount += pSettledAmt;
+            } else if (sumPaidOrAdjusted > 0) {
+              settledAmount += sumPaidOrAdjusted;
             }
-            settledAmount += pSettledAmt;
           }
         });
       } else {
