@@ -120,48 +120,54 @@
 }
 
 /* Sticky Footer (General) */
-.table-container tfoot {
-  position: sticky;
-  bottom: 0;
-  z-index: 250;
+.table-container tfoot,
+.qr-table-container tfoot,
+tfoot.qr-sticky-footer-bottom {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 250 !important;
+}
+
+.table-container tfoot tr,
+.qr-table-container tfoot tr,
+tfoot.qr-sticky-footer-bottom tr {
+  position: static !important;
 }
 
 .table-container tfoot td, 
-.table-container tfoot th {
-  position: sticky !important;
-  bottom: 0 !important;
+.table-container tfoot th,
+.qr-table-container tfoot td,
+.qr-table-container tfoot th,
+tfoot.qr-sticky-footer-bottom td,
+tfoot.qr-sticky-footer-bottom th {
+  position: static !important;
+  bottom: auto !important;
   z-index: 240 !important;
-  background-color: #000000 !important;
-  color: white !important;
-  box-shadow: inset 0 1px 0 #1e293b, inset -1px 0 0 #1e293b !important;
 }
 
 /* QR Specific Sticky Footer (for rows inside tbody) */
-.qr-sticky-footer td {
+tbody tr.qr-sticky-footer td {
   position: sticky !important;
   background-clip: padding-box !important;
   background-color: white; /* Default solid background */
-  /* Normal 1px borders using inset shadow to survive stickiness without looking thick */
-  box-shadow: inset 0 1px 0 #94a3b8, inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8 !important;
 }
 
-/* Base sticky footer (usually for the bottom-most row like 'Grand Total') */
-.qr-sticky-footer-bottom td {
+/* Base sticky footer (for sticky rows inside tbody like 'Grand Total') */
+tbody tr.qr-sticky-footer-bottom td {
+  position: sticky !important;
   bottom: 0 !important;
   z-index: 220 !important; /* Higher than regular rows, lower than thead (250) */
   background-color: #000000 !important; /* Black background */
   color: #ffffff !important; /* White text */
-  /* Add a distinct top border for the grand total row */
-  box-shadow: inset 0 1px 0 #1e293b, inset 0 -1px 0 #1e293b, inset -1px 0 0 #1e293b !important;
 }
 
-/* Offset sticky footer (for the 'Total' row when it sits above 'Grand Total') */
-.qr-sticky-footer-offset td {
+/* Offset sticky footer (for the 'Total' row when it sits above 'Grand Total' inside tbody) */
+tbody tr.qr-sticky-footer-offset td {
+  position: sticky !important;
   bottom: 28px !important; /* Matches the h-[28px] of the row below it */
   z-index: 210 !important; /* Higher than regular rows, lower than bottom footer */
   background-color: #000000 !important; /* Black background */
   color: #ffffff !important; /* White text */
-  box-shadow: inset 0 1px 0 #1e293b, inset 0 -1px 0 #1e293b, inset -1px 0 0 #1e293b !important;
 }
 
 /* Disable hover background changes for Total/Grand Total rows and any tfoot rows */
@@ -359,38 +365,7 @@ tbody tr.qr-sticky-footer-offset td:hover,
 
 /* --- "বিস্তারিত - ১" SPECIFIC TABLE CONTAINER STICKY FIX --- */
 #details1-table-container {
-  height: calc(100vh - 165px) !important;
-  max-height: calc(100vh - 165px) !important;
-  overflow-y: auto !important;
-  overflow-x: auto !important;
   position: relative !important;
 }
 
-#details1-table-container thead {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 250 !important;
-}
-
-#details1-table-container thead th {
-  background-color: #f1f5f9 !important;
-  z-index: 250 !important;
-  box-shadow: inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8 !important;
-}
-
-#details1-table-container thead tr:first-child th {
-  box-shadow: inset 0 1px 0 #94a3b8, inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8 !important;
-}
-
-#details1-table-container tfoot {
-  position: sticky !important;
-  bottom: 0 !important;
-  z-index: 250 !important;
-}
-
-#details1-table-container tfoot td,
-#details1-table-container tfoot th {
-  z-index: 250 !important;
-  box-shadow: inset 0 1px 0 #94a3b8, inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8 !important;
-}
 
