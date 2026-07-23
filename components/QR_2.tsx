@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Printer, Sparkles, ChevronDown, BarChart3, FileSpreadsheet, Lock } from 'lucide-react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { Printer, Sparkles, ChevronDown, BarChart3, FileSpreadsheet, Lock, Building2 } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
@@ -19,6 +19,47 @@ interface QRProps {
 }
 
 const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', monthPickerElement, customTitle }) => {
+  const [localMinistryFilter, setLocalMinistryFilter] = useState<string>('সকল');
+  const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState<boolean>(false);
+  const ministryDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ministryDropdownRef.current && !ministryDropdownRef.current.contains(event.target as Node)) {
+        setIsMinistryDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const allMinistryOptions = useMemo(() => {
+    const list = [
+      'সকল',
+      'শিল্প মন্ত্রণালয়',
+      'বস্ত্র ও পাট মন্ত্রণালয়',
+      'বাণিজ্য মন্ত্রণালয়',
+      'বেসামরিক বিমান পরিবহন ও পর্যটন',
+      'আর্থিক প্রতিষ্ঠান বিভাগ'
+    ];
+    if (entries && entries.length > 0) {
+      entries.forEach(e => {
+        if (e.ministryName && e.ministryName.trim()) {
+          const trimmed = e.ministryName.trim();
+          if (!list.some(m => robustNormalize(m) === robustNormalize(trimmed))) {
+            list.push(trimmed);
+          }
+        }
+      });
+    }
+    return list;
+  }, [entries]);
+
+  const activeMinistryFilter = useMemo(() => {
+    if (localMinistryFilter !== 'সকল') return localMinistryFilter;
+    return filterMinistry || '';
+  }, [localMinistryFilter, filterMinistry]);
+
   // Standard calendar quarter date calculation:
   // Quarters: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec)
   const getQuarterInfo = (date: Date) => {
@@ -1469,7 +1510,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     const processedGroups: any[] = [];
 
     Object.entries(QR2_MINISTRY_MAP).forEach(([mName, entities]) => {
-      const matchMinistry = filterMinistry === '' || robustNormalize(mName).includes(robustNormalize(filterMinistry));
+      const matchMinistry = activeMinistryFilter === '' || isMinistryMatch(mName, activeMinistryFilter) || robustNormalize(mName).includes(robustNormalize(activeMinistryFilter));
       
       const entityDataList = entities.map(entityName => {
         const dyn = getDynamicBalances(entityName, mName, false);
@@ -1510,7 +1551,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     });
 
     return processedGroups;
-  }, [entries, prevLedgerData, searchTerm, filterMinistry, startDate, endDate, customTitle, cutoffMonth, activeCycle]);
+  }, [entries, prevLedgerData, searchTerm, activeMinistryFilter, startDate, endDate, customTitle, cutoffMonth, activeCycle]);
 
   const details1Totals = useMemo(() => {
     const t = { 
@@ -1548,7 +1589,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     const processedGroups: any[] = [];
 
     Object.entries(QR2_MINISTRY_MAP_TABLE2).forEach(([mName, entities]) => {
-      const matchMinistry = filterMinistry === '' || robustNormalize(mName).includes(robustNormalize(filterMinistry));
+      const matchMinistry = activeMinistryFilter === '' || isMinistryMatch(mName, activeMinistryFilter) || robustNormalize(mName).includes(robustNormalize(activeMinistryFilter));
       
       const entityDataList = entities.map(entityName => {
         const dyn = getDynamicBalances(entityName, mName, true);
@@ -1589,7 +1630,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     });
 
     return processedGroups;
-  }, [entries, prevLedgerTable2Data, searchTerm, filterMinistry, startDate, endDate, customTitle, cutoffMonth, activeCycle]);
+  }, [entries, prevLedgerTable2Data, searchTerm, activeMinistryFilter, startDate, endDate, customTitle, cutoffMonth, activeCycle]);
 
   const details1Table2Totals = useMemo(() => {
     const t = { 
@@ -1652,7 +1693,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     if (issueDateStr < quarterCycleStartDateStr || issueDateStr > quarterCycleEndDateStr) return false;
 
     // Filter by Ministry
-    const matchMinistry = filterMinistry === '' || robustNormalize(e.ministryName).includes(robustNormalize(filterMinistry));
+    const matchMinistry = activeMinistryFilter === '' || isMinistryMatch(e.ministryName || '', activeMinistryFilter) || robustNormalize(e.ministryName || '').includes(robustNormalize(activeMinistryFilter));
     
     // Filter by Search Term
     const matchSearch = searchTerm === '' || 
@@ -1816,8 +1857,53 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               </button>
             </div>
 
-            {/* Right Column: Date Range Pill & Month Picker */}
-            <div className="flex items-center gap-2.5 w-full xl:w-auto justify-end flex-wrap">
+            {/* Right Column: Ministry Dropdown, Date Range Pill & Month Picker */}
+            <div className="flex items-center gap-2.5 w-full xl:w-auto justify-end flex-wrap relative z-[300]">
+              {/* Ministry Filter Dropdown */}
+              <div className="relative select-none" ref={ministryDropdownRef}>
+                <div 
+                  onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
+                  className={`flex items-center gap-1.5 px-3 h-[38px] bg-sky-50 border hover:border-sky-300 hover:bg-white transition-all rounded-xl cursor-pointer shadow-sm ${isMinistryDropdownOpen ? 'border-sky-300 bg-white ring-2 ring-sky-50' : 'border-sky-100'}`}
+                  title="মন্ত্রণালয় ভিত্তিক ফিল্টার"
+                >
+                  <Building2 size={14} className="text-sky-600 shrink-0" />
+                  <span className="font-extrabold text-[12px] text-sky-800 tracking-tight shrink-0 max-w-[150px] truncate">
+                    {localMinistryFilter === 'সকল' ? 'সকল মন্ত্রণালয়' : localMinistryFilter}
+                  </span>
+                  <ChevronDown size={13} className={`text-sky-500 shrink-0 transition-transform duration-300 ${isMinistryDropdownOpen ? 'rotate-180 text-sky-600' : ''}`} />
+                </div>
+
+                {isMinistryDropdownOpen && (
+                  <div className="absolute top-[110%] right-0 w-[230px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-2 animate-in fade-in duration-200">
+                    <div className="px-3 py-1 pb-1.5 border-b border-slate-100 flex items-center justify-between">
+                      <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest flex items-center gap-1">
+                        <Building2 size={10} /> মন্ত্রণালয় নির্বাচন
+                      </span>
+                    </div>
+                    <div className="max-h-[240px] overflow-y-auto space-y-1 p-0.5 scrollbar-thin">
+                      {allMinistryOptions.map((m, idx) => {
+                        const isSelected = localMinistryFilter === m;
+                        const label = m === 'সকল' ? 'সকল মন্ত্রণালয়' : m;
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => {
+                              setLocalMinistryFilter(m);
+                              setIsMinistryDropdownOpen(false);
+                            }}
+                            className={`px-3 py-2 rounded-xl cursor-pointer transition-all duration-150 text-[11.5px] truncate flex items-center justify-between ${isSelected ? 'bg-sky-500 text-white font-black' : 'hover:bg-slate-50 text-slate-700 font-bold'}`}
+                            title={label}
+                          >
+                            <span className="truncate">{label}</span>
+                            {isSelected && <Sparkles size={11} className="text-amber-200 shrink-0 ml-1" />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="inline-flex items-center gap-2 px-3.5 h-[38px] bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
                 <span className="text-blue-700 font-black text-[12.5px] whitespace-nowrap">
@@ -1885,68 +1971,156 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             <tbody>
               {/* Table 1 rows */}
               {details1Data.map((mGroup, mIdx) => {
-                return mGroup.entities.map((ent: any, eIdx: number) => {
-                  return (
-                    <tr key={`${mIdx}-${ent.entityName}`} className="hover:bg-slate-50 transition-colors">
-                      {eIdx === 0 && (
-                        <>
-                          <td rowSpan={mGroup.entities.length} className={`${numTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>
-                            {toBengaliDigits((mIdx + 1).toString())}
-                          </td>
-                          <td rowSpan={mGroup.entities.length} className={`${tdCls} font-bold text-center bg-slate-50/20 w-[85px] min-w-[85px] max-w-[85px] text-[10px]`}>
-                            <HighlightText text={mGroup.ministryName} searchTerm={searchTerm} />
-                          </td>
-                        </>
-                      )}
-                      <td className={`${tdCls} font-semibold w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>
-                        <HighlightText text={ent.entityName} searchTerm={searchTerm} />
-                      </td>
-                      <td className={`${numTdCls} w-[60px] text-[10px]`}>{formatCountBengali(ent.june25Raised)}</td>
-                      <td className={`${numTdCls} bg-slate-50/30 w-[60px] text-[10px]`}>{formatCountBengali(ent.raisedCountCurr)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.totalRaisedCount)}</td>
-                      <td className={`${numTdCls} w-[60px] text-[10px]`}>{formatCountBengali(ent.june25Settled)}</td>
-                      <td className={`${numTdCls} bg-slate-50/30 w-[60px] text-[10px]`}>{formatCountBengali(ent.settledCountCurr)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.totalSettledCount)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.unsettledCountEnd)}</td>
-                      <td className={`${numTdCls} w-[110px] text-[10px]`}>{formatAmountBengali(ent.june25UnsettledAmount)}</td>
-                      <td className={`${numTdCls} bg-slate-50/30 w-[105px] text-[10px]`}>{formatAmountBengali(ent.settledAmountCurr)}</td>
-                      <td className={`${numTdCls} font-black text-blue-900 bg-blue-50/5 w-[110px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountEnd)}</td>
-                    </tr>
-                  );
+                const mSubtotal = mGroup.entities.reduce((acc: any, ent: any) => ({
+                  june25Raised: acc.june25Raised + (ent.june25Raised || 0),
+                  raisedCountCurr: acc.raisedCountCurr + (ent.raisedCountCurr || 0),
+                  totalRaisedCount: acc.totalRaisedCount + (ent.totalRaisedCount || 0),
+                  june25Settled: acc.june25Settled + (ent.june25Settled || 0),
+                  settledCountCurr: acc.settledCountCurr + (ent.settledCountCurr || 0),
+                  totalSettledCount: acc.totalSettledCount + (ent.totalSettledCount || 0),
+                  unsettledCountEnd: acc.unsettledCountEnd + (ent.unsettledCountEnd || 0),
+                  june25UnsettledAmount: acc.june25UnsettledAmount + (ent.june25UnsettledAmount || 0),
+                  settledAmountCurr: acc.settledAmountCurr + (ent.settledAmountCurr || 0),
+                  unsettledAmountEnd: acc.unsettledAmountEnd + (ent.unsettledAmountEnd || 0),
+                }), {
+                  june25Raised: 0,
+                  raisedCountCurr: 0,
+                  totalRaisedCount: 0,
+                  june25Settled: 0,
+                  settledCountCurr: 0,
+                  totalSettledCount: 0,
+                  unsettledCountEnd: 0,
+                  june25UnsettledAmount: 0,
+                  settledAmountCurr: 0,
+                  unsettledAmountEnd: 0
                 });
+
+                return (
+                  <React.Fragment key={`mgroup-t1-${mIdx}-${mGroup.ministryName}`}>
+                    {mGroup.entities.map((ent: any, eIdx: number) => {
+                      return (
+                        <tr key={`${mIdx}-${ent.entityName}`} className="hover:bg-slate-50 transition-colors">
+                          {eIdx === 0 && (
+                            <>
+                              <td rowSpan={mGroup.entities.length + 1} className={`${numTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>
+                                {toBengaliDigits((mIdx + 1).toString())}
+                              </td>
+                              <td rowSpan={mGroup.entities.length + 1} className={`${tdCls} font-bold text-center bg-slate-50/20 w-[85px] min-w-[85px] max-w-[85px] text-[10px]`}>
+                                <HighlightText text={mGroup.ministryName} searchTerm={searchTerm} />
+                              </td>
+                            </>
+                          )}
+                          <td className={`${tdCls} font-semibold w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>
+                            <HighlightText text={ent.entityName} searchTerm={searchTerm} />
+                          </td>
+                          <td className={`${numTdCls} w-[60px] text-[10px]`}>{formatCountBengali(ent.june25Raised)}</td>
+                          <td className={`${numTdCls} bg-slate-50/30 w-[60px] text-[10px]`}>{formatCountBengali(ent.raisedCountCurr)}</td>
+                          <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.totalRaisedCount)}</td>
+                          <td className={`${numTdCls} w-[60px] text-[10px]`}>{formatCountBengali(ent.june25Settled)}</td>
+                          <td className={`${numTdCls} bg-slate-50/30 w-[60px] text-[10px]`}>{formatCountBengali(ent.settledCountCurr)}</td>
+                          <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.totalSettledCount)}</td>
+                          <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.unsettledCountEnd)}</td>
+                          <td className={`${numTdCls} w-[110px] text-[10px]`}>{formatAmountBengali(ent.june25UnsettledAmount)}</td>
+                          <td className={`${numTdCls} bg-slate-50/30 w-[105px] text-[10px]`}>{formatAmountBengali(ent.settledAmountCurr)}</td>
+                          <td className={`${numTdCls} font-black text-blue-900 bg-blue-50/5 w-[110px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountEnd)}</td>
+                        </tr>
+                      );
+                    })}
+                    {/* Ministry Subtotal Row */}
+                    <tr key={`mgroup-t1-total-${mIdx}`} className="bg-amber-50/60 font-black hover:bg-amber-100/50 transition-colors">
+                      <td className={`${tdCls} font-black text-center bg-amber-100/70 text-slate-900 w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>
+                        মোট
+                      </td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.june25Raised)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.raisedCountCurr)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-100/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.totalRaisedCount)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.june25Settled)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.settledCountCurr)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-100/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.totalSettledCount)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-100/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.unsettledCountEnd)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[110px] text-[10px]`}>{formatAmountBengali(mSubtotal.june25UnsettledAmount)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[105px] text-[10px]`}>{formatAmountBengali(mSubtotal.settledAmountCurr)}</td>
+                      <td className={`${numTdCls} font-black text-blue-950 bg-amber-100/90 w-[110px] text-[10px]`}>{formatAmountBengali(mSubtotal.unsettledAmountEnd)}</td>
+                    </tr>
+                  </React.Fragment>
+                );
               })}
 
               {/* Table 2 rows (Financial Institutions Division) */}
               {details1Table2Data.map((mGroup, mIdx) => {
-                return mGroup.entities.map((ent: any, eIdx: number) => {
-                  return (
-                    <tr key={`${mIdx}-${ent.entityName}`} className="hover:bg-slate-50 transition-colors">
-                      {eIdx === 0 && (
-                        <>
-                          <td rowSpan={mGroup.entities.length} className={`${numTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>
-                            {toBengaliDigits((mIdx + 5).toString())}
-                          </td>
-                          <td rowSpan={mGroup.entities.length} className={`${tdCls} font-bold text-center bg-slate-50/20 w-[85px] min-w-[85px] max-w-[85px] text-[10px]`}>
-                            <HighlightText text={mGroup.ministryName} searchTerm={searchTerm} />
-                          </td>
-                        </>
-                      )}
-                      <td className={`${tdCls} font-semibold w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>
-                        <HighlightText text={ent.entityName} searchTerm={searchTerm} />
-                      </td>
-                      <td className={`${numTdCls} w-[60px] text-[10px]`}>{formatCountBengali(ent.june25Raised)}</td>
-                      <td className={`${numTdCls} bg-slate-50/30 w-[60px] text-[10px]`}>{formatCountBengali(ent.raisedCountCurr)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.totalRaisedCount)}</td>
-                      <td className={`${numTdCls} w-[60px] text-[10px]`}>{formatCountBengali(ent.june25Settled)}</td>
-                      <td className={`${numTdCls} bg-slate-50/30 w-[60px] text-[10px]`}>{formatCountBengali(ent.settledCountCurr)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.totalSettledCount)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.unsettledCountEnd)}</td>
-                      <td className={`${numTdCls} w-[110px] text-[10px]`}>{formatAmountBengali(ent.june25UnsettledAmount)}</td>
-                      <td className={`${numTdCls} bg-slate-50/30 w-[105px] text-[10px]`}>{formatAmountBengali(ent.settledAmountCurr)}</td>
-                      <td className={`${numTdCls} font-black text-blue-900 bg-blue-50/5 w-[110px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountEnd)}</td>
-                    </tr>
-                  );
+                const mSubtotal = mGroup.entities.reduce((acc: any, ent: any) => ({
+                  june25Raised: acc.june25Raised + (ent.june25Raised || 0),
+                  raisedCountCurr: acc.raisedCountCurr + (ent.raisedCountCurr || 0),
+                  totalRaisedCount: acc.totalRaisedCount + (ent.totalRaisedCount || 0),
+                  june25Settled: acc.june25Settled + (ent.june25Settled || 0),
+                  settledCountCurr: acc.settledCountCurr + (ent.settledCountCurr || 0),
+                  totalSettledCount: acc.totalSettledCount + (ent.totalSettledCount || 0),
+                  unsettledCountEnd: acc.unsettledCountEnd + (ent.unsettledCountEnd || 0),
+                  june25UnsettledAmount: acc.june25UnsettledAmount + (ent.june25UnsettledAmount || 0),
+                  settledAmountCurr: acc.settledAmountCurr + (ent.settledAmountCurr || 0),
+                  unsettledAmountEnd: acc.unsettledAmountEnd + (ent.unsettledAmountEnd || 0),
+                }), {
+                  june25Raised: 0,
+                  raisedCountCurr: 0,
+                  totalRaisedCount: 0,
+                  june25Settled: 0,
+                  settledCountCurr: 0,
+                  totalSettledCount: 0,
+                  unsettledCountEnd: 0,
+                  june25UnsettledAmount: 0,
+                  settledAmountCurr: 0,
+                  unsettledAmountEnd: 0
                 });
+
+                return (
+                  <React.Fragment key={`mgroup-t2-${mIdx}-${mGroup.ministryName}`}>
+                    {mGroup.entities.map((ent: any, eIdx: number) => {
+                      return (
+                        <tr key={`${mIdx}-${ent.entityName}`} className="hover:bg-slate-50 transition-colors">
+                          {eIdx === 0 && (
+                            <>
+                              <td rowSpan={mGroup.entities.length + 1} className={`${numTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>
+                                {toBengaliDigits((mIdx + 5).toString())}
+                              </td>
+                              <td rowSpan={mGroup.entities.length + 1} className={`${tdCls} font-bold text-center bg-slate-50/20 w-[85px] min-w-[85px] max-w-[85px] text-[10px]`}>
+                                <HighlightText text={mGroup.ministryName} searchTerm={searchTerm} />
+                              </td>
+                            </>
+                          )}
+                          <td className={`${tdCls} font-semibold w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>
+                            <HighlightText text={ent.entityName} searchTerm={searchTerm} />
+                          </td>
+                          <td className={`${numTdCls} w-[60px] text-[10px]`}>{formatCountBengali(ent.june25Raised)}</td>
+                          <td className={`${numTdCls} bg-slate-50/30 w-[60px] text-[10px]`}>{formatCountBengali(ent.raisedCountCurr)}</td>
+                          <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.totalRaisedCount)}</td>
+                          <td className={`${numTdCls} w-[60px] text-[10px]`}>{formatCountBengali(ent.june25Settled)}</td>
+                          <td className={`${numTdCls} bg-slate-50/30 w-[60px] text-[10px]`}>{formatCountBengali(ent.settledCountCurr)}</td>
+                          <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.totalSettledCount)}</td>
+                          <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.unsettledCountEnd)}</td>
+                          <td className={`${numTdCls} w-[110px] text-[10px]`}>{formatAmountBengali(ent.june25UnsettledAmount)}</td>
+                          <td className={`${numTdCls} bg-slate-50/30 w-[105px] text-[10px]`}>{formatAmountBengali(ent.settledAmountCurr)}</td>
+                          <td className={`${numTdCls} font-black text-blue-900 bg-blue-50/5 w-[110px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountEnd)}</td>
+                        </tr>
+                      );
+                    })}
+                    {/* Ministry Subtotal Row */}
+                    <tr key={`mgroup-t2-total-${mIdx}`} className="bg-amber-50/60 font-black hover:bg-amber-100/50 transition-colors">
+                      <td className={`${tdCls} font-black text-center bg-amber-100/70 text-slate-900 w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>
+                        মোট
+                      </td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.june25Raised)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.raisedCountCurr)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-100/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.totalRaisedCount)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.june25Settled)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.settledCountCurr)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-100/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.totalSettledCount)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-100/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.unsettledCountEnd)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[110px] text-[10px]`}>{formatAmountBengali(mSubtotal.june25UnsettledAmount)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[105px] text-[10px]`}>{formatAmountBengali(mSubtotal.settledAmountCurr)}</td>
+                      <td className={`${numTdCls} font-black text-blue-950 bg-amber-100/90 w-[110px] text-[10px]`}>{formatAmountBengali(mSubtotal.unsettledAmountEnd)}</td>
+                    </tr>
+                  </React.Fragment>
+                );
               })}
             </tbody>
             <tfoot className="qr-sticky-footer-bottom">
