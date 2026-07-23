@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import React from 'react';
 import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
-import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
+import { toBengaliDigits, parseBengaliNumber, toEnglishDigits, extractEntryDate } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants';
 import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
 import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
@@ -451,7 +451,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         const labelMatch = e.cycleLabel && toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon;
         if (labelMatch) return false;
         
-        const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+        const entryDate = extractEntryDate(e);
         if (entryDate !== '' && entryDate >= cycleStartStr) return false;
         
         return entryDate !== '' && entryDate >= effectiveEntryStartDate;
@@ -541,8 +541,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             const eEnt = robustNormalize(e.entityName || '');
             if (eMin !== normMinistry || eEnt !== normEntity) return false;
             
-            const entryDateRaw = e.issueDateISO || "";
-            const entryDate = entryDateRaw.split("T")[0];
+            const entryDate = extractEntryDate(e);
             const dateMatch =
               entryDate !== "" &&
               entryDate >= cycleStartStr &&
@@ -783,8 +782,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             const eEnt = robustNormalize(e.entityName || '');
             if (eMin !== normMinistry || eEnt !== normEntity) return false;
             
-            const entryDateRaw = e.issueDateISO || "";
-            const entryDate = entryDateRaw.split("T")[0];
+            const entryDate = extractEntryDate(e);
             const dateMatch =
               entryDate !== "" &&
               entryDate >= cycleStartStr &&

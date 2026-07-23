@@ -1,6 +1,6 @@
 import React from 'react';
 import { Printer, Sparkles, ChevronDown, BarChart3, FileSpreadsheet } from 'lucide-react';
-import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits, extractEntryDate } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
@@ -151,7 +151,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     if (!isValidType) return false;
 
     // Filter by Date Range (Issue Date)
-    const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+    const issueDateStr = extractEntryDate(e);
     if (!issueDateStr) return false;
     const issueDate = new Date(issueDateStr);
     if (issueDate < startDate || issueDate > endDate) return false;

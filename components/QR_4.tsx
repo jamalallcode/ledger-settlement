@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Printer, FileSpreadsheet, Sparkles } from 'lucide-react';
-import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits, parseBengaliNumber, extractEntryDate } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate, format as dateFnsFormat } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
@@ -358,7 +358,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         if (robustNormalize(e.ministryName) !== robustNormalize(ministryName)) return false;
         if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
 
-        const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+        const entryDate = extractEntryDate(e);
         return entryDate !== '' && entryDate >= cutoffInfo.transitionStartStr && entryDate < cycleStartStr;
       });
 
@@ -434,7 +434,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         if (robustNormalize(e.ministryName) !== robustNormalize(ministryName)) return false;
         if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
 
-        const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+        const entryDate = extractEntryDate(e);
         return entryDate !== '' && entryDate >= cutoffInfo.transitionStartStr && entryDate < cycleStartStr;
       });
 
@@ -844,7 +844,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         const pastEntries = entries.filter(e => {
           if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
           if (robustNormalize(e.paraType || '') !== robustNormalize(targetParaType)) return false;
-          const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+          const entryDate = extractEntryDate(e);
           return entryDate !== '' && entryDate < cycleStartStr && entryDate >= ENTRY_START_DATE;
         });
 
@@ -914,7 +914,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       if (!map.has(key)) return;
 
       const data = map.get(key);
-      const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+      const issueDateStr = extractEntryDate(e);
       if (!issueDateStr) return;
       const issueDate = new Date(issueDateStr);
 

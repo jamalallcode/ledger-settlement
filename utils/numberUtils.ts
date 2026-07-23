@@ -73,3 +73,83 @@ export const formatDateBN = (iso: string | undefined | null): string => {
   }
   return toBengaliDigits(iso);
 };
+
+/**
+ * Extracts a normalized ISO YYYY-MM-DD date from a SettlementEntry or CorrespondenceEntry.
+ * It prioritizes issueDateISO, then extracts dates from issueLetterNoDate (জারিপত্রের তারিখ),
+ * letterNoDate, workpaperNoDate, minutesNoDate, meetingDate, etc.
+ * Handles both Bengali and English digits.
+ */
+export const extractEntryDate = (e: any): string => {
+  if (!e) return '';
+
+  // 1. If issueDateISO exists and is a valid YYYY-MM-DD string
+  if (e.issueDateISO && typeof e.issueDateISO === 'string' && e.issueDateISO.trim() !== '') {
+    const isoClean = e.issueDateISO.split('T')[0].trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(isoClean)) {
+      return isoClean;
+    }
+  }
+
+  // 2. Search fields in order of precedence (issue letter date is top priority!)
+  const textFields = [
+    e.issueLetterNoDate,
+    e.issueLetterDate,
+    e.letterNoDate,
+    e.letterDate,
+    e.workpaperNoDate,
+    e.minutesNoDate,
+    e.meetingDate,
+    e.branchReceiptDate,
+    e.presentationDate
+  ];
+
+  for (const field of textFields) {
+    if (!field || typeof field !== 'string' || field.trim() === '') continue;
+
+    // Convert any Bengali digits to English
+    const engStr = toEnglishDigits(field);
+
+    // Look for DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
+    const matchDDMM = engStr.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+    if (matchDDMM) {
+      const d = matchDDMM[1].padStart(2, '0');
+      const m = matchDDMM[2].padStart(2, '0');
+      const y = matchDDMM[3];
+      const numY = parseInt(y, 10);
+      if (numY >= 1970 && numY <= 2099) {
+        return `${y}-${m}-${d}`;
+      }
+    }
+
+    // Look for YYYY-MM-DD or YYYY/MM/DD
+    const matchYYYY = engStr.match(/(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+    if (matchYYYY) {
+      const y = matchYYYY[1];
+      const m = matchYYYY[2].padStart(2, '0');
+      const d = matchYYYY[3].padStart(2, '0');
+      const numY = parseInt(y, 10);
+      if (numY >= 1970 && numY <= 2099) {
+        return `${y}-${m}-${d}`;
+      }
+    }
+  }
+
+  // 3. Fallback to createdAt if valid ISO
+  if (e.createdAt && typeof e.createdAt === 'string' && e.createdAt.trim() !== '') {
+    const createdClean = e.createdAt.split('T')[0].trim();
+    const engCreated = toEnglishDigits(createdClean);
+    const match = engCreated.match(/(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+    if (match) {
+      const y = match[1];
+      const m = match[2].padStart(2, '0');
+      const d = match[3].padStart(2, '0');
+      const numY = parseInt(y, 10);
+      if (numY >= 1970 && numY <= 2099) {
+        return `${y}-${m}-${d}`;
+      }
+    }
+  }
+
+  return '';
+};

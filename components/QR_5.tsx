@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Printer, FileSpreadsheet, Sparkles } from 'lucide-react';
-import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits, parseBengaliNumber, extractEntryDate } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
@@ -336,7 +336,7 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
         if (robustNormalize(e.ministryName) !== robustNormalize(ministryName)) return false;
         if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
 
-        const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+        const entryDate = extractEntryDate(e);
         return entryDate !== '' && entryDate >= cutoffInfo.transitionStartStr && entryDate < cycleStartStr;
       });
 
@@ -515,7 +515,7 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       if (robustNormalize(e.paraType) !== robustNormalize(paraType)) return;
 
       // Filter by Date Range (Issue Date)
-      const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+      const issueDateStr = extractEntryDate(e);
       if (!issueDateStr) return;
       const issueDate = new Date(issueDateStr);
       if (issueDate < startDate || issueDate > endDate) return;

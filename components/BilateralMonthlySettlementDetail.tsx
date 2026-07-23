@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Printer, Sparkles, ChevronDown, FileSpreadsheet, LayoutGrid, Search, X, CalendarDays, Check, Landmark, ArrowLeftRight } from 'lucide-react';
-import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits, extractEntryDate } from '../utils/numberUtils';
 import { format as dateFnsFormat, startOfMonth, endOfMonth } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
@@ -77,7 +77,7 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
       if (!meetingType.includes(robustNormalize('দ্বিপক্ষীয়'))) return;
       
       // 3. Filter by Date range of the selected month
-      const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+      const issueDateStr = extractEntryDate(e);
       if (!issueDateStr) return;
       const entryDate = new Date(issueDateStr);
       if (entryDate < startOfMonthDate || entryDate > endOfMonthDate) return;

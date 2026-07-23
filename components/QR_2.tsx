@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Printer, Sparkles, ChevronDown, BarChart3, FileSpreadsheet, Lock, Building2 } from 'lucide-react';
-import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits, parseBengaliNumber, extractEntryDate } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
@@ -392,17 +392,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         }
       }
 
-      let entryDateStr = (e.issueDateISO || '').split('T')[0].trim();
-      if (!entryDateStr && (e.issueLetterNoDate || e.workpaperNoDate)) {
-        const str = e.issueLetterNoDate || e.workpaperNoDate || '';
-        const match = str.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
-        if (match) {
-          entryDateStr = `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
-        }
-      }
-      if (!entryDateStr && e.createdAt) {
-        entryDateStr = e.createdAt.split('T')[0].trim();
-      }
+      const entryDateStr = extractEntryDate(e);
       if (!entryDateStr) return false;
       
       if (isExclusiveEnd) {
@@ -1399,7 +1389,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           if (!isEntityMatch(e.entityName, entityName)) return false;
           if (!isMinistryMatch(e.ministryName, ministryName)) return false;
 
-          const entryDateStr = (e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '')).trim();
+          const entryDateStr = extractEntryDate(e);
           if (!entryDateStr) return false;
           return entryDateStr >= qStartDateStr && entryDateStr <= qEndDateStr;
         });
@@ -1441,7 +1431,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         if (!isEntityMatch(e.entityName, entityName)) return false;
         if (!isMinistryMatch(e.ministryName, ministryName)) return false;
 
-        const entryDateStr = (e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '')).trim();
+        const entryDateStr = extractEntryDate(e);
         if (!entryDateStr) return false;
         return entryDateStr >= qStartDateStr && entryDateStr <= qEndDateStr;
       });
@@ -1673,7 +1663,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     if (!isValidType) return false;
 
     // Filter by Date Range (Issue Date) matching quarterly cycle range
-    const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+    const issueDateStr = extractEntryDate(e);
     if (!issueDateStr) return false;
     if (issueDateStr < quarterCycleStartDateStr || issueDateStr > quarterCycleEndDateStr) return false;
 
