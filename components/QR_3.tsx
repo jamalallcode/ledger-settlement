@@ -1326,9 +1326,10 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       const data = map.get(key);
       const issueDateStr = extractEntryDate(e);
       if (!issueDateStr) return;
-      const issueDate = new Date(issueDateStr);
+      const cycleStartStr = format(activeCycle.start, 'yyyy-MM-dd');
+      const cycleEndStr = format(activeCycle.end, 'yyyy-MM-dd');
 
-      if (issueDate >= startDate && issueDate <= endDate) {
+      if (issueDateStr >= cycleStartStr && issueDateStr <= cycleEndStr) {
         const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
         if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
           data.cCount += parseBengaliNumber(rCountRaw);

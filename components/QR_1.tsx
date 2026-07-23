@@ -62,7 +62,9 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     };
   };
 
-  const { startDate, endDate, startMonthName, endMonthName, formattedRange } = getQuarterInfo(activeCycle.end);
+  const cycleStartStr = format(activeCycle.start, 'yyyy-MM-dd');
+  const cycleEndStr = format(activeCycle.end, 'yyyy-MM-dd');
+  const formattedRange = activeCycle.label;
 
   const downloadExcel = () => {
     const tables = document.querySelectorAll('table');
@@ -150,11 +152,10 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                         mType.includes(robustNormalize('দ্বিপাক্ষিক'));
     if (!isValidType) return false;
 
-    // Filter by Date Range (Issue Date)
+    // Filter by Date Range (Issue Date) matching active cycle range
     const issueDateStr = extractEntryDate(e);
     if (!issueDateStr) return false;
-    const issueDate = new Date(issueDateStr);
-    if (issueDate < startDate || issueDate > endDate) return false;
+    if (issueDateStr < cycleStartStr || issueDateStr > cycleEndStr) return false;
 
     // Filter by Ministry
     const matchMinistry = filterMinistry === '' || robustNormalize(e.ministryName).includes(robustNormalize(filterMinistry));

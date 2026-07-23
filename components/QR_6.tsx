@@ -74,7 +74,8 @@ const QR_6: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     };
   };
 
-  const { startDate, endDate, startMonthName, endMonthName, formattedRange } = getQuarterInfo(activeCycle.end);
+  const { startDate, endDate, startMonthName, endMonthName } = getQuarterInfo(activeCycle.end);
+  const formattedRange = activeCycle.label;
 
   const downloadExcel = () => {
     const tables = document.querySelectorAll('table');
@@ -481,8 +482,9 @@ const QR_6: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       // Filter by Date Range (Issue Date)
       const issueDateStr = extractEntryDate(e);
       if (!issueDateStr) return;
-      const issueDate = new Date(issueDateStr);
-      if (issueDate < startDate || issueDate > endDate) return;
+      const cycleStartStr = format(activeCycle.start, 'yyyy-MM-dd');
+      const cycleEndStr = format(activeCycle.end, 'yyyy-MM-dd');
+      if (issueDateStr < cycleStartStr || issueDateStr > cycleEndStr) return;
 
       const mName = e.ministryName;
       if (!ministryMap.has(mName)) {

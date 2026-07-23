@@ -352,7 +352,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       const ledger = prevLedgerTable1Data[entityName] || { june25Raised: 0, june25Settled: 0, june25UnsettledAmount: 0 };
       
       // Calculate transition settled and raised from July 1, 2025 up to cycle start
-      const cycleStartStr = dateFnsFormat(startDate, 'yyyy-MM-dd');
+      const cycleStartStr = dateFnsFormat(activeCycle.start, 'yyyy-MM-dd');
       const transitionEntries = entries.filter(e => {
         if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
         if (robustNormalize(e.ministryName) !== robustNormalize(ministryName)) return false;
@@ -428,7 +428,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       const ledger = prevLedgerTable2Data[entityName] || { june25Raised: 0, june25Settled: 0, june25UnsettledAmount: 0 };
       
       // Calculate transition settled and raised from July 1, 2025 up to cycle start
-      const cycleStartStr = dateFnsFormat(startDate, 'yyyy-MM-dd');
+      const cycleStartStr = dateFnsFormat(activeCycle.start, 'yyyy-MM-dd');
       const transitionEntries = entries.filter(e => {
         if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
         if (robustNormalize(e.ministryName) !== robustNormalize(ministryName)) return false;

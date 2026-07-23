@@ -243,9 +243,9 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   quarterCycleStartDate.setHours(0, 0, 0, 0);
   quarterCycleEndDate.setHours(23, 59, 59, 999);
 
-  const quarterCycleStartDateStr = format(quarterCycleStartDate, 'yyyy-MM-dd');
-  const quarterCycleEndDateStr = format(quarterCycleEndDate, 'yyyy-MM-dd');
-  const quarterCycleRangeFormatted = `${toBengaliDigits(format(quarterCycleStartDate, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(format(quarterCycleEndDate, 'dd/MM/yyyy'))}`;
+  const quarterCycleStartDateStr = format(activeCycle.start, 'yyyy-MM-dd');
+  const quarterCycleEndDateStr = format(activeCycle.end, 'yyyy-MM-dd');
+  const quarterCycleRangeFormatted = activeCycle.label;
 
   // Settlement cycle starts from the 16th of the month BEFORE the quarter start month
   let settlementStartMonth = quarterStartMonth - 1;
@@ -1381,8 +1381,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       const qStartDate = new Date(currentQuarterYear, currentQuarterStartMonth, 16);
       const qEndDate = new Date(currentQuarterYear, qEndMonth, 15);
       
-      const qStartDateStr = format(qStartDate, 'yyyy-MM-dd');
-      const qEndDateStr = format(qEndDate, 'yyyy-MM-dd');
+      const qStartDateStr = isCurrentQuarterActive ? format(activeCycle.start, 'yyyy-MM-dd') : format(qStartDate, 'yyyy-MM-dd');
+      const qEndDateStr = isCurrentQuarterActive ? format(activeCycle.end, 'yyyy-MM-dd') : format(qEndDate, 'yyyy-MM-dd');
 
       if (isCurrentQuarterActive) {
         const currentBSRRaisedEntries = entries.filter(e => {
