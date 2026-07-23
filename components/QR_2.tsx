@@ -18,6 +18,134 @@ interface QRProps {
   customTitle?: string;
 }
 
+const robustNormalize = (str: string = '') => {
+  let normalized = str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+  normalized = normalized.replace(/कर्मসংস্থান/g, "কর্মসংস্থান").replace(/कर्मसंस्थान/g, "কর্মসংস্থান");
+  return normalized;
+};
+
+const QR2_MINISTRY_MAP: Record<string, string[]> = {
+  "শিল্প মন্ত্রণালয়": [
+    "চিনি ও খাদ্য সংস্থা",
+    "হস্ত ও কুটির শিল্প সংস্থা",
+    "বিটাক",
+    "রসায়ন শিল্প সংস্থা"
+  ],
+  "বস্ত্র ও পাট মন্ত্রণালয়": [
+    "পাটকল সংস্থা",
+    "পাট সংস্থা",
+    "বস্ত্রকল সংস্থা",
+    "রেশম বোর্ড"
+  ],
+  "বাণিজ্য মন্ত্রণালয়": [
+    "টিসিবি",
+    "আমদানি ও রপ্তানি"
+  ],
+  "বেসামরিক বিমান পরিবহন ও পর্যটন": [
+    "বাংলাদেশ বিমান",
+    "পর্যটন কর্পোরেশন"
+  ]
+};
+
+const QR2_MINISTRY_MAP_TABLE2: Record<string, string[]> = {
+  "আর্থিক প্রতিষ্ঠান বিভাগ": [
+    "সোনালী ব্যাংক পিএলসি",
+    "জনতা ব্যাংক পিএলসি",
+    "অগ্রণী ব্যাংক পিএলসি",
+    "বাংলাদেশ কৃষি ব্যাংক",
+    "রূপালী ব্যাংক পিএলসি",
+    "বাংলাদেশ ব্যাংক",
+    "বাংলাদেশ ডেভেলপমেন্ট ব্যাংক লিঃ",
+    "গৃহনির্মাণ ঋণদান সংস্থা",
+    "কর্মসংস্থান ব্যাংক",
+    "বেসিক ব্যাংক লিঃ",
+    "আনসার ভিডিপি উন্নয়ন ব্যাংক লিঃ",
+    "ইনভেস্টমেন্ট কর্পোরেশন অব বাংলাদেশ",
+    "সাধারণ বীমা কর্পোরেশন",
+    "জীবন বীমা কর্পোরেশন",
+    "প্রবাসী কল্যাণ ব্যাংক"
+  ]
+};
+
+const isMinistryMatch = (entryMinistry: string, targetMinistry: string) => {
+  const normEntry = robustNormalize(entryMinistry);
+  const normTarget = robustNormalize(targetMinistry);
+  if (normEntry === normTarget) return true;
+
+  if (normTarget === robustNormalize("বস্ত্র ও পাট মন্ত্রণালয়")) {
+    return normEntry === robustNormalize("পাট মন্ত্রণালয়") || 
+           normEntry === robustNormalize("বস্ত্র মন্ত্রণালয়") || 
+           normEntry === robustNormalize("বস্ত্র ও পাট মন্ত্রণালয়") ||
+           normEntry.includes("পাট") || normEntry.includes("বস্ত্র");
+  }
+
+  if (normTarget === robustNormalize("শিল্প মন্ত্রণালয়")) {
+    return normEntry === robustNormalize("শিল্প মন্ত্রণালয়") || normEntry.includes("শিল্প");
+  }
+
+  if (normTarget === robustNormalize("বেসামরিক বিমান পরিবহন ও পর্যটন")) {
+    return normEntry === robustNormalize("বিমান ও পর্যটন মন্ত্রণালয়") || 
+           normEntry === robustNormalize("বেসামরিক বিমান পরিবহন ও পর্যটন") ||
+           normEntry.includes("বিমান") || normEntry.includes("পর্যটন");
+  }
+
+  return normEntry.includes(normTarget) || normTarget.includes(normEntry);
+};
+
+const isEntityMatch = (entryEntity: string, targetEntity: string) => {
+  const normEntry = robustNormalize(entryEntity);
+  const normTarget = robustNormalize(targetEntity);
+  if (normEntry === normTarget) return true;
+  
+  // Equivalence mappings
+  if (normTarget === robustNormalize("হস্ত ও কুটির শিল্প সংস্থা") && (normEntry === robustNormalize("ক্ষুদ্র ও কুটির শিল্প") || normEntry.includes("কুটির") || normEntry.includes("হস্ত"))) return true;
+  if (normTarget === robustNormalize("ক্ষুদ্র ও কুটির শিল্প") && (normEntry === robustNormalize("হস্ত ও কুটির শিল্প সংস্থা") || normEntry.includes("কুটির") || normEntry.includes("হস্ত"))) return true;
+  if (normTarget === robustNormalize("রসায়ন শিল্প সংস্থা") && (normEntry === robustNormalize("রসায়ন শিল্প") || normEntry.includes("রসায়ন") || normEntry.includes("রসায়ন"))) return true;
+  if (normTarget === robustNormalize("রসায়ন শিল্প") && (normEntry === robustNormalize("রসায়ন শিল্প সংস্থা") || normEntry.includes("রসায়ন") || normEntry.includes("রসায়ন"))) return true;
+  
+  // General equivalent matches for Jute/Patkol
+  const isPatkolTarget = normTarget === robustNormalize("পাটকল সংস্থা");
+  const isPatTarget = normTarget === robustNormalize("পাট সংস্থা");
+  
+  const isPatkolEntry = normEntry === robustNormalize("পাটকল সংস্থা") || normEntry.includes("পাটকল") || normEntry.includes("বিজেএমসি") || normEntry.includes("জুট");
+  const isPatEntry = normEntry === robustNormalize("পাট সংস্থা") || (normEntry.includes("পাট") && !normEntry.includes("পাটকল") && !normEntry.includes("বিজেএমসি") && !normEntry.includes("জুট"));
+
+  if (isPatkolTarget) {
+    return isPatkolEntry;
+  }
+  if (isPatTarget) {
+    return isPatEntry && !isPatkolEntry;
+  }
+
+  const isPatkolEntryDirect = normEntry === robustNormalize("পাটকল সংস্থা");
+  const isPatEntryDirect = normEntry === robustNormalize("পাট সংস্থা");
+
+  if (isPatkolEntryDirect) {
+    return normTarget.includes("পাটকল") || normTarget.includes("বিজেএমসি") || normTarget.includes("জুট");
+  }
+  if (isPatEntryDirect) {
+    return normTarget.includes("পাট") && !normTarget.includes("পাটকল") && !normTarget.includes("বিজেএমসি") && !normTarget.includes("জুট");
+  }
+
+  // Financial institutions equivalents to prevent typo mismatches
+  if (normTarget.includes("বাংলাদেশ ডেভেলপমেন্ট ব্যাংক") && normEntry.includes("বাংলাদেশ ডেভেলপমেন্ট ব্যাংক")) return true;
+  if (normTarget.includes("বেসিক ব্যাংক") && normEntry.includes("বেসিক ব্যাংক")) return true;
+  if (normTarget.includes("ইনভেস্টমেন্ট কর্পোরেশন") && normEntry.includes("ইনভেস্ট")) return true;
+  if (normTarget.includes("ইনভেস্ট কর্পোরেশন") && normEntry.includes("ইনভেস্ট")) return true;
+  if (normTarget.includes("আনসার ভিডিপি") && normEntry.includes("আনসার ভিডিপি")) return true;
+  if (normTarget.includes("সোনালী ব্যাংক") && normEntry.includes("সোনালী ব্যাংক")) return true;
+  if (normTarget.includes("জনতা ব্যাংক") && normEntry.includes("জনতা ব্যাংক")) return true;
+  if (normTarget.includes(" can ") || normTarget.includes("অগ্রণী ব্যাংক") && normEntry.includes("অগ্রণী ব্যাংক")) return true;
+  if (normTarget.includes("রূপালী ব্যাংক") && normEntry.includes("রূপালী ব্যাংক")) return true;
+  if (normTarget.includes("কৃষি ব্যাংক") && normEntry.includes("কৃষি ব্যাংক")) return true;
+  if (normTarget.includes("কর্মসংস্থান") && normEntry.includes("কর্মসংস্থান")) return true;
+  if (normTarget.includes("সাধারণ বীমা") && normEntry.includes("সাধারণ বীমা")) return true;
+  if (normTarget.includes("জীবন বীমা") && normEntry.includes("জীবন বীমা")) return true;
+  if (normTarget.includes(" can ") || normTarget.includes("কো-অপারেটিভ") || normTarget.includes("সমবায়") || normTarget.includes("সমবায়") || normTarget.includes("প্রবাসী কল্যাণ") && normEntry.includes("প্রবাসী কল্যাণ")) return true;
+
+  return normEntry.includes(normTarget) || normTarget.includes(normEntry);
+};
+
 const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', monthPickerElement, customTitle }) => {
   const [localMinistryFilter, setLocalMinistryFilter] = useState<string>('সকল');
   const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState<boolean>(false);
@@ -203,12 +331,6 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     return months[date.getMonth()];
   };
 
-  const robustNormalize = (str: string = '') => {
-    let normalized = str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
-    normalized = normalized.replace(/कर्मসংস্থান/g, "কর্মসংস্থান").replace(/कर्मसंस्थान/g, "কর্মসংস্থান");
-    return normalized;
-  };
-
   const getPrevQuarterEndInfo = () => {
     const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
     let prevMonthIdx = 0;
@@ -233,128 +355,6 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   
   const prevQuarterEnd = getPrevQuarterEndInfo();
 
-  const QR2_MINISTRY_MAP: Record<string, string[]> = {
-    "শিল্প মন্ত্রণালয়": [
-      "চিনি ও খাদ্য সংস্থা",
-      "হস্ত ও কুটির শিল্প সংস্থা",
-      "বিটাক",
-      "রসায়ন শিল্প সংস্থা"
-    ],
-    "বস্ত্র ও পাট মন্ত্রণালয়": [
-      "পাটকল সংস্থা",
-      "পাট সংস্থা",
-      "বস্ত্রকল সংস্থা",
-      "রেশম বোর্ড"
-    ],
-    "বাণিজ্য মন্ত্রণালয়": [
-      "টিসিবি",
-      "আমদানি ও রপ্তানি"
-    ],
-    "বেসামরিক বিমান পরিবহন ও পর্যটন": [
-      "বাংলাদেশ বিমান",
-      "পর্যটন কর্পোরেশন"
-    ]
-  };
-
-  const QR2_MINISTRY_MAP_TABLE2: Record<string, string[]> = {
-    "আর্থিক প্রতিষ্ঠান বিভাগ": [
-      "সোনালী ব্যাংক পিএলসি",
-      "জনতা ব্যাংক পিএলসি",
-      "অগ্রণী ব্যাংক পিএলসি",
-      "বাংলাদেশ কৃষি ব্যাংক",
-      "রূপালী ব্যাংক পিএলসি",
-      "বাংলাদেশ ব্যাংক",
-      "বাংলাদেশ ডেভেলপমেন্ট ব্যাংক লিঃ",
-      "গৃহনির্মাণ ঋণদান সংস্থা",
-      "কর্মসংস্থান ব্যাংক",
-      "বেসিক ব্যাংক লিঃ",
-      "আনসার ভিডিপি উন্নয়ন ব্যাংক লিঃ",
-      "ইনভেস্টমেন্ট কর্পোরেশন অব বাংলাদেশ",
-      "সাধারণ বীমা কর্পোরেশন",
-      "জীবন বীমা কর্পোরেশন",
-      "প্রবাসী কল্যাণ ব্যাংক"
-    ]
-  };
-
-  const isMinistryMatch = (entryMinistry: string, targetMinistry: string) => {
-    const normEntry = robustNormalize(entryMinistry);
-    const normTarget = robustNormalize(targetMinistry);
-    if (normEntry === normTarget) return true;
-
-    if (normTarget === robustNormalize("বস্ত্র ও পাট মন্ত্রণালয়")) {
-      return normEntry === robustNormalize("পাট মন্ত্রণালয়") || 
-             normEntry === robustNormalize("বস্ত্র মন্ত্রণালয়") || 
-             normEntry === robustNormalize("বস্ত্র ও পাট মন্ত্রণালয়") ||
-             normEntry.includes("পাট") || normEntry.includes("বস্ত্র");
-    }
-
-    if (normTarget === robustNormalize("শিল্প মন্ত্রণালয়")) {
-      return normEntry === robustNormalize("শিল্প মন্ত্রণালয়") || normEntry.includes("শিল্প");
-    }
-
-    if (normTarget === robustNormalize("বেসামরিক বিমান পরিবহন ও পর্যটন")) {
-      return normEntry === robustNormalize("বিমান ও পর্যটন মন্ত্রণালয়") || 
-             normEntry === robustNormalize("বেসামরিক বিমান পরিবহন ও পর্যটন") ||
-             normEntry.includes("বিমান") || normEntry.includes("পর্যটন");
-    }
-
-    return normEntry.includes(normTarget) || normTarget.includes(normEntry);
-  };
-
-  const isEntityMatch = (entryEntity: string, targetEntity: string) => {
-    const normEntry = robustNormalize(entryEntity);
-    const normTarget = robustNormalize(targetEntity);
-    if (normEntry === normTarget) return true;
-    
-    // Equivalence mappings
-    if (normTarget === robustNormalize("হস্ত ও কুটির শিল্প সংস্থা") && (normEntry === robustNormalize("ক্ষুদ্র ও কুটির শিল্প") || normEntry.includes("কুটির") || normEntry.includes("হস্ত"))) return true;
-    if (normTarget === robustNormalize("ক্ষুদ্র ও কুটির শিল্প") && (normEntry === robustNormalize("হস্ত ও কুটির শিল্প সংস্থা") || normEntry.includes("কুটির") || normEntry.includes("হস্ত"))) return true;
-    if (normTarget === robustNormalize("রসায়ন শিল্প সংস্থা") && (normEntry === robustNormalize("রসায়ন শিল্প") || normEntry.includes("রসায়ন") || normEntry.includes("রসায়ন"))) return true;
-    if (normTarget === robustNormalize("রসায়ন শিল্প") && (normEntry === robustNormalize("রসায়ন শিল্প সংস্থা") || normEntry.includes("রসায়ন") || normEntry.includes("রসায়ন"))) return true;
-    
-    // General equivalent matches for Jute/Patkol
-    const isPatkolTarget = normTarget === robustNormalize("পাটকল সংস্থা");
-    const isPatTarget = normTarget === robustNormalize("পাট সংস্থা");
-    
-    const isPatkolEntry = normEntry === robustNormalize("পাটকল সংস্থা") || normEntry.includes("পাটকল") || normEntry.includes("বিজেএমসি") || normEntry.includes("জুট");
-    const isPatEntry = normEntry === robustNormalize("পাট সংস্থা") || (normEntry.includes("পাট") && !normEntry.includes("পাটকল") && !normEntry.includes("বিজেএমসি") && !normEntry.includes("জুট"));
-
-    if (isPatkolTarget) {
-      return isPatkolEntry;
-    }
-    if (isPatTarget) {
-      return isPatEntry && !isPatkolEntry;
-    }
-
-    const isPatkolEntryDirect = normEntry === robustNormalize("পাটকল সংস্থা");
-    const isPatEntryDirect = normEntry === robustNormalize("পাট সংস্থা");
-
-    if (isPatkolEntryDirect) {
-      return normTarget.includes("পাটকল") || normTarget.includes("বিজেএমসি") || normTarget.includes("জুট");
-    }
-    if (isPatEntryDirect) {
-      return normTarget.includes("পাট") && !normTarget.includes("পাটকল") && !normTarget.includes("বিজেএমসি") && !normTarget.includes("জুট");
-    }
-
-    // Financial institutions equivalents to prevent typo mismatches
-    if (normTarget.includes("বাংলাদেশ ডেভেলপমেন্ট ব্যাংক") && normEntry.includes("বাংলাদেশ ডেভেলপমেন্ট ব্যাংক")) return true;
-    if (normTarget.includes("বেসিক ব্যাংক") && normEntry.includes("বেসিক ব্যাংক")) return true;
-    if (normTarget.includes("ইনভেস্টমেন্ট কর্পোরেশন") && normEntry.includes("ইনভেস্ট")) return true;
-    if (normTarget.includes("ইনভেস্ট কর্পোরেশন") && normEntry.includes("ইনভেস্ট")) return true;
-    if (normTarget.includes("আনসার ভিডিপি") && normEntry.includes("আনসার ভিডিপি")) return true;
-    if (normTarget.includes("সোনালী ব্যাংক") && normEntry.includes("সোনালী ব্যাংক")) return true;
-    if (normTarget.includes("জনতা ব্যাংক") && normEntry.includes("জনতা ব্যাংক")) return true;
-    if (normTarget.includes(" can ") || normTarget.includes("অগ্রণী ব্যাংক") && normEntry.includes("অগ্রণী ব্যাংক")) return true;
-    if (normTarget.includes("রূপালী ব্যাংক") && normEntry.includes("রূপালী ব্যাংক")) return true;
-    if (normTarget.includes("কৃষি ব্যাংক") && normEntry.includes("কৃষি ব্যাংক")) return true;
-    if (normTarget.includes("কর্মসংস্থান") && normEntry.includes("কর্মসংস্থান")) return true;
-    if (normTarget.includes("সাধারণ বীমা") && normEntry.includes("সাধারণ বীমা")) return true;
-    if (normTarget.includes("জীবন বীমা") && normEntry.includes("জীবন বীমা")) return true;
-    if (normTarget.includes(" can ") || normTarget.includes("কো-অপারেটিভ") || normTarget.includes("সমবায়") || normTarget.includes("সমবায়") || normTarget.includes("প্রবাসী কল্যাণ") && normEntry.includes("প্রবাসী কল্যাণ")) return true;
-
-    return normEntry.includes(normTarget) || normTarget.includes(normEntry);
-  };
-
   const getSettlementStats = (
     entriesList: SettlementEntry[],
     entityName: string,
@@ -378,7 +378,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         }
       }
 
-      const mType = robustNormalize(e.meetingType || e.letterType || '');
+      const mType = robustNormalize(e.meetingType || (e as any).letterType || '');
       if (isTransition) {
         if (mType && !mType.includes(robustNormalize('বিএসআর'))) return false;
       } else {
@@ -1683,7 +1683,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     if (normalizedParaType !== robustNormalize('নন এসএফআই')) return false;
     
     // Filter only by BSR
-    const mType = robustNormalize(e.meetingType || e.letterType || '');
+    const mType = robustNormalize(e.meetingType || (e as any).letterType || '');
     const isValidType = mType.includes(robustNormalize('বিএসআর'));
     if (!isValidType) return false;
 
