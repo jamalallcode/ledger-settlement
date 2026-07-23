@@ -1100,23 +1100,6 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                   ১৯৭১-৭২ হতে {cutoffInfo.formattedLong} পর্যন্ত উত্থাপিত ও নিষ্পত্তিকৃত আপত্তির সংখ্যাগুলো ইনপুট দিন। {cutoffInfo.nextMonthFormattedLong} হতে নিষ্পত্তি স্বয়ংক্রিয়ভাবে হিসাব হবে।
                 </p>
               </div>
-
-              {/* Dynamic Month Selector */}
-              <div className="flex items-center gap-2.5 bg-gradient-to-r from-amber-50 to-amber-100/50 border border-amber-200/80 rounded-xl px-3.5 py-1.5 shadow-sm text-xs shrink-0">
-                <span className="font-extrabold text-amber-900 tracking-wide">জেরের মাস:</span>
-                <select
-                  value={cutoffMonth}
-                  onChange={(e) => {
-                    setCutoffMonth(e.target.value);
-                    localStorage.setItem('opening_balance_cutoff_month', e.target.value);
-                  }}
-                  className="bg-white border border-amber-300 rounded-lg px-2.5 py-1 font-black text-slate-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none cursor-pointer shadow-sm hover:bg-slate-50 transition-all text-xs"
-                >
-                  {getMonthOptions().map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -1326,23 +1309,6 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 <p className="text-[10px] font-bold text-slate-500 mt-1">
                   ১৯৭১-৭২ হতে {cutoffInfo.formattedLong} পর্যন্ত উত্থাপিত ও নিষ্পত্তিকৃত আপত্তির সংখ্যাগুলো ইনপুট দিন। {cutoffInfo.nextMonthFormattedLong} হতে নিষ্পত্তি স্বয়ংক্রিয়ভাবে হিসাব হবে।
                 </p>
-              </div>
-
-              {/* Dynamic Month Selector */}
-              <div className="flex items-center gap-2.5 bg-gradient-to-r from-amber-50 to-amber-100/50 border border-amber-200/80 rounded-xl px-3.5 py-1.5 shadow-sm text-xs shrink-0">
-                <span className="font-extrabold text-amber-900 tracking-wide">জেরের মাস:</span>
-                <select
-                  value={cutoffMonth}
-                  onChange={(e) => {
-                    setCutoffMonth(e.target.value);
-                    localStorage.setItem('opening_balance_cutoff_month', e.target.value);
-                  }}
-                  className="bg-white border border-amber-300 rounded-lg px-2.5 py-1 font-black text-slate-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none cursor-pointer shadow-sm hover:bg-slate-50 transition-all text-xs"
-                >
-                  {getMonthOptions().map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
               </div>
             </div>
             <div className="flex items-center gap-2">
