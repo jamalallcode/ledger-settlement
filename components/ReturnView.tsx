@@ -277,8 +277,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     const isYearly = selectedReportType?.includes('বাৎসরিক');
 
     if (isQuarterly) {
-      // Loop back about 24 months to find all quarters in the last 2 years.
-      for (let i = -2; i < 24; i++) {
+      // Loop back about 36 months to find all quarters.
+      for (let i = -2; i < 36; i++) {
         const refDate = addMonths(today, -i);
         const month = refDate.getMonth(); // 0 to 11
         const year = refDate.getFullYear();
@@ -310,7 +310,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         const label = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
         
         if (!seen.has(label)) {
-          if (quarterYear < 2026 || (quarterYear === 2026 && quarterStartMonth < 3)) {
+          if (quarterYear < 2025) {
             continue;
           }
           seen.add(label);
@@ -321,7 +321,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       }
     } else if (isHalfYearly) {
       // Half-Yearly: 6-month cycles (Jan to Jun, Jul to Dec)
-      for (let i = -2; i < 24; i++) {
+      for (let i = -2; i < 36; i++) {
         const refDate = addMonths(today, -i);
         const month = refDate.getMonth();
         const year = refDate.getFullYear();
@@ -342,7 +342,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         const label = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
 
         if (!seen.has(label)) {
-          if (year < 2026 || (year === 2026 && halfStartMonth < 3)) {
+          if (year < 2025) {
             continue;
           }
           seen.add(label);
@@ -360,7 +360,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         const label = `${BENGALI_MONTHS[0]}/${toBengaliDigits(dateFnsFormat(new Date(year, 0, 1), 'yy'))} হতে ${BENGALI_MONTHS[11]}/${toBengaliDigits(dateFnsFormat(new Date(year, 11, 1), 'yy'))}`;
 
         if (!seen.has(label)) {
-          if (year < 2026) {
+          if (year < 2025) {
             continue;
           }
           seen.add(label);
@@ -371,8 +371,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       }
     } else {
       // Monthly!
-      // Loop back about 24 months to find all months in the last 2 years.
-      for (let i = -2; i < 24; i++) {
+      // Loop back about 36 months to find all months down to June 2025.
+      for (let i = -2; i < 36; i++) {
         const refDate = addMonths(today, -i);
         const month = refDate.getMonth(); // 0 to 11
         const year = refDate.getFullYear();
@@ -381,7 +381,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         const label = `${monthName}/${toBengaliDigits(year.toString())}`;
 
         if (!seen.has(label)) {
-          if (year < 2026 || (year === 2026 && month < 3)) {
+          if (year < 2025 || (year === 2025 && month < 5)) {
             continue;
           }
           seen.add(label);
