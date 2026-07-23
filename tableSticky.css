@@ -356,3 +356,45 @@ tbody tr.qr-sticky-footer-offset td:hover,
 .qr-table-container thead tr:first-child th:first-child {
   box-shadow: inset 0 1px 0 #94a3b8, inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8, inset 1px 0 0 #94a3b8 !important;
 }
+
+/* --- "বিস্তারিত - ১" SPECIFIC TABLE CONTAINER STICKY FIX --- */
+#details1-table-container {
+  max-height: calc(100vh - 165px) !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  position: relative !important;
+}
+
+#details1-table-container thead {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 250 !important;
+}
+
+#details1-table-container thead tr {
+  position: static !important;
+}
+
+#details1-table-container thead th {
+  position: static !important;
+  top: auto !important;
+}
+
+#details1-table-container tfoot {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 250 !important;
+}
+
+#details1-table-container tfoot tr {
+  position: static !important;
+}
+
+#details1-table-container tfoot td,
+#details1-table-container tfoot th {
+  position: static !important;
+  bottom: auto !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  box-shadow: inset 0 1px 0 #1e293b, inset -1px 0 0 #1e293b !important;
+}

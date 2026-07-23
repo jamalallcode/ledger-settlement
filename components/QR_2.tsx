@@ -1904,7 +1904,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         </div>
 
         {/* Unified Table Container */}
-        <div className="table-container qr-table-container qr2-table-container overflow-auto xl:overflow-visible shadow-sm rounded-none mb-8">
+        <div id="details1-table-container" className="table-container qr-table-container qr2-table-container shadow-sm rounded-none mb-8">
           <table className="w-full border-separate border-spacing-0 !table-auto border-l border-slate-400">
             <colgroup>
               <col style={{ width: '35px', minWidth: '35px' }} />
