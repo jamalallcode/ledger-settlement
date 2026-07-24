@@ -271,7 +271,10 @@ const QR_Detailed_1: React.FC<QRProps> = ({
   const getEntityData = (entityName: string) => {
     const prior = priorData[entityName] || { col4: 0, col7: 0, col11: 0 };
     
-    // Calculate current quarter raised and settled from entries
+    let priorRaisedCount = 0;
+    let priorSettledCount = 0;
+    let priorSettledAmount = 0;
+
     let currentRaisedCount = 0;
     let currentSettledCount = 0;
     let currentSettledAmount = 0;
@@ -281,19 +284,14 @@ const QR_Detailed_1: React.FC<QRProps> = ({
     (entries || []).forEach(e => {
       const normEntity = robustNormalize(e.entityName || '');
       if (normEntity === normTarget) {
-        // Filter by active cycle dates (the 3 months of the quarter)
-        const eDate = e.issueDateISO ? new Date(e.issueDateISO) : (e.createdAt ? new Date(e.createdAt) : null);
-        if (activeCycle?.start && activeCycle?.end && eDate) {
-          if (eDate < activeCycle.start || eDate > activeCycle.end) return;
-        }
-
-        // Col 5: Raised Count
+        // Extract raised count
+        let rCount = 0;
         const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
         if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
-          currentRaisedCount += parseBengaliNumber(rCountRaw);
+          rCount = parseBengaliNumber(rCountRaw);
         }
         
-        // Col 12: Settled Amount
+        // Extract settled amount
         let settledAmt = 0;
         if (e.settledAmount) {
           settledAmt += parseBengaliNumber(String(e.settledAmount));
@@ -310,7 +308,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           });
         }
 
-        // Col 8: Settled Count
+        // Extract settled count
         let fc = parseBengaliNumber(String(e.fullCount || 0));
         let pc = parseBengaliNumber(String(e.partialCount || 0));
 
@@ -321,23 +319,42 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           fc = e.paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ').length;
           pc = e.paragraphs.filter(p => p.status === 'আংশিক').length;
         }
+        const sCount = fc + pc;
 
-        currentSettledCount += (fc + pc);
-        currentSettledAmount += settledAmt;
+        // Categorize by date relative to active cycle
+        const eDate = e.issueDateISO ? new Date(e.issueDateISO) : (e.createdAt ? new Date(e.createdAt) : null);
+        
+        if (activeCycle?.start && activeCycle?.end && eDate) {
+          if (eDate < activeCycle.start) {
+            // Prior quarter entry -> carry forward to opening balance of current quarter
+            priorRaisedCount += rCount;
+            priorSettledCount += sCount;
+            priorSettledAmount += settledAmt;
+          } else if (eDate >= activeCycle.start && eDate <= activeCycle.end) {
+            // Current active quarter entry
+            currentRaisedCount += rCount;
+            currentSettledCount += sCount;
+            currentSettledAmount += settledAmt;
+          }
+        } else {
+          currentRaisedCount += rCount;
+          currentSettledCount += sCount;
+          currentSettledAmount += settledAmt;
+        }
       }
     });
 
-    const col4 = prior.col4 || 0;
+    const col4 = (prior.col4 || 0) + priorRaisedCount;
     const col5 = currentRaisedCount;
     const col6 = col4 + col5;
 
-    const col7 = prior.col7 || 0;
+    const col7 = (prior.col7 || 0) + priorSettledCount;
     const col8 = currentSettledCount;
     const col9 = col7 + col8;
 
     const col10 = col6 - col9;
 
-    const col11 = prior.col11 || 0;
+    const col11 = (prior.col11 || 0) - priorSettledAmount;
     const col12 = currentSettledAmount;
     const col13 = col11 - col12;
 
