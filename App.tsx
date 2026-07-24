@@ -196,52 +196,98 @@ const App: React.FC = () => {
 
   // Smart Scroll-Up Reveal Header Effect
   useEffect(() => {
-    const scrollContainer = mainScrollRef.current;
-    if (!scrollContainer) return;
-
-    let lastY = scrollContainer.scrollTop;
+    let lastY = 0;
+    let accumulatedUpScroll = 0;
+    let accumulatedDownScroll = 0;
+    let isRevealed = false;
 
     const handleScroll = () => {
+      const scrollContainer = mainScrollRef.current || document.querySelector('main');
+      if (!scrollContainer) return;
+
       const currentY = scrollContainer.scrollTop;
       const diff = currentY - lastY;
       lastY = currentY;
 
-      if (Math.abs(diff) < 2) return;
-
-      const isScrollingUp = diff < 0;
-      const isScrollingDown = diff > 0;
+      if (Math.abs(diff) < 1) return;
 
       const theads = document.querySelectorAll('.table-container thead, .qr-table-container thead, table thead');
+      if (!theads.length) return;
 
-      theads.forEach((thead) => {
+      const mainRect = scrollContainer.getBoundingClientRect();
+
+      theads.forEach((theadEl) => {
+        const thead = theadEl as HTMLElement;
         const table = thead.closest('table');
         if (!table) return;
 
-        const mainRect = scrollContainer.getBoundingClientRect();
         const tableRect = table.getBoundingClientRect();
+        const theadHeight = thead.getBoundingClientRect().height || 80;
 
         // Check if top of table has scrolled above top of main scroll viewport
-        const isTableScrolledAboveTop = tableRect.top < mainRect.top + 10;
-        const isTableStillInView = tableRect.bottom > mainRect.top + 80;
+        const isTableScrolledAboveTop = tableRect.top < mainRect.top - 2;
+        const isTableStillInView = tableRect.bottom > mainRect.top + theadHeight + 20;
 
-        if (isScrollingUp && isTableScrolledAboveTop && isTableStillInView) {
-          if (!thead.classList.contains('scroll-up-header-sticky')) {
-            thead.classList.add('scroll-up-header-sticky');
-          }
-        } else if (isScrollingDown || currentY <= 10 || !isTableScrolledAboveTop || !isTableStillInView) {
-          if (thead.classList.contains('scroll-up-header-sticky')) {
+        if (diff < 0) {
+          // Scrolling UP
+          accumulatedUpScroll += Math.abs(diff);
+          accumulatedDownScroll = 0;
+
+          if (isTableScrolledAboveTop && isTableStillInView) {
+            if (accumulatedUpScroll > 4 || isRevealed) {
+              isRevealed = true;
+              const offset = Math.max(0, mainRect.top - tableRect.top);
+              thead.style.position = 'relative';
+              thead.style.zIndex = '500';
+              thead.style.transform = `translateY(${offset}px)`;
+              if (!thead.classList.contains('scroll-up-header-sticky')) {
+                thead.classList.add('scroll-up-header-sticky');
+              }
+            }
+          } else {
+            isRevealed = false;
+            thead.style.transform = '';
+            thead.style.zIndex = '';
             thead.classList.remove('scroll-up-header-sticky');
+          }
+        } else if (diff > 0) {
+          // Scrolling DOWN
+          accumulatedDownScroll += diff;
+          accumulatedUpScroll = 0;
+
+          if (accumulatedDownScroll > 6 || !isTableScrolledAboveTop || !isTableStillInView) {
+            isRevealed = false;
+            thead.style.transform = '';
+            thead.style.zIndex = '';
+            thead.classList.remove('scroll-up-header-sticky');
+          } else if (isRevealed && isTableScrolledAboveTop && isTableStillInView) {
+            const offset = Math.max(0, mainRect.top - tableRect.top);
+            thead.style.transform = `translateY(${offset}px)`;
           }
         }
       });
     };
 
-    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true, capture: true });
+    const mainEl = mainScrollRef.current;
+    if (mainEl) {
+      mainEl.addEventListener('scroll', handleScroll, { passive: true });
+    }
 
     return () => {
-      scrollContainer.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', handleScroll, { capture: true });
+      if (mainEl) {
+        mainEl.removeEventListener('scroll', handleScroll);
+      }
+      const theads = document.querySelectorAll('.table-container thead, .qr-table-container thead, table thead');
+      theads.forEach((theadEl) => {
+        const thead = theadEl as HTMLElement;
+        thead.style.transform = '';
+        thead.style.zIndex = '';
+        thead.classList.remove('scroll-up-header-sticky');
+      });
     };
-  }, [activeTab]);
+  }, [activeTab, registerSubModule, reportType]);
 
   useEffect(() => {
     if (darkMode) {
