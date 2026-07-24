@@ -534,7 +534,16 @@ const QR_Detailed_1: React.FC<QRProps> = ({
             {(() => {
               let serialCount = 0;
               return table1Data.map((group, gIdx) => {
-                return group.entities.map((entity, eIdx) => {
+                const groupSums = { col4: 0, col5: 0, col6: 0, col7: 0, col8: 0, col9: 0, col10: 0, col11: 0, col12: 0, col13: 0 };
+                group.entities.forEach(ent => {
+                  const d = getEntityData(ent);
+                  groupSums.col4 += d.col4; groupSums.col5 += d.col5; groupSums.col6 += d.col6;
+                  groupSums.col7 += d.col7; groupSums.col8 += d.col8; groupSums.col9 += d.col9;
+                  groupSums.col10 += d.col10; groupSums.col11 += d.col11; groupSums.col12 += d.col12;
+                  groupSums.col13 += d.col13;
+                });
+
+                const groupRows = group.entities.map((entity, eIdx) => {
                   serialCount++;
                   const isFirstOfGroup = eIdx === 0;
 
@@ -572,6 +581,30 @@ const QR_Detailed_1: React.FC<QRProps> = ({
                     </tr>
                   );
                 });
+
+                const hasMatchingEntities = groupRows.some(row => row !== null);
+                if (!hasMatchingEntities) return null;
+
+                return (
+                  <React.Fragment key={`t1-group-${gIdx}`}>
+                    {groupRows}
+                    <tr className="bg-slate-100 font-black">
+                      <td colSpan={3} className={`${tdCls} border-l font-black text-center bg-slate-200 text-slate-900`}>
+                        মোট ({group.ministry})
+                      </td>
+                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col4.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col5.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col6.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col7.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col8.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col9.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col10.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col11.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col12.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col13.toString())}</td>
+                    </tr>
+                  </React.Fragment>
+                );
               });
             })()}
           </tbody>
@@ -638,7 +671,16 @@ const QR_Detailed_1: React.FC<QRProps> = ({
             {(() => {
               let serialCount = 0;
               return table2Data.map((group, gIdx) => {
-                return group.entities.map((entity, eIdx) => {
+                const groupSums = { col4: 0, col5: 0, col6: 0, col7: 0, col8: 0, col9: 0, col10: 0, col11: 0, col12: 0, col13: 0 };
+                group.entities.forEach(ent => {
+                  const d = getEntityData(ent);
+                  groupSums.col4 += d.col4; groupSums.col5 += d.col5; groupSums.col6 += d.col6;
+                  groupSums.col7 += d.col7; groupSums.col8 += d.col8; groupSums.col9 += d.col9;
+                  groupSums.col10 += d.col10; groupSums.col11 += d.col11; groupSums.col12 += d.col12;
+                  groupSums.col13 += d.col13;
+                });
+
+                const groupRows = group.entities.map((entity, eIdx) => {
                   serialCount++;
                   const isFirstOfGroup = eIdx === 0;
 
@@ -676,6 +718,30 @@ const QR_Detailed_1: React.FC<QRProps> = ({
                     </tr>
                   );
                 });
+
+                const hasMatchingEntities = groupRows.some(row => row !== null);
+                if (!hasMatchingEntities) return null;
+
+                return (
+                  <React.Fragment key={`t2-group-${gIdx}`}>
+                    {groupRows}
+                    <tr className="bg-amber-100/80 font-black">
+                      <td colSpan={3} className={`${tdCls} border-l font-black text-center bg-amber-200 text-slate-900`}>
+                        মোট ({group.ministry})
+                      </td>
+                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col4.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col5.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col6.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col7.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col8.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col9.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col10.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col11.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col12.toString())}</td>
+                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col13.toString())}</td>
+                    </tr>
+                  </React.Fragment>
+                );
               });
             })()}
           </tbody>
