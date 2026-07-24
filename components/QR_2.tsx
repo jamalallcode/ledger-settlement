@@ -381,15 +381,6 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       const mType = robustNormalize(e.meetingType || (e as any).letterType || '');
       if (isTransition) {
         if (mType && !mType.includes(robustNormalize('বিএসআর'))) return false;
-      } else {
-        if (mType) {
-          const isValidMeeting = mType.includes(robustNormalize('বিএসআর')) ||
-                                 mType.includes(robustNormalize('দ্বিপক্ষীয়')) ||
-                                 mType.includes(robustNormalize('দ্বিপাক্ষিক')) ||
-                                 mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
-                                 mType.includes(robustNormalize('ত্রিপাক্ষিক'));
-          if (!isValidMeeting) return false;
-        }
       }
 
       const entryDateStr = extractEntryDate(e);
@@ -1395,6 +1386,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         });
 
         let raisedCount = 0;
+        let raisedAmount = 0;
         currentBSRRaisedEntries.forEach(e => {
           const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
           if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
@@ -1403,6 +1395,14 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             raisedCount += e.paragraphs.length;
           } else {
             raisedCount += 1;
+          }
+
+          if (e.paragraphs && e.paragraphs.length > 0) {
+            e.paragraphs.forEach(p => {
+              raisedAmount += parseBengaliNumber(String(p.involvedAmount || '0'));
+            });
+          } else {
+            raisedAmount += parseBengaliNumber(String(e.involvedAmount || '0'));
           }
         });
 
@@ -1419,6 +1419,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         return {
           june25Raised: priorRaisedCount,
           raisedCountCurr: raisedCount,
+          raisedAmountCurr: raisedAmount,
           june25Settled: priorSettledCount,
           settledCountCurr: sCount,
           june25UnsettledAmount: priorUnsettledAmount,
@@ -1437,6 +1438,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       });
 
       let raisedCount = 0;
+      let raisedAmount = 0;
       currentBSRRaisedEntries.forEach(e => {
         const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
         if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
@@ -1445,6 +1447,14 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           raisedCount += e.paragraphs.length;
         } else {
           raisedCount += 1;
+        }
+
+        if (e.paragraphs && e.paragraphs.length > 0) {
+          e.paragraphs.forEach(p => {
+            raisedAmount += parseBengaliNumber(String(p.involvedAmount || '0'));
+          });
+        } else {
+          raisedAmount += parseBengaliNumber(String(e.involvedAmount || '0'));
         }
       });
 
@@ -1460,7 +1470,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
       priorRaisedCount += raisedCount;
       priorSettledCount += sCount;
-      priorUnsettledAmount = Math.max(0, priorUnsettledAmount - sAmount);
+      priorUnsettledAmount = Math.max(0, priorUnsettledAmount + raisedAmount - sAmount);
 
       currentQuarterStartMonth += 3;
       if (currentQuarterStartMonth > 11) {
@@ -1472,6 +1482,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     return {
       june25Raised: priorRaisedCount,
       raisedCountCurr: 0,
+      raisedAmountCurr: 0,
       june25Settled: priorSettledCount,
       settledCountCurr: 0,
       june25UnsettledAmount: priorUnsettledAmount,
@@ -1492,7 +1503,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         const totalRaisedCount = dyn.june25Raised + dyn.raisedCountCurr;
         const totalSettledCount = dyn.june25Settled + dyn.settledCountCurr;
         const unsettledCountEnd = Math.max(0, totalRaisedCount - totalSettledCount);
-        const unsettledAmountEnd = Math.max(0, dyn.june25UnsettledAmount - dyn.settledAmountCurr);
+        const unsettledAmountEnd = Math.max(0, dyn.june25UnsettledAmount + dyn.raisedAmountCurr - dyn.settledAmountCurr);
 
         return {
           entityName,
@@ -1571,7 +1582,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         const totalRaisedCount = dyn.june25Raised + dyn.raisedCountCurr;
         const totalSettledCount = dyn.june25Settled + dyn.settledCountCurr;
         const unsettledCountEnd = Math.max(0, totalRaisedCount - totalSettledCount);
-        const unsettledAmountEnd = Math.max(0, dyn.june25UnsettledAmount - dyn.settledAmountCurr);
+        const unsettledAmountEnd = Math.max(0, dyn.june25UnsettledAmount + dyn.raisedAmountCurr - dyn.settledAmountCurr);
 
         return {
           entityName,
