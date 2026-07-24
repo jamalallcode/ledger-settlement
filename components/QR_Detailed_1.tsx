@@ -18,6 +18,10 @@ interface QRProps {
 
 const STORAGE_KEY = 'qr1_prior_balances_v1';
 
+const robustNormalize = (str: string = '') => {
+  return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+};
+
 interface EntityPriorValues {
   col4: number;  // প্রারম্ভিক অমিমাংসিত উত্থাপিত আপত্তির সংখ্যা
   col7: number;  // প্রারম্ভিক নিষ্পত্তিকৃত আপত্তির সংখ্যা
