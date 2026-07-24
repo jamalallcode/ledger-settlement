@@ -277,8 +277,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     const isYearly = selectedReportType?.includes('বাৎসরিক');
 
     if (isQuarterly) {
-      // Loop back about 24 months to find all quarters in the last 2 years.
-      for (let i = -2; i < 24; i++) {
+      // Loop back to find all quarters in the last 2 years.
+      for (let i = -6; i < 36; i++) {
         const refDate = addMonths(today, -i);
         const month = refDate.getMonth(); // 0 to 11
         const year = refDate.getFullYear();
@@ -310,18 +310,18 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         const label = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
         
         if (!seen.has(label)) {
-          if (quarterYear < 2026 || (quarterYear === 2026 && quarterStartMonth < 3)) {
+          if (quarterYear < 2025 || (quarterYear === 2025 && quarterStartMonth < 5)) {
             continue;
           }
           seen.add(label);
-          const reprDate = new Date(quarterYear, quarterStartMonth, 1);
+          const reprDate = new Date(quarterYear, quarterStartMonth, 16);
           const cycle = getCycleForDate(reprDate);
           options.push({ date: reprDate, label, cycleLabel: cycle.label });
         }
       }
     } else if (isHalfYearly) {
       // Half-Yearly: 6-month cycles (Jan to Jun, Jul to Dec)
-      for (let i = -2; i < 24; i++) {
+      for (let i = -6; i < 36; i++) {
         const refDate = addMonths(today, -i);
         const month = refDate.getMonth();
         const year = refDate.getFullYear();
@@ -342,11 +342,11 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         const label = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
 
         if (!seen.has(label)) {
-          if (year < 2026 || (year === 2026 && halfStartMonth < 3)) {
+          if (year < 2025 || (year === 2025 && halfStartMonth < 5)) {
             continue;
           }
           seen.add(label);
-          const reprDate = new Date(year, halfStartMonth, 1);
+          const reprDate = new Date(year, halfStartMonth, 16);
           const cycle = getCycleForDate(reprDate);
           options.push({ date: reprDate, label, cycleLabel: cycle.label });
         }
@@ -360,19 +360,18 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         const label = `${BENGALI_MONTHS[0]}/${toBengaliDigits(dateFnsFormat(new Date(year, 0, 1), 'yy'))} হতে ${BENGALI_MONTHS[11]}/${toBengaliDigits(dateFnsFormat(new Date(year, 11, 1), 'yy'))}`;
 
         if (!seen.has(label)) {
-          if (year < 2026) {
+          if (year < 2025) {
             continue;
           }
           seen.add(label);
-          const reprDate = new Date(year, 0, 1);
+          const reprDate = new Date(year, 0, 16);
           const cycle = getCycleForDate(reprDate);
           options.push({ date: reprDate, label, cycleLabel: cycle.label });
         }
       }
     } else {
       // Monthly!
-      // Loop back about 24 months to find all months in the last 2 years.
-      for (let i = -2; i < 24; i++) {
+      for (let i = -6; i < 36; i++) {
         const refDate = addMonths(today, -i);
         const month = refDate.getMonth(); // 0 to 11
         const year = refDate.getFullYear();
@@ -381,11 +380,11 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         const label = `${monthName}/${toBengaliDigits(year.toString())}`;
 
         if (!seen.has(label)) {
-          if (year < 2026 || (year === 2026 && month < 3)) {
+          if (year < 2025 || (year === 2025 && month < 5)) {
             continue;
           }
           seen.add(label);
-          const reprDate = new Date(year, month, 1);
+          const reprDate = new Date(year, month, 16);
           const cycle = getCycleForDate(reprDate);
           options.push({ date: reprDate, label, cycleLabel: cycle.label });
         }
@@ -987,23 +986,24 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     <div className="relative no-print z-[350]" ref={dropdownRef}>
       <div 
         onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
-        className={`flex items-center gap-1.5 px-2.5 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}
+        className={`flex items-center gap-1.5 px-2.5 h-[38px] bg-sky-50 text-sky-800 border hover:border-sky-300 hover:bg-white rounded-xl cursor-pointer transition-all duration-300 shadow-md group ${isCycleDropdownOpen ? 'border-sky-400 ring-2 ring-sky-100' : 'border-sky-100'}`}
       >
-         <CalendarDays size={14} className="text-blue-600 shrink-0" />
-         <span className="font-extrabold text-[11px] sm:text-[11.5px] text-slate-800 tracking-tight shrink-0 leading-none">
-           {cycleOptions.find(o => o.cycleLabel === activeCycle.label)?.label || toBengaliDigits(activeCycle.label)}
+         <CalendarDays size={14} className="text-sky-600 shrink-0" />
+         <span className="text-sky-600 font-bold text-[11px] sm:text-[11.5px]">সাইকেল:</span> 
+         <span className="font-extrabold text-[11px] sm:text-[11.5px] text-sky-900 tracking-tight shrink-0 leading-none">
+           {toBengaliDigits(activeCycle.label)}
          </span>
-         <ChevronDown size={13} className={`text-slate-400 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-blue-500' : ''}`} />
+         <ChevronDown size={13} className={`text-sky-500 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-sky-600' : ''}`} />
       </div>
       {isCycleDropdownOpen && (
         <div 
           onWheel={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
-          className="absolute top-[calc(100%+4px)] right-0 lg:left-0 w-[240px] bg-white border border-slate-200 rounded-3xl shadow-2xl z-[9999] p-3 animate-in fade-in slide-in-from-top-2 duration-200"
+          className="absolute top-[calc(100%+4px)] right-0 w-[260px] bg-white border border-slate-200 rounded-3xl shadow-2xl z-[9999] p-3 animate-in fade-in slide-in-from-top-2 duration-200"
         >
           <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-[10] mb-2">
             <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
-              <CalendarDays size={11} className="text-blue-500" /> সাইকেল নির্বাচন করুন
+              <CalendarDays size={11} className="text-blue-500" /> মাস / সাইকেল নির্বাচন
             </span>
           </div>
           <div className="max-h-[260px] overflow-y-auto overscroll-contain space-y-1 p-0.5 scrollbar-thin">
@@ -1023,7 +1023,10 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                       : "hover:bg-slate-50 text-slate-700 hover:text-blue-600 font-bold bg-white"
                   }`}
                 >
-                  <span className="text-[12px]">{opt.label}</span>
+                  <div className="flex flex-col text-left">
+                    <span className="text-[11.5px] font-extrabold">{opt.cycleLabel}</span>
+                    <span className={`text-[9.5px] ${matchesActive ? 'text-blue-100' : 'text-slate-400'}`}>{opt.label}</span>
+                  </div>
                   {matchesActive && <Check size={13} className="text-white stroke-[3.5]" />}
                 </div>
               );
