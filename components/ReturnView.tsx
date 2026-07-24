@@ -5,7 +5,7 @@ import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/n
 import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants';
 import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
 import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
-import { getCycleForDate } from '../utils/cycleHelper';
+import { getCycleForDate, getQuarterlyCycleForDate } from '../utils/cycleHelper';
 import { isSFI, isNonSFI } from '../utils/branchUtils';
 import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
 import CorrespondenceDhakaReturn from './CorrespondenceDhakaReturn';
@@ -17,6 +17,7 @@ import QR_3 from './QR_3';
 import QR_4 from './QR_4';
 import QR_5 from './QR_5';
 import QR_6 from './QR_6';
+import QR_Detailed_1 from './QR_Detailed_1';
 import BSRMonthlySettlementDetail from './BSRMonthlySettlementDetail';
 import BilateralMonthlySettlementDetail from './BilateralMonthlySettlementDetail';
 import BSRMonthlyOnlineReceiptDetail from './BSRMonthlyOnlineReceiptDetail';
@@ -315,7 +316,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           }
           seen.add(label);
           const reprDate = new Date(quarterYear, quarterStartMonth, 16);
-          const cycle = getCycleForDate(reprDate);
+          const cycle = getQuarterlyCycleForDate(reprDate);
           options.push({ date: reprDate, label, cycleLabel: cycle.label });
         }
       }
@@ -393,7 +394,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     return options;
   }, [selectedReportType]);
 
-  const activeCycle = useMemo(() => getCycleForDate(selectedCycleDate), [selectedCycleDate]);
+  const activeCycle = useMemo(() => {
+    const isQuarterly = selectedReportType?.includes('ত্রৈমাসিক');
+    if (isQuarterly) {
+      return getQuarterlyCycleForDate(selectedCycleDate);
+    }
+    return getCycleForDate(selectedCycleDate);
+  }, [selectedCycleDate, selectedReportType]);
 
   const robustNormalize = (str: string = '') => {
     return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
@@ -1171,7 +1178,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') {
     renderedContent = <QR_2 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১') {
-    renderedContent = <QR_2 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ১" />;
+    renderedContent = <QR_Detailed_1 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২') {
     renderedContent = <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ২" />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩') {
