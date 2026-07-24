@@ -194,6 +194,55 @@ const App: React.FC = () => {
     localStorage.setItem('app_theme_id', themeId);
   }, [themeId]);
 
+  // Smart Scroll-Up Reveal Header Effect
+  useEffect(() => {
+    const scrollContainer = mainScrollRef.current;
+    if (!scrollContainer) return;
+
+    let lastY = scrollContainer.scrollTop;
+
+    const handleScroll = () => {
+      const currentY = scrollContainer.scrollTop;
+      const diff = currentY - lastY;
+      lastY = currentY;
+
+      if (Math.abs(diff) < 2) return;
+
+      const isScrollingUp = diff < 0;
+      const isScrollingDown = diff > 0;
+
+      const theads = document.querySelectorAll('.table-container thead, .qr-table-container thead, table thead');
+
+      theads.forEach((thead) => {
+        const table = thead.closest('table');
+        if (!table) return;
+
+        const mainRect = scrollContainer.getBoundingClientRect();
+        const tableRect = table.getBoundingClientRect();
+
+        // Check if top of table has scrolled above top of main scroll viewport
+        const isTableScrolledAboveTop = tableRect.top < mainRect.top + 10;
+        const isTableStillInView = tableRect.bottom > mainRect.top + 80;
+
+        if (isScrollingUp && isTableScrolledAboveTop && isTableStillInView) {
+          if (!thead.classList.contains('scroll-up-header-sticky')) {
+            thead.classList.add('scroll-up-header-sticky');
+          }
+        } else if (isScrollingDown || currentY <= 10 || !isTableScrolledAboveTop || !isTableStillInView) {
+          if (thead.classList.contains('scroll-up-header-sticky')) {
+            thead.classList.remove('scroll-up-header-sticky');
+          }
+        }
+      });
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+    };
+  }, [activeTab]);
+
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');

@@ -1904,7 +1904,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         </div>
 
         {/* Unified Table Container */}
-        <div className="table-container qr-table-container qr2-table-container overflow-auto xl:overflow-visible shadow-sm rounded-none mb-8">
+        <div className="table-container qr-table-container qr2-table-container overflow-auto shadow-sm rounded-none mb-8">
           <table className="w-full border-separate border-spacing-0 !table-auto border-l border-slate-400">
             <colgroup>
               <col style={{ width: '35px', minWidth: '35px' }} />
@@ -2130,19 +2130,19 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 <td className={`${footerNumTdCls} w-[110px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.unsettledAmountEnd)}</td>
               </tr>
               <tr className="h-[36px]">
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-300 font-extrabold w-[35px]"></td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-300 font-extrabold w-[85px]"></td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-300 font-extrabold text-center w-[110px] text-[11px]">সর্বমোট</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.june25Raised)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.raisedCountCurr)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.totalRaisedCount)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.june25Settled)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.settledCountCurr)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.totalSettledCount)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.unsettledCountEnd)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.june25UnsettledAmount)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[105px] text-[10px]">{formatAmountBengali(details1GrandTotals.settledAmountCurr)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.unsettledAmountEnd)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white align-middle bg-black font-extrabold w-[35px]"></td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white align-middle bg-black font-extrabold w-[85px]"></td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white align-middle bg-black font-extrabold text-center w-[110px] text-[11px]">সর্বমোট</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.june25Raised)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.raisedCountCurr)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.totalRaisedCount)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.june25Settled)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.settledCountCurr)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.totalSettledCount)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.unsettledCountEnd)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.june25UnsettledAmount)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[105px] text-[10px]">{formatAmountBengali(details1GrandTotals.settledAmountCurr)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.unsettledAmountEnd)}</td>
               </tr>
             </tfoot>
           </table>
@@ -2260,7 +2260,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       </div>
 
       {/* Table Section */}
-      <div className="table-container qr-table-container qr2-table-container overflow-auto xl:overflow-visible shadow-sm rounded-none">
+      <div className="table-container qr-table-container qr2-table-container overflow-auto shadow-sm rounded-none">
         <table className="w-full border-separate border-spacing-0 !table-auto border-l border-slate-400">
           <thead className="bg-slate-100">
             <tr className="h-[44px]">
