@@ -1,71 +1,133 @@
-
 /* TABLE STICKY HEADER & FOOTER LOGIC */
 
-/* General Sticky Header Base Style */
-.table-container {
-  width: 100%;
-  max-width: 100%;
+@keyframes slideDownHeader {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* General Table Base Style */
+.table-container,
+.qr-table-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  position: relative !important;
+  background-color: white !important;
+  border: 1px solid #cbd5e1 !important;
+  max-height: none !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  scrollbar-gutter: stable;
+}
+
+.dark .table-container,
+.dark .qr-table-container {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+/* Default state: Header containers are relative wrappers */
+.table-container thead,
+.qr-table-container thead,
+table thead {
   position: relative;
-  background-color: white;
-  border: 1px solid #cbd5e1;
+  z-index: 100;
 }
 
-@media (min-width: 1280px) {
-  .table-container {
-    overflow: visible !important;
-  }
+.table-container thead tr,
+.qr-table-container thead tr,
+table thead tr {
+  position: relative;
 }
 
-@media (max-width: 1279px) {
-  .table-container {
-    max-height: 72vh;
-    overflow-y: auto !important;
-    overflow-x: auto !important;
-    scrollbar-gutter: stable;
-  }
-}
+/* ==========================================================================
+   MULTI-ROW STICKY POSITION OFFSETS (Row 1, Row 2, Row 3)
+   ========================================================================== */
 
-/* Ensure table header is always on top */
-.table-container thead {
+/* 1st Row sticky header cells: pinned at top 0px */
+.table-container thead tr:nth-child(1) th,
+.qr-table-container thead tr:nth-child(1) th,
+table thead tr:nth-child(1) th,
+thead tr:nth-child(1) th {
   position: sticky !important;
-  top: 0 !important;
-  z-index: 250 !important;
-}
-
-.table-container thead tr {
-  position: sticky !important;
-  top: 0 !important;
-}
-
-.table-container thead th {
-  position: sticky !important;
-  top: 0 !important;
-  background-color: #f1f5f9 !important; 
-  z-index: 240 !important;
+  top: 0px !important;
+  z-index: 220 !important;
+  background-color: #f1f5f9 !important;
   background-clip: padding-box !important;
-  border-top: none !important;
-  border-left: none !important;
-  border-bottom: none !important;
-  border-right: none !important;
-  /* 1px clean right and bottom borders by default to avoid vertical double borders in multi-row headers */
-  box-shadow: inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8 !important;
   vertical-align: middle !important;
-}
-
-/* 1px clean top border ONLY on the first row of table header to prevent double borders between rows */
-.table-container thead tr:first-child th {
   box-shadow: inset 0 1px 0 #94a3b8, inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8 !important;
 }
 
-/* Left-most cell gets left border for non-QR tables (which don't have table-level border-l) */
-.table-container:not(.qr-table-container) thead th:first-child {
+/* 2nd Row sticky header cells: pinned at top 42px offset */
+.table-container thead tr:nth-child(2) th,
+.qr-table-container thead tr:nth-child(2) th,
+table thead tr:nth-child(2) th,
+thead tr:nth-child(2) th {
+  position: sticky !important;
+  top: 42px !important;
+  z-index: 210 !important;
+  background-color: #f1f5f9 !important;
+  background-clip: padding-box !important;
+  vertical-align: middle !important;
+  box-shadow: inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8 !important;
+}
+
+/* 3rd Row sticky header cells: pinned at top 80px offset */
+.table-container thead tr:nth-child(3) th,
+.qr-table-container thead tr:nth-child(3) th,
+table thead tr:nth-child(3) th,
+thead tr:nth-child(3) th {
+  position: sticky !important;
+  top: 80px !important;
+  z-index: 200 !important;
+  background-color: #f1f5f9 !important;
+  background-clip: padding-box !important;
+  vertical-align: middle !important;
+  box-shadow: inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8 !important;
+}
+
+/* First column left-border shadow for all rows */
+.table-container thead th:first-child,
+.qr-table-container thead th:first-child,
+table thead th:first-child {
   box-shadow: inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8, inset 1px 0 0 #94a3b8 !important;
 }
-.table-container:not(.qr-table-container) thead tr:first-child th:first-child {
+.table-container thead tr:first-child th:first-child,
+.qr-table-container thead tr:first-child th:first-child,
+table thead tr:first-child th:first-child {
   box-shadow: inset 0 1px 0 #94a3b8, inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8, inset 1px 0 0 #94a3b8 !important;
 }
 
-/* QR Table specific overrides to prevent double borders and eliminate border radius */
+/* Dark mode colors for sticky header cells */
+.dark .table-container thead tr:nth-child(1) th,
+.dark .qr-table-container thead tr:nth-child(1) th,
+.dark table thead tr:nth-child(1) th,
+.dark thead tr:nth-child(1) th,
+.dark .table-container thead tr:nth-child(2) th,
+.dark .qr-table-container thead tr:nth-child(2) th,
+.dark table thead tr:nth-child(2) th,
+.dark thead tr:nth-child(2) th,
+.dark .table-container thead tr:nth-child(3) th,
+.dark .qr-table-container thead tr:nth-child(3) th,
+.dark table thead tr:nth-child(3) th,
+.dark thead tr:nth-child(3) th {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  box-shadow: inset 0 -1px 0 #334155, inset -1px 0 0 #334155 !important;
+}
+
+.dark .table-container thead tr:first-child th,
+.dark .qr-table-container thead tr:first-child th,
+.dark table thead tr:first-child th {
+  box-shadow: inset 0 1px 0 #334155, inset 0 -1px 0 #334155, inset -1px 0 0 #334155 !important;
+}
+
+/* QR Table specific overrides */
 .qr-table-container {
   border: 1px solid #94a3b8 !important;
   border-radius: 0px !important;
@@ -82,86 +144,54 @@
   border-radius: 0px !important;
 }
 
-.qr-table-container thead th:first-child {
-  box-shadow: inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8, inset 1px 0 0 #94a3b8 !important;
+/* ==========================================================================
+   SMART SCROLL-UP REVEAL HEADER (Sticky under Navbar when scrolling UP)
+   ========================================================================== */
+thead.scroll-up-header-sticky,
+.table-container thead.scroll-up-header-sticky,
+.qr-table-container thead.scroll-up-header-sticky,
+table thead.scroll-up-header-sticky {
+  position: relative !important;
+  top: auto !important;
+  z-index: 500 !important;
 }
 
-.qr-table-container thead tr:first-child th:first-child {
-  box-shadow: inset 0 1px 0 #94a3b8, inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8, inset 1px 0 0 #94a3b8 !important;
+thead.scroll-up-header-sticky tr:last-child th,
+.table-container thead.scroll-up-header-sticky tr:last-child th,
+.qr-table-container thead.scroll-up-header-sticky tr:last-child th,
+table thead.scroll-up-header-sticky tr:last-child th {
+  box-shadow: inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8, 0 4px 6px -1px rgba(0, 0, 0, 0.12) !important;
 }
 
-/* Ensure sticky footers/grand total rows in QR tables have proper left border on leftmost cells */
-.qr-table-container .qr-sticky-footer td:first-child {
-  box-shadow: inset 0 1px 0 #94a3b8, inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8, inset 1px 0 0 #94a3b8 !important;
-}
-.qr-table-container .qr-sticky-footer-bottom td:first-child {
-  box-shadow: inset 0 1px 0 #1e293b, inset 0 -1px 0 #1e293b, inset -1px 0 0 #1e293b, inset 1px 0 0 #1e293b !important;
-}
-.qr-table-container .qr-sticky-footer-offset td:first-child {
-  box-shadow: inset 0 1px 0 #1e293b, inset 0 -1px 0 #1e293b, inset -1px 0 0 #1e293b, inset 1px 0 0 #1e293b !important;
+/* Footer (General and QR Tables) */
+.table-container tfoot,
+.qr-table-container tfoot {
+  position: relative;
+  z-index: 20;
 }
 
-/* Row-specific offsets for multi-row headers */
-/* Most tables have a first row height of 42px */
-.table-container thead tr:nth-child(2) th {
-  top: 42px !important; 
-}
-/* If there's a third row, it usually follows a 38px second row (42+38=80) */
-.table-container thead tr:nth-child(3) th {
-  top: 80px !important; 
-}
-
-/* Special handling for QR tables if they differ, but currently they match 42px */
-.qr-table-container thead tr:nth-child(2) th {
-  top: 42px !important;
-}
-.qr-table-container thead tr:nth-child(3) th {
-  top: 80px !important;
-}
-
-/* Sticky Footer (General) */
-.table-container tfoot {
-  position: sticky;
-  bottom: 0;
-  z-index: 250;
-}
-
-.table-container tfoot td, 
-.table-container tfoot th {
-  position: sticky !important;
-  bottom: 0 !important;
-  z-index: 240 !important;
+.table-container tfoot tr td, 
+.table-container tfoot tr th,
+.qr-table-container tfoot tr td,
+.qr-table-container tfoot tr th,
+.qr-sticky-footer td,
+.qr-sticky-footer-bottom td,
+.qr-sticky-footer-offset td {
+  position: relative !important;
+  bottom: auto !important;
   background-color: #000000 !important;
-  color: white !important;
+  color: #ffffff !important;
+  font-weight: 900 !important;
   box-shadow: inset 0 1px 0 #1e293b, inset -1px 0 0 #1e293b !important;
 }
 
-/* QR Specific Sticky Footer (for rows inside tbody) */
-.qr-sticky-footer td {
-  position: sticky !important;
-  background-clip: padding-box !important;
-  background-color: white; /* Default solid background */
-  /* Normal 1px borders using inset shadow to survive stickiness without looking thick */
-  box-shadow: inset 0 1px 0 #94a3b8, inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8 !important;
-}
-
-/* Base sticky footer (usually for the bottom-most row like 'Grand Total') */
-.qr-sticky-footer-bottom td {
-  bottom: 0 !important;
-  z-index: 220 !important; /* Higher than regular rows, lower than thead (250) */
-  background-color: #000000 !important; /* Black background */
-  color: #ffffff !important; /* White text */
-  /* Add a distinct top border for the grand total row */
-  box-shadow: inset 0 1px 0 #1e293b, inset 0 -1px 0 #1e293b, inset -1px 0 0 #1e293b !important;
-}
-
-/* Offset sticky footer (for the 'Total' row when it sits above 'Grand Total') */
-.qr-sticky-footer-offset td {
-  bottom: 28px !important; /* Matches the h-[28px] of the row below it */
-  z-index: 210 !important; /* Higher than regular rows, lower than bottom footer */
-  background-color: #000000 !important; /* Black background */
-  color: #ffffff !important; /* White text */
-  box-shadow: inset 0 1px 0 #1e293b, inset 0 -1px 0 #1e293b, inset -1px 0 0 #1e293b !important;
+/* Ensure left border for footers */
+.qr-table-container .qr-sticky-footer td:first-child,
+.qr-table-container .qr-sticky-footer-bottom td:first-child,
+.qr-table-container .qr-sticky-footer-offset td:first-child,
+.table-container tfoot td:first-child,
+.qr-table-container tfoot td:first-child {
+  box-shadow: inset 0 1px 0 #1e293b, inset 0 -1px 0 #1e293b, inset -1px 0 0 #1e293b, inset 1px 0 0 #1e293b !important;
 }
 
 /* Disable hover background changes for Total/Grand Total rows and any tfoot rows */
@@ -183,52 +213,12 @@ tbody tr.qr-sticky-footer-offset td:hover,
 .table-container tfoot tr:hover th,
 .table-container tfoot td:hover,
 .table-container tfoot th:hover,
-.dark .qr-sticky-footer-bottom:hover td,
-.dark .qr-sticky-footer-offset:hover td,
-.dark .qr-sticky-footer-bottom tr:hover td,
-.dark .qr-sticky-footer-offset tr:hover td,
-.dark .qr-sticky-footer-bottom td:hover,
-.dark .qr-sticky-footer-offset td:hover,
-.dark tbody tr.qr-sticky-footer-bottom:hover td,
-.dark tbody tr.qr-sticky-footer-offset:hover td,
-.dark tbody tr.qr-sticky-footer-bottom td:hover,
-.dark tbody tr.qr-sticky-footer-offset td:hover,
-.dark .table-container tbody tr.qr-sticky-footer-bottom:hover td,
-.dark .table-container tbody tr.qr-sticky-footer-offset:hover td,
-.dark .table-container tbody tr.qr-sticky-footer-bottom td:hover,
-.dark .table-container tbody tr.qr-sticky-footer-offset td:hover,
-.dark .table-container tfoot tr:hover td,
-.dark .table-container tfoot tr:hover th,
-.dark .table-container tfoot td:hover,
-.dark .table-container tfoot th:hover {
+.qr-table-container tfoot tr:hover td,
+.qr-table-container tfoot tr:hover th,
+.qr-table-container tfoot td:hover,
+.qr-table-container tfoot th:hover {
   background-color: #000000 !important; /* Keep original black background */
   color: #ffffff !important; /* Keep original white text */
-}
-
-/* Fallback background for generic sticky footers if not specified */
-.qr-sticky-footer:not(.qr-sticky-footer-bottom):not(.qr-sticky-footer-offset) td {
-  background-color: #f1f5f9 !important;
-}
-
-/* Ensure z-index for stacked footers */
-.qr-sticky-footer.z-20 td {
-  z-index: 211 !important;
-}
-
-/* --- MULTI-TABLE VIEW SPECIFIC OVERRIDES --- */
-
-.multi-table-view .table-container:first-of-type,
-.multi-table-view .table-container:first-of-type thead,
-.multi-table-view .table-container:first-of-type thead tr,
-.multi-table-view .table-container:first-of-type thead tr th {
-  position: static !important;
-  top: auto !important;
-  box-shadow: none !important;
-}
-
-.multi-table-view .table-container:last-of-type thead th {
-  position: -webkit-sticky !important;
-  position: sticky !important;
 }
 
 @media print {
@@ -238,19 +228,19 @@ tbody tr.qr-sticky-footer-offset td:hover,
   }
 }
 
-/* Premium Scrollbar Styling (Generic) */
+/* Premium Scrollbar Styling */
 .table-container::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 
 .table-container::-webkit-scrollbar-track {
-  background: transparent;
+  background: #f1f5f9;
 }
 
 .table-container::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 10px;
+  border-radius: 6px;
   transition: all 0.3s ease;
 }
 
@@ -262,8 +252,6 @@ tbody tr.qr-sticky-footer-offset td:hover,
   background: #64748b !important;
 }
 
-/* --- QR TABLE SPECIFIC SCROLLBAR (Must come last or have higher specificity) --- */
-
 .qr-table-container.table-container::-webkit-scrollbar {
   width: 14px !important;
   display: block !important;
@@ -271,7 +259,6 @@ tbody tr.qr-sticky-footer-offset td:hover,
 
 .qr-table-container.table-container::-webkit-scrollbar-track {
   background-color: #f8fafc !important;
-  /* Standard borders are the most robust against zoom scaling issues */
   border-left: 1px solid #475569 !important;
   border-right: 1px solid #475569 !important;
 }
@@ -279,18 +266,16 @@ tbody tr.qr-sticky-footer-offset td:hover,
 .qr-table-container.table-container::-webkit-scrollbar-thumb {
   background-color: #94a3b8 !important;
   border-radius: 20px !important;
-  border: 3px solid #f8fafc !important; /* Slightly thicker border for better thumb definition */
+  border: 3px solid #f8fafc !important;
 }
 
 .qr-table-container.table-container::-webkit-scrollbar-thumb:hover {
   background-color: #64748b !important;
 }
 
-/* Scrollbar Arrows (Buttons) for QR Tables */
 .qr-table-container.table-container::-webkit-scrollbar-button:single-button {
   background-color: #f8fafc !important;
   display: block !important;
-  /* Standard borders for consistency across zoom levels */
   border-left: 1px solid #475569 !important;
   border-right: 1px solid #475569 !important;
   height: 14px !important;
@@ -309,50 +294,4 @@ tbody tr.qr-sticky-footer-offset td:hover,
   background-image: 
     url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%23475569'><polygon points='50,80 20,20 80,20'/></svg>") !important;
   background-size: 8px !important;
-}
-
-/* DD Sir Summary Table styles to prevent sticky positioning */
-.summary-table-container thead,
-.summary-table-container thead tr,
-.summary-table-container thead tr th {
-  position: static !important;
-  top: auto !important;
-  box-shadow: none !important;
-}
-
-/* DD Sir Detailed Table Sticky Header Adjustment to sit cleanly at top-0 of the scrolling container */
-@media (min-width: 1280px) {
-  .dd-sir-detailed-table-container thead th,
-  .dd-sir-detailed-table-container thead tr th {
-    top: 0 !important;
-  }
-}
-
-/* Clean Unified Sticky Header for QR Tables to prevent header splitting/disconnection */
-.qr-table-container thead {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 250 !important;
-}
-
-.qr-table-container thead tr {
-  position: static !important;
-}
-
-.qr-table-container thead th {
-  position: static !important;
-  top: auto !important;
-  box-shadow: inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8 !important;
-}
-
-.qr-table-container thead tr:first-child th {
-  box-shadow: inset 0 1px 0 #94a3b8, inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8 !important;
-}
-
-.qr-table-container thead th:first-child {
-  box-shadow: inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8, inset 1px 0 0 #94a3b8 !important;
-}
-
-.qr-table-container thead tr:first-child th:first-child {
-  box-shadow: inset 0 1px 0 #94a3b8, inset 0 -1px 0 #94a3b8, inset -1px 0 0 #94a3b8, inset 1px 0 0 #94a3b8 !important;
 }
