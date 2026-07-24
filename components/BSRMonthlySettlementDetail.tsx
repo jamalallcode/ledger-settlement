@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Printer, Sparkles, ChevronDown, FileSpreadsheet, LayoutGrid, Search, X, CheckCircle2, CalendarDays, Check, Landmark, ArrowLeftRight } from 'lucide-react';
-import { toBengaliDigits, toEnglishDigits, extractEntryDate } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { format as dateFnsFormat, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
@@ -77,7 +77,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
       if (!meetingType.includes(robustNormalize('বিএসআর'))) return;
       
       // 3. Filter by Date range of the selected month
-      const issueDateStr = extractEntryDate(e);
+      const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
       if (!issueDateStr) return;
       const entryDate = new Date(issueDateStr);
       if (entryDate < startOfMonthDate || entryDate > endOfMonthDate) return;

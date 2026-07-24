@@ -4,7 +4,7 @@ import {
   ChevronLeft, LayoutGrid, Sparkles, FileSpreadsheet, ArrowRight,
   ShieldCheck, Mail, Info, FileEdit, ArrowUpDown
 } from 'lucide-react';
-import { toBengaliDigits, toEnglishDigits, formatDateBN, extractEntryDate } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { isSFI, isNonSFI, getCleanLetterTypeDisplay } from '../utils/branchUtils';
 import { format } from 'date-fns';
 import { MINISTRY_ENTITY_MAP } from '../constants';
@@ -487,8 +487,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
   const filteredSettlementEntries = useMemo(() => {
     const filtered = (settlementEntries || []).filter(entry => {
-      // 1. Date Range Filter using extractEntryDate
-      const entryDate = extractEntryDate(entry);
+      // 1. Date Range Filter using entry.issueDateISO or entry.createdAt
+      const entryDate = entry.issueDateISO || (entry.createdAt ? entry.createdAt.split('T')[0] : '');
       if (!entryDate) return false;
 
       const isWithinDateRange = entryDate >= startDate && entryDate <= endDate;
@@ -552,8 +552,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     });
 
     return [...filtered].sort((a, b) => {
-      const dateA = extractEntryDate(a);
-      const dateB = extractEntryDate(b);
+      const dateA = a.issueDateISO || (a.createdAt ? a.createdAt.split('T')[0] : '');
+      const dateB = b.issueDateISO || (b.createdAt ? b.createdAt.split('T')[0] : '');
       return sortOrder === 'desc' 
         ? dateB.localeCompare(dateA) 
         : dateA.localeCompare(dateB);

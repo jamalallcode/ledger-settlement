@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { Printer, Sparkles, ChevronDown, BarChart3, FileSpreadsheet, Lock, Building2 } from 'lucide-react';
-import { toBengaliDigits, toEnglishDigits, parseBengaliNumber, extractEntryDate } from '../utils/numberUtils';
+import React, { useMemo } from 'react';
+import { Printer, Sparkles, ChevronDown, BarChart3, FileSpreadsheet, Lock } from 'lucide-react';
+import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
@@ -18,176 +18,7 @@ interface QRProps {
   customTitle?: string;
 }
 
-const robustNormalize = (str: string = '') => {
-  let normalized = str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
-  normalized = normalized.replace(/कर्मসংস্থান/g, "কর্মসংস্থান").replace(/कर्मसंस्थान/g, "কর্মসংস্থান");
-  return normalized;
-};
-
-const QR2_MINISTRY_MAP: Record<string, string[]> = {
-  "শিল্প মন্ত্রণালয়": [
-    "চিনি ও খাদ্য সংস্থা",
-    "হস্ত ও কুটির শিল্প সংস্থা",
-    "বিটাক",
-    "রসায়ন শিল্প সংস্থা"
-  ],
-  "বস্ত্র ও পাট মন্ত্রণালয়": [
-    "পাটকল সংস্থা",
-    "পাট সংস্থা",
-    "বস্ত্রকল সংস্থা",
-    "রেশম বোর্ড"
-  ],
-  "বাণিজ্য মন্ত্রণালয়": [
-    "টিসিবি",
-    "আমদানি ও রপ্তানি"
-  ],
-  "বেসামরিক বিমান পরিবহন ও পর্যটন": [
-    "বাংলাদেশ বিমান",
-    "পর্যটন কর্পোরেশন"
-  ]
-};
-
-const QR2_MINISTRY_MAP_TABLE2: Record<string, string[]> = {
-  "আর্থিক প্রতিষ্ঠান বিভাগ": [
-    "সোনালী ব্যাংক পিএলসি",
-    "জনতা ব্যাংক পিএলসি",
-    "অগ্রণী ব্যাংক পিএলসি",
-    "বাংলাদেশ কৃষি ব্যাংক",
-    "রূপালী ব্যাংক পিএলসি",
-    "বাংলাদেশ ব্যাংক",
-    "বাংলাদেশ ডেভেলপমেন্ট ব্যাংক লিঃ",
-    "গৃহনির্মাণ ঋণদান সংস্থা",
-    "কর্মসংস্থান ব্যাংক",
-    "বেসিক ব্যাংক লিঃ",
-    "আনসার ভিডিপি উন্নয়ন ব্যাংক লিঃ",
-    "ইনভেস্টমেন্ট কর্পোরেশন অব বাংলাদেশ",
-    "সাধারণ বীমা কর্পোরেশন",
-    "জীবন বীমা কর্পোরেশন",
-    "প্রবাসী কল্যাণ ব্যাংক"
-  ]
-};
-
-const isMinistryMatch = (entryMinistry: string, targetMinistry: string) => {
-  const normEntry = robustNormalize(entryMinistry);
-  const normTarget = robustNormalize(targetMinistry);
-  if (normEntry === normTarget) return true;
-
-  if (normTarget === robustNormalize("বস্ত্র ও পাট মন্ত্রণালয়")) {
-    return normEntry === robustNormalize("পাট মন্ত্রণালয়") || 
-           normEntry === robustNormalize("বস্ত্র মন্ত্রণালয়") || 
-           normEntry === robustNormalize("বস্ত্র ও পাট মন্ত্রণালয়") ||
-           normEntry.includes("পাট") || normEntry.includes("বস্ত্র");
-  }
-
-  if (normTarget === robustNormalize("শিল্প মন্ত্রণালয়")) {
-    return normEntry === robustNormalize("শিল্প মন্ত্রণালয়") || normEntry.includes("শিল্প");
-  }
-
-  if (normTarget === robustNormalize("বেসামরিক বিমান পরিবহন ও পর্যটন")) {
-    return normEntry === robustNormalize("বিমান ও পর্যটন মন্ত্রণালয়") || 
-           normEntry === robustNormalize("বেসামরিক বিমান পরিবহন ও পর্যটন") ||
-           normEntry.includes("বিমান") || normEntry.includes("পর্যটন");
-  }
-
-  return normEntry.includes(normTarget) || normTarget.includes(normEntry);
-};
-
-const isEntityMatch = (entryEntity: string, targetEntity: string) => {
-  const normEntry = robustNormalize(entryEntity);
-  const normTarget = robustNormalize(targetEntity);
-  if (normEntry === normTarget) return true;
-  
-  // Equivalence mappings
-  if (normTarget === robustNormalize("হস্ত ও কুটির শিল্প সংস্থা") && (normEntry === robustNormalize("ক্ষুদ্র ও কুটির শিল্প") || normEntry.includes("কুটির") || normEntry.includes("হস্ত"))) return true;
-  if (normTarget === robustNormalize("ক্ষুদ্র ও কুটির শিল্প") && (normEntry === robustNormalize("হস্ত ও কুটির শিল্প সংস্থা") || normEntry.includes("কুটির") || normEntry.includes("হস্ত"))) return true;
-  if (normTarget === robustNormalize("রসায়ন শিল্প সংস্থা") && (normEntry === robustNormalize("রসায়ন শিল্প") || normEntry.includes("রসায়ন") || normEntry.includes("রসায়ন"))) return true;
-  if (normTarget === robustNormalize("রসায়ন শিল্প") && (normEntry === robustNormalize("রসায়ন শিল্প সংস্থা") || normEntry.includes("রসায়ন") || normEntry.includes("রসায়ন"))) return true;
-  
-  // General equivalent matches for Jute/Patkol
-  const isPatkolTarget = normTarget === robustNormalize("পাটকল সংস্থা");
-  const isPatTarget = normTarget === robustNormalize("পাট সংস্থা");
-  
-  const isPatkolEntry = normEntry === robustNormalize("পাটকল সংস্থা") || normEntry.includes("পাটকল") || normEntry.includes("বিজেএমসি") || normEntry.includes("জুট");
-  const isPatEntry = normEntry === robustNormalize("পাট সংস্থা") || (normEntry.includes("পাট") && !normEntry.includes("পাটকল") && !normEntry.includes("বিজেএমসি") && !normEntry.includes("জুট"));
-
-  if (isPatkolTarget) {
-    return isPatkolEntry;
-  }
-  if (isPatTarget) {
-    return isPatEntry && !isPatkolEntry;
-  }
-
-  const isPatkolEntryDirect = normEntry === robustNormalize("পাটকল সংস্থা");
-  const isPatEntryDirect = normEntry === robustNormalize("পাট সংস্থা");
-
-  if (isPatkolEntryDirect) {
-    return normTarget.includes("পাটকল") || normTarget.includes("বিজেএমসি") || normTarget.includes("জুট");
-  }
-  if (isPatEntryDirect) {
-    return normTarget.includes("পাট") && !normTarget.includes("পাটকল") && !normTarget.includes("বিজেএমসি") && !normTarget.includes("জুট");
-  }
-
-  // Financial institutions equivalents to prevent typo mismatches
-  if (normTarget.includes("বাংলাদেশ ডেভেলপমেন্ট ব্যাংক") && normEntry.includes("বাংলাদেশ ডেভেলপমেন্ট ব্যাংক")) return true;
-  if (normTarget.includes("বেসিক ব্যাংক") && normEntry.includes("বেসিক ব্যাংক")) return true;
-  if (normTarget.includes("ইনভেস্টমেন্ট কর্পোরেশন") && normEntry.includes("ইনভেস্ট")) return true;
-  if (normTarget.includes("ইনভেস্ট কর্পোরেশন") && normEntry.includes("ইনভেস্ট")) return true;
-  if (normTarget.includes("আনসার ভিডিপি") && normEntry.includes("আনসার ভিডিপি")) return true;
-  if (normTarget.includes("সোনালী ব্যাংক") && normEntry.includes("সোনালী ব্যাংক")) return true;
-  if (normTarget.includes("জনতা ব্যাংক") && normEntry.includes("জনতা ব্যাংক")) return true;
-  if (normTarget.includes(" can ") || normTarget.includes("অগ্রণী ব্যাংক") && normEntry.includes("অগ্রণী ব্যাংক")) return true;
-  if (normTarget.includes("রূপালী ব্যাংক") && normEntry.includes("রূপালী ব্যাংক")) return true;
-  if (normTarget.includes("কৃষি ব্যাংক") && normEntry.includes("কৃষি ব্যাংক")) return true;
-  if (normTarget.includes("কর্মসংস্থান") && normEntry.includes("কর্মসংস্থান")) return true;
-  if (normTarget.includes("সাধারণ বীমা") && normEntry.includes("সাধারণ বীমা")) return true;
-  if (normTarget.includes("জীবন বীমা") && normEntry.includes("জীবন বীমা")) return true;
-  if (normTarget.includes(" can ") || normTarget.includes("কো-অপারেটিভ") || normTarget.includes("সমবায়") || normTarget.includes("সমবায়") || normTarget.includes("প্রবাসী কল্যাণ") && normEntry.includes("প্রবাসী কল্যাণ")) return true;
-
-  return normEntry.includes(normTarget) || normTarget.includes(normEntry);
-};
-
 const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', monthPickerElement, customTitle }) => {
-  const [localMinistryFilter, setLocalMinistryFilter] = useState<string>('সকল');
-  const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState<boolean>(false);
-  const ministryDropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (ministryDropdownRef.current && !ministryDropdownRef.current.contains(event.target as Node)) {
-        setIsMinistryDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const allMinistryOptions = useMemo(() => {
-    const list = [
-      'সকল',
-      'শিল্প মন্ত্রণালয়',
-      'বস্ত্র ও পাট মন্ত্রণালয়',
-      'বাণিজ্য মন্ত্রণালয়',
-      'বেসামরিক বিমান পরিবহন ও পর্যটন',
-      'আর্থিক প্রতিষ্ঠান বিভাগ'
-    ];
-    if (entries && entries.length > 0) {
-      entries.forEach(e => {
-        if (e.ministryName && e.ministryName.trim()) {
-          const trimmed = e.ministryName.trim();
-          if (!list.some(m => robustNormalize(m) === robustNormalize(trimmed))) {
-            list.push(trimmed);
-          }
-        }
-      });
-    }
-    return list;
-  }, [entries]);
-
-  const activeMinistryFilter = useMemo(() => {
-    if (localMinistryFilter !== 'সকল') return localMinistryFilter;
-    return filterMinistry || '';
-  }, [localMinistryFilter, filterMinistry]);
-
   // Standard calendar quarter date calculation:
   // Quarters: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec)
   const getQuarterInfo = (date: Date) => {
@@ -243,9 +74,9 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   quarterCycleStartDate.setHours(0, 0, 0, 0);
   quarterCycleEndDate.setHours(23, 59, 59, 999);
 
-  const quarterCycleStartDateStr = format(activeCycle.start, 'yyyy-MM-dd');
-  const quarterCycleEndDateStr = format(activeCycle.end, 'yyyy-MM-dd');
-  const quarterCycleRangeFormatted = activeCycle.label;
+  const quarterCycleStartDateStr = format(quarterCycleStartDate, 'yyyy-MM-dd');
+  const quarterCycleEndDateStr = format(quarterCycleEndDate, 'yyyy-MM-dd');
+  const quarterCycleRangeFormatted = `${toBengaliDigits(format(quarterCycleStartDate, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(format(quarterCycleEndDate, 'dd/MM/yyyy'))}`;
 
   // Settlement cycle starts from the 16th of the month BEFORE the quarter start month
   let settlementStartMonth = quarterStartMonth - 1;
@@ -331,6 +162,12 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     return months[date.getMonth()];
   };
 
+  const robustNormalize = (str: string = '') => {
+    let normalized = str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+    normalized = normalized.replace(/कर्मসংস্থান/g, "কর্মসংস্থান").replace(/कर्मसंस्थान/g, "কর্মসংস্থান");
+    return normalized;
+  };
+
   const getPrevQuarterEndInfo = () => {
     const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
     let prevMonthIdx = 0;
@@ -355,6 +192,128 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   
   const prevQuarterEnd = getPrevQuarterEndInfo();
 
+  const QR2_MINISTRY_MAP: Record<string, string[]> = {
+    "শিল্প মন্ত্রণালয়": [
+      "চিনি ও খাদ্য সংস্থা",
+      "হস্ত ও কুটির শিল্প সংস্থা",
+      "বিটাক",
+      "রসায়ন শিল্প সংস্থা"
+    ],
+    "বস্ত্র ও পাট মন্ত্রণালয়": [
+      "পাটকল সংস্থা",
+      "পাট সংস্থা",
+      "বস্ত্রকল সংস্থা",
+      "রেশম বোর্ড"
+    ],
+    "বাণিজ্য মন্ত্রণালয়": [
+      "টিসিবি",
+      "আমদানি ও রপ্তানি"
+    ],
+    "বেসামরিক বিমান পরিবহন ও পর্যটন": [
+      "বাংলাদেশ বিমান",
+      "পর্যটন কর্পোরেশন"
+    ]
+  };
+
+  const QR2_MINISTRY_MAP_TABLE2: Record<string, string[]> = {
+    "আর্থিক প্রতিষ্ঠান বিভাগ": [
+      "সোনালী ব্যাংক পিএলসি",
+      "জনতা ব্যাংক পিএলসি",
+      "অগ্রণী ব্যাংক পিএলসি",
+      "বাংলাদেশ কৃষি ব্যাংক",
+      "রূপালী ব্যাংক পিএলসি",
+      "বাংলাদেশ ব্যাংক",
+      "বাংলাদেশ ডেভেলপমেন্ট ব্যাংক লিঃ",
+      "গৃহনির্মাণ ঋণদান সংস্থা",
+      "কর্মসংস্থান ব্যাংক",
+      "বেসিক ব্যাংক লিঃ",
+      "আনসার ভিডিপি উন্নয়ন ব্যাংক লিঃ",
+      "ইনভেস্টমেন্ট কর্পোরেশন অব বাংলাদেশ",
+      "সাধারণ বীমা কর্পোরেশন",
+      "জীবন বীমা কর্পোরেশন",
+      "প্রবাসী কল্যাণ ব্যাংক"
+    ]
+  };
+
+  const isMinistryMatch = (entryMinistry: string, targetMinistry: string) => {
+    const normEntry = robustNormalize(entryMinistry);
+    const normTarget = robustNormalize(targetMinistry);
+    if (normEntry === normTarget) return true;
+
+    if (normTarget === robustNormalize("বস্ত্র ও পাট মন্ত্রণালয়")) {
+      return normEntry === robustNormalize("পাট মন্ত্রণালয়") || 
+             normEntry === robustNormalize("বস্ত্র মন্ত্রণালয়") || 
+             normEntry === robustNormalize("বস্ত্র ও পাট মন্ত্রণালয়") ||
+             normEntry.includes("পাট") || normEntry.includes("বস্ত্র");
+    }
+
+    if (normTarget === robustNormalize("শিল্প মন্ত্রণালয়")) {
+      return normEntry === robustNormalize("শিল্প মন্ত্রণালয়") || normEntry.includes("শিল্প");
+    }
+
+    if (normTarget === robustNormalize("বেসামরিক বিমান পরিবহন ও পর্যটন")) {
+      return normEntry === robustNormalize("বিমান ও পর্যটন মন্ত্রণালয়") || 
+             normEntry === robustNormalize("বেসামরিক বিমান পরিবহন ও পর্যটন") ||
+             normEntry.includes("বিমান") || normEntry.includes("পর্যটন");
+    }
+
+    return normEntry.includes(normTarget) || normTarget.includes(normEntry);
+  };
+
+  const isEntityMatch = (entryEntity: string, targetEntity: string) => {
+    const normEntry = robustNormalize(entryEntity);
+    const normTarget = robustNormalize(targetEntity);
+    if (normEntry === normTarget) return true;
+    
+    // Equivalence mappings
+    if (normTarget === robustNormalize("হস্ত ও কুটির শিল্প সংস্থা") && (normEntry === robustNormalize("ক্ষুদ্র ও কুটির শিল্প") || normEntry.includes("কুটির") || normEntry.includes("হস্ত"))) return true;
+    if (normTarget === robustNormalize("ক্ষুদ্র ও কুটির শিল্প") && (normEntry === robustNormalize("হস্ত ও কুটির শিল্প সংস্থা") || normEntry.includes("কুটির") || normEntry.includes("হস্ত"))) return true;
+    if (normTarget === robustNormalize("রসায়ন শিল্প সংস্থা") && (normEntry === robustNormalize("রসায়ন শিল্প") || normEntry.includes("রসায়ন") || normEntry.includes("রসায়ন"))) return true;
+    if (normTarget === robustNormalize("রসায়ন শিল্প") && (normEntry === robustNormalize("রসায়ন শিল্প সংস্থা") || normEntry.includes("রসায়ন") || normEntry.includes("রসায়ন"))) return true;
+    
+    // General equivalent matches for Jute/Patkol
+    const isPatkolTarget = normTarget === robustNormalize("পাটকল সংস্থা");
+    const isPatTarget = normTarget === robustNormalize("পাট সংস্থা");
+    
+    const isPatkolEntry = normEntry === robustNormalize("পাটকল সংস্থা") || normEntry.includes("পাটকল") || normEntry.includes("বিজেএমসি") || normEntry.includes("জুট");
+    const isPatEntry = normEntry === robustNormalize("পাট সংস্থা") || (normEntry.includes("পাট") && !normEntry.includes("পাটকল") && !normEntry.includes("বিজেএমসি") && !normEntry.includes("জুট"));
+
+    if (isPatkolTarget) {
+      return isPatkolEntry;
+    }
+    if (isPatTarget) {
+      return isPatEntry && !isPatkolEntry;
+    }
+
+    const isPatkolEntryDirect = normEntry === robustNormalize("পাটকল সংস্থা");
+    const isPatEntryDirect = normEntry === robustNormalize("পাট সংস্থা");
+
+    if (isPatkolEntryDirect) {
+      return normTarget.includes("পাটকল") || normTarget.includes("বিজেএমসি") || normTarget.includes("জুট");
+    }
+    if (isPatEntryDirect) {
+      return normTarget.includes("পাট") && !normTarget.includes("পাটকল") && !normTarget.includes("বিজেএমসি") && !normTarget.includes("জুট");
+    }
+
+    // Financial institutions equivalents to prevent typo mismatches
+    if (normTarget.includes("বাংলাদেশ ডেভেলপমেন্ট ব্যাংক") && normEntry.includes("বাংলাদেশ ডেভেলপমেন্ট ব্যাংক")) return true;
+    if (normTarget.includes("বেসিক ব্যাংক") && normEntry.includes("বেসিক ব্যাংক")) return true;
+    if (normTarget.includes("ইনভেস্টমেন্ট কর্পোরেশন") && normEntry.includes("ইনভেস্ট")) return true;
+    if (normTarget.includes("ইনভেস্ট কর্পোরেশন") && normEntry.includes("ইনভেস্ট")) return true;
+    if (normTarget.includes("আনসার ভিডিপি") && normEntry.includes("আনসার ভিডিপি")) return true;
+    if (normTarget.includes("সোনালী ব্যাংক") && normEntry.includes("সোনালী ব্যাংক")) return true;
+    if (normTarget.includes("জনতা ব্যাংক") && normEntry.includes("জনতা ব্যাংক")) return true;
+    if (normTarget.includes(" can ") || normTarget.includes("অগ্রণী ব্যাংক") && normEntry.includes("অগ্রণী ব্যাংক")) return true;
+    if (normTarget.includes("রূপালী ব্যাংক") && normEntry.includes("রূপালী ব্যাংক")) return true;
+    if (normTarget.includes("কৃষি ব্যাংক") && normEntry.includes("কৃষি ব্যাংক")) return true;
+    if (normTarget.includes("কর্মসংস্থান") && normEntry.includes("কর্মসংস্থান")) return true;
+    if (normTarget.includes("সাধারণ বীমা") && normEntry.includes("সাধারণ বীমা")) return true;
+    if (normTarget.includes("জীবন বীমা") && normEntry.includes("জীবন বীমা")) return true;
+    if (normTarget.includes(" can ") || normTarget.includes("কো-অপারেটিভ") || normTarget.includes("সমবায়") || normTarget.includes("সমবায়") || normTarget.includes("প্রবাসী কল্যাণ") && normEntry.includes("প্রবাসী কল্যাণ")) return true;
+
+    return normEntry.includes(normTarget) || normTarget.includes(normEntry);
+  };
+
   const getSettlementStats = (
     entriesList: SettlementEntry[],
     entityName: string,
@@ -370,20 +329,25 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
       const normalizedPType = robustNormalize(e.paraType || '');
       if (isTransition) {
-        if (normalizedPType && normalizedPType !== robustNormalize('নন এসএফআই')) return false;
+        if (normalizedPType !== robustNormalize('নন এসএফআই')) return false;
       } else {
-        if (normalizedPType) {
-          const isBranchMatch = normalizedPType === robustNormalize('নন এসএফআই') || normalizedPType === robustNormalize('এসএফআই');
-          if (!isBranchMatch) return false;
-        }
+        const isBranchMatch = normalizedPType === robustNormalize('নন এসএফআই') || normalizedPType === robustNormalize('এসএফআই');
+        if (!isBranchMatch) return false;
       }
 
-      const mType = robustNormalize(e.meetingType || (e as any).letterType || '');
+      const mType = robustNormalize(e.meetingType || '');
       if (isTransition) {
-        if (mType && !mType.includes(robustNormalize('বিএসআর'))) return false;
+        if (!mType.includes(robustNormalize('বিএসআর'))) return false;
+      } else {
+        const isValidMeeting = mType.includes(robustNormalize('বিএসআর')) ||
+                               mType.includes(robustNormalize('দ্বিপক্ষীয়')) ||
+                               mType.includes(robustNormalize('দ্বিপাক্ষিক')) ||
+                               mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
+                               mType.includes(robustNormalize('ত্রিপাক্ষিক'));
+        if (!isValidMeeting) return false;
       }
 
-      const entryDateStr = extractEntryDate(e);
+      const entryDateStr = (e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '')).trim();
       if (!entryDateStr) return false;
       
       if (isExclusiveEnd) {
@@ -409,32 +373,13 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             const pInvAmt = parseBengaliNumber(String(p.involvedAmount || '0'));
             const pRecAmt = parseBengaliNumber(String(p.recoveredAmount || '0'));
             const pAdjAmt = parseBengaliNumber(String(p.adjustedAmount || '0'));
-            const pOthRec = parseBengaliNumber(String(p.othersRec || '0'));
-            const pOthAdj = parseBengaliNumber(String(p.othersAdj || '0'));
-            const pVatRec = parseBengaliNumber(String(p.vatRec || '0'));
-            const pVatAdj = parseBengaliNumber(String(p.vatAdj || '0'));
-            const pItRec = parseBengaliNumber(String(p.itRec || '0'));
-            const pItAdj = parseBengaliNumber(String(p.itAdj || '0'));
+            
+            const pSettledAmt = (pRecAmt + pAdjAmt) || 0;
 
-            const normFull = robustNormalize('পূর্ণাঙ্গ');
-            const normMimansa = robustNormalize('মীমাংসিত');
-            const normSampurna = robustNormalize('সম্পূর্ণ');
-
-            const isSettled = status.includes(normFull) || 
-                              status.includes(normMimansa) || 
-                              status.includes(normSampurna) || 
-                              status === 'settled' || 
-                              status === 'full';
-
-            const sumPaidOrAdjusted = pRecAmt + pAdjAmt + pOthRec + pOthAdj + pVatRec + pVatAdj + pItRec + pItAdj;
-
-            if (isSettled) {
+            if (status === robustNormalize('পূর্ণাঙ্গ')) {
               settledCount++;
-              const pSettledAmt = sumPaidOrAdjusted > 0 ? sumPaidOrAdjusted : pInvAmt;
-              settledAmount += pSettledAmt;
-            } else if (sumPaidOrAdjusted > 0) {
-              settledAmount += sumPaidOrAdjusted;
             }
+            settledAmount += pSettledAmt;
           }
         });
       } else {
@@ -1071,7 +1016,22 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 </p>
               </div>
 
-
+              {/* Dynamic Month Selector */}
+              <div className="flex items-center gap-2.5 bg-gradient-to-r from-amber-50 to-amber-100/50 border border-amber-200/80 rounded-xl px-3.5 py-1.5 shadow-sm text-xs shrink-0">
+                <span className="font-extrabold text-amber-900 tracking-wide">জেরের মাস:</span>
+                <select
+                  value={cutoffMonth}
+                  onChange={(e) => {
+                    setCutoffMonth(e.target.value);
+                    localStorage.setItem('opening_balance_cutoff_month', e.target.value);
+                  }}
+                  className="bg-white border border-amber-300 rounded-lg px-2.5 py-1 font-black text-slate-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none cursor-pointer shadow-sm hover:bg-slate-50 transition-all text-xs"
+                >
+                  {getMonthOptions().map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -1155,15 +1115,14 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                     <th className={`${thCls} w-[45px]`} rowSpan={2}>ক্র নং</th>
                     <th className={`${thCls} w-[150px]`} rowSpan={2}>মন্ত্রণালয়ের নাম</th>
                     <th className={`${thCls} w-[180px]`} rowSpan={2}>সংস্থার নাম</th>
-                    <th className={`${thCls}`} colSpan={3}>{cutoffInfo.formattedLong} পর্যন্ত অডিট আপত্তির প্রারম্ভিক পূর্ব জের (ইনপুট)</th>
+                    <th className={`${thCls} w-[130px]`} colSpan={2}>{cutoffInfo.formattedShort} পর্যন্ত অমীমাংসিত অডিট আপত্তির</th>
                   </tr>
                   <tr>
-                    <th className={thCls}>উত্থাপিত আপত্তির সংখ্যা (৪)</th>
-                    <th className={thCls}>নিষ্পত্তিকৃত আপত্তির সংখ্যা (৭)</th>
-                    <th className={thCls}>অনিষ্পন্ন আপত্তিতে জড়িত টাকা (১১)</th>
+                    <th className={thCls}>সংখ্যা</th>
+                    <th className={thCls}>টাকা</th>
                   </tr>
                   <tr className="bg-slate-50 text-[9px] font-black text-slate-500">
-                    {["১", "২", "৩", "৪ (ইনপুট)", "৭ (ইনপুট)", "১১ (ইনপুট)"].map((l, i) => (
+                    {["১", "২", "৩", "৪ (ইনপুট)", "৫ (ইনপুট)"].map((l, i) => (
                       <th key={i} className={thCls + " py-1"}>{l}</th>
                     ))}
                   </tr>
@@ -1211,23 +1170,16 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                             onPaste={e => handlePaste(e, idx, 'june25Settled')}
                           />
                         </td>
-                        <td className="border-r border-b border-slate-400 p-1 bg-amber-50/20">
-                          <input
-                            type="text"
-                            className="w-full text-center font-black text-xs bg-amber-50/30 hover:bg-amber-100/40 focus:bg-white border border-amber-200 hover:border-amber-300 focus:border-blue-500 rounded px-1.5 py-1 text-slate-900 outline-none transition-all"
-                            value={row.june25UnsettledAmount === 0 ? '' : toBengaliDigits(row.june25UnsettledAmount.toString())}
-                            placeholder="০"
-                            onChange={e => {
-                              const val = parseBengaliNumber(e.target.value);
-                              handleInputChange(row.entityName, 'june25UnsettledAmount', val);
-                            }}
-                            onPaste={e => handlePaste(e, idx, 'june25UnsettledAmount')}
-                          />
-                        </td>
                       </tr>
                     );
                   })}
 
+                  {/* Section divider for Table 2 */}
+                  <tr className="bg-slate-100/90 font-extrabold text-[10.5px] text-slate-800">
+                    <td colSpan={5} className="border-r border-b border-slate-400 p-2 text-left bg-slate-100 font-extrabold text-[11px] tracking-wide">
+                      টেবিল - ২: আর্থিক প্রতিষ্ঠান বিভাগ
+                    </td>
+                  </tr>
 
                   {/* Table 2 Rows */}
                   {prevLedgerTable2Rows.map((row, idx) => {
@@ -1271,19 +1223,6 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                             onPaste={e => handlePasteTable2(e, idx, 'june25Settled')}
                           />
                         </td>
-                        <td className="border-r border-b border-slate-400 p-1 bg-amber-50/20">
-                          <input
-                            type="text"
-                            className="w-full text-center font-black text-xs bg-amber-50/30 hover:bg-amber-100/40 focus:bg-white border border-amber-200 hover:border-amber-300 focus:border-blue-500 rounded px-1.5 py-1 text-slate-900 outline-none transition-all"
-                            value={row.june25UnsettledAmount === 0 ? '' : toBengaliDigits(row.june25UnsettledAmount.toString())}
-                            placeholder="০"
-                            onChange={e => {
-                              const val = parseBengaliNumber(e.target.value);
-                              handleInputChangeTable2(row.entityName, 'june25UnsettledAmount', val);
-                            }}
-                            onPaste={e => handlePasteTable2(e, idx, 'june25UnsettledAmount')}
-                          />
-                        </td>
                       </tr>
                     );
                   })}
@@ -1293,19 +1232,16 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                     <td className={footerTdCls} colSpan={3}>মোট (টেবিল-১)</td>
                     <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Raised)}</td>
                     <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Settled)}</td>
-                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25UnsettledAmount)}</td>
                   </tr>
                   <tr className="bg-slate-100 font-bold text-[10px] text-slate-800">
                     <td className={footerTdCls} colSpan={3}>মোট (টেবিল-২)</td>
                     <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerTable2GrandTotals.june25Raised)}</td>
                     <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerTable2GrandTotals.june25Settled)}</td>
-                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerTable2GrandTotals.june25UnsettledAmount)}</td>
                   </tr>
                   <tr className="bg-slate-200 font-extrabold text-[10.5px] text-slate-900">
                     <td className={footerTdCls} colSpan={3}>সর্বমোট</td>
                     <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Raised + prevLedgerTable2GrandTotals.june25Raised)}</td>
                     <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25Settled + prevLedgerTable2GrandTotals.june25Settled)}</td>
-                    <td className={footerNumTdCls}>{formatNumberSimple(prevLedgerGrandTotals.june25UnsettledAmount + prevLedgerTable2GrandTotals.june25UnsettledAmount)}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -1329,9 +1265,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       ? (prevLedgerTable2Data[entityName] || { june25Raised: 0, june25Settled: 0, june25UnsettledAmount: 0 })
       : (prevLedgerData[entityName] || { june25Raised: 0, june25Settled: 0, june25UnsettledAmount: 0 });
 
-    const masterRaisedCount = parseBengaliNumber(rawLedger.june25Raised);
-    const masterSettledCount = parseBengaliNumber(rawLedger.june25Settled);
-    const masterUnsettledAmount = parseBengaliNumber(rawLedger.june25UnsettledAmount);
+    const masterUnsettledCount = parseBengaliNumber(rawLedger.june25Raised);
+    const masterUnsettledAmount = parseBengaliNumber(rawLedger.june25Settled);
 
     const [cutoffYear, cutoffMonthNum] = cutoffMonth.split('-').map(Number);
     const cutoffMonthIdx = cutoffMonthNum - 1;
@@ -1357,9 +1292,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     else if (activeEndMonth >= 6 && activeEndMonth <= 8) activeQuarterStartMonth = 6;
     else activeQuarterStartMonth = 9;
 
-    let priorRaisedCount = masterRaisedCount;
-    let priorSettledCount = masterSettledCount;
-    let priorUnsettledAmount = masterUnsettledAmount;
+    let unsettledCount = masterUnsettledCount;
+    let unsettledAmount = masterUnsettledAmount;
 
     while (true) {
       if (currentQuarterYear > activeYear || (currentQuarterYear === activeYear && currentQuarterStartMonth > activeQuarterStartMonth)) {
@@ -1372,15 +1306,30 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       const qStartDate = new Date(currentQuarterYear, currentQuarterStartMonth, 16);
       const qEndDate = new Date(currentQuarterYear, qEndMonth, 15);
       
-      const qStartDateStr = isCurrentQuarterActive ? format(activeCycle.start, 'yyyy-MM-dd') : format(qStartDate, 'yyyy-MM-dd');
-      const qEndDateStr = isCurrentQuarterActive ? format(activeCycle.end, 'yyyy-MM-dd') : format(qEndDate, 'yyyy-MM-dd');
+      const qStartDateStr = format(qStartDate, 'yyyy-MM-dd');
+      const qEndDateStr = format(qEndDate, 'yyyy-MM-dd');
+
+      // Calculate the settlement start date for this quarter (16th of the preceding month)
+      let qSettleStartMonth = currentQuarterStartMonth - 1;
+      let qSettleStartYear = currentQuarterYear;
+      if (qSettleStartMonth < 0) {
+        qSettleStartMonth = 11;
+        qSettleStartYear -= 1;
+      }
+      const qSettleStartDate = new Date(qSettleStartYear, qSettleStartMonth, 16);
+      const qSettleStartDateStr = format(qSettleStartDate, 'yyyy-MM-dd');
 
       if (isCurrentQuarterActive) {
         const currentBSRRaisedEntries = entries.filter(e => {
           if (!isEntityMatch(e.entityName, entityName)) return false;
           if (!isMinistryMatch(e.ministryName, ministryName)) return false;
+          const normalizedPType = robustNormalize(e.paraType || '');
+          if (normalizedPType !== robustNormalize('নন এসএফআই')) return false;
 
-          const entryDateStr = extractEntryDate(e);
+          const mType = robustNormalize(e.meetingType || e.letterType || '');
+          if (!mType.includes(robustNormalize('বিএসআর'))) return false;
+
+          const entryDateStr = (e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '')).trim();
           if (!entryDateStr) return false;
           return entryDateStr >= qStartDateStr && entryDateStr <= qEndDateStr;
         });
@@ -1391,48 +1340,42 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
           if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
             raisedCount += parseBengaliNumber(rCountRaw);
-          } else if (e.paragraphs && e.paragraphs.length > 0) {
-            raisedCount += e.paragraphs.length;
-          } else {
-            raisedCount += 1;
           }
-
-          if (e.paragraphs && e.paragraphs.length > 0) {
-            e.paragraphs.forEach(p => {
-              raisedAmount += parseBengaliNumber(String(p.involvedAmount || '0'));
-            });
-          } else {
-            raisedAmount += parseBengaliNumber(String(e.involvedAmount || '0'));
-          }
+          if (e.manualRaisedAmount) raisedAmount += parseBengaliNumber(String(e.manualRaisedAmount || '0'));
         });
 
         const { settledCount: sCount, settledAmount: sAmount } = getSettlementStats(
           entries,
           entityName,
           ministryName,
-          qStartDateStr,
+          qSettleStartDateStr,
           qEndDateStr,
           false,
           false
         );
 
         return {
-          june25Raised: priorRaisedCount,
+          unsettledCountPrior: unsettledCount,
+          unsettledAmountPrior: unsettledAmount,
           raisedCountCurr: raisedCount,
           raisedAmountCurr: raisedAmount,
-          june25Settled: priorSettledCount,
           settledCountCurr: sCount,
-          june25UnsettledAmount: priorUnsettledAmount,
-          settledAmountCurr: sAmount
+          settledAmountCurr: sAmount,
+          unsettledCountEnd: Math.max(0, unsettledCount + raisedCount - sCount),
+          unsettledAmountEnd: Math.max(0, unsettledAmount + raisedAmount - sAmount)
         };
       }
 
-      // Previous quarters roll over
       const currentBSRRaisedEntries = entries.filter(e => {
         if (!isEntityMatch(e.entityName, entityName)) return false;
         if (!isMinistryMatch(e.ministryName, ministryName)) return false;
+        const normalizedPType = robustNormalize(e.paraType || '');
+        if (normalizedPType !== robustNormalize('নন এসএফআই')) return false;
 
-        const entryDateStr = extractEntryDate(e);
+        const mType = robustNormalize(e.meetingType || e.letterType || '');
+        if (!mType.includes(robustNormalize('বিএসআর'))) return false;
+
+        const entryDateStr = (e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '')).trim();
         if (!entryDateStr) return false;
         return entryDateStr >= qStartDateStr && entryDateStr <= qEndDateStr;
       });
@@ -1443,34 +1386,22 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
         if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
           raisedCount += parseBengaliNumber(rCountRaw);
-        } else if (e.paragraphs && e.paragraphs.length > 0) {
-          raisedCount += e.paragraphs.length;
-        } else {
-          raisedCount += 1;
         }
-
-        if (e.paragraphs && e.paragraphs.length > 0) {
-          e.paragraphs.forEach(p => {
-            raisedAmount += parseBengaliNumber(String(p.involvedAmount || '0'));
-          });
-        } else {
-          raisedAmount += parseBengaliNumber(String(e.involvedAmount || '0'));
-        }
+        if (e.manualRaisedAmount) raisedAmount += parseBengaliNumber(String(e.manualRaisedAmount || '0'));
       });
 
       const { settledCount: sCount, settledAmount: sAmount } = getSettlementStats(
         entries,
         entityName,
         ministryName,
-        qStartDateStr,
+        qSettleStartDateStr,
         qEndDateStr,
         false,
         false
       );
 
-      priorRaisedCount += raisedCount;
-      priorSettledCount += sCount;
-      priorUnsettledAmount = Math.max(0, priorUnsettledAmount + raisedAmount - sAmount);
+      unsettledCount = Math.max(0, unsettledCount + raisedCount - sCount);
+      unsettledAmount = Math.max(0, unsettledAmount + raisedAmount - sAmount);
 
       currentQuarterStartMonth += 3;
       if (currentQuarterStartMonth > 11) {
@@ -1480,13 +1411,14 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     }
 
     return {
-      june25Raised: priorRaisedCount,
+      unsettledCountPrior: unsettledCount,
+      unsettledAmountPrior: unsettledAmount,
       raisedCountCurr: 0,
       raisedAmountCurr: 0,
-      june25Settled: priorSettledCount,
       settledCountCurr: 0,
-      june25UnsettledAmount: priorUnsettledAmount,
-      settledAmountCurr: 0
+      settledAmountCurr: 0,
+      unsettledCountEnd: unsettledCount,
+      unsettledAmountEnd: unsettledAmount
     };
   };
 
@@ -1496,27 +1428,22 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     const processedGroups: any[] = [];
 
     Object.entries(QR2_MINISTRY_MAP).forEach(([mName, entities]) => {
-      const matchMinistry = activeMinistryFilter === '' || isMinistryMatch(mName, activeMinistryFilter) || robustNormalize(mName).includes(robustNormalize(activeMinistryFilter));
+      const matchMinistry = filterMinistry === '' || robustNormalize(mName).includes(robustNormalize(filterMinistry));
       
       const entityDataList = entities.map(entityName => {
         const dyn = getDynamicBalances(entityName, mName, false);
-        const totalRaisedCount = dyn.june25Raised + dyn.raisedCountCurr;
-        const totalSettledCount = dyn.june25Settled + dyn.settledCountCurr;
-        const unsettledCountEnd = Math.max(0, totalRaisedCount - totalSettledCount);
-        const unsettledAmountEnd = Math.max(0, dyn.june25UnsettledAmount + dyn.raisedAmountCurr - dyn.settledAmountCurr);
-
         return {
           entityName,
-          june25Raised: dyn.june25Raised,
+          unsettledCountPrior: dyn.unsettledCountPrior,
+          unsettledAmountPrior: dyn.unsettledAmountPrior,
           raisedCountCurr: dyn.raisedCountCurr,
-          totalRaisedCount,
-          june25Settled: dyn.june25Settled,
+          raisedAmountCurr: dyn.raisedAmountCurr,
+          totalCount: dyn.unsettledCountPrior + dyn.raisedCountCurr,
+          totalAmount: dyn.unsettledAmountPrior + dyn.raisedAmountCurr,
           settledCountCurr: dyn.settledCountCurr,
-          totalSettledCount,
-          unsettledCountEnd,
-          june25UnsettledAmount: dyn.june25UnsettledAmount,
           settledAmountCurr: dyn.settledAmountCurr,
-          unsettledAmountEnd
+          unsettledCountEnd: dyn.unsettledCountEnd,
+          unsettledAmountEnd: dyn.unsettledAmountEnd
         };
       });
 
@@ -1537,32 +1464,32 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     });
 
     return processedGroups;
-  }, [entries, prevLedgerData, searchTerm, activeMinistryFilter, startDate, endDate, customTitle, cutoffMonth, activeCycle]);
+  }, [entries, prevLedgerData, searchTerm, filterMinistry, startDate, endDate, customTitle, cutoffMonth, activeCycle]);
 
   const details1Totals = useMemo(() => {
     const t = { 
-      june25Raised: 0,
-      raisedCountCurr: 0,
-      totalRaisedCount: 0,
-      june25Settled: 0,
-      settledCountCurr: 0,
-      totalSettledCount: 0,
-      unsettledCountEnd: 0,
-      june25UnsettledAmount: 0,
-      settledAmountCurr: 0,
-      unsettledAmountEnd: 0
+      unsettledCountPrior: 0,
+      unsettledAmountPrior: 0,
+      raisedCountCurr: 0, 
+      raisedAmountCurr: 0,
+      totalCount: 0, 
+      totalAmount: 0, 
+      settledCountCurr: 0, 
+      settledAmountCurr: 0, 
+      unsettledCountEnd: 0, 
+      unsettledAmountEnd: 0 
     };
     details1Data.forEach(g => {
       g.entities.forEach((ent: any) => {
-        t.june25Raised += (ent.june25Raised || 0);
+        t.unsettledCountPrior += (ent.unsettledCountPrior || 0);
+        t.unsettledAmountPrior += (ent.unsettledAmountPrior || 0);
         t.raisedCountCurr += (ent.raisedCountCurr || 0);
-        t.totalRaisedCount += (ent.totalRaisedCount || 0);
-        t.june25Settled += (ent.june25Settled || 0);
+        t.raisedAmountCurr += (ent.raisedAmountCurr || 0);
+        t.totalCount += (ent.totalCount || 0);
+        t.totalAmount += (ent.totalAmount || 0);
         t.settledCountCurr += (ent.settledCountCurr || 0);
-        t.totalSettledCount += (ent.totalSettledCount || 0);
-        t.unsettledCountEnd += (ent.unsettledCountEnd || 0);
-        t.june25UnsettledAmount += (ent.june25UnsettledAmount || 0);
         t.settledAmountCurr += (ent.settledAmountCurr || 0);
+        t.unsettledCountEnd += (ent.unsettledCountEnd || 0);
         t.unsettledAmountEnd += (ent.unsettledAmountEnd || 0);
       });
     });
@@ -1575,27 +1502,22 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     const processedGroups: any[] = [];
 
     Object.entries(QR2_MINISTRY_MAP_TABLE2).forEach(([mName, entities]) => {
-      const matchMinistry = activeMinistryFilter === '' || isMinistryMatch(mName, activeMinistryFilter) || robustNormalize(mName).includes(robustNormalize(activeMinistryFilter));
+      const matchMinistry = filterMinistry === '' || robustNormalize(mName).includes(robustNormalize(filterMinistry));
       
       const entityDataList = entities.map(entityName => {
         const dyn = getDynamicBalances(entityName, mName, true);
-        const totalRaisedCount = dyn.june25Raised + dyn.raisedCountCurr;
-        const totalSettledCount = dyn.june25Settled + dyn.settledCountCurr;
-        const unsettledCountEnd = Math.max(0, totalRaisedCount - totalSettledCount);
-        const unsettledAmountEnd = Math.max(0, dyn.june25UnsettledAmount + dyn.raisedAmountCurr - dyn.settledAmountCurr);
-
         return {
           entityName,
-          june25Raised: dyn.june25Raised,
+          unsettledCountPrior: dyn.unsettledCountPrior,
+          unsettledAmountPrior: dyn.unsettledAmountPrior,
           raisedCountCurr: dyn.raisedCountCurr,
-          totalRaisedCount,
-          june25Settled: dyn.june25Settled,
+          raisedAmountCurr: dyn.raisedAmountCurr,
+          totalCount: dyn.unsettledCountPrior + dyn.raisedCountCurr,
+          totalAmount: dyn.unsettledAmountPrior + dyn.raisedAmountCurr,
           settledCountCurr: dyn.settledCountCurr,
-          totalSettledCount,
-          unsettledCountEnd,
-          june25UnsettledAmount: dyn.june25UnsettledAmount,
           settledAmountCurr: dyn.settledAmountCurr,
-          unsettledAmountEnd
+          unsettledCountEnd: dyn.unsettledCountEnd,
+          unsettledAmountEnd: dyn.unsettledAmountEnd
         };
       });
 
@@ -1616,32 +1538,32 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     });
 
     return processedGroups;
-  }, [entries, prevLedgerTable2Data, searchTerm, activeMinistryFilter, startDate, endDate, customTitle, cutoffMonth, activeCycle]);
+  }, [entries, prevLedgerTable2Data, searchTerm, filterMinistry, startDate, endDate, customTitle, cutoffMonth, activeCycle]);
 
   const details1Table2Totals = useMemo(() => {
     const t = { 
-      june25Raised: 0,
-      raisedCountCurr: 0,
-      totalRaisedCount: 0,
-      june25Settled: 0,
-      settledCountCurr: 0,
-      totalSettledCount: 0,
-      unsettledCountEnd: 0,
-      june25UnsettledAmount: 0,
-      settledAmountCurr: 0,
-      unsettledAmountEnd: 0
+      unsettledCountPrior: 0,
+      unsettledAmountPrior: 0,
+      raisedCountCurr: 0, 
+      raisedAmountCurr: 0,
+      totalCount: 0, 
+      totalAmount: 0, 
+      settledCountCurr: 0, 
+      settledAmountCurr: 0, 
+      unsettledCountEnd: 0, 
+      unsettledAmountEnd: 0 
     };
     details1Table2Data.forEach(g => {
       g.entities.forEach((ent: any) => {
-        t.june25Raised += (ent.june25Raised || 0);
+        t.unsettledCountPrior += (ent.unsettledCountPrior || 0);
+        t.unsettledAmountPrior += (ent.unsettledAmountPrior || 0);
         t.raisedCountCurr += (ent.raisedCountCurr || 0);
-        t.totalRaisedCount += (ent.totalRaisedCount || 0);
-        t.june25Settled += (ent.june25Settled || 0);
+        t.raisedAmountCurr += (ent.raisedAmountCurr || 0);
+        t.totalCount += (ent.totalCount || 0);
+        t.totalAmount += (ent.totalAmount || 0);
         t.settledCountCurr += (ent.settledCountCurr || 0);
-        t.totalSettledCount += (ent.totalSettledCount || 0);
-        t.unsettledCountEnd += (ent.unsettledCountEnd || 0);
-        t.june25UnsettledAmount += (ent.june25UnsettledAmount || 0);
         t.settledAmountCurr += (ent.settledAmountCurr || 0);
+        t.unsettledCountEnd += (ent.unsettledCountEnd || 0);
         t.unsettledAmountEnd += (ent.unsettledAmountEnd || 0);
       });
     });
@@ -1650,15 +1572,15 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
   const details1GrandTotals = useMemo(() => {
     return {
-      june25Raised: details1Totals.june25Raised + details1Table2Totals.june25Raised,
+      unsettledCountPrior: details1Totals.unsettledCountPrior + details1Table2Totals.unsettledCountPrior,
+      unsettledAmountPrior: details1Totals.unsettledAmountPrior + details1Table2Totals.unsettledAmountPrior,
       raisedCountCurr: details1Totals.raisedCountCurr + details1Table2Totals.raisedCountCurr,
-      totalRaisedCount: details1Totals.totalRaisedCount + details1Table2Totals.totalRaisedCount,
-      june25Settled: details1Totals.june25Settled + details1Table2Totals.june25Settled,
+      raisedAmountCurr: details1Totals.raisedAmountCurr + details1Table2Totals.raisedAmountCurr,
+      totalCount: details1Totals.totalCount + details1Table2Totals.totalCount,
+      totalAmount: details1Totals.totalAmount + details1Table2Totals.totalAmount,
       settledCountCurr: details1Totals.settledCountCurr + details1Table2Totals.settledCountCurr,
-      totalSettledCount: details1Totals.totalSettledCount + details1Table2Totals.totalSettledCount,
-      unsettledCountEnd: details1Totals.unsettledCountEnd + details1Table2Totals.unsettledCountEnd,
-      june25UnsettledAmount: details1Totals.june25UnsettledAmount + details1Table2Totals.june25UnsettledAmount,
       settledAmountCurr: details1Totals.settledAmountCurr + details1Table2Totals.settledAmountCurr,
+      unsettledCountEnd: details1Totals.unsettledCountEnd + details1Table2Totals.unsettledCountEnd,
       unsettledAmountEnd: details1Totals.unsettledAmountEnd + details1Table2Totals.unsettledAmountEnd
     };
   }, [details1Totals, details1Table2Totals]);
@@ -1669,17 +1591,17 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     if (normalizedParaType !== robustNormalize('নন এসএফআই')) return false;
     
     // Filter only by BSR
-    const mType = robustNormalize(e.meetingType || (e as any).letterType || '');
+    const mType = robustNormalize(e.meetingType || e.letterType || '');
     const isValidType = mType.includes(robustNormalize('বিএসআর'));
     if (!isValidType) return false;
 
     // Filter by Date Range (Issue Date) matching quarterly cycle range
-    const issueDateStr = extractEntryDate(e);
+    const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
     if (!issueDateStr) return false;
     if (issueDateStr < quarterCycleStartDateStr || issueDateStr > quarterCycleEndDateStr) return false;
 
     // Filter by Ministry
-    const matchMinistry = activeMinistryFilter === '' || isMinistryMatch(e.ministryName || '', activeMinistryFilter) || robustNormalize(e.ministryName || '').includes(robustNormalize(activeMinistryFilter));
+    const matchMinistry = filterMinistry === '' || robustNormalize(e.ministryName).includes(robustNormalize(filterMinistry));
     
     // Filter by Search Term
     const matchSearch = searchTerm === '' || 
@@ -1787,14 +1709,14 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     const footerNumTdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-200";
 
     const getColWidthClass = (index: number) => {
-      if (index === 0) return "w-[35px] min-w-[35px] max-w-[35px]";
-      if (index === 1) return "w-[85px] min-w-[85px] max-w-[85px]";
-      if (index === 2) return "w-[110px] min-w-[110px] max-w-[110px]";
-      if (index >= 3 && index <= 9) return "w-[60px] min-w-[60px] max-w-[60px]";
-      if (index === 10) return "w-[110px] min-w-[110px] max-w-[110px]";
-      if (index === 11) return "w-[105px] min-w-[105px] max-w-[105px]";
-      if (index === 12) return "w-[110px] min-w-[110px] max-w-[110px]";
-      return "w-[60px] min-w-[60px] max-w-[60px]";
+      if (index === 0) return "w-[30px] min-w-[30px] max-w-[30px]";
+      if (index === 1) return "w-[75px] min-w-[75px] max-w-[75px]";
+      if (index === 2) return "w-[95px] min-w-[95px] max-w-[95px]";
+      if (index % 2 === 1) {
+        return "w-[35px] min-w-[35px] max-w-[35px]";
+      } else {
+        return "w-[110px] min-w-[110px] max-w-[110px]";
+      }
     };
 
     return (
@@ -1843,53 +1765,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               </button>
             </div>
 
-            {/* Right Column: Ministry Dropdown, Date Range Pill & Month Picker */}
-            <div className="flex items-center gap-2.5 w-full xl:w-auto justify-end flex-wrap relative z-[300]">
-              {/* Ministry Filter Dropdown */}
-              <div className="relative select-none" ref={ministryDropdownRef}>
-                <div 
-                  onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
-                  className={`flex items-center gap-1.5 px-3 h-[38px] bg-sky-50 border hover:border-sky-300 hover:bg-white transition-all rounded-xl cursor-pointer shadow-sm ${isMinistryDropdownOpen ? 'border-sky-300 bg-white ring-2 ring-sky-50' : 'border-sky-100'}`}
-                  title="মন্ত্রণালয় ভিত্তিক ফিল্টার"
-                >
-                  <Building2 size={14} className="text-sky-600 shrink-0" />
-                  <span className="font-extrabold text-[12px] text-sky-800 tracking-tight shrink-0 max-w-[150px] truncate">
-                    {localMinistryFilter === 'সকল' ? 'সকল মন্ত্রণালয়' : localMinistryFilter}
-                  </span>
-                  <ChevronDown size={13} className={`text-sky-500 shrink-0 transition-transform duration-300 ${isMinistryDropdownOpen ? 'rotate-180 text-sky-600' : ''}`} />
-                </div>
-
-                {isMinistryDropdownOpen && (
-                  <div className="absolute top-[110%] right-0 w-[230px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-2 animate-in fade-in duration-200">
-                    <div className="px-3 py-1 pb-1.5 border-b border-slate-100 flex items-center justify-between">
-                      <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest flex items-center gap-1">
-                        <Building2 size={10} /> মন্ত্রণালয় নির্বাচন
-                      </span>
-                    </div>
-                    <div className="max-h-[240px] overflow-y-auto space-y-1 p-0.5 scrollbar-thin">
-                      {allMinistryOptions.map((m, idx) => {
-                        const isSelected = localMinistryFilter === m;
-                        const label = m === 'সকল' ? 'সকল মন্ত্রণালয়' : m;
-                        return (
-                          <div
-                            key={idx}
-                            onClick={() => {
-                              setLocalMinistryFilter(m);
-                              setIsMinistryDropdownOpen(false);
-                            }}
-                            className={`px-3 py-2 rounded-xl cursor-pointer transition-all duration-150 text-[11.5px] truncate flex items-center justify-between ${isSelected ? 'bg-sky-500 text-white font-black' : 'hover:bg-slate-50 text-slate-700 font-bold'}`}
-                            title={label}
-                          >
-                            <span className="truncate">{label}</span>
-                            {isSelected && <Sparkles size={11} className="text-amber-200 shrink-0 ml-1" />}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-
+            {/* Right Column: Date Range Pill & Month Picker */}
+            <div className="flex items-center gap-2.5 w-full xl:w-auto justify-end flex-wrap">
               <div className="inline-flex items-center gap-2 px-3.5 h-[38px] bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
                 <span className="text-blue-700 font-black text-[12.5px] whitespace-nowrap">
@@ -1904,6 +1781,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             </div>
           </div>
 
+
+
           {/* Elegant Info Bar */}
           <div className="mb-1 text-[12.5px] font-bold text-slate-800 flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1.5 border border-slate-200 py-2.5 px-4 bg-slate-50/50 rounded-xl shadow-sm">
             <p><span className="text-slate-500">বিষয়ঃ</span> মন্ত্রণালয়/সংস্থা ভিত্তিক অমীমাংসিত অডিট আপত্তির ত্রৈমাসিক বিবরণ</p>
@@ -1914,42 +1793,50 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           </div>
         </div>
 
+
         {/* Unified Table Container */}
-        <div className="table-container qr-table-container qr2-table-container overflow-auto shadow-sm rounded-none mb-8">
+        <div className="table-container qr-table-container qr2-table-container overflow-auto xl:overflow-visible shadow-sm rounded-none mb-8">
           <table className="w-full border-separate border-spacing-0 !table-auto border-l border-slate-400">
             <colgroup>
+              <col style={{ width: '30px', minWidth: '30px' }} />
+              <col style={{ width: '75px', minWidth: '75px' }} />
+              <col style={{ width: '95px', minWidth: '95px' }} />
               <col style={{ width: '35px', minWidth: '35px' }} />
-              <col style={{ width: '85px', minWidth: '85px' }} />
               <col style={{ width: '110px', minWidth: '110px' }} />
-              <col style={{ width: '60px', minWidth: '60px' }} />
-              <col style={{ width: '60px', minWidth: '60px' }} />
-              <col style={{ width: '60px', minWidth: '60px' }} />
-              <col style={{ width: '60px', minWidth: '60px' }} />
-              <col style={{ width: '60px', minWidth: '60px' }} />
-              <col style={{ width: '60px', minWidth: '60px' }} />
-              <col style={{ width: '60px', minWidth: '60px' }} />
+              <col style={{ width: '35px', minWidth: '35px' }} />
               <col style={{ width: '110px', minWidth: '110px' }} />
-              <col style={{ width: '105px', minWidth: '105px' }} />
+              <col style={{ width: '35px', minWidth: '35px' }} />
+              <col style={{ width: '110px', minWidth: '110px' }} />
+              <col style={{ width: '35px', minWidth: '35px' }} />
+              <col style={{ width: '110px', minWidth: '110px' }} />
+              <col style={{ width: '35px', minWidth: '35px' }} />
               <col style={{ width: '110px', minWidth: '110px' }} />
             </colgroup>
             <thead className="bg-slate-100">
               <tr>
-                <th className={`${thClsWithTop} w-[35px] min-w-[35px] max-w-[35px]`}>ক্রঃ নং</th>
-                <th className={`${thClsWithTop} w-[85px] min-w-[85px] max-w-[85px]`}>মন্ত্রণালয়ের নাম</th>
-                <th className={`${thClsWithTop} w-[110px] min-w-[110px] max-w-[110px]`}>সংস্থার নাম</th>
-                <th className={`${thClsWithTop} w-[60px] min-w-[60px] max-w-[60px]`}>{priorMonthFormatted} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
-                <th className={`${thClsWithTop} w-[60px] min-w-[60px] max-w-[60px]`}>{currentQuarterFormatted} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
-                <th className={`${thClsWithTop} w-[60px] min-w-[60px] max-w-[60px]`}>{endMonthFormatted} পর্যন্ত উত্থাপিত মোট আপত্তির সংখ্যা</th>
-                <th className={`${thClsWithTop} w-[60px] min-w-[60px] max-w-[60px]`}>{priorMonthFormatted} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-                <th className={`${thClsWithTop} w-[60px] min-w-[60px] max-w-[60px]`}>{currentQuarterFormatted} পর্যন্ত নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-                <th className={`${thClsWithTop} w-[60px] min-w-[60px] max-w-[60px]`}>{endMonthFormatted} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-                <th className={`${thClsWithTop} w-[60px] min-w-[60px] max-w-[60px]`}>{endMonthFormatted} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
-                <th className={`${thClsWithTop} w-[110px] min-w-[110px] max-w-[110px]`}>{priorMonthFormatted} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
-                <th className={`${thClsWithTop} w-[105px] min-w-[105px] max-w-[105px]`}>{currentQuarterFormatted} পর্যন্ত নিষ্পত্তিকৃত আপত্তিতে জড়িত টাকা</th>
-                <th className={`${thClsWithTop} w-[110px] min-w-[110px] max-w-[110px]`}>{endMonthFormatted} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
+                <th className={`${thClsWithTop} w-[30px] min-w-[30px] max-w-[30px]`} rowSpan={2}>ক্রঃ নং</th>
+                <th className={`${thClsWithTop} w-[75px] min-w-[75px] max-w-[75px]`} rowSpan={2}>মন্ত্রণালয়ের নাম</th>
+                <th className={`${thClsWithTop} w-[95px] min-w-[95px] max-w-[95px]`} rowSpan={2}>সংস্থার নাম</th>
+                <th className={`${thClsWithTop}`} colSpan={2}>{priorMonthFormatted} পর্যন্ত অমীমাংসিত অডিট আপত্তির</th>
+                <th className={`${thClsWithTop}`} colSpan={2}>{currentQuarterFormatted} পর্যন্ত উত্থাপিত অডিট আপত্তির</th>
+                <th className={`${thClsWithTop}`} colSpan={2}>মোট অডিট আপত্তি</th>
+                <th className={`${thClsWithTop}`} colSpan={2}>{currentQuarterFormatted} পর্যন্ত মীমাংসিত অডিট আপত্তির</th>
+                <th className={`${thClsWithTop}`} colSpan={2}>{endMonthFormatted} পর্যন্ত অমীমাংসিত অডিট আপত্তির</th>
+              </tr>
+              <tr>
+                <th className={`${thCls} w-[35px] min-w-[35px] max-w-[35px]`}>সংখ্যা</th>
+                <th className={`${thCls} w-[110px] min-w-[110px] max-w-[110px]`}>টাকা</th>
+                <th className={`${thCls} w-[35px] min-w-[35px] max-w-[35px]`}>সংখ্যা</th>
+                <th className={`${thCls} w-[110px] min-w-[110px] max-w-[110px]`}>টাকা</th>
+                <th className={`${thCls} w-[35px] min-w-[35px] max-w-[35px]`}>সংখ্যা</th>
+                <th className={`${thCls} w-[110px] min-w-[110px] max-w-[110px]`}>টাকা</th>
+                <th className={`${thCls} w-[35px] min-w-[35px] max-w-[35px]`}>সংখ্যা</th>
+                <th className={`${thCls} w-[110px] min-w-[110px] max-w-[110px]`}>টাকা</th>
+                <th className={`${thCls} w-[35px] min-w-[35px] max-w-[35px]`}>সংখ্যা</th>
+                <th className={`${thCls} w-[110px] min-w-[110px] max-w-[110px]`}>টাকা</th>
               </tr>
               <tr className="h-[28px]">
-                {["১", "২", "৩", "৪", "৫", "৬ = ৪+৫", "৭", "৮", "৯ = (৭+৮)", "১০ = ৬-৯", "১১", "১২", "১৩ = ১১-১২"].map((idxLabel, i) => (
+                {["১", "২", "৩", "৪", "৫", "৬", "৭", "৮=৪+৬", "৯=৫+৭", "১০", "১১", "১২=৮-১০", "১৩=৯-১১"].map((idxLabel, i) => (
                   <th key={i} className={`${thCls} text-[10px] font-bold text-slate-500 py-1 ${getColWidthClass(i)}`}>{idxLabel}</th>
                 ))}
               </tr>
@@ -1957,203 +1844,115 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             <tbody>
               {/* Table 1 rows */}
               {details1Data.map((mGroup, mIdx) => {
-                const mSubtotal = mGroup.entities.reduce((acc: any, ent: any) => ({
-                  june25Raised: acc.june25Raised + (ent.june25Raised || 0),
-                  raisedCountCurr: acc.raisedCountCurr + (ent.raisedCountCurr || 0),
-                  totalRaisedCount: acc.totalRaisedCount + (ent.totalRaisedCount || 0),
-                  june25Settled: acc.june25Settled + (ent.june25Settled || 0),
-                  settledCountCurr: acc.settledCountCurr + (ent.settledCountCurr || 0),
-                  totalSettledCount: acc.totalSettledCount + (ent.totalSettledCount || 0),
-                  unsettledCountEnd: acc.unsettledCountEnd + (ent.unsettledCountEnd || 0),
-                  june25UnsettledAmount: acc.june25UnsettledAmount + (ent.june25UnsettledAmount || 0),
-                  settledAmountCurr: acc.settledAmountCurr + (ent.settledAmountCurr || 0),
-                  unsettledAmountEnd: acc.unsettledAmountEnd + (ent.unsettledAmountEnd || 0),
-                }), {
-                  june25Raised: 0,
-                  raisedCountCurr: 0,
-                  totalRaisedCount: 0,
-                  june25Settled: 0,
-                  settledCountCurr: 0,
-                  totalSettledCount: 0,
-                  unsettledCountEnd: 0,
-                  june25UnsettledAmount: 0,
-                  settledAmountCurr: 0,
-                  unsettledAmountEnd: 0
-                });
-
-                return (
-                  <React.Fragment key={`mgroup-t1-${mIdx}-${mGroup.ministryName}`}>
-                    {mGroup.entities.map((ent: any, eIdx: number) => {
-                      return (
-                        <tr key={`${mIdx}-${ent.entityName}`} className="hover:bg-slate-50 transition-colors">
-                          {eIdx === 0 && (
-                            <>
-                              <td rowSpan={mGroup.entities.length + 1} className={`${numTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>
-                                {toBengaliDigits((mIdx + 1).toString())}
-                              </td>
-                              <td rowSpan={mGroup.entities.length + 1} className={`${tdCls} font-bold text-center bg-slate-50/20 w-[85px] min-w-[85px] max-w-[85px] text-[10px]`}>
-                                <HighlightText text={mGroup.ministryName} searchTerm={searchTerm} />
-                              </td>
-                            </>
-                          )}
-                          <td className={`${tdCls} font-semibold w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>
-                            <HighlightText text={ent.entityName} searchTerm={searchTerm} />
+                return mGroup.entities.map((ent: any, eIdx: number) => {
+                  return (
+                    <tr key={`${mIdx}-${ent.entityName}`} className="hover:bg-slate-50 transition-colors">
+                      {eIdx === 0 && (
+                        <>
+                          <td rowSpan={mGroup.entities.length} className={`${numTdCls} w-[30px] min-w-[30px] max-w-[30px] text-[10px]`}>
+                            {toBengaliDigits((mIdx + 1).toString())}
                           </td>
-                          <td className={`${numTdCls} w-[60px] text-[10px]`}>{formatCountBengali(ent.june25Raised)}</td>
-                          <td className={`${numTdCls} bg-slate-50/30 w-[60px] text-[10px]`}>{formatCountBengali(ent.raisedCountCurr)}</td>
-                          <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.totalRaisedCount)}</td>
-                          <td className={`${numTdCls} w-[60px] text-[10px]`}>{formatCountBengali(ent.june25Settled)}</td>
-                          <td className={`${numTdCls} bg-slate-50/30 w-[60px] text-[10px]`}>{formatCountBengali(ent.settledCountCurr)}</td>
-                          <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.totalSettledCount)}</td>
-                          <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.unsettledCountEnd)}</td>
-                          <td className={`${numTdCls} w-[110px] text-[10px]`}>{formatAmountBengali(ent.june25UnsettledAmount)}</td>
-                          <td className={`${numTdCls} bg-slate-50/30 w-[105px] text-[10px]`}>{formatAmountBengali(ent.settledAmountCurr)}</td>
-                          <td className={`${numTdCls} font-black text-blue-900 bg-blue-50/5 w-[110px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountEnd)}</td>
-                        </tr>
-                      );
-                    })}
-                    {/* Ministry Subtotal Row */}
-                    <tr key={`mgroup-t1-total-${mIdx}`} className="bg-amber-50/60 font-black hover:bg-amber-100/50 transition-colors">
-                      <td className={`${tdCls} font-black text-center bg-amber-100/70 text-slate-900 w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>
-                        মোট
+                          <td rowSpan={mGroup.entities.length} className={`${tdCls} font-bold text-center bg-slate-50/20 w-[75px] min-w-[75px] max-w-[75px] text-[10px]`}>
+                            <HighlightText text={mGroup.ministryName} searchTerm={searchTerm} />
+                          </td>
+                        </>
+                      )}
+                      <td className={`${tdCls} font-semibold w-[95px] min-w-[95px] max-w-[95px] text-[10px]`}>
+                        <HighlightText text={ent.entityName} searchTerm={searchTerm} />
                       </td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.june25Raised)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.raisedCountCurr)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-100/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.totalRaisedCount)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.june25Settled)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.settledCountCurr)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-100/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.totalSettledCount)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-100/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.unsettledCountEnd)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[110px] text-[10px]`}>{formatAmountBengali(mSubtotal.june25UnsettledAmount)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[105px] text-[10px]`}>{formatAmountBengali(mSubtotal.settledAmountCurr)}</td>
-                      <td className={`${numTdCls} font-black text-blue-950 bg-amber-100/90 w-[110px] text-[10px]`}>{formatAmountBengali(mSubtotal.unsettledAmountEnd)}</td>
+                      <td className={`${numTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.unsettledCountPrior)}</td>
+                      <td className={`${numTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountPrior)}</td>
+                      <td className={`${numTdCls} bg-slate-50/30 w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.raisedCountCurr)}</td>
+                      <td className={`${numTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.raisedAmountCurr)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.totalCount)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.totalAmount)}</td>
+                      <td className={`${numTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.settledCountCurr)}</td>
+                      <td className={`${numTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.settledAmountCurr)}</td>
+                      <td className={`${numTdCls} font-black text-blue-900 bg-blue-50/5 w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.unsettledCountEnd)}</td>
+                      <td className={`${numTdCls} text-slate-900 font-black bg-slate-50/5 w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountEnd)}</td>
                     </tr>
-                  </React.Fragment>
-                );
+                  );
+                });
               })}
 
               {/* Table 2 rows (Financial Institutions Division) */}
               {details1Table2Data.map((mGroup, mIdx) => {
-                const mSubtotal = mGroup.entities.reduce((acc: any, ent: any) => ({
-                  june25Raised: acc.june25Raised + (ent.june25Raised || 0),
-                  raisedCountCurr: acc.raisedCountCurr + (ent.raisedCountCurr || 0),
-                  totalRaisedCount: acc.totalRaisedCount + (ent.totalRaisedCount || 0),
-                  june25Settled: acc.june25Settled + (ent.june25Settled || 0),
-                  settledCountCurr: acc.settledCountCurr + (ent.settledCountCurr || 0),
-                  totalSettledCount: acc.totalSettledCount + (ent.totalSettledCount || 0),
-                  unsettledCountEnd: acc.unsettledCountEnd + (ent.unsettledCountEnd || 0),
-                  june25UnsettledAmount: acc.june25UnsettledAmount + (ent.june25UnsettledAmount || 0),
-                  settledAmountCurr: acc.settledAmountCurr + (ent.settledAmountCurr || 0),
-                  unsettledAmountEnd: acc.unsettledAmountEnd + (ent.unsettledAmountEnd || 0),
-                }), {
-                  june25Raised: 0,
-                  raisedCountCurr: 0,
-                  totalRaisedCount: 0,
-                  june25Settled: 0,
-                  settledCountCurr: 0,
-                  totalSettledCount: 0,
-                  unsettledCountEnd: 0,
-                  june25UnsettledAmount: 0,
-                  settledAmountCurr: 0,
-                  unsettledAmountEnd: 0
-                });
-
-                return (
-                  <React.Fragment key={`mgroup-t2-${mIdx}-${mGroup.ministryName}`}>
-                    {mGroup.entities.map((ent: any, eIdx: number) => {
-                      return (
-                        <tr key={`${mIdx}-${ent.entityName}`} className="hover:bg-slate-50 transition-colors">
-                          {eIdx === 0 && (
-                            <>
-                              <td rowSpan={mGroup.entities.length + 1} className={`${numTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>
-                                {toBengaliDigits((mIdx + 5).toString())}
-                              </td>
-                              <td rowSpan={mGroup.entities.length + 1} className={`${tdCls} font-bold text-center bg-slate-50/20 w-[85px] min-w-[85px] max-w-[85px] text-[10px]`}>
-                                <HighlightText text={mGroup.ministryName} searchTerm={searchTerm} />
-                              </td>
-                            </>
-                          )}
-                          <td className={`${tdCls} font-semibold w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>
-                            <HighlightText text={ent.entityName} searchTerm={searchTerm} />
+                return mGroup.entities.map((ent: any, eIdx: number) => {
+                  return (
+                    <tr key={`${mIdx}-${ent.entityName}`} className="hover:bg-slate-50 transition-colors">
+                      {eIdx === 0 && (
+                        <>
+                          <td rowSpan={mGroup.entities.length} className={`${numTdCls} w-[30px] min-w-[30px] max-w-[30px] text-[10px]`}>
+                            {toBengaliDigits((mIdx + 5).toString())}
                           </td>
-                          <td className={`${numTdCls} w-[60px] text-[10px]`}>{formatCountBengali(ent.june25Raised)}</td>
-                          <td className={`${numTdCls} bg-slate-50/30 w-[60px] text-[10px]`}>{formatCountBengali(ent.raisedCountCurr)}</td>
-                          <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.totalRaisedCount)}</td>
-                          <td className={`${numTdCls} w-[60px] text-[10px]`}>{formatCountBengali(ent.june25Settled)}</td>
-                          <td className={`${numTdCls} bg-slate-50/30 w-[60px] text-[10px]`}>{formatCountBengali(ent.settledCountCurr)}</td>
-                          <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.totalSettledCount)}</td>
-                          <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[60px] text-[10px]`}>{formatCountBengali(ent.unsettledCountEnd)}</td>
-                          <td className={`${numTdCls} w-[110px] text-[10px]`}>{formatAmountBengali(ent.june25UnsettledAmount)}</td>
-                          <td className={`${numTdCls} bg-slate-50/30 w-[105px] text-[10px]`}>{formatAmountBengali(ent.settledAmountCurr)}</td>
-                          <td className={`${numTdCls} font-black text-blue-900 bg-blue-50/5 w-[110px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountEnd)}</td>
-                        </tr>
-                      );
-                    })}
-                    {/* Ministry Subtotal Row */}
-                    <tr key={`mgroup-t2-total-${mIdx}`} className="bg-amber-50/60 font-black hover:bg-amber-100/50 transition-colors">
-                      <td className={`${tdCls} font-black text-center bg-amber-100/70 text-slate-900 w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>
-                        মোট
+                          <td rowSpan={mGroup.entities.length} className={`${tdCls} font-bold text-center bg-slate-50/20 w-[75px] min-w-[75px] max-w-[75px] text-[10px]`}>
+                            <HighlightText text={mGroup.ministryName} searchTerm={searchTerm} />
+                          </td>
+                        </>
+                      )}
+                      <td className={`${tdCls} font-semibold w-[95px] min-w-[95px] max-w-[95px] text-[10px]`}>
+                        <HighlightText text={ent.entityName} searchTerm={searchTerm} />
                       </td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.june25Raised)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.raisedCountCurr)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-100/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.totalRaisedCount)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.june25Settled)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.settledCountCurr)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-100/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.totalSettledCount)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-100/80 w-[60px] text-[10px]`}>{formatCountBengali(mSubtotal.unsettledCountEnd)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[110px] text-[10px]`}>{formatAmountBengali(mSubtotal.june25UnsettledAmount)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-amber-50/80 w-[105px] text-[10px]`}>{formatAmountBengali(mSubtotal.settledAmountCurr)}</td>
-                      <td className={`${numTdCls} font-black text-blue-950 bg-amber-100/90 w-[110px] text-[10px]`}>{formatAmountBengali(mSubtotal.unsettledAmountEnd)}</td>
+                      <td className={`${numTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.unsettledCountPrior)}</td>
+                      <td className={`${numTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountPrior)}</td>
+                      <td className={`${numTdCls} bg-slate-50/30 w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.raisedCountCurr)}</td>
+                      <td className={`${numTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.raisedAmountCurr)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.totalCount)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.totalAmount)}</td>
+                      <td className={`${numTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.settledCountCurr)}</td>
+                      <td className={`${numTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.settledAmountCurr)}</td>
+                      <td className={`${numTdCls} font-black text-blue-900 bg-blue-50/5 w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.unsettledCountEnd)}</td>
+                      <td className={`${numTdCls} text-slate-900 font-black bg-slate-50/5 w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountEnd)}</td>
                     </tr>
-                  </React.Fragment>
-                );
+                  );
+                });
               })}
             </tbody>
             <tfoot className="qr-sticky-footer-bottom">
               <tr className="h-[36px]">
-                <td className={`${footerTdCls} w-[35px]`}></td>
-                <td className={`${footerTdCls} w-[85px]`}></td>
-                <td className={`${footerTdCls} text-center font-black w-[110px] text-[11px]`}>মোট (টেবিল-১)</td>
-                <td className={`${footerNumTdCls} w-[60px] text-[10px]`}>{formatCountBengali(details1Totals.june25Raised)}</td>
-                <td className={`${footerNumTdCls} w-[60px] text-[10px]`}>{formatCountBengali(details1Totals.raisedCountCurr)}</td>
-                <td className={`${footerNumTdCls} w-[60px] text-[10px]`}>{formatCountBengali(details1Totals.totalRaisedCount)}</td>
-                <td className={`${footerNumTdCls} w-[60px] text-[10px]`}>{formatCountBengali(details1Totals.june25Settled)}</td>
-                <td className={`${footerNumTdCls} w-[60px] text-[10px]`}>{formatCountBengali(details1Totals.settledCountCurr)}</td>
-                <td className={`${footerNumTdCls} w-[60px] text-[10px]`}>{formatCountBengali(details1Totals.totalSettledCount)}</td>
-                <td className={`${footerNumTdCls} w-[60px] text-[10px]`}>{formatCountBengali(details1Totals.unsettledCountEnd)}</td>
-                <td className={`${footerNumTdCls} w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.june25UnsettledAmount)}</td>
-                <td className={`${footerNumTdCls} w-[105px] text-[10px]`}>{formatAmountBengali(details1Totals.settledAmountCurr)}</td>
-                <td className={`${footerNumTdCls} w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.unsettledAmountEnd)}</td>
+                <td className={`${footerTdCls} w-[30px] min-w-[30px] max-w-[30px]`}></td>
+                <td className={`${footerTdCls} w-[75px] min-w-[75px] max-w-[75px]`}></td>
+                <td className={`${footerTdCls} text-center font-black w-[95px] min-w-[95px] max-w-[95px] text-[11px]`}>মোট (টেবিল-১)</td>
+                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.unsettledCountPrior)}</td>
+                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.unsettledAmountPrior)}</td>
+                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.raisedCountCurr)}</td>
+                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.raisedAmountCurr)}</td>
+                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.totalCount)}</td>
+                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.totalAmount)}</td>
+                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.settledCountCurr)}</td>
+                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.settledAmountCurr)}</td>
+                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.unsettledCountEnd)}</td>
+                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.unsettledAmountEnd)}</td>
               </tr>
               <tr className="h-[36px]">
-                <td className={`${footerTdCls} w-[35px]`}></td>
-                <td className={`${footerTdCls} w-[85px]`}></td>
-                <td className={`${footerTdCls} text-center font-black w-[110px] text-[11px]`}>মোট (টেবিল-২)</td>
-                <td className={`${footerNumTdCls} w-[60px] text-[10px]`}>{formatCountBengali(details1Table2Totals.june25Raised)}</td>
-                <td className={`${footerNumTdCls} w-[60px] text-[10px]`}>{formatCountBengali(details1Table2Totals.raisedCountCurr)}</td>
-                <td className={`${footerNumTdCls} w-[60px] text-[10px]`}>{formatCountBengali(details1Table2Totals.totalRaisedCount)}</td>
-                <td className={`${footerNumTdCls} w-[60px] text-[10px]`}>{formatCountBengali(details1Table2Totals.june25Settled)}</td>
-                <td className={`${footerNumTdCls} w-[60px] text-[10px]`}>{formatCountBengali(details1Table2Totals.settledCountCurr)}</td>
-                <td className={`${footerNumTdCls} w-[60px] text-[10px]`}>{formatCountBengali(details1Table2Totals.totalSettledCount)}</td>
-                <td className={`${footerNumTdCls} w-[60px] text-[10px]`}>{formatCountBengali(details1Table2Totals.unsettledCountEnd)}</td>
-                <td className={`${footerNumTdCls} w-[110px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.june25UnsettledAmount)}</td>
-                <td className={`${footerNumTdCls} w-[105px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.settledAmountCurr)}</td>
-                <td className={`${footerNumTdCls} w-[110px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.unsettledAmountEnd)}</td>
+                <td className={`${footerTdCls} w-[30px] min-w-[30px] max-w-[30px]`}></td>
+                <td className={`${footerTdCls} w-[75px] min-w-[75px] max-w-[75px]`}></td>
+                <td className={`${footerTdCls} text-center font-black w-[95px] min-w-[95px] max-w-[95px] text-[11px]`}>মোট (টেবিল-২)</td>
+                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Table2Totals.unsettledCountPrior)}</td>
+                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.unsettledAmountPrior)}</td>
+                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Table2Totals.raisedCountCurr)}</td>
+                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.raisedAmountCurr)}</td>
+                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Table2Totals.totalCount)}</td>
+                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.totalAmount)}</td>
+                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Table2Totals.settledCountCurr)}</td>
+                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.settledAmountCurr)}</td>
+                <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Table2Totals.unsettledCountEnd)}</td>
+                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.unsettledAmountEnd)}</td>
               </tr>
               <tr className="h-[36px]">
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white align-middle bg-black font-extrabold w-[35px]"></td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white align-middle bg-black font-extrabold w-[85px]"></td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white align-middle bg-black font-extrabold text-center w-[110px] text-[11px]">সর্বমোট</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.june25Raised)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.raisedCountCurr)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.totalRaisedCount)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.june25Settled)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.settledCountCurr)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.totalSettledCount)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[60px] text-[10px]">{formatCountBengali(details1GrandTotals.unsettledCountEnd)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.june25UnsettledAmount)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[105px] text-[10px]">{formatAmountBengali(details1GrandTotals.settledAmountCurr)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-black bg-black w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.unsettledAmountEnd)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-300 font-extrabold w-[30px] min-w-[30px] max-w-[30px]"></td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-300 font-extrabold w-[75px] min-w-[75px] max-w-[75px]"></td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-300 font-extrabold text-center w-[95px] min-w-[95px] max-w-[95px] text-[11px]">সর্বমোট</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[35px] min-w-[35px] max-w-[35px] text-[10px]">{formatCountBengali(details1GrandTotals.unsettledCountPrior)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[110px] min-w-[110px] max-w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.unsettledAmountPrior)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[35px] min-w-[35px] max-w-[35px] text-[10px]">{formatCountBengali(details1GrandTotals.raisedCountCurr)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[110px] min-w-[110px] max-w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.raisedAmountCurr)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[35px] min-w-[35px] max-w-[35px] text-[10px]">{formatCountBengali(details1GrandTotals.totalCount)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[110px] min-w-[110px] max-w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.totalAmount)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[35px] min-w-[35px] max-w-[35px] text-[10px]">{formatCountBengali(details1GrandTotals.settledCountCurr)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[110px] min-w-[110px] max-w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.settledAmountCurr)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[35px] min-w-[35px] max-w-[35px] text-[10px]">{formatCountBengali(details1GrandTotals.unsettledCountEnd)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[110px] min-w-[110px] max-w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.unsettledAmountEnd)}</td>
               </tr>
             </tfoot>
           </table>
@@ -2271,7 +2070,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       </div>
 
       {/* Table Section */}
-      <div className="table-container qr-table-container qr2-table-container overflow-auto shadow-sm rounded-none">
+      <div className="table-container qr-table-container qr2-table-container overflow-auto xl:overflow-visible shadow-sm rounded-none">
         <table className="w-full border-separate border-spacing-0 !table-auto border-l border-slate-400">
           <thead className="bg-slate-100">
             <tr className="h-[44px]">

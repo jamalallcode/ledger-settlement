@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Printer, FileSpreadsheet, Sparkles } from 'lucide-react';
-import { toBengaliDigits, toEnglishDigits, parseBengaliNumber, extractEntryDate } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate, format as dateFnsFormat } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
@@ -359,7 +359,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         if (robustNormalize(e.ministryName) !== robustNormalize(ministryName)) return false;
         if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
 
-        const entryDate = extractEntryDate(e);
+        const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
         return entryDate !== '' && entryDate >= cutoffInfo.transitionStartStr && entryDate < cycleStartStr;
       });
 
@@ -435,7 +435,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         if (robustNormalize(e.ministryName) !== robustNormalize(ministryName)) return false;
         if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return false;
 
-        const entryDate = extractEntryDate(e);
+        const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
         return entryDate !== '' && entryDate >= cutoffInfo.transitionStartStr && entryDate < cycleStartStr;
       });
 
@@ -769,6 +769,23 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                   ১৯৭১-৭২ হতে {cutoffInfo.formattedLong} পর্যন্ত উত্থাপিত ও নিষ্পত্তিকৃত আপত্তির সংখ্যাগুলো ইনপুট দিন। {cutoffInfo.nextMonthFormattedLong} হতে নিষ্পত্তি স্বয়ংক্রিয়ভাবে হিসাব হবে।
                 </p>
               </div>
+
+              {/* Dynamic Month Selector */}
+              <div className="flex items-center gap-2.5 bg-gradient-to-r from-amber-50 to-amber-100/50 border border-amber-200/80 rounded-xl px-3.5 py-1.5 shadow-sm text-xs shrink-0">
+                <span className="font-extrabold text-amber-900 tracking-wide">জেরের মাস:</span>
+                <select
+                  value={cutoffMonth}
+                  onChange={(e) => {
+                    setCutoffMonth(e.target.value);
+                    localStorage.setItem('opening_balance_cutoff_month', e.target.value);
+                  }}
+                  className="bg-white border border-amber-300 rounded-lg px-2.5 py-1 font-black text-slate-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none cursor-pointer shadow-sm hover:bg-slate-50 transition-all text-xs"
+                >
+                  {getMonthOptions().map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -978,6 +995,23 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 <p className="text-[10px] font-bold text-slate-500 mt-1">
                   ১৯৭১-৭২ হতে {cutoffInfo.formattedLong} পর্যন্ত উত্থাপিত ও নিষ্পত্তিকৃত আপত্তির সংখ্যাগুলো ইনপুট দিন। {cutoffInfo.nextMonthFormattedLong} হতে নিষ্পত্তি স্বয়ংক্রিয়ভাবে হিসাব হবে।
                 </p>
+              </div>
+
+              {/* Dynamic Month Selector */}
+              <div className="flex items-center gap-2.5 bg-gradient-to-r from-amber-50 to-amber-100/50 border border-amber-200/80 rounded-xl px-3.5 py-1.5 shadow-sm text-xs shrink-0">
+                <span className="font-extrabold text-amber-900 tracking-wide">জেরের মাস:</span>
+                <select
+                  value={cutoffMonth}
+                  onChange={(e) => {
+                    setCutoffMonth(e.target.value);
+                    localStorage.setItem('opening_balance_cutoff_month', e.target.value);
+                  }}
+                  className="bg-white border border-amber-300 rounded-lg px-2.5 py-1 font-black text-slate-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none cursor-pointer shadow-sm hover:bg-slate-50 transition-all text-xs"
+                >
+                  {getMonthOptions().map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -1265,7 +1299,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         const pastEntries = entries.filter(e => {
           if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
           if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
-          const entryDate = extractEntryDate(e);
+          const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
           return entryDate !== '' && entryDate < cycleStartStr && entryDate >= ENTRY_START_DATE;
         });
 
@@ -1324,12 +1358,11 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       if (!map.has(key)) return; // Should already be in the map if it's in MINISTRY_ENTITY_MAP
 
       const data = map.get(key);
-      const issueDateStr = extractEntryDate(e);
+      const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
       if (!issueDateStr) return;
-      const cycleStartStr = format(activeCycle.start, 'yyyy-MM-dd');
-      const cycleEndStr = format(activeCycle.end, 'yyyy-MM-dd');
+      const issueDate = new Date(issueDateStr);
 
-      if (issueDateStr >= cycleStartStr && issueDateStr <= cycleEndStr) {
+      if (issueDate >= startDate && issueDate <= endDate) {
         const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
         if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
           data.cCount += parseBengaliNumber(rCountRaw);

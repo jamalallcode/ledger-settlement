@@ -1,6 +1,6 @@
 import React from 'react';
 import { Printer, Sparkles, ChevronDown, BarChart3, FileSpreadsheet } from 'lucide-react';
-import { toBengaliDigits, toEnglishDigits, extractEntryDate } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
@@ -62,9 +62,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     };
   };
 
-  const cycleStartStr = format(activeCycle.start, 'yyyy-MM-dd');
-  const cycleEndStr = format(activeCycle.end, 'yyyy-MM-dd');
-  const formattedRange = activeCycle.label;
+  const { startDate, endDate, startMonthName, endMonthName, formattedRange } = getQuarterInfo(activeCycle.end);
 
   const downloadExcel = () => {
     const tables = document.querySelectorAll('table');
@@ -152,10 +150,11 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                         mType.includes(robustNormalize('দ্বিপাক্ষিক'));
     if (!isValidType) return false;
 
-    // Filter by Date Range (Issue Date) matching active cycle range
-    const issueDateStr = extractEntryDate(e);
+    // Filter by Date Range (Issue Date)
+    const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
     if (!issueDateStr) return false;
-    if (issueDateStr < cycleStartStr || issueDateStr > cycleEndStr) return false;
+    const issueDate = new Date(issueDateStr);
+    if (issueDate < startDate || issueDate > endDate) return false;
 
     // Filter by Ministry
     const matchMinistry = filterMinistry === '' || robustNormalize(e.ministryName).includes(robustNormalize(filterMinistry));
@@ -307,7 +306,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       </div>
 
       {/* Table Section */}
-      <div className="table-container qr-table-container overflow-auto border border-slate-400 shadow-sm rounded-lg">
+      <div className="table-container qr-table-container overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg">
         <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">

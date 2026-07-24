@@ -4,7 +4,7 @@ import SearchableSelect from './SearchableSelect.tsx';
 import DeleteConfirmationModal from './DeleteConfirmationModal.tsx';
 import { MINISTRIES_LIST, MINISTRY_ENTITY_MAP, ENTITY_BRANCH_MAP, AUDIT_YEARS_OPTIONS } from '../constants.ts';
 import { Trash2, Globe, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus, Hash, ChevronDown, CheckCircle } from 'lucide-react';
-import { toBengaliDigits, parseBengaliNumber, toEnglishDigits, extractEntryDate } from '../utils/numberUtils.ts';
+import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils.ts';
 import { getCycleForDate, isEntryLate } from '../utils/cycleHelper.ts';
 import { getDateError } from '../utils/dateValidation';
 import { format } from 'date-fns';
@@ -671,24 +671,11 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
 
-      const combinedLetter = buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear, 'পত্র নং-', 'পত্রের তারিখ-');
-      const combinedDiary = formData.meetingType === 'বিএসআর' ? buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear, 'ডায়েরি নং-', 'ডায়েরির তারিখ-') : '';
-      const combinedIssue = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
-      const combinedWp = formData.meetingType !== 'বিএসআর' ? buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-') : '';
-
-      const effectiveIssueISO = formData.issueDateISO || extractEntryDate({
-        ...formData,
-        issueLetterNoDate: combinedIssue,
-        letterNoDate: combinedLetter,
-        workpaperNoDate: combinedDiary,
-        meetingWorkpaper: combinedWp
-      });
-
       const now = new Date();
       let cycleLabel = '';
       let isLate = false;
-      if (effectiveIssueISO) {
-        const cycle = getCycleForDate(new Date(effectiveIssueISO));
+      if (formData.issueDateISO) {
+        const cycle = getCycleForDate(new Date(formData.issueDateISO));
         cycleLabel = cycle.label;
         isLate = isEntryLate(now, cycle.end);
       }
@@ -710,10 +697,14 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       const paraInvTotal = paragraphs.reduce((s, p) => s + p.involvedAmount, 0);
       const totalSettledAmount = paragraphs.reduce((s, p) => s + p.recoveredAmount + p.adjustedAmount, 0);
       const calculatedUnsettledAmount = (formData.totalInvolvedAmount || 0) - totalSettledAmount;
+      
+      const combinedLetter = buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear, 'পত্র নং-', 'পত্রের তারিখ-');
+      const combinedDiary = formData.meetingType === 'বিএসআর' ? buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear, 'ডায়েরি নং-', 'ডায়েরির তারিখ-') : '';
+      const combinedIssue = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
+      const combinedWp = formData.meetingType !== 'বিএসআর' ? buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-') : '';
 
       const finalData = {
         ...formData, 
-        issueDateISO: effectiveIssueISO,
         letterNoDate: combinedLetter,
         issueLetterNoDate: combinedIssue,
         workpaperNoDate: combinedDiary,

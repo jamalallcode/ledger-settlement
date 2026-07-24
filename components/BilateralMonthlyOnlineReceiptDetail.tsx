@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Printer, ChevronDown, FileSpreadsheet, LayoutGrid, Search, X, Landmark, CalendarDays, Check, ArrowLeft } from 'lucide-react';
-import { toBengaliDigits, toEnglishDigits, extractEntryDate } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { format as dateFnsFormat, startOfMonth, endOfMonth } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
@@ -76,7 +76,7 @@ const BilateralMonthlyOnlineReceiptDetail: React.FC<BilateralMonthlyOnlineReceip
       if (!isOnline) return;
 
       // 4. Filter by Date range of the selected month
-      const issueDateStr = extractEntryDate(e);
+      const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
       if (!issueDateStr) return;
       const entryDate = new Date(issueDateStr);
       if (entryDate < startOfMonthDate || entryDate > endOfMonthDate) return;

@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Printer, FileSpreadsheet, Sparkles } from 'lucide-react';
-import { toBengaliDigits, toEnglishDigits, parseBengaliNumber, extractEntryDate } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
@@ -74,8 +74,7 @@ const QR_6: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     };
   };
 
-  const { startDate, endDate, startMonthName, endMonthName } = getQuarterInfo(activeCycle.end);
-  const formattedRange = activeCycle.label;
+  const { startDate, endDate, startMonthName, endMonthName, formattedRange } = getQuarterInfo(activeCycle.end);
 
   const downloadExcel = () => {
     const tables = document.querySelectorAll('table');
@@ -329,7 +328,7 @@ const QR_6: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
         if (robustNormalize(e.ministryName) !== robustNormalize(ministryName)) return false;
         if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
 
-        const entryDate = extractEntryDate(e);
+        const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
         return entryDate !== '' && entryDate >= cutoffInfo.transitionStartStr && entryDate < cycleStartStr;
       });
 
@@ -480,11 +479,10 @@ const QR_6: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       if (robustNormalize(e.paraType) !== robustNormalize(paraType)) return;
 
       // Filter by Date Range (Issue Date)
-      const issueDateStr = extractEntryDate(e);
+      const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
       if (!issueDateStr) return;
-      const cycleStartStr = format(activeCycle.start, 'yyyy-MM-dd');
-      const cycleEndStr = format(activeCycle.end, 'yyyy-MM-dd');
-      if (issueDateStr < cycleStartStr || issueDateStr > cycleEndStr) return;
+      const issueDate = new Date(issueDateStr);
+      if (issueDate < startDate || issueDate > endDate) return;
 
       const mName = e.ministryName;
       if (!ministryMap.has(mName)) {
@@ -541,6 +539,23 @@ const QR_6: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                 <p className="text-[10px] font-bold text-slate-500 mt-1">
                   ১৯৭১-৭২ হতে {cutoffInfo.formattedLong} পর্যন্ত আদায় ও সমন্বয়ের টাকা ইনপুট দিন। {cutoffInfo.nextMonthFormattedLong} হতে তথ্য রেজিস্টার থেকে স্বয়ংক্রিয়ভাবে হিসাব হবে।
                 </p>
+              </div>
+
+              {/* Dynamic Month Selector */}
+              <div className="flex items-center gap-2.5 bg-gradient-to-r from-amber-50 to-amber-100/50 border border-amber-200/80 rounded-xl px-3.5 py-1.5 shadow-sm text-xs shrink-0">
+                <span className="font-extrabold text-amber-900 tracking-wide">জেরের মাস:</span>
+                <select
+                  value={cutoffMonth}
+                  onChange={(e) => {
+                    setCutoffMonth(e.target.value);
+                    localStorage.setItem('opening_balance_cutoff_month', e.target.value);
+                  }}
+                  className="bg-white border border-amber-300 rounded-lg px-2.5 py-1 font-black text-slate-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none cursor-pointer shadow-sm hover:bg-slate-50 transition-all text-xs"
+                >
+                  {getMonthOptions().map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="flex items-center gap-2">
