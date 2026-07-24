@@ -712,7 +712,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
 
       {/* "ত্রৈমাসিক পূর্বজের" MODAL POPUP (Item 2.1) */}
       {isPriorModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-3 z-[9999] no-print animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-3 z-[100000] no-print animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[98%] max-h-[94vh] flex flex-col overflow-hidden font-sans">
             {/* Modal Header */}
             <div className="p-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
@@ -762,20 +762,20 @@ const QR_Detailed_1: React.FC<QRProps> = ({
             </div>
 
             {/* Modal Table Body */}
-            <div className="p-4 overflow-y-auto grow">
+            <div className="px-4 pb-4 pt-0 overflow-auto grow">
               <table className="w-full border-separate border-spacing-0 border border-slate-300 text-[11px]">
-                <thead className="bg-slate-200 sticky top-0 z-20 shadow-xs">
+                <thead className="bg-slate-200 sticky top-0 z-30 shadow-sm">
                   <tr>
-                    <th className="border-b border-r border-slate-300 p-2.5 font-black text-slate-900 text-center w-[45px] bg-slate-200">ক্রঃ নং</th>
-                    <th className="border-b border-r border-slate-300 p-2.5 font-black text-slate-900 text-center w-[160px] bg-slate-200">মন্ত্রণালয়ের নাম</th>
-                    <th className="border-b border-r border-slate-300 p-2.5 font-black text-slate-900 text-center bg-slate-200">প্রতিষ্ঠানের নাম</th>
-                    <th className="border-b border-r border-slate-300 p-2.5 font-black text-blue-950 text-center bg-blue-100 w-[180px]">
+                    <th className="sticky top-0 z-30 border-b border-r border-slate-300 p-2.5 font-black text-slate-900 text-center w-[45px] bg-slate-200">ক্রঃ নং</th>
+                    <th className="sticky top-0 z-30 border-b border-r border-slate-300 p-2.5 font-black text-slate-900 text-center w-[160px] bg-slate-200">মন্ত্রণালয়ের নাম</th>
+                    <th className="sticky top-0 z-30 border-b border-r border-slate-300 p-2.5 font-black text-slate-900 text-center bg-slate-200">প্রতিষ্ঠানের নাম</th>
+                    <th className="sticky top-0 z-30 border-b border-r border-slate-300 p-2.5 font-black text-blue-950 text-center bg-blue-100 w-[180px]">
                       প্রারম্ভিক অমিমাংসিত উত্থাপিত আপত্তির সংখ্যা (কলাম ৪)
                     </th>
-                    <th className="border-b border-r border-slate-300 p-2.5 font-black text-emerald-950 text-center bg-emerald-100 w-[180px]">
+                    <th className="sticky top-0 z-30 border-b border-r border-slate-300 p-2.5 font-black text-emerald-950 text-center bg-emerald-100 w-[180px]">
                       প্রারম্ভিক মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা (কলাম ৭)
                     </th>
-                    <th className="border-b border-slate-300 p-2.5 font-black text-purple-950 text-center bg-purple-100 w-[180px]">
+                    <th className="sticky top-0 z-30 border-b border-slate-300 p-2.5 font-black text-purple-950 text-center bg-purple-100 w-[180px]">
                       অমিমাংসিত আপত্তিতে জড়িত টাকা (কলাম ১১)
                     </th>
                   </tr>
@@ -809,7 +809,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
                                   {toBengaliDigits(overallSerial.toString())}
                                 </td>
                                 {isFirst && (
-                                  <td rowSpan={group.entities.length + 1} className="border-b border-r border-slate-300 p-2 font-black text-slate-900 text-center align-middle bg-slate-100/60">
+                                  <td rowSpan={group.entities.length} className="border-b border-r border-slate-300 p-2 font-black text-slate-900 text-center align-middle bg-slate-100/60">
                                     {group.ministry}
                                   </td>
                                 )}
@@ -854,17 +854,17 @@ const QR_Detailed_1: React.FC<QRProps> = ({
                             <React.Fragment key={groupIdx}>
                               {groupRows}
                               {/* Ministry Total Row */}
-                              <tr className="bg-slate-200/80 font-black">
-                                <td className="border-b border-r border-slate-300 p-2 text-center text-slate-700" colSpan={2}>
+                              <tr className="bg-slate-200/90 font-black">
+                                <td className="border-b border-r border-slate-300 p-2 text-center text-slate-900 bg-slate-200" colSpan={3}>
                                   মোট ({group.ministry})
                                 </td>
-                                <td className="border-b border-r border-slate-300 p-2 text-center text-blue-950 font-black bg-blue-100/50">
+                                <td className="border-b border-r border-slate-300 p-2 text-center text-blue-950 font-black bg-blue-100">
                                   {toBengaliDigits(minSums.col4.toString())}
                                 </td>
-                                <td className="border-b border-r border-slate-300 p-2 text-center text-emerald-950 font-black bg-emerald-100/50">
+                                <td className="border-b border-r border-slate-300 p-2 text-center text-emerald-950 font-black bg-emerald-100">
                                   {toBengaliDigits(minSums.col7.toString())}
                                 </td>
-                                <td className="border-b border-slate-300 p-2 text-center text-purple-950 font-black bg-purple-100/50">
+                                <td className="border-b border-slate-300 p-2 text-center text-purple-950 font-black bg-purple-100">
                                   {toBengaliDigits(minSums.col11.toString())}
                                 </td>
                               </tr>
