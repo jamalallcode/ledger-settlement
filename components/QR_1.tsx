@@ -191,6 +191,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
   }, { sentPara: 0, recommendedPara: 0, settledPara: 0, amount: 0, recovery: 0, adjustment: 0, involvedAmount: 0, others: 0 });
 
   const thCls = "border-r border-b border-slate-400 p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
+  const thClsWithTop = thCls + " border-t border-slate-400";
   const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle";
   const numTdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
   const footerTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-white align-middle bg-black";
@@ -306,21 +307,21 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       </div>
 
       {/* Table Section */}
-      <div className="table-container qr-table-container overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg">
-        <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
+      <div className="table-container qr-table-container overflow-auto xl:overflow-visible shadow-sm rounded-lg">
+        <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto border-l border-slate-400">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">
-              <th rowSpan={2} className={`${thCls} w-[34px]`}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thCls} w-[12%]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
-              <th rowSpan={2} className={`${thCls} w-[62px]`}>দ্বি-পক্ষীয় সভার সংখ্যা</th>
-              <th rowSpan={2} className={thCls}>সভা অনুষ্ঠানের তারিখ</th>
-              <th rowSpan={2} className={`${thCls} w-[62px]`}>আলোচিত অনুচ্ছেদ সংখ্যা</th>
-              <th rowSpan={2} className={thCls}>সুপারিশকৃত অনুচ্ছেদ সংখ্যা</th>
-              <th rowSpan={2} className={thCls}>কার্য বিবরণী প্রাপ্তির তারিখ</th>
-              <th rowSpan={2} className={thCls}>মীমাংসাপত্র জারীর তারিখ</th>
-              <th rowSpan={2} className={thCls}>মীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
-              <th colSpan={3} className={thCls}>সভার প্রেক্ষিতে আদায় সমন্বয়ের পরিমাণ</th>
-              <th rowSpan={2} className={`${thCls.replace('p-2', 'p-1')} w-[42px]`}>মন্তব্য</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[34px]`}>ক্রঃ নং</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[12%]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[62px]`}>দ্বি-পক্ষীয় সভার সংখ্যা</th>
+              <th rowSpan={2} className={thClsWithTop}>সভা অনুষ্ঠানের তারিখ</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[62px]`}>আলোচিত অনুচ্ছেদ সংখ্যা</th>
+              <th rowSpan={2} className={thClsWithTop}>সুপারিশকৃত অনুচ্ছেদ সংখ্যা</th>
+              <th rowSpan={2} className={thClsWithTop}>কার্য বিবরণী প্রাপ্তির তারিখ</th>
+              <th rowSpan={2} className={thClsWithTop}>মীমাংসাপত্র জারীর তারিখ</th>
+              <th rowSpan={2} className={thClsWithTop}>মীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
+              <th colSpan={3} className={thClsWithTop}>সভার প্রেক্ষিতে আদায় সমন্বয়ের পরিমাণ</th>
+              <th rowSpan={2} className={`${thClsWithTop.replace('p-2', 'p-1')} w-[42px]`}>মন্তব্য</th>
             </tr>
             <tr className="h-[38px]">
               <th className={thCls}>আদায়</th>

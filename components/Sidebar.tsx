@@ -723,7 +723,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 দ্বিপক্ষীয়
                               </button>
 
-                              {/* বিস্তারিত এবং এর ৬টি সাব-আইটেম */}
+                              {/* বিস্তারিত এবং এর ৪টি সাব-আইটেম */}
                               <button 
                                 onClick={() => setIsDetailedExpanded(!isDetailedExpanded)}
                                 className={`w-full flex items-center justify-between px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${isDetailedExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
@@ -743,7 +743,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     transition={{ duration: 0.2, ease: "easeInOut" }}
                                     className="pl-3 py-1 space-y-1 overflow-hidden"
                                   >
-                                    {['১', '২', '৩', '৪', '৫', '৬'].map((num) => {
+                                    {['১', '২', '৩', '৪'].map((num) => {
                                       const key = `ত্রৈমাসিক রিটার্ন - বিস্তারিত - ${num}`;
                                       const isSelected = reportType === key;
                                       return (

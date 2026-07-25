@@ -980,6 +980,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   const filteredTable2Data = useMemo(() => processData(true), [entries, prevStats, searchTerm, filterMinistry]);
 
   const thCls = "border-r border-b border-slate-400 p-1 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
+  const thClsWithTop = thCls + " border-t border-slate-400";
   const tdCls = "border-r border-b border-slate-400 p-1 text-[9px] text-slate-700 align-middle";
   const numTdCls = "border-r border-b border-slate-400 p-1 text-[9px] text-slate-700 text-center align-middle font-bold";
   
@@ -992,22 +993,22 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     const totals = { pR: 0, cR: 0, tR: 0, pS: 0, cS: 0, tS: 0, pnd: 0, cSA: 0, pndA: 0 };
 
     return (
-      <div className={`table-container qr-table-container ${tableId === 'table-2' ? '' : 'mb-10'} overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg`}>
-        <table className="w-full border-separate border-spacing-0 min-w-[1000px] !table-auto">
+      <div className={`table-container qr-table-container ${tableId === 'table-2' ? '' : 'mb-10'} overflow-auto xl:overflow-visible shadow-sm rounded-lg`}>
+        <table className="w-full border-separate border-spacing-0 min-w-[1000px] !table-auto border-l border-slate-400">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">
-              <th className={thCls + " w-10"}>ক্রঃ নং</th>
-              <th className={`${thCls} w-[8%]`}>মন্ত্রণালয়ের নাম</th>
-              <th className={`${thCls} w-[8%]`}>প্রতিষ্ঠানের নাম</th>
-              <th className={thCls}>১৯৭১-৭২ হতে {getMonthNameBN(prevMonthDate)}/{formatYearBN(prevMonthDate)} মাস পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
-              <th className={thCls}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
-              <th className={thCls}>{getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত মোট উত্থাপিত আপত্তির সংখ্যা</th>
-              <th className={thCls}>১৯৭১-৭২ হতে {getMonthNameBN(prevMonthDate)}/{formatYearBN(prevMonthDate)} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-              <th className={thCls}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-              <th className={thCls}>{getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-              <th className={thCls}>{getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
-              <th className={thCls}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত নিষ্পত্তিকৃত আপত্তিতে জড়িত টাকা</th>
-              <th className={thCls}>{getMonthNameBN(endDate)}/{formatYearBN(endDate)} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
+              <th className={thClsWithTop + " w-10"}>ক্রঃ নং</th>
+              <th className={`${thClsWithTop} w-[8%]`}>মন্ত্রণালয়ের নাম</th>
+              <th className={`${thClsWithTop} w-[8%]`}>প্রতিষ্ঠানের নাম</th>
+              <th className={thClsWithTop}>১৯৭১-৭২ হতে {getMonthNameBN(prevMonthDate)}/{formatYearBN(prevMonthDate)} মাস পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
+              <th className={thClsWithTop}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
+              <th className={thClsWithTop}>{getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত মোট উত্থাপিত আপত্তির সংখ্যা</th>
+              <th className={thClsWithTop}>১৯৭১-৭২ হতে {getMonthNameBN(prevMonthDate)}/{formatYearBN(prevMonthDate)} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+              <th className={thClsWithTop}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+              <th className={thClsWithTop}>{getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+              <th className={thClsWithTop}>{getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
+              <th className={thClsWithTop}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত নিষ্পত্তিকৃত আপত্তিতে জড়িত টাকা</th>
+              <th className={thClsWithTop}>{getMonthNameBN(endDate)}/{formatYearBN(endDate)} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
             </tr>
           </thead>
           <tbody>

@@ -362,17 +362,17 @@ const QR_Detailed_1: React.FC<QRProps> = ({
   };
 
   // Header styles with border fix for sticky header
-  const thCls = "border-b border-r border-t border-l border-slate-400 p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-100";
-  const thRow2Cls = "border-b border-r border-t border-l border-slate-400 p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-100";
-  const thRow3Cls = "border-b border-r border-t border-l border-slate-400 p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-200";
+  const thCls = "border-b border-r border-t border-slate-400 p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-100";
+  const thRow2Cls = "border-b border-r border-slate-400 p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-100";
+  const thRow3Cls = "border-b border-r border-slate-400 p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-200";
 
-  const yellowThCls = "border-b border-r border-t border-l border-slate-400 p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-300";
-  const yellowThRow2Cls = "border-b border-r border-t border-l border-slate-400 p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-300";
-  const yellowThRow3Cls = "border-b border-r border-t border-l border-slate-400 p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-400";
+  const yellowThCls = "border-b border-r border-t border-slate-400 p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-300";
+  const yellowThRow2Cls = "border-b border-r border-slate-400 p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-300";
+  const yellowThRow3Cls = "border-b border-r border-slate-400 p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-400";
 
-  const tdCls = "border-b border-r border-l border-slate-400 p-2 text-[10px] text-slate-800 align-middle bg-white";
+  const tdCls = "border-b border-r border-slate-400 p-2 text-[10px] text-slate-800 align-middle bg-white";
   const numTdCls = "border-b border-r border-slate-400 p-2 text-[10px] text-slate-800 text-center align-middle font-bold bg-white";
-  const footerTdCls = "border-b border-r border-l border-slate-400 p-2 text-[10px] text-white align-middle bg-black font-black text-center";
+  const footerTdCls = "border-b border-r border-slate-400 p-2 text-[10px] text-white align-middle bg-black font-black text-center";
 
   // Calculate Table 1 Totals
   const t1Totals = { col4: 0, col5: 0, col6: 0, col7: 0, col8: 0, col9: 0, col10: 0, col11: 0, col12: 0, col13: 0 };
@@ -501,7 +501,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       </div>
 
       {/* Main Table Container (With Fixed Borders & Scroll Fix - Item 1) */}
-      <div className="qr-table-container table-container overflow-auto border border-slate-400 shadow-sm rounded-lg mb-6 max-h-[75vh]">
+      <div className="qr-table-container table-container overflow-auto shadow-sm rounded-lg mb-6 max-h-[75vh]">
         {/* TABLE 1 */}
         <table className="w-full border-separate border-spacing-0 min-w-[1050px]">
           <thead>
@@ -627,7 +627,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={3} className={footerTdCls}>মোট (টেবিল-১)</td>
+              <td colSpan={3} className={`${footerTdCls} border-l`}>মোট (টেবিল-১)</td>
               <td className={footerTdCls}>{toBengaliDigits(t1Totals.col4.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(t1Totals.col5.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(t1Totals.col6.toString())}</td>
@@ -764,7 +764,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={3} className={footerTdCls}>মোট (টেবিল-২)</td>
+              <td colSpan={3} className={`${footerTdCls} border-l`}>মোট (টেবিল-২)</td>
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col4.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col5.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col6.toString())}</td>
