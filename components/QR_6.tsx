@@ -724,11 +724,12 @@ const QR_6: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     );
   };
 
-  const thCls = "border-r border-b border-slate-400 p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
-  const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle";
-  const numTdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
-  const footerTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-white align-middle bg-black";
-  const footerNumTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-white text-center align-middle font-bold bg-black";
+  const thCls = "p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
+  const thClsWithTop = thCls;
+  const tdCls = "p-2 text-[9px] text-slate-700 align-middle";
+  const numTdCls = "p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
+  const footerTdCls = "p-2 text-[10px] text-white align-middle bg-black";
+  const footerNumTdCls = "p-2 text-[10px] text-white text-center align-middle font-bold bg-black";
 
   return (
     <div id="qr-6-container" className="w-full mx-auto py-4 px-[4px] bg-white rounded-xl relative animate-in fade-in duration-500 font-sans">
@@ -798,17 +799,17 @@ const QR_6: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
         <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
       </div>
 
-      <div className="table-container qr-table-container overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg">
-        <table className="w-full border-separate border-spacing-0 min-w-[850px] !table-auto">
+      <div className="table-container qr-table-container overflow-auto xl:overflow-visible shadow-sm rounded-lg">
+        <table className="w-full border-separate border-spacing-0 min-w-[850px] !table-auto border-l border-slate-400">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">
-              <th rowSpan={2} className={`${thCls} w-[calc(5%-2px)]`}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thCls} w-[calc(12%-2px)]`}>মন্ত্রণালয়ের নাম</th>
-              <th rowSpan={2} className={thCls}>জড়িত টাকা</th>
-              <th colSpan={2} className={thCls}>আয়কর ও ভ্যাট বাবদ</th>
-              <th colSpan={2} className={thCls}>অন্যান্য বাবদ</th>
-              <th colSpan={2} className={thCls}>সর্বমোট</th>
-              <th rowSpan={2} className={thCls}>মন্তব্য</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[calc(5%-2px)]`}>ক্রঃ নং</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[calc(12%-2px)]`}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={thClsWithTop}>জড়িত টাকা</th>
+              <th colSpan={2} className={thClsWithTop}>আয়কর ও ভ্যাট বাবদ</th>
+              <th colSpan={2} className={thClsWithTop}>অন্যান্য বাবদ</th>
+              <th colSpan={2} className={thClsWithTop}>সর্বমোট</th>
+              <th rowSpan={2} className={thClsWithTop}>মন্তব্য</th>
             </tr>
             <tr className="h-[38px]">
               <th className={thCls}>আদায়</th>

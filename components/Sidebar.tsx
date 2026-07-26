@@ -723,7 +723,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 দ্বিপক্ষীয়
                               </button>
 
-                              {/* বিস্তারিত এবং এর ৬টি সাব-আইটেম */}
+                              {/* বিস্তারিত এবং এর ৪টি সাব-আইটেম */}
                               <button 
                                 onClick={() => setIsDetailedExpanded(!isDetailedExpanded)}
                                 className={`w-full flex items-center justify-between px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${isDetailedExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
@@ -743,7 +743,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     transition={{ duration: 0.2, ease: "easeInOut" }}
                                     className="pl-3 py-1 space-y-1 overflow-hidden"
                                   >
-                                    {['১', '২', '৩', '৪', '৫', '৬'].map((num) => {
+                                    {['১', '২', '৩', '৪'].map((num) => {
                                       const key = `ত্রৈমাসিক রিটার্ন - বিস্তারিত - ${num}`;
                                       const isSelected = reportType === key;
                                       return (
@@ -786,40 +786,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                         >
                           <span>চাহিদা মোতাবেক</span>
                         </button>
-
-                        {/* ৫. সেটআপ (Toggle) */}
-                        {isAdmin && (
-                          <>
-                            <button 
-                              onClick={() => setIsSetupExpanded(!isSetupExpanded)}
-                              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-black transition-all cursor-pointer ${isSetupExpanded ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <span>সেটআপ</span>
-                              </div>
-                              <ChevronDown size={6} className={`transition-transform duration-300 ${isSetupExpanded ? 'rotate-180' : ''}`} />
-                            </button>
-
-                            <AnimatePresence>
-                              {isSetupExpanded && (
-                                <motion.div 
-                                  initial={{ height: 0, opacity: 0 }}
-                                  animate={{ height: 'auto', opacity: 1 }}
-                                  exit={{ height: 0, opacity: 0 }}
-                                  transition={{ duration: 0.2, ease: "easeInOut" }}
-                                  className="pl-3 py-1 space-y-1 overflow-hidden"
-                                >
-                                  <button 
-                                    onClick={() => setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক')}
-                                    className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'প্রারম্ভিক জের সেটআপ: মাসিক' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
-                                  >
-                                    মাসিক জের
-                                  </button>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </>
-                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>

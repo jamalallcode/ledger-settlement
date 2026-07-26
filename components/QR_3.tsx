@@ -1424,6 +1424,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   const filteredTable2Data = useMemo(() => processData(true), [entries, prevStats, searchTerm, filterMinistry]);
 
   const thCls = "border-r border-b border-slate-400 p-1 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
+  const thClsWithTop = thCls + " border-t border-slate-400";
   const tdCls = "border-r border-b border-slate-400 p-1 text-[9px] text-slate-700 align-middle";
   const numTdCls = "border-r border-b border-slate-400 p-1 text-[9px] text-slate-700 text-center align-middle font-bold";
   const footerTdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-200 font-extrabold";
@@ -1434,19 +1435,19 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     const totals = { pC: 0, pA: 0, cC: 0, cA: 0, tC: 0, sC: 0, sA: 0, fC: 0, fA: 0 };
 
     return (
-      <div className={`table-container qr-table-container ${tableId === 'table-2' ? '' : 'mb-10'} overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg`}>
-        <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
+      <div className={`table-container qr-table-container ${tableId === 'table-2' ? '' : 'mb-10'} overflow-auto xl:overflow-visible shadow-sm rounded-lg`}>
+        <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto border-l border-slate-400">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">
-              <th rowSpan={2} className={`${thCls} w-10`}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thCls} w-[calc(12%-2px)]`}>মন্ত্রণালয়ের নাম</th>
-              <th rowSpan={2} className={`${thCls} w-[calc(12%-2px)]`}>সংস্থার নাম</th>
-              <th colSpan={2} className={thCls}>{getMonthNameBN(prevMonthDate)}/{formatYearBN(prevMonthDate)} পর্যন্ত অমীমাংসিত অডিট আপত্তি</th>
-              <th colSpan={2} className={thCls}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত উত্থাপিত অডিট আপত্তি</th>
-              <th rowSpan={2} className={thCls}>মোট অডিট আপত্তি</th>
-              <th colSpan={2} className={thCls}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত মীমাংসিত অডিট আপত্তি</th>
-              <th colSpan={2} className={thCls}>{getMonthNameBN(endDate)}/{formatYearBN(endDate)} পর্যন্ত অমীমাংসিত অডিট আপত্তি</th>
-              <th rowSpan={2} className={`${thCls} w-[calc(8%-2px)]`}>মন্তব্য</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-10`}>ক্রঃ নং</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[calc(12%-2px)]`}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[calc(12%-2px)]`}>সংস্থার নাম</th>
+              <th colSpan={2} className={thClsWithTop}>{getMonthNameBN(prevMonthDate)}/{formatYearBN(prevMonthDate)} পর্যন্ত অমীমাংসিত অডিট আপত্তি</th>
+              <th colSpan={2} className={thClsWithTop}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত উত্থাপিত অডিট আপত্তি</th>
+              <th rowSpan={2} className={thClsWithTop}>মোট অডিট আপত্তি</th>
+              <th colSpan={2} className={thClsWithTop}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত মীমাংসিত অডিট আপত্তি</th>
+              <th colSpan={2} className={thClsWithTop}>{getMonthNameBN(endDate)}/{formatYearBN(endDate)} পর্যন্ত অমীমাংসিত অডিট আপত্তি</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[calc(8%-2px)]`}>মন্তব্য</th>
             </tr>
             <tr className="h-[38px]">
               <th className={thCls}>সংখ্যা</th>

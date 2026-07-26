@@ -652,40 +652,40 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
               <table className="w-full border-separate border-spacing-0 !table-auto text-center min-w-[1200px]">
                 <thead className="bg-slate-100 sticky top-0 z-20 shadow-sm text-[9px] font-black text-slate-800">
                   <tr>
-                    <th className="border-r border-b border-slate-300 p-2 text-center" rowSpan={2}>ক্র নং</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center" rowSpan={2}>মন্ত্রণালয়ের নাম</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center" rowSpan={2}>সংস্থার নাম</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center" colSpan={7}>{cutoffInfo.formattedLong} পর্যন্ত প্রারম্ভিক জের (ইনপুট)</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center" colSpan={7}>{cutoffInfo.nextMonthFormattedLong} হতে Active Quarter এর আগের মাস পর্যন্ত সমন্বয় (রেজিস্টার হতে)</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center" colSpan={7}>১৯৭১-৭২ হতে মোট সমন্বয়কৃত পূর্ব জের</th>
+                    <th className="p-2 text-center" rowSpan={2}>ক্র নং</th>
+                    <th className="p-2 text-center" rowSpan={2}>মন্ত্রণালয়ের নাম</th>
+                    <th className="p-2 text-center" rowSpan={2}>সংস্থার নাম</th>
+                    <th className="p-2 text-center" colSpan={7}>{cutoffInfo.formattedLong} পর্যন্ত প্রারম্ভিক জের (ইনপুট)</th>
+                    <th className="p-2 text-center" colSpan={7}>{cutoffInfo.nextMonthFormattedLong} হতে Active Quarter এর আগের মাস পর্যন্ত সমন্বয় (রেজিস্টার হতে)</th>
+                    <th className="p-2 text-center" colSpan={7}>১৯৭১-৭২ হতে মোট সমন্বয়কৃত পূর্ব জের</th>
                   </tr>
                   <tr>
                     {/* June 2025 Inputs */}
-                    <th className="border-r border-b border-slate-300 p-2 text-center">জড়িত টাকা</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">অডিট কালীন আদায়</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">অডিট কালীন সমন্বয়</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">উত্থাপিত অর্থের বিপরীতে আদায়</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">উত্থাপিত অর্থের বিপরীতে সমন্বয়</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">পুরাতন আপত্তিতে জড়িত আদায়</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">পুরাতন আপত্তিতে জড়িত সমন্বয়</th>
+                    <th className="p-2 text-center">জড়িত টাকা</th>
+                    <th className="p-2 text-center">অডিট কালীন আদায়</th>
+                    <th className="p-2 text-center">অডিট কালীন সমন্বয়</th>
+                    <th className="p-2 text-center">উত্থাপিত অর্থের বিপরীতে আদায়</th>
+                    <th className="p-2 text-center">উত্থাপিত অর্থের বিপরীতে সমন্বয়</th>
+                    <th className="p-2 text-center">পুরাতন আপত্তিতে জড়িত আদায়</th>
+                    <th className="p-2 text-center">পুরাতন আপত্তিতে জড়িত সমন্বয়</th>
                     
                     {/* Transition Values */}
-                    <th className="border-r border-b border-slate-300 p-2 text-center">জড়িত টাকা</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">অডিট কালীন আদায়</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">অডিট কালীন সমন্বয়</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">উত্থাপিত অর্থের বিপরীতে আদায়</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">উত্থাপিত অর্থের বিপরীতে সমন্বয়</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">পুরাতন আপত্তিতে জড়িত আদায়</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">পুরাতন আপত্তিতে জড়িত সমন্বয়</th>
+                    <th className="p-2 text-center">জড়িত টাকা</th>
+                    <th className="p-2 text-center">অডিট কালীন আদায়</th>
+                    <th className="p-2 text-center">অডিট কালীন সমন্বয়</th>
+                    <th className="p-2 text-center">উত্থাপিত অর্থের বিপরীতে আদায়</th>
+                    <th className="p-2 text-center">উত্থাপিত অর্থের বিপরীতে সমন্বয়</th>
+                    <th className="p-2 text-center">পুরাতন আপত্তিতে জড়িত আদায়</th>
+                    <th className="p-2 text-center">পুরাতন আপত্তিতে জড়িত সমন্বয়</th>
 
                     {/* Total Cumulative */}
-                    <th className="border-r border-b border-slate-300 p-2 text-center">জড়িত টাকা</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">অডিট কালীন আদায়</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">অডিট কালীন সমন্বয়</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">উত্থাপিত অর্থের বিপরীতে আদায়</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">উত্থাপিত অর্থের বিপরীতে সমন্বয়</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">পুরাতন আপত্তিতে জড়িত আদায়</th>
-                    <th className="border-r border-b border-slate-300 p-2 text-center">পুরাতন আপত্তিতে জড়িত সমন্বয়</th>
+                    <th className="p-2 text-center">জড়িত টাকা</th>
+                    <th className="p-2 text-center">অডিট কালীন আদায়</th>
+                    <th className="p-2 text-center">অডিট কালীন সমন্বয়</th>
+                    <th className="p-2 text-center">উত্থাপিত অর্থের বিপরীতে আদায়</th>
+                    <th className="p-2 text-center">উত্থাপিত অর্থের বিপরীতে সমন্বয়</th>
+                    <th className="p-2 text-center">পুরাতন আপত্তিতে জড়িত আদায়</th>
+                    <th className="p-2 text-center">পুরাতন আপত্তিতে জড়িত সমন্বয়</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -695,13 +695,13 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
 
                     return (
                       <tr key={row.entityName} className="hover:bg-slate-50 transition-colors text-[10px]">
-                        <td className="border-r border-b border-slate-300 p-2 font-bold">{toBengaliDigits(row.sl.toString())}</td>
+                        <td className="p-2 font-bold">{toBengaliDigits(row.sl.toString())}</td>
                         {showMinistry && (
-                          <td rowSpan={rowSpan} className="border-r border-b border-slate-300 p-2 font-black bg-slate-50/50 align-middle text-center">
+                          <td rowSpan={rowSpan} className="p-2 font-black bg-slate-50/50 align-middle text-center">
                             {row.ministryName}
                           </td>
                         )}
-                        <td className="border-r border-b border-slate-300 p-2 font-bold text-left">{row.entityName}</td>
+                        <td className="p-2 font-bold text-left">{row.entityName}</td>
                         
                         {/* June 2025 Inputs */}
                         {[
@@ -713,7 +713,7 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                           'june25OldRec',
                           'june25OldAdj'
                         ].map(f => (
-                          <td key={f} className="border-r border-b border-slate-300 p-1 bg-amber-50/10">
+                          <td key={f} className="p-1 bg-amber-50/10">
                             <input
                               type="text"
                               className="w-full text-center font-black text-[11px] bg-amber-50/20 hover:bg-amber-100/30 focus:bg-white border border-amber-200 focus:border-blue-500 rounded px-1 py-0.5 outline-none transition-all"
@@ -729,52 +729,52 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                         ))}
 
                         {/* Transitions */}
-                        <td className="border-r border-b border-slate-300 p-2 bg-slate-50 font-bold text-slate-600">{toBengaliDigits(row.transAmount.toString())}</td>
-                        <td className="border-r border-b border-slate-300 p-2 bg-slate-50 font-bold text-slate-600">{toBengaliDigits(row.transAuditRec.toString())}</td>
-                        <td className="border-r border-b border-slate-300 p-2 bg-slate-50 font-bold text-slate-600">{toBengaliDigits(row.transAuditAdj.toString())}</td>
-                        <td className="border-r border-b border-slate-300 p-2 bg-slate-50 font-bold text-slate-600">{toBengaliDigits(row.transCurrentRec.toString())}</td>
-                        <td className="border-r border-b border-slate-300 p-2 bg-slate-50 font-bold text-slate-600">{toBengaliDigits(row.transCurrentAdj.toString())}</td>
-                        <td className="border-r border-b border-slate-300 p-2 bg-slate-50 font-bold text-slate-600">{toBengaliDigits(row.transOldRec.toString())}</td>
-                        <td className="border-r border-b border-slate-300 p-2 bg-slate-50 font-bold text-slate-600">{toBengaliDigits(row.transOldAdj.toString())}</td>
+                        <td className="p-2 bg-slate-50 font-bold text-slate-600">{toBengaliDigits(row.transAmount.toString())}</td>
+                        <td className="p-2 bg-slate-50 font-bold text-slate-600">{toBengaliDigits(row.transAuditRec.toString())}</td>
+                        <td className="p-2 bg-slate-50 font-bold text-slate-600">{toBengaliDigits(row.transAuditAdj.toString())}</td>
+                        <td className="p-2 bg-slate-50 font-bold text-slate-600">{toBengaliDigits(row.transCurrentRec.toString())}</td>
+                        <td className="p-2 bg-slate-50 font-bold text-slate-600">{toBengaliDigits(row.transCurrentAdj.toString())}</td>
+                        <td className="p-2 bg-slate-50 font-bold text-slate-600">{toBengaliDigits(row.transOldRec.toString())}</td>
+                        <td className="p-2 bg-slate-50 font-bold text-slate-600">{toBengaliDigits(row.transOldAdj.toString())}</td>
 
                         {/* Cumulative totals */}
-                        <td className="border-r border-b border-slate-300 p-2 bg-blue-50/10 font-bold text-blue-900">{toBengaliDigits(row.totalAmount.toString())}</td>
-                        <td className="border-r border-b border-slate-300 p-2 bg-blue-50/10 font-bold text-slate-900">{toBengaliDigits(row.totalAuditRec.toString())}</td>
-                        <td className="border-r border-b border-slate-300 p-2 bg-blue-50/10 font-bold text-slate-900">{toBengaliDigits(row.totalAuditAdj.toString())}</td>
-                        <td className="border-r border-b border-slate-300 p-2 bg-blue-50/10 font-bold text-slate-900">{toBengaliDigits(row.totalCurrentRec.toString())}</td>
-                        <td className="border-r border-b border-slate-300 p-2 bg-blue-50/10 font-bold text-slate-900">{toBengaliDigits(row.totalCurrentAdj.toString())}</td>
-                        <td className="border-r border-b border-slate-300 p-2 bg-blue-50/10 font-bold text-slate-900">{toBengaliDigits(row.totalOldRec.toString())}</td>
-                        <td className="border-r border-b border-slate-300 p-2 bg-blue-50/10 font-bold text-slate-900">{toBengaliDigits(row.totalOldAdj.toString())}</td>
+                        <td className="p-2 bg-blue-50/10 font-bold text-blue-900">{toBengaliDigits(row.totalAmount.toString())}</td>
+                        <td className="p-2 bg-blue-50/10 font-bold text-slate-900">{toBengaliDigits(row.totalAuditRec.toString())}</td>
+                        <td className="p-2 bg-blue-50/10 font-bold text-slate-900">{toBengaliDigits(row.totalAuditAdj.toString())}</td>
+                        <td className="p-2 bg-blue-50/10 font-bold text-slate-900">{toBengaliDigits(row.totalCurrentRec.toString())}</td>
+                        <td className="p-2 bg-blue-50/10 font-bold text-slate-900">{toBengaliDigits(row.totalCurrentAdj.toString())}</td>
+                        <td className="p-2 bg-blue-50/10 font-bold text-slate-900">{toBengaliDigits(row.totalOldRec.toString())}</td>
+                        <td className="p-2 bg-blue-50/10 font-bold text-slate-900">{toBengaliDigits(row.totalOldAdj.toString())}</td>
                       </tr>
                     );
                   })}
                 </tbody>
                 <tfoot className="bg-slate-200 text-slate-900 font-extrabold text-[10px]">
                   <tr>
-                    <td className="border-r border-b border-slate-300 p-2 text-right" colSpan={3}>সর্বমোট</td>
-                    <td className="border-r border-b border-slate-300 p-2">{toBengaliDigits(prevLedgerGrandTotals.june25Amount.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2">{toBengaliDigits(prevLedgerGrandTotals.june25AuditRec.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2">{toBengaliDigits(prevLedgerGrandTotals.june25AuditAdj.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2">{toBengaliDigits(prevLedgerGrandTotals.june25CurrentRec.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2">{toBengaliDigits(prevLedgerGrandTotals.june25CurrentAdj.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2">{toBengaliDigits(prevLedgerGrandTotals.june25OldRec.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2">{toBengaliDigits(prevLedgerGrandTotals.june25OldAdj.toString())}</td>
+                    <td className="p-2 text-right" colSpan={3}>সর্বমোট</td>
+                    <td className="p-2">{toBengaliDigits(prevLedgerGrandTotals.june25Amount.toString())}</td>
+                    <td className="p-2">{toBengaliDigits(prevLedgerGrandTotals.june25AuditRec.toString())}</td>
+                    <td className="p-2">{toBengaliDigits(prevLedgerGrandTotals.june25AuditAdj.toString())}</td>
+                    <td className="p-2">{toBengaliDigits(prevLedgerGrandTotals.june25CurrentRec.toString())}</td>
+                    <td className="p-2">{toBengaliDigits(prevLedgerGrandTotals.june25CurrentAdj.toString())}</td>
+                    <td className="p-2">{toBengaliDigits(prevLedgerGrandTotals.june25OldRec.toString())}</td>
+                    <td className="p-2">{toBengaliDigits(prevLedgerGrandTotals.june25OldAdj.toString())}</td>
 
-                    <td className="border-r border-b border-slate-300 p-2 bg-slate-100">{toBengaliDigits(prevLedgerGrandTotals.transAmount.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2 bg-slate-100">{toBengaliDigits(prevLedgerGrandTotals.transAuditRec.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2 bg-slate-100">{toBengaliDigits(prevLedgerGrandTotals.transAuditAdj.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2 bg-slate-100">{toBengaliDigits(prevLedgerGrandTotals.transCurrentRec.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2 bg-slate-100">{toBengaliDigits(prevLedgerGrandTotals.transCurrentAdj.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2 bg-slate-100">{toBengaliDigits(prevLedgerGrandTotals.transOldRec.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2 bg-slate-100">{toBengaliDigits(prevLedgerGrandTotals.transOldAdj.toString())}</td>
+                    <td className="p-2 bg-slate-100">{toBengaliDigits(prevLedgerGrandTotals.transAmount.toString())}</td>
+                    <td className="p-2 bg-slate-100">{toBengaliDigits(prevLedgerGrandTotals.transAuditRec.toString())}</td>
+                    <td className="p-2 bg-slate-100">{toBengaliDigits(prevLedgerGrandTotals.transAuditAdj.toString())}</td>
+                    <td className="p-2 bg-slate-100">{toBengaliDigits(prevLedgerGrandTotals.transCurrentRec.toString())}</td>
+                    <td className="p-2 bg-slate-100">{toBengaliDigits(prevLedgerGrandTotals.transCurrentAdj.toString())}</td>
+                    <td className="p-2 bg-slate-100">{toBengaliDigits(prevLedgerGrandTotals.transOldRec.toString())}</td>
+                    <td className="p-2 bg-slate-100">{toBengaliDigits(prevLedgerGrandTotals.transOldAdj.toString())}</td>
 
-                    <td className="border-r border-b border-slate-300 p-2 text-blue-900 bg-blue-100/30">{toBengaliDigits(prevLedgerGrandTotals.totalAmount.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2 bg-blue-100/20">{toBengaliDigits(prevLedgerGrandTotals.totalAuditRec.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2 bg-blue-100/20">{toBengaliDigits(prevLedgerGrandTotals.totalAuditAdj.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2 bg-blue-100/20">{toBengaliDigits(prevLedgerGrandTotals.totalCurrentRec.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2 bg-blue-100/20">{toBengaliDigits(prevLedgerGrandTotals.totalCurrentAdj.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2 bg-blue-100/20">{toBengaliDigits(prevLedgerGrandTotals.totalOldRec.toString())}</td>
-                    <td className="border-r border-b border-slate-300 p-2 bg-blue-100/20">{toBengaliDigits(prevLedgerGrandTotals.totalOldAdj.toString())}</td>
+                    <td className="p-2 text-blue-900 bg-blue-100/30">{toBengaliDigits(prevLedgerGrandTotals.totalAmount.toString())}</td>
+                    <td className="p-2 bg-blue-100/20">{toBengaliDigits(prevLedgerGrandTotals.totalAuditRec.toString())}</td>
+                    <td className="p-2 bg-blue-100/20">{toBengaliDigits(prevLedgerGrandTotals.totalAuditAdj.toString())}</td>
+                    <td className="p-2 bg-blue-100/20">{toBengaliDigits(prevLedgerGrandTotals.totalCurrentRec.toString())}</td>
+                    <td className="p-2 bg-blue-100/20">{toBengaliDigits(prevLedgerGrandTotals.totalCurrentAdj.toString())}</td>
+                    <td className="p-2 bg-blue-100/20">{toBengaliDigits(prevLedgerGrandTotals.totalOldRec.toString())}</td>
+                    <td className="p-2 bg-blue-100/20">{toBengaliDigits(prevLedgerGrandTotals.totalOldAdj.toString())}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -797,11 +797,12 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     );
   };
 
-  const thCls = "border-r border-b border-slate-400 p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
-  const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle";
-  const numTdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
-  const footerTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-900 align-middle bg-slate-200 font-extrabold";
-  const footerNumTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-200";
+  const thCls = "p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
+  const thClsWithTop = thCls;
+  const tdCls = "p-2 text-[9px] text-slate-700 align-middle";
+  const numTdCls = "p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
+  const footerTdCls = "p-2 text-[10px] text-slate-900 align-middle bg-slate-200 font-extrabold";
+  const footerNumTdCls = "p-2 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-200";
 
   return (
     <div id="qr-5-container" className="w-full mx-auto py-4 px-[4px] bg-white rounded-xl relative animate-in fade-in duration-500 font-sans">
@@ -871,18 +872,18 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
         <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
       </div>
 
-      <div className="table-container qr-table-container overflow-auto xl:overflow-visible border border-slate-400 shadow-sm rounded-lg">
+      <div className="table-container qr-table-container overflow-auto xl:overflow-visible shadow-sm rounded-lg">
         <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">
-              <th rowSpan={2} className={`${thCls} w-[calc(5%-2px)]`}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thCls} w-[calc(15%-2px)]`}>মন্ত্রণালয়ের নাম</th>
-              <th rowSpan={2} className={`${thCls} w-[12%]`}>প্রতিবেদনধীন সময়ে উত্থাপিত আপত্তিতে জড়িত টাকার পরিমাণ</th>
-              <th colSpan={2} className={thCls}>অডিট কালীন আদায়/সমন্বয়</th>
-              <th colSpan={2} className={thCls}>প্রতিবেদনধীন সময়ে উত্থাপিত অর্থের বিপরীতে আদায়/সমন্বয়</th>
-              <th colSpan={2} className={thCls}>পুরাতন আপত্তিতে জড়িত অর্থ</th>
-              <th colSpan={2} className={thCls}>মোট</th>
-              <th rowSpan={2} className={`${thCls} w-[12%]`}>মন্তব্য</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[calc(5%-2px)]`}>ক্রঃ নং</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[calc(15%-2px)]`}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[12%]`}>প্রতিবেদনধীন সময়ে উত্থাপিত আপত্তিতে জড়িত টাকার পরিমাণ</th>
+              <th colSpan={2} className={thClsWithTop}>অডিট কালীন আদায়/সমন্বয়</th>
+              <th colSpan={2} className={thClsWithTop}>প্রতিবেদনধীন সময়ে উত্থাপিত অর্থের বিপরীতে আদায়/সমন্বয়</th>
+              <th colSpan={2} className={thClsWithTop}>পুরাতন আপত্তিতে জড়িত অর্থ</th>
+              <th colSpan={2} className={thClsWithTop}>মোট</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[12%]`}>মন্তব্য</th>
             </tr>
             <tr className="h-[38px]">
               <th className={`${thCls} w-[7%]`}>আদায়</th>

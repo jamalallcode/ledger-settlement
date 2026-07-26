@@ -631,48 +631,48 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           সময়কাল: ${formatDateBN(startDate)} হতে ${formatDateBN(endDate)}
         </p>
         ${activeReportMode === 'correspondence' ? `
-        <table style="width: 50%; margin: 10px auto; border: 1px solid #cbd5e1;">
+        <table style="width: 50%; margin: 10px auto; border: none;">
           <tr style="background-color: #e2e8f0;">
-            <th style="padding: 6px; text-align: left; color: #000; background: #e2e8f0 !important; border: 1px solid #cbd5e1;">পত্রের প্রকারভেদ</th>
-            <th style="padding: 6px; text-align: center; color: #000; background: #e2e8f0 !important; border: 1px solid #cbd5e1;">মোট সংখ্যা</th>
+            <th style="padding: 6px; text-align: left; color: #000; background: #e2e8f0 !important; border: none;">পত্রের প্রকারভেদ</th>
+            <th style="padding: 6px; text-align: center; color: #000; background: #e2e8f0 !important; border: none;">মোট সংখ্যা</th>
           </tr>
           <tr>
-            <td style="padding: 6px; border: 1px solid #cbd5e1;">মোট বিএসআর (BSR)</td>
-            <td style="padding: 6px; text-align: center; font-weight: bold; border: 1px solid #cbd5e1;">${toBengaliDigits(stats.bsr)} টি</td>
+            <td style="padding: 6px; border: none;">মোট বিএসআর (BSR)</td>
+            <td style="padding: 6px; text-align: center; font-weight: bold; border: none;">${toBengaliDigits(stats.bsr)} টি</td>
           </tr>
           <tr>
-            <td style="padding: 6px; border: 1px solid #cbd5e1;">মোট দ্বিপক্ষীয় সভা</td>
-            <td style="padding: 6px; text-align: center; font-weight: bold; border: 1px solid #cbd5e1;">${toBengaliDigits(stats.bilateral)} টি</td>
+            <td style="padding: 6px; border: none;">মোট দ্বিপক্ষীয় সভা</td>
+            <td style="padding: 6px; text-align: center; font-weight: bold; border: none;">${toBengaliDigits(stats.bilateral)} টি</td>
           </tr>
           <tr>
-            <td style="padding: 6px; border: 1px solid #cbd5e1;">মোট ত্রিপক্ষীয় সভা</td>
-            <td style="padding: 6px; text-align: center; font-weight: bold; border: 1px solid #cbd5e1;">${toBengaliDigits(stats.trilateral)} টি</td>
+            <td style="padding: 6px; border: none;">মোট ত্রিপক্ষীয় সভা</td>
+            <td style="padding: 6px; text-align: center; font-weight: bold; border: none;">${toBengaliDigits(stats.trilateral)} টি</td>
           </tr>
           <tr>
-            <td style="padding: 6px; border: 1px solid #cbd5e1;">মোট কার্যপত্র</td>
-            <td style="padding: 6px; text-align: center; font-weight: bold; border: 1px solid #cbd5e1;">${toBengaliDigits(stats.workingPaper)} টি</td>
+            <td style="padding: 6px; border: none;">মোট কার্যপত্র</td>
+            <td style="padding: 6px; text-align: center; font-weight: bold; border: none;">${toBengaliDigits(stats.workingPaper)} টি</td>
           </tr>
           <tr>
-            <td style="padding: 6px; border: 1px solid #cbd5e1;">অন্যান্য চিঠিপত্র</td>
-            <td style="padding: 6px; text-align: center; font-weight: bold; border: 1px solid #cbd5e1;">${toBengaliDigits(stats.others)} টি</td>
+            <td style="padding: 6px; border: none;">অন্যান্য চিঠিপত্র</td>
+            <td style="padding: 6px; text-align: center; font-weight: bold; border: none;">${toBengaliDigits(stats.others)} টি</td>
           </tr>
           <tr style="background-color: #f8fafc; font-weight: bold;">
-            <td style="padding: 6px; border: 1px solid #cbd5e1;">সর্বমোট প্রাপ্ত পত্র</td>
-            <td style="padding: 6px; text-align: center; border: 1px solid #cbd5e1;">${toBengaliDigits(stats.total)} টি</td>
+            <td style="padding: 6px; border: none;">সর্বমোট প্রাপ্ত পত্র</td>
+            <td style="padding: 6px; text-align: center; border: none;">${toBengaliDigits(stats.total)} টি</td>
           </tr>
         </table>
         ` : `
-        <table style="width: 50%; margin: 10px auto; border: 1px solid #cbd5e1;">
+        <table style="width: 50%; margin: 10px auto; border: none;">
           <tr style="background-color: #e2e8f0;">
-            <th colSpan="2" style="padding: 8px; text-align: center; color: #000; background: #e2e8f0 !important; border: 1px solid #cbd5e1;">মীমাংসার সারসংক্ষেপ</th>
+            <th colSpan="2" style="padding: 8px; text-align: center; color: #000; background: #e2e8f0 !important; border: none;">মীমাংসার সারসংক্ষেপ</th>
           </tr>
           <tr>
-            <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold;">মোট নিষ্পত্তি হওয়া অনুচ্ছেদের সংখ্যা</td>
-            <td style="padding: 8px; text-align: center; font-weight: bold; border: 1px solid #cbd5e1; color: #1e3a8a;">${toBengaliDigits(totalSettledCountSum)} টি</td>
+            <td style="padding: 8px; border: none; font-weight: bold;">মোট নিষ্পত্তি হওয়া অনুচ্ছেদের সংখ্যা</td>
+            <td style="padding: 8px; text-align: center; font-weight: bold; border: none; color: #1e3a8a;">${toBengaliDigits(totalSettledCountSum)} টি</td>
           </tr>
           <tr>
-            <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold;">মোট নিষ্পত্তিকৃত টাকা</td>
-            <td style="padding: 8px; text-align: center; font-weight: bold; border: 1px solid #cbd5e1; color: #1e3a8a;">${toBengaliDigits(totalSettledAmountSum)} টাকা</td>
+            <td style="padding: 8px; border: none; font-weight: bold;">মোট নিষ্পত্তিকৃত টাকা</td>
+            <td style="padding: 8px; text-align: center; font-weight: bold; border: none; color: #1e3a8a;">${toBengaliDigits(totalSettledAmountSum)} টাকা</td>
           </tr>
         </table>
         `}
@@ -1167,7 +1167,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           {/* TABLE */}
           {activeReportMode === 'correspondence' ? (
             filteredEntries.length > 0 ? (
-              <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-inner">
+              <div className="table-container overflow-x-auto rounded-2xl shadow-inner">
                 <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                   <colgroup>
                     <col className="w-[8%]" />
@@ -1181,15 +1181,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     <col className="w-[14%] no-print" />
                   </colgroup>
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-700">
-                      <th className="px-4 py-3 text-center text-xs font-black border-r border-slate-200">ক্র: নং</th>
-                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">পত্র নং ও তারিখ</th>
-                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">ডায়রি নং ও তারিখ</th>
-                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">শাখা ও পত্রের ধরন</th>
-                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">বিষয় / বিবরণ</th>
-                      <th className="px-4 py-3 text-center text-xs font-black border-r border-slate-200">অনুচ্ছেদ সংখ্যা</th>
-                      <th className="px-4 py-3 text-right text-xs font-black border-r border-slate-200">জড়িত টাকা (টাকা)</th>
-                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">মন্ত্রণালয়</th>
+                    <tr className="bg-slate-50 text-slate-700">
+                      <th className="px-4 py-3 text-center text-xs font-black">ক্র: নং</th>
+                      <th className="px-4 py-3 text-left text-xs font-black">পত্র নং ও তারিখ</th>
+                      <th className="px-4 py-3 text-left text-xs font-black">ডায়রি নং ও তারিখ</th>
+                      <th className="px-4 py-3 text-left text-xs font-black">শাখা ও পত্রের ধরন</th>
+                      <th className="px-4 py-3 text-left text-xs font-black">বিষয় / বিবরণ</th>
+                      <th className="px-4 py-3 text-center text-xs font-black">অনুচ্ছেদ সংখ্যা</th>
+                      <th className="px-4 py-3 text-right text-xs font-black">জড়িত টাকা (টাকা)</th>
+                      <th className="px-4 py-3 text-left text-xs font-black">মন্ত্রণালয়</th>
                       <th className="px-4 py-3 text-center text-xs font-black no-print">অ্যাকশন</th>
                     </tr>
                   </thead>
@@ -1262,7 +1262,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
             )
           ) : (
             filteredSettlementEntries.length > 0 ? (
-              <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-inner">
+              <div className="table-container overflow-x-auto rounded-2xl shadow-inner">
                 <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                   <colgroup>
                     <col className="w-[6%]" />
@@ -1276,15 +1276,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     <col className="w-[10%] no-print" />
                   </colgroup>
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-700">
-                      <th className="px-4 py-3 text-center text-xs font-black border-r border-slate-200">ক্র: নং</th>
-                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">স্মারক ও তারিখ</th>
-                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">মন্ত্রণালয় ও প্রতিষ্ঠান</th>
-                      <th className="px-4 py-3 text-center text-xs font-black border-r border-slate-200">অডিট বছর</th>
-                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">শাখা ও নিষ্পত্তির ধরন</th>
-                      <th className="px-4 py-3 text-center text-xs font-black border-r border-slate-200">নিষ্পন্নকৃত অনুচ্ছেদের সংখ্যা</th>
-                      <th className="px-4 py-3 text-right text-xs font-black border-r border-slate-200">নিষ্পত্তিকৃত টাকা (টাকা)</th>
-                      <th className="px-4 py-3 text-left text-xs font-black border-r border-slate-200">মন্তব্য</th>
+                    <tr className="bg-slate-50 text-slate-700">
+                      <th className="px-4 py-3 text-center text-xs font-black">ক্র: নং</th>
+                      <th className="px-4 py-3 text-left text-xs font-black">স্মারক ও তারিখ</th>
+                      <th className="px-4 py-3 text-left text-xs font-black">মন্ত্রণালয় ও প্রতিষ্ঠান</th>
+                      <th className="px-4 py-3 text-center text-xs font-black">অডিট বছর</th>
+                      <th className="px-4 py-3 text-left text-xs font-black">শাখা ও নিষ্পত্তির ধরন</th>
+                      <th className="px-4 py-3 text-center text-xs font-black">নিষ্পন্নকৃত অনুচ্ছেদের সংখ্যা</th>
+                      <th className="px-4 py-3 text-right text-xs font-black">নিষ্পত্তিকৃত টাকা (টাকা)</th>
+                      <th className="px-4 py-3 text-left text-xs font-black">মন্তব্য</th>
                       <th className="px-4 py-3 text-center text-xs font-black no-print">অ্যাকশন</th>
                     </tr>
                   </thead>

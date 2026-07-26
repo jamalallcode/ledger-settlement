@@ -81,6 +81,43 @@ export const getCycleForDate = (date: Date): { start: Date; end: Date; label: st
 };
 
 /**
+ * Returns quarterly cycle information for a given date.
+ * Q1 (Jan-Mar): 16/01/YYYY to 15/03/YYYY
+ * Q2 (Apr-Jun): 16/03/YYYY to 15/06/YYYY
+ * Q3 (Jul-Sep): 16/06/YYYY to 15/09/YYYY
+ * Q4 (Oct-Dec): 16/09/YYYY to 15/12/YYYY
+ */
+export const getQuarterlyCycleForDate = (date: Date): { start: Date; end: Date; label: string } => {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  let start: Date;
+  let end: Date;
+
+  if (month >= 0 && month <= 2) {
+    start = new Date(year, 0, 16);
+    end = new Date(year, 2, 15);
+  } else if (month >= 3 && month <= 5) {
+    start = new Date(year, 2, 16);
+    end = new Date(year, 5, 15);
+  } else if (month >= 6 && month <= 8) {
+    start = new Date(year, 5, 16);
+    end = new Date(year, 8, 15);
+  } else {
+    start = new Date(year, 8, 16);
+    end = new Date(year, 11, 15);
+  }
+
+  const s = startOfDay(start);
+  const e = endOfDay(end);
+
+  return {
+    start: s,
+    end: e,
+    label: `${format(s, 'dd/MM/yyyy')} হতে ${format(e, 'dd/MM/yyyy')}`
+  };
+};
+
+/**
  * Helper to check if an entry is within its intended cycle or it's backdated/late
  */
 export const isEntryLate = (entryMadeAt: Date, targetCycleEnd: Date): boolean => {
