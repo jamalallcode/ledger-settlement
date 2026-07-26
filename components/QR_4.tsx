@@ -979,14 +979,14 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   const filteredTable1Data = useMemo(() => processData(false), [entries, prevStats, searchTerm, filterMinistry]);
   const filteredTable2Data = useMemo(() => processData(true), [entries, prevStats, searchTerm, filterMinistry]);
 
-  const thCls = "border-r border-b border-slate-400 p-1 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
-  const thClsWithTop = thCls + " border-t border-slate-400";
-  const tdCls = "border-r border-b border-slate-400 p-1 text-[9px] text-slate-700 align-middle";
-  const numTdCls = "border-r border-b border-slate-400 p-1 text-[9px] text-slate-700 text-center align-middle font-bold";
+  const thCls = "p-1 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
+  const thClsWithTop = thCls;
+  const tdCls = "p-1 text-[9px] text-slate-700 align-middle";
+  const numTdCls = "p-1 text-[9px] text-slate-700 text-center align-middle font-bold";
   
-  // Footer-specific classes without borders to avoid double borders with inset box-shadow
-  const footerTdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-white align-middle bg-black";
-  const footerNumTdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-white text-center align-middle font-bold bg-black";
+  // Footer-specific classes
+  const footerTdCls = "p-1 text-[10px] text-white align-middle bg-black";
+  const footerNumTdCls = "p-1 text-[10px] text-white text-center align-middle font-bold bg-black";
 
   const renderTable = (data: any[], tableId: string) => {
     let globalIdx = 1;
@@ -994,7 +994,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
     return (
       <div className={`table-container qr-table-container ${tableId === 'table-2' ? '' : 'mb-10'} overflow-auto xl:overflow-visible shadow-sm rounded-lg`}>
-        <table className="w-full border-separate border-spacing-0 min-w-[1000px] !table-auto border-l border-slate-400">
+        <table className="w-full border-separate border-spacing-0 min-w-[1000px] !table-auto">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">
               <th className={thClsWithTop + " w-10"}>ক্রঃ নং</th>

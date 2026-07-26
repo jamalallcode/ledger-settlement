@@ -192,9 +192,9 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
     return `${month}-${year}`;
   };
 
-  const thStyle = "border-r border-b border-slate-400 px-1 py-1.5 font-black text-center text-slate-800 text-[10px] sm:text-[10.5px] leading-tight align-middle h-full bg-slate-100 bg-clip-border relative";
-  const tdStyle = "border-r border-b border-slate-400 px-1 py-2 text-[10px] sm:text-[11px] text-slate-700 align-middle text-center break-words bg-white";
-  const numTdStyle = "border-r border-b border-slate-400 px-1 py-2 text-[10px] sm:text-[11px] text-slate-700 align-middle text-center font-bold bg-white";
+  const thStyle = "px-1 py-1.5 font-black text-center text-slate-800 text-[10px] sm:text-[10.5px] leading-tight align-middle h-full bg-slate-100 bg-clip-border relative";
+  const tdStyle = "px-1 py-2 text-[10px] sm:text-[11px] text-slate-700 align-middle text-center break-words bg-white";
+  const numTdStyle = "px-1 py-2 text-[10px] sm:text-[11px] text-slate-700 align-middle text-center font-bold bg-white";
 
   const formatTextValue = (val: string | undefined | null) => {
     if (val === undefined || val === null || val.trim() === '') return '-';
@@ -386,7 +386,7 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
       </div>
 
       {/* Main Table Section */}
-      <div id="card-bsr-monthly-online-detail-table-container" className="bg-white border border-slate-300 shadow-inner rounded-none overflow-hidden">
+      <div id="card-bsr-monthly-online-detail-table-container" className="bg-white shadow-inner rounded-none overflow-hidden">
         
         {/* Print Header */}
         <div className="hidden print:block text-center space-y-2 mb-4">
@@ -397,7 +397,7 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
         </div>
 
         <div className="overflow-x-auto">
-          <table id="table-bsr-monthly-online-detail" className="w-full border-separate border-spacing-0 !table-auto border-l border-t border-slate-400">
+          <table id="table-bsr-monthly-online-detail" className="w-full border-separate border-spacing-0 !table-auto">
             <thead>
               <tr className="bg-slate-50">
                 <th rowSpan={2} className={`${thStyle} w-[50px]`}>ক্রমিক নং</th>

@@ -459,9 +459,9 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     );
   }, [correspondenceEntries, searchTerm, filterParaType, filterLetterType, selectedMonthDate]);
 
-  const thS = "border border-slate-300 px-1 py-1 font-black text-center text-[10px] bg-slate-200 text-slate-900 leading-tight align-middle h-full shadow-[inset_0_0_0_1px_#cbd5e1] bg-clip-border";
+  const thS = "px-1 py-1 font-black text-center text-[10px] bg-slate-200 text-slate-900 leading-tight align-middle h-full bg-clip-border";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-emerald-600 ring-4 ring-emerald-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-300'}`;
-  const tdS = "border border-slate-300 px-2 py-2 text-[11px] text-center font-bold leading-tight min-h-[40px] align-middle break-words";
+  const tdS = "px-2 py-2 text-[11px] text-center font-bold leading-tight min-h-[40px] align-middle break-words";
   
   const reportingLimitDate = useMemo(() => {
     return selectedMonthDate;
@@ -792,7 +792,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           </div>
         </div>
 
-        <div className="table-container relative overflow-auto border border-slate-300 rounded-lg">
+        <div className="table-container qr-table-container relative overflow-auto">
           <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
             <colgroup>
               <col className="w-[40px]" />
@@ -855,10 +855,10 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               )}
             </tbody>
             <tfoot className="z-[120]">
-              <tr className="bg-black text-white font-black text-[12px] h-11 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] border-t-2 border-slate-400">
-                <td colSpan={2} className="px-4 text-left border-t border-slate-400 bg-black text-white">সর্বমোট চিঠিপত্র (ফিল্টারকৃত):</td>
-                <td colSpan={2} className="px-4 text-center border-t border-slate-400 bg-black text-emerald-400">{toBengaliDigits(filteredData.length)} টি</td>
-                <td colSpan={9} className="border-t border-slate-400 bg-black"></td>
+              <tr className="bg-black text-white font-black text-[12px] h-11 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+                <td colSpan={2} className="px-4 text-left bg-black text-white">সর্বমোট চিঠিপত্র (ফিল্টারকৃত):</td>
+                <td colSpan={2} className="px-4 text-center bg-black text-emerald-400">{toBengaliDigits(filteredData.length)} টি</td>
+                <td colSpan={9} className="bg-black"></td>
               </tr>
             </tfoot>
           </table>
@@ -896,17 +896,17 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-slate-100">
-                      <th className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>অডিটর</th>
-                      <th className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>অডিটরের</th>
-                      <th className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>এএন্ডএও</th>
-                      <th className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>উপপরিচালক</th>
-                      <th className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>মোট</th>
+                      <th className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>অডিটর</th>
+                      <th className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>অডিটরের</th>
+                      <th className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>এএন্ডএও</th>
+                      <th className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>উপপরিচালক</th>
+                      <th className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>মোট</th>
                     </tr>
                   </thead>
                   <tbody>
                     {auditorWiseStats.map((stat, idx) => (
                       <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
-                        <td className={`border border-slate-200 ${isDetailsModalOpen ? 'p-0.5' : 'px-1 py-2'} text-center align-middle`}>
+                        <td className={`${isDetailsModalOpen ? 'p-0.5' : 'px-1 py-2'} text-center align-middle`}>
                           <div className={`flex flex-col items-center justify-center gap-1 w-full mx-auto ${isDetailsModalOpen ? 'max-w-[65px]' : 'min-w-[80px]'}`}>
                             {getDisplayImage(stat.name) ? (
                               <img 
@@ -929,25 +929,25 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                           </div>
                         </td>
                         <td 
-                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all ${getHighlightClass(`${stat.name} - অডিটরের কাছে`)}`}
+                          className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all ${getHighlightClass(`${stat.name} - অডিটরের কাছে`)}`}
                           onClick={() => handleCountClick(`${stat.name} - অডিটরের কাছে`, stat.auditorLetters)}
                         >
                           {toBengaliDigits(stat.auditor)} টি
                         </td>
                         <td 
-                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-blue-600 bg-blue-50/30 cursor-pointer hover:bg-blue-100/50 transition-all ${getHighlightClass(`${stat.name} - এএন্ডএও`)}`}
+                          className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-blue-600 bg-blue-50/30 cursor-pointer hover:bg-blue-100/50 transition-all ${getHighlightClass(`${stat.name} - এএন্ডএও`)}`}
                           onClick={() => handleCountClick(`${stat.name} - এএন্ডএও`, stat.aaoLetters)}
                         >
                           {toBengaliDigits(stat.aao)} টি
                         </td>
                         <td 
-                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-green-600 bg-green-50/30 cursor-pointer hover:bg-green-100/50 transition-all ${getHighlightClass(`${stat.name} - উপপরিচালক`)}`}
+                          className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-green-600 bg-green-50/30 cursor-pointer hover:bg-green-100/50 transition-all ${getHighlightClass(`${stat.name} - উপপরিচালক`)}`}
                           onClick={() => handleCountClick(`${stat.name} - উপপরিচালক`, stat.ddLetters)}
                         >
                           {toBengaliDigits(stat.dd)} টি
                         </td>
                         <td 
-                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-slate-900 bg-slate-50 cursor-pointer hover:bg-slate-200/50 transition-all ${getHighlightClass(`${stat.name} - মোট`)}`}
+                          className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-slate-900 bg-slate-50 cursor-pointer hover:bg-slate-200/50 transition-all ${getHighlightClass(`${stat.name} - মোট`)}`}
                           onClick={() => handleCountClick(`${stat.name} - মোট`, stat.totalLetters)}
                         >
                           {toBengaliDigits(stat.total)} টি

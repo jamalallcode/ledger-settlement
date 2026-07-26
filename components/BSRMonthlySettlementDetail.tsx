@@ -218,9 +218,9 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
     return months[date.getMonth()];
   };
 
-  const thStyle = "border-r border-b border-slate-400 px-1 py-1.5 font-black text-center text-slate-800 text-[9px] sm:text-[9.5px] leading-tight align-middle h-full bg-slate-100 bg-clip-border relative";
-  const tdStyle = "border-r border-b border-slate-400 px-1 py-1 text-[9.5px] sm:text-[10px] text-slate-700 align-middle text-center break-words bg-white";
-  const numTdStyle = "border-r border-b border-slate-400 px-1 py-1 text-[9.5px] sm:text-[10px] text-slate-700 align-middle text-center font-bold bg-white";
+  const thStyle = "px-1 py-1.5 font-black text-center text-slate-800 text-[9px] sm:text-[9.5px] leading-tight align-middle h-full bg-slate-100 bg-clip-border relative";
+  const tdStyle = "px-1 py-1 text-[9.5px] sm:text-[10px] text-slate-700 align-middle text-center break-words bg-white";
+  const numTdStyle = "px-1 py-1 text-[9.5px] sm:text-[10px] text-slate-700 align-middle text-center font-bold bg-white";
 
   const formatAmountBengali = (num: number | undefined | null) => {
     if (num === undefined || num === null || isNaN(num) || num === 0) return '-';
@@ -512,9 +512,9 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
       </div>
 
       {/* Main Table Section */}
-      <div id="card-bsr-monthly-detail-table-container" className="bg-white border border-slate-300 shadow-inner rounded-none overflow-hidden">
+      <div id="card-bsr-monthly-detail-table-container" className="bg-white shadow-inner rounded-none overflow-hidden">
         <div className="overflow-x-auto">
-          <table id="table-bsr-monthly-detail" className="w-full border-separate border-spacing-0 !table-auto border-l border-t border-slate-400">
+          <table id="table-bsr-monthly-detail" className="w-full border-separate border-spacing-0 !table-auto">
             <thead>
               <tr className="h-[44px] bg-slate-100">
                 <th rowSpan={2} className={`${thStyle} w-[35px] rounded-none`}>ক্রঃ নং</th>

@@ -724,12 +724,12 @@ const QR_6: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     );
   };
 
-  const thCls = "border-r border-b border-slate-400 p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
-  const thClsWithTop = thCls + " border-t border-slate-400";
-  const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle";
-  const numTdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
-  const footerTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-white align-middle bg-black";
-  const footerNumTdCls = "border-r border-b border-slate-400 p-2 text-[10px] text-white text-center align-middle font-bold bg-black";
+  const thCls = "p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
+  const thClsWithTop = thCls;
+  const tdCls = "p-2 text-[9px] text-slate-700 align-middle";
+  const numTdCls = "p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
+  const footerTdCls = "p-2 text-[10px] text-white align-middle bg-black";
+  const footerNumTdCls = "p-2 text-[10px] text-white text-center align-middle font-bold bg-black";
 
   return (
     <div id="qr-6-container" className="w-full mx-auto py-4 px-[4px] bg-white rounded-xl relative animate-in fade-in duration-500 font-sans">

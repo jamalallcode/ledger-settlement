@@ -43,6 +43,7 @@ table {
   border-spacing: 0 !important;
   width: 100%;
   table-layout: fixed;
+  border: none !important;
 }
 
 th, td {
@@ -192,13 +193,11 @@ tbody tr:not(.no-hover-row):hover td {
 .dark th {
   background-color: #1f2937 !important;
   color: #f3f4f6 !important;
-  border-color: #4b5563 !important;
 }
 
 .dark td {
   background-color: #111827 !important;
   color: #e5e7eb !important;
-  border-color: #4b5563 !important;
 }
 
 .dark tr:hover td {
@@ -340,28 +339,6 @@ tbody tr:not(.no-hover-row):hover td {
 /* Soft exceptions for interactive elements and state */
 .dark .text-slate-900\/80 {
   color: rgba(243, 244, 246, 0.8) !important;
-}
-
-/* Inset box-shadow overrides for sticky headers and footers in tables in Dark Mode */
-.dark .table-container thead th {
-  box-shadow: inset 0 -1px 0 #4b5563, inset -1px 0 0 #4b5563 !important;
-}
-
-.dark .table-container tfoot td,
-.dark .table-container tfoot th {
-  box-shadow: inset 0 1px 0 #4b5563, inset -1px 0 0 #4b5563 !important;
-}
-
-.dark .qr-sticky-footer td {
-  box-shadow: inset 0 1px 0 #4b5563, inset 0 -1px 0 #4b5563, inset -1px 0 0 #4b5563 !important;
-}
-
-.dark .qr-sticky-footer-bottom td {
-  box-shadow: inset 0 1px 0 #4b5563, inset 0 -1px 0 #4b5563, inset -1px 0 0 #4b5563 !important;
-}
-
-.dark .qr-sticky-footer-offset td {
-  box-shadow: inset 0 1px 0 #4b5563, inset 0 -1px 0 #4b5563, inset -1px 0 0 #4b5563 !important;
 }
 
 /* --- EXECUTIVE PREMIUM LANDING PAGE STYLING --- */

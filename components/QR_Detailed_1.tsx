@@ -362,17 +362,17 @@ const QR_Detailed_1: React.FC<QRProps> = ({
   };
 
   // Header styles with border fix for sticky header
-  const thCls = "border-b border-r border-t border-slate-400 p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-100";
-  const thRow2Cls = "border-b border-r border-slate-400 p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-100";
-  const thRow3Cls = "border-b border-r border-slate-400 p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-200";
+  const thCls = "p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-100";
+  const thRow2Cls = "p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-100";
+  const thRow3Cls = "p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-200";
 
-  const yellowThCls = "border-b border-r border-t border-slate-400 p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-300";
-  const yellowThRow2Cls = "border-b border-r border-slate-400 p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-300";
-  const yellowThRow3Cls = "border-b border-r border-slate-400 p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-400";
+  const yellowThCls = "p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-300";
+  const yellowThRow2Cls = "p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-300";
+  const yellowThRow3Cls = "p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-400";
 
-  const tdCls = "border-b border-r border-slate-400 p-2 text-[10px] text-slate-800 align-middle bg-white";
-  const numTdCls = "border-b border-r border-slate-400 p-2 text-[10px] text-slate-800 text-center align-middle font-bold bg-white";
-  const footerTdCls = "border-b border-r border-slate-400 p-2 text-[10px] text-white align-middle bg-black font-black text-center";
+  const tdCls = "p-2 text-[10px] text-slate-800 align-middle bg-white";
+  const numTdCls = "p-2 text-[10px] text-slate-800 text-center align-middle font-bold bg-white";
+  const footerTdCls = "p-2 text-[10px] text-white align-middle bg-black font-black text-center";
 
   // Calculate Table 1 Totals
   const t1Totals = { col4: 0, col5: 0, col6: 0, col7: 0, col8: 0, col9: 0, col10: 0, col11: 0, col12: 0, col13: 0 };
@@ -506,7 +506,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
         <table className="w-full border-separate border-spacing-0 min-w-[1050px]">
           <thead>
             <tr>
-              <th rowSpan={2} className={`${thCls} w-[40px] border-l`}>ক্রঃ নং</th>
+              <th rowSpan={2} className={`${thCls} w-[40px]`}>ক্রঃ নং</th>
               <th rowSpan={2} className={`${thCls} w-[105px]`}>মন্ত্রণালয়ের নাম</th>
               <th rowSpan={2} className={`${thCls} w-[112px]`}>প্রতিষ্ঠানের নাম</th>
               <th colSpan={3} className={thCls}>প্রারম্ভিক অমিমাংসিত</th>
@@ -532,7 +532,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
             </tr>
             {/* Column Numbers Row */}
             <tr>
-              <th className={`${thRow3Cls} border-l`}>১</th>
+              <th className={thRow3Cls}>১</th>
               <th className={thRow3Cls}>২</th>
               <th className={thRow3Cls}>৩</th>
               <th className={thRow3Cls}>৪</th>
@@ -576,7 +576,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
 
                   return (
                     <tr key={`${gIdx}-${eIdx}`} className="hover:bg-slate-50 transition-colors">
-                      <td className={`${numTdCls} border-l`}>{toBengaliDigits(serialCount.toString())}</td>
+                      <td className={numTdCls}>{toBengaliDigits(serialCount.toString())}</td>
                       {isFirstOfGroup && (
                         <td rowSpan={group.entities.length} className={`${tdCls} font-bold text-center bg-white`}>
                           <HighlightText text={group.ministry} searchTerm={searchTerm} />
@@ -606,7 +606,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
                   <React.Fragment key={`t1-group-${gIdx}`}>
                     {groupRows}
                     <tr className="bg-slate-100 font-black">
-                      <td colSpan={3} className={`${tdCls} border-l font-black text-center bg-slate-200 text-slate-900`}>
+                      <td colSpan={3} className={`${tdCls} font-black text-center bg-slate-200 text-slate-900`}>
                         মোট ({group.ministry})
                       </td>
                       <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col4.toString())}</td>
@@ -627,7 +627,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={3} className={`${footerTdCls} border-l`}>মোট (টেবিল-১)</td>
+              <td colSpan={3} className={footerTdCls}>মোট (টেবিল-১)</td>
               <td className={footerTdCls}>{toBengaliDigits(t1Totals.col4.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(t1Totals.col5.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(t1Totals.col6.toString())}</td>
@@ -646,7 +646,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
         <table className="w-full border-separate border-spacing-0 min-w-[1050px] mt-3">
           <thead>
             <tr>
-              <th rowSpan={2} className={`${yellowThCls} w-[40px] border-l`}>ক্রঃ নং</th>
+              <th rowSpan={2} className={`${yellowThCls} w-[40px]`}>ক্রঃ নং</th>
               <th rowSpan={2} className={`${yellowThCls} w-[105px]`}>মন্ত্রণালয়ের নাম</th>
               <th rowSpan={2} className={`${yellowThCls} w-[112px]`}>প্রতিষ্ঠানের নাম</th>
               <th colSpan={3} className={yellowThCls}>প্রারম্ভিক অমিমাংসিত</th>
@@ -669,7 +669,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
               <th className={yellowThRow2Cls}>১৯৭১-৭২ হতে {cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
             </tr>
             <tr>
-              <th className={`${yellowThRow3Cls} border-l`}>১</th>
+              <th className={yellowThRow3Cls}>১</th>
               <th className={yellowThRow3Cls}>২</th>
               <th className={yellowThRow3Cls}>৩</th>
               <th className={yellowThRow3Cls}>৪</th>
@@ -713,7 +713,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
 
                   return (
                     <tr key={`t2-${gIdx}-${eIdx}`} className="hover:bg-amber-50/40 transition-colors">
-                      <td className={`${numTdCls} border-l`}>{toBengaliDigits(serialCount.toString())}</td>
+                      <td className={numTdCls}>{toBengaliDigits(serialCount.toString())}</td>
                       {isFirstOfGroup && (
                         <td rowSpan={group.entities.length} className={`${tdCls} font-bold text-center bg-white`}>
                           <HighlightText text={group.ministry} searchTerm={searchTerm} />
@@ -743,7 +743,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
                   <React.Fragment key={`t2-group-${gIdx}`}>
                     {groupRows}
                     <tr className="bg-amber-100/80 font-black">
-                      <td colSpan={3} className={`${tdCls} border-l font-black text-center bg-amber-200 text-slate-900`}>
+                      <td colSpan={3} className={`${tdCls} font-black text-center bg-amber-200 text-slate-900`}>
                         মোট ({group.ministry})
                       </td>
                       <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col4.toString())}</td>
@@ -764,7 +764,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={3} className={`${footerTdCls} border-l`}>মোট (টেবিল-২)</td>
+              <td colSpan={3} className={footerTdCls}>মোট (টেবিল-২)</td>
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col4.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col5.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col6.toString())}</td>
@@ -777,17 +777,17 @@ const QR_Detailed_1: React.FC<QRProps> = ({
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col13.toString())}</td>
             </tr>
             <tr className="bg-amber-300">
-              <td colSpan={3} className="border-b border-r border-l border-slate-400 p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">সর্বমোট</td>
-              <td className="border-b border-r border-slate-400 p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col4.toString())}</td>
-              <td className="border-b border-r border-slate-400 p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col5.toString())}</td>
-              <td className="border-b border-r border-slate-400 p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col6.toString())}</td>
-              <td className="border-b border-r border-slate-400 p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col7.toString())}</td>
-              <td className="border-b border-r border-slate-400 p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col8.toString())}</td>
-              <td className="border-b border-r border-slate-400 p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col9.toString())}</td>
-              <td className="border-b border-r border-slate-400 p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col10.toString())}</td>
-              <td className="border-b border-r border-slate-400 p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col11.toString())}</td>
-              <td className="border-b border-r border-slate-400 p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col12.toString())}</td>
-              <td className="border-b border-r border-slate-400 p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col13.toString())}</td>
+              <td colSpan={3} className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">সর্বমোট</td>
+              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col4.toString())}</td>
+              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col5.toString())}</td>
+              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col6.toString())}</td>
+              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col7.toString())}</td>
+              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col8.toString())}</td>
+              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col9.toString())}</td>
+              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col10.toString())}</td>
+              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col11.toString())}</td>
+              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col12.toString())}</td>
+              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col13.toString())}</td>
             </tr>
           </tfoot>
         </table>
@@ -846,19 +846,19 @@ const QR_Detailed_1: React.FC<QRProps> = ({
 
             {/* Modal Table Body */}
             <div className="px-4 pb-4 pt-0 overflow-auto grow">
-              <table className="w-full border-separate border-spacing-0 border border-slate-300 text-[11px]">
+              <table className="w-full text-[11px]">
                 <thead className="bg-slate-200 sticky top-0 z-30 shadow-sm">
                   <tr>
-                    <th className="sticky top-0 z-30 border-b border-r border-slate-300 p-2.5 font-black text-slate-900 text-center w-[45px] bg-slate-200">ক্রঃ নং</th>
-                    <th className="sticky top-0 z-30 border-b border-r border-slate-300 p-2.5 font-black text-slate-900 text-center w-[160px] bg-slate-200">মন্ত্রণালয়ের নাম</th>
-                    <th className="sticky top-0 z-30 border-b border-r border-slate-300 p-2.5 font-black text-slate-900 text-center bg-slate-200">প্রতিষ্ঠানের নাম</th>
-                    <th className="sticky top-0 z-30 border-b border-r border-slate-300 p-2.5 font-black text-blue-950 text-center bg-blue-100 w-[180px]">
+                    <th className="sticky top-0 z-30 p-2.5 font-black text-slate-900 text-center w-[45px] bg-slate-200">ক্রঃ নং</th>
+                    <th className="sticky top-0 z-30 p-2.5 font-black text-slate-900 text-center w-[160px] bg-slate-200">মন্ত্রণালয়ের নাম</th>
+                    <th className="sticky top-0 z-30 p-2.5 font-black text-slate-900 text-center bg-slate-200">প্রতিষ্ঠানের নাম</th>
+                    <th className="sticky top-0 z-30 p-2.5 font-black text-blue-950 text-center bg-blue-100 w-[180px]">
                       প্রারম্ভিক অমিমাংসিত উত্থাপিত আপত্তির সংখ্যা (কলাম ৪)
                     </th>
-                    <th className="sticky top-0 z-30 border-b border-r border-slate-300 p-2.5 font-black text-emerald-950 text-center bg-emerald-100 w-[180px]">
+                    <th className="sticky top-0 z-30 p-2.5 font-black text-emerald-950 text-center bg-emerald-100 w-[180px]">
                       প্রারম্ভিক মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা (কলাম ৭)
                     </th>
-                    <th className="sticky top-0 z-30 border-b border-slate-300 p-2.5 font-black text-purple-950 text-center bg-purple-100 w-[180px]">
+                    <th className="sticky top-0 z-30 p-2.5 font-black text-purple-950 text-center bg-purple-100 w-[180px]">
                       অমিমাংসিত আপত্তিতে জড়িত টাকা (কলাম ১১)
                     </th>
                   </tr>
@@ -888,18 +888,18 @@ const QR_Detailed_1: React.FC<QRProps> = ({
 
                             return (
                               <tr key={`${groupIdx}-${entityIdx}`} className="hover:bg-slate-50 transition-colors">
-                                <td className="border-b border-r border-slate-300 p-2 text-center font-bold text-slate-600 bg-slate-50/50">
+                                <td className="p-2 text-center font-bold text-slate-600 bg-slate-50/50">
                                   {toBengaliDigits(overallSerial.toString())}
                                 </td>
                                 {isFirst && (
-                                  <td rowSpan={group.entities.length} className="border-b border-r border-slate-300 p-2 font-black text-slate-900 text-center align-middle bg-slate-100/60">
+                                  <td rowSpan={group.entities.length} className="p-2 font-black text-slate-900 text-center align-middle bg-slate-100/60">
                                     {group.ministry}
                                   </td>
                                 )}
-                                <td className="border-b border-r border-slate-300 p-2 font-bold text-slate-800">
+                                <td className="p-2 font-bold text-slate-800">
                                   {entity}
                                 </td>
-                                <td className="border-b border-r border-slate-300 p-1 bg-blue-50/30">
+                                <td className="p-1 bg-blue-50/30">
                                   <input
                                     type="text"
                                     value={curVals.col4 === 0 ? '' : toBengaliDigits(curVals.col4.toString())}
@@ -909,7 +909,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
                                     className="w-full text-center font-extrabold text-blue-900 bg-white border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded px-2 py-1 outline-none text-[12px]"
                                   />
                                 </td>
-                                <td className="border-b border-r border-slate-300 p-1 bg-emerald-50/30">
+                                <td className="p-1 bg-emerald-50/30">
                                   <input
                                     type="text"
                                     value={curVals.col7 === 0 ? '' : toBengaliDigits(curVals.col7.toString())}
@@ -919,7 +919,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
                                     className="w-full text-center font-extrabold text-emerald-900 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded px-2 py-1 outline-none text-[12px]"
                                   />
                                 </td>
-                                <td className="border-b border-slate-300 p-1 bg-purple-50/30">
+                                <td className="p-1 bg-purple-50/30">
                                   <input
                                     type="text"
                                     value={curVals.col11 === 0 ? '' : toBengaliDigits(curVals.col11.toString())}
@@ -938,16 +938,16 @@ const QR_Detailed_1: React.FC<QRProps> = ({
                               {groupRows}
                               {/* Ministry Total Row */}
                               <tr className="bg-slate-200/90 font-black">
-                                <td className="border-b border-r border-slate-300 p-2 text-center text-slate-900 bg-slate-200" colSpan={3}>
+                                <td className="p-2 text-center text-slate-900 bg-slate-200" colSpan={3}>
                                   মোট ({group.ministry})
                                 </td>
-                                <td className="border-b border-r border-slate-300 p-2 text-center text-blue-950 font-black bg-blue-100">
+                                <td className="p-2 text-center text-blue-950 font-black bg-blue-100">
                                   {toBengaliDigits(minSums.col4.toString())}
                                 </td>
-                                <td className="border-b border-r border-slate-300 p-2 text-center text-emerald-950 font-black bg-emerald-100">
+                                <td className="p-2 text-center text-emerald-950 font-black bg-emerald-100">
                                   {toBengaliDigits(minSums.col7.toString())}
                                 </td>
-                                <td className="border-b border-slate-300 p-2 text-center text-purple-950 font-black bg-purple-100">
+                                <td className="p-2 text-center text-purple-950 font-black bg-purple-100">
                                   {toBengaliDigits(minSums.col11.toString())}
                                 </td>
                               </tr>
@@ -957,13 +957,13 @@ const QR_Detailed_1: React.FC<QRProps> = ({
 
                         {/* Grand Total Row ("সর্বমোট") */}
                         <tr className="bg-slate-900 text-white font-black">
-                          <td colSpan={3} className="border-r border-slate-700 p-3 text-center text-[12px] bg-slate-900">
+                          <td colSpan={3} className="p-3 text-center text-[12px] bg-slate-900">
                             সর্বমোট
                           </td>
-                          <td className="border-r border-slate-700 p-3 text-center text-[12px] text-blue-200 bg-slate-900">
+                          <td className="p-3 text-center text-[12px] text-blue-200 bg-slate-900">
                             {toBengaliDigits(grandSums.col4.toString())}
                           </td>
-                          <td className="border-r border-slate-700 p-3 text-center text-[12px] text-emerald-200 bg-slate-900">
+                          <td className="p-3 text-center text-[12px] text-emerald-200 bg-slate-900">
                             {toBengaliDigits(grandSums.col7.toString())}
                           </td>
                           <td className="p-3 text-center text-[12px] text-purple-200 bg-slate-900">

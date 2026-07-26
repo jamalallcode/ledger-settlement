@@ -183,9 +183,9 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
     URL.revokeObjectURL(url);
   };
 
-  const thStyle = "border-r border-b border-slate-400 px-2 py-2 font-black text-center text-slate-800 text-[10px] sm:text-[11px] leading-tight align-middle h-full bg-slate-100 bg-clip-border relative";
-  const tdStyle = "border-r border-b border-slate-400 px-2 py-2 text-[10.5px] sm:text-[11px] text-slate-700 align-middle text-center break-words bg-white";
-  const numTdStyle = "border-r border-b border-slate-400 px-2 py-2 text-[10.5px] sm:text-[11px] text-slate-700 align-middle text-center font-bold bg-white";
+  const thStyle = "px-2 py-2 font-black text-center text-slate-800 text-[10px] sm:text-[11px] leading-tight align-middle h-full bg-slate-100 bg-clip-border relative";
+  const tdStyle = "px-2 py-2 text-[10.5px] sm:text-[11px] text-slate-700 align-middle text-center break-words bg-white";
+  const numTdStyle = "px-2 py-2 text-[10.5px] sm:text-[11px] text-slate-700 align-middle text-center font-bold bg-white";
 
   const formatCountBengali = (count: string | number | undefined | null) => {
     if (count === undefined || count === null) return '-';
@@ -426,9 +426,9 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
       </div>
 
       {/* Main Table Section (Strictly matching CamScanner layout) */}
-      <div id="card-bilateral-monthly-detail-table-container" className="bg-white border border-slate-300 shadow-inner rounded-none overflow-hidden">
+      <div id="card-bilateral-monthly-detail-table-container" className="bg-white shadow-inner rounded-none overflow-hidden">
         <div className="overflow-x-auto">
-          <table id="table-bilateral-monthly-detail" className="w-full border-separate border-spacing-0 !table-auto border-l border-t border-slate-400">
+          <table id="table-bilateral-monthly-detail" className="w-full border-separate border-spacing-0 !table-auto">
             <thead>
               <tr className="bg-slate-50">
                 <th rowSpan={2} className={`${thStyle} w-[50px]`}>ক্রমিক নং</th>
