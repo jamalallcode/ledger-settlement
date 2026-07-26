@@ -308,18 +308,15 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           });
         }
 
-        // Extract settled count
-        let fc = parseBengaliNumber(String(e.fullCount || 0));
-        let pc = parseBengaliNumber(String(e.partialCount || 0));
+        // Extract settled count (only full settlements count towards settled paragraph count)
+        let fc = parseBengaliNumber(String(e.fullCount || e.meetingFullSettledParaCount || 0));
 
-        if (fc === 0 && pc === 0 && e.meetingSettledParaCount) {
+        if (fc === 0 && e.paragraphs && e.paragraphs.length > 0) {
+          fc = e.paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ').length;
+        } else if (fc === 0 && e.meetingSettledParaCount) {
           fc = parseBengaliNumber(String(e.meetingSettledParaCount));
         }
-        if (fc === 0 && pc === 0 && e.paragraphs && e.paragraphs.length > 0) {
-          fc = e.paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ').length;
-          pc = e.paragraphs.filter(p => p.status === 'আংশিক').length;
-        }
-        const sCount = fc + pc;
+        const sCount = fc;
 
         // Categorize by date relative to active cycle
         const eDate = e.issueDateISO ? new Date(e.issueDateISO) : (e.createdAt ? new Date(e.createdAt) : null);
