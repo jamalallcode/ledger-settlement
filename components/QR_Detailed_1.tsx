@@ -31,7 +31,7 @@ interface EntityPriorValues {
 const table1Data = [
   {
     ministry: "শিল্প মন্ত্রণালয়",
-    entities: ["চিনি ও খাদ্য সংস্থা", "হস্ত ও কুটির শিল্প সংস্থা", "বিটাক", "রসায়ন শিল্প সংস্থা"]
+    entities: ["চিনি ও খাদ্য সংস্থা", "ক্ষুদ্র ও কুটির শিল্প", "বিটাক", "রসায়ন শিল্প সংস্থা"]
   },
   {
     ministry: "বস্ত্র ও পাট মন্ত্রণালয়",
@@ -283,7 +283,13 @@ const QR_Detailed_1: React.FC<QRProps> = ({
 
     (entries || []).forEach(e => {
       const normEntity = robustNormalize(e.entityName || '');
-      if (normEntity === normTarget) {
+      let isMatch = normEntity === normTarget;
+      if (!isMatch) {
+        if ((normTarget.includes("কুটির") || normTarget.includes("হস্ত")) && (normEntity.includes("কুটির") || normEntity.includes("হস্ত"))) {
+          isMatch = true;
+        }
+      }
+      if (isMatch) {
         // Extract raised count
         let rCount = 0;
         const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
@@ -308,18 +314,15 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           });
         }
 
-        // Extract settled count
-        let fc = parseBengaliNumber(String(e.fullCount || 0));
-        let pc = parseBengaliNumber(String(e.partialCount || 0));
+        // Extract settled count (only full settlements count towards settled paragraph count)
+        let fc = parseBengaliNumber(String(e.fullCount || e.meetingFullSettledParaCount || 0));
 
-        if (fc === 0 && pc === 0 && e.meetingSettledParaCount) {
+        if (fc === 0 && e.paragraphs && e.paragraphs.length > 0) {
+          fc = e.paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ').length;
+        } else if (fc === 0 && e.meetingSettledParaCount) {
           fc = parseBengaliNumber(String(e.meetingSettledParaCount));
         }
-        if (fc === 0 && pc === 0 && e.paragraphs && e.paragraphs.length > 0) {
-          fc = e.paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ').length;
-          pc = e.paragraphs.filter(p => p.status === 'আংশিক').length;
-        }
-        const sCount = fc + pc;
+        const sCount = fc;
 
         // Categorize by date relative to active cycle
         const eDate = e.issueDateISO ? new Date(e.issueDateISO) : (e.createdAt ? new Date(e.createdAt) : null);
