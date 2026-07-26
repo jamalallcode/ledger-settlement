@@ -23,6 +23,54 @@ const robustNormalize = (str: string = '') => {
   return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
 };
 
+const isEntityMatch = (entryEntity: string = '', targetEntity: string = ''): boolean => {
+  const normEntry = robustNormalize(entryEntity);
+  const normTarget = robustNormalize(targetEntity);
+  if (!normEntry || !normTarget) return false;
+  if (normEntry === normTarget) return true;
+
+  if ((normTarget.includes("কুটির") || normTarget.includes("হস্ত") || normTarget.includes("বিসিক")) && 
+      (normEntry.includes("কুটির") || normEntry.includes("হস্ত") || normEntry.includes("বিসিক"))) return true;
+
+  if ((normTarget.includes("চিনি") || normTarget.includes("খাদ্য") || normTarget.includes("বিএসএফআইসি")) && 
+      (normEntry.includes("চিনি") || normEntry.includes("খাদ্য") || normEntry.includes("বিএসএফআইসি"))) return true;
+
+  if ((normTarget.includes("রসায়ন") || normTarget.includes("রসায়ন") || normTarget.includes("বিসিআইসি")) && 
+      (normEntry.includes("রসায়ন") || normEntry.includes("রসায়ন") || normEntry.includes("বিসিআইসি"))) return true;
+
+  if (normTarget.includes("সোনালী") && normEntry.includes("সোনালী")) return true;
+  if (normTarget.includes("জনতা") && normEntry.includes("জনতা")) return true;
+  if (normTarget.includes("অগ্রণী") && normEntry.includes("অগ্রণী")) return true;
+  if (normTarget.includes("রূপালী") && normEntry.includes("রূপালী")) return true;
+  if (normTarget.includes("কৃষি") && normEntry.includes("কৃষি")) return true;
+  if (normTarget.includes("বাংলাদেশ ব্যাংক") && normEntry.includes("বাংলাদেশ ব্যাংক")) return true;
+  if (normTarget.includes("ডেভেলপমেন্ট") && normEntry.includes("ডেভেলপমেন্ট")) return true;
+  if (normTarget.includes("গৃহনির্মাণ") && normEntry.includes("গৃহনির্মাণ")) return true;
+  if (normTarget.includes("কর্মসংস্থান") && normEntry.includes("কর্মসংস্থান")) return true;
+  if (normTarget.includes("বেসিক") && normEntry.includes("বেসিক")) return true;
+  if (normTarget.includes("আনসার") && normEntry.includes("আনসার")) return true;
+  if (normTarget.includes("ইনভেস্ট") && normEntry.includes("ইনভেস্ট")) return true;
+  if (normTarget.includes("সাধারণ বীমা") && normEntry.includes("সাধারণ বীমা")) return true;
+  if (normTarget.includes("জীবন বীমা") && normEntry.includes("জীবন বীমা")) return true;
+  if (normTarget.includes("প্রবাসী কল্যাণ") && normEntry.includes("প্রবাসী কল্যাণ")) return true;
+
+  const isPatkolTarget = normTarget.includes("পাটকল") || normTarget.includes("বিজেএমসি") || normTarget.includes("জুট");
+  const isPatkolEntry = normEntry.includes("পাটকল") || normEntry.includes("বিজেএমসি") || normEntry.includes("জুট");
+  if (isPatkolTarget || isPatkolEntry) return isPatkolTarget && isPatkolEntry;
+
+  const isPatTarget = normTarget.includes("পাট") && !normTarget.includes("পাটকল") && !normTarget.includes("বিজেএমসি");
+  const isPatEntry = normEntry.includes("পাট") && !normEntry.includes("পাটকল") && !normEntry.includes("বিজেএমসি");
+  if (isPatTarget || isPatEntry) return isPatTarget && isPatEntry;
+
+  if (normTarget.includes("টিসিবি") && normEntry.includes("টিসিবি")) return true;
+  if ((normTarget.includes("আমদানি") || normTarget.includes("রপ্তানি")) && 
+      (normEntry.includes("আমদানি") || normEntry.includes("রপ্তানি"))) return true;
+  if (normTarget.includes("বিমান") && normEntry.includes("বিমান")) return true;
+  if (normTarget.includes("পর্যটন") && normEntry.includes("পর্যটন")) return true;
+
+  return normEntry.includes(normTarget) || normTarget.includes(normEntry);
+};
+
 // Categorization helper
 const isFinancialInstitution = (ministryName: string) => {
   return robustNormalize(ministryName).includes(robustNormalize('আর্থিক প্রতিষ্ঠান বিভাগ'));
@@ -354,7 +402,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       // Calculate transition settled and raised from July 1, 2025 up to cycle start
       const cycleStartStr = dateFnsFormat(startDate, 'yyyy-MM-dd');
       const transitionEntries = entries.filter(e => {
-        if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
+        if (!isEntityMatch(e.entityName, entityName)) return false;
         if (robustNormalize(e.ministryName) !== robustNormalize(ministryName)) return false;
         if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
 
@@ -430,7 +478,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       // Calculate transition settled and raised from July 1, 2025 up to cycle start
       const cycleStartStr = dateFnsFormat(startDate, 'yyyy-MM-dd');
       const transitionEntries = entries.filter(e => {
-        if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
+        if (!isEntityMatch(e.entityName, entityName)) return false;
         if (robustNormalize(e.ministryName) !== robustNormalize(ministryName)) return false;
         if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
 
@@ -842,7 +890,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         const base = baseMap[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
         
         const pastEntries = entries.filter(e => {
-          if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
+          if (!isEntityMatch(e.entityName, entityName)) return false;
           if (robustNormalize(e.paraType || '') !== robustNormalize(targetParaType)) return false;
           const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
           return entryDate !== '' && entryDate < cycleStartStr && entryDate >= ENTRY_START_DATE;
