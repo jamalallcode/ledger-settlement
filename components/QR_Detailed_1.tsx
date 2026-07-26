@@ -561,7 +561,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
               <th rowSpan={2} className={`${thCls} w-[112px]`}>প্রতিষ্ঠানের নাম</th>
               <th colSpan={3} className={thCls}>প্রারম্ভিক অমিমাংসিত</th>
               <th colSpan={3} className={thCls}>প্রারম্ভিক মীমাংসিত</th>
-              <th rowSpan={2} className={`${thCls} w-[100px]`}>জুন/২০২৫ পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
+              <th rowSpan={2} className={`${thCls} w-[100px]`}>{cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
               <th colSpan={3} className={thCls}>অমিমাংসিত আপত্তিতে জড়িত টাকা</th>
             </tr>
             <tr>
@@ -701,7 +701,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
               <th rowSpan={2} className={`${yellowThCls} w-[112px]`}>প্রতিষ্ঠানের নাম</th>
               <th colSpan={3} className={yellowThCls}>প্রারম্ভিক অমিমাংসিত</th>
               <th colSpan={3} className={yellowThCls}>প্রারম্ভিক মীমাংসিত</th>
-              <th rowSpan={2} className={`${yellowThCls} w-[100px]`}>জুন/২০২৫ পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
+              <th rowSpan={2} className={`${yellowThCls} w-[100px]`}>{cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
               <th colSpan={3} className={yellowThCls}>অমিমাংসিত আপত্তিতে জড়িত টাকা</th>
             </tr>
             <tr>
