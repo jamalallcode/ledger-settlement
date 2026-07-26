@@ -31,7 +31,7 @@ interface EntityPriorValues {
 const table1Data = [
   {
     ministry: "শিল্প মন্ত্রণালয়",
-    entities: ["চিনি ও খাদ্য সংস্থা", "হস্ত ও কুটির শিল্প সংস্থা", "বিটাক", "রসায়ন শিল্প সংস্থা"]
+    entities: ["চিনি ও খাদ্য সংস্থা", "ক্ষুদ্র ও কুটির শিল্প", "বিটাক", "রসায়ন শিল্প সংস্থা"]
   },
   {
     ministry: "বস্ত্র ও পাট মন্ত্রণালয়",
@@ -283,7 +283,13 @@ const QR_Detailed_1: React.FC<QRProps> = ({
 
     (entries || []).forEach(e => {
       const normEntity = robustNormalize(e.entityName || '');
-      if (normEntity === normTarget) {
+      let isMatch = normEntity === normTarget;
+      if (!isMatch) {
+        if ((normTarget.includes("কুটির") || normTarget.includes("হস্ত")) && (normEntity.includes("কুটির") || normEntity.includes("হস্ত"))) {
+          isMatch = true;
+        }
+      }
+      if (isMatch) {
         // Extract raised count
         let rCount = 0;
         const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
