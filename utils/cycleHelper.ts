@@ -94,16 +94,16 @@ export const getQuarterlyCycleForDate = (date: Date): { start: Date; end: Date; 
   let end: Date;
 
   if (month >= 0 && month <= 2) {
-    start = new Date(year - 1, 0, 16);
+    start = new Date(year - 1, 11, 16);
     end = new Date(year, 2, 15);
   } else if (month >= 3 && month <= 5) {
-    start = new Date(year - 1, 2, 16);
+    start = new Date(year, 2, 16);
     end = new Date(year, 5, 15);
   } else if (month >= 6 && month <= 8) {
-    start = new Date(year - 1, 5, 16);
+    start = new Date(year, 5, 16);
     end = new Date(year, 8, 15);
   } else {
-    start = new Date(year - 1, 8, 16);
+    start = new Date(year, 8, 16);
     end = new Date(year, 11, 15);
   }
 
