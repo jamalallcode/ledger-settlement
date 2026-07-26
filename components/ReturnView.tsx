@@ -5,7 +5,7 @@ import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/n
 import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants';
 import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
 import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
-import { getCycleForDate, getQuarterlyCycleForDate } from '../utils/cycleHelper';
+import { getCurrentCycle, getCycleForDate, getQuarterlyCycleForDate } from '../utils/cycleHelper';
 import { isSFI, isNonSFI } from '../utils/branchUtils';
 import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
 import CorrespondenceDhakaReturn from './CorrespondenceDhakaReturn';
@@ -272,6 +272,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     const options = [];
     const seen = new Set<string>();
     const today = new Date();
+    const currentCycle = getCurrentCycle(today);
+    const currentQuarter = getQuarterlyCycleForDate(today);
     
     const isQuarterly = selectedReportType?.includes('ত্রৈমাসিক');
     const isHalfYearly = selectedReportType?.includes('ষাণ্মাসিক');
@@ -279,7 +281,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
     if (isQuarterly) {
       // Loop back to find all quarters in the last 2 years.
-      for (let i = -6; i < 36; i++) {
+      for (let i = 0; i < 36; i++) {
         const refDate = addMonths(today, -i);
         const month = refDate.getMonth(); // 0 to 11
         const year = refDate.getFullYear();
@@ -314,15 +316,18 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           if (quarterYear < 2025 || (quarterYear === 2025 && quarterStartMonth < 5)) {
             continue;
           }
-          seen.add(label);
           const reprDate = new Date(quarterYear, quarterStartMonth, 16);
           const cycle = getQuarterlyCycleForDate(reprDate);
+          if (cycle.start.getTime() > currentQuarter.start.getTime()) {
+            continue;
+          }
+          seen.add(label);
           options.push({ date: reprDate, label, cycleLabel: cycle.label });
         }
       }
     } else if (isHalfYearly) {
       // Half-Yearly: 6-month cycles (Jan to Jun, Jul to Dec)
-      for (let i = -6; i < 36; i++) {
+      for (let i = 0; i < 36; i++) {
         const refDate = addMonths(today, -i);
         const month = refDate.getMonth();
         const year = refDate.getFullYear();
@@ -346,15 +351,18 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           if (year < 2025 || (year === 2025 && halfStartMonth < 5)) {
             continue;
           }
-          seen.add(label);
           const reprDate = new Date(year, halfStartMonth, 16);
           const cycle = getCycleForDate(reprDate);
+          if (cycle.start.getTime() > currentCycle.start.getTime()) {
+            continue;
+          }
+          seen.add(label);
           options.push({ date: reprDate, label, cycleLabel: cycle.label });
         }
       }
     } else if (isYearly) {
       // Yearly: 12-month cycles (Jan to Dec)
-      for (let i = -1; i < 10; i++) {
+      for (let i = 0; i < 10; i++) {
         const refDate = addMonths(today, -i * 12);
         const year = refDate.getFullYear();
 
@@ -364,15 +372,18 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           if (year < 2025) {
             continue;
           }
-          seen.add(label);
           const reprDate = new Date(year, 0, 16);
           const cycle = getCycleForDate(reprDate);
+          if (cycle.start.getTime() > currentCycle.start.getTime()) {
+            continue;
+          }
+          seen.add(label);
           options.push({ date: reprDate, label, cycleLabel: cycle.label });
         }
       }
     } else {
       // Monthly!
-      for (let i = -6; i < 36; i++) {
+      for (let i = 0; i < 36; i++) {
         const refDate = addMonths(today, -i);
         const month = refDate.getMonth(); // 0 to 11
         const year = refDate.getFullYear();
@@ -384,9 +395,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           if (year < 2025 || (year === 2025 && month < 5)) {
             continue;
           }
-          seen.add(label);
           const reprDate = new Date(year, month, 16);
           const cycle = getCycleForDate(reprDate);
+          if (cycle.start.getTime() > currentCycle.start.getTime()) {
+            continue;
+          }
+          seen.add(label);
           options.push({ date: reprDate, label, cycleLabel: cycle.label });
         }
       }
@@ -405,6 +419,54 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   const robustNormalize = (str: string = '') => {
     return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
   };
+
+  const isEntityMatch = useCallback((entryEntity: string = '', targetEntity: string = ''): boolean => {
+    const normEntry = robustNormalize(entryEntity);
+    const normTarget = robustNormalize(targetEntity);
+    if (!normEntry || !normTarget) return false;
+    if (normEntry === normTarget) return true;
+
+    if ((normTarget.includes("কুটির") || normTarget.includes("হস্ত") || normTarget.includes("বিসিক")) && 
+        (normEntry.includes("কুটির") || normEntry.includes("হস্ত") || normEntry.includes("বিসিক"))) return true;
+
+    if ((normTarget.includes("চিনি") || normTarget.includes("খাদ্য") || normTarget.includes("বিএসএফআইসি")) && 
+        (normEntry.includes("চিনি") || normEntry.includes("খাদ্য") || normEntry.includes("বিএসএফআইসি"))) return true;
+
+    if ((normTarget.includes("রসায়ন") || normTarget.includes("রসায়ন") || normTarget.includes("বিসিআইসি")) && 
+        (normEntry.includes("রসায়ন") || normEntry.includes("রসায়ন") || normEntry.includes("বিসিআইসি"))) return true;
+
+    if (normTarget.includes("সোনালী") && normEntry.includes("সোনালী")) return true;
+    if (normTarget.includes("জনতা") && normEntry.includes("জনতা")) return true;
+    if (normTarget.includes("অগ্রণী") && normEntry.includes("অগ্রণী")) return true;
+    if (normTarget.includes("রূপালী") && normEntry.includes("রূপালী")) return true;
+    if (normTarget.includes("কৃষি") && normEntry.includes("কৃষি")) return true;
+    if (normTarget.includes("বাংলাদেশ ব্যাংক") && normEntry.includes("বাংলাদেশ ব্যাংক")) return true;
+    if (normTarget.includes("ডেভেলপমেন্ট") && normEntry.includes("ডেভেলপমেন্ট")) return true;
+    if (normTarget.includes("গৃহনির্মাণ") && normEntry.includes("গৃহনির্মাণ")) return true;
+    if (normTarget.includes("কর্মসংস্থান") && normEntry.includes("কর্মসংস্থান")) return true;
+    if (normTarget.includes("বেসিক") && normEntry.includes("বেসিক")) return true;
+    if (normTarget.includes("আনসার") && normEntry.includes("আনসার")) return true;
+    if (normTarget.includes("ইনভেস্ট") && normEntry.includes("ইনভেস্ট")) return true;
+    if (normTarget.includes("সাধারণ বীমা") && normEntry.includes("সাধারণ বীমা")) return true;
+    if (normTarget.includes("জীবন বীমা") && normEntry.includes("জীবন বীমা")) return true;
+    if (normTarget.includes("প্রবাসী কল্যাণ") && normEntry.includes("প্রবাসী কল্যাণ")) return true;
+
+    const isPatkolTarget = normTarget.includes("পাটকল") || normTarget.includes("বিজেএমসি") || normTarget.includes("জুট");
+    const isPatkolEntry = normEntry.includes("পাটকল") || normEntry.includes("বিজেএমসি") || normEntry.includes("জুট");
+    if (isPatkolTarget || isPatkolEntry) return isPatkolTarget && isPatkolEntry;
+
+    const isPatTarget = normTarget.includes("পাট") && !normTarget.includes("পাটকল") && !normTarget.includes("বিজেএমসি");
+    const isPatEntry = normEntry.includes("পাট") && !normEntry.includes("পাটকল") && !normEntry.includes("বিজেএমসি");
+    if (isPatTarget || isPatEntry) return isPatTarget && isPatEntry;
+
+    if (normTarget.includes("টিসিবি") && normEntry.includes("টিসিবি")) return true;
+    if ((normTarget.includes("আমদানি") || normTarget.includes("রপ্তানি")) && 
+        (normEntry.includes("আমদানি") || normEntry.includes("রপ্তানি"))) return true;
+    if (normTarget.includes("বিমান") && normEntry.includes("বিমান")) return true;
+    if (normTarget.includes("পর্যটন") && normEntry.includes("পর্যটন")) return true;
+
+    return normEntry.includes(normTarget) || normTarget.includes(normEntry);
+  }, []);
 
   const calculateRecursiveOpening = useCallback((entityName: string, cycleStart: Date, paraType: 'এসএফআই' | 'নন এসএফআই' = 'এসএফআই') => {
     const cycleStartStr = dateFnsFormat(cycleStart, 'yyyy-MM-dd');
@@ -451,7 +513,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     }
 
     const pastEntries = filteredPotential.filter(e => {
-        if (robustNormalize(e.entityName) !== robustNormalize(entityName)) return false;
+        if (!isEntityMatch(e.entityName, entityName)) return false;
         if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
         
         const labelMatch = e.cycleLabel && toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon;
@@ -544,8 +606,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           const allPotentialEntries = [...entries, ...correspondenceEntries];
           const matchingEntries = allPotentialEntries.filter(e => {
             const eMin = robustNormalize(e.ministryName || '');
-            const eEnt = robustNormalize(e.entityName || '');
-            if (eMin !== normMinistry || eEnt !== normEntity) return false;
+            if (eMin !== normMinistry || !isEntityMatch(e.entityName, entityName)) return false;
             
             const entryDateRaw = e.issueDateISO || "";
             const entryDate = entryDateRaw.split("T")[0];
@@ -786,8 +847,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           const allPotentialEntries = [...entries, ...correspondenceEntries];
           const matchingEntries = allPotentialEntries.filter(e => {
             const eMin = robustNormalize(e.ministryName || '');
-            const eEnt = robustNormalize(e.entityName || '');
-            if (eMin !== normMinistry || eEnt !== normEntity) return false;
+            if (eMin !== normMinistry || !isEntityMatch(e.entityName, entityName)) return false;
             
             const entryDateRaw = e.issueDateISO || "";
             const entryDate = entryDateRaw.split("T")[0];

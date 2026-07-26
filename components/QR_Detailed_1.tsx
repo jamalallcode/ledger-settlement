@@ -22,6 +22,60 @@ const robustNormalize = (str: string = '') => {
   return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
 };
 
+const isEntityMatch = (entryEntity: string = '', targetEntity: string = ''): boolean => {
+  const normEntry = robustNormalize(entryEntity);
+  const normTarget = robustNormalize(targetEntity);
+  if (!normEntry || !normTarget) return false;
+  if (normEntry === normTarget) return true;
+
+  // Cottage / Handicraft / Small Industries / BSCIC
+  if ((normTarget.includes("কুটির") || normTarget.includes("হস্ত") || normTarget.includes("বিসিক")) && 
+      (normEntry.includes("কুটির") || normEntry.includes("হস্ত") || normEntry.includes("বিসিক"))) return true;
+
+  // Sugar & Food Industries (বিএসএফআইসি / চিনি ও খাদ্য)
+  if ((normTarget.includes("চিনি") || normTarget.includes("খাদ্য") || normTarget.includes("বিএসএফআইসি")) && 
+      (normEntry.includes("চিনি") || normEntry.includes("খাদ্য") || normEntry.includes("বিএসএফআইসি"))) return true;
+
+  // Chemical Industries (BCIC / বিসিআইসি / রসায়ন)
+  if ((normTarget.includes("রসায়ন") || normTarget.includes("রসায়ন") || normTarget.includes("বিসিআইসি")) && 
+      (normEntry.includes("রসায়ন") || normEntry.includes("রসায়ন") || normEntry.includes("বিসিআইসি"))) return true;
+
+  // Banks & Financial Institutions
+  if (normTarget.includes("সোনালী") && normEntry.includes("সোনালী")) return true;
+  if (normTarget.includes("জনতা") && normEntry.includes("জনতা")) return true;
+  if (normTarget.includes("অগ্রণী") && normEntry.includes("অগ্রণী")) return true;
+  if (normTarget.includes("রূপালী") && normEntry.includes("রূপালী")) return true;
+  if (normTarget.includes("কৃষি") && normEntry.includes("কৃষি")) return true;
+  if (normTarget.includes("বাংলাদেশ ব্যাংক") && normEntry.includes("বাংলাদেশ ব্যাংক")) return true;
+  if (normTarget.includes("ডেভেলপমেন্ট") && normEntry.includes("ডেভেলপমেন্ট")) return true;
+  if (normTarget.includes("গৃহনির্মাণ") && normEntry.includes("গৃহনির্মাণ")) return true;
+  if (normTarget.includes("কর্মসংস্থান") && normEntry.includes("কর্মসংস্থান")) return true;
+  if (normTarget.includes("বেসিক") && normEntry.includes("বেসিক")) return true;
+  if (normTarget.includes("আনসার") && normEntry.includes("আনসার")) return true;
+  if (normTarget.includes("ইনভেস্ট") && normEntry.includes("ইনভেস্ট")) return true;
+  if (normTarget.includes("সাধারণ বীমা") && normEntry.includes("সাধারণ বীমা")) return true;
+  if (normTarget.includes("জীবন বীমা") && normEntry.includes("জীবন বীমা")) return true;
+  if (normTarget.includes("প্রবাসী কল্যাণ") && normEntry.includes("প্রবাসী কল্যাণ")) return true;
+
+  // Jute & Textiles (Patkol vs Pat)
+  const isPatkolTarget = normTarget.includes("পাটকল") || normTarget.includes("বিজেএমসি") || normTarget.includes("জুট");
+  const isPatkolEntry = normEntry.includes("পাটকল") || normEntry.includes("বিজেএমসি") || normEntry.includes("জুট");
+  if (isPatkolTarget || isPatkolEntry) return isPatkolTarget && isPatkolEntry;
+
+  const isPatTarget = normTarget.includes("পাট") && !normTarget.includes("পাটকল") && !normTarget.includes("বিজেএমসি");
+  const isPatEntry = normEntry.includes("পাট") && !normEntry.includes("পাটকল") && !normEntry.includes("বিজেএমসি");
+  if (isPatTarget || isPatEntry) return isPatTarget && isPatEntry;
+
+  // Commerce / Aviation / Tourism
+  if (normTarget.includes("টিসিবি") && normEntry.includes("টিসিবি")) return true;
+  if ((normTarget.includes("আমদানি") || normTarget.includes("রপ্তানি")) && 
+      (normEntry.includes("আমদানি") || normEntry.includes("রপ্তানি"))) return true;
+  if (normTarget.includes("বিমান") && normEntry.includes("বিমান")) return true;
+  if (normTarget.includes("পর্যটন") && normEntry.includes("পর্যটন")) return true;
+
+  return normEntry.includes(normTarget) || normTarget.includes(normEntry);
+};
+
 interface EntityPriorValues {
   col4: number;  // প্রারম্ভিক অমিমাংসিত উত্থাপিত আপত্তির সংখ্যা
   col7: number;  // প্রারম্ভিক নিষ্পত্তিকৃত আপত্তির সংখ্যা
@@ -282,14 +336,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
     const normTarget = robustNormalize(entityName);
 
     (entries || []).forEach(e => {
-      const normEntity = robustNormalize(e.entityName || '');
-      let isMatch = normEntity === normTarget;
-      if (!isMatch) {
-        if ((normTarget.includes("কুটির") || normTarget.includes("হস্ত")) && (normEntity.includes("কুটির") || normEntity.includes("হস্ত"))) {
-          isMatch = true;
-        }
-      }
-      if (isMatch) {
+      if (isEntityMatch(e.entityName || '', entityName)) {
         // Extract raised count
         let rCount = 0;
         const rCountRaw = e.manualRaisedCount?.toString().trim() || "";

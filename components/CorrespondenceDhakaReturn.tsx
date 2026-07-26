@@ -365,7 +365,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       'September': 'সেপ্টেম্বর', 'October': 'অক্টোবর', 'November': 'নভেম্বর', 'December': 'ডিসেম্বর'
     };
     const today = new Date();
-    for (let i = -1; i < 23; i++) {
+    for (let i = 0; i < 24; i++) {
       const refDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const monthNameEng = dateFnsFormat(refDate, 'MMMM');
       const yearEng = dateFnsFormat(refDate, 'yyyy');
