@@ -17,7 +17,6 @@ import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import AdminAnalytics from './subapps/admin_analytics/AdminAnalytics';
-import BackToTop from './components/BackToTop';
 import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, CorrespondenceEntry } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
@@ -1682,8 +1681,6 @@ const App: React.FC = () => {
         isOpen={showChangePassword} 
         onClose={() => setShowChangePassword(false)} 
       />
-
-      <BackToTop scrollRef={mainScrollRef} />
 
       {/* Admin Proactive Notification */}
       {showAdminAlert && (
