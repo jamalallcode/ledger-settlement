@@ -18,24 +18,17 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Force table to fit within container at 100% zoom on desktop/laptop */
-@media (min-width: 1280px) {
-  .table-container {
-    overflow: visible !important;
-  }
-  .table-container table {
-    table-layout: fixed !important;
-    width: 100% !important;
-  }
+/* Table container styling for all screen sizes */
+.table-container {
+  max-height: 72vh;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  scrollbar-gutter: stable;
 }
 
-@media (max-width: 1279px) {
-  .table-container {
-    max-height: 72vh;
-    overflow-y: auto !important;
-    overflow-x: auto !important;
-    scrollbar-gutter: stable;
-  }
+.table-container table {
+  table-layout: fixed !important;
+  width: 100% !important;
 }
 
 table {
