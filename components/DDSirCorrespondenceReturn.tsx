@@ -137,27 +137,32 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     return n;
   };
 
-  const getDisplayName = (name: string | null | undefined): string => {
-    if (!name) return 'অনির্ধারিত';
-    const norm = normalizeName(name);
+  const getDisplayName = (name: string | null | undefined, fallbackRawName?: string): string => {
+    if (!name && !fallbackRawName) return 'অনির্ধারিত';
+    const norm = normalizeName(name || fallbackRawName);
     if (norm === 'অনির্ধারিত') return 'অনির্ধারিত';
     
     const match = receiversList.find(r => normalizeName(r.name) === norm);
-    return match ? match.name : name;
+    if (match && match.name) return match.name;
+    return fallbackRawName || name || 'অনির্ধারিত';
   };
 
-  const getDisplayDesignation = (name: string | null | undefined): string => {
-    if (!name) return 'অডিটর';
-    const norm = normalizeName(name);
+  const getDisplayDesignation = (name: string | null | undefined, fallbackRawName?: string): string => {
+    if (!name && !fallbackRawName) return 'অডিটর';
+    const norm = normalizeName(name || fallbackRawName);
     const match = receiversList.find(r => normalizeName(r.name) === norm);
-    return match && match.designation ? match.designation : (receiverDesignations[name] || receiverDesignations[norm] || "অডিটর");
+    if (match && match.designation) return match.designation;
+    const key = fallbackRawName || name || '';
+    return receiverDesignations[key] || receiverDesignations[norm] || "অডিটর";
   };
 
-  const getDisplayImage = (name: string | null | undefined): string | null => {
-    if (!name) return null;
-    const norm = normalizeName(name);
+  const getDisplayImage = (name: string | null | undefined, fallbackRawName?: string): string | null => {
+    if (!name && !fallbackRawName) return null;
+    const norm = normalizeName(name || fallbackRawName);
     const match = receiversList.find(r => normalizeName(r.name) === norm);
-    return match && match.image ? match.image : (receiverImages[name] || receiverImages[norm] || null);
+    if (match && match.image) return match.image;
+    const key = fallbackRawName || name || '';
+    return receiverImages[key] || receiverImages[norm] || null;
   };
 
   useEffect(() => {
@@ -196,28 +201,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         }
       };
 
-      // 1. Fetch from database (Supabase)
-      if (isSupabaseConfigured) {
-        try {
-          const { data: dbReceivers } = await supabase
-            .from('receivers')
-            .select('*');
-          if (dbReceivers) {
-            dbReceivers.forEach(r => {
-              addProfile(r.name, r.image, r.designation);
-              finalReceivers.push({
-                ...r,
-                name: r.name ? r.name.trim() : '',
-                source: 'database'
-              });
-            });
-          }
-        } catch (err) {
-          console.error("Error fetching db receivers in DD Sir Return:", err);
-        }
-      }
-
-      // 2. Fetch from local storage keys
+      // 1. Fetch from local storage keys FIRST (instant synchronous populating)
       const localKeys = [
         { key: 'ledger_correspondence_receivers_admin', branch: 'প্রশাসন' },
         { key: 'ledger_correspondence_receivers_sfi', branch: 'এসএফআই' },
@@ -229,21 +213,15 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           if (saved) {
             const items = JSON.parse(saved);
             if (Array.isArray(items)) {
-              const existingNormalizedNames = new Set(finalReceivers.map(r => normalizeName(r.name) + '_' + getCleanBranch(r.para_type)));
-
               items.forEach((item: any) => {
                 addProfile(item.name, item.image, item.designation);
                 const b = getCleanBranch(item.para_type || branch);
                 const compositeKey = normalizeName(item.name) + '_' + b;
-                const hasSameIdInBranch = item.id && finalReceivers.some(r => r.id === item.id && getCleanBranch(r.para_type) === b);
-                if (!hasSameIdInBranch && !existingNormalizedNames.has(compositeKey)) {
-                  finalReceivers.push({
-                    ...item,
-                    para_type: b,
-                    source: 'local'
-                  });
-                  existingNormalizedNames.add(compositeKey);
-                }
+                finalReceivers.push({
+                  ...item,
+                  para_type: b,
+                  source: 'local'
+                });
               });
             }
           }
@@ -251,6 +229,32 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           console.error("Error parsing local receivers in DD Sir Return:", e);
         }
       });
+
+      // 2. Fetch from database (Supabase) if configured and merge
+      if (isSupabaseConfigured) {
+        try {
+          const { data: dbReceivers } = await supabase
+            .from('receivers')
+            .select('*');
+          if (dbReceivers) {
+            dbReceivers.forEach(r => {
+              addProfile(r.name, r.image, r.designation);
+              const b = getCleanBranch(r.para_type);
+              const compositeKey = normalizeName(r.name) + '_' + b;
+              const hasSameIdInBranch = r.id && finalReceivers.some(existing => existing.id === r.id && getCleanBranch(existing.para_type) === b);
+              if (!hasSameIdInBranch) {
+                finalReceivers.push({
+                  ...r,
+                  name: r.name ? r.name.trim() : '',
+                  source: 'database'
+                });
+              }
+            });
+          }
+        } catch (err) {
+          console.error("Error fetching db receivers in DD Sir Return:", err);
+        }
+      }
 
       const inactiveListRaw = getInactiveList();
       const inactiveKeysSet = new Set(inactiveListRaw.map(item => normalizeName(item)));
@@ -490,14 +494,17 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
   const auditorWiseStats = useMemo(() => {
     const stats: Record<string, { 
+      rawName: string;
       total: number; auditor: number; aao: number; dd: number; others: number;
       auditorLetters: any[]; aaoLetters: any[]; ddLetters: any[]; othersLetters: any[]; totalLetters: any[]
     }> = {};
     
     filteredEntries.forEach(entry => {
-      const auditor = normalizeName(entry.receiverName || entry.presentedToName);
+      const rawAud = (entry.receiverName || entry.presentedToName || '').trim();
+      const auditor = normalizeName(rawAud);
       if (!stats[auditor]) {
         stats[auditor] = { 
+          rawName: rawAud,
           total: 0, auditor: 0, aao: 0, dd: 0, others: 0,
           auditorLetters: [], aaoLetters: [], ddLetters: [], othersLetters: [], totalLetters: []
         };
@@ -542,10 +549,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     const thresholdDate = subMonths(reportingDate, 1);
 
     filteredEntries.forEach(entry => {
-      const auditor = normalizeName(entry.receiverName || entry.presentedToName);
+      const rawAud = (entry.receiverName || entry.presentedToName || '').trim();
+      const auditor = normalizeName(rawAud);
       if (!grouped[auditor]) {
         grouped[auditor] = {
           name: auditor,
+          rawName: rawAud,
           karyapatra: { less: 0, more: 0, lessLetters: [], moreLetters: [] },
           karyabibarani: { less: 0, more: 0, lessLetters: [], moreLetters: [] },
           broadsheet: { less: 0, more: 0, lessLetters: [], moreLetters: [] },
@@ -592,14 +601,15 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       return audA.localeCompare(audB);
     });
 
-    const groups: { auditor: string; rows: any[] }[] = [];
+    const groups: { auditor: string; rawAuditor: string; rows: any[] }[] = [];
     sorted.forEach(row => {
-      const aud = normalizeName(row.receiverName || row.presentedToName);
+      const rawAud = (row.receiverName || row.presentedToName || '').trim();
+      const aud = normalizeName(rawAud);
       const lastGroup = groups[groups.length - 1];
       if (lastGroup && lastGroup.auditor === aud) {
         lastGroup.rows.push(row);
       } else {
-        groups.push({ auditor: aud, rows: [row] });
+        groups.push({ auditor: aud, rawAuditor: rawAud, rows: [row] });
       }
     });
     return groups;
@@ -1057,7 +1067,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 {reportTableData.length > 0 ? reportTableData.map((row, idx) => (
                   <tr key={idx} className="no-hover-row group bg-white hover:bg-blue-100/50 transition-all duration-200">
                     <td className={tdStyle}>{toBengaliDigits(idx + 1)}</td>
-                    <td className={tdStyle + " text-left text-[11px] font-bold group-hover:bg-blue-50/30"}>{getDisplayName(row.name)}</td>
+                    <td className={tdStyle + " text-left text-[11px] font-bold group-hover:bg-blue-50/30"}>{getDisplayName(row.name, row.rawName)}</td>
                     <td 
                       className={`${tdStyle} ${row.karyapatra.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - কার্যপত্র (১ মাস-)`)}`}
                       onClick={() => handleCountClick(`${row.name} - কার্যপত্র (১ মাস-)`, row.karyapatra.lessLetters)}
@@ -1220,7 +1230,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                           <td rowSpan={group.rows.length} className={stickyTdStyle + " bg-slate-50/50 group-hover:bg-blue-200/40 transition-colors"}>
                             <div className="flex items-center justify-center h-full">
                               <div className="font-bold text-slate-900 text-[11px] leading-tight [writing-mode:vertical-rl] rotate-180 whitespace-nowrap py-2">
-                                {getDisplayName(group.auditor)}
+                                {getDisplayName(group.auditor, group.rawAuditor)}
                               </div>
                             </div>
                           </td>
@@ -1320,22 +1330,22 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                       <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
                         <td className={`border border-slate-200 ${isDetailsModalOpen ? 'p-0.5' : 'px-1 py-2'} text-center align-middle`}>
                           <div className={`flex flex-col items-center justify-center gap-1 w-full mx-auto ${isDetailsModalOpen ? 'max-w-[65px]' : 'min-w-[80px]'}`}>
-                            {getDisplayImage(stat.name) ? (
+                            {getDisplayImage(stat.name, stat.rawName) ? (
                               <img 
-                                      src={getDisplayImage(stat.name)!} 
-                                alt={getDisplayName(stat.name)} 
+                                      src={getDisplayImage(stat.name, stat.rawName)!} 
+                                alt={getDisplayName(stat.name, stat.rawName)} 
                                 className={`${isDetailsModalOpen ? 'w-6 h-6 sm:w-7 sm:h-7 rounded-lg' : 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl'} object-cover border border-slate-100 shrink-0 shadow-sm`} 
                                 referrerPolicy="no-referrer"
                               />
                             ) : (
                               <div className={`${isDetailsModalOpen ? 'w-6 h-6 sm:w-7 sm:h-7 text-[8px] rounded-lg' : 'w-9 h-9 sm:w-10 sm:h-10 text-xs rounded-xl'} bg-blue-50 text-blue-600 flex items-center justify-center font-black shrink-0 uppercase shadow-sm`}>
-                                {getDisplayName(stat.name).slice(0, 2)}
+                                {getDisplayName(stat.name, stat.rawName).slice(0, 2)}
                               </div>
                             )}
                             <div className="flex flex-col items-center min-w-0 w-full">
-                              <span className={`${isDetailsModalOpen ? 'text-[7.5px] sm:text-[8px] tracking-tight' : 'text-[10px] sm:text-[11.5px]'} font-extrabold text-slate-800 leading-tight text-center break-words w-full`}>{getDisplayName(stat.name)}</span>
+                              <span className={`${isDetailsModalOpen ? 'text-[7.5px] sm:text-[8px] tracking-tight' : 'text-[10px] sm:text-[11.5px]'} font-extrabold text-slate-800 leading-tight text-center break-words w-full`}>{getDisplayName(stat.name, stat.rawName)}</span>
                               <span className={`${isDetailsModalOpen ? 'text-[6.5px] sm:text-[7px]' : 'text-[8px] sm:text-[9.5px]'} font-bold text-slate-400 leading-none mt-0.5 text-center break-words w-full`}>
-                                {getDisplayDesignation(stat.name)}
+                                {getDisplayDesignation(stat.name, stat.rawName)}
                               </span>
                             </div>
                           </div>
