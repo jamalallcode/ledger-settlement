@@ -16,15 +16,39 @@
 
 /* Ensure table header as a whole block and stacked rows are always sticky on top */
 .table-container thead {
+  position: -webkit-sticky !important;
   position: sticky !important;
   top: 0 !important;
   z-index: 250 !important;
 }
 
-.table-container thead th {
+.table-container table thead th,
+.table-container table thead tr th,
+.table-container thead th,
+.table-container th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
   z-index: 240 !important;
   background-clip: padding-box !important;
   vertical-align: middle !important;
+}
+
+.table-container table thead tr:first-child th,
+.table-container thead tr:first-child th {
+  top: 0 !important;
+  z-index: 250 !important;
+}
+
+.table-container table thead tr:nth-child(2) th,
+.table-container thead tr:nth-child(2) th {
+  top: 34px !important;
+  z-index: 245 !important;
+}
+
+.table-container table thead tr:nth-child(3) th,
+.table-container thead tr:nth-child(3) th {
+  top: 86px !important;
+  z-index: 240 !important;
 }
 
 
