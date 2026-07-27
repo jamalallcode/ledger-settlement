@@ -443,7 +443,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
   const yellowThRow3Cls = "p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-400";
 
   const tdCls = "p-2 text-[10px] text-slate-800 align-middle bg-white";
-  const numTdCls = "p-2 text-[10px] text-slate-800 text-center align-middle font-bold bg-white";
+  const numTdCls = "p-2 text-[10px] text-slate-800 text-center align-middle font-bold bg-white whitespace-nowrap";
   const footerTdCls = "p-2 text-[10px] text-white align-middle bg-black font-black text-center whitespace-nowrap";
 
   // Calculate Table 1 Totals
@@ -579,8 +579,8 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           <thead>
             <tr>
               <th rowSpan={2} className={`${thCls} w-[40px]`}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thCls} w-[93px]`}>মন্ত্রণালয়ের নাম</th>
-              <th rowSpan={2} className={`${thCls} w-[100px]`}>প্রতিষ্ঠানের নাম</th>
+              <th rowSpan={2} className={`${thCls} w-[68px]`}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={`${thCls} w-[78px]`}>প্রতিষ্ঠানের নাম</th>
               <th colSpan={3} className={thCls}>প্রারম্ভিক অমিমাংসিত</th>
               <th colSpan={3} className={thCls}>প্রারম্ভিক মীমাংসিত</th>
               <th rowSpan={2} className={`${thCls} w-[100px]`}>{cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
@@ -719,8 +719,8 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           <thead>
             <tr>
               <th rowSpan={2} className={`${yellowThCls} w-[40px]`}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${yellowThCls} w-[93px]`}>মন্ত্রণালয়ের নাম</th>
-              <th rowSpan={2} className={`${yellowThCls} w-[100px]`}>প্রতিষ্ঠানের নাম</th>
+              <th rowSpan={2} className={`${yellowThCls} w-[68px]`}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={`${yellowThCls} w-[78px]`}>প্রতিষ্ঠানের নাম</th>
               <th colSpan={3} className={yellowThCls}>প্রারম্ভিক অমিমাংসিত</th>
               <th colSpan={3} className={yellowThCls}>প্রারম্ভিক মীমাংসিত</th>
               <th rowSpan={2} className={`${yellowThCls} w-[100px]`}>{cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
