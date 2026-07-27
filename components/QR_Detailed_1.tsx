@@ -151,12 +151,30 @@ const QR_Detailed_1: React.FC<QRProps> = ({
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(priorData));
-    } catch (e) {
-      console.error(e);
+    if (Object.keys(priorData).length > 0) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(priorData));
+      } catch (e) {
+        console.error(e);
+      }
     }
   }, [priorData]);
+
+  useEffect(() => {
+    const handleReload = () => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          setPriorData(JSON.parse(saved));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    handleReload();
+    window.addEventListener('prev_ledgers_updated', handleReload);
+    return () => window.removeEventListener('prev_ledgers_updated', handleReload);
+  }, []);
 
   const getQuarterInfo = (date: Date) => {
     const cycleEndMonth = date.getMonth(); // 0 to 11
@@ -425,8 +443,8 @@ const QR_Detailed_1: React.FC<QRProps> = ({
   const yellowThRow3Cls = "p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-400";
 
   const tdCls = "p-2 text-[10px] text-slate-800 align-middle bg-white";
-  const numTdCls = "p-2 text-[10px] text-slate-800 text-center align-middle font-bold bg-white";
-  const footerTdCls = "p-2 text-[10px] text-white align-middle bg-black font-black text-center";
+  const numTdCls = "p-2 text-[10px] text-slate-800 text-center align-middle font-bold bg-white whitespace-nowrap";
+  const footerTdCls = "p-2 text-[10px] text-white align-middle bg-black font-black text-center whitespace-nowrap";
 
   // Calculate Table 1 Totals
   const t1Totals = { col4: 0, col5: 0, col6: 0, col7: 0, col8: 0, col9: 0, col10: 0, col11: 0, col12: 0, col13: 0 };
@@ -561,8 +579,8 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           <thead>
             <tr>
               <th rowSpan={2} className={`${thCls} w-[40px]`}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thCls} w-[105px]`}>মন্ত্রণালয়ের নাম</th>
-              <th rowSpan={2} className={`${thCls} w-[112px]`}>প্রতিষ্ঠানের নাম</th>
+              <th rowSpan={2} className={`${thCls} w-[68px]`}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={`${thCls} w-[78px]`}>প্রতিষ্ঠানের নাম</th>
               <th colSpan={3} className={thCls}>প্রারম্ভিক অমিমাংসিত</th>
               <th colSpan={3} className={thCls}>প্রারম্ভিক মীমাংসিত</th>
               <th rowSpan={2} className={`${thCls} w-[100px]`}>{cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
@@ -701,8 +719,8 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           <thead>
             <tr>
               <th rowSpan={2} className={`${yellowThCls} w-[40px]`}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${yellowThCls} w-[105px]`}>মন্ত্রণালয়ের নাম</th>
-              <th rowSpan={2} className={`${yellowThCls} w-[112px]`}>প্রতিষ্ঠানের নাম</th>
+              <th rowSpan={2} className={`${yellowThCls} w-[68px]`}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={`${yellowThCls} w-[78px]`}>প্রতিষ্ঠানের নাম</th>
               <th colSpan={3} className={yellowThCls}>প্রারম্ভিক অমিমাংসিত</th>
               <th colSpan={3} className={yellowThCls}>প্রারম্ভিক মীমাংসিত</th>
               <th rowSpan={2} className={`${yellowThCls} w-[100px]`}>{cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
@@ -830,18 +848,18 @@ const QR_Detailed_1: React.FC<QRProps> = ({
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col12.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col13.toString())}</td>
             </tr>
-            <tr className="bg-amber-300">
-              <td colSpan={3} className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">সর্বমোট</td>
-              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col4.toString())}</td>
-              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col5.toString())}</td>
-              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col6.toString())}</td>
-              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col7.toString())}</td>
-              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col8.toString())}</td>
-              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col9.toString())}</td>
-              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col10.toString())}</td>
-              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col11.toString())}</td>
-              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col12.toString())}</td>
-              <td className="p-2 text-[11px] font-black text-slate-900 text-center bg-amber-300">{toBengaliDigits(grandTotals.col13.toString())}</td>
+            <tr>
+              <td colSpan={3} className={footerTdCls}>সর্বমোট</td>
+              <td className={footerTdCls}>{toBengaliDigits(grandTotals.col4.toString())}</td>
+              <td className={footerTdCls}>{toBengaliDigits(grandTotals.col5.toString())}</td>
+              <td className={footerTdCls}>{toBengaliDigits(grandTotals.col6.toString())}</td>
+              <td className={footerTdCls}>{toBengaliDigits(grandTotals.col7.toString())}</td>
+              <td className={footerTdCls}>{toBengaliDigits(grandTotals.col8.toString())}</td>
+              <td className={footerTdCls}>{toBengaliDigits(grandTotals.col9.toString())}</td>
+              <td className={footerTdCls}>{toBengaliDigits(grandTotals.col10.toString())}</td>
+              <td className={footerTdCls}>{toBengaliDigits(grandTotals.col11.toString())}</td>
+              <td className={footerTdCls}>{toBengaliDigits(grandTotals.col12.toString())}</td>
+              <td className={footerTdCls}>{toBengaliDigits(grandTotals.col13.toString())}</td>
             </tr>
           </tfoot>
         </table>

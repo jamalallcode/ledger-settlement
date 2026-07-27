@@ -266,7 +266,9 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
   // Helper to get base starting values from prevStats
   const getEntityStats = (entName: string) => {
-    const baseMap = paraType === 'এসএফআই' ? (prevStats?.entitiesSFI || {}) : (prevStats?.entitiesNonSFI || {});
+    const primaryMap = paraType === 'এসএফআই' ? prevStats?.entitiesSFI : prevStats?.entitiesNonSFI;
+    const fallbackMap = paraType === 'এসএফআই' ? prevStats?.entitiesNonSFI : prevStats?.entitiesSFI;
+    const baseMap = (primaryMap && Object.keys(primaryMap).length > 0) ? primaryMap : (fallbackMap || {});
     let stats = baseMap[entName];
     if (!stats) {
       const keys = Object.keys(baseMap);
@@ -359,6 +361,32 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       setPrevLedgerTable2Data(defaults);
     }
   }, [paraType, table1EntitiesList, table2EntitiesList, prevStats, cutoffMonth]);
+
+  React.useEffect(() => {
+    const handleReload = () => {
+      const savedCutoff = localStorage.getItem('opening_balance_cutoff_month');
+      if (savedCutoff) {
+        setCutoffMonth(savedCutoff);
+      }
+      const activeCutoff = savedCutoff || cutoffMonth;
+      const key1 = getStorageKeyTable1(activeCutoff);
+      const saved1 = localStorage.getItem(key1);
+      if (saved1) {
+        try {
+          setPrevLedgerTable1Data(JSON.parse(saved1));
+        } catch (e) { console.error(e); }
+      }
+      const key2 = getStorageKeyTable2(activeCutoff);
+      const saved2 = localStorage.getItem(key2);
+      if (saved2) {
+        try {
+          setPrevLedgerTable2Data(JSON.parse(saved2));
+        } catch (e) { console.error(e); }
+      }
+    };
+    window.addEventListener('prev_ledgers_updated', handleReload);
+    return () => window.removeEventListener('prev_ledgers_updated', handleReload);
+  }, [paraType, cutoffMonth]);
 
   const handleSavePrevLedgerTable1 = (updated: typeof prevLedgerTable1Data) => {
     setPrevLedgerTable1Data(updated);

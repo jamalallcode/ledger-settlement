@@ -393,7 +393,9 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   };
 
   const getEntityStats = (entName: string) => {
-    const baseMap = prevStats?.entitiesNonSFI || {};
+    const baseMap = (prevStats?.entitiesNonSFI && Object.keys(prevStats.entitiesNonSFI).length > 0)
+      ? prevStats.entitiesNonSFI
+      : (prevStats?.entitiesSFI || {});
     let matchKey = entName;
     if (robustNormalize(entName) === robustNormalize("হস্ত ও কুটির শিল্প সংস্থা")) {
       matchKey = "ক্ষুদ্র ও কুটির শিল্প";
@@ -685,6 +687,44 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       });
       setPrevLedgerTable2Data(defaults);
     }
+  }, [cutoffMonth]);
+
+  React.useEffect(() => {
+    const handleReload = () => {
+      const savedCutoff = localStorage.getItem('opening_balance_cutoff_month');
+      if (savedCutoff) {
+        setCutoffMonth(savedCutoff);
+      }
+      const activeCutoff = savedCutoff || cutoffMonth;
+      const key1 = getStorageKeyTable1(activeCutoff);
+      const saved1 = localStorage.getItem(key1);
+      if (saved1) {
+        try {
+          const parsed = JSON.parse(saved1);
+          const migrated: Record<string, any> = {};
+          Object.entries(parsed).forEach(([k, val]) => {
+            const cleanKey = k.replace(/कर्मসংস্থান/g, "কর্মসংস্থান");
+            migrated[cleanKey] = val;
+          });
+          setPrevLedgerData(migrated);
+        } catch (e) { console.error(e); }
+      }
+      const key2 = getStorageKeyTable2(activeCutoff);
+      const saved2 = localStorage.getItem(key2);
+      if (saved2) {
+        try {
+          const parsed = JSON.parse(saved2);
+          const migrated: Record<string, any> = {};
+          Object.entries(parsed).forEach(([k, val]) => {
+            const cleanKey = k.replace(/कर्मসংস্থান/g, "কর্মসংস্থান");
+            migrated[cleanKey] = val;
+          });
+          setPrevLedgerTable2Data(migrated);
+        } catch (e) { console.error(e); }
+      }
+    };
+    window.addEventListener('prev_ledgers_updated', handleReload);
+    return () => window.removeEventListener('prev_ledgers_updated', handleReload);
   }, [cutoffMonth]);
 
   const prevLedgerTable2Rows = useMemo(() => {
@@ -1799,8 +1839,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           <table className="w-full border-separate border-spacing-0 !table-auto border-l border-slate-400">
             <colgroup>
               <col style={{ width: '30px', minWidth: '30px' }} />
-              <col style={{ width: '75px', minWidth: '75px' }} />
-              <col style={{ width: '95px', minWidth: '95px' }} />
+              <col style={{ width: '63px', minWidth: '63px' }} />
+              <col style={{ width: '83px', minWidth: '83px' }} />
               <col style={{ width: '35px', minWidth: '35px' }} />
               <col style={{ width: '110px', minWidth: '110px' }} />
               <col style={{ width: '35px', minWidth: '35px' }} />
@@ -1815,8 +1855,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             <thead className="bg-slate-100">
               <tr>
                 <th className={`${thClsWithTop} w-[30px] min-w-[30px] max-w-[30px]`} rowSpan={2}>ক্রঃ নং</th>
-                <th className={`${thClsWithTop} w-[75px] min-w-[75px] max-w-[75px]`} rowSpan={2}>মন্ত্রণালয়ের নাম</th>
-                <th className={`${thClsWithTop} w-[95px] min-w-[95px] max-w-[95px]`} rowSpan={2}>সংস্থার নাম</th>
+                <th className={`${thClsWithTop} w-[63px] min-w-[63px] max-w-[63px]`} rowSpan={2}>মন্ত্রণালয়ের নাম</th>
+                <th className={`${thClsWithTop} w-[83px] min-w-[83px] max-w-[83px]`} rowSpan={2}>সংস্থার নাম</th>
                 <th className={`${thClsWithTop}`} colSpan={2}>{priorMonthFormatted} পর্যন্ত অমীমাংসিত অডিট আপত্তির</th>
                 <th className={`${thClsWithTop}`} colSpan={2}>{currentQuarterFormatted} পর্যন্ত উত্থাপিত অডিট আপত্তির</th>
                 <th className={`${thClsWithTop}`} colSpan={2}>মোট অডিট আপত্তি</th>
@@ -1911,8 +1951,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             <tfoot className="qr-sticky-footer-bottom">
               <tr className="h-[36px]">
                 <td className={`${footerTdCls} w-[30px] min-w-[30px] max-w-[30px]`}></td>
-                <td className={`${footerTdCls} w-[75px] min-w-[75px] max-w-[75px]`}></td>
-                <td className={`${footerTdCls} text-center font-black w-[95px] min-w-[95px] max-w-[95px] text-[11px]`}>মোট (টেবিল-১)</td>
+                <td className={`${footerTdCls} w-[63px] min-w-[63px] max-w-[63px]`}></td>
+                <td className={`${footerTdCls} text-center font-black w-[83px] min-w-[83px] max-w-[83px] text-[10px]`}>মোট (টেবিল-১)</td>
                 <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.unsettledCountPrior)}</td>
                 <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.unsettledAmountPrior)}</td>
                 <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.raisedCountCurr)}</td>
@@ -1926,8 +1966,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               </tr>
               <tr className="h-[36px]">
                 <td className={`${footerTdCls} w-[30px] min-w-[30px] max-w-[30px]`}></td>
-                <td className={`${footerTdCls} w-[75px] min-w-[75px] max-w-[75px]`}></td>
-                <td className={`${footerTdCls} text-center font-black w-[95px] min-w-[95px] max-w-[95px] text-[11px]`}>মোট (টেবিল-২)</td>
+                <td className={`${footerTdCls} w-[63px] min-w-[63px] max-w-[63px]`}></td>
+                <td className={`${footerTdCls} text-center font-black w-[83px] min-w-[83px] max-w-[83px] text-[10px]`}>মোট (টেবিল-২)</td>
                 <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Table2Totals.unsettledCountPrior)}</td>
                 <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.unsettledAmountPrior)}</td>
                 <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Table2Totals.raisedCountCurr)}</td>
@@ -1941,8 +1981,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               </tr>
               <tr className="h-[36px]">
                 <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-300 font-extrabold w-[30px] min-w-[30px] max-w-[30px]"></td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-300 font-extrabold w-[75px] min-w-[75px] max-w-[75px]"></td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-300 font-extrabold text-center w-[95px] min-w-[95px] max-w-[95px] text-[11px]">সর্বমোট</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-300 font-extrabold w-[63px] min-w-[63px] max-w-[63px]"></td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-300 font-extrabold text-center w-[83px] min-w-[83px] max-w-[83px] text-[10px]">সর্বমোট</td>
                 <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[35px] min-w-[35px] max-w-[35px] text-[10px]">{formatCountBengali(details1GrandTotals.unsettledCountPrior)}</td>
                 <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[110px] min-w-[110px] max-w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.unsettledAmountPrior)}</td>
                 <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[35px] min-w-[35px] max-w-[35px] text-[10px]">{formatCountBengali(details1GrandTotals.raisedCountCurr)}</td>

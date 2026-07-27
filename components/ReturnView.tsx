@@ -571,7 +571,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       ministryGroups.forEach(m => {
         const entities = MINISTRY_ENTITY_MAP[m] || [];
         entities.forEach(ent => {
-          rawMasterStats[ent] = prevStats.entitiesSFI[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+          rawMasterStats[ent] = prevStats?.entitiesSFI?.[ent] || prevStats?.entitiesNonSFI?.[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
         });
       });
       setTempPrevStats(rawMasterStats);
@@ -999,7 +999,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   const { statsReportData, statsGrandTotals } = statsDataTuple;
 
   const handleSaveSetup = () => {
-    setPrevStats({ ...prevStats, entitiesSFI: tempPrevStats, entitiesNonSFI: {} });
+    setPrevStats({ ...prevStats, entitiesSFI: tempPrevStats, entitiesNonSFI: tempPrevStats });
     setIsSetupMode(false); setSelectedReportType(null); setIsEditingSetup(false);
   };
 
