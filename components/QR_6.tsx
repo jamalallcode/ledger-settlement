@@ -268,6 +268,23 @@ const QR_6: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     }
   }, [cutoffMonth, paraType]);
 
+  useEffect(() => {
+    const handleReload = () => {
+      const savedCutoff = localStorage.getItem('opening_balance_cutoff_month');
+      if (savedCutoff) {
+        setCutoffMonth(savedCutoff);
+      }
+      const activeCutoff = savedCutoff || cutoffMonth;
+      const key = getStorageKey(activeCutoff);
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        try { setPrevLedgerData(JSON.parse(saved)); } catch (e) { console.error(e); }
+      }
+    };
+    window.addEventListener('prev_ledgers_updated', handleReload);
+    return () => window.removeEventListener('prev_ledgers_updated', handleReload);
+  }, [cutoffMonth, paraType]);
+
   // Ensure every entity has defaults
   const normalizedPrevLedgerData = useMemo(() => {
     const data = { ...prevLedgerData };

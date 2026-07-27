@@ -270,7 +270,7 @@ const App: React.FC = () => {
       const ledgers: Record<string, string> = {};
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && (key.startsWith('qr2_') || key.startsWith('qr3_') || key.startsWith('qr4_') || key.startsWith('qr5_') || key.startsWith('qr6_'))) {
+        if (key && (key.startsWith('qr') || key.startsWith('opening_balance_') || key.includes('prev_ledger') || key.includes('prior_balances'))) {
           const val = localStorage.getItem(key);
           if (val) ledgers[key] = val;
         }
@@ -298,7 +298,7 @@ const App: React.FC = () => {
     (localStorage as any).setItem = function(key: string, value: string) {
       originalSetItem.apply(this, [key, value]);
       if (!isSyncPausedRef.current) {
-        if (key === 'opening_balance_cutoff_month' || key.startsWith('qr2_') || key.startsWith('qr3_') || key.startsWith('qr4_') || key.startsWith('qr5_') || key.startsWith('qr6_')) {
+        if (key === 'opening_balance_cutoff_month' || key.startsWith('qr') || key.includes('prev_ledger') || key.includes('prior_balances')) {
           triggerPrevLedgersSync();
         }
       }
@@ -307,7 +307,7 @@ const App: React.FC = () => {
     (localStorage as any).removeItem = function(key: string) {
       originalRemoveItem.apply(this, [key]);
       if (!isSyncPausedRef.current) {
-        if (key === 'opening_balance_cutoff_month' || key.startsWith('qr2_') || key.startsWith('qr3_') || key.startsWith('qr4_') || key.startsWith('qr5_') || key.startsWith('qr6_')) {
+        if (key === 'opening_balance_cutoff_month' || key.startsWith('qr') || key.includes('prev_ledger') || key.includes('prior_balances')) {
           triggerPrevLedgersSync();
         }
       }
@@ -741,6 +741,7 @@ const App: React.FC = () => {
                 setAllPrevStats(migrated);
                 localStorage.setItem(PREV_STATS_KEY, JSON.stringify(migrated));
               }
+              window.dispatchEvent(new CustomEvent('prev_stats_updated'));
             } else if (row.id === 'system_metadata_prev_ledgers') {
               isSyncPausedRef.current = true;
               if (content.opening_balance_cutoff_month) {
@@ -752,6 +753,7 @@ const App: React.FC = () => {
                 });
               }
               isSyncPausedRef.current = false;
+              window.dispatchEvent(new CustomEvent('prev_ledgers_updated'));
             } else if (!row.id.startsWith('doc_')) {
               // Distinguish between entry types - robust check
               const isCorrespondence = content.type === 'correspondence' || (content.description !== undefined && content.description !== null);
@@ -826,6 +828,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const syncPrevStats = async () => {
+      if (!isDataLoaded) return;
       if (Object.keys(allPrevStats.monthly.entitiesSFI).length > 0 || 
           Object.keys(allPrevStats.quarterly.entitiesSFI).length > 0 ||
           Object.keys(allPrevStats.halfYearly.entitiesSFI).length > 0 ||
@@ -840,7 +843,7 @@ const App: React.FC = () => {
       }
     };
     syncPrevStats();
-  }, [allPrevStats]);
+  }, [allPrevStats, isDataLoaded]);
 
   const cycleInfo = useMemo(() => getCurrentCycle(), []);
   const cycleLabelBengali = useMemo(() => toBengaliDigits(cycleInfo.label), [cycleInfo.label]);

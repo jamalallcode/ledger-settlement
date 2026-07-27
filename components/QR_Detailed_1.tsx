@@ -151,12 +151,30 @@ const QR_Detailed_1: React.FC<QRProps> = ({
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(priorData));
-    } catch (e) {
-      console.error(e);
+    if (Object.keys(priorData).length > 0) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(priorData));
+      } catch (e) {
+        console.error(e);
+      }
     }
   }, [priorData]);
+
+  useEffect(() => {
+    const handleReload = () => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          setPriorData(JSON.parse(saved));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    handleReload();
+    window.addEventListener('prev_ledgers_updated', handleReload);
+    return () => window.removeEventListener('prev_ledgers_updated', handleReload);
+  }, []);
 
   const getQuarterInfo = (date: Date) => {
     const cycleEndMonth = date.getMonth(); // 0 to 11

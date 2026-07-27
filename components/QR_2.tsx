@@ -393,7 +393,9 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   };
 
   const getEntityStats = (entName: string) => {
-    const baseMap = prevStats?.entitiesNonSFI || {};
+    const baseMap = (prevStats?.entitiesNonSFI && Object.keys(prevStats.entitiesNonSFI).length > 0)
+      ? prevStats.entitiesNonSFI
+      : (prevStats?.entitiesSFI || {});
     let matchKey = entName;
     if (robustNormalize(entName) === robustNormalize("হস্ত ও কুটির শিল্প সংস্থা")) {
       matchKey = "ক্ষুদ্র ও কুটির শিল্প";
@@ -685,6 +687,44 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       });
       setPrevLedgerTable2Data(defaults);
     }
+  }, [cutoffMonth]);
+
+  React.useEffect(() => {
+    const handleReload = () => {
+      const savedCutoff = localStorage.getItem('opening_balance_cutoff_month');
+      if (savedCutoff) {
+        setCutoffMonth(savedCutoff);
+      }
+      const activeCutoff = savedCutoff || cutoffMonth;
+      const key1 = getStorageKeyTable1(activeCutoff);
+      const saved1 = localStorage.getItem(key1);
+      if (saved1) {
+        try {
+          const parsed = JSON.parse(saved1);
+          const migrated: Record<string, any> = {};
+          Object.entries(parsed).forEach(([k, val]) => {
+            const cleanKey = k.replace(/कर्मসংস্থান/g, "কর্মসংস্থান");
+            migrated[cleanKey] = val;
+          });
+          setPrevLedgerData(migrated);
+        } catch (e) { console.error(e); }
+      }
+      const key2 = getStorageKeyTable2(activeCutoff);
+      const saved2 = localStorage.getItem(key2);
+      if (saved2) {
+        try {
+          const parsed = JSON.parse(saved2);
+          const migrated: Record<string, any> = {};
+          Object.entries(parsed).forEach(([k, val]) => {
+            const cleanKey = k.replace(/कर्मসংস্থান/g, "কর্মসংস্থান");
+            migrated[cleanKey] = val;
+          });
+          setPrevLedgerTable2Data(migrated);
+        } catch (e) { console.error(e); }
+      }
+    };
+    window.addEventListener('prev_ledgers_updated', handleReload);
+    return () => window.removeEventListener('prev_ledgers_updated', handleReload);
   }, [cutoffMonth]);
 
   const prevLedgerTable2Rows = useMemo(() => {
