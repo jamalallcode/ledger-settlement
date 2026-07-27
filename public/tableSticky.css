@@ -1,0 +1,308 @@
+/* TABLE STICKY HEADER & FOOTER LOGIC */
+
+/* General Sticky Header Base Style */
+.table-container {
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+  background-color: white;
+  border: none !important;
+  max-height: 72vh;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  scrollbar-gutter: stable;
+}
+
+/* Ensure table header as a whole block and stacked rows are always sticky on top */
+.table-container thead {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 250 !important;
+  background-color: #f1f5f9 !important;
+}
+
+.table-container thead tr {
+  background-color: #f1f5f9 !important;
+}
+
+.table-container thead th {
+  background-color: #f1f5f9 !important; 
+  z-index: 240 !important;
+  background-clip: padding-box !important;
+  vertical-align: middle !important;
+}
+
+
+
+/* QR Table specific overrides to prevent double borders and eliminate border radius */
+.qr-table-container {
+  border: none !important;
+  border-radius: 0px !important;
+}
+
+.qr-table-container,
+.qr-table-container table,
+.qr-table-container thead,
+.qr-table-container tbody,
+.qr-table-container tfoot,
+.qr-table-container tr,
+.qr-table-container th,
+.qr-table-container td {
+  border-radius: 0px !important;
+}
+
+.qr-table-container th,
+.qr-table-container td {
+  box-shadow: none !important;
+}
+
+/* Sticky Footer (General) */
+.table-container tfoot {
+  position: sticky;
+  bottom: 0;
+  z-index: 250;
+}
+
+.table-container tfoot td, 
+.table-container tfoot th {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 240 !important;
+  background-color: #000000 !important;
+  color: white !important;
+}
+
+/* QR Specific Sticky Footer (for rows inside tbody) */
+.qr-sticky-footer td {
+  position: sticky !important;
+  background-clip: padding-box !important;
+  background-color: white; /* Default solid background */
+}
+
+/* Base sticky footer (usually for the bottom-most row like 'Grand Total') */
+.qr-sticky-footer-bottom td {
+  bottom: 0 !important;
+  z-index: 220 !important; /* Higher than regular rows, lower than thead (250) */
+  background-color: #000000 !important; /* Black background */
+  color: #ffffff !important; /* White text */
+}
+
+/* Offset sticky footer (for the 'Total' row when it sits above 'Grand Total') */
+.qr-sticky-footer-offset td {
+  bottom: 28px !important; /* Matches the h-[28px] of the row below it */
+  z-index: 210 !important; /* Higher than regular rows, lower than bottom footer */
+  background-color: #000000 !important; /* Black background */
+  color: #ffffff !important; /* White text */
+}
+
+/* Disable hover background changes for Total/Grand Total rows and any tfoot rows */
+.qr-sticky-footer-bottom:hover td,
+.qr-sticky-footer-offset:hover td,
+.qr-sticky-footer-bottom tr:hover td,
+.qr-sticky-footer-offset tr:hover td,
+.qr-sticky-footer-bottom td:hover,
+.qr-sticky-footer-offset td:hover,
+tbody tr.qr-sticky-footer-bottom:hover td,
+tbody tr.qr-sticky-footer-offset:hover td,
+tbody tr.qr-sticky-footer-bottom td:hover,
+tbody tr.qr-sticky-footer-offset td:hover,
+.table-container tbody tr.qr-sticky-footer-bottom:hover td,
+.table-container tbody tr.qr-sticky-footer-offset:hover td,
+.table-container tbody tr.qr-sticky-footer-bottom td:hover,
+.table-container tbody tr.qr-sticky-footer-offset td:hover,
+.table-container tfoot tr:hover td,
+.table-container tfoot tr:hover th,
+.table-container tfoot td:hover,
+.table-container tfoot th:hover,
+.dark .qr-sticky-footer-bottom:hover td,
+.dark .qr-sticky-footer-offset:hover td,
+.dark .qr-sticky-footer-bottom tr:hover td,
+.dark .qr-sticky-footer-offset tr:hover td,
+.dark .qr-sticky-footer-bottom td:hover,
+.dark .qr-sticky-footer-offset td:hover,
+.dark tbody tr.qr-sticky-footer-bottom:hover td,
+.dark tbody tr.qr-sticky-footer-offset:hover td,
+.dark tbody tr.qr-sticky-footer-bottom td:hover,
+.dark tbody tr.qr-sticky-footer-offset td:hover,
+.dark .table-container tbody tr.qr-sticky-footer-bottom:hover td,
+.dark .table-container tbody tr.qr-sticky-footer-offset:hover td,
+.dark .table-container tbody tr.qr-sticky-footer-bottom td:hover,
+.dark .table-container tbody tr.qr-sticky-footer-offset td:hover,
+.dark .table-container tfoot tr:hover td,
+.dark .table-container tfoot tr:hover th,
+.dark .table-container tfoot td:hover,
+.dark .table-container tfoot th:hover {
+  background-color: #000000 !important; /* Keep original black background */
+  color: #ffffff !important; /* Keep original white text */
+}
+
+/* Fallback background for generic sticky footers if not specified */
+.qr-sticky-footer:not(.qr-sticky-footer-bottom):not(.qr-sticky-footer-offset) td {
+  background-color: #f1f5f9 !important;
+}
+
+/* Ensure z-index for stacked footers */
+.qr-sticky-footer.z-20 td {
+  z-index: 211 !important;
+}
+
+/* --- MULTI-TABLE VIEW SPECIFIC OVERRIDES --- */
+
+.multi-table-view .table-container:first-of-type,
+.multi-table-view .table-container:first-of-type thead,
+.multi-table-view .table-container:first-of-type thead tr,
+.multi-table-view .table-container:first-of-type thead tr th {
+  position: static !important;
+  top: auto !important;
+  box-shadow: none !important;
+}
+
+.multi-table-view .table-container:last-of-type thead th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+}
+
+@media print {
+  .table-container thead th, 
+  .table-container tfoot td { 
+    position: static !important; 
+  }
+}
+
+/* Premium Scrollbar Styling (Generic) */
+.table-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.table-container:hover::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: #64748b !important;
+}
+
+/* --- QR TABLE SPECIFIC SCROLLBAR (Must come last or have higher specificity) --- */
+
+.qr-table-container.table-container::-webkit-scrollbar {
+  width: 14px !important;
+  display: block !important;
+}
+
+.qr-table-container.table-container::-webkit-scrollbar-track {
+  background-color: #f8fafc !important;
+  /* Standard borders are the most robust against zoom scaling issues */
+  border-left: 1px solid #475569 !important;
+  border-right: 1px solid #475569 !important;
+}
+
+.qr-table-container.table-container::-webkit-scrollbar-thumb {
+  background-color: #94a3b8 !important;
+  border-radius: 20px !important;
+  border: 3px solid #f8fafc !important; /* Slightly thicker border for better thumb definition */
+}
+
+.qr-table-container.table-container::-webkit-scrollbar-thumb:hover {
+  background-color: #64748b !important;
+}
+
+/* Scrollbar Arrows (Buttons) for QR Tables */
+.qr-table-container.table-container::-webkit-scrollbar-button:single-button {
+  background-color: #f8fafc !important;
+  display: block !important;
+  /* Standard borders for consistency across zoom levels */
+  border-left: 1px solid #475569 !important;
+  border-right: 1px solid #475569 !important;
+  height: 14px !important;
+  width: 14px !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+.qr-table-container.table-container::-webkit-scrollbar-button:single-button:vertical:decrement {
+  background-image: 
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%23475569'><polygon points='50,20 20,80 80,80'/></svg>") !important;
+  background-size: 8px !important;
+}
+
+.qr-table-container.table-container::-webkit-scrollbar-button:single-button:vertical:increment {
+  background-image: 
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%23475569'><polygon points='50,80 20,20 80,20'/></svg>") !important;
+  background-size: 8px !important;
+}
+
+/* DD Sir Summary Table styles to prevent sticky positioning */
+.summary-table-container thead,
+.summary-table-container thead tr,
+.summary-table-container thead tr th {
+  position: static !important;
+  top: auto !important;
+  box-shadow: none !important;
+}
+
+/* DD Sir Detailed Table Sticky Header Adjustment to sit cleanly at top-0 of the scrolling container */
+@media (min-width: 1280px) {
+  .dd-sir-detailed-table-container thead th,
+  .dd-sir-detailed-table-container thead tr th {
+    top: 0 !important;
+  }
+}
+
+/* Clean Unified 1px Non-Overlapping Borders for ALL Tables */
+table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border-top: 1px solid #94a3b8 !important;
+  border-left: 1px solid #94a3b8 !important;
+  border-right: none !important;
+  border-bottom: none !important;
+}
+
+/* Outer wrappers should not add extra outer borders that cause overlapping */
+.table-container,
+.qr-table-container,
+.summary-table-container,
+.dd-sir-detailed-table-container,
+[id*="table-container"],
+[id$="-table-container"] {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Every cell gets right and bottom borders only - preventing double lines */
+table thead th,
+table tbody td,
+table tfoot td,
+table tfoot th {
+  border-top: none !important;
+  border-left: none !important;
+  border-right: 1px solid #94a3b8 !important;
+  border-bottom: 1px solid #94a3b8 !important;
+  box-shadow: none !important;
+}
+
+/* Dark mode border overrides */
+.dark table {
+  border-top-color: #4b5563 !important;
+  border-left-color: #4b5563 !important;
+}
+
+.dark table thead th,
+.dark table tbody td,
+.dark table tfoot td,
+.dark table tfoot th {
+  border-right-color: #4b5563 !important;
+  border-bottom-color: #4b5563 !important;
+}
