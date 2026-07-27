@@ -19,15 +19,9 @@
   position: sticky !important;
   top: 0 !important;
   z-index: 250 !important;
-  background-color: #f1f5f9 !important;
-}
-
-.table-container thead tr {
-  background-color: #f1f5f9 !important;
 }
 
 .table-container thead th {
-  background-color: #f1f5f9 !important; 
   z-index: 240 !important;
   background-clip: padding-box !important;
   vertical-align: middle !important;

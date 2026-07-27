@@ -520,33 +520,33 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
         </div>
 
         <div id="card-report-table-container" className="bg-white w-full p-1 relative animate-table-entrance">
-          {/* Simple Header Title matching Image 1 */}
-          {simpleHeaderTitle && (
-            <div className="text-center py-2 mb-2 font-bold text-slate-900 text-[14px] sm:text-[15px] tracking-tight">
-              {simpleHeaderTitle}
-            </div>
-          )}
-
           <div className="table-container qr-table-container relative z-[10] rounded-lg">
-          <table id="table-return-summary" className="w-full border-separate border-spacing-0 table-fixed">
-            <colgroup>
-              <col className="w-[5%]" />
-              <col className="w-[11%]" />
-              <col className="w-[6%]" />
-              <col className="w-[6%]" />
-              <col className="w-[6%]" />
-              <col className="w-[6%]" />
-              <col className="w-[6%]" />
-              <col className="w-[6%]" />
-              <col className="w-[6%]" />
-              <col className="w-[6%]" />
-              <col className="w-[6%]" />
-              <col className="w-[6%]" />
-              <col className="w-[6%]" />
-              <col className="w-[6%]" />
-              <col className="w-[6%]" />
-              <col className="w-[6%]" />
-            </colgroup>
+            {/* Simple Header Title matching Image 1 */}
+            {simpleHeaderTitle && (
+              <div className="text-center py-2 mb-2 font-bold text-slate-900 text-[14px] sm:text-[15px] tracking-tight">
+                {simpleHeaderTitle}
+              </div>
+            )}
+
+            <table id="table-return-summary" className="w-full border-separate border-spacing-0 table-fixed">
+              <colgroup>
+                <col className="w-[5%]" />
+                <col className="w-[9.4%]" />
+                <col className="w-[4.2%]" />
+                <col className="w-[8.0%]" />
+                <col className="w-[4.2%]" />
+                <col className="w-[8.0%]" />
+                <col className="w-[4.2%]" />
+                <col className="w-[8.0%]" />
+                <col className="w-[4.2%]" />
+                <col className="w-[8.0%]" />
+                <col className="w-[4.2%]" />
+                <col className="w-[8.0%]" />
+                <col className="w-[4.2%]" />
+                <col className="w-[8.0%]" />
+                <col className="w-[4.2%]" />
+                <col className="w-[8.0%]" />
+              </colgroup>
             <thead className="z-[240] bg-slate-200">
               <tr className="h-[42px]">
                 <th rowSpan={2} className={`${reportThStyle1}`}>মন্ত্রণালয়</th>

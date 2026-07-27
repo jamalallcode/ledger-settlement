@@ -420,9 +420,9 @@ const QR_Detailed_1: React.FC<QRProps> = ({
   const thRow2Cls = "p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-100";
   const thRow3Cls = "p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-200";
 
-  const yellowThCls = "p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-300";
-  const yellowThRow2Cls = "p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-300";
-  const yellowThRow3Cls = "p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-400";
+  const yellowThCls = "p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-100";
+  const yellowThRow2Cls = "p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-100";
+  const yellowThRow3Cls = "p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-200";
 
   const tdCls = "p-2 text-[10px] text-slate-800 align-middle bg-white";
   const numTdCls = "p-2 text-[10px] text-slate-800 text-center align-middle font-bold bg-white";
