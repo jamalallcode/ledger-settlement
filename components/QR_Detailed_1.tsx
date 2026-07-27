@@ -362,12 +362,16 @@ const QR_Detailed_1: React.FC<QRProps> = ({
         }
 
         // Extract settled count (only full settlements count towards settled paragraph count)
-        let fc = parseBengaliNumber(String(e.fullCount || e.meetingFullSettledParaCount || 0));
-
-        if (fc === 0 && e.paragraphs && e.paragraphs.length > 0) {
+        let fc = 0;
+        if (e.paragraphs && e.paragraphs.length > 0) {
           fc = e.paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ').length;
-        } else if (fc === 0 && e.meetingSettledParaCount) {
-          fc = parseBengaliNumber(String(e.meetingSettledParaCount));
+        } else {
+          const rawFc = parseBengaliNumber(String(e.fullCount || e.meetingFullSettledParaCount || e.meetingSettledParaCount || 0));
+          if (settledAmt > 0 && (rawFc === settledAmt || rawFc > 500)) {
+            fc = 1;
+          } else {
+            fc = rawFc;
+          }
         }
         const sCount = fc;
 
