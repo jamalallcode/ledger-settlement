@@ -565,19 +565,19 @@ const QR_Detailed_1: React.FC<QRProps> = ({
               <th rowSpan={2} className={`${thCls} w-[102px]`}>প্রতিষ্ঠানের নাম</th>
               <th colSpan={3} className={thCls}>প্রারম্ভিক অমিমাংসিত</th>
               <th colSpan={3} className={thCls}>প্রারম্ভিক মীমাংসিত</th>
-              <th rowSpan={2} className={`${thCls} w-[92px]`}>{cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
+              <th rowSpan={2} className={`${thCls} w-[90px]`}>{cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
               <th colSpan={3} className={thCls}>অমিমাংসিত আপত্তিতে জড়িত টাকা</th>
             </tr>
             <tr>
               {/* Columns 4, 5, 6 under প্রারম্ভিক অমিমাংসিত - Item 2.5 Header Text Fix */}
-              <th className={thRow2Cls}>১৯৭১-৭২ হতে {priorPeriodEnd} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
-              <th className={thRow2Cls}>{formattedRange} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
-              <th className={thRow2Cls}>{cumPeriodEnd} পর্যন্ত উত্থাপিত মোট আপত্তির সংখ্যা</th>
+              <th className={`${thRow2Cls} w-[90px]`}>১৯৭১-৭২ হতে {priorPeriodEnd} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
+              <th className={`${thRow2Cls} w-[90px]`}>{formattedRange} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
+              <th className={`${thRow2Cls} w-[90px]`}>{cumPeriodEnd} পর্যন্ত উত্থাপিত মোট আপত্তির সংখ্যা</th>
               
               {/* Columns 7, 8, 9 under প্রারম্ভিক মীমাংসিত - Item 2.5 Header Text Fix */}
-              <th className={thRow2Cls}>১৯৭১-৭২ হতে {priorPeriodEnd} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-              <th className={thRow2Cls}>{formattedRange} পর্যন্ত নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-              <th className={thRow2Cls}>{cumPeriodEnd} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+              <th className={`${thRow2Cls} w-[90px]`}>১৯৭১-৭২ হতে {priorPeriodEnd} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+              <th className={`${thRow2Cls} w-[90px]`}>{formattedRange} পর্যন্ত নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+              <th className={`${thRow2Cls} w-[90px]`}>{cumPeriodEnd} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
               
               {/* Columns 11, 12, 13 under অমিমাংসিত আপত্তিতে জড়িত টাকা - Item 2.5 Header Text Fix */}
               <th className={thRow2Cls}>১৯৭১-৭২ হতে {priorPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
@@ -705,18 +705,18 @@ const QR_Detailed_1: React.FC<QRProps> = ({
               <th rowSpan={2} className={`${yellowThCls} w-[102px]`}>প্রতিষ্ঠানের নাম</th>
               <th colSpan={3} className={yellowThCls}>প্রারম্ভিক অমিমাংসিত</th>
               <th colSpan={3} className={yellowThCls}>প্রারম্ভিক মীমাংসিত</th>
-              <th rowSpan={2} className={`${yellowThCls} w-[92px]`}>{cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
+              <th rowSpan={2} className={`${yellowThCls} w-[90px]`}>{cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
               <th colSpan={3} className={yellowThCls}>অমিমাংসিত আপত্তিতে জড়িত টাকা</th>
             </tr>
             <tr>
               {/* Item 2.5 Header Text Fix */}
-              <th className={yellowThRow2Cls}>১৯৭১-৭২ হতে {priorPeriodEnd} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
-              <th className={yellowThRow2Cls}>{formattedRange} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
-              <th className={yellowThRow2Cls}>{cumPeriodEnd} পর্যন্ত উত্থাপিত মোট আপত্তির সংখ্যা</th>
+              <th className={`${yellowThRow2Cls} w-[90px]`}>১৯৭১-৭২ হতে {priorPeriodEnd} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
+              <th className={`${yellowThRow2Cls} w-[90px]`}>{formattedRange} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
+              <th className={`${yellowThRow2Cls} w-[90px]`}>{cumPeriodEnd} পর্যন্ত উত্থাপিত মোট আপত্তির সংখ্যা</th>
               
-              <th className={yellowThRow2Cls}>১৯৭১-৭২ হতে {priorPeriodEnd} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-              <th className={yellowThRow2Cls}>{formattedRange} পর্যন্ত নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
-              <th className={yellowThRow2Cls}>{cumPeriodEnd} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+              <th className={`${yellowThRow2Cls} w-[90px]`}>১৯৭১-৭২ হতে {priorPeriodEnd} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+              <th className={`${yellowThRow2Cls} w-[90px]`}>{formattedRange} পর্যন্ত নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
+              <th className={`${yellowThRow2Cls} w-[90px]`}>{cumPeriodEnd} পর্যন্ত মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা</th>
               
               <th className={yellowThRow2Cls}>১৯৭১-৭২ হতে {priorPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
               <th className={yellowThRow2Cls}>{formattedRange} পর্যন্ত নিষ্পত্তিকৃত আপত্তিতে জড়িত টাকা</th>

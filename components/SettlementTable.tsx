@@ -717,9 +717,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
 
     // Headers reverted to font-black
     const thBase =
-      "sticky top-0 border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 z-[110]";
+      "border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 z-[110]";
     const thBase2 =
-      "sticky top-[42px] border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 z-[110]";
+      "border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 z-[110]";
     // Body cells reverted to font-bold
     const tdBase =
       "border border-slate-300 px-0.5 py-1.5 text-center align-middle text-[9px] leading-tight font-bold text-slate-900 relative";

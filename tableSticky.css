@@ -19,15 +19,9 @@
   position: sticky !important;
   top: 0 !important;
   z-index: 250 !important;
-  background-color: #f1f5f9 !important;
-}
-
-.table-container thead tr {
-  background-color: #f1f5f9 !important;
 }
 
 .table-container thead th {
-  background-color: #f1f5f9 !important; 
   z-index: 240 !important;
   background-clip: padding-box !important;
   vertical-align: middle !important;
@@ -294,14 +288,6 @@ table tfoot th {
   box-shadow: none !important;
 }
 
-/* Ensure the far-left column cells have a left border */
-table thead th:first-child,
-table tbody td:first-child,
-table tfoot td:first-child,
-table tfoot th:first-child {
-  border-left: 1px solid #94a3b8 !important;
-}
-
 /* Dark mode border overrides */
 .dark table {
   border-top-color: #4b5563 !important;
@@ -314,11 +300,4 @@ table tfoot th:first-child {
 .dark table tfoot th {
   border-right-color: #4b5563 !important;
   border-bottom-color: #4b5563 !important;
-}
-
-.dark table thead th:first-child,
-.dark table tbody td:first-child,
-.dark table tfoot td:first-child,
-.dark table tfoot th:first-child {
-  border-left-color: #4b5563 !important;
 }

@@ -1,6 +1,4 @@
 @import "tailwindcss";
-@import "./fonts.css";
-@import "./tableSticky.css";
 
 @theme {
   --font-sans: "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, sans-serif;
