@@ -8,38 +8,13 @@
   position: relative;
   background-color: white;
   border: none !important;
+  max-height: 72vh;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  scrollbar-gutter: stable;
 }
 
-@media (min-width: 1280px) {
-  .table-container {
-    overflow: visible !important;
-  }
-
-  .table-container thead,
-  .table-container thead tr,
-  .table-container thead th,
-  .table-container thead tr:nth-child(2) th,
-  .table-container thead tr:nth-child(3) th,
-  .qr-table-container thead,
-  .qr-table-container thead tr,
-  .qr-table-container thead th,
-  .qr-table-container thead tr:nth-child(2) th,
-  .qr-table-container thead tr:nth-child(3) th {
-    position: static !important;
-    top: auto !important;
-  }
-}
-
-@media (max-width: 1279px) {
-  .table-container {
-    max-height: 72vh;
-    overflow-y: auto !important;
-    overflow-x: auto !important;
-    scrollbar-gutter: stable;
-  }
-}
-
-/* Ensure table header as a whole block is always on top */
+/* Ensure table header as a whole block and stacked rows are always sticky on top */
 .table-container thead {
   position: sticky !important;
   top: 0 !important;
@@ -57,6 +32,8 @@
   background-clip: padding-box !important;
   vertical-align: middle !important;
 }
+
+
 
 /* QR Table specific overrides to prevent double borders and eliminate border radius */
 .qr-table-container {
