@@ -281,11 +281,11 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
     }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0, sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0, nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0 });
   }, [filteredStatsReportData, searchTerm, statsGrandTotals, grandTotals, filterMinistry]);
 
-  const reportThStyle1 = "px-0.5 py-1.5 font-black text-center text-slate-900 text-[8px] sm:text-[9px] leading-tight align-middle bg-slate-200 bg-clip-border relative whitespace-normal break-words";
-  const reportThStyle2 = "px-0.5 py-1.5 font-black text-center text-slate-900 text-[8px] sm:text-[9px] leading-tight align-middle bg-slate-200 bg-clip-border relative whitespace-normal break-words";
-  const reportThStyle3 = "px-0.5 py-1 font-black text-center text-slate-600 text-[8px] sm:text-[9px] leading-tight align-middle bg-slate-200 bg-clip-border relative whitespace-nowrap";
-  const tdStyle = "px-0.5 py-1 text-[9px] sm:text-[10px] text-center font-bold leading-tight group-hover:bg-blue-100/80 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
-  const subTotalTdStyle = "px-0.5 py-1 text-[9px] sm:text-[10px] text-center font-black leading-tight text-slate-950 h-[38px] whitespace-normal break-words relative";
+  const reportThStyle1 = "sticky top-0 xl:top-[45px] z-[240] px-0.5 py-2 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 bg-clip-border relative";
+  const reportThStyle2 = "sticky top-[42px] xl:top-[87px] z-[240] px-0.5 py-2 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 bg-clip-border relative";
+  const reportThStyle3 = "sticky top-[80px] xl:top-[125px] z-[240] px-0.5 py-1.5 font-black text-center text-slate-500 text-[8px] leading-tight align-middle h-full bg-slate-200 bg-clip-border relative";
+  const tdStyle = "px-0.5 py-1 text-[9px] text-center font-bold leading-tight group-hover:bg-blue-100/80 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
+  const subTotalTdStyle = "px-0.5 py-1 text-[9px] text-center font-bold leading-tight text-slate-900 h-[38px] whitespace-normal break-words relative";
   const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[10px] bg-slate-200 z-[190] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
   const grandStyleTfoot = "px-0.5 py-2 text-center font-black !text-white !bg-black text-[10px] z-[190] shadow-[inset_0_1px_0_#1e293b,inset_0_0_0_1px_#1e293b] h-[45px] align-middle whitespace-nowrap transition-all relative";
 
@@ -296,17 +296,6 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   const displayTitle = isSearchExpanded 
     ? selectedReportType?.replace('মাসিক রিটার্ন: ', 'রিটার্ন: ').replace('ষাণ্মাসিক রিটার্ণ: ', 'রিটার্ণ: ').replace('বাৎসরিক রিটার্ণ: ', 'রিটার্ণ: ')
     : selectedReportType;
-
-  const simpleHeaderTitle = useMemo(() => {
-    if (!activeCycle || !activeCycle.start || !activeCycle.end) return '';
-    try {
-      const startStr = toBengaliDigits(dateFnsFormat(new Date(activeCycle.start), 'dd/MM/yyyy'));
-      const endStr = toBengaliDigits(dateFnsFormat(new Date(activeCycle.end), 'dd/MM/yyyy'));
-      return `সময়কাল: ${startStr} হতে ${endStr} খ্রিঃ তারিখ পর্যন্ত।`;
-    } catch (e) {
-      return '';
-    }
-  }, [activeCycle]);
 
   return (
     <div id="section-report-summary" className="space-y-4 py-2 w-full animate-report-page relative">
@@ -519,34 +508,27 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
           </div>
         </div>
 
-        <div id="card-report-table-container" className="bg-white w-full p-1 relative animate-table-entrance">
-          <div className="table-container qr-table-container relative z-[10] rounded-lg">
-            {/* Simple Header Title matching Image 1 */}
-            {simpleHeaderTitle && (
-              <div className="text-center py-2 mb-2 font-bold text-slate-900 text-[14px] sm:text-[15px] tracking-tight">
-                {simpleHeaderTitle}
-              </div>
-            )}
-
-            <table id="table-return-summary" className="w-full border-separate border-spacing-0 table-fixed">
-              <colgroup>
-                <col className="w-[5%]" />
-                <col className="w-[9.4%]" />
-                <col className="w-[4.2%]" />
-                <col className="w-[8.0%]" />
-                <col className="w-[4.2%]" />
-                <col className="w-[8.0%]" />
-                <col className="w-[4.2%]" />
-                <col className="w-[8.0%]" />
-                <col className="w-[4.2%]" />
-                <col className="w-[8.0%]" />
-                <col className="w-[4.2%]" />
-                <col className="w-[8.0%]" />
-                <col className="w-[4.2%]" />
-                <col className="w-[8.0%]" />
-                <col className="w-[4.2%]" />
-                <col className="w-[8.0%]" />
-              </colgroup>
+        <div id="card-report-table-container" className="bg-white w-full p-1 relative animate-table-entrance overflow-x-auto xl:overflow-visible">
+          <div className="table-container qr-table-container overflow-auto xl:overflow-visible relative z-[10] rounded-lg">
+          <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0 !table-auto">
+            <colgroup>
+              <col className="w-[50px]" />
+              <col className="w-[110px]" />
+              <col className="w-[30px]" />
+              <col className="w-[55px]" />
+              <col className="w-[30px]" />
+              <col className="w-[55px]" />
+              <col className="w-[30px]" />
+              <col className="w-[55px]" />
+              <col className="w-[30px]" />
+              <col className="w-[55px]" />
+              <col className="w-[30px]" />
+              <col className="w-[55px]" />
+              <col className="w-[30px]" />
+              <col className="w-[55px]" />
+              <col className="w-[30px]" />
+              <col className="w-[55px]" />
+            </colgroup>
             <thead className="z-[240] bg-slate-200">
               <tr className="h-[42px]">
                 <th rowSpan={2} className={`${reportThStyle1}`}>মন্ত্রণালয়</th>
@@ -618,7 +600,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                       );
                     })}
                     <tr className="bg-sky-100 font-black text-blue-950 h-[42px] border-y-2 border-slate-200 no-hover-row">
-                      <td className={subTotalTdStyle + " text-right not-italic pr-3 border-l border-r border-slate-300 text-[10px] sm:text-[11px] bg-sky-100 font-[950] text-blue-950"}>মোট: {m.ministry}</td>
+                      <td className={subTotalTdStyle + " text-right italic pr-3 border-l border-r border-slate-300 text-[10px] bg-sky-100 font-black"}>উপ-মোট: {m.ministry}</td>
                       <td className={subTotalTdStyle + " font-black bg-sky-100"}>{toBengaliDigits(mTotals.pUC)}</td><td className={subTotalTdStyle + " text-center border-r border-slate-300 font-black bg-sky-100"}>{toBengaliDigits(Math.round(mTotals.pUA))}</td>
                       <td className={subTotalTdStyle + " font-black bg-sky-100"}>{toBengaliDigits(mTotals.cRC)}</td><td className={subTotalTdStyle + " text-center border-r border-slate-300 font-black bg-sky-100"}>{toBengaliDigits(Math.round(mTotals.cRA))}</td>
                       <td className={subTotalTdStyle + " bg-sky-100 font-black"}>{toBengaliDigits(mTotals.pUC + mTotals.cRC)}</td><td className={subTotalTdStyle + " text-center bg-sky-100 border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pUA + mTotals.cRA))}</td>

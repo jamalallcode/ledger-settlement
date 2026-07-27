@@ -171,7 +171,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
                      </tr>
                    ))}
                    <tr className="bg-sky-50/50 font-black italic text-slate-700 no-hover-row">
-                      <td className="px-6 py-3 text-right text-[11px] uppercase font-black">মোট: {m}</td>
+                      <td className="px-6 py-3 text-right text-[11px] uppercase">উপ-মোট: {m}</td>
                       {displayFields.map(f => {
                         const val = f.key === 'unsettledCount' ? mSubTotal.uC :
                                     f.key === 'unsettledAmount' ? mSubTotal.uA :
