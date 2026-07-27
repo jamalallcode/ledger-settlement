@@ -561,8 +561,8 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           <thead>
             <tr>
               <th rowSpan={2} className={`${thCls} w-[40px]`}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thCls} w-[105px]`}>মন্ত্রণালয়ের নাম</th>
-              <th rowSpan={2} className={`${thCls} w-[112px]`}>প্রতিষ্ঠানের নাম</th>
+              <th rowSpan={2} className={`${thCls} w-[98px]`}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={`${thCls} w-[105px]`}>প্রতিষ্ঠানের নাম</th>
               <th colSpan={3} className={thCls}>প্রারম্ভিক অমিমাংসিত</th>
               <th colSpan={3} className={thCls}>প্রারম্ভিক মীমাংসিত</th>
               <th rowSpan={2} className={`${thCls} w-[100px]`}>{cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
@@ -701,8 +701,8 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           <thead>
             <tr>
               <th rowSpan={2} className={`${yellowThCls} w-[40px]`}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${yellowThCls} w-[105px]`}>মন্ত্রণালয়ের নাম</th>
-              <th rowSpan={2} className={`${yellowThCls} w-[112px]`}>প্রতিষ্ঠানের নাম</th>
+              <th rowSpan={2} className={`${yellowThCls} w-[98px]`}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={`${yellowThCls} w-[105px]`}>প্রতিষ্ঠানের নাম</th>
               <th colSpan={3} className={yellowThCls}>প্রারম্ভিক অমিমাংসিত</th>
               <th colSpan={3} className={yellowThCls}>প্রারম্ভিক মীমাংসিত</th>
               <th rowSpan={2} className={`${yellowThCls} w-[100px]`}>{cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
