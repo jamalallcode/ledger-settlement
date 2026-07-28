@@ -319,6 +319,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
     // Determine initial base opening balances from monthly opening balances / prevStats
     let baseUnsettledCount = 0;
     let baseUnsettledAmount = 0;
+    let baseSettledCount = 0;
 
     const exactMatch = periodOpeningBalances?.find(pb => pb.startDate === cycleStartStr);
     if (exactMatch) {
@@ -327,19 +328,21 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       if (sfi || nonSfi) {
         baseUnsettledCount = (sfi?.unsettledCount || 0) + (nonSfi?.unsettledCount || 0);
         baseUnsettledAmount = (sfi?.unsettledAmount || 0) + (nonSfi?.unsettledAmount || 0);
+        baseSettledCount = (sfi?.settledCount || 0) + (nonSfi?.settledCount || 0);
       }
     } else if (prevStats) {
       const sfi = prevStats?.entitiesSFI?.[entityName];
       const nonSfi = prevStats?.entitiesNonSFI?.[entityName];
       baseUnsettledCount = (sfi?.unsettledCount || 0) + (nonSfi?.unsettledCount || 0);
       baseUnsettledAmount = (sfi?.unsettledAmount || 0) + (nonSfi?.unsettledAmount || 0);
+      baseSettledCount = (sfi?.settledCount || 0) + (nonSfi?.settledCount || 0);
     }
 
     const col4 = baseUnsettledCount + priorRaisedCount;
     const col5 = currentRaisedCount;
     const col6 = col4 + col5;
 
-    const col7 = priorSettledCount;
+    const col7 = baseSettledCount + priorSettledCount;
     const col8 = currentSettledCount;
     const col9 = col7 + col8;
 

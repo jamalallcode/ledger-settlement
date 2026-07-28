@@ -291,7 +291,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     table1EntitiesList.forEach(({ entityName }) => {
       const base = getEntityStats(entityName);
       defaults[entityName] = {
-        june25Raised: (base?.unsettledCount || 0) + (base?.settledCount || 0),
+        june25Raised: (base?.unsettledCount || 0),
         june25Settled: (base?.settledCount || 0),
         june25UnsettledAmount: (base?.unsettledAmount || 0)
       };
@@ -310,7 +310,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     table2EntitiesList.forEach(({ entityName }) => {
       const base = getEntityStats(entityName);
       defaults[entityName] = {
-        june25Raised: (base?.unsettledCount || 0) + (base?.settledCount || 0),
+        june25Raised: (base?.unsettledCount || 0),
         june25Settled: (base?.settledCount || 0),
         june25UnsettledAmount: (base?.unsettledAmount || 0)
       };
@@ -332,7 +332,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       table1EntitiesList.forEach(({ entityName }) => {
         const base = getEntityStats(entityName);
         defaults[entityName] = {
-          june25Raised: (base?.unsettledCount || 0) + (base?.settledCount || 0),
+          june25Raised: (base?.unsettledCount || 0),
           june25Settled: (base?.settledCount || 0),
           june25UnsettledAmount: (base?.unsettledAmount || 0)
         };
@@ -353,7 +353,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       table2EntitiesList.forEach(({ entityName }) => {
         const base = getEntityStats(entityName);
         defaults[entityName] = {
-          june25Raised: (base?.unsettledCount || 0) + (base?.settledCount || 0),
+          june25Raised: (base?.unsettledCount || 0),
           june25Settled: (base?.settledCount || 0),
           june25UnsettledAmount: (base?.unsettledAmount || 0)
         };
@@ -1205,7 +1205,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                     table1EntitiesList.forEach(({ entityName }) => {
                       const base = getEntityStats(entityName);
                       defaults[entityName] = {
-                        june25Raised: (base?.unsettledCount || 0) + (base?.settledCount || 0),
+                        june25Raised: (base?.unsettledCount || 0),
                         june25Settled: (base?.settledCount || 0),
                         june25UnsettledAmount: (base?.unsettledAmount || 0)
                       };
@@ -1432,7 +1432,7 @@ const QR_4: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                     table2EntitiesList.forEach(({ entityName }) => {
                       const base = getEntityStats(entityName);
                       defaults[entityName] = {
-                        june25Raised: (base?.unsettledCount || 0) + (base?.settledCount || 0),
+                        june25Raised: (base?.unsettledCount || 0),
                         june25Settled: (base?.settledCount || 0),
                         june25UnsettledAmount: (base?.unsettledAmount || 0)
                       };
