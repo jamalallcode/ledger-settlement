@@ -49,22 +49,24 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
   const displayFields: { key: keyof MinistryPrevStats, label: string, subLabel?: string }[] = [
     { key: 'unsettledCount', label: 'অমীমাংসিত অনুচ্ছেদ সংখ্যা', subLabel: '(প্রারম্ভিক)' },
     { key: 'unsettledAmount', label: 'অমীমাংসিত টাকা', subLabel: '(প্রারম্ভিক)' },
+    { key: 'unsettledQuarterlyAmount', label: 'অমীমাংসিত টাকা (ত্রৈমাসিক)', subLabel: '(প্রারম্ভিক)' },
     { key: 'settledCount', label: 'মীমাংসিত অনুচ্ছেদ সংখ্যা', subLabel: '(প্রারম্ভিক)' },
     { key: 'settledAmount', label: 'মীমাংসিত টাকা', subLabel: '(প্রারম্ভিক)' }
   ];
 
-  const setupThCls = "p-3 text-center font-black text-slate-900 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-16 align-middle z-[210] border-b border-slate-300 w-[19%]";
+  const setupThCls = "p-3 text-center font-black text-slate-900 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-16 align-middle z-[210] border-b border-slate-300 w-[15%]";
   const setupFooterTdCls = "p-4 text-center text-[15px] bg-slate-200 text-slate-900 font-black z-[190]";
   
   const totalStats = ministryGroups.reduce((acc, m) => {
     const entities = MINISTRY_ENTITY_MAP[m] || [];
     entities.forEach(ent => {
-      const stats = tempPrevStats[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+      const stats = tempPrevStats[ent] || { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 };
       acc.uC += stats.unsettledCount; acc.uA += Math.round(stats.unsettledAmount);
+      acc.uQA += Math.round(stats.unsettledQuarterlyAmount || 0);
       acc.sC += stats.settledCount; acc.sA += Math.round(stats.settledAmount);
     });
     return acc;
-  }, { uC: 0, uA: 0, sC: 0, sA: 0 });
+  }, { uC: 0, uA: 0, uQA: 0, sC: 0, sA: 0 });
 
   return (
     <div id="section-prev-stats-setup" className="max-w-full mx-auto space-y-6 py-4 animate-table-entrance relative px-2">
@@ -176,15 +178,16 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
              {ministryGroups.map(m => {
                const entities = MINISTRY_ENTITY_MAP[m] || [];
                const mSubTotal = entities.reduce((acc, ent) => {
-                 const s = tempPrevStats[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+                 const s = tempPrevStats[ent] || { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 };
                  acc.uC += s.unsettledCount; acc.uA += Math.round(s.unsettledAmount);
+                 acc.uQA += Math.round(s.unsettledQuarterlyAmount || 0);
                  acc.sC += s.settledCount; acc.sA += Math.round(s.settledAmount);
                  return acc;
-               }, { uC: 0, uA: 0, sC: 0, sA: 0 });
+               }, { uC: 0, uA: 0, uQA: 0, sC: 0, sA: 0 });
 
                return (
                  <React.Fragment key={m}>
-                   <tr className="bg-[#1e293b] no-hover-row"><td colSpan={5} className="px-5 py-3 bg-[#1e293b]"><div className="flex items-center gap-2 font-black uppercase text-[12px] tracking-wide text-white"><LayoutGrid size={15} className="text-blue-400" /> {m}</div></td></tr>
+                   <tr className="bg-[#1e293b] no-hover-row"><td colSpan={6} className="px-5 py-3 bg-[#1e293b]"><div className="flex items-center gap-2 font-black uppercase text-[12px] tracking-wide text-white"><LayoutGrid size={15} className="text-blue-400" /> {m}</div></td></tr>
                    {entities.map(ent => (
                      <tr key={ent} className="hover:bg-blue-50/40 transition-all group bg-white">
                        <td className="px-6 py-4 font-bold text-slate-800 text-[13px] bg-white group-hover:text-blue-700">{ent}</td>
@@ -200,7 +203,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
                              onChange={e => { 
                                if (!isEditingSetup) return;
                                const num = parseBengaliNumber(e.target.value); 
-                               setTempPrevStats(prev => ({ ...prev, [ent]: { ...(prev[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 }), [f.key]: num } })); 
+                               setTempPrevStats(prev => ({ ...prev, [ent]: { ...(prev[ent] || { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 }), [f.key]: num } })); 
                              }} 
                            />
                          </td>
@@ -212,6 +215,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
                       {displayFields.map(f => {
                         const val = f.key === 'unsettledCount' ? mSubTotal.uC :
                                     f.key === 'unsettledAmount' ? mSubTotal.uA :
+                                    f.key === 'unsettledQuarterlyAmount' ? mSubTotal.uQA :
                                     f.key === 'settledCount' ? mSubTotal.sC : mSubTotal.sA;
                         const colorCls = f.key.startsWith('settled') ? 'text-emerald-600' : 'text-blue-600';
                         return <td key={f.key} className={`p-3 text-center ${colorCls}`}>{toBengaliDigits(Math.round(val))}</td>;
@@ -227,6 +231,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
                {displayFields.map(f => {
                   const val = f.key === 'unsettledCount' ? totalStats.uC :
                               f.key === 'unsettledAmount' ? totalStats.uA :
+                              f.key === 'unsettledQuarterlyAmount' ? totalStats.uQA :
                               f.key === 'settledCount' ? totalStats.sC : totalStats.sA;
                   const colorCls = f.key.startsWith('settled') ? 'text-emerald-700 font-extrabold' : 'text-blue-700 font-extrabold';
                   return <td key={f.key} className={`${setupFooterTdCls} ${colorCls}`}>{toBengaliDigits(Math.round(val))}</td>;

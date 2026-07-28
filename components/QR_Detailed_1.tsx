@@ -336,8 +336,8 @@ const QR_Detailed_1: React.FC<QRProps> = ({
 
     // পূর্ব জের টেবিল হতে প্রারম্ভিক জের প্রাপ্তি এবং ত্রৈমাসিক রিটার্নে ম্যাপিং:
     // - পূর্ব জের কলাম (২) [অমীমাংসিত অনুচ্ছেদ সংখ্যা] -> কলাম ৪ (প্রারম্ভিক অমীমাংসিত অনুচ্ছেদ সংখ্যা)
-    // - পূর্ব জের কলাম (৪) [মীমাংসিত অনুচ্ছেদ সংখ্যা] -> কলাম ৭ (প্রারম্ভিক নিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা)
-    // - পূর্ব জের কলাম (৩) [অমীমাংসিত টাকা] -> কলাম ১১ (প্রারম্ভিক অমীমাংসিত টাকা)
+    // - পূর্ব জের কলাম (৪) [অমীমাংসিত টাকা (ত্রৈমাসিক)] -> কলাম ১১ (প্রারম্ভিক অমীমাংসিত টাকা)
+    // - পূর্ব জের কলাম (৫) [মীমাংসিত অনুচ্ছেদ সংখ্যা] -> কলাম ৭ (প্রারম্ভিক নিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা)
     let baseUnsettledCount = 0;
     let baseUnsettledAmount = 0;
     let baseSettledCount = 0;
@@ -359,6 +359,12 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       const nsC = nonSfiObj?.unsettledCount || 0;
       const sA = sfiObj?.unsettledAmount || 0;
       const nsA = nonSfiObj?.unsettledAmount || 0;
+      const sQA = (sfiObj?.unsettledQuarterlyAmount !== undefined && sfiObj?.unsettledQuarterlyAmount !== 0) 
+        ? sfiObj.unsettledQuarterlyAmount 
+        : sA;
+      const nsQA = (nonSfiObj?.unsettledQuarterlyAmount !== undefined && nonSfiObj?.unsettledQuarterlyAmount !== 0) 
+        ? nonSfiObj.unsettledQuarterlyAmount 
+        : nsA;
       const sS = sfiObj?.settledCount || 0;
       const nsS = nonSfiObj?.settledCount || 0;
 
@@ -367,11 +373,11 @@ const QR_Detailed_1: React.FC<QRProps> = ({
 
       if (isUnifiedMap) {
         baseUnsettledCount = sC;
-        baseUnsettledAmount = sA;
+        baseUnsettledAmount = sQA;
         baseSettledCount = sS;
       } else {
         baseUnsettledCount = sC + nsC;
-        baseUnsettledAmount = sA + nsA;
+        baseUnsettledAmount = sQA + nsQA;
         baseSettledCount = sS + nsS;
       }
     }

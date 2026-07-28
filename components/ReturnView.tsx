@@ -1044,10 +1044,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     const startIdx = allEntities.indexOf(startEntity);
     if (startIdx === -1) return;
     
-    const isQuarterly = selectedReportType?.includes('ত্রৈমাসিক');
-    const fields: (keyof MinistryPrevStats)[] = isQuarterly 
-      ? ['unsettledCount', 'settledCount', 'unsettledAmount']
-      : ['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount'];
+    const fields: (keyof MinistryPrevStats)[] = ['unsettledCount', 'unsettledAmount', 'unsettledQuarterlyAmount', 'settledCount', 'settledAmount'];
       
     const fieldStartIdx = fields.indexOf(startField);
     const newStats = { ...tempPrevStats };
@@ -1057,7 +1054,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       cells.forEach((cell, cellOffset) => {
         const fieldIdx = fieldStartIdx + cellOffset; if (fieldIdx >= fields.length) return;
         const fieldName = fields[fieldIdx]; const value = parseBengaliNumber(cell.trim());
-        newStats[entityName] = { ...(newStats[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 }), [fieldName]: value };
+        newStats[entityName] = { ...(newStats[entityName] || { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 }), [fieldName]: value };
       });
     });
     setTempPrevStats(newStats);
