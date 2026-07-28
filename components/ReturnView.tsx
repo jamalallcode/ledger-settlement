@@ -597,7 +597,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           const normEntity = robustNormalize(entityName);
           const ePrevSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'এসএফআই');
           const ePrevNonSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'নন এসএফআই');
-          const ePrev = {
+          const isUnified = prevStats?.entitiesSFI && prevStats?.entitiesNonSFI && 
+            JSON.stringify(prevStats.entitiesSFI) === JSON.stringify(prevStats.entitiesNonSFI);
+          const ePrev = isUnified ? ePrevSFI : {
             unsettledCount: ePrevSFI.unsettledCount + ePrevNonSFI.unsettledCount,
             unsettledAmount: ePrevSFI.unsettledAmount + ePrevNonSFI.unsettledAmount,
             settledCount: ePrevSFI.settledCount + ePrevNonSFI.settledCount,
@@ -838,7 +840,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           const normEntity = robustNormalize(entityName);
           const ePrevSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'এসএফআই');
           const ePrevNonSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'নন এসএফআই');
-          const ePrev = {
+          const isUnified = prevStats?.entitiesSFI && prevStats?.entitiesNonSFI && 
+            JSON.stringify(prevStats.entitiesSFI) === JSON.stringify(prevStats.entitiesNonSFI);
+          const ePrev = isUnified ? ePrevSFI : {
             unsettledCount: ePrevSFI.unsettledCount + ePrevNonSFI.unsettledCount,
             unsettledAmount: ePrevSFI.unsettledAmount + ePrevNonSFI.unsettledAmount,
             settledCount: ePrevSFI.settledCount + ePrevNonSFI.settledCount,
