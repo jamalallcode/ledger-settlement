@@ -84,7 +84,7 @@ interface EntityPriorValues {
 const table1Data = [
   {
     ministry: "শিল্প মন্ত্রণালয়",
-    entities: ["চিনি ও খাদ্য সংস্থা", "ক্ষুদ্র ও কুটির শিল্প", "বিটাক", "রসায়ন শিল্প সংস্থা"]
+    entities: ["চিনি ও খাদ্য সংস্থা", "ক্ষুদ্র ও কুটির শিল্প", "বিটাক", "রসায়ন শিল্প"]
   },
   {
     ministry: "বস্ত্র ও পাট মন্ত্রণালয়",
@@ -110,15 +110,15 @@ const table2Data = [
       "বাংলাদেশ কৃষি ব্যাংক",
       "রূপালী ব্যাংক পিএলসি",
       "বাংলাদেশ ব্যাংক",
-      "বাংলাদেশ ডেভেলপমেন্ট ব্যাংক লিঃ",
+      "বাংলাদেশ ডেভেলপমেন্ট ব্যাংক লি.",
       "গৃহনির্মাণ ঋণদান সংস্থা",
       "কর্মসংস্থান ব্যাংক",
-      "বেসিক ব্যাংক লিঃ",
-      "আনসার ভিডিপি উন্নয়ন ব্যাংক লিঃ",
+      "বেসিক ব্যাংক লি.",
+      "আনসার ভিডিপি উন্নয়ন ব্যাংক লি.",
       "ইনভেস্টমেন্ট কর্পোরেশন অব বাংলাদেশ",
       "সাধারণ বীমা কর্পোরেশন",
       "জীবন বীমা কর্পোরেশন",
-      "প্রবাসী কল্যাণ ব্যাংক পিএলসি"
+      "প্রবাসী কল্যাণ ব্যাংক"
     ]
   }
 ];
@@ -359,17 +359,17 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       const nsC = nonSfiObj?.unsettledCount || 0;
       const sA = sfiObj?.unsettledAmount || 0;
       const nsA = nonSfiObj?.unsettledAmount || 0;
-      const sQA = sfiObj?.unsettledQuarterlyAmount !== undefined 
+      const sQA = (sfiObj && sfiObj.unsettledQuarterlyAmount !== undefined && sfiObj.unsettledQuarterlyAmount !== null)
         ? sfiObj.unsettledQuarterlyAmount 
         : sA;
-      const nsQA = nonSfiObj?.unsettledQuarterlyAmount !== undefined 
+      const nsQA = (nonSfiObj && nonSfiObj.unsettledQuarterlyAmount !== undefined && nonSfiObj.unsettledQuarterlyAmount !== null)
         ? nonSfiObj.unsettledQuarterlyAmount 
         : nsA;
       const sS = sfiObj?.settledCount || 0;
       const nsS = nonSfiObj?.settledCount || 0;
 
       // Check if SFI and NonSFI maps point to the same unified setup values
-      const isUnifiedMap = (sC === nsC) && (sA === nsA) && (sS === nsS);
+      const isUnifiedMap = (sfiObj === nonSfiObj) || ((sC === nsC) && (sA === nsA) && (sQA === nsQA) && (sS === nsS));
 
       if (isUnifiedMap) {
         baseUnsettledCount = sC;

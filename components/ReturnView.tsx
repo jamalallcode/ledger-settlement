@@ -567,9 +567,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         }
     });
 
+    const qBase = (base.unsettledQuarterlyAmount !== undefined && base.unsettledQuarterlyAmount !== null) 
+      ? base.unsettledQuarterlyAmount 
+      : base.unsettledAmount;
+
     return {
         unsettledCount: Math.max(0, base.unsettledCount + pastRC),
         unsettledAmount: Math.max(0, base.unsettledAmount + Math.round(pastRA)),
+        unsettledQuarterlyAmount: Math.max(0, qBase + Math.round(pastRA)),
         settledCount: base.settledCount + pastSC,
         settledAmount: base.settledAmount + Math.round(pastSA)
     };
