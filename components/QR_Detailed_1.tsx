@@ -316,26 +316,46 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       }
     });
 
+    // Helper to get stats from a map with robust key matching
+    const getStatsFromMap = (map: Record<string, any> | undefined) => {
+      if (!map) return { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+      let matchKey = entityName;
+      if (robustNormalize(entityName) === robustNormalize("হস্ত ও কুটির শিল্প সংস্থা")) {
+        matchKey = "ক্ষুদ্র ও কুটির শিল্প";
+      } else if (robustNormalize(entityName) === robustNormalize("রসায়ন শিল্প সংস্থা")) {
+        matchKey = "রসায়ন শিল্প";
+      }
+      let res = map[matchKey] || map[entityName];
+      if (!res) {
+        const keys = Object.keys(map);
+        const foundKey = keys.find(k => {
+          const nk = robustNormalize(k);
+          const ne = robustNormalize(entityName);
+          return nk.includes(ne) || ne.includes(nk);
+        });
+        if (foundKey) res = map[foundKey];
+      }
+      return res || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+    };
+
     // Determine initial base opening balances from monthly opening balances / prevStats
     let baseUnsettledCount = 0;
     let baseUnsettledAmount = 0;
     let baseSettledCount = 0;
 
     const exactMatch = periodOpeningBalances?.find(pb => pb.startDate === cycleStartStr);
-    if (exactMatch) {
-      const sfi = exactMatch.stats?.entitiesSFI?.[entityName];
-      const nonSfi = exactMatch.stats?.entitiesNonSFI?.[entityName];
-      if (sfi || nonSfi) {
-        baseUnsettledCount = (sfi?.unsettledCount || 0) + (nonSfi?.unsettledCount || 0);
-        baseUnsettledAmount = (sfi?.unsettledAmount || 0) + (nonSfi?.unsettledAmount || 0);
-        baseSettledCount = (sfi?.settledCount || 0) + (nonSfi?.settledCount || 0);
-      }
+    if (exactMatch && exactMatch.stats) {
+      const sfi = getStatsFromMap(exactMatch.stats.entitiesSFI);
+      const nonSfi = getStatsFromMap(exactMatch.stats.entitiesNonSFI);
+      baseUnsettledCount = (sfi.unsettledCount || 0) + (nonSfi.unsettledCount || 0);
+      baseUnsettledAmount = (sfi.unsettledAmount || 0) + (nonSfi.unsettledAmount || 0);
+      baseSettledCount = (sfi.settledCount || 0) + (nonSfi.settledCount || 0);
     } else if (prevStats) {
-      const sfi = prevStats?.entitiesSFI?.[entityName];
-      const nonSfi = prevStats?.entitiesNonSFI?.[entityName];
-      baseUnsettledCount = (sfi?.unsettledCount || 0) + (nonSfi?.unsettledCount || 0);
-      baseUnsettledAmount = (sfi?.unsettledAmount || 0) + (nonSfi?.unsettledAmount || 0);
-      baseSettledCount = (sfi?.settledCount || 0) + (nonSfi?.settledCount || 0);
+      const sfi = getStatsFromMap(prevStats.entitiesSFI);
+      const nonSfi = getStatsFromMap(prevStats.entitiesNonSFI);
+      baseUnsettledCount = (sfi.unsettledCount || 0) + (nonSfi.unsettledCount || 0);
+      baseUnsettledAmount = (sfi.unsettledAmount || 0) + (nonSfi.unsettledAmount || 0);
+      baseSettledCount = (sfi.settledCount || 0) + (nonSfi.settledCount || 0);
     }
 
     const col4 = baseUnsettledCount + priorRaisedCount;
