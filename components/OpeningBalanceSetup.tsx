@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { Settings2, ChevronLeft, Pencil, LayoutGrid, Calendar, CalendarRange, CheckCircle2 } from 'lucide-react';
+import { Settings2, ChevronLeft, Pencil, LayoutGrid, Calendar, CheckCircle2 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP } from '../constants';
 import { MinistryPrevStats } from '../types';
@@ -41,49 +41,19 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
   originalStats,
   dynamicSetupConfig
 }) => {
-  const [mode, setMode] = React.useState<'monthly' | 'quarterly'>(() => {
-    return setupType.includes('ত্রৈমাসিক') ? 'quarterly' : 'monthly';
-  });
-
-  React.useEffect(() => {
-    if (setupType.includes('ত্রৈমাসিক')) {
-      setMode('quarterly');
-    } else if (setupType.includes('মাসিক')) {
-      setMode('monthly');
-    }
-  }, [setupType]);
-
   const [customMonthText, setCustomMonthText] = React.useState<string>(() => {
     return localStorage.getItem('opening_balance_custom_month_text') || '১৬/০৫/২০২৫ হতে ১৫/০৬/২০২৫';
   });
-  const [customQuarterText, setCustomQuarterText] = React.useState<string>(() => {
-    return localStorage.getItem('opening_balance_custom_quarter_text') || '১৬/০৩/২০২৫ হতে ১৫/০৬/২০২৫';
-  });
   const [showSavedToast, setShowSavedToast] = React.useState<boolean>(false);
 
-  const isQuarterly = mode === 'quarterly';
-
-  const currentMonthText = isQuarterly ? customQuarterText : customMonthText;
-
-  const handleSwitchMode = (newMode: 'monthly' | 'quarterly') => {
-    setMode(newMode);
-    if (setSelectedReportType) {
-      setSelectedReportType(newMode === 'quarterly' ? 'প্রারম্ভিক জের সেটআপ: ত্রৈমাসিক' : 'প্রারম্ভিক জের সেটআপ: মাসিক');
-    }
-  };
-
-  const displayFields: { key: keyof MinistryPrevStats, label: string, subLabel?: string }[] = isQuarterly ? [
-    { key: 'unsettledCount', label: 'উত্থাপিত অনুচ্ছেদ সংখ্যা', subLabel: '(ত্রৈমাসিক)' },
-    { key: 'settledCount', label: 'মোট নিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা', subLabel: '(ত্রৈমাসিক)' },
-    { key: 'unsettledAmount', label: 'অনিষ্পন্ন অনুচ্ছেদে জড়িত টাকা', subLabel: '(ত্রৈমাসিক)' }
-  ] : [
+  const displayFields: { key: keyof MinistryPrevStats, label: string, subLabel?: string }[] = [
     { key: 'unsettledCount', label: 'অমীমাংসিত অনুচ্ছেদ সংখ্যা', subLabel: '(প্রারম্ভিক)' },
     { key: 'unsettledAmount', label: 'অমীমাংসিত টাকা', subLabel: '(প্রারম্ভিক)' },
     { key: 'settledCount', label: 'মীমাংসিত অনুচ্ছেদ সংখ্যা', subLabel: '(প্রারম্ভিক)' },
     { key: 'settledAmount', label: 'মীমাংসিত টাকা', subLabel: '(প্রারম্ভিক)' }
   ];
 
-  const setupThCls = `p-3 text-center font-black text-slate-900 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-16 align-middle z-[210] border-b border-slate-300 ${isQuarterly ? 'w-[24%]' : 'w-[19%]'}`;
+  const setupThCls = "p-3 text-center font-black text-slate-900 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-16 align-middle z-[210] border-b border-slate-300 w-[19%]";
   const setupFooterTdCls = "p-4 text-center text-[15px] bg-slate-200 text-slate-900 font-black z-[190]";
   
   const totalStats = ministryGroups.reduce((acc, m) => {
@@ -120,38 +90,10 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
           <div className="flex flex-col">
             <h2 className="text-xl md:text-2xl font-black text-slate-900 flex items-center gap-2.5">
               <Settings2 size={26} className="text-blue-600 shrink-0" /> 
-              <span>{isQuarterly ? 'পূর্ব জের সেটাপ (ত্রৈমাসিক)' : 'পূর্ব জের সেটাপ (মাসিক)'}</span>
+              <span>পূর্ব জের সেটাপ</span>
             </h2>
             <span className="text-[11px] font-black text-slate-500 uppercase tracking-tighter">সমন্বিত (UNIFIED) ব্যালেন্স ইনপুট উইন্ডো</span>
           </div>
-        </div>
-
-        {/* Premium Mode Switcher (Monthly vs Quarterly) */}
-        <div className="bg-slate-100 p-1.5 rounded-2xl border border-slate-200/90 shadow-inner flex items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => handleSwitchMode('monthly')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all duration-300 cursor-pointer ${
-              !isQuarterly
-                ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-md shadow-blue-500/25 scale-[1.02] ring-2 ring-blue-400/20'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/80 font-extrabold'
-            }`}
-          >
-            <Calendar size={15} className={!isQuarterly ? "text-amber-300 animate-pulse" : "text-slate-500"} />
-            <span>মাসিক জের</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSwitchMode('quarterly')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all duration-300 cursor-pointer ${
-              isQuarterly
-                ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-md shadow-blue-500/25 scale-[1.02] ring-2 ring-blue-400/20'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/80 font-extrabold'
-            }`}
-          >
-            <CalendarRange size={15} className={isQuarterly ? "text-amber-300 animate-pulse" : "text-slate-500"} />
-            <span>ত্রৈমাসিক জের</span>
-          </button>
         </div>
 
         <div className="flex-1 flex justify-center">
@@ -159,22 +101,17 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
             isEditingSetup ? 'bg-amber-100/90 border-2 border-amber-400 ring-2 ring-amber-400/30' : 'bg-amber-50/90 border border-amber-300/90'
           }`}>
             <Calendar size={18} className="text-amber-700 shrink-0" />
-            <span className="font-extrabold text-amber-950 text-[13px] whitespace-nowrap">{isQuarterly ? 'জের-এর মেয়াদ:' : 'জের-এর মাস:'}</span>
+            <span className="font-extrabold text-amber-950 text-[13px] whitespace-nowrap">জের-এর মাস:</span>
             <input
               type="text"
-              placeholder={isQuarterly ? "যেমন: ১৬/০৩/২০২৫ হতে ১৫/০৬/২০২৫" : "যেমন: ১৬/০৫/২০২৫ হতে ১৫/০৬/২০২৫"}
-              value={currentMonthText}
+              placeholder="যেমন: ১৬/০৫/২০২৫ হতে ১৫/০৬/২০২৫"
+              value={customMonthText}
               readOnly={!isEditingSetup}
               onChange={(e) => {
                 if (!isEditingSetup) return;
                 const val = e.target.value;
-                if (isQuarterly) {
-                  setCustomQuarterText(val);
-                  localStorage.setItem('opening_balance_custom_quarter_text', val);
-                } else {
-                  setCustomMonthText(val);
-                  localStorage.setItem('opening_balance_custom_month_text', val);
-                }
+                setCustomMonthText(val);
+                localStorage.setItem('opening_balance_custom_month_text', val);
               }}
               className={`rounded-xl px-3 py-1.5 font-bold text-[13px] outline-none w-64 transition-all shadow-sm ${
                 isEditingSetup
@@ -198,7 +135,6 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
             <button 
               onClick={() => {
                 localStorage.setItem('opening_balance_custom_month_text', customMonthText);
-                localStorage.setItem('opening_balance_custom_quarter_text', customQuarterText);
                 handleSaveSetup();
                 setShowSavedToast(true);
                 setTimeout(() => {
@@ -218,7 +154,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
          <table className="w-full text-sm border-separate border-spacing-0">
            <thead>
               <tr>
-                <th className={`p-3.5 text-left font-black text-slate-900 text-[12px] md:text-[13px] ${isQuarterly ? 'w-[28%]' : 'w-[24%]'} bg-slate-200 leading-tight h-16 align-middle z-[210] border-b border-slate-300`}>মন্ত্রণালয় ও সংস্থা</th>
+                <th className="p-3.5 text-left font-black text-slate-900 text-[12px] md:text-[13px] w-[24%] bg-slate-200 leading-tight h-16 align-middle z-[210] border-b border-slate-300">মন্ত্রণালয় ও সংস্থা</th>
                 {displayFields.map(f => (
                   <th key={f.key} className={setupThCls}>
                     {f.label} {f.subLabel && <><br/><span className="text-[10px] text-slate-500 font-black">{f.subLabel}</span></>}
@@ -248,7 +184,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
 
                return (
                  <React.Fragment key={m}>
-                   <tr className="bg-[#1e293b] no-hover-row"><td colSpan={isQuarterly ? 4 : 5} className="px-5 py-3 bg-[#1e293b]"><div className="flex items-center gap-2 font-black uppercase text-[12px] tracking-wide text-white"><LayoutGrid size={15} className="text-blue-400" /> {m}</div></td></tr>
+                   <tr className="bg-[#1e293b] no-hover-row"><td colSpan={5} className="px-5 py-3 bg-[#1e293b]"><div className="flex items-center gap-2 font-black uppercase text-[12px] tracking-wide text-white"><LayoutGrid size={15} className="text-blue-400" /> {m}</div></td></tr>
                    {entities.map(ent => (
                      <tr key={ent} className="hover:bg-blue-50/40 transition-all group bg-white">
                        <td className="px-6 py-4 font-bold text-slate-800 text-[13px] bg-white group-hover:text-blue-700">{ent}</td>
@@ -305,4 +241,5 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
 };
 
 export default OpeningBalanceSetup;
+
 
