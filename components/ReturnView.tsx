@@ -417,7 +417,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }, [selectedCycleDate, selectedReportType]);
 
   const robustNormalize = (str: string = '') => {
-    return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+    if (!str) return '';
+    return str.normalize('NFC')
+      .replace(/कर्मসংস্থান/g, "কর্মসংস্থান")
+      .replace(/कर्मसंस्थान/g, "কর্মসংস্থান")
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
   };
 
   const isEntityMatch = useCallback((entryEntity: string = '', targetEntity: string = ''): boolean => {
@@ -569,6 +575,41 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     };
   }, [entries, correspondenceEntries, activeCycle, prevStats, selectedReportType]);
 
+  const getCombinedPrev = useCallback((entityName: string) => {
+    const ePrevSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'এসএফআই');
+    const ePrevNonSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'নন এসএফআই');
+    
+    const isUnified = prevStats?.entitiesSFI && prevStats?.entitiesNonSFI && 
+      JSON.stringify(prevStats.entitiesSFI) === JSON.stringify(prevStats.entitiesNonSFI);
+
+    if (isUnified) {
+      const base = prevStats?.entitiesSFI?.[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+      const pastRC_SFI = ePrevSFI.unsettledCount - base.unsettledCount;
+      const pastRA_SFI = ePrevSFI.unsettledAmount - base.unsettledAmount;
+      const pastSC_SFI = ePrevSFI.settledCount - base.settledCount;
+      const pastSA_SFI = ePrevSFI.settledAmount - base.settledAmount;
+
+      const pastRC_NonSFI = ePrevNonSFI.unsettledCount - base.unsettledCount;
+      const pastRA_NonSFI = ePrevNonSFI.unsettledAmount - base.unsettledAmount;
+      const pastSC_NonSFI = ePrevNonSFI.settledCount - base.settledCount;
+      const pastSA_NonSFI = ePrevNonSFI.settledAmount - base.settledAmount;
+
+      return {
+        unsettledCount: Math.max(0, base.unsettledCount + pastRC_SFI + pastRC_NonSFI),
+        unsettledAmount: Math.max(0, base.unsettledAmount + pastRA_SFI + pastRA_NonSFI),
+        settledCount: Math.max(0, base.settledCount + pastSC_SFI + pastSC_NonSFI),
+        settledAmount: Math.max(0, base.settledAmount + pastSA_SFI + pastSA_NonSFI)
+      };
+    }
+
+    return {
+      unsettledCount: ePrevSFI.unsettledCount + ePrevNonSFI.unsettledCount,
+      unsettledAmount: ePrevSFI.unsettledAmount + ePrevNonSFI.unsettledAmount,
+      settledCount: ePrevSFI.settledCount + ePrevNonSFI.settledCount,
+      settledAmount: ePrevSFI.settledAmount + ePrevNonSFI.settledAmount
+    };
+  }, [calculateRecursiveOpening, activeCycle.start, prevStats]);
+
   useEffect(() => {
     if (isSetupMode) {
       const rawMasterStats: Record<string, MinistryPrevStats> = {};
@@ -599,16 +640,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         ministry: normMinistry,
         entityRows: entities.map(entityName => {
           const normEntity = robustNormalize(entityName);
-          const ePrevSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'এসএফআই');
-          const ePrevNonSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'নন এসএফআই');
-          const isUnified = prevStats?.entitiesSFI && prevStats?.entitiesNonSFI && 
-            JSON.stringify(prevStats.entitiesSFI) === JSON.stringify(prevStats.entitiesNonSFI);
-          const ePrev = isUnified ? ePrevSFI : {
-            unsettledCount: ePrevSFI.unsettledCount + ePrevNonSFI.unsettledCount,
-            unsettledAmount: ePrevSFI.unsettledAmount + ePrevNonSFI.unsettledAmount,
-            settledCount: ePrevSFI.settledCount + ePrevNonSFI.settledCount,
-            settledAmount: ePrevSFI.settledAmount + ePrevNonSFI.settledAmount
-          };
+          const ePrev = getCombinedPrev(entityName);
           const allPotentialEntries = [...entries, ...correspondenceEntries];
           const matchingEntries = allPotentialEntries.filter(e => {
             const eMin = robustNormalize(e.ministryName || '');
@@ -842,16 +874,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         ministry: normMinistry,
         entityRows: entities.map(entityName => {
           const normEntity = robustNormalize(entityName);
-          const ePrevSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'এসএফআই');
-          const ePrevNonSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'নন এসএফআই');
-          const isUnified = prevStats?.entitiesSFI && prevStats?.entitiesNonSFI && 
-            JSON.stringify(prevStats.entitiesSFI) === JSON.stringify(prevStats.entitiesNonSFI);
-          const ePrev = isUnified ? ePrevSFI : {
-            unsettledCount: ePrevSFI.unsettledCount + ePrevNonSFI.unsettledCount,
-            unsettledAmount: ePrevSFI.unsettledAmount + ePrevNonSFI.unsettledAmount,
-            settledCount: ePrevSFI.settledCount + ePrevNonSFI.settledCount,
-            settledAmount: ePrevSFI.settledAmount + ePrevNonSFI.settledAmount
-          };
+          const ePrev = getCombinedPrev(entityName);
           const allPotentialEntries = [...entries, ...correspondenceEntries];
           const matchingEntries = allPotentialEntries.filter(e => {
             const eMin = robustNormalize(e.ministryName || '');
