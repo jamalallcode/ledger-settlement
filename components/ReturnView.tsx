@@ -514,15 +514,19 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
     const pastEntries = filteredPotential.filter(e => {
         if (!isEntityMatch(e.entityName, entityName)) return false;
-        if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
-        
-        const labelMatch = e.cycleLabel && toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon;
-        if (labelMatch) return false;
+        const normEType = robustNormalize(e.paraType || '');
+        if (normEType !== '' && normEType !== robustNormalize(paraType)) return false;
         
         const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
-        if (entryDate !== '' && entryDate >= cycleStartStr) return false;
-        
-        return entryDate !== '' && entryDate >= effectiveEntryStartDate;
+        if (entryDate !== '') {
+          if (entryDate >= cycleStartStr) return false;
+          return entryDate >= effectiveEntryStartDate;
+        }
+
+        const labelMatch = e.cycleLabel && toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon;
+        if (labelMatch) return false;
+
+        return true;
     });
 
     let pastRC = 0, pastRA = 0, pastSC = 0, pastSA = 0;
