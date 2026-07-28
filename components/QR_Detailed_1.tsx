@@ -328,34 +328,52 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       let res = map[matchKey] || map[entityName];
       if (!res) {
         const keys = Object.keys(map);
-        const foundKey = keys.find(k => {
-          const nk = robustNormalize(k);
-          const ne = robustNormalize(entityName);
-          return nk.includes(ne) || ne.includes(nk);
-        });
+        const foundKey = keys.find(k => isEntityMatch(k, entityName));
         if (foundKey) res = map[foundKey];
       }
       return res || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
     };
 
-    // Determine initial base opening balances from monthly opening balances / prevStats
+    // পূর্ব জের টেবিল হতে প্রারম্ভিক জের প্রাপ্তি এবং ত্রৈমাসিক রিটার্নে ম্যাপিং:
+    // - পূর্ব জের কলাম (২) [অমীমাংসিত অনুচ্ছেদ সংখ্যা] -> কলাম ৪ (প্রারম্ভিক অমীমাংসিত অনুচ্ছেদ সংখ্যা)
+    // - পূর্ব জের কলাম (৪) [মীমাংসিত অনুচ্ছেদ সংখ্যা] -> কলাম ৭ (প্রারম্ভিক নিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা)
+    // - পূর্ব জের কলাম (৩) [অমীমাংসিত টাকা] -> কলাম ১১ (প্রারম্ভিক অমীমাংসিত টাকা)
     let baseUnsettledCount = 0;
     let baseUnsettledAmount = 0;
     let baseSettledCount = 0;
 
     const exactMatch = periodOpeningBalances?.find(pb => pb.startDate === cycleStartStr);
+    let sfiObj: any = null;
+    let nonSfiObj: any = null;
+
     if (exactMatch && exactMatch.stats) {
-      const sfi = getStatsFromMap(exactMatch.stats.entitiesSFI);
-      const nonSfi = getStatsFromMap(exactMatch.stats.entitiesNonSFI);
-      baseUnsettledCount = (sfi.unsettledCount || 0) + (nonSfi.unsettledCount || 0);
-      baseUnsettledAmount = (sfi.unsettledAmount || 0) + (nonSfi.unsettledAmount || 0);
-      baseSettledCount = (sfi.settledCount || 0) + (nonSfi.settledCount || 0);
+      sfiObj = getStatsFromMap(exactMatch.stats.entitiesSFI);
+      nonSfiObj = getStatsFromMap(exactMatch.stats.entitiesNonSFI);
     } else if (prevStats) {
-      const sfi = getStatsFromMap(prevStats.entitiesSFI);
-      const nonSfi = getStatsFromMap(prevStats.entitiesNonSFI);
-      baseUnsettledCount = (sfi.unsettledCount || 0) + (nonSfi.unsettledCount || 0);
-      baseUnsettledAmount = (sfi.unsettledAmount || 0) + (nonSfi.unsettledAmount || 0);
-      baseSettledCount = (sfi.settledCount || 0) + (nonSfi.settledCount || 0);
+      sfiObj = getStatsFromMap(prevStats.entitiesSFI);
+      nonSfiObj = getStatsFromMap(prevStats.entitiesNonSFI);
+    }
+
+    if (sfiObj || nonSfiObj) {
+      const sC = sfiObj?.unsettledCount || 0;
+      const nsC = nonSfiObj?.unsettledCount || 0;
+      const sA = sfiObj?.unsettledAmount || 0;
+      const nsA = nonSfiObj?.unsettledAmount || 0;
+      const sS = sfiObj?.settledCount || 0;
+      const nsS = nonSfiObj?.settledCount || 0;
+
+      // Check if SFI and NonSFI maps point to the same unified setup values
+      const isUnifiedMap = (sC === nsC) && (sA === nsA) && (sS === nsS);
+
+      if (isUnifiedMap) {
+        baseUnsettledCount = sC;
+        baseUnsettledAmount = sA;
+        baseSettledCount = sS;
+      } else {
+        baseUnsettledCount = sC + nsC;
+        baseUnsettledAmount = sA + nsA;
+        baseSettledCount = sS + nsS;
+      }
     }
 
     const col4 = baseUnsettledCount + priorRaisedCount;

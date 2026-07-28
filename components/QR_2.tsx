@@ -554,8 +554,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         const base = getEntityStats(entName);
         defaults[entName] = {
           june25Raised: (base?.unsettledCount || 0),
-          june25Settled: (base?.unsettledAmount || 0),
-          june25UnsettledAmount: (base?.settledCount || 0)
+          june25Settled: (base?.settledCount || 0),
+          june25UnsettledAmount: (base?.unsettledAmount || 0)
         };
       });
     });
@@ -603,8 +603,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         const base = getEntityStats(entName);
         defaults[entName] = {
           june25Raised: (base?.unsettledCount || 0),
-          june25Settled: (base?.unsettledAmount || 0),
-          june25UnsettledAmount: (base?.settledCount || 0)
+          june25Settled: (base?.settledCount || 0),
+          june25UnsettledAmount: (base?.unsettledAmount || 0)
         };
       });
     });
@@ -649,8 +649,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           const base = getEntityStats(entName);
           defaults[entName] = {
             june25Raised: (base?.unsettledCount || 0),
-            june25Settled: (base?.unsettledAmount || 0),
-            june25UnsettledAmount: (base?.settledCount || 0)
+            june25Settled: (base?.settledCount || 0),
+            june25UnsettledAmount: (base?.unsettledAmount || 0)
           };
         });
       });
@@ -680,8 +680,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           const base = getEntityStats(entName);
           defaults[entName] = {
             june25Raised: (base?.unsettledCount || 0),
-            june25Settled: (base?.unsettledAmount || 0),
-            june25UnsettledAmount: (base?.settledCount || 0)
+            june25Settled: (base?.settledCount || 0),
+            june25UnsettledAmount: (base?.unsettledAmount || 0)
           };
         });
       });
@@ -1097,8 +1097,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                         const base = getEntityStats(entName);
                         defaults1[entName] = {
                           june25Raised: (base?.unsettledCount || 0),
-                          june25Settled: (base?.unsettledAmount || 0),
-                          june25UnsettledAmount: (base?.settledCount || 0)
+                          june25Settled: (base?.settledCount || 0),
+                          june25UnsettledAmount: (base?.unsettledAmount || 0)
                         };
                       });
                     });
@@ -1110,8 +1110,8 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                         const base = getEntityStats(entName);
                         defaults2[entName] = {
                           june25Raised: (base?.unsettledCount || 0),
-                          june25Settled: (base?.unsettledAmount || 0),
-                          june25UnsettledAmount: (base?.settledCount || 0)
+                          june25Settled: (base?.settledCount || 0),
+                          june25UnsettledAmount: (base?.unsettledAmount || 0)
                         };
                       });
                     });
