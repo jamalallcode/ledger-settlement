@@ -53,13 +53,13 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
     { key: 'settledCount', label: 'মোট নিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা' },
     { key: 'unsettledAmount', label: 'অনিষ্পন্ন অনুচ্ছেদে জড়িত টাকা' }
   ] : [
-    { key: 'unsettledCount', label: 'অমী: সংখ্যা', subLabel: '(প্রারম্ভিক)' },
-    { key: 'unsettledAmount', label: 'অমী: টাকা', subLabel: '(প্রারম্ভিক)' },
-    { key: 'settledCount', label: 'মী: সংখ্যা', subLabel: '(প্রারম্ভিক)' },
-    { key: 'settledAmount', label: 'মী: টাকা', subLabel: '(প্রারম্ভিক)' }
+    { key: 'unsettledCount', label: 'অমীমাংসিত অনুচ্ছেদ সংখ্যা', subLabel: '(প্রারম্ভিক)' },
+    { key: 'unsettledAmount', label: 'অমীমাংসিত টাকা', subLabel: '(প্রারম্ভিক)' },
+    { key: 'settledCount', label: 'মীমাংসিত অনুচ্ছেদ সংখ্যা', subLabel: '(প্রারম্ভিক)' },
+    { key: 'settledAmount', label: 'মীমাংসিত টাকা', subLabel: '(প্রারম্ভিক)' }
   ];
 
-  const setupThCls = "p-4 text-center font-black text-slate-900 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-20 align-middle z-[210]";
+  const setupThCls = "p-3 text-center font-black text-slate-900 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-16 align-middle z-[210] border-b border-slate-300 w-[19%]";
   const setupFooterTdCls = "p-4 text-center text-[15px] bg-slate-200 text-slate-900 font-black z-[190]";
   
   const totalStats = ministryGroups.reduce((acc, m) => {
@@ -157,10 +157,20 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
          <table className="w-full text-sm border-separate border-spacing-0">
            <thead>
               <tr>
-                <th className="p-5 text-left font-black text-slate-900 text-[12px] md:text-[13px] w-[35%] bg-slate-200 leading-tight h-20 align-middle z-[210]">মন্ত্রণালয় ও সংস্থা</th>
+                <th className="p-3.5 text-left font-black text-slate-900 text-[12px] md:text-[13px] w-[24%] bg-slate-200 leading-tight h-16 align-middle z-[210] border-b border-slate-300">মন্ত্রণালয় ও সংস্থা</th>
                 {displayFields.map(f => (
                   <th key={f.key} className={setupThCls}>
                     {f.label} {f.subLabel && <><br/><span className="text-[10px] text-slate-500 font-black">{f.subLabel}</span></>}
+                  </th>
+                ))}
+              </tr>
+              <tr className="bg-slate-300 text-slate-900 font-black text-[12px] text-center border-b border-slate-400">
+                <th className="py-1.5 px-3 text-center font-black text-slate-800 bg-slate-300 border-r border-slate-400 text-[12px]">
+                  (১)
+                </th>
+                {displayFields.map((_, idx) => (
+                  <th key={idx} className="py-1.5 px-3 text-center font-black text-slate-800 bg-slate-300 border-r border-slate-400 text-[12px]">
+                    ({toBengaliDigits(idx + 2)})
                   </th>
                 ))}
               </tr>
