@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { Settings2, ChevronLeft, Unlock, Pencil, LayoutGrid, Sparkles } from 'lucide-react';
+import { Settings2, ChevronLeft, Pencil, LayoutGrid, Calendar, CheckCircle2 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP } from '../constants';
 import { MinistryPrevStats } from '../types';
@@ -41,26 +41,12 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
   originalStats,
   dynamicSetupConfig
 }) => {
+  const [customMonthText, setCustomMonthText] = React.useState<string>(() => {
+    return localStorage.getItem('opening_balance_custom_month_text') || '';
+  });
+  const [showSavedToast, setShowSavedToast] = React.useState<boolean>(false);
+
   const isQuarterly = setupType.includes('ত্রৈমাসিক');
-  const hasChanges = React.useMemo(() => {
-    if (!isEditingSetup) return false;
-    for (const m of ministryGroups) {
-      const entities = MINISTRY_ENTITY_MAP[m] || [];
-      for (const ent of entities) {
-        const temp = tempPrevStats[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
-        const orig = originalStats[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
-        if (
-          temp.unsettledCount !== orig.unsettledCount ||
-          temp.unsettledAmount !== orig.unsettledAmount ||
-          temp.settledCount !== orig.settledCount ||
-          temp.settledAmount !== orig.settledAmount
-        ) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }, [tempPrevStats, originalStats, isEditingSetup, ministryGroups]);
 
   const displayFields: { key: keyof MinistryPrevStats, label: string, subLabel?: string }[] = isQuarterly ? [
     { key: 'unsettledCount', label: 'উত্থাপিত অনুচ্ছেদ সংখ্যা' },
@@ -89,6 +75,20 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
   return (
     <div id="section-prev-stats-setup" className="max-w-full mx-auto space-y-6 py-4 animate-table-entrance relative px-2">
       <IDBadge id="section-prev-stats-setup" />
+
+      {/* Floating Success Toast */}
+      {showSavedToast && (
+        <div className="fixed top-6 right-6 z-[10000] flex items-center gap-3.5 bg-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl border-2 border-emerald-300 animate-in slide-in-from-top-6 fade-in duration-300">
+          <div className="bg-white/20 p-2 rounded-xl shrink-0">
+            <CheckCircle2 size={24} className="text-white animate-bounce" />
+          </div>
+          <div className="flex flex-col">
+            <span className="font-black text-sm text-white tracking-wide">ডাটা সফলভাবে সংরক্ষিত হয়েছে!</span>
+            <span className="text-[11px] font-extrabold text-emerald-100">সকল তথ্য ও জের সফলভাবে লক করা হয়েছে।</span>
+          </div>
+        </div>
+      )}
+
       <div id="container-setup-controls" className="flex flex-col md:flex-row items-center justify-between bg-white p-6 rounded-3xl border border-slate-200 shadow-xl gap-4 no-print relative">
         <IDBadge id="container-setup-controls" />
         <div className="flex items-center gap-4">
@@ -100,30 +100,60 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
         </div>
 
         <div className="flex-1 flex justify-center">
-          <button 
-            onClick={() => setSelectedReportType('সময়কাল ভিত্তিক প্রারম্ভিক জের সেটআপ:নতুন')}
-            className="flex items-center gap-2.5 px-5 py-2.5 rounded-2xl font-black text-[13px] transition-all border-2 shadow-sm hover:shadow-md active:scale-95 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-          >
-            <Sparkles size={18} className="text-amber-500 animate-pulse" />
-            কাস্টম জের
-          </button>
+          <div className={`flex flex-wrap items-center gap-2.5 rounded-2xl px-4 py-2 shadow-sm text-xs transition-all ${
+            isEditingSetup ? 'bg-amber-100/90 border-2 border-amber-400 ring-2 ring-amber-400/30' : 'bg-amber-50/90 border border-amber-300/90'
+          }`}>
+            <Calendar size={18} className="text-amber-700 shrink-0" />
+            <span className="font-extrabold text-amber-950 text-[13px] whitespace-nowrap">জের-এর মাস:</span>
+            <input
+              type="text"
+              placeholder="মাস/বছর (যেমন: ১৬/০৫/২০২৫ হতে ১৫/০৬/২০২৫)"
+              value={customMonthText}
+              readOnly={!isEditingSetup}
+              onChange={(e) => {
+                if (!isEditingSetup) return;
+                const val = e.target.value;
+                setCustomMonthText(val);
+                localStorage.setItem('opening_balance_custom_month_text', val);
+              }}
+              className={`rounded-xl px-3 py-1.5 font-bold text-[13px] outline-none w-64 transition-all shadow-sm ${
+                isEditingSetup
+                  ? 'bg-white border-2 border-amber-400 text-slate-900 focus:ring-2 focus:ring-amber-500/30 placeholder:text-slate-400 cursor-text'
+                  : 'bg-amber-100/70 border border-amber-200/80 text-amber-950 cursor-not-allowed select-none font-extrabold'
+              }`}
+            />
+          </div>
         </div>
 
         <div className="flex items-center gap-4">
-           <button 
-             onClick={() => setIsEditingSetup(!isEditingSetup)} 
-             className={`px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all border-b-4 active:scale-95 ${isEditingSetup ? 'bg-amber-500 text-white border-amber-700 hover:bg-amber-600' : 'bg-indigo-600 text-white border-indigo-800 hover:bg-indigo-700'}`}
-           >
-             {isEditingSetup ? <Unlock size={18} /> : <Pencil size={18} />}
-             {isEditingSetup ? 'এডিট মোড বন্ধ' : 'এডিট করুন'}
-           </button>
-           {hasChanges && (
-             <button onClick={handleSaveSetup} className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-blue-700 shadow-2xl transition-all border-b-4 border-blue-800 active:scale-95 animate-in fade-in duration-200">সংরক্ষণ করুন</button>
-           )}
+          {!isEditingSetup ? (
+            <button 
+              onClick={() => setIsEditingSetup(true)} 
+              className="px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all border-b-4 bg-indigo-600 text-white border-indigo-800 hover:bg-indigo-700 active:scale-95 shadow-md hover:shadow-lg cursor-pointer"
+            >
+              <Pencil size={18} />
+              <span>এডিট করুন</span>
+            </button>
+          ) : (
+            <button 
+              onClick={() => {
+                localStorage.setItem('opening_balance_custom_month_text', customMonthText);
+                handleSaveSetup();
+                setShowSavedToast(true);
+                setTimeout(() => {
+                  setShowSavedToast(false);
+                }, 3500);
+              }} 
+              className="px-7 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all border-b-4 bg-emerald-600 text-white border-emerald-800 hover:bg-emerald-700 active:scale-95 shadow-xl hover:shadow-2xl animate-in zoom-in-95 duration-200 cursor-pointer"
+            >
+              <CheckCircle2 size={19} className="text-emerald-100 animate-pulse" />
+              <span>সংরক্ষণ করুন</span>
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="table-container bg-white rounded-3xl relative w-full overflow-auto">
+      <div className={`table-container bg-white rounded-3xl relative w-full overflow-auto transition-all duration-500 ${showSavedToast ? 'ring-4 ring-emerald-500/80 shadow-emerald-500/30 shadow-2xl scale-[1.002]' : ''}`}>
          <table className="w-full text-sm border-separate border-spacing-0">
            <thead>
               <tr>
@@ -156,7 +186,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
                            <input 
                              type="text" 
                              readOnly={!isEditingSetup}
-                             className={`w-full h-11 text-center font-bold text-[15px] outline-none border-0 transition-all ${isEditingSetup ? 'bg-white text-slate-900 cursor-text' : 'bg-slate-50 text-slate-400 cursor-not-allowed'}`} 
+                             className={`w-full h-11 text-center font-bold text-[15px] outline-none border-0 transition-all ${isEditingSetup ? 'bg-white text-slate-900 cursor-text hover:bg-blue-50/50 focus:bg-amber-50 focus:ring-2 focus:ring-blue-500 rounded-lg' : 'bg-slate-50 text-slate-400 cursor-not-allowed'}`} 
                              placeholder="০" 
                              value={tempPrevStats[ent]?.[f.key] !== undefined && tempPrevStats[ent]![f.key] !== 0 ? toBengaliDigits(tempPrevStats[ent]![f.key]) : ''} 
                              onPaste={(e) => handleSetupPaste(e, ent, f.key)} 

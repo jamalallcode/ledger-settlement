@@ -1000,7 +1000,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
   const handleSaveSetup = () => {
     setPrevStats({ ...prevStats, entitiesSFI: tempPrevStats, entitiesNonSFI: tempPrevStats });
-    setIsSetupMode(false); setSelectedReportType(null); setIsEditingSetup(false);
+    setIsEditingSetup(false);
   };
 
   const handleSetupPaste = (e: React.ClipboardEvent, startEntity: string, startField: keyof MinistryPrevStats) => {
