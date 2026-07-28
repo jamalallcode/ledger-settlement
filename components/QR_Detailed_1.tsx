@@ -368,16 +368,29 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       const sS = sfiObj?.settledCount || 0;
       const nsS = nonSfiObj?.settledCount || 0;
 
-      // Check if SFI and NonSFI maps point to the same unified setup values
-      const isUnifiedMap = (sfiObj === nonSfiObj) || ((sC === nsC) && (sA === nsA) && (sQA === nsQA) && (sS === nsS));
-
-      if (isUnifiedMap) {
-        baseUnsettledCount = sC;
+      // Opening Balance Setup uses a unified master row per entity.
+      // Column 4 (unsettledQuarterlyAmount) represents the total initial quarterly unsettled amount.
+      if (sQA === nsQA || nsQA === 0 || sfiObj === nonSfiObj) {
         baseUnsettledAmount = sQA;
-        baseSettledCount = sS;
+      } else if (sQA === 0) {
+        baseUnsettledAmount = nsQA;
+      } else {
+        baseUnsettledAmount = sQA + nsQA;
+      }
+
+      if (sC === nsC || nsC === 0 || sfiObj === nonSfiObj) {
+        baseUnsettledCount = sC;
+      } else if (sC === 0) {
+        baseUnsettledCount = nsC;
       } else {
         baseUnsettledCount = sC + nsC;
-        baseUnsettledAmount = sQA + nsQA;
+      }
+
+      if (sS === nsS || nsS === 0 || sfiObj === nonSfiObj) {
+        baseSettledCount = sS;
+      } else if (sS === 0) {
+        baseSettledCount = nsS;
+      } else {
         baseSettledCount = sS + nsS;
       }
     }
