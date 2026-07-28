@@ -417,7 +417,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }, [selectedCycleDate, selectedReportType]);
 
   const robustNormalize = (str: string = '') => {
-    return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+    if (!str) return '';
+    return str.normalize('NFC')
+      .replace(/कर्मসংস্থান/g, "কর্মসংস্থান")
+      .replace(/कर्मसंस्थान/g, "কর্মসংস্থান")
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
   };
 
   const isEntityMatch = useCallback((entryEntity: string = '', targetEntity: string = ''): boolean => {
@@ -514,15 +520,19 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
     const pastEntries = filteredPotential.filter(e => {
         if (!isEntityMatch(e.entityName, entityName)) return false;
-        if (robustNormalize(e.paraType || '') !== robustNormalize(paraType)) return false;
-        
-        const labelMatch = e.cycleLabel && toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon;
-        if (labelMatch) return false;
+        const normEType = robustNormalize(e.paraType || '');
+        if (normEType !== '' && normEType !== robustNormalize(paraType)) return false;
         
         const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
-        if (entryDate !== '' && entryDate >= cycleStartStr) return false;
-        
-        return entryDate !== '' && entryDate >= effectiveEntryStartDate;
+        if (entryDate !== '') {
+          if (entryDate >= cycleStartStr) return false;
+          return entryDate >= effectiveEntryStartDate;
+        }
+
+        const labelMatch = e.cycleLabel && toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon;
+        if (labelMatch) return false;
+
+        return true;
     });
 
     let pastRC = 0, pastRA = 0, pastSC = 0, pastSA = 0;
@@ -557,13 +567,53 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         }
     });
 
+    const qBase = (base.unsettledQuarterlyAmount !== undefined && base.unsettledQuarterlyAmount !== null) 
+      ? base.unsettledQuarterlyAmount 
+      : base.unsettledAmount;
+
     return {
         unsettledCount: Math.max(0, base.unsettledCount + pastRC),
         unsettledAmount: Math.max(0, base.unsettledAmount + Math.round(pastRA)),
+        unsettledQuarterlyAmount: Math.max(0, qBase + Math.round(pastRA)),
         settledCount: base.settledCount + pastSC,
         settledAmount: base.settledAmount + Math.round(pastSA)
     };
   }, [entries, correspondenceEntries, activeCycle, prevStats, selectedReportType]);
+
+  const getCombinedPrev = useCallback((entityName: string) => {
+    const ePrevSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'এসএফআই');
+    const ePrevNonSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'নন এসএফআই');
+    
+    const isUnified = prevStats?.entitiesSFI && prevStats?.entitiesNonSFI && 
+      JSON.stringify(prevStats.entitiesSFI) === JSON.stringify(prevStats.entitiesNonSFI);
+
+    if (isUnified) {
+      const base = prevStats?.entitiesSFI?.[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+      const pastRC_SFI = ePrevSFI.unsettledCount - base.unsettledCount;
+      const pastRA_SFI = ePrevSFI.unsettledAmount - base.unsettledAmount;
+      const pastSC_SFI = ePrevSFI.settledCount - base.settledCount;
+      const pastSA_SFI = ePrevSFI.settledAmount - base.settledAmount;
+
+      const pastRC_NonSFI = ePrevNonSFI.unsettledCount - base.unsettledCount;
+      const pastRA_NonSFI = ePrevNonSFI.unsettledAmount - base.unsettledAmount;
+      const pastSC_NonSFI = ePrevNonSFI.settledCount - base.settledCount;
+      const pastSA_NonSFI = ePrevNonSFI.settledAmount - base.settledAmount;
+
+      return {
+        unsettledCount: Math.max(0, base.unsettledCount + pastRC_SFI + pastRC_NonSFI),
+        unsettledAmount: Math.max(0, base.unsettledAmount + pastRA_SFI + pastRA_NonSFI),
+        settledCount: Math.max(0, base.settledCount + pastSC_SFI + pastSC_NonSFI),
+        settledAmount: Math.max(0, base.settledAmount + pastSA_SFI + pastSA_NonSFI)
+      };
+    }
+
+    return {
+      unsettledCount: ePrevSFI.unsettledCount + ePrevNonSFI.unsettledCount,
+      unsettledAmount: ePrevSFI.unsettledAmount + ePrevNonSFI.unsettledAmount,
+      settledCount: ePrevSFI.settledCount + ePrevNonSFI.settledCount,
+      settledAmount: ePrevSFI.settledAmount + ePrevNonSFI.settledAmount
+    };
+  }, [calculateRecursiveOpening, activeCycle.start, prevStats]);
 
   useEffect(() => {
     if (isSetupMode) {
@@ -571,7 +621,17 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       ministryGroups.forEach(m => {
         const entities = MINISTRY_ENTITY_MAP[m] || [];
         entities.forEach(ent => {
-          rawMasterStats[ent] = prevStats?.entitiesSFI?.[ent] || prevStats?.entitiesNonSFI?.[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+          const existing = prevStats?.entitiesSFI?.[ent] || prevStats?.entitiesNonSFI?.[ent];
+          if (existing) {
+            rawMasterStats[ent] = {
+              ...existing,
+              unsettledQuarterlyAmount: existing.unsettledQuarterlyAmount !== undefined
+                ? existing.unsettledQuarterlyAmount
+                : existing.unsettledAmount
+            };
+          } else {
+            rawMasterStats[ent] = { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 };
+          }
         });
       });
       setTempPrevStats(rawMasterStats);
@@ -595,14 +655,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         ministry: normMinistry,
         entityRows: entities.map(entityName => {
           const normEntity = robustNormalize(entityName);
-          const ePrevSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'এসএফআই');
-          const ePrevNonSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'নন এসএফআই');
-          const ePrev = {
-            unsettledCount: ePrevSFI.unsettledCount + ePrevNonSFI.unsettledCount,
-            unsettledAmount: ePrevSFI.unsettledAmount + ePrevNonSFI.unsettledAmount,
-            settledCount: ePrevSFI.settledCount + ePrevNonSFI.settledCount,
-            settledAmount: ePrevSFI.settledAmount + ePrevNonSFI.settledAmount
-          };
+          const ePrev = getCombinedPrev(entityName);
           const allPotentialEntries = [...entries, ...correspondenceEntries];
           const matchingEntries = allPotentialEntries.filter(e => {
             const eMin = robustNormalize(e.ministryName || '');
@@ -836,14 +889,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         ministry: normMinistry,
         entityRows: entities.map(entityName => {
           const normEntity = robustNormalize(entityName);
-          const ePrevSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'এসএফআই');
-          const ePrevNonSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'নন এসএফআই');
-          const ePrev = {
-            unsettledCount: ePrevSFI.unsettledCount + ePrevNonSFI.unsettledCount,
-            unsettledAmount: ePrevSFI.unsettledAmount + ePrevNonSFI.unsettledAmount,
-            settledCount: ePrevSFI.settledCount + ePrevNonSFI.settledCount,
-            settledAmount: ePrevSFI.settledAmount + ePrevNonSFI.settledAmount
-          };
+          const ePrev = getCombinedPrev(entityName);
           const allPotentialEntries = [...entries, ...correspondenceEntries];
           const matchingEntries = allPotentialEntries.filter(e => {
             const eMin = robustNormalize(e.ministryName || '');
@@ -1000,7 +1046,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
   const handleSaveSetup = () => {
     setPrevStats({ ...prevStats, entitiesSFI: tempPrevStats, entitiesNonSFI: tempPrevStats });
-    setIsSetupMode(false); setSelectedReportType(null); setIsEditingSetup(false);
+    setIsEditingSetup(false);
   };
 
   const handleSetupPaste = (e: React.ClipboardEvent, startEntity: string, startField: keyof MinistryPrevStats) => {
@@ -1013,10 +1059,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     const startIdx = allEntities.indexOf(startEntity);
     if (startIdx === -1) return;
     
-    const isQuarterly = selectedReportType?.includes('ত্রৈমাসিক');
-    const fields: (keyof MinistryPrevStats)[] = isQuarterly 
-      ? ['unsettledCount', 'settledCount', 'unsettledAmount']
-      : ['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount'];
+    const fields: (keyof MinistryPrevStats)[] = ['unsettledCount', 'unsettledAmount', 'unsettledQuarterlyAmount', 'settledCount', 'settledAmount'];
       
     const fieldStartIdx = fields.indexOf(startField);
     const newStats = { ...tempPrevStats };
@@ -1026,7 +1069,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       cells.forEach((cell, cellOffset) => {
         const fieldIdx = fieldStartIdx + cellOffset; if (fieldIdx >= fields.length) return;
         const fieldName = fields[fieldIdx]; const value = parseBengaliNumber(cell.trim());
-        newStats[entityName] = { ...(newStats[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 }), [fieldName]: value };
+        newStats[entityName] = { ...(newStats[entityName] || { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 }), [fieldName]: value };
       });
     });
     setTempPrevStats(newStats);
@@ -1238,7 +1281,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') {
     renderedContent = <QR_2 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১') {
-    renderedContent = <QR_Detailed_1 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
+    renderedContent = <QR_Detailed_1 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} periodOpeningBalances={periodOpeningBalances} />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২') {
     renderedContent = <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ২" />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩') {

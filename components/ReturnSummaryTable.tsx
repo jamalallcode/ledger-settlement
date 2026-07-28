@@ -328,16 +328,6 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
           {/* Right Group: Reporting cycle, month picker, and statistics button in a flex-wrap container */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center xl:justify-end shrink-0 z-[1010] xl:mr-2">
             
-            {/* Monthly Opening Balance Button ("মাসিক পূর্বজের") */}
-            <button
-              type="button"
-              onClick={() => setSelectedReportType('প্রারম্ভিক জের সেটআপ: মাসিক')}
-              className="flex items-center gap-1.5 px-2.5 h-[38px] bg-amber-50 hover:bg-amber-500 text-amber-800 hover:text-white border border-amber-200 hover:border-amber-500 rounded-xl font-bold text-[11px] sm:text-[11.5px] transition-all duration-300 cursor-pointer shadow-md hover:shadow-lg active:scale-95 group shrink-0 leading-none animate-in fade-in no-print"
-            >
-              <Settings2 size={13} className="text-amber-600 group-hover:text-white transition-colors shrink-0" />
-              <span>মাসিক পূর্বজের</span>
-            </button>
-
             {/* Received BSR Button ("প্রাপ্ত বিএসআর") */}
             <button
               type="button"

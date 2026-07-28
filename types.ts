@@ -17,6 +17,7 @@ export interface ArchiveDoc {
 export interface MinistryPrevStats {
   unsettledCount: number;
   unsettledAmount: number;
+  unsettledQuarterlyAmount?: number;
   settledCount: number;
   settledAmount: number;
 }

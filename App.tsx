@@ -242,17 +242,13 @@ const App: React.FC = () => {
   });
 
   const currentPrevStats = useMemo(() => {
-    if (reportType?.includes('ত্রৈমাসিক')) return allPrevStats.quarterly;
     if (reportType?.includes('ষাণ্মাসিক')) return allPrevStats.halfYearly;
     if (reportType?.includes('বাৎসরিক')) return allPrevStats.yearly;
     return allPrevStats.monthly;
   }, [allPrevStats, reportType]);
 
   const handleSetCurrentPrevStats = (stats: CumulativeStats) => {
-    const type = reportType?.includes('ত্রৈমাসিক') ? 'quarterly' :
-                 reportType?.includes('ষাণ্মাসিক') ? 'halfYearly' :
-                 reportType?.includes('বাৎসরিক') ? 'yearly' : 'monthly';
-    setAllPrevStats(prev => ({ ...prev, [type]: stats }));
+    setAllPrevStats(prev => ({ ...prev, monthly: stats, quarterly: stats }));
   };
 
   const mainScrollRef = useRef<HTMLElement>(null);
