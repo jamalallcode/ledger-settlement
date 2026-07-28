@@ -359,10 +359,10 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       const nsC = nonSfiObj?.unsettledCount || 0;
       const sA = sfiObj?.unsettledAmount || 0;
       const nsA = nonSfiObj?.unsettledAmount || 0;
-      const sQA = (sfiObj?.unsettledQuarterlyAmount !== undefined && sfiObj?.unsettledQuarterlyAmount !== 0) 
+      const sQA = sfiObj?.unsettledQuarterlyAmount !== undefined 
         ? sfiObj.unsettledQuarterlyAmount 
         : sA;
-      const nsQA = (nonSfiObj?.unsettledQuarterlyAmount !== undefined && nonSfiObj?.unsettledQuarterlyAmount !== 0) 
+      const nsQA = nonSfiObj?.unsettledQuarterlyAmount !== undefined 
         ? nonSfiObj.unsettledQuarterlyAmount 
         : nsA;
       const sS = sfiObj?.settledCount || 0;

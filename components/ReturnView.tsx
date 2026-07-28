@@ -616,7 +616,17 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       ministryGroups.forEach(m => {
         const entities = MINISTRY_ENTITY_MAP[m] || [];
         entities.forEach(ent => {
-          rawMasterStats[ent] = prevStats?.entitiesSFI?.[ent] || prevStats?.entitiesNonSFI?.[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+          const existing = prevStats?.entitiesSFI?.[ent] || prevStats?.entitiesNonSFI?.[ent];
+          if (existing) {
+            rawMasterStats[ent] = {
+              ...existing,
+              unsettledQuarterlyAmount: existing.unsettledQuarterlyAmount !== undefined
+                ? existing.unsettledQuarterlyAmount
+                : existing.unsettledAmount
+            };
+          } else {
+            rawMasterStats[ent] = { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 };
+          }
         });
       });
       setTempPrevStats(rawMasterStats);
