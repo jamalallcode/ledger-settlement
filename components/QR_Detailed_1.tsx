@@ -14,6 +14,7 @@ interface QRProps {
   searchTerm?: string;
   filterMinistry?: string;
   monthPickerElement?: React.ReactNode;
+  periodOpeningBalances?: any[];
 }
 
 const STORAGE_KEY = 'qr1_prior_balances_v1';
@@ -133,7 +134,8 @@ const QR_Detailed_1: React.FC<QRProps> = ({
   IDBadge,
   searchTerm = '',
   filterMinistry = '',
-  monthPickerElement
+  monthPickerElement,
+  periodOpeningBalances
 }) => {
   const [priorData, setPriorData] = useState<Record<string, EntityPriorValues>>(() => {
     try {
@@ -341,9 +343,10 @@ const QR_Detailed_1: React.FC<QRProps> = ({
 
   // Compute metrics for each entity
   const getEntityData = (entityName: string) => {
-    const prior = priorData[entityName] || { col4: 0, col7: 0, col11: 0 };
+    const prior = priorData[entityName];
     
     let priorRaisedCount = 0;
+    let priorRaisedAmount = 0;
     let priorSettledCount = 0;
     let priorSettledAmount = 0;
 
@@ -351,7 +354,8 @@ const QR_Detailed_1: React.FC<QRProps> = ({
     let currentSettledCount = 0;
     let currentSettledAmount = 0;
 
-    const normTarget = robustNormalize(entityName);
+    const cycleStartStr = activeCycle?.start ? format(activeCycle.start, 'yyyy-MM-dd') : '';
+    const cycleEndStr = activeCycle?.end ? format(activeCycle.end, 'yyyy-MM-dd') : '';
 
     (entries || []).forEach(e => {
       if (isEntityMatch(e.entityName || '', entityName)) {
@@ -361,48 +365,55 @@ const QR_Detailed_1: React.FC<QRProps> = ({
         if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
           rCount = parseBengaliNumber(rCountRaw);
         }
-        
-        // Extract settled amount
-        let settledAmt = 0;
-        if (e.settledAmount) {
-          settledAmt += parseBengaliNumber(String(e.settledAmount));
-        } else if (e.manualSettledAmount) {
-          settledAmt += parseBengaliNumber(String(e.manualSettledAmount));
-        } else {
-          const rec = (e.totalRec || 0) + (e.totalAdj || 0);
-          if (rec > 0) settledAmt += rec;
+
+        // Extract raised amount
+        let rAmount = 0;
+        if (e.manualRaisedAmount) {
+          rAmount = parseBengaliNumber(String(e.manualRaisedAmount));
         }
 
-        if (!settledAmt && e.paragraphs && e.paragraphs.length > 0) {
+        // Extract settled amount
+        let settledAmt = 0;
+        if (e.paragraphs && e.paragraphs.length > 0) {
           e.paragraphs.forEach(p => {
-            settledAmt += (p.recoveredAmount || 0) + (p.adjustedAmount || 0);
+            settledAmt += parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
           });
+        } else {
+          if (e.settledAmount) {
+            settledAmt += parseBengaliNumber(String(e.settledAmount));
+          } else if (e.manualSettledAmount) {
+            settledAmt += parseBengaliNumber(String(e.manualSettledAmount));
+          } else {
+            const rec = (e.totalRec || 0) + (e.totalAdj || 0);
+            if (rec > 0) settledAmt += rec;
+          }
         }
 
         // Extract settled count (only full settlements count towards settled paragraph count)
-        let fc = 0;
+        let sCount = 0;
         if (e.paragraphs && e.paragraphs.length > 0) {
-          fc = e.paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ').length;
+          sCount = e.paragraphs.filter(p => robustNormalize(p.status || '') === robustNormalize('পূর্ণাঙ্গ')).length;
         } else {
           const rawFc = parseBengaliNumber(String(e.fullCount || e.meetingFullSettledParaCount || e.meetingSettledParaCount || 0));
           if (settledAmt > 0 && (rawFc === settledAmt || rawFc > 500)) {
-            fc = 1;
+            sCount = 1;
           } else {
-            fc = rawFc;
+            sCount = rawFc;
           }
         }
-        const sCount = fc;
 
-        // Categorize by date relative to active cycle
-        const eDate = e.issueDateISO ? new Date(e.issueDateISO) : (e.createdAt ? new Date(e.createdAt) : null);
-        
-        if (activeCycle?.start && activeCycle?.end && eDate) {
-          if (eDate < activeCycle.start) {
+        // Categorize by date relative to active cycle using string comparison (yyyy-MM-dd)
+        const entryDateRaw = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+        const entryDate = entryDateRaw ? entryDateRaw.split('T')[0] : '';
+
+        if (cycleStartStr && cycleEndStr && entryDate) {
+          if (entryDate < cycleStartStr) {
             // Prior quarter entry -> carry forward to opening balance of current quarter
             priorRaisedCount += rCount;
+            priorRaisedAmount += rAmount;
             priorSettledCount += sCount;
             priorSettledAmount += settledAmt;
-          } else if (eDate >= activeCycle.start && eDate <= activeCycle.end) {
+          } else if (entryDate >= cycleStartStr && entryDate <= cycleEndStr) {
             // Current active quarter entry
             currentRaisedCount += rCount;
             currentSettledCount += sCount;
@@ -416,17 +427,36 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       }
     });
 
-    const col4 = (prior.col4 || 0) + priorRaisedCount;
+    // Determine initial base opening balances from exact period match or prevStats if user override is not set
+    let baseUnsettledCount = 0;
+    let baseUnsettledAmount = 0;
+
+    const exactMatch = periodOpeningBalances?.find(pb => pb.startDate === cycleStartStr);
+    if (exactMatch) {
+      const sfi = exactMatch.stats?.entitiesSFI?.[entityName];
+      const nonSfi = exactMatch.stats?.entitiesNonSFI?.[entityName];
+      if (sfi || nonSfi) {
+        baseUnsettledCount = (sfi?.unsettledCount || 0) + (nonSfi?.unsettledCount || 0);
+        baseUnsettledAmount = (sfi?.unsettledAmount || 0) + (nonSfi?.unsettledAmount || 0);
+      }
+    } else if (prevStats) {
+      const sfi = prevStats?.entitiesSFI?.[entityName];
+      const nonSfi = prevStats?.entitiesNonSFI?.[entityName];
+      baseUnsettledCount = (sfi?.unsettledCount || 0) + (nonSfi?.unsettledCount || 0);
+      baseUnsettledAmount = (sfi?.unsettledAmount || 0) + (nonSfi?.unsettledAmount || 0);
+    }
+
+    const col4 = (prior && prior.col4 !== undefined ? prior.col4 : baseUnsettledCount) + priorRaisedCount;
     const col5 = currentRaisedCount;
     const col6 = col4 + col5;
 
-    const col7 = (prior.col7 || 0) + priorSettledCount;
+    const col7 = (prior && prior.col7 !== undefined ? prior.col7 : 0) + priorSettledCount;
     const col8 = currentSettledCount;
     const col9 = col7 + col8;
 
     const col10 = col6 - col9;
 
-    const col11 = (prior.col11 || 0) - priorSettledAmount;
+    const col11 = (prior && prior.col11 !== undefined ? prior.col11 : baseUnsettledAmount) + priorRaisedAmount - priorSettledAmount;
     const col12 = currentSettledAmount;
     const col13 = col11 - col12;
 
