@@ -94,7 +94,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
         <div className="flex items-center gap-4">
           <button onClick={() => { setIsSetupMode(false); setSelectedReportType(null); }} className="p-3 bg-slate-100 border border-slate-200 rounded-2xl hover:bg-slate-200 text-slate-600 shadow-sm transition-all"><ChevronLeft size={22} /></button>
           <div className="flex flex-col">
-            <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3"><Settings2 size={28} className="text-blue-600" /> {setupType || 'প্রারম্ভিক জের সেটআপ'}</h2>
+            <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3"><Settings2 size={28} className="text-blue-600" /> {setupType ? setupType.replace('প্রারম্ভিক জের সেটআপ: মাসিক', 'পূর্ব জের সেটাপ').replace('প্রারম্ভিক জের সেটআপ', 'পূর্ব জের সেটাপ') : 'পূর্ব জের সেটাপ'}</h2>
             <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">সমন্বিত (UNIFIED) ব্যালেন্স ইনপুট উইন্ডো</span>
           </div>
         </div>
