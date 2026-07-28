@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, ChevronDown, BarChart3, FileSpreadsheet, Database, AlertTriangle, X, RotateCcw } from 'lucide-react';
+import React from 'react';
+import { Sparkles, ChevronDown, BarChart3, FileSpreadsheet } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { format } from 'date-fns';
 import HighlightText from './HighlightText';
@@ -16,8 +16,6 @@ interface QRProps {
   monthPickerElement?: React.ReactNode;
   periodOpeningBalances?: any[];
 }
-
-const STORAGE_KEY = 'qr1_prior_balances_v1';
 
 const robustNormalize = (str: string = '') => {
   return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
@@ -137,47 +135,6 @@ const QR_Detailed_1: React.FC<QRProps> = ({
   monthPickerElement,
   periodOpeningBalances
 }) => {
-  const [priorData, setPriorData] = useState<Record<string, EntityPriorValues>>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    return {};
-  });
-
-  const [isPriorModalOpen, setIsPriorModalOpen] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
-
-  useEffect(() => {
-    if (Object.keys(priorData).length > 0) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(priorData));
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  }, [priorData]);
-
-  useEffect(() => {
-    const handleReload = () => {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          setPriorData(JSON.parse(saved));
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    handleReload();
-    window.addEventListener('prev_ledgers_updated', handleReload);
-    return () => window.removeEventListener('prev_ledgers_updated', handleReload);
-  }, []);
-
   const getQuarterInfo = (date: Date) => {
     const cycleEndMonth = date.getMonth(); // 0 to 11
     const year = date.getFullYear();
@@ -275,76 +232,8 @@ const QR_Detailed_1: React.FC<QRProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  const handleInputValueChange = (entity: string, field: 'col4' | 'col7' | 'col11', val: string) => {
-    const num = parseBengaliNumber(val);
-    setPriorData(prev => ({
-      ...prev,
-      [entity]: {
-        col4: prev[entity]?.col4 || 0,
-        col7: prev[entity]?.col7 || 0,
-        col11: prev[entity]?.col11 || 0,
-        [field]: num
-      }
-    }));
-  };
-
-  const handleTablePaste = (e: React.ClipboardEvent, startEntity: string, startColField: 'col4' | 'col7' | 'col11') => {
-    e.preventDefault();
-    const clipboardData = e.clipboardData.getData('text');
-    if (!clipboardData) return;
-
-    const rows = clipboardData.split(/\r?\n/).filter(r => r.trim() !== '');
-    if (rows.length === 0) return;
-
-    const fieldsInOrder: Array<'col4' | 'col7' | 'col11'> = ['col4', 'col7', 'col11'];
-    const startColIndex = fieldsInOrder.indexOf(startColField);
-
-    const allEntitiesInOrder: string[] = [];
-    allMinistryGroups.forEach(g => {
-      g.entities.forEach(ent => allEntitiesInOrder.push(ent));
-    });
-
-    const startEntityIndex = allEntitiesInOrder.indexOf(startEntity);
-    if (startEntityIndex === -1) return;
-
-    const updatedData = { ...priorData };
-
-    rows.forEach((rowStr, rowOffset) => {
-      const currentEntityIdx = startEntityIndex + rowOffset;
-      if (currentEntityIdx >= allEntitiesInOrder.length) return;
-      const targetEntity = allEntitiesInOrder[currentEntityIdx];
-
-      const cellValues = rowStr.split('\t');
-      cellValues.forEach((cellVal, colOffset) => {
-        const currentColIdx = startColIndex + colOffset;
-        if (currentColIdx >= fieldsInOrder.length) return;
-        const targetField = fieldsInOrder[currentColIdx];
-
-        const parsedVal = parseBengaliNumber(cellVal.trim());
-        if (!updatedData[targetEntity]) {
-          updatedData[targetEntity] = { col4: 0, col7: 0, col11: 0 };
-        }
-        updatedData[targetEntity][targetField] = isNaN(parsedVal) ? 0 : parsedVal;
-      });
-    });
-
-    setPriorData(updatedData);
-  };
-
-  const handleResetConfirmed = () => {
-    setPriorData({});
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch (e) {
-      console.error(e);
-    }
-    setShowResetConfirm(false);
-  };
-
   // Compute metrics for each entity
   const getEntityData = (entityName: string) => {
-    const prior = priorData[entityName];
-    
     let priorRaisedCount = 0;
     let priorRaisedAmount = 0;
     let priorSettledCount = 0;
@@ -427,7 +316,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       }
     });
 
-    // Determine initial base opening balances from exact period match or prevStats if user override is not set
+    // Determine initial base opening balances from monthly opening balances / prevStats
     let baseUnsettledCount = 0;
     let baseUnsettledAmount = 0;
 
@@ -446,17 +335,17 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       baseUnsettledAmount = (sfi?.unsettledAmount || 0) + (nonSfi?.unsettledAmount || 0);
     }
 
-    const col4 = (prior && prior.col4 !== undefined ? prior.col4 : baseUnsettledCount) + priorRaisedCount;
+    const col4 = baseUnsettledCount + priorRaisedCount;
     const col5 = currentRaisedCount;
     const col6 = col4 + col5;
 
-    const col7 = (prior && prior.col7 !== undefined ? prior.col7 : 0) + priorSettledCount;
+    const col7 = priorSettledCount;
     const col8 = currentSettledCount;
     const col9 = col7 + col8;
 
     const col10 = col6 - col9;
 
-    const col11 = (prior && prior.col11 !== undefined ? prior.col11 : baseUnsettledAmount) + priorRaisedAmount - priorSettledAmount;
+    const col11 = baseUnsettledAmount + priorRaisedAmount - priorSettledAmount;
     const col12 = currentSettledAmount;
     const col13 = col11 - col12;
 
@@ -519,19 +408,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       <IDBadge id="qr-detailed-1-container" />
 
       {/* Top Single Row Toolbar (Item 2.4) */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-slate-50 border border-slate-200 p-2.5 rounded-xl no-print shadow-sm">
-        {/* Left: "ত্রৈমাসিক পূর্বজের" Button (Item 2.1) */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIsPriorModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-[12px] shadow-sm hover:shadow transition-all cursor-pointer border border-blue-700"
-          >
-            <Database size={15} />
-            <span>ত্রৈমাসিক পূর্বজের</span>
-          </button>
-        </div>
-
+      <div className="flex flex-wrap items-center justify-end gap-3 mb-4 bg-slate-50 border border-slate-200 p-2.5 rounded-xl no-print shadow-sm">
         {/* Right: Cycle Selector, Statistics & Excel Button */}
         <div className="flex items-center gap-2.5 flex-wrap">
           {/* Cycle / Quarterly selector element */}
@@ -894,226 +771,6 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           </tfoot>
         </table>
       </div>
-
-      {/* "ত্রৈমাসিক পূর্বজের" MODAL POPUP (Item 2.1) */}
-      {isPriorModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-3 z-[100000] no-print animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[98%] max-h-[94vh] flex flex-col overflow-hidden font-sans">
-            {/* Modal Header */}
-            <div className="p-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-600 rounded-xl text-white">
-                  <Database size={20} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-black tracking-tight text-white">ত্রৈমাসিক পূর্বজের প্রারম্ভিক জের এন্ট্রি</h3>
-                  <p className="text-[11px] text-slate-300 font-bold">
-                    মন্ত্রণালয় ও প্রতিষ্ঠান ভিত্তিক কলাম ৪, ৭, এবং ১১ এর ডাটা ইনপুট দিন (এক্সেল থেকে সরাসরি কপি-পেস্ট সাপোর্টসহ)
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsPriorModalOpen(false)}
-                className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Modal Toolbar */}
-            <div className="p-3 bg-slate-100 border-b border-slate-200 flex items-center justify-between shrink-0 flex-wrap gap-2">
-              <div className="flex items-center gap-2 text-[11.5px] text-slate-600 font-bold">
-                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>এক্সেল টেবিল কপি করে যেকোনো ইনপুট ঘরে পেস্ট করলে অটো-ফিল হবে।</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowResetConfirm(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold text-[11.5px] transition-all cursor-pointer"
-                >
-                  <RotateCcw size={14} />
-                  <span>রিসেট</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsPriorModalOpen(false)}
-                  className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-[11.5px] shadow-sm transition-all cursor-pointer"
-                >
-                  <span>সংরক্ষণ ও বন্ধ করুন</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Table Body */}
-            <div className="px-4 pb-4 pt-0 overflow-auto grow">
-              <table className="w-full text-[11px]">
-                <thead className="bg-slate-200 sticky top-0 z-30 shadow-sm">
-                  <tr>
-                    <th className="sticky top-0 z-30 p-2.5 font-black text-slate-900 text-center w-[45px] bg-slate-200">ক্রঃ নং</th>
-                    <th className="sticky top-0 z-30 p-2.5 font-black text-slate-900 text-center w-[160px] bg-slate-200">মন্ত্রণালয়ের নাম</th>
-                    <th className="sticky top-0 z-30 p-2.5 font-black text-slate-900 text-center bg-slate-200">প্রতিষ্ঠানের নাম</th>
-                    <th className="sticky top-0 z-30 p-2.5 font-black text-blue-950 text-center bg-blue-100 w-[180px]">
-                      প্রারম্ভিক অমিমাংসিত উত্থাপিত আপত্তির সংখ্যা (কলাম ৪)
-                    </th>
-                    <th className="sticky top-0 z-30 p-2.5 font-black text-emerald-950 text-center bg-emerald-100 w-[180px]">
-                      প্রারম্ভিক মোট নিষ্পত্তিকৃত আপত্তির সংখ্যা (কলাম ৭)
-                    </th>
-                    <th className="sticky top-0 z-30 p-2.5 font-black text-purple-950 text-center bg-purple-100 w-[180px]">
-                      অমিমাংসিত আপত্তিতে জড়িত টাকা (কলাম ১১)
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(() => {
-                    let overallSerial = 0;
-                    const grandSums = { col4: 0, col7: 0, col11: 0 };
-
-                    return (
-                      <>
-                        {allMinistryGroups.map((group, groupIdx) => {
-                          const minSums = { col4: 0, col7: 0, col11: 0 };
-
-                          const groupRows = group.entities.map((entity, entityIdx) => {
-                            overallSerial++;
-                            const isFirst = entityIdx === 0;
-                            const curVals = priorData[entity] || { col4: 0, col7: 0, col11: 0 };
-
-                            minSums.col4 += curVals.col4 || 0;
-                            minSums.col7 += curVals.col7 || 0;
-                            minSums.col11 += curVals.col11 || 0;
-
-                            grandSums.col4 += curVals.col4 || 0;
-                            grandSums.col7 += curVals.col7 || 0;
-                            grandSums.col11 += curVals.col11 || 0;
-
-                            return (
-                              <tr key={`${groupIdx}-${entityIdx}`} className="hover:bg-slate-50 transition-colors">
-                                <td className="p-2 text-center font-bold text-slate-600 bg-slate-50/50">
-                                  {toBengaliDigits(overallSerial.toString())}
-                                </td>
-                                {isFirst && (
-                                  <td rowSpan={group.entities.length} className="p-2 font-black text-slate-900 text-center align-middle bg-slate-100/60">
-                                    {group.ministry}
-                                  </td>
-                                )}
-                                <td className="p-2 font-bold text-slate-800">
-                                  {entity}
-                                </td>
-                                <td className="p-1 bg-blue-50/30">
-                                  <input
-                                    type="text"
-                                    value={curVals.col4 === 0 ? '' : toBengaliDigits(curVals.col4.toString())}
-                                    onChange={(e) => handleInputValueChange(entity, 'col4', e.target.value)}
-                                    onPaste={(e) => handleTablePaste(e, entity, 'col4')}
-                                    placeholder="০"
-                                    className="w-full text-center font-extrabold text-blue-900 bg-white border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded px-2 py-1 outline-none text-[12px]"
-                                  />
-                                </td>
-                                <td className="p-1 bg-emerald-50/30">
-                                  <input
-                                    type="text"
-                                    value={curVals.col7 === 0 ? '' : toBengaliDigits(curVals.col7.toString())}
-                                    onChange={(e) => handleInputValueChange(entity, 'col7', e.target.value)}
-                                    onPaste={(e) => handleTablePaste(e, entity, 'col7')}
-                                    placeholder="০"
-                                    className="w-full text-center font-extrabold text-emerald-900 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded px-2 py-1 outline-none text-[12px]"
-                                  />
-                                </td>
-                                <td className="p-1 bg-purple-50/30">
-                                  <input
-                                    type="text"
-                                    value={curVals.col11 === 0 ? '' : toBengaliDigits(curVals.col11.toString())}
-                                    onChange={(e) => handleInputValueChange(entity, 'col11', e.target.value)}
-                                    onPaste={(e) => handleTablePaste(e, entity, 'col11')}
-                                    placeholder="০"
-                                    className="w-full text-center font-extrabold text-purple-900 bg-white border border-slate-200 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded px-2 py-1 outline-none text-[12px]"
-                                  />
-                                </td>
-                              </tr>
-                            );
-                          });
-
-                          return (
-                            <React.Fragment key={groupIdx}>
-                              {groupRows}
-                              {/* Ministry Total Row */}
-                              <tr className="bg-slate-200/90 font-black">
-                                <td className="p-2 text-center text-slate-900 bg-slate-200" colSpan={3}>
-                                  মোট ({group.ministry})
-                                </td>
-                                <td className="p-2 text-center text-blue-950 font-black bg-blue-100">
-                                  {toBengaliDigits(minSums.col4.toString())}
-                                </td>
-                                <td className="p-2 text-center text-emerald-950 font-black bg-emerald-100">
-                                  {toBengaliDigits(minSums.col7.toString())}
-                                </td>
-                                <td className="p-2 text-center text-purple-950 font-black bg-purple-100">
-                                  {toBengaliDigits(minSums.col11.toString())}
-                                </td>
-                              </tr>
-                            </React.Fragment>
-                          );
-                        })}
-
-                        {/* Grand Total Row ("সর্বমোট") */}
-                        <tr className="bg-slate-900 text-white font-black">
-                          <td colSpan={3} className="p-3 text-center text-[12px] bg-slate-900">
-                            সর্বমোট
-                          </td>
-                          <td className="p-3 text-center text-[12px] text-blue-200 bg-slate-900">
-                            {toBengaliDigits(grandSums.col4.toString())}
-                          </td>
-                          <td className="p-3 text-center text-[12px] text-emerald-200 bg-slate-900">
-                            {toBengaliDigits(grandSums.col7.toString())}
-                          </td>
-                          <td className="p-3 text-center text-[12px] text-purple-200 bg-slate-900">
-                            {toBengaliDigits(grandSums.col11.toString())}
-                          </td>
-                        </tr>
-                      </>
-                    );
-                  })()}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Reset Confirmation Modal (Item 2.1) */}
-      {showResetConfirm && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 z-[10000] no-print animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 text-center space-y-4 font-sans">
-            <div className="w-14 h-14 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto">
-              <AlertTriangle size={28} />
-            </div>
-            <div>
-              <h4 className="text-lg font-black text-slate-900 mb-1">সতর্কবার্তা</h4>
-              <p className="text-sm font-bold text-slate-600 leading-relaxed">
-                আপনি কি নিশ্চিত যে সকল ত্রৈমাসিক পূর্বজের প্রারম্ভিক জের ডাটা মুছে ফেলতে চান? এই কাজের পর ডাটাগুলো পুনরুদ্ধার করা যাবে না।
-              </p>
-            </div>
-            <div className="flex items-center justify-center gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowResetConfirm(false)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
-              >
-                বাতিল
-              </button>
-              <button
-                type="button"
-                onClick={handleResetConfirmed}
-                className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
-              >
-                হ্যাঁ, রিসেট করুন
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
