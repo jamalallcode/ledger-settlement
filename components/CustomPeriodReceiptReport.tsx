@@ -1086,7 +1086,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       )}
 
       {/* PRINT BANNER / REPORT CARD (Visible both on screen and print) */}
-      <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-xl overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-xl overflow-visible">
         {/* Print Header */}
         <div className="hidden print:block text-center space-y-2 p-6 border-b border-slate-300">
           <h1 className="text-2xl font-black text-slate-900 uppercase">হিসাব মহানিয়ন্ত্রক এর কার্যালয়</h1>
@@ -1180,17 +1180,17 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     <col className="w-[11%]" />
                     <col className="w-[14%] no-print" />
                   </colgroup>
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-700">
-                      <th className="px-4 py-3 text-center text-xs font-black">ক্র: নং</th>
-                      <th className="px-4 py-3 text-left text-xs font-black">পত্র নং ও তারিখ</th>
-                      <th className="px-4 py-3 text-left text-xs font-black">ডায়রি নং ও তারিখ</th>
-                      <th className="px-4 py-3 text-left text-xs font-black">শাখা ও পত্রের ধরন</th>
-                      <th className="px-4 py-3 text-left text-xs font-black">বিষয় / বিবরণ</th>
-                      <th className="px-4 py-3 text-center text-xs font-black">অনুচ্ছেদ সংখ্যা</th>
-                      <th className="px-4 py-3 text-right text-xs font-black">জড়িত টাকা (টাকা)</th>
-                      <th className="px-4 py-3 text-left text-xs font-black">মন্ত্রণালয়</th>
-                      <th className="px-4 py-3 text-center text-xs font-black no-print">অ্যাকশন</th>
+                  <thead className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 shadow-sm">
+                    <tr className="bg-slate-100 text-slate-700">
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-center text-xs font-black border-b border-slate-200">ক্র: নং</th>
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">পত্র নং ও তারিখ</th>
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">ডায়রি নং ও তারিখ</th>
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">শাখা ও পত্রের ধরন</th>
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">বিষয় / বিবরণ</th>
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-center text-xs font-black border-b border-slate-200">অনুচ্ছেদ সংখ্যা</th>
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-right text-xs font-black border-b border-slate-200">জড়িত টাকা (টাকা)</th>
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">মন্ত্রণালয়</th>
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-center text-xs font-black no-print border-b border-slate-200">অ্যাকশন</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -1275,17 +1275,17 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     <col className="w-[16%]" />
                     <col className="w-[10%] no-print" />
                   </colgroup>
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-700">
-                      <th className="px-4 py-3 text-center text-xs font-black">ক্র: নং</th>
-                      <th className="px-4 py-3 text-left text-xs font-black">স্মারক ও তারিখ</th>
-                      <th className="px-4 py-3 text-left text-xs font-black">মন্ত্রণালয় ও প্রতিষ্ঠান</th>
-                      <th className="px-4 py-3 text-center text-xs font-black">অডিট বছর</th>
-                      <th className="px-4 py-3 text-left text-xs font-black">শাখা ও নিষ্পত্তির ধরন</th>
-                      <th className="px-4 py-3 text-center text-xs font-black">নিষ্পন্নকৃত অনুচ্ছেদের সংখ্যা</th>
-                      <th className="px-4 py-3 text-right text-xs font-black">নিষ্পত্তিকৃত টাকা (টাকা)</th>
-                      <th className="px-4 py-3 text-left text-xs font-black">মন্তব্য</th>
-                      <th className="px-4 py-3 text-center text-xs font-black no-print">অ্যাকশন</th>
+                  <thead className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 shadow-sm">
+                    <tr className="bg-slate-100 text-slate-700">
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-center text-xs font-black border-b border-slate-200">ক্র: নং</th>
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">স্মারক ও তারিখ</th>
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">মন্ত্রণালয় ও প্রতিষ্ঠান</th>
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-center text-xs font-black border-b border-slate-200">অডিট বছর</th>
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">শাখা ও নিষ্পত্তির ধরন</th>
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-center text-xs font-black border-b border-slate-200">নিষ্পন্নকৃত অনুচ্ছেদের সংখ্যা</th>
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-right text-xs font-black border-b border-slate-200">নিষ্পত্তিকৃত টাকা (টাকা)</th>
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">মন্তব্য</th>
+                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-center text-xs font-black no-print border-b border-slate-200">অ্যাকশন</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">

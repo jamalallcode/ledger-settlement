@@ -499,7 +499,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
         </div>
 
         <div id="card-report-table-container" className="bg-white w-full p-1 relative animate-table-entrance overflow-x-auto xl:overflow-visible">
-          <div className="table-container qr-table-container overflow-auto xl:overflow-visible relative z-[10] rounded-lg">
+          <div className="table-container qr-table-container overflow-auto xl:overflow-visible relative z-[10] rounded-none">
           <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0 !table-auto">
             <colgroup>
               <col className="w-[50px]" />
