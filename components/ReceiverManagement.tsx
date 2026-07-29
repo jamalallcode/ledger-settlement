@@ -384,13 +384,43 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
         }
       }
 
-      // Stop merging correspondence names directly into finalReceivers to enforce that ReceiverManagement is the only source of truth
-      const existingNormalizedNames = new Set(finalReceivers.map(r => normalizeName(r.name) + '_' + getCleanBranch(r.para_type)));
-
       const inactiveListRaw = getInactiveList();
       const inactiveKeysSet = new Set(inactiveListRaw.map(item => normalizeName(item)));
       const transfersMap = getTransfersMap();
       const transferTimesMap = getTransferTimesMap();
+
+      const existingNormalizedNames = new Set(finalReceivers.map(r => normalizeName(r.name) + '_' + getCleanBranch(r.para_type)));
+
+      // Ensure any recipient with correspondence entries in a branch is present in finalReceivers (e.g. in Incognito mode)
+      Object.entries(correspondenceNamesByBranch).forEach(([branch, names]) => {
+        const b = getCleanBranch(branch);
+        names.forEach(name => {
+          if (!name || !name.trim()) return;
+          const norm = normalizeName(name);
+          const compKey = `${norm}_${b}`;
+          if (!existingNormalizedNames.has(compKey)) {
+            // Check if this person is active in another branch or marked inactive
+            const isActiveInOtherBranch = finalReceivers.some(
+              r => normalizeName(r.name) === norm && r.is_active !== false
+            );
+            const isMarkedInactive = inactiveKeysSet.has(compKey) || inactiveKeysSet.has(norm);
+
+            const is_active = !(isActiveInOtherBranch || isMarkedInactive);
+            
+            finalReceivers.push({
+              id: `corr-rec-${norm}-${b}`,
+              name: name.trim(),
+              designation: 'অডিটর',
+              para_type: b as any,
+              is_active,
+              transferred_to: transfersMap[compKey] || (is_active ? '' : 'অন্যান্য শাখা'),
+              transferred_at: transferTimesMap[compKey] || '',
+              source: 'local'
+            });
+            existingNormalizedNames.add(compKey);
+          }
+        });
+      });
 
       // Map counts and active status
       const receiversWithCounts = finalReceivers.map(r => {
@@ -410,7 +440,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
           }
         }
 
-        let transferred_to = r.transferred_to || transfersMap[compKey] || '';
+        let transferred_to = r.transferred_to || transfersMap[compKey] || (is_active === false ? 'অন্যান্য শাখা' : '');
         let transferred_at = r.transferred_at || transferTimesMap[compKey] || '';
 
         return {
