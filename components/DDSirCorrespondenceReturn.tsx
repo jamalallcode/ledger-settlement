@@ -122,7 +122,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
       .trim()
       .replace(/\s+/g, ' ')
-      .replace(/[:ঃ।\.\-\u09CD]/g, '')
+      .replace(/[:ঃ।\.\-]/g, '')
       .normalize('NFC');
 
     // Strip common prefixes like "জনাব", "জনাবা", "ডাঃ", "ডা", "ড", "ডক্টর"
@@ -1288,11 +1288,11 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       </div>
       {/* Auditor Statistics Modal */}
       {showAuditorStatsModal && createPortal(
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 xl:p-8 animate-in fade-in duration-200">
-          <div className={`w-full ${isDetailsModalOpen ? 'max-w-[95%] lg:max-w-7xl h-[85vh]' : 'max-w-2xl max-h-[90vh]'} flex flex-col lg:flex-row items-stretch gap-4 transition-all duration-300`}>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-2 sm:p-4 lg:p-6 animate-in fade-in duration-200">
+          <div className={`w-full ${isDetailsModalOpen ? 'max-w-[98vw] h-[92vh]' : 'max-w-2xl max-h-[90vh]'} flex flex-col lg:flex-row items-stretch gap-4 transition-all duration-300`}>
             
             {/* Auditor Stats Card */}
-            <div className={`bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${isDetailsModalOpen ? 'w-full lg:w-[29%] shrink-0 h-full' : 'w-full max-h-full'}`}>
+            <div className={`bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${isDetailsModalOpen ? 'w-full lg:w-[35%] shrink-0 h-full' : 'w-full max-h-full'}`}>
               <div className="bg-slate-900 px-6 py-3.5 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-600/20 rounded-xl flex items-center justify-center">
@@ -1314,7 +1314,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 </button>
               </div>
               
-              <div className={`overflow-y-auto no-scrollbar flex-1 min-h-0 ${isDetailsModalOpen ? 'p-2' : 'p-4 sm:p-6'}`}>
+              <div className={`overflow-y-auto no-scrollbar flex-1 min-h-0 ${isDetailsModalOpen ? 'p-3 sm:p-4' : 'p-4 sm:p-6'}`}>
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-slate-100">
@@ -1351,26 +1351,26 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                           </div>
                         </td>
                         <td 
-                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all ${getHighlightClass(`${stat.name} - অডিটরের কাছে`)}`}
-                          onClick={() => handleCountClick(`${stat.name} - অডিটরের কাছে`, stat.auditorLetters)}
+                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all ${getHighlightClass(`${getDisplayName(stat.name, stat.rawName)} - অডিটরের কাছে`)}`}
+                          onClick={() => handleCountClick(`${getDisplayName(stat.name, stat.rawName)} - অডিটরের কাছে`, stat.auditorLetters)}
                         >
                           {toBengaliDigits(stat.auditor)} টি
                         </td>
                         <td 
-                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-blue-600 bg-blue-50/30 cursor-pointer hover:bg-blue-100/50 transition-all ${getHighlightClass(`${stat.name} - এএন্ডএও`)}`}
-                          onClick={() => handleCountClick(`${stat.name} - এএন্ডএও`, stat.aaoLetters)}
+                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-blue-600 bg-blue-50/30 cursor-pointer hover:bg-blue-100/50 transition-all ${getHighlightClass(`${getDisplayName(stat.name, stat.rawName)} - এএন্ডএও`)}`}
+                          onClick={() => handleCountClick(`${getDisplayName(stat.name, stat.rawName)} - এএন্ডএও`, stat.aaoLetters)}
                         >
                           {toBengaliDigits(stat.aao)} টি
                         </td>
                         <td 
-                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-green-600 bg-green-50/30 cursor-pointer hover:bg-green-100/50 transition-all ${getHighlightClass(`${stat.name} - উপপরিচালক`)}`}
-                          onClick={() => handleCountClick(`${stat.name} - উপপরিচালক`, stat.ddLetters)}
+                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-green-600 bg-green-50/30 cursor-pointer hover:bg-green-100/50 transition-all ${getHighlightClass(`${getDisplayName(stat.name, stat.rawName)} - উপপরিচালক`)}`}
+                          onClick={() => handleCountClick(`${getDisplayName(stat.name, stat.rawName)} - উপপরিচালক`, stat.ddLetters)}
                         >
                           {toBengaliDigits(stat.dd)} টি
                         </td>
                         <td 
-                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-slate-900 bg-slate-50 cursor-pointer hover:bg-slate-200/50 transition-all ${getHighlightClass(`${stat.name} - মোট`)}`}
-                          onClick={() => handleCountClick(`${stat.name} - মোট`, stat.totalLetters)}
+                          className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-slate-900 bg-slate-50 cursor-pointer hover:bg-slate-200/50 transition-all ${getHighlightClass(`${getDisplayName(stat.name, stat.rawName)} - মোট`)}`}
+                          onClick={() => handleCountClick(`${getDisplayName(stat.name, stat.rawName)} - মোট`, stat.totalLetters)}
                         >
                           {toBengaliDigits(stat.total)} টি
                         </td>

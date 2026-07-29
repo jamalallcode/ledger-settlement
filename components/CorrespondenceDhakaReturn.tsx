@@ -222,7 +222,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
       .trim()
       .replace(/\s+/g, ' ')
-      .replace(/[:ঃ।\.\-\u09CD]/g, '')
+      .replace(/[:ঃ।\.\-]/g, '')
       .normalize('NFC');
 
     // Strip common prefixes like "জনাব", "জনাবা", "ডাঃ", "ডা", "ড", "ডক্টর"

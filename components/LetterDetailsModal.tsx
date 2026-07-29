@@ -37,8 +37,8 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
       </div>
       
       {/* Content */}
-      <div className="p-0 grow bg-white flex flex-col min-h-0">
-        <div className="relative overflow-auto custom-scrollbar flex-1">
+      <div className={`grow bg-white flex flex-col min-h-0 ${isEmbedded ? 'p-3 sm:p-4' : 'p-0'}`}>
+        <div className="relative overflow-auto custom-scrollbar flex-1 border border-slate-200/80 rounded-2xl">
           <table className="w-full border-separate border-spacing-0 table-fixed">
             <colgroup>
               <col style={{ width: isEmbedded ? '6%' : '90px' }} />
