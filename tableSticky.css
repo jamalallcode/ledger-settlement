@@ -81,19 +81,27 @@
 }
 
 /* Sticky Footer (General) */
-.table-container tfoot {
-  position: sticky;
-  bottom: 0;
-  z-index: 250;
+.table-container tfoot,
+.qr-table-container tfoot {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 250 !important;
+  background-color: #000000 !important;
+}
+
+.table-container tfoot tr,
+.qr-table-container tfoot tr {
+  background-color: #000000 !important;
 }
 
 .table-container tfoot td, 
-.table-container tfoot th {
-  position: sticky !important;
-  bottom: 0 !important;
-  z-index: 240 !important;
+.table-container tfoot th,
+.qr-table-container tfoot td,
+.qr-table-container tfoot th {
   background-color: #000000 !important;
-  color: white !important;
+  color: #ffffff !important;
+  background-clip: padding-box !important;
 }
 
 /* QR Specific Sticky Footer (for rows inside tbody) */

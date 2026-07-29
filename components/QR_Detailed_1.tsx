@@ -664,8 +664,8 @@ const QR_Detailed_1: React.FC<QRProps> = ({
               });
             })()}
           </tbody>
-          <tfoot>
-            <tr>
+          <tfoot className="bg-black">
+            <tr className="bg-black">
               <td colSpan={3} className={footerTdCls}>মোট (টেবিল-১)</td>
               <td className={footerTdCls}>{toBengaliDigits(t1Totals.col4.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(t1Totals.col5.toString())}</td>
@@ -801,8 +801,8 @@ const QR_Detailed_1: React.FC<QRProps> = ({
               });
             })()}
           </tbody>
-          <tfoot>
-            <tr>
+          <tfoot className="bg-black">
+            <tr className="bg-black">
               <td colSpan={3} className={footerTdCls}>মোট (টেবিল-২)</td>
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col4.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col5.toString())}</td>
@@ -815,7 +815,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col12.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col13.toString())}</td>
             </tr>
-            <tr>
+            <tr className="bg-black">
               <td colSpan={3} className={footerTdCls}>সর্বমোট</td>
               <td className={footerTdCls}>{toBengaliDigits(grandTotals.col4.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(grandTotals.col5.toString())}</td>
