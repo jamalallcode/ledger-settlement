@@ -1010,7 +1010,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
         {/* SECTION 1: সারসংক্ষেপ টেবিল */}
         <div className="mb-10 flex flex-col items-stretch overflow-visible">
-          <div className="summary-table-container max-w-full w-full rounded-lg overflow-auto">
+          <div className="summary-table-container max-w-full w-full rounded-none overflow-auto">
             <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
               <colgroup>
                 <col className="w-[30px]" />
@@ -1192,7 +1192,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
              </div>
           </div>
 
-          <div className="table-container dd-sir-detailed-table-container relative overflow-auto w-full border border-slate-300 rounded-lg">
+          <div className="table-container dd-sir-detailed-table-container relative overflow-auto w-full border border-slate-300 rounded-none">
             <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
               <colgroup>
                 <col className="w-[30px]" />
