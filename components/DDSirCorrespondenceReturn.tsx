@@ -1288,11 +1288,11 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       </div>
       {/* Auditor Statistics Modal */}
       {showAuditorStatsModal && createPortal(
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 xl:p-8 animate-in fade-in duration-200">
-          <div className={`w-full ${isDetailsModalOpen ? 'max-w-[95%] lg:max-w-7xl h-[85vh]' : 'max-w-2xl max-h-[90vh]'} flex flex-col lg:flex-row items-stretch gap-4 transition-all duration-300`}>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-2 sm:p-4 lg:p-6 animate-in fade-in duration-200">
+          <div className={`w-full ${isDetailsModalOpen ? 'max-w-[98vw] h-[92vh]' : 'max-w-2xl max-h-[90vh]'} flex flex-col lg:flex-row items-stretch gap-4 transition-all duration-300`}>
             
             {/* Auditor Stats Card */}
-            <div className={`bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${isDetailsModalOpen ? 'w-full lg:w-[29%] shrink-0 h-full' : 'w-full max-h-full'}`}>
+            <div className={`bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${isDetailsModalOpen ? 'w-full lg:w-[35%] shrink-0 h-full' : 'w-full max-h-full'}`}>
               <div className="bg-slate-900 px-6 py-3.5 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-600/20 rounded-xl flex items-center justify-center">
@@ -1314,7 +1314,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 </button>
               </div>
               
-              <div className={`overflow-y-auto no-scrollbar flex-1 min-h-0 ${isDetailsModalOpen ? 'p-2' : 'p-4 sm:p-6'}`}>
+              <div className={`overflow-y-auto no-scrollbar flex-1 min-h-0 ${isDetailsModalOpen ? 'p-3 sm:p-4' : 'p-4 sm:p-6'}`}>
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-slate-100">
