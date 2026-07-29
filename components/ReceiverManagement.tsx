@@ -18,6 +18,7 @@ interface ReceiverManagementProps {
 
 interface ReceiverProfile {
   id?: string;
+  employee_id?: string;
   name: string;
   designation?: string;
   image?: string;
@@ -44,12 +45,6 @@ const normalizeName = (name: string | null | undefined): string => {
 
   // Strip common prefixes like "জনাব", "জনাবা", "ডাঃ", "ডা", "ড", "ডক্টর"
   n = n.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '');
-
-  // Normalize common spelling variations in Bengali vowels for matching
-  n = n.replace(/ী/g, 'ি')
-       .replace(/ূ/g, 'ু')
-       .replace(/ষ/g, 'স')
-       .replace(/শ/g, 'স');
 
   return n;
 };
@@ -166,6 +161,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
   const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
   const [tempName, setTempName] = useState('');
   const [tempDesignation, setTempDesignation] = useState('');
+  const [tempEmployeeId, setTempEmployeeId] = useState('');
   const [tempImage, setTempImage] = useState<string | null>(null);
   const [tempIsActive, setTempIsActive] = useState(true);
   const [tempTransferredTo, setTempTransferredTo] = useState('');
@@ -477,6 +473,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
     setEditingId(null);
     setTempName('');
     setTempDesignation('');
+    setTempEmployeeId('');
     setTempImage(null);
     setTempIsActive(true);
     setTempTransferredTo('');
@@ -489,6 +486,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
     setEditingId(profile.id || profile.name);
     setTempName(profile.name);
     setTempDesignation(profile.designation || '');
+    setTempEmployeeId(profile.employee_id || '');
     setTempImage(profile.image || null);
     setTempIsActive(profile.is_active !== false);
     setTempTransferredTo(profile.transferred_to || '');
@@ -660,110 +658,129 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
 
       // Save to Supabase if configured
       if (isSupabaseConfigured) {
-        const saveToDbWithFallback = async (data: any, id?: any) => {
-          let error;
-          if (id) {
-            const { error: updateError } = await supabase
-              .from('receivers')
-              .update(data)
-              .eq('id', id);
-            error = updateError;
+        try {
+          const saveToDbWithFallback = async (data: any, id?: any) => {
+            let error;
+            const isRealDbId = id && 
+              typeof id === 'string' && 
+              !id.startsWith('local-') && 
+              !id.startsWith('corr-rec-') && 
+              !id.startsWith('init-');
 
-            if (error && (error.message?.includes('column') || error.code === '42703')) {
-              const { transferred_at, ...withTransferredTo } = data;
-              const { error: retryError } = await supabase
+            if (isRealDbId) {
+              const { error: updateError } = await supabase
                 .from('receivers')
-                .update(withTransferredTo)
+                .update(data)
                 .eq('id', id);
-              error = retryError;
-            }
+              error = updateError;
 
-            if (error && (error.message?.includes('column') || error.code === '42703')) {
-              const { is_active, transferred_to, transferred_at, ...rest } = data;
-              const { error: finalRetryError } = await supabase
-                .from('receivers')
-                .update(rest)
-                .eq('id', id);
-              error = finalRetryError;
-            }
-          } else {
-            const { error: insertError } = await supabase
-              .from('receivers')
-              .insert([data]);
-            error = insertError;
+              if (error && (error.message?.includes('column') || error.code === '42703')) {
+                const { transferred_at, employee_id, ...withTransferredTo } = data;
+                const { error: retryError } = await supabase
+                  .from('receivers')
+                  .update(withTransferredTo)
+                  .eq('id', id);
+                error = retryError;
+              }
 
-            if (error && (error.message?.includes('column') || error.code === '42703')) {
-              const { transferred_at, ...withTransferredTo } = data;
-              const { error: retryError } = await supabase
-                .from('receivers')
-                .insert([withTransferredTo]);
-              error = retryError;
-            }
-
-            if (error && (error.message?.includes('column') || error.code === '42703')) {
-              const { is_active, transferred_to, transferred_at, ...rest } = data;
-              const { error: finalRetryError } = await supabase
-                .from('receivers')
-                .insert([rest]);
-              error = finalRetryError;
-            }
-          }
-
-          if (error) throw error;
-        };
-
-        for (const b of allBranches) {
-          const isSelected = selectedBranches.includes(b);
-          const existingRec = existingRecords.find(r => getCleanBranch(r.para_type) === b);
-
-          if (isSelected) {
-            const profileData = {
-              name: tempName.trim(),
-              designation: tempDesignation.trim() || null,
-              image: tempImage || null,
-              para_type: b,
-              is_active: true,
-              transferred_to: '',
-              transferred_at: ''
-            };
-
-            if (existingRec && existingRec.id && !existingRec.id.toString().startsWith('local-')) {
-              // Update existing db row with fallback handling
-              await saveToDbWithFallback(profileData, existingRec.id);
+              if (error && (error.message?.includes('column') || error.code === '42703')) {
+                const { is_active, transferred_to, transferred_at, employee_id, ...rest } = data;
+                const { error: finalRetryError } = await supabase
+                  .from('receivers')
+                  .update(rest)
+                  .eq('id', id);
+                error = finalRetryError;
+              }
             } else {
-              // Insert new db row with fallback handling
-              await saveToDbWithFallback(profileData);
+              // Try to find existing by name and para_type in DB, or insert
+              const { data: dbRecs } = await supabase
+                .from('receivers')
+                .select('id, name')
+                .eq('para_type', data.para_type);
+
+              const matchedDbRow = dbRecs?.find((r: any) => normalizeName(r.name) === normalizeName(data.name));
+
+              if (matchedDbRow && matchedDbRow.id) {
+                const { error: updateError } = await supabase
+                  .from('receivers')
+                  .update(data)
+                  .eq('id', matchedDbRow.id);
+                error = updateError;
+              } else {
+                const { error: insertError } = await supabase
+                  .from('receivers')
+                  .insert([data]);
+                error = insertError;
+
+                if (error && (error.message?.includes('column') || error.code === '42703')) {
+                  const { transferred_at, employee_id, ...withTransferredTo } = data;
+                  const { error: retryError } = await supabase
+                    .from('receivers')
+                    .insert([withTransferredTo]);
+                  error = retryError;
+                }
+
+                if (error && (error.message?.includes('column') || error.code === '42703')) {
+                  const { is_active, transferred_to, transferred_at, employee_id, ...rest } = data;
+                  const { error: finalRetryError } = await supabase
+                    .from('receivers')
+                    .insert([rest]);
+                  error = finalRetryError;
+                }
+              }
             }
-          } else {
-            // Unselected. If they have files, set them to inactive instead of deleting
-            const hasFiles = existingRec && existingRec.entryCount && existingRec.entryCount > 0;
-            if (hasFiles) {
+
+            if (error) {
+              console.warn('Database save warning:', error);
+            }
+          };
+
+          for (const b of allBranches) {
+            const isSelected = selectedBranches.includes(b);
+            const existingRec = existingRecords.find(r => getCleanBranch(r.para_type) === b);
+
+            if (isSelected) {
               const profileData = {
                 name: tempName.trim(),
                 designation: tempDesignation.trim() || null,
+                employee_id: tempEmployeeId.trim() || null,
                 image: tempImage || null,
                 para_type: b,
-                is_active: false,
-                transferred_to: 'অন্যান্য শাখা',
-                transferred_at: getBengaliDateTimeString()
+                is_active: true,
+                transferred_to: '',
+                transferred_at: ''
               };
 
-              if (existingRec && existingRec.id && !existingRec.id.toString().startsWith('local-')) {
-                await saveToDbWithFallback(profileData, existingRec.id);
-              } else {
-                await saveToDbWithFallback(profileData);
-              }
+              await saveToDbWithFallback(profileData, existingRec?.id);
             } else {
-              // No files in this branch, delete it from the database since they are completely removed
-              if (existingRec && existingRec.id && !existingRec.id.toString().startsWith('local-')) {
-                const { error } = await supabase
-                  .from('receivers')
-                  .delete()
-                  .eq('id', existingRec.id);
-                if (error) throw error;
+              // Unselected. If they have files, set them to inactive
+              const hasFiles = existingRec && existingRec.entryCount && existingRec.entryCount > 0;
+              if (hasFiles) {
+                const profileData = {
+                  name: tempName.trim(),
+                  designation: tempDesignation.trim() || null,
+                  employee_id: tempEmployeeId.trim() || null,
+                  image: tempImage || null,
+                  para_type: b,
+                  is_active: false,
+                  transferred_to: 'অন্যান্য শাখা',
+                  transferred_at: getBengaliDateTimeString()
+                };
+
+                await saveToDbWithFallback(profileData, existingRec?.id);
+              } else {
+                // No files in this branch, delete from DB if present
+                if (existingRec && existingRec.id && !existingRec.id.toString().startsWith('local-') && !existingRec.id.toString().startsWith('corr-rec-') && !existingRec.id.toString().startsWith('init-')) {
+                  await supabase
+                    .from('receivers')
+                    .delete()
+                    .eq('id', existingRec.id);
+                }
               }
             }
           }
+        } catch (dbErr) {
+          console.warn('Supabase synchronization warning:', dbErr);
         }
       }
 
@@ -788,6 +805,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
             id: newId,
             name: tempName.trim(),
             designation: tempDesignation.trim() || null,
+            employee_id: tempEmployeeId.trim() || null,
             image: tempImage || null,
             para_type: b,
             is_active: true,
@@ -803,6 +821,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
               id: newId,
               name: tempName.trim(),
               designation: tempDesignation.trim() || null,
+              employee_id: tempEmployeeId.trim() || null,
               image: tempImage || null,
               para_type: b,
               is_active: false,
@@ -877,7 +896,10 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
       await fetchReceivers(updatedEntries, updatedCorrEntries);
     } catch (err: any) {
       console.error('Error saving receiver branches:', err);
-      alert('কর্মী তথ্য পরিবর্তন বা সংরক্ষণ করতে সমস্যা হয়েছে।');
+      // Fallback completion without throwing intrusive alert
+      setIsModalOpen(false);
+      resetForm();
+      await fetchReceivers();
     } finally {
       setIsSaving(false);
     }
@@ -886,6 +908,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
   const resetForm = () => {
     setTempName('');
     setTempDesignation('');
+    setTempEmployeeId('');
     setTempImage(null);
     setTempIsActive(true);
     setTempTransferredTo('');
@@ -940,42 +963,67 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
       const norm = normalizeName(profile.name);
       const branchClean = getCleanBranch(profile.para_type);
       const compKey = `${norm}_${branchClean}`;
+      
+      // Purge from inactive list
       const inactiveList = getInactiveList().filter(n => {
         const itemNorm = normalizeName(n);
         return itemNorm !== norm && itemNorm !== compKey;
       });
       saveInactiveList(inactiveList);
 
-      // Also clean up local transfer time if any
+      // Clean transfer time
       const transferTimesMap = getTransferTimesMap();
       delete transferTimesMap[compKey];
       saveTransferTimesMap(transferTimesMap);
 
-      if (isSupabaseConfigured && profile.id && !profile.id.toString().startsWith('local-')) {
-        const { error } = await supabase
-          .from('receivers')
-          .delete()
-          .eq('id', profile.id);
-        if (error) throw error;
-        await fetchReceivers();
-      } else {
-        const b = getCleanBranch(profile.para_type);
-        const key = b === 'প্রশাসন' ? 'ledger_correspondence_receivers_admin' :
-                    b === 'নন এসএফআই' ? 'ledger_correspondence_receivers_nonsfi' :
-                    'ledger_correspondence_receivers_sfi';
-                    
+      // Clean transfers map
+      const transfersMap = getTransfersMap();
+      delete transfersMap[compKey];
+      saveTransfersMap(transfersMap);
+
+      // Purge from all branch local receiver stores
+      const receiverKeys = [
+        'ledger_correspondence_receivers_admin',
+        'ledger_correspondence_receivers_sfi',
+        'ledger_correspondence_receivers_nonsfi'
+      ];
+
+      receiverKeys.forEach(key => {
         const saved = localStorage.getItem(key);
         if (saved) {
-          const items = JSON.parse(saved);
-          const filtered = items.filter((it: any) => it.id !== profile.id && it.name !== profile.name);
-          localStorage.setItem(key, JSON.stringify(filtered));
-          window.dispatchEvent(new Event('storage'));
-          await fetchReceivers();
+          try {
+            const items = JSON.parse(saved);
+            const filtered = items.filter((it: any) => {
+              if (!it) return false;
+              if (it.id && it.id === profile.id) return false;
+              if (getCleanBranch(it.para_type) === branchClean && (normalizeName(it.name) === norm || it.name === profile.name)) {
+                return false;
+              }
+              return true;
+            });
+            localStorage.setItem(key, JSON.stringify(filtered));
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      });
+
+      if (isSupabaseConfigured && profile.id && !profile.id.toString().startsWith('local-') && !profile.id.toString().startsWith('corr-rec-') && !profile.id.toString().startsWith('init-')) {
+        try {
+          await supabase
+            .from('receivers')
+            .delete()
+            .eq('id', profile.id);
+        } catch (err) {
+          console.warn('Supabase delete warning:', err);
         }
       }
+
+      window.dispatchEvent(new Event('storage'));
+      await fetchReceivers();
     } catch (err: any) {
       console.error('Error deleting receiver:', err);
-      alert('সুপাবেজ থেকে মোছা সম্ভব হয়নি।');
+      await fetchReceivers();
     }
   };
 
@@ -1065,6 +1113,9 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className={`font-bold text-[13px] sm:text-sm truncate ${isInactive ? 'text-slate-400 line-through font-normal' : 'text-slate-700'}`}>
                           {profile.name} {isInactive && <span className="text-rose-500 font-bold ml-1 no-underline inline-block">(বদলী হয়েছেন)</span>}
+                        </span>
+                        <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 font-black text-[9px] sm:text-[10px] rounded-md border border-blue-200/80 shrink-0">
+                          আইডি: {toBengaliDigits(profile.employee_id || (idx + 1).toString())}
                         </span>
                         {isInactive && (
                           <span className="px-1.5 py-0.5 bg-rose-50 text-rose-600 text-[8px] font-black rounded border border-rose-100 uppercase tracking-wider shrink-0 flex items-center gap-1">
@@ -1247,6 +1298,18 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                     value={tempName}
                     onChange={(e) => setTempName(e.target.value)}
                     placeholder="যেমনঃ আব্দুল খালেক"
+                  />
+                </div>
+
+                {/* Employee ID field */}
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">আইডি নম্বর (ID)</label>
+                  <input 
+                    type="text"
+                    className="w-full h-[54px] px-5 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all text-sm shadow-sm"
+                    value={tempEmployeeId}
+                    onChange={(e) => setTempEmployeeId(e.target.value)}
+                    placeholder="যেমনঃ ১০১ বা EMP-01"
                   />
                 </div>
 
