@@ -19,6 +19,7 @@ interface ReceiverManagementProps {
 interface ReceiverProfile {
   id?: string;
   employee_id?: string;
+  displayId?: string;
   name: string;
   designation?: string;
   image?: string;
@@ -457,7 +458,46 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
       });
 
       receiversWithCounts.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-      setReceiversList(receiversWithCounts);
+
+      // Assign system-wide unique IDs so no two employees share the same ID
+      const usedIds = new Set<string>();
+      const personIdMap = new Map<string, string>();
+
+      // Collect explicitly defined custom employee_id values first
+      receiversWithCounts.forEach(r => {
+        if (r.employee_id && r.employee_id.trim()) {
+          const empId = r.employee_id.trim();
+          usedIds.add(empId);
+          const norm = normalizeName(r.name);
+          if (!personIdMap.has(norm)) {
+            personIdMap.set(norm, empId);
+          }
+        }
+      });
+
+      // Sequential auto-increment for employees without custom employee_id
+      let autoCounter = 1;
+      const receiversWithUniqueIds = receiversWithCounts.map(r => {
+        const norm = normalizeName(r.name);
+        let finalId = r.employee_id && r.employee_id.trim() ? r.employee_id.trim() : personIdMap.get(norm);
+
+        if (!finalId) {
+          while (usedIds.has(autoCounter.toString())) {
+            autoCounter++;
+          }
+          finalId = autoCounter.toString();
+          usedIds.add(finalId);
+          personIdMap.set(norm, finalId);
+          autoCounter++;
+        }
+
+        return {
+          ...r,
+          displayId: finalId
+        };
+      });
+
+      setReceiversList(receiversWithUniqueIds);
     } catch (err) {
       console.error('Error fetching receivers:', err);
     } finally {
@@ -1115,7 +1155,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                           {profile.name} {isInactive && <span className="text-rose-500 font-bold ml-1 no-underline inline-block">(বদলী হয়েছেন)</span>}
                         </span>
                         <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 font-black text-[9px] sm:text-[10px] rounded-md border border-blue-200/80 shrink-0">
-                          আইডি: {toBengaliDigits(profile.employee_id || (idx + 1).toString())}
+                          আইডি: {toBengaliDigits(profile.displayId || profile.employee_id || (idx + 1).toString())}
                         </span>
                         {isInactive && (
                           <span className="px-1.5 py-0.5 bg-rose-50 text-rose-600 text-[8px] font-black rounded border border-rose-100 uppercase tracking-wider shrink-0 flex items-center gap-1">
