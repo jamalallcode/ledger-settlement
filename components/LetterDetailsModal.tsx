@@ -37,45 +37,45 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
       </div>
       
       {/* Content */}
-      <div className={`grow bg-white flex flex-col min-h-0 ${isEmbedded ? 'p-3 sm:p-4' : 'p-0'}`}>
-        <div className="relative overflow-auto custom-scrollbar flex-1 border border-slate-200/80 rounded-2xl">
+      <div className={`grow bg-white flex flex-col min-h-0 ${isEmbedded ? 'p-3 sm:p-4' : 'p-4 sm:p-6'}`}>
+        <div className="relative overflow-auto custom-scrollbar flex-1 border border-slate-300 rounded-xl shadow-sm bg-white">
           <table className="w-full border-separate border-spacing-0 table-fixed">
             <colgroup>
-              <col style={{ width: isEmbedded ? '6%' : '90px' }} />
-              <col style={{ width: isEmbedded ? '39%' : '335px' }} />
+              <col style={{ width: isEmbedded ? '6%' : '80px' }} />
+              <col style={{ width: isEmbedded ? '39%' : '340px' }} />
               <col style={{ width: isEmbedded ? '19%' : '180px' }} />
               <col style={{ width: isEmbedded ? '19%' : '180px' }} />
               <col style={{ width: isEmbedded ? '17%' : '160px' }} />
             </colgroup>
             <thead className="sticky top-0 z-30">
               <tr>
-                <th className={`sticky top-0 z-30 border-b border-slate-200 text-center font-black text-slate-700 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'py-2 px-1 text-[11px]' : 'py-4 pl-8 pr-4 text-[13px]'
+                <th className={`sticky top-0 z-30 border-b border-r border-slate-200 text-center font-black text-slate-700 uppercase tracking-tighter bg-slate-100 ${
+                  isEmbedded ? 'py-2 px-1 text-[11px]' : 'py-3.5 px-3 text-[13px]'
                 }`}>ক্রমিক</th>
-                <th className={`sticky top-0 z-30 border-b border-slate-200 text-left font-black text-slate-700 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'p-2 text-[11px]' : 'p-4 text-[13px]'
+                <th className={`sticky top-0 z-30 border-b border-r border-slate-200 text-left font-black text-slate-700 uppercase tracking-tighter bg-slate-100 ${
+                  isEmbedded ? 'p-2 text-[11px]' : 'p-3.5 text-[13px]'
                 }`}>চিঠির নাম/বিবরণ</th>
-                <th className={`sticky top-0 z-30 border-b border-slate-200 text-center font-black text-slate-700 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'p-2 text-[11px]' : 'p-4 text-[13px]'
+                <th className={`sticky top-0 z-30 border-b border-r border-slate-200 text-center font-black text-slate-700 uppercase tracking-tighter bg-slate-100 ${
+                  isEmbedded ? 'p-2 text-[11px]' : 'p-3.5 text-[13px]'
                 }`}>স্মারক নং ও তারিখ</th>
-                <th className={`sticky top-0 z-30 border-b border-slate-200 text-center font-black text-slate-700 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'p-2 text-[11px]' : 'p-4 text-[13px]'
+                <th className={`sticky top-0 z-30 border-b border-r border-slate-200 text-center font-black text-slate-700 uppercase tracking-tighter bg-slate-100 ${
+                  isEmbedded ? 'p-2 text-[11px]' : 'p-3.5 text-[13px]'
                 }`}>ডায়েরি নং ও তারিখ</th>
                 <th className={`sticky top-0 z-30 border-b border-slate-200 text-center font-black text-slate-700 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'py-2 px-1 text-[11px]' : 'py-4 pr-8 pl-4 text-[13px]'
+                  isEmbedded ? 'py-2 px-1 text-[11px]' : 'py-3.5 px-3 text-[13px]'
                 }`}>বর্তমান অবস্থান</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y-0">
               {letters.map((letter, idx) => (
                 <tr key={letter.id || idx} className="no-hover-row group hover:bg-slate-50/80 transition-colors">
-                  <td className={`text-center font-bold text-slate-500 border-r border-slate-100 ${
-                    isEmbedded ? 'py-2 px-1 text-[11px]' : 'py-4 pl-8 pr-4 text-[13px]'
+                  <td className={`text-center font-bold text-slate-500 border-b border-r border-slate-200/80 group-last:border-b-0 ${
+                    isEmbedded ? 'py-2 px-1 text-[11px]' : 'py-3.5 px-3 text-[13px]'
                   }`}>
                     {toBengaliDigits(idx + 1)}
                   </td>
-                  <td className={`text-left font-bold text-slate-800 ${
-                    isEmbedded ? 'p-2 text-[11px]' : 'p-4 text-[13px]'
+                  <td className={`text-left font-bold text-slate-800 border-b border-r border-slate-200/80 group-last:border-b-0 ${
+                    isEmbedded ? 'p-2 text-[11px]' : 'p-3.5 text-[13px]'
                   }`}>
                     <div className="flex flex-col gap-1.5">
                       <span className="leading-relaxed">{letter.description}</span>
@@ -100,8 +100,8 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
                       </div>
                     </div>
                   </td>
-                  <td className={`text-center font-bold text-slate-700 border-x border-slate-100 ${
-                    isEmbedded ? 'p-2 text-[11px]' : 'p-4 text-[13px]'
+                  <td className={`text-center font-bold text-slate-700 border-b border-r border-slate-200/80 group-last:border-b-0 ${
+                    isEmbedded ? 'p-2 text-[11px]' : 'p-3.5 text-[13px]'
                   }`}>
                     <div className="flex flex-col items-center gap-1">
                       <div className="flex items-center gap-1 text-slate-900">
@@ -114,8 +114,8 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
                       </div>
                     </div>
                   </td>
-                  <td className={`text-center font-bold text-slate-700 border-x border-slate-100 ${
-                    isEmbedded ? 'p-2 text-[11px]' : 'p-4 text-[13px]'
+                  <td className={`text-center font-bold text-slate-700 border-b border-r border-slate-200/80 group-last:border-b-0 ${
+                    isEmbedded ? 'p-2 text-[11px]' : 'p-3.5 text-[13px]'
                   }`}>
                     <div className="flex flex-col items-center gap-1">
                       <div className="flex items-center gap-1 text-slate-900">
@@ -128,8 +128,8 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
                       </div>
                     </div>
                   </td>
-                  <td className={`text-center font-bold text-slate-700 ${
-                    isEmbedded ? 'py-2 px-1 text-[11px]' : 'py-4 pr-8 pl-4 text-[13px]'
+                  <td className={`text-center font-bold text-slate-700 border-b border-slate-200/80 group-last:border-b-0 ${
+                    isEmbedded ? 'py-2 px-1 text-[11px]' : 'py-3.5 px-3 text-[13px]'
                   }`}>
                     <div className="flex items-center justify-center gap-1.5">
                       {!isEmbedded && <User size={14} className="text-slate-400 shrink-0" />}
