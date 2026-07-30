@@ -698,7 +698,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
   };
 
   return (
-    <div className="max-w-[1400px] mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500 relative">
+    <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-3 md:px-4 py-4 md:py-6 space-y-6 animate-in fade-in duration-500 relative">
       <IDBadge id="custom-period-receipt-report-panel" />
 
       {/* TOP HEADER / BACK BAR */}
