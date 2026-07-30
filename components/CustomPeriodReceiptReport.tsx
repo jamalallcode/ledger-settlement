@@ -185,6 +185,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
   const [filterMinistry, setFilterMinistry] = useState('সকল');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [activeReportMode, setActiveReportMode] = useState<'correspondence' | 'settlement'>('correspondence');
+  const [expandedParasMap, setExpandedParasMap] = useState<Record<string, boolean>>({});
+
+  const toggleExpandParas = (entryId: string) => {
+    setExpandedParasMap(prev => ({ ...prev, [entryId]: !prev[entryId] }));
+  };
 
   const MINISTRIES = STATIC_MINISTRIES;
 
@@ -1179,28 +1184,28 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     <col className="w-[10%]" />
                     <col className="w-[9%]" />
                   </colgroup>
-                  <thead className="sticky top-0 xl:top-[45px] z-30 shadow-sm">
+                  <thead className="sticky top-0 xl:top-[45px] z-30 shadow-sm bg-slate-800">
                     {/* Header Row 1: Titles */}
                     <tr className="bg-slate-800 text-white text-[11px] font-black uppercase tracking-wider">
-                      <th className="px-3 py-2.5 text-center border-b border-r border-slate-700">ক্র: নং</th>
-                      <th className="px-3 py-2.5 text-left border-b border-r border-slate-700">প্রতিষ্ঠানের বিবরণ</th>
-                      <th className="px-3 py-2.5 text-left border-b border-r border-slate-700">পত্র ও ডায়েরির বিবরণ</th>
-                      <th className="px-3 py-2.5 text-left border-b border-r border-slate-700">বর্তমান অবস্থান / জারিপত্র</th>
-                      <th className="px-3 py-2.5 text-left border-b border-r border-slate-700">প্রাপ্ত অনুচ্ছেদ ও টাকা</th>
-                      <th className="px-3 py-2.5 text-left border-b border-r border-slate-700">নিষ্পত্তিকৃত তথ্য</th>
-                      <th className="px-3 py-2.5 text-left border-b border-r border-slate-700">অনিষ্পন্ন তথ্য</th>
-                      <th className="px-3 py-2.5 text-left border-b border-slate-700">মন্তব্য ও অ্যাকশন</th>
+                      <th className="bg-slate-800 text-white px-3 py-2.5 text-center border-b border-r border-slate-700">ক্র: নং</th>
+                      <th className="bg-slate-800 text-white px-3 py-2.5 text-left border-b border-r border-slate-700">প্রতিষ্ঠানের বিবরণ</th>
+                      <th className="bg-slate-800 text-white px-3 py-2.5 text-left border-b border-r border-slate-700">পত্র ও ডায়েরির বিবরণ</th>
+                      <th className="bg-slate-800 text-white px-3 py-2.5 text-left border-b border-r border-slate-700">বর্তমান অবস্থান / জারিপত্র</th>
+                      <th className="bg-slate-800 text-white px-3 py-2.5 text-left border-b border-r border-slate-700">প্রাপ্ত অনুচ্ছেদ ও টাকা</th>
+                      <th className="bg-slate-800 text-white px-3 py-2.5 text-left border-b border-r border-slate-700">নিষ্পত্তিকৃত তথ্য</th>
+                      <th className="bg-slate-800 text-white px-3 py-2.5 text-left border-b border-r border-slate-700">অনিষ্পন্ন তথ্য</th>
+                      <th className="bg-slate-800 text-white px-3 py-2.5 text-left border-b border-slate-700">মন্তব্য ও অ্যাকশন</th>
                     </tr>
                     {/* Header Row 2: Sub-header Numbers (1-8) */}
                     <tr className="bg-slate-200 text-slate-800 text-[11px] font-black text-center">
-                      <th className="py-1 border-b border-r border-slate-300">১</th>
-                      <th className="py-1 border-b border-r border-slate-300">২</th>
-                      <th className="py-1 border-b border-r border-slate-300">৩</th>
-                      <th className="py-1 border-b border-r border-slate-300">৪</th>
-                      <th className="py-1 border-b border-r border-slate-300">৫</th>
-                      <th className="py-1 border-b border-r border-slate-300">৬</th>
-                      <th className="py-1 border-b border-r border-slate-300">৭</th>
-                      <th className="py-1 border-b border-slate-300">৮</th>
+                      <th className="bg-slate-200 text-slate-900 py-1 border-b border-r border-slate-300">১</th>
+                      <th className="bg-slate-200 text-slate-900 py-1 border-b border-r border-slate-300">২</th>
+                      <th className="bg-slate-200 text-slate-900 py-1 border-b border-r border-slate-300">৩</th>
+                      <th className="bg-slate-200 text-slate-900 py-1 border-b border-r border-slate-300">৪</th>
+                      <th className="bg-slate-200 text-slate-900 py-1 border-b border-r border-slate-300">৫</th>
+                      <th className="bg-slate-200 text-slate-900 py-1 border-b border-r border-slate-300">৬</th>
+                      <th className="bg-slate-200 text-slate-900 py-1 border-b border-r border-slate-300">৭</th>
+                      <th className="bg-slate-200 text-slate-900 py-1 border-b border-slate-300">৮</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 bg-white">
@@ -1377,29 +1382,39 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                               </div>
                               {settledParas.length > 0 && (
                                 <div className="pt-1.5 border-t border-slate-100">
-                                  <span className="font-black text-slate-700 block text-[10px] mb-1">
-                                    ৩. নিষ্পত্তিকৃত অনুচ্ছেদ নং সমূহ:
+                                  <span className="font-black text-slate-700 block text-[10px] mb-0.5">
+                                    ৩. নিষ্পত্তিকৃত অনুচ্ছেদ নং:
                                   </span>
-                                  <div className="flex flex-wrap gap-1">
-                                    {settledParas.map((p: any, pIdx: number) => {
-                                      const paraNum = p.paraNo ? toBengaliDigits(p.paraNo) : toBengaliDigits(pIdx + 1);
-                                      const pAmount = (p.recoveredAmount || 0) + (p.adjustedAmount || 0);
-                                      const tooltipText = `অনুচ্ছেদ ${paraNum}: ${toBengaliDigits(pAmount || settledAmount)} টাকা নিষ্পন্ন (আদায়: ${toBengaliDigits(p.recoveredAmount || 0)}, সমন্বয়: ${toBengaliDigits(p.adjustedAmount || 0)})`;
-                                      return (
-                                        <span
-                                          key={pIdx}
-                                          title={tooltipText}
-                                          className="group/tooltip relative inline-flex items-center px-1.5 py-0.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 rounded font-black text-[9.5px] cursor-help border border-emerald-300 transition-colors"
-                                        >
-                                          অনুচ্ছেদ {paraNum}
-                                          {/* Hover Tooltip popover */}
-                                          <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/tooltip:block z-50 whitespace-nowrap bg-slate-900 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-xl border border-slate-700 animate-in fade-in duration-200">
-                                            {tooltipText}
-                                          </span>
+                                  {(() => {
+                                    const entryKey = entry.id || String(index);
+                                    const isExpanded = !!expandedParasMap[entryKey];
+                                    const hasMore = settledParas.length > 3;
+                                    const visibleParas = (hasMore && !isExpanded) ? settledParas.slice(0, 3) : settledParas;
+                                    const paraNumbersStr = visibleParas.map((p: any, pIdx: number) => {
+                                      return p.paraNo ? toBengaliDigits(p.paraNo) : toBengaliDigits(pIdx + 1);
+                                    }).join(', ');
+
+                                    return (
+                                      <div className="text-[10.5px] leading-relaxed">
+                                        <span className="font-bold text-emerald-900 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 inline">
+                                          অনুচ্ছেদ নং- {paraNumbersStr}
+                                          {hasMore && !isExpanded && '...'}
                                         </span>
-                                      );
-                                    })}
-                                  </div>
+                                        {hasMore && (
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              toggleExpandParas(entryKey);
+                                            }}
+                                            className="ml-1 inline-flex items-center text-[10px] font-black text-blue-600 hover:text-blue-800 underline cursor-pointer no-print"
+                                          >
+                                            {isExpanded ? 'কম দেখুন' : 'আরো দেখুন'}
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               )}
                             </div>
