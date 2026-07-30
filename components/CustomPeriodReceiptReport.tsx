@@ -1299,12 +1299,12 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                               <div>
                                 <span className="font-black text-slate-700">৩. ডায়েরী নম্বর ও তারিখ: </span>
                                 <span className="font-bold text-slate-900">{diaryNo}</span>
-                                {diaryDate !== '-' && <span className="text-slate-500 font-semibold"> ({formatDateBN(diaryDate)})</span>}
+                                {diaryDate !== '-' && <span className="text-slate-800 font-bold"> ({formatDateBN(diaryDate)})</span>}
                               </div>
                               <div>
                                 <span className="font-black text-slate-700">৪. পত্র নম্বর ও তারিখ: </span>
                                 <span className="font-bold text-slate-900">{letterNo}</span>
-                                {letterDate !== '-' && <span className="text-slate-500 font-semibold"> ({formatDateBN(letterDate)})</span>}
+                                {letterDate !== '-' && <span className="text-slate-800 font-bold"> ({formatDateBN(letterDate)})</span>}
                               </div>
                               {auditYear !== '-' && (
                                 <div>
