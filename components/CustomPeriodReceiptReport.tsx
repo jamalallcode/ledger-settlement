@@ -698,7 +698,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
   };
 
   return (
-    <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-3 md:px-4 py-4 md:py-6 space-y-6 animate-in fade-in duration-500 relative">
+    <div className="w-full max-w-[2000px] mx-auto px-2 sm:px-3 md:px-4 py-4 md:py-6 space-y-6 animate-in fade-in duration-500 relative">
       <IDBadge id="custom-period-receipt-report-panel" />
 
       {/* TOP HEADER / BACK BAR */}
@@ -1339,9 +1339,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                               <span className="font-black text-slate-700 block text-[10.5px]">১. চিঠিটির বর্তমান অবস্থান:</span>
                               {hasIssueLetter ? (
                                 <div className="bg-emerald-50 text-emerald-900 p-2 rounded-xl border border-emerald-200 shadow-2xs space-y-0.5">
-                                  <span className="font-black block text-[10.5px] text-emerald-800">জারিপত্র জারী হয়েছে</span>
                                   {issueLetterNo && <span className="block text-[10px] font-bold">জারিপত্র নং: {issueLetterNo}</span>}
-                                  {issueLetterDate && <span className="block text-[10px] text-emerald-700">তারিখ: {formatDateBN(issueLetterDate)}</span>}
+                                  {issueLetterDate && <span className="block text-[10px] font-bold text-emerald-900">তারিখ: {formatDateBN(issueLetterDate)}</span>}
                                 </div>
                               ) : (
                                 <div className="bg-amber-50 text-amber-900 p-2 rounded-xl border border-amber-200 shadow-2xs space-y-0.5">
@@ -1394,7 +1393,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                     return (
                                       <div className="text-[10.5px] leading-relaxed">
                                         <span className="font-bold text-emerald-900 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 inline">
-                                          অনুচ্ছেদ নং- {paraNumbersStr}
+                                          {paraNumbersStr}
                                           {hasMore && !isExpanded && '...'}
                                         </span>
                                         {hasMore && (
