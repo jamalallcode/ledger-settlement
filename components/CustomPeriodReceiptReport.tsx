@@ -1354,13 +1354,13 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           {/* Col 5: প্রাপ্ত অনুচ্ছেদ ও টাকা */}
                           <td className="px-3 py-3 text-left border-r border-slate-200">
                             <div className="space-y-1.5 text-[11px]">
-                              <div className="flex items-baseline gap-x-1.5 whitespace-nowrap">
+                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
                                 <span className="font-black text-slate-700 text-[10px]">১. প্রেরিত মোট অনুচ্ছেদ:</span>
-                                <span className="font-black text-slate-900 text-xs">{toBengaliDigits(totalParas)} টি</span>
+                                <span className="font-black text-slate-900 text-xs break-all">{toBengaliDigits(totalParas)} টি</span>
                               </div>
-                              <div className="flex items-baseline gap-x-1.5 whitespace-nowrap pt-0.5">
+                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words pt-0.5">
                                 <span className="font-black text-slate-700 text-[10px]">২. মোট জড়িত টাকা:</span>
-                                <span className="font-black text-blue-900 text-xs">{toBengaliDigits(totalAmount)}</span>
+                                <span className="font-black text-blue-900 text-xs break-all">{toBengaliDigits(totalAmount)}</span>
                               </div>
                             </div>
                           </td>
@@ -1368,13 +1368,13 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           {/* Col 6: নিষ্পত্তিকৃত তথ্য */}
                           <td className="px-3 py-3 text-left border-r border-slate-200">
                             <div className="space-y-1 text-[11px]">
-                              <div className="flex items-baseline gap-x-1.5 whitespace-nowrap">
+                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
                                 <span className="font-black text-slate-700 text-[10px]">১. মোট অনুচ্ছেদ:</span>
-                                <span className="font-black text-emerald-700 text-xs">{toBengaliDigits(settledCount)} টি</span>
+                                <span className="font-black text-emerald-700 text-xs break-all">{toBengaliDigits(settledCount)} টি</span>
                               </div>
-                              <div className="flex items-baseline gap-x-1.5 whitespace-nowrap pt-0.5">
+                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words pt-0.5">
                                 <span className="font-black text-slate-700 text-[10px]">২. মোট টাকা:</span>
-                                <span className="font-black text-emerald-900 text-xs">{toBengaliDigits(settledAmount)}</span>
+                                <span className="font-black text-emerald-900 text-xs break-all">{toBengaliDigits(settledAmount)}</span>
                               </div>
                               {settledParas.length > 0 && (
                                 <div className="pt-1.5 border-t border-slate-100 flex flex-wrap items-center gap-x-1.5 gap-y-1">
@@ -1419,13 +1419,13 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           {/* Col 7: অনিষ্পন্ন তথ্য ও মন্তব্য (এবং হোভারে এডিট বাটন) */}
                           <td className="px-3 py-3 text-left relative">
                             <div className="space-y-1.5 text-[11px] pr-6">
-                              <div className="flex items-baseline gap-x-1.5 whitespace-nowrap">
+                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
                                 <span className="font-black text-slate-700 text-[10px]">১. মোট অনুচ্ছেদ:</span>
-                                <span className="font-black text-rose-700 text-xs">{toBengaliDigits(unsettledCount)} টি</span>
+                                <span className="font-black text-rose-700 text-xs break-all">{toBengaliDigits(unsettledCount)} টি</span>
                               </div>
-                              <div className="flex items-baseline gap-x-1.5 whitespace-nowrap pt-0.5">
+                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words pt-0.5">
                                 <span className="font-black text-slate-700 text-[10px]">২. মোট টাকা:</span>
-                                <span className="font-black text-rose-800 text-xs">{toBengaliDigits(unsettledAmount)}</span>
+                                <span className="font-black text-rose-800 text-xs break-all">{toBengaliDigits(unsettledAmount)}</span>
                               </div>
                               <div>
                                 <span className="font-black text-slate-700 block text-[10px] mb-0.5">৩. মন্তব্য:</span>
