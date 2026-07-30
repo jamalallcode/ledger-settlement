@@ -1055,7 +1055,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full">
           {/* Total Settled Paragraphs */}
           <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
             <div className="flex items-center justify-between">
@@ -1187,12 +1187,12 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     {/* Header Row 1: Titles (Black Text) */}
                     <tr className="bg-slate-200 text-slate-900 text-[11px] font-black tracking-wider">
                       <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">ক্র: নং</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">প্রতিষ্ঠানের বিবরণ</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">পত্র ও ডায়েরির বিবরণ</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">বর্তমান অবস্থান / জারিপত্র</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">প্রাপ্ত অনুচ্ছেদ ও টাকা</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">নিষ্পত্তিকৃত তথ্য</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-slate-300 font-black">অনিষ্পন্ন তথ্য ও মন্তব্য</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">প্রতিষ্ঠানের বিবরণ</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">পত্র ও ডায়েরির বিবরণ</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">বর্তমান অবস্থান / জারিপত্র</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">প্রাপ্ত অনুচ্ছেদ ও টাকা</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">নিষ্পত্তিকৃত তথ্য</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-slate-300 font-black">অনিষ্পন্ন তথ্য ও মন্তব্য</th>
                     </tr>
                     {/* Header Row 2: Sub-header Numbers (1-7) */}
                     <tr className="bg-slate-100 text-slate-900 text-[11px] font-black text-center">
@@ -1481,13 +1481,13 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     {/* Header Row 1: Titles */}
                     <tr className="bg-slate-200 text-slate-900 text-[11px] font-black tracking-wider">
                       <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">ক্র: নং</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">মন্ত্রণালয় ও প্রতিষ্ঠান</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">স্মারক ও তারিখ</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">মন্ত্রণালয় ও প্রতিষ্ঠান</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">স্মারক ও তারিখ</th>
                       <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">অডিট বছর</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">শাখা ও নিষ্পত্তির ধরন</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">শাখা ও নিষ্পত্তির ধরন</th>
                       <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">নিষ্পন্নকৃত অনুচ্ছেদের সংখ্যা</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-right border-b border-r border-slate-300 font-black">নিষ্পত্তিকৃত টাকা (টাকা)</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-slate-300 font-black">মন্তব্য</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">নিষ্পত্তিকৃত টাকা (টাকা)</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-slate-300 font-black">মন্তব্য</th>
                     </tr>
                     {/* Header Row 2: Sub-header Numbers (1-8) */}
                     <tr className="bg-slate-100 text-slate-900 text-[11px] font-black text-center">
@@ -1544,7 +1544,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-center text-[11px] font-semibold text-slate-800 border-r border-slate-200">
+                          <td className="px-4 py-3 text-center text-[11px] font-black text-slate-900 border-r border-slate-200">
                             {toBengaliDigits(entry.auditYear)}
                           </td>
                           <td className="px-3 py-3 text-left text-[11px] font-bold text-slate-700 border-r border-slate-200">
@@ -1569,7 +1569,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           <td className="px-4 py-3 text-right text-[11.5px] font-black text-slate-900 border-r border-slate-200">
                             {toBengaliDigits(rowSettledAmount || '০')}
                           </td>
-                          <td className="px-4 py-3 text-left text-[11px] font-semibold text-slate-800 border-r border-slate-200 relative pb-7">
+                          <td className="px-4 py-3 text-justify break-words text-[11px] font-semibold text-slate-800 border-r border-slate-200 relative pb-7">
                             {entry.remarks || '-'}
                             <div className="no-print absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                               <button
