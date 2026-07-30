@@ -1177,11 +1177,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                   <colgroup>
                     <col className="w-[4%]" />
                     <col className="w-[17%]" />
-                    <col className="w-[23%]" />
+                    <col className="w-[21%]" />
                     <col className="w-[15%]" />
                     <col className="w-[13%]" />
                     <col className="w-[16%]" />
-                    <col className="w-[12%]" />
+                    <col className="w-[14%]" />
                   </colgroup>
                   <thead className="sticky top-0 xl:top-[45px] z-30 shadow-sm bg-slate-200">
                     {/* Header Row 1: Titles (Black Text) */}
@@ -1354,11 +1354,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           {/* Col 5: প্রাপ্ত অনুচ্ছেদ ও টাকা */}
                           <td className="px-3 py-3 text-left border-r border-slate-200">
                             <div className="space-y-1.5 text-[11px]">
-                              <div className="flex flex-wrap items-baseline gap-x-1.5">
+                              <div className="flex items-baseline gap-x-1.5 whitespace-nowrap">
                                 <span className="font-black text-slate-700 text-[10px]">১. প্রেরিত মোট অনুচ্ছেদ:</span>
                                 <span className="font-black text-slate-900 text-xs">{toBengaliDigits(totalParas)} টি</span>
                               </div>
-                              <div className="flex flex-wrap items-baseline gap-x-1.5 pt-0.5">
+                              <div className="flex items-baseline gap-x-1.5 whitespace-nowrap pt-0.5">
                                 <span className="font-black text-slate-700 text-[10px]">২. মোট জড়িত টাকা:</span>
                                 <span className="font-black text-blue-900 text-xs">{toBengaliDigits(totalAmount)}</span>
                               </div>
@@ -1368,17 +1368,17 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           {/* Col 6: নিষ্পত্তিকৃত তথ্য */}
                           <td className="px-3 py-3 text-left border-r border-slate-200">
                             <div className="space-y-1 text-[11px]">
-                              <div className="flex flex-wrap items-baseline gap-x-1.5">
+                              <div className="flex items-baseline gap-x-1.5 whitespace-nowrap">
                                 <span className="font-black text-slate-700 text-[10px]">১. মোট অনুচ্ছেদ:</span>
                                 <span className="font-black text-emerald-700 text-xs">{toBengaliDigits(settledCount)} টি</span>
                               </div>
-                              <div className="flex flex-wrap items-baseline gap-x-1.5 pt-0.5">
+                              <div className="flex items-baseline gap-x-1.5 whitespace-nowrap pt-0.5">
                                 <span className="font-black text-slate-700 text-[10px]">২. মোট টাকা:</span>
                                 <span className="font-black text-emerald-900 text-xs">{toBengaliDigits(settledAmount)}</span>
                               </div>
                               {settledParas.length > 0 && (
-                                <div className="pt-1.5 border-t border-slate-100">
-                                  <span className="font-black text-slate-700 block text-[10px] mb-0.5">
+                                <div className="pt-1.5 border-t border-slate-100 flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                                  <span className="font-black text-slate-700 text-[10px] shrink-0">
                                     ৩. অনুচ্ছেদ নং:
                                   </span>
                                   {(() => {
@@ -1391,7 +1391,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                     }).join(', ');
 
                                     return (
-                                      <div className="text-[10.5px] leading-relaxed">
+                                      <span className="inline-flex items-center gap-1 text-[10.5px]">
                                         <span className="font-bold text-emerald-900 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 inline">
                                           {paraNumbersStr}
                                           {hasMore && !isExpanded && '...'}
@@ -1403,12 +1403,12 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                               e.stopPropagation();
                                               toggleExpandParas(entryKey);
                                             }}
-                                            className="ml-1 inline-flex items-center text-[10px] font-black text-blue-600 hover:text-blue-800 underline cursor-pointer no-print"
+                                            className="ml-1 inline-flex items-center text-[10px] font-black text-blue-600 hover:text-blue-800 underline cursor-pointer no-print whitespace-nowrap"
                                           >
                                             {isExpanded ? 'কম দেখুন' : 'আরো দেখুন'}
                                           </button>
                                         )}
-                                      </div>
+                                      </span>
                                     );
                                   })()}
                                 </div>
@@ -1419,11 +1419,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           {/* Col 7: অনিষ্পন্ন তথ্য ও মন্তব্য (এবং হোভারে এডিট বাটন) */}
                           <td className="px-3 py-3 text-left relative">
                             <div className="space-y-1.5 text-[11px] pr-6">
-                              <div className="flex flex-wrap items-baseline gap-x-1.5">
+                              <div className="flex items-baseline gap-x-1.5 whitespace-nowrap">
                                 <span className="font-black text-slate-700 text-[10px]">১. মোট অনুচ্ছেদ:</span>
                                 <span className="font-black text-rose-700 text-xs">{toBengaliDigits(unsettledCount)} টি</span>
                               </div>
-                              <div className="flex flex-wrap items-baseline gap-x-1.5 pt-0.5">
+                              <div className="flex items-baseline gap-x-1.5 whitespace-nowrap pt-0.5">
                                 <span className="font-black text-slate-700 text-[10px]">২. মোট টাকা:</span>
                                 <span className="font-black text-rose-800 text-xs">{toBengaliDigits(unsettledAmount)}</span>
                               </div>
