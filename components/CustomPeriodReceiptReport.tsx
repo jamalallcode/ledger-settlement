@@ -1179,8 +1179,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     <col className="w-[17%]" />
                     <col className="w-[21%]" />
                     <col className="w-[15%]" />
-                    <col className="w-[13%]" />
-                    <col className="w-[16%]" />
+                    <col className="w-[calc(13%+5px)]" style={{ width: 'calc(13% + 5px)' }} />
+                    <col className="w-[calc(16%-5px)]" style={{ width: 'calc(16% - 5px)' }} />
                     <col className="w-[14%]" />
                   </colgroup>
                   <thead className="sticky top-0 xl:top-[45px] z-30 shadow-sm bg-slate-200">
