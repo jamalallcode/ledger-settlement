@@ -1370,17 +1370,17 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           <td className="px-3 py-3 text-left border-r border-slate-200">
                             <div className="space-y-1 text-[11px]">
                               <div>
-                                <span className="font-black text-slate-700 block text-[10px]">১. নিষ্পত্তিকৃত মোট অনুচ্ছেদ:</span>
+                                <span className="font-black text-slate-700 block text-[10px]">১. মোট অনুচ্ছেদ:</span>
                                 <span className="font-black text-emerald-700 text-xs">{toBengaliDigits(settledCount)} টি</span>
                               </div>
                               <div className="pt-1">
-                                <span className="font-black text-slate-700 block text-[10px]">২. নিষ্পত্তিকৃত মোট টাকা:</span>
+                                <span className="font-black text-slate-700 block text-[10px]">২. মোট টাকা:</span>
                                 <span className="font-black text-emerald-900 text-xs">{toBengaliDigits(settledAmount)}</span>
                               </div>
                               {settledParas.length > 0 && (
                                 <div className="pt-1.5 border-t border-slate-100">
                                   <span className="font-black text-slate-700 block text-[10px] mb-0.5">
-                                    ৩. নিষ্পত্তিকৃত অনুচ্ছেদ নং:
+                                    ৩. অনুচ্ছেদ নং:
                                   </span>
                                   {(() => {
                                     const entryKey = entry.id || String(index);
@@ -1421,11 +1421,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           <td className="px-3 py-3 text-left relative">
                             <div className="space-y-1.5 text-[11px] pr-6">
                               <div>
-                                <span className="font-black text-slate-700 block text-[10px]">১. মোট অনিষ্পন্ন অনুচ্ছেদ:</span>
+                                <span className="font-black text-slate-700 block text-[10px]">১. মোট অনুচ্ছেদ:</span>
                                 <span className="font-black text-rose-700 text-xs">{toBengaliDigits(unsettledCount)} টি</span>
                               </div>
                               <div className="pt-0.5">
-                                <span className="font-black text-slate-700 block text-[10px]">২. মোট অনিষ্পন্ন টাকা:</span>
+                                <span className="font-black text-slate-700 block text-[10px]">২. মোট টাকা:</span>
                                 <span className="font-black text-rose-800 text-xs">{toBengaliDigits(unsettledAmount)}</span>
                               </div>
                               <div>
