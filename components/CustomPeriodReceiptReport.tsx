@@ -1179,33 +1179,30 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     <col className="w-[17%]" />
                     <col className="w-[23%]" />
                     <col className="w-[15%]" />
-                    <col className="w-[10%]" />
+                    <col className="w-[13%]" />
+                    <col className="w-[16%]" />
                     <col className="w-[12%]" />
-                    <col className="w-[10%]" />
-                    <col className="w-[9%]" />
                   </colgroup>
-                  <thead className="sticky top-0 xl:top-[45px] z-30 shadow-sm bg-slate-800">
-                    {/* Header Row 1: Titles */}
-                    <tr className="bg-slate-800 text-white text-[11px] font-black uppercase tracking-wider">
-                      <th className="bg-slate-800 text-white px-3 py-2.5 text-center border-b border-r border-slate-700">ক্র: নং</th>
-                      <th className="bg-slate-800 text-white px-3 py-2.5 text-left border-b border-r border-slate-700">প্রতিষ্ঠানের বিবরণ</th>
-                      <th className="bg-slate-800 text-white px-3 py-2.5 text-left border-b border-r border-slate-700">পত্র ও ডায়েরির বিবরণ</th>
-                      <th className="bg-slate-800 text-white px-3 py-2.5 text-left border-b border-r border-slate-700">বর্তমান অবস্থান / জারিপত্র</th>
-                      <th className="bg-slate-800 text-white px-3 py-2.5 text-left border-b border-r border-slate-700">প্রাপ্ত অনুচ্ছেদ ও টাকা</th>
-                      <th className="bg-slate-800 text-white px-3 py-2.5 text-left border-b border-r border-slate-700">নিষ্পত্তিকৃত তথ্য</th>
-                      <th className="bg-slate-800 text-white px-3 py-2.5 text-left border-b border-r border-slate-700">অনিষ্পন্ন তথ্য</th>
-                      <th className="bg-slate-800 text-white px-3 py-2.5 text-left border-b border-slate-700">মন্তব্য ও অ্যাকশন</th>
+                  <thead className="sticky top-0 xl:top-[45px] z-30 shadow-sm bg-slate-200">
+                    {/* Header Row 1: Titles (Black Text) */}
+                    <tr className="bg-slate-200 text-slate-900 text-[11px] font-black tracking-wider">
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">ক্র: নং</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">প্রতিষ্ঠানের বিবরণ</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">পত্র ও ডায়েরির বিবরণ</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">বর্তমান অবস্থান / জারিপত্র</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">প্রাপ্ত অনুচ্ছেদ ও টাকা</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">নিষ্পত্তিকৃত তথ্য</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-slate-300 font-black">অনিষ্পন্ন তথ্য ও মন্তব্য</th>
                     </tr>
-                    {/* Header Row 2: Sub-header Numbers (1-8) */}
-                    <tr className="bg-slate-200 text-slate-800 text-[11px] font-black text-center">
-                      <th className="bg-slate-200 text-slate-900 py-1 border-b border-r border-slate-300">১</th>
-                      <th className="bg-slate-200 text-slate-900 py-1 border-b border-r border-slate-300">২</th>
-                      <th className="bg-slate-200 text-slate-900 py-1 border-b border-r border-slate-300">৩</th>
-                      <th className="bg-slate-200 text-slate-900 py-1 border-b border-r border-slate-300">৪</th>
-                      <th className="bg-slate-200 text-slate-900 py-1 border-b border-r border-slate-300">৫</th>
-                      <th className="bg-slate-200 text-slate-900 py-1 border-b border-r border-slate-300">৬</th>
-                      <th className="bg-slate-200 text-slate-900 py-1 border-b border-r border-slate-300">৭</th>
-                      <th className="bg-slate-200 text-slate-900 py-1 border-b border-slate-300">৮</th>
+                    {/* Header Row 2: Sub-header Numbers (1-7) */}
+                    <tr className="bg-slate-100 text-slate-900 text-[11px] font-black text-center">
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">১</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">২</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৩</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৪</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৫</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৬</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-slate-300">৭</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 bg-white">
@@ -1268,7 +1265,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       const remarks = entry.remarks || entry.issueLetterComment || '-';
 
                       return (
-                        <tr key={entry.id || index} className="hover:bg-blue-50/30 transition-colors align-top">
+                        <tr key={entry.id || index} className="group hover:bg-blue-50/40 transition-colors align-top relative">
                           {/* Col 1: ক্র: নং */}
                           <td className="px-3 py-3 text-center text-[11px] font-black text-slate-800 border-r border-slate-200">
                             {toBengaliDigits(index + 1)}
@@ -1420,42 +1417,38 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                             </div>
                           </td>
 
-                          {/* Col 7: অনিষ্পন্ন তথ্য */}
-                          <td className="px-3 py-3 text-left border-r border-slate-200">
-                            <div className="space-y-1.5 text-[11px]">
+                          {/* Col 7: অনিষ্পন্ন তথ্য ও মন্তব্য (এবং হোভারে এডিট বাটন) */}
+                          <td className="px-3 py-3 text-left relative">
+                            <div className="space-y-1.5 text-[11px] pr-6">
                               <div>
                                 <span className="font-black text-slate-700 block text-[10px]">১. মোট অনিষ্পন্ন অনুচ্ছেদ:</span>
                                 <span className="font-black text-rose-700 text-xs">{toBengaliDigits(unsettledCount)} টি</span>
                               </div>
-                              <div className="pt-1">
+                              <div className="pt-0.5">
                                 <span className="font-black text-slate-700 block text-[10px]">২. মোট অনিষ্পন্ন টাকা:</span>
                                 <span className="font-black text-rose-800 text-xs">{toBengaliDigits(unsettledAmount)}</span>
                               </div>
-                            </div>
-                          </td>
-
-                          {/* Col 8: মন্তব্য ও অ্যাকশন */}
-                          <td className="px-3 py-3 text-left">
-                            <div className="space-y-2 text-[11px]">
                               <div>
-                                <span className="font-black text-slate-700 block text-[10px] mb-0.5">মন্তব্য:</span>
+                                <span className="font-black text-slate-700 block text-[10px] mb-0.5">৩. মন্তব্য:</span>
                                 <p className="text-[10.5px] font-medium text-slate-800 leading-tight">
                                   {remarks}
                                 </p>
                               </div>
-                              <div className="no-print pt-1">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onEdit) onEdit(entry);
-                                  }}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-all duration-200 font-bold text-[10.5px] shadow-xs active:scale-95 border border-slate-200 cursor-pointer whitespace-nowrap"
-                                  title="এডিট করুন"
-                                >
-                                  <FileEdit size={12} className="text-blue-500 shrink-0" />
-                                  এডিট
-                                </button>
-                              </div>
+                            </div>
+
+                            {/* Floating Hover Edit Button */}
+                            <div className="no-print absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (onEdit) onEdit(entry);
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition-all duration-200 font-bold text-[10.5px] active:scale-95 cursor-pointer whitespace-nowrap"
+                                title="এডিট করুন"
+                              >
+                                <FileEdit size={12} className="shrink-0" />
+                                এডিট
+                              </button>
                             </div>
                           </td>
                         </tr>
