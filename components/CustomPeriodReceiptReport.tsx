@@ -1418,7 +1418,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
                           {/* Col 7: অনিষ্পন্ন তথ্য ও মন্তব্য (এবং হোভারে এডিট বাটন) */}
                           <td className="px-3 py-3 text-left relative">
-                            <div className="space-y-1.5 text-[11px] pr-6">
+                            <div className="space-y-1.5 text-[11px] pr-2 pb-7">
                               <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
                                 <span className="font-black text-slate-700 text-[10px]">১. মোট অনুচ্ছেদ:</span>
                                 <span className="font-black text-rose-700 text-xs break-all">{toBengaliDigits(unsettledCount)} টি</span>
@@ -1436,7 +1436,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                             </div>
 
                             {/* Floating Hover Edit Button */}
-                            <div className="no-print absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <div className="no-print absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
