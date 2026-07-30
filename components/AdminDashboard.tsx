@@ -4,7 +4,7 @@ import {
   PieChart, FileText, Mail, PlusCircle, ArrowRight,
   Settings, KeyRound, Fingerprint, Library, BellRing,
   Sparkles, CheckCircle2, AlertCircle, Clock, Eye, EyeOff,
-  CalendarRange, MessageCircle
+  CalendarRange, MessageCircle, Menu
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -295,6 +295,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">মডিউল ভিজিবিলিটি কন্ট্রোল</h3>
                 <div className="space-y-2">
                   {[
+                    { key: 'navbar', label: 'মেনু বার', icon: Menu, color: 'amber' },
                     { key: 'entry', label: 'নতুন এন্ট্রি', icon: PlusCircle, color: 'blue' },
                     { key: 'register', label: 'রেজিস্টার দেখুন', icon: FileText, color: 'emerald' },
                     { key: 'return', label: 'রিপোর্ট ও সারাংশ', icon: PieChart, color: 'indigo' },

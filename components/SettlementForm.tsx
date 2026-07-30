@@ -73,7 +73,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, 
         isAdmin={isAdmin}
         existingEntries={entries}
         navigateToEntry={navigateToEntry}
-        showAuditDetails={moduleVisibility?.audit_details ?? true}
+        showAuditDetails={isAdmin || (moduleVisibility?.audit_details ?? true)}
       />
     );
   }

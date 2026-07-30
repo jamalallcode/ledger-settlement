@@ -147,6 +147,7 @@ const App: React.FC = () => {
     change_pass: true,
     admin_analytics: true,
     audit_details: true,
+    navbar: true,
   });
   
   const [contactLink, setContactLink] = useState<string>(() => {
@@ -1424,31 +1425,33 @@ const App: React.FC = () => {
       </div>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="no-print">
-          <Navbar 
-            activeTab={activeTab} setActiveTab={handleTabChange} onDemoLoad={() => {}}
-            isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
-            onExportSystem={handleExportDatabase} onImportSystem={handleImportDatabase}
-            isAdmin={isAdmin} setIsAdmin={setIsAdmin} cycleLabel={cycleLabelBengali}
-            showRegisterFilters={showRegisterFilters} setShowRegisterFilters={setShowRegisterFilters}
-            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen}
-            pendingEntries={[...pendingEntries, ...pendingCorrespondence]}
-            unassignedEntries={unassignedCorrespondence}
-            onApprove={handleApproveEntry}
-            onReject={handleRejectEntry}
-            setShowPendingOnly={setShowPendingOnly}
-            onOpenLogin={() => setShowAdminLogin(true)}
-            onLogout={handleLogout}
-            isDarkMode={darkMode}
-            onToggleDarkMode={() => setDarkMode(!darkMode)}
-            entryModule={entryModule}
-            registerSubModule={registerSubModule}
-            reportType={reportType}
-            contactLink={contactLink}
-            onGoBack={goBack}
-            hasHistory={navHistory.length > 0}
-          />
-        </div>
+        {(isAdmin || moduleVisibility.navbar !== false) && (
+          <div className="no-print">
+            <Navbar 
+              activeTab={activeTab} setActiveTab={handleTabChange} onDemoLoad={() => {}}
+              isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}
+              onExportSystem={handleExportDatabase} onImportSystem={handleImportDatabase}
+              isAdmin={isAdmin} setIsAdmin={setIsAdmin} cycleLabel={cycleLabelBengali}
+              showRegisterFilters={showRegisterFilters} setShowRegisterFilters={setShowRegisterFilters}
+              onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen}
+              pendingEntries={[...pendingEntries, ...pendingCorrespondence]}
+              unassignedEntries={unassignedCorrespondence}
+              onApprove={handleApproveEntry}
+              onReject={handleRejectEntry}
+              setShowPendingOnly={setShowPendingOnly}
+              onOpenLogin={() => setShowAdminLogin(true)}
+              onLogout={handleLogout}
+              isDarkMode={darkMode}
+              onToggleDarkMode={() => setDarkMode(!darkMode)}
+              entryModule={entryModule}
+              registerSubModule={registerSubModule}
+              reportType={reportType}
+              contactLink={contactLink}
+              onGoBack={goBack}
+              hasHistory={navHistory.length > 0}
+            />
+          </div>
+        )}
 
         <main 
           ref={mainScrollRef} 

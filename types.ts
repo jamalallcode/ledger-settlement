@@ -176,4 +176,5 @@ export interface ModuleVisibility {
   change_pass: boolean;
   admin_analytics: boolean;
   audit_details: boolean;
+  navbar?: boolean;
 }

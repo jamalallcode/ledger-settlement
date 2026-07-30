@@ -185,6 +185,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
   const [filterMinistry, setFilterMinistry] = useState('সকল');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [activeReportMode, setActiveReportMode] = useState<'correspondence' | 'settlement'>('correspondence');
+  const [expandedParasMap, setExpandedParasMap] = useState<Record<string, boolean>>({});
+
+  const toggleExpandParas = (entryId: string) => {
+    setExpandedParasMap(prev => ({ ...prev, [entryId]: !prev[entryId] }));
+  };
 
   const MINISTRIES = STATIC_MINISTRIES;
 
@@ -693,7 +698,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
   };
 
   return (
-    <div className="max-w-[1400px] mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500 relative">
+    <div className="w-full max-w-[2000px] mx-auto px-2 sm:px-3 md:px-4 py-4 md:py-6 space-y-6 animate-in fade-in duration-500 relative">
       <IDBadge id="custom-period-receipt-report-panel" />
 
       {/* TOP HEADER / BACK BAR */}
@@ -1167,85 +1172,283 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           {/* TABLE */}
           {activeReportMode === 'correspondence' ? (
             filteredEntries.length > 0 ? (
-              <div className="table-container overflow-x-auto rounded-2xl shadow-inner">
+              <div className="table-container overflow-x-auto rounded-2xl shadow-inner border border-slate-200">
                 <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                   <colgroup>
-                    <col className="w-[8%]" />
-                    <col className="w-[11%]" />
-                    <col className="w-[11%]" />
-                    <col className="w-[11%]" />
-                    <col className="w-[19%]" />
-                    <col className="w-[8%]" />
-                    <col className="w-[11%]" />
-                    <col className="w-[11%]" />
-                    <col className="w-[14%] no-print" />
+                    <col className="w-[4%]" />
+                    <col className="w-[17%]" />
+                    <col className="w-[21%]" />
+                    <col className="w-[15%]" />
+                    <col className="w-[calc(13%+5px)]" style={{ width: 'calc(13% + 5px)' }} />
+                    <col className="w-[calc(16%-5px)]" style={{ width: 'calc(16% - 5px)' }} />
+                    <col className="w-[14%]" />
                   </colgroup>
-                  <thead className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 shadow-sm">
-                    <tr className="bg-slate-100 text-slate-700">
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-center text-xs font-black border-b border-slate-200">ক্র: নং</th>
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">পত্র নং ও তারিখ</th>
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">ডায়রি নং ও তারিখ</th>
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">শাখা ও পত্রের ধরন</th>
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">বিষয় / বিবরণ</th>
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-center text-xs font-black border-b border-slate-200">অনুচ্ছেদ সংখ্যা</th>
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-right text-xs font-black border-b border-slate-200">জড়িত টাকা (টাকা)</th>
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">মন্ত্রণালয়</th>
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-center text-xs font-black no-print border-b border-slate-200">অ্যাকশন</th>
+                  <thead className="sticky top-0 xl:top-[45px] z-30 shadow-sm bg-slate-200">
+                    {/* Header Row 1: Titles (Black Text) */}
+                    <tr className="bg-slate-200 text-slate-900 text-[11px] font-black tracking-wider">
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">ক্র: নং</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">প্রতিষ্ঠানের বিবরণ</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">পত্র ও ডায়েরির বিবরণ</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">বর্তমান অবস্থান / জারিপত্র</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">প্রাপ্ত অনুচ্ছেদ ও টাকা</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">নিষ্পত্তিকৃত তথ্য</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-slate-300 font-black">অনিষ্পন্ন তথ্য ও মন্তব্য</th>
+                    </tr>
+                    {/* Header Row 2: Sub-header Numbers (1-7) */}
+                    <tr className="bg-slate-100 text-slate-900 text-[11px] font-black text-center">
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">১</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">২</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৩</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৪</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৫</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৬</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-slate-300">৭</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-200 bg-white">
                     {filteredEntries.map((entry, index) => {
+                      const auditEntity = entry.entityName || entry.description || 'নির্ধারিত নয়';
+                      const ministryName = getEntryMinistry(entry) || entry.ministryName || 'নির্ধারিত নয়';
+
+                      const paraType = entry.paraType || 'এসএফআই';
+                      const letterTypeDisplay = getCleanLetterTypeDisplay(entry.letterType) || (entry.isMeeting ? renderMeetingType(entry.meetingType) : 'সাধারণ');
+                      const diaryNo = entry.diaryNo ? toBengaliDigits(entry.diaryNo) : (entry.workpaperNoDate ? cleanAndFormat(entry.workpaperNoDate, "ডায়রি") : '-');
+                      const diaryDate = entry.diaryDate || '-';
+                      const letterNo = entry.letterNo ? toBengaliDigits(entry.letterNo) : (entry.letterNoDate ? cleanAndFormat(entry.letterNoDate, "পত্র") : '-');
+                      const letterDate = entry.letterDate || '-';
+                      const auditYear = entry.auditYear || '-';
+                      const receiptDate = entry.receiptDate || entry.branchReceiptDate || entry.receivedDate || '-';
+                      const presentationDate = entry.presentationDate || entry.createdAt || '-';
+                      const archiveNo = entry.archiveNo || '-';
+
+                      // Current Position / Issue Letter Status
+                      const hasIssueLetter = !!(entry.issueLetterNo || entry.issueLetterDate || entry.issueLetterNoDate);
+                      const issueLetterNo = entry.issueLetterNo || (entry.issueLetterNoDate ? cleanAndFormat(entry.issueLetterNoDate, "জারিপত্র") : '');
+                      const issueLetterDate = entry.issueLetterDate || '';
+                      const holderName = entry.presentedToName || entry.receiverName || 'শাখা কর্মকর্তা';
+
+                      // Sent/Received Paras & Amount
+                      const totalParas = parseInt(toEnglishDigits(String(entry.totalParas || entry.sentParaCount || (entry.paragraphs ? entry.paragraphs.length : 1))));
+                      const totalAmount = parseFloat(toEnglishDigits(String(entry.totalAmount || entry.sentParaInvolvedAmount || entry.involvedAmount || 0)));
+
+                      // Settlement stats calculation
+                      let settledCount = 0;
+                      let settledAmount = 0;
+                      let settledParas: any[] = [];
+
+                      if (entry.paragraphs && entry.paragraphs.length > 0) {
+                        settledParas = entry.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0);
+                        settledCount = settledParas.length;
+                        settledAmount = entry.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0);
+                      } else {
+                        const matchedS = (settlementEntries || []).find((s: any) => {
+                          const sLetter = normalizeForSearch(s.letterNoDate || '');
+                          const sWork = normalizeForSearch(s.workpaperNoDate || '');
+                          const eLetter = normalizeForSearch(entry.letterNo || '');
+                          const eDiary = normalizeForSearch(entry.diaryNo || '');
+                          return (eLetter && sLetter.includes(eLetter)) || (eDiary && sWork.includes(eDiary));
+                        });
+
+                        if (matchedS && matchedS.paragraphs && matchedS.paragraphs.length > 0) {
+                          settledParas = matchedS.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0);
+                          settledCount = settledParas.length;
+                          settledAmount = matchedS.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0);
+                        } else {
+                          settledCount = parseInt(toEnglishDigits(String(entry.meetingSettledParaCount || '0')));
+                          settledAmount = parseFloat(toEnglishDigits(String(entry.meetingSettledAmount || (entry.totalRec || 0) + (entry.totalAdj || 0))));
+                        }
+                      }
+
+                      // Unsettled stats
+                      const unsettledCount = Math.max(0, totalParas - settledCount);
+                      const unsettledAmount = Math.max(0, totalAmount - settledAmount);
+                      const remarks = entry.remarks || entry.issueLetterComment || '-';
+
                       return (
-                        <tr key={entry.id || index} className="hover:bg-blue-50/20 transition-colors">
-                          <td className="px-4 py-3 text-center text-[11px] font-black text-slate-800 border-r border-slate-200">
+                        <tr key={entry.id || index} className="group hover:bg-blue-50/40 transition-colors align-top relative">
+                          {/* Col 1: ক্র: নং */}
+                          <td className="px-3 py-3 text-center text-[11px] font-black text-slate-800 border-r border-slate-200">
                             {toBengaliDigits(index + 1)}
                           </td>
-                          <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
-                            <div className="flex flex-col">
-                              <span className="font-black text-slate-900">পত্র নং: {entry.letterNo ? toBengaliDigits(entry.letterNo) : '-'}</span>
-                              <span className="text-[10px] text-slate-500">তারিখ: {formatDateBN(entry.letterDate)}</span>
+
+                          {/* Col 2: অডিট প্রতিষ্ঠান ও মন্ত্রণালয় */}
+                          <td className="px-3 py-3 text-left border-r border-slate-200">
+                            <div className="space-y-1 text-[11px]">
+                              <div>
+                                <span className="font-black text-slate-700">১. অডিট প্রতিষ্ঠানের নাম: </span>
+                                <span className="font-bold text-slate-900 block leading-snug">{auditEntity}</span>
+                              </div>
+                              <div className="pt-0.5">
+                                <span className="font-black text-slate-700">২. মন্ত্রণালয়ের নাম: </span>
+                                <span className="font-bold text-blue-800 block">{ministryName}</span>
+                              </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
-                            <div className="flex flex-col">
-                              <span className="font-black text-slate-900">ডায়রি: {toBengaliDigits(entry.diaryNo)}</span>
-                              <span className="text-[10px] text-slate-500">তারিখ: {formatDateBN(entry.diaryDate)}</span>
+
+                          {/* Col 3: পত্র ও ডায়েরির বিবরণ */}
+                          <td className="px-3 py-3 text-left border-r border-slate-200">
+                            <div className="space-y-1 text-[10.5px] leading-snug">
+                              <div>
+                                <span className="font-black text-slate-700">১. শাখার নাম: </span>
+                                <span className="font-bold text-emerald-800 bg-emerald-50 px-1 py-0.5 rounded text-[9.5px]">{paraType}</span>
+                              </div>
+                              <div>
+                                <span className="font-black text-slate-700">২. পত্রের ধরন: </span>
+                                <span className="font-bold text-slate-900">{letterTypeDisplay}</span>
+                              </div>
+                              <div>
+                                <span className="font-black text-slate-700">৩. ডায়েরী নম্বর ও তারিখ: </span>
+                                <span className="font-bold text-slate-900">{diaryNo}</span>
+                                {diaryDate !== '-' && <span className="text-slate-800 font-bold"> ({formatDateBN(diaryDate)})</span>}
+                              </div>
+                              <div>
+                                <span className="font-black text-slate-700">৪. পত্র নম্বর ও তারিখ: </span>
+                                <span className="font-bold text-slate-900">{letterNo}</span>
+                                {letterDate !== '-' && <span className="text-slate-800 font-bold"> ({formatDateBN(letterDate)})</span>}
+                              </div>
+                              {auditYear !== '-' && (
+                                <div>
+                                  <span className="font-black text-slate-700">৫. নিরীক্ষা বছর: </span>
+                                  <span className="font-bold text-slate-900">{toBengaliDigits(auditYear)}</span>
+                                </div>
+                              )}
+                              {receiptDate !== '-' && (
+                                <div>
+                                  <span className="font-black text-slate-700">৬. শাখায় প্রাপ্তির তারিখ: </span>
+                                  <span className="font-bold text-slate-800">{formatDateBN(receiptDate)}</span>
+                                </div>
+                              )}
+                              {presentationDate !== '-' && (
+                                <div>
+                                  <span className="font-black text-slate-700">৭. গ্রহণের তারিখ: </span>
+                                  <span className="font-bold text-slate-800">{formatDateBN(presentationDate)}</span>
+                                </div>
+                              )}
+                              {archiveNo !== '-' && (
+                                <div>
+                                  <span className="font-black text-slate-700">৮. আর্কাইভ নং: </span>
+                                  <span className="font-bold text-purple-700">{toBengaliDigits(archiveNo)}</span>
+                                </div>
+                              )}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-700 border-r border-slate-200">
-                            <div className="space-y-1">
-                              <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-black text-slate-600">
-                                {entry.paraType}
-                              </span>
-                              <span className="block font-black text-slate-900 text-[10.5px]">
-                                {getCleanLetterTypeDisplay(entry.letterType)}
-                              </span>
+
+                          {/* Col 4: বর্তমান অবস্থান / জারিপত্র */}
+                          <td className="px-3 py-3 text-left border-r border-slate-200">
+                            <div className="space-y-1.5 text-[11px]">
+                              <span className="font-black text-slate-700 block text-[10.5px]">১. চিঠিটির বর্তমান অবস্থান:</span>
+                              {hasIssueLetter ? (
+                                <div className="bg-emerald-50 text-emerald-900 p-2 rounded-xl border border-emerald-200 shadow-2xs space-y-0.5">
+                                  {issueLetterNo && <span className="block text-[10px] font-bold">জারিপত্র নং: {issueLetterNo}</span>}
+                                  {issueLetterDate && <span className="block text-[10px] font-bold text-emerald-900">তারিখ: {formatDateBN(issueLetterDate)}</span>}
+                                </div>
+                              ) : (
+                                <div className="bg-amber-50 text-amber-900 p-2 rounded-xl border border-amber-200 shadow-2xs space-y-0.5">
+                                  <span className="font-bold block text-[10px] text-amber-700">চিঠিটি এখনো যার কাছে আছে:</span>
+                                  <span className="font-black block text-[11px] text-amber-950">{holderName}</span>
+                                </div>
+                              )}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-left text-[11px] font-semibold text-slate-800 leading-relaxed border-r border-slate-200">
-                            {entry.description}
+
+                          {/* Col 5: প্রাপ্ত অনুচ্ছেদ ও টাকা */}
+                          <td className="px-3 py-3 text-left border-r border-slate-200">
+                            <div className="space-y-1.5 text-[11px]">
+                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
+                                <span className="font-black text-slate-700 text-[10px]">১. প্রেরিত মোট অনুচ্ছেদ:</span>
+                                <span className="font-black text-slate-900 text-xs break-all">{toBengaliDigits(totalParas)} টি</span>
+                              </div>
+                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words pt-0.5">
+                                <span className="font-black text-slate-700 text-[10px]">২. মোট জড়িত টাকা:</span>
+                                <span className="font-black text-blue-900 text-xs break-all">{toBengaliDigits(totalAmount)}</span>
+                              </div>
+                            </div>
                           </td>
-                          <td className="px-4 py-3 text-center text-[11px] font-black text-slate-700 border-r border-slate-200">
-                            {toBengaliDigits(entry.totalParas || '০')} টি
+
+                          {/* Col 6: নিষ্পত্তিকৃত তথ্য */}
+                          <td className="px-3 py-3 text-left border-r border-slate-200">
+                            <div className="space-y-1 text-[11px]">
+                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
+                                <span className="font-black text-slate-700 text-[10px]">১. মোট অনুচ্ছেদ:</span>
+                                <span className="font-black text-emerald-700 text-xs break-all">{toBengaliDigits(settledCount)} টি</span>
+                              </div>
+                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words pt-0.5">
+                                <span className="font-black text-slate-700 text-[10px]">২. মোট টাকা:</span>
+                                <span className="font-black text-emerald-900 text-xs break-all">{toBengaliDigits(settledAmount)}</span>
+                              </div>
+                              {settledParas.length > 0 && (
+                                <div className="pt-1.5 border-t border-slate-100 flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                                  <span className="font-black text-slate-700 text-[10px] shrink-0">
+                                    ৩. অনুচ্ছেদ নং:
+                                  </span>
+                                  {(() => {
+                                    const entryKey = entry.id || String(index);
+                                    const isExpanded = !!expandedParasMap[entryKey];
+                                    const hasMore = settledParas.length > 3;
+                                    const visibleParas = (hasMore && !isExpanded) ? settledParas.slice(0, 3) : settledParas;
+                                    const paraNumbersStr = visibleParas.map((p: any, pIdx: number) => {
+                                      return p.paraNo ? toBengaliDigits(p.paraNo) : toBengaliDigits(pIdx + 1);
+                                    }).join(', ');
+
+                                    return (
+                                      <span className="inline-flex items-center gap-1 text-[10.5px]">
+                                        <span className="font-bold text-emerald-900 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 inline">
+                                          {paraNumbersStr}
+                                          {hasMore && !isExpanded && '...'}
+                                        </span>
+                                        {hasMore && (
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              toggleExpandParas(entryKey);
+                                            }}
+                                            className="ml-1 inline-flex items-center text-[10px] font-black text-blue-600 hover:text-blue-800 underline cursor-pointer no-print whitespace-nowrap"
+                                          >
+                                            {isExpanded ? 'কম দেখুন' : 'আরো দেখুন'}
+                                          </button>
+                                        )}
+                                      </span>
+                                    );
+                                  })()}
+                                </div>
+                              )}
+                            </div>
                           </td>
-                          <td className="px-4 py-3 text-right text-[11.5px] font-black text-slate-900 border-r border-slate-200">
-                            {toBengaliDigits(entry.totalAmount || '০')}
-                          </td>
-                          <td className="px-4 py-3 text-left text-[11px] font-semibold text-slate-800 border-r border-slate-200">
-                            {getEntryMinistry(entry) || '-'}
-                          </td>
-                          <td className="px-4 py-3 text-center text-[11px] no-print">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (onEdit) onEdit(entry);
-                              }}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-all duration-200 font-bold text-[10.5px] shadow-sm active:scale-95 border border-slate-200 cursor-pointer whitespace-nowrap"
-                              title="এডিট করুন"
-                            >
-                              <FileEdit size={12} className="text-blue-500 shrink-0" />
-                              এডিট
-                            </button>
+
+                          {/* Col 7: অনিষ্পন্ন তথ্য ও মন্তব্য (এবং হোভারে এডিট বাটন) */}
+                          <td className="px-3 py-3 text-left relative">
+                            <div className="space-y-1.5 text-[11px] pr-2 pb-7">
+                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
+                                <span className="font-black text-slate-700 text-[10px]">১. মোট অনুচ্ছেদ:</span>
+                                <span className="font-black text-rose-700 text-xs break-all">{toBengaliDigits(unsettledCount)} টি</span>
+                              </div>
+                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words pt-0.5">
+                                <span className="font-black text-slate-700 text-[10px]">২. মোট টাকা:</span>
+                                <span className="font-black text-rose-800 text-xs break-all">{toBengaliDigits(unsettledAmount)}</span>
+                              </div>
+                              <div>
+                                <span className="font-black text-slate-700 block text-[10px] mb-0.5">৩. মন্তব্য:</span>
+                                <p className="text-[10.5px] font-medium text-slate-800 leading-tight">
+                                  {remarks}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Floating Hover Edit Button */}
+                            <div className="no-print absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (onEdit) onEdit(entry);
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition-all duration-200 font-bold text-[10.5px] active:scale-95 cursor-pointer whitespace-nowrap"
+                                title="এডিট করুন"
+                              >
+                                <FileEdit size={12} className="shrink-0" />
+                                এডিট
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
