@@ -1267,7 +1267,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       return (
                         <tr key={entry.id || index} className="group hover:bg-blue-50/40 transition-colors align-top relative">
                           {/* Col 1: ক্র: নং */}
-                          <td className="px-3 py-3 text-center text-[11px] font-black text-slate-800 border-r border-slate-200">
+                          <td className="px-2 py-3 text-center text-[11px] font-black text-slate-800 border-r border-slate-200 whitespace-nowrap">
                             {toBengaliDigits(index + 1)}
                           </td>
 
@@ -1468,8 +1468,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
               <div className="table-container overflow-x-auto rounded-2xl shadow-inner">
                 <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                   <colgroup>
-                    <col className="w-[4%]" />
-                    <col className="w-[22%]" />
+                    <col className="w-[5%]" />
+                    <col className="w-[21%]" />
                     <col className="w-[17%]" />
                     <col className="w-[9%]" />
                     <col className="w-[14%]" />
@@ -1513,33 +1513,54 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
                       return (
                         <tr key={entry.id || index} className="hover:bg-blue-50/20 transition-colors group">
-                          <td className="px-4 py-3 text-center text-[11px] font-black text-slate-800 border-r border-slate-200">
+                          <td className="px-2 py-3 text-center text-[11px] font-black text-slate-800 border-r border-slate-200 whitespace-nowrap">
                             {toBengaliDigits(index + 1)}
                           </td>
-                          <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
-                            <div className="flex flex-col">
-                              <span className="font-black text-slate-900">{entry.ministryName}</span>
-                              <span className="text-[10px] text-slate-500">{entry.entityName} ({entry.branchName})</span>
+                          <td className="px-3 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
+                            <div className="flex flex-col space-y-1">
+                              <div>
+                                <span className="font-black text-slate-700">১. </span>
+                                <span className="font-black text-slate-900">{entry.ministryName}</span>
+                              </div>
+                              <div>
+                                <span className="font-black text-slate-700">২. </span>
+                                <span className="text-[10px] text-slate-600 font-medium">{entry.entityName} ({entry.branchName})</span>
+                              </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
+                          <td className="px-3 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
                             <div className="flex flex-col space-y-1">
-                              <span className="font-bold text-slate-900 block">{cleanAndFormat(entry.letterNoDate, "পত্র নং ও তারিখ")}</span>
-                              <span className="text-[10px] text-slate-600 block">{cleanAndFormat(entry.workpaperNoDate, "ডায়েরি নং ও তারিখ")}</span>
-                              <span className="text-[10px] text-slate-600 block">{cleanAndFormat(entry.issueLetterNoDate, "জারিপত্র নং ও তারিখ")}</span>
+                              <div>
+                                <span className="font-black text-slate-700">১. </span>
+                                <span className="font-bold text-slate-900">{cleanAndFormat(entry.letterNoDate, "পত্র নং ও তারিখ")}</span>
+                              </div>
+                              <div>
+                                <span className="font-black text-slate-700">২. </span>
+                                <span className="text-[10px] text-slate-600 font-bold">{cleanAndFormat(entry.workpaperNoDate, "ডায়েরি নং ও তারিখ")}</span>
+                              </div>
+                              <div>
+                                <span className="font-black text-slate-700">৩. </span>
+                                <span className="text-[10px] text-slate-600 font-bold">{cleanAndFormat(entry.issueLetterNoDate, "জারিপত্র নং ও তারিখ")}</span>
+                              </div>
                             </div>
                           </td>
                           <td className="px-4 py-3 text-center text-[11px] font-semibold text-slate-800 border-r border-slate-200">
                             {toBengaliDigits(entry.auditYear)}
                           </td>
-                          <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-700 border-r border-slate-200">
+                          <td className="px-3 py-3 text-left text-[11px] font-bold text-slate-700 border-r border-slate-200">
                             <div className="space-y-1">
-                              <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-black text-slate-600">
-                                {entry.paraType}
-                              </span>
-                              <span className="block font-black text-slate-900 text-[10.5px]">
-                                {entry.isMeeting ? renderMeetingType(entry.meetingType) : 'সাধারণ নিষ্পত্তি'}
-                              </span>
+                              <div>
+                                <span className="font-black text-slate-700 text-[10px]">১. </span>
+                                <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-black text-slate-600">
+                                  {entry.paraType}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="font-black text-slate-700 text-[10px]">২. </span>
+                                <span className="font-black text-slate-900 text-[10.5px]">
+                                  {entry.isMeeting ? renderMeetingType(entry.meetingType) : 'সাধারণ নিষ্পত্তি'}
+                                </span>
+                              </div>
                             </div>
                           </td>
                           <td className="px-4 py-3 text-center text-[11px] font-black text-slate-700 border-r border-slate-200">
@@ -1570,7 +1591,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                   </tbody>
                   <tfoot>
                     <tr className="bg-slate-100 font-black text-slate-900 border-t-2 border-slate-300">
-                      <td colSpan={5} className="px-4 py-3 text-left text-xs border-r border-slate-200 font-black pl-6">সর্বমোট:</td>
+                      <td colSpan={5} className="px-4 py-3 text-center text-xs border-r border-slate-200 font-black">সর্বমোট:</td>
                       <td className="px-4 py-3 text-center text-[11px] border-r border-slate-200 font-black">
                         {toBengaliDigits(totalSettledCountSum)} টি
                       </td>
