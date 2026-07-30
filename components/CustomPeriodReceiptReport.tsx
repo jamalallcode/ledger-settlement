@@ -698,7 +698,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
   };
 
   return (
-    <div className="w-full max-w-[2000px] mx-auto px-2 sm:px-3 md:px-4 py-4 md:py-6 space-y-6 animate-in fade-in duration-500 relative">
+    <div className="w-full max-w-full mx-auto px-1 sm:px-1.5 md:px-2 py-3 md:py-4 space-y-5 animate-in fade-in duration-500 relative">
       <IDBadge id="custom-period-receipt-report-panel" />
 
       {/* TOP HEADER / BACK BAR */}
@@ -1055,7 +1055,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full">
           {/* Total Settled Paragraphs */}
           <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
             <div className="flex items-center justify-between">
@@ -1103,7 +1103,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           </div>
         </div>
 
-        <div className="p-4 md:p-6">
+        <div className="p-2 sm:p-3 md:p-3">
           {/* Toggle Report Mode Control */}
           <div className="flex items-center gap-2 p-1 bg-slate-100 border border-slate-200 rounded-2xl w-fit mb-6 no-print">
             <button
@@ -1187,12 +1187,12 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     {/* Header Row 1: Titles (Black Text) */}
                     <tr className="bg-slate-200 text-slate-900 text-[11px] font-black tracking-wider">
                       <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">ক্র: নং</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">প্রতিষ্ঠানের বিবরণ</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">পত্র ও ডায়েরির বিবরণ</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">বর্তমান অবস্থান / জারিপত্র</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">প্রাপ্ত অনুচ্ছেদ ও টাকা</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-r border-slate-300 font-black">নিষ্পত্তিকৃত তথ্য</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-left border-b border-slate-300 font-black">অনিষ্পন্ন তথ্য ও মন্তব্য</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">প্রতিষ্ঠানের বিবরণ</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">পত্র ও ডায়েরির বিবরণ</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">বর্তমান অবস্থান / জারিপত্র</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">প্রাপ্ত অনুচ্ছেদ ও টাকা</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">নিষ্পত্তিকৃত তথ্য</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-slate-300 font-black">অনিষ্পন্ন তথ্য ও মন্তব্য</th>
                     </tr>
                     {/* Header Row 2: Sub-header Numbers (1-7) */}
                     <tr className="bg-slate-100 text-slate-900 text-[11px] font-black text-center">
@@ -1267,7 +1267,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       return (
                         <tr key={entry.id || index} className="group hover:bg-blue-50/40 transition-colors align-top relative">
                           {/* Col 1: ক্র: নং */}
-                          <td className="px-3 py-3 text-center text-[11px] font-black text-slate-800 border-r border-slate-200">
+                          <td className="px-2 py-3 text-center text-[11px] font-black text-slate-800 border-r border-slate-200 whitespace-nowrap">
                             {toBengaliDigits(index + 1)}
                           </td>
 
@@ -1468,27 +1468,37 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
               <div className="table-container overflow-x-auto rounded-2xl shadow-inner">
                 <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                   <colgroup>
-                    <col className="w-[6%]" />
-                    <col className="w-[14%]" />
-                    <col className="w-[18%]" />
-                    <col className="w-[10%]" />
+                    <col className="w-[5%]" />
+                    <col className="w-[21%]" />
+                    <col className="w-[17%]" />
+                    <col className="w-[9%]" />
                     <col className="w-[14%]" />
                     <col className="w-[11%]" />
                     <col className="w-[11%]" />
-                    <col className="w-[16%]" />
-                    <col className="w-[10%] no-print" />
+                    <col className="w-[12%]" />
                   </colgroup>
-                  <thead className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 shadow-sm">
-                    <tr className="bg-slate-100 text-slate-700">
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-center text-xs font-black border-b border-slate-200">ক্র: নং</th>
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">স্মারক ও তারিখ</th>
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">মন্ত্রণালয় ও প্রতিষ্ঠান</th>
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-center text-xs font-black border-b border-slate-200">অডিট বছর</th>
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">শাখা ও নিষ্পত্তির ধরন</th>
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-center text-xs font-black border-b border-slate-200">নিষ্পন্নকৃত অনুচ্ছেদের সংখ্যা</th>
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-right text-xs font-black border-b border-slate-200">নিষ্পত্তিকৃত টাকা (টাকা)</th>
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-left text-xs font-black border-b border-slate-200">মন্তব্য</th>
-                      <th className="sticky top-0 xl:top-[45px] z-30 bg-slate-100 px-4 py-3 text-center text-xs font-black no-print border-b border-slate-200">অ্যাকশন</th>
+                  <thead className="sticky top-0 xl:top-[45px] z-30 shadow-sm bg-slate-200">
+                    {/* Header Row 1: Titles */}
+                    <tr className="bg-slate-200 text-slate-900 text-[11px] font-black tracking-wider">
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">ক্র: নং</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">মন্ত্রণালয় ও প্রতিষ্ঠান</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">স্মারক ও তারিখ</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">অডিট বছর</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">শাখা ও নিষ্পত্তির ধরন</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">নিষ্পন্নকৃত অনুচ্ছেদের সংখ্যা</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">নিষ্পত্তিকৃত টাকা (টাকা)</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-slate-300 font-black">মন্তব্য</th>
+                    </tr>
+                    {/* Header Row 2: Sub-header Numbers (1-8) */}
+                    <tr className="bg-slate-100 text-slate-900 text-[11px] font-black text-center">
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">১</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">২</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৩</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৪</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৫</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৬</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৭</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-slate-300">৮</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -1502,34 +1512,55 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                         : ((entry.totalRec || 0) + (entry.totalAdj || 0));
 
                       return (
-                        <tr key={entry.id || index} className="hover:bg-blue-50/20 transition-colors">
-                          <td className="px-4 py-3 text-center text-[11px] font-black text-slate-800 border-r border-slate-200">
+                        <tr key={entry.id || index} className="hover:bg-blue-50/20 transition-colors group">
+                          <td className="px-2 py-3 text-center text-[11px] font-black text-slate-800 border-r border-slate-200 whitespace-nowrap">
                             {toBengaliDigits(index + 1)}
                           </td>
-                          <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
+                          <td className="px-3 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
                             <div className="flex flex-col space-y-1">
-                              <span className="font-bold text-slate-900 block">{cleanAndFormat(entry.letterNoDate, "পত্র নং ও তারিখ")}</span>
-                              <span className="text-[10px] text-slate-600 block">{cleanAndFormat(entry.workpaperNoDate, "ডায়েরি নং ও তারিখ")}</span>
-                              <span className="text-[10px] text-slate-600 block">{cleanAndFormat(entry.issueLetterNoDate, "জারিপত্র নং ও তারিখ")}</span>
+                              <div>
+                                <span className="font-black text-slate-700">১. </span>
+                                <span className="font-black text-slate-900">{entry.ministryName}</span>
+                              </div>
+                              <div>
+                                <span className="font-black text-slate-700">২. </span>
+                                <span className="text-[10px] text-slate-600 font-medium">{entry.entityName} ({entry.branchName})</span>
+                              </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
-                            <div className="flex flex-col">
-                              <span className="font-black text-slate-900">{entry.ministryName}</span>
-                              <span className="text-[10px] text-slate-500">{entry.entityName} ({entry.branchName})</span>
+                          <td className="px-3 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
+                            <div className="flex flex-col space-y-1">
+                              <div>
+                                <span className="font-black text-slate-700">১. </span>
+                                <span className="font-bold text-slate-900">{cleanAndFormat(entry.letterNoDate, "পত্র নং ও তারিখ")}</span>
+                              </div>
+                              <div>
+                                <span className="font-black text-slate-700">২. </span>
+                                <span className="text-[10px] text-slate-600 font-bold">{cleanAndFormat(entry.workpaperNoDate, "ডায়েরি নং ও তারিখ")}</span>
+                              </div>
+                              <div>
+                                <span className="font-black text-slate-700">৩. </span>
+                                <span className="text-[10px] text-slate-600 font-bold">{cleanAndFormat(entry.issueLetterNoDate, "জারিপত্র নং ও তারিখ")}</span>
+                              </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-center text-[11px] font-semibold text-slate-800 border-r border-slate-200">
+                          <td className="px-4 py-3 text-center text-[11px] font-black text-slate-900 border-r border-slate-200">
                             {toBengaliDigits(entry.auditYear)}
                           </td>
-                          <td className="px-4 py-3 text-left text-[11px] font-bold text-slate-700 border-r border-slate-200">
+                          <td className="px-3 py-3 text-left text-[11px] font-bold text-slate-700 border-r border-slate-200">
                             <div className="space-y-1">
-                              <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-black text-slate-600">
-                                {entry.paraType}
-                              </span>
-                              <span className="block font-black text-slate-900 text-[10.5px]">
-                                {entry.isMeeting ? renderMeetingType(entry.meetingType) : 'সাধারণ নিষ্পত্তি'}
-                              </span>
+                              <div>
+                                <span className="font-black text-slate-700 text-[10px]">১. </span>
+                                <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-black text-slate-600">
+                                  {entry.paraType}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="font-black text-slate-700 text-[10px]">২. </span>
+                                <span className="font-black text-slate-900 text-[10.5px]">
+                                  {entry.isMeeting ? renderMeetingType(entry.meetingType) : 'সাধারণ নিষ্পত্তি'}
+                                </span>
+                              </div>
                             </div>
                           </td>
                           <td className="px-4 py-3 text-center text-[11px] font-black text-slate-700 border-r border-slate-200">
@@ -1538,21 +1569,21 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           <td className="px-4 py-3 text-right text-[11.5px] font-black text-slate-900 border-r border-slate-200">
                             {toBengaliDigits(rowSettledAmount || '০')}
                           </td>
-                          <td className="px-4 py-3 text-left text-[11px] font-semibold text-slate-800 border-r border-slate-200">
+                          <td className="px-4 py-3 text-justify break-words text-[11px] font-semibold text-slate-800 border-r border-slate-200 relative pb-7">
                             {entry.remarks || '-'}
-                          </td>
-                          <td className="px-4 py-3 text-center text-[11px] no-print">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (onEdit) onEdit(entry);
-                              }}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-all duration-200 font-bold text-[10.5px] shadow-sm active:scale-95 border border-slate-200 cursor-pointer whitespace-nowrap"
-                              title="এডিট করুন"
-                            >
-                              <FileEdit size={12} className="text-blue-500 shrink-0" />
-                              এডিট
-                            </button>
+                            <div className="no-print absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (onEdit) onEdit(entry);
+                                }}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-all duration-200 font-bold text-[10.5px] shadow-sm active:scale-95 border border-slate-200 cursor-pointer whitespace-nowrap"
+                                title="এডিট করুন"
+                              >
+                                <FileEdit size={12} className="text-blue-500 shrink-0" />
+                                এডিট
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1560,14 +1591,14 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                   </tbody>
                   <tfoot>
                     <tr className="bg-slate-100 font-black text-slate-900 border-t-2 border-slate-300">
-                      <td colSpan={5} className="px-4 py-3 text-right text-xs border-r border-slate-200 font-black">সর্বমোট:</td>
+                      <td colSpan={5} className="px-4 py-3 text-center text-xs border-r border-slate-200 font-black">সর্বমোট:</td>
                       <td className="px-4 py-3 text-center text-[11px] border-r border-slate-200 font-black">
                         {toBengaliDigits(totalSettledCountSum)} টি
                       </td>
                       <td className="px-4 py-3 text-right text-[11.5px] border-r border-slate-200 font-black">
                         {toBengaliDigits(totalSettledAmountSum || '০')}
                       </td>
-                      <td colSpan={2} className="px-4 py-3 border-r border-slate-200"></td>
+                      <td className="px-4 py-3 border-r border-slate-200"></td>
                     </tr>
                   </tfoot>
                 </table>
