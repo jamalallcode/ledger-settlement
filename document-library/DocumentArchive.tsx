@@ -487,7 +487,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
                   onClick={() => setShowPendingModal(true)}
                   className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 border border-white/20 transition-all cursor-pointer"
                 >
-                  <UserCheck size={16} className="text-blue-300" /> 📊 ৩ দিনের ভিজিটর লগ ও এক্সেস রেজিস্টার ({toBengaliDigits(whitelistedEmails.length)})
+                  <UserCheck size={16} className="text-blue-300" /> 👥 নতুন জিমেইল যুক্তকরণ ও ১ মাসের ভিজিটর লগ ({toBengaliDigits(whitelistedEmails.length)})
                 </button>
               </>
             ) : (
