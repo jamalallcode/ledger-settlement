@@ -404,8 +404,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
     });
   }, [documents, activeCategory, searchTerm]);
 
-  const handleDocClick = (doc: ExtendedArchiveDoc) => {
-    if (isFullyUnlocked) {
+  const handleDocClick = (doc: ExtendedArchiveDoc, isDocUnlocked: boolean = true) => {
+    if (isDocUnlocked) {
       setSelectedDoc(doc);
     } else {
       setShowUnlockModal(true);
@@ -437,7 +437,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
               <div className={`px-3 py-1.5 rounded-lg text-xs font-black flex items-center gap-2 border ${isFullyUnlocked ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'}`}>
                 {isFullyUnlocked ? <Unlock size={14} /> : <Lock size={14} />}
                 <span>
-                  {effectiveAdmin ? 'অ্যাডমিন মোড (পূর্ণ এক্সেস)' : isFullyUnlocked ? 'Whitelisted Gmail (ফ্রি এক্সেস)' : 'সীমিত এক্সেস (আনলক প্রয়োজন)'}
+                  {effectiveAdmin ? 'অ্যাডমিন মোড (সকল নথি উন্মুক্ত)' : isWhitelisted ? 'Whitelisted Gmail (সকল নথি উন্মুক্ত)' : 'প্রথম ৫টি নথি ফ্রি (অন্যান্য লকড)'}
                 </span>
               </div>
 
@@ -564,11 +564,11 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
             />
             {isWhitelisted ? (
               <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded text-[10px] flex items-center gap-1">
-                <CheckCircle2 size={12} /> অনুমোদিত (Whitelisted)
+                <CheckCircle2 size={12} /> অনুমোদিত (সকল নথি উন্মুক্ত)
               </span>
             ) : (
               <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-black rounded text-[10px]">
-                অনুমোদিত নয়
+                সাধারণ এক্সেস (প্রথম ৫টি নথি ফ্রি, অন্যান্য লকড)
               </span>
             )}
           </div>
@@ -591,8 +591,9 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
       ) : filteredDocs.length > 0 ? (
         viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredDocs.map((doc) => {
+            {filteredDocs.map((doc, idx) => {
               const cleanId = extractCleanId(doc.archiveId);
+              const isDocUnlocked = isFullyUnlocked || idx < 5;
               return (
                 <div 
                   key={doc.id}
@@ -603,11 +604,11 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
                       <img 
                         src={`https://archive.org/services/img/${cleanId}`} 
                         alt={doc.title}
-                        className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${!isFullyUnlocked ? 'blur-[1.5px] opacity-75' : ''}`}
+                        className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${!isDocUnlocked ? 'blur-[1.5px] opacity-75' : ''}`}
                         onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
                       />
 
-                      {!isFullyUnlocked && (
+                      {!isDocUnlocked && (
                         <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center z-10">
                           <div className="w-10 h-10 bg-amber-500 text-slate-950 rounded-full flex items-center justify-center shadow-lg mb-2">
                             <Lock size={20} />
@@ -622,12 +623,12 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
 
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-4 gap-2 z-20">
                         <button 
-                          onClick={() => handleDocClick(doc)} 
+                          onClick={() => handleDocClick(doc, isDocUnlocked)} 
                           className="flex-1 py-2.5 bg-white text-slate-900 rounded-xl font-black text-xs uppercase tracking-wider shadow-xl hover:bg-blue-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
                         >
-                          {isFullyUnlocked ? <Eye size={14} /> : <Lock size={14} />} {isFullyUnlocked ? 'ওপেন করুন' : 'আনলক অপশন'}
+                          {isDocUnlocked ? <Eye size={14} /> : <Lock size={14} />} {isDocUnlocked ? 'ওপেন করুন' : 'আনলক অপশন'}
                         </button>
-                        {isFullyUnlocked && (
+                        {isDocUnlocked && (
                           <button 
                             onClick={() => window.open(`https://archive.org/download/${cleanId}/${cleanId}.pdf`, '_blank')} 
                             className="p-2.5 bg-blue-600 text-white rounded-xl shadow-xl hover:bg-blue-700 transition-all cursor-pointer"
@@ -660,10 +661,10 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
 
                   <div className="p-3 bg-slate-50/70 rounded-b-2xl border-t border-slate-100 flex items-center justify-between">
                     <button 
-                      onClick={() => handleDocClick(doc)} 
+                      onClick={() => handleDocClick(doc, isDocUnlocked)} 
                       className="text-xs font-black text-slate-600 hover:text-blue-600 flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      {isFullyUnlocked ? 'বিস্তারিত দেখুন' : 'আনলক করুন'} <ChevronRight size={14} />
+                      {isDocUnlocked ? 'বিস্তারিত দেখুন' : 'আনলক করুন'} <ChevronRight size={14} />
                     </button>
 
                     <div className="flex items-center gap-1">
@@ -712,8 +713,9 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
-                  {filteredDocs.map((doc) => {
+                  {filteredDocs.map((doc, idx) => {
                     const cleanId = extractCleanId(doc.archiveId);
+                    const isDocUnlocked = isFullyUnlocked || idx < 5;
                     return (
                       <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
                         <td className="p-4">
@@ -721,7 +723,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
                             <div className="w-10 h-10 bg-slate-100 rounded-lg overflow-hidden shrink-0 relative">
                               <img 
                                 src={`https://archive.org/services/img/${cleanId}`} 
-                                className={`w-full h-full object-cover ${!isFullyUnlocked ? 'blur-[1px]' : ''}`}
+                                className={`w-full h-full object-cover ${!isDocUnlocked ? 'blur-[1px]' : ''}`}
                                 onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
                               />
                             </div>
@@ -741,11 +743,11 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
                         <td className="p-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button 
-                              onClick={() => handleDocClick(doc)} 
+                              onClick={() => handleDocClick(doc, isDocUnlocked)} 
                               className="p-2 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg transition-all"
-                              title={isFullyUnlocked ? "ওপেন করুন" : "আনলক করুন"}
+                              title={isDocUnlocked ? "ওপেন করুন" : "আনলক করুন"}
                             >
-                              {isFullyUnlocked ? <Eye size={16} /> : <Lock size={16} className="text-amber-500" />}
+                              {isDocUnlocked ? <Eye size={16} /> : <Lock size={16} className="text-amber-500" />}
                             </button>
                             <button 
                               onClick={() => copyCitation(doc)} 
