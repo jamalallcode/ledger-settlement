@@ -47,6 +47,15 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
     return localStorage.getItem('audit_doc_current_user_email') || 'user@gmail.com';
   });
 
+  // Custom Send Money / Payment Phone Number State
+  const [paymentNumber, setPaymentNumber] = useState<string>(() => {
+    return localStorage.getItem('audit_doc_payment_number') || '01712-345678';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('audit_doc_payment_number', paymentNumber);
+  }, [paymentNumber]);
+
   // Demo / Subscription / Admin State
   const [isSubscribed, setIsSubscribed] = useState<boolean>(() => {
     return localStorage.getItem('audit_doc_is_subscribed') === 'true';
@@ -989,6 +998,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
         isAdmin={effectiveAdmin}
         whitelistedEmails={whitelistedEmails}
         currentUserEmail={currentUserEmail}
+        paymentNumber={paymentNumber}
+        onUpdatePaymentNumber={(num) => setPaymentNumber(num)}
         onVerifyGmail={handleVerifyGmail}
         onActivateSubscription={(trxId, phone) => {
           setIsSubscribed(true);

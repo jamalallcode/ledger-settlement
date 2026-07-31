@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Lock, Unlock, ShieldCheck, Sparkles, Plus, CheckCircle2, 
-  Clock, AlertCircle, CreditCard, ChevronRight, X, User, Gift, Zap, MessageSquare, Mail, Search
+  Clock, AlertCircle, CreditCard, ChevronRight, X, User, Gift, Zap, MessageSquare, Mail, Search, Edit2, Check
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 
@@ -16,6 +16,8 @@ interface UnlockStatusModalProps {
   onActivateSubscription: (trxId: string, phone: string) => void;
   onSetDemoState?: (state: { isSubscribed: boolean; isAdmin: boolean; demoEmail?: string }) => void;
   whatsappNumber?: string;
+  paymentNumber?: string;
+  onUpdatePaymentNumber?: (num: string) => void;
 }
 
 export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
@@ -28,7 +30,9 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
   onVerifyGmail,
   onActivateSubscription,
   onSetDemoState,
-  whatsappNumber = '8801712345678'
+  whatsappNumber = '01712-345678',
+  paymentNumber = '01712-345678',
+  onUpdatePaymentNumber
 }) => {
   const [activeTab, setActiveTab] = useState<'whatsapp' | 'subscribe' | 'demo'>('whatsapp');
   const [trxId, setTrxId] = useState('');
@@ -37,11 +41,25 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
   const [isSubmittingPay, setIsSubmittingPay] = useState(false);
   const [paySuccess, setPaySuccess] = useState(false);
 
+  // Phone number inline edit state
+  const [isEditingNum, setIsEditingNum] = useState(false);
+  const [customNum, setCustomNum] = useState(paymentNumber);
+
   // Email check state
   const [checkEmail, setCheckEmail] = useState(currentUserEmail);
   const [checkStatus, setCheckStatus] = useState<'none' | 'success' | 'failed'>('none');
 
   if (!isOpen) return null;
+
+  const currentPayNum = paymentNumber || customNum || whatsappNumber;
+
+  const handleSaveNumber = () => {
+    if (!customNum.trim()) return;
+    if (onUpdatePaymentNumber) {
+      onUpdatePaymentNumber(customNum.trim());
+    }
+    setIsEditingNum(false);
+  };
 
   const isWhitelisted = whitelistedEmails.some(e => e.toLowerCase() === currentUserEmail.toLowerCase());
   const isFullyUnlocked = isAdmin || isSubscribed || isWhitelisted;
@@ -71,8 +89,10 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
     }, 1000);
   };
 
+  const cleanNum = currentPayNum.replace(/[^0-9]/g, '');
+  const formattedWaNum = cleanNum.startsWith('88') ? cleanNum : `88${cleanNum}`;
   const whatsappMessage = encodeURIComponent("নমস্কার, আমি অডিট ডকুমেন্ট লাইব্রেরির জন্য একটি নতুন সার্কুলার/ডকুমেন্ট পাঠাচ্ছি।\n\nআমার জিমেইল আইডি:");
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+  const whatsappUrl = `https://wa.me/${formattedWaNum}?text=${whatsappMessage}`;
 
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 pt-16 md:pt-20 pb-8 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
@@ -197,7 +217,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
                   <MessageSquare size={20} /> WhatsApp এ ডকুমেন্ট ও Gmail পাঠান
                 </a>
                 <p className="text-[11px] text-center font-bold text-slate-400">
-                  WhatsApp নম্বর: <span className="text-emerald-600 font-mono">01712-345678</span>
+                  WhatsApp নম্বর: <span className="text-emerald-600 font-mono font-black">{currentPayNum}</span>
                 </p>
               </div>
 
@@ -314,11 +334,58 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
                     </div>
 
                     <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs font-bold text-slate-700">
-                      <div className="flex items-center justify-between text-slate-900 font-black">
+                      <div className="flex items-center justify-between text-slate-900 font-black gap-2">
                         <span>সেন্ড মানি নম্বর (Personal):</span>
-                        <span className="text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200 font-mono">01712-345678</span>
+                        
+                        {isEditingNum ? (
+                          <div className="flex items-center gap-1.5">
+                            <input 
+                              type="text" 
+                              value={customNum} 
+                              onChange={e => setCustomNum(e.target.value)} 
+                              className="px-2.5 py-1 bg-white border-2 border-blue-500 rounded-lg text-xs font-mono font-bold outline-none text-slate-900 w-36 shadow-inner"
+                              placeholder="017XXXXXXXX"
+                            />
+                            <button 
+                              type="button" 
+                              onClick={handleSaveNumber}
+                              className="p-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all text-xs font-black flex items-center gap-1 cursor-pointer"
+                              title="সেভ করুন"
+                            >
+                              <Check size={14} /> সেভ
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => {
+                                setCustomNum(currentPayNum);
+                                setIsEditingNum(false);
+                              }}
+                              className="px-2 py-1 text-slate-500 hover:text-slate-700 text-xs font-bold"
+                            >
+                              বাতিল
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className="text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 font-mono text-xs md:text-sm font-black tracking-wide">
+                              {currentPayNum}
+                            </span>
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                setCustomNum(currentPayNum);
+                                setIsEditingNum(true);
+                              }}
+                              className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 shadow-xs cursor-pointer"
+                              title="আপনার নিজের নম্বর সেট করুন"
+                            >
+                              <Edit2 size={12} className="text-blue-600" />
+                              <span>নম্বর পরিবর্তন</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      <p className="text-slate-500 text-[11px]">
+                      <p className="text-slate-500 text-[11px] leading-relaxed">
                         * উল্লেখিত নম্বরে ১৯৯ টাকা সেন্ড মানি (Send Money) করে নিচে আপনার মোবাইল নম্বর ও প্রাপ্ত TrxID প্রদান করুন।
                       </p>
                     </div>
