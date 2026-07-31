@@ -1,53 +1,61 @@
-import React from 'react';
-import { ArchiveDoc } from '../types';
-import { X, CheckCircle2, XCircle, Clock, ExternalLink, ShieldCheck, User, Calendar, FileText } from 'lucide-react';
-import { formatDateBN, toBengaliDigits } from '../utils/numberUtils';
-
-interface ExtendedArchiveDoc extends ArchiveDoc {
-  memoNo?: string;
-  authority?: string;
-  tags?: string;
-  status?: 'approved' | 'pending' | 'rejected';
-  uploadedBy?: string;
-}
+import React, { useState } from 'react';
+import { X, CheckCircle2, ShieldCheck, User, Plus, Trash2, Search, Mail, MessageSquare, AlertCircle } from 'lucide-react';
+import { toBengaliDigits } from '../utils/numberUtils';
 
 interface PendingDocsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  pendingDocs: ExtendedArchiveDoc[];
   isAdmin?: boolean;
-  onApproveDoc: (id: string) => void;
-  onRejectDoc: (id: string) => void;
-  extractCleanId: (rawId: string) => string;
+  whitelistedEmails: string[];
+  onAddWhitelistedEmail: (email: string) => void;
+  onRemoveWhitelistedEmail: (email: string) => void;
+  whatsappNumber?: string;
 }
 
 export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
   isOpen,
   onClose,
-  pendingDocs,
   isAdmin = false,
-  onApproveDoc,
-  onRejectDoc,
-  extractCleanId
+  whitelistedEmails = [],
+  onAddWhitelistedEmail,
+  onRemoveWhitelistedEmail,
+  whatsappNumber = '8801712345678'
 }) => {
+  const [newEmail, setNewEmail] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [addedSuccess, setAddedSuccess] = useState(false);
+
   if (!isOpen) return null;
 
+  const handleAddSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmail.trim()) return;
+    onAddWhitelistedEmail(newEmail.trim());
+    setNewEmail('');
+    setAddedSuccess(true);
+    setTimeout(() => setAddedSuccess(false), 2500);
+  };
+
+  const filteredEmails = whitelistedEmails.filter(email =>
+    email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden relative animate-in slide-in-from-bottom-6 duration-300 my-8">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden relative animate-in slide-in-from-bottom-6 duration-300 my-8">
         
         {/* Header */}
-        <div className="bg-slate-900 p-6 text-white flex items-center justify-between border-b border-white/10">
+        <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 p-6 text-white flex items-center justify-between border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl flex items-center justify-center">
-              <Clock size={20} />
+            <div className="w-10 h-10 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-xl flex items-center justify-center">
+              <ShieldCheck size={22} />
             </div>
             <div>
               <h3 className="text-xl font-black text-white tracking-tight">
-                {isAdmin ? 'অনুমোদনের জন্য অপেক্ষমান ডকুমেন্টসমূহ' : 'আপনার আপলোডকৃত ফাইল ও স্ট্যাটাস'}
+                Gmail এক্সেস ও কন্ট্রিবিউটর রেজিস্টার (Whitelisted Emails)
               </h3>
-              <p className="text-xs text-slate-400 font-medium">
-                {isAdmin ? 'প্রাপ্য কন্ট্রিবিউটর ফাইলগুলো যাচাই করে অনুমোদন অথবা বাতিল করুন' : 'আপনার সাবমিট করা ডকুমেন্টের বর্তমান অবস্থা'}
+              <p className="text-xs text-slate-300 font-medium">
+                WhatsApp এ সার্কুলার পাঠানো ব্যবহারকারীদের জিমেইল আইডি যোগ ও পরিচালনা করুন
               </p>
             </div>
           </div>
@@ -60,102 +68,123 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
           </button>
         </div>
 
-        {/* List of Pending Docs */}
-        <div className="p-6 max-h-[70vh] overflow-y-auto space-y-4">
-          {pendingDocs.length === 0 ? (
-            <div className="py-16 text-center space-y-3">
-              <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle2 size={32} />
+        <div className="p-6 space-y-6">
+
+          {/* Admin Add Email Form */}
+          {isAdmin ? (
+            <form onSubmit={handleAddSubmit} className="space-y-3 bg-blue-50/70 p-5 rounded-xl border border-blue-100">
+              <div className="flex items-center gap-2 text-blue-900 font-black text-xs uppercase tracking-wider">
+                <Plus size={16} className="text-blue-600" /> নতুন অনুমোদিত জিমেইল আইডি (Gmail ID) যুক্ত করুন:
               </div>
-              <h4 className="text-lg font-black text-slate-800">কোনো অপেক্ষমান ডকুমেন্ট নেই</h4>
-              <p className="text-xs font-bold text-slate-500">সব কন্ট্রিবিউশন ফাইল ইতিমধ্যে প্রক্রিয়াজাত করা হয়েছে।</p>
-            </div>
-          ) : (
-            pendingDocs.map((doc) => {
-              const cleanId = extractCleanId(doc.archiveId);
-              return (
-                <div 
-                  key={doc.id}
-                  className="bg-slate-50 border border-slate-200 rounded-xl p-5 hover:border-blue-200 transition-all space-y-4"
+              <p className="text-xs text-slate-600">
+                ব্যবহারকারী WhatsApp এ ডকুমেন্ট পাঠানোর পর যাচাই শেষে তার জিমেইল আইডিটি এখানে যোগ করুন।
+              </p>
+              
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Mail className="absolute left-3.5 top-3 text-slate-400" size={16} />
+                  <input 
+                    type="email" 
+                    required
+                    placeholder="যেমন: contributor@gmail.com"
+                    value={newEmail}
+                    onChange={e => setNewEmail(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-blue-200 rounded-xl font-bold text-xs outline-none focus:border-blue-500"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-black text-xs hover:bg-blue-700 transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer"
                 >
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                      <div className="w-14 h-14 bg-white rounded-lg border border-slate-200 overflow-hidden shrink-0">
-                        <img 
-                          src={`https://archive.org/services/img/${cleanId}`}
-                          alt={doc.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-black rounded uppercase">
-                            {doc.category}
-                          </span>
-                          <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
-                            <Calendar size={12} /> {formatDateBN(doc.docDate)}
-                          </span>
-                        </div>
-                        <h4 className="text-base font-black text-slate-900 leading-snug">{doc.title}</h4>
-                        {doc.memoNo && (
-                          <p className="text-xs font-bold text-slate-600">স্মারক নং: {doc.memoNo}</p>
-                        )}
-                        {doc.authority && (
-                          <p className="text-xs text-slate-500">কর্তৃপক্ষ: {doc.authority}</p>
-                        )}
-                      </div>
+                  <Plus size={16} /> রেজিস্টার করুন
+                </button>
+              </div>
+
+              {addedSuccess && (
+                <div className="p-2.5 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-black flex items-center gap-2 animate-in fade-in">
+                  <CheckCircle2 size={16} className="text-emerald-600" />
+                  জিমেইল আইডিটি সফলভাবে এক্সেস তালিকায় যুক্ত করা হয়েছে!
+                </div>
+              )}
+            </form>
+          ) : (
+            <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-xs text-emerald-900 font-medium space-y-1">
+              <div className="font-black flex items-center gap-1.5 text-emerald-950">
+                <MessageSquare size={16} className="text-emerald-600" /> WhatsApp এ আপনার Gmail আইডি ও সার্কুলার দিন
+              </div>
+              <p>
+                আপনার জিমেইল আইডি তালিকায় অন্তর্ভুক্ত করতে WhatsApp নম্বরে (<span className="font-bold font-mono text-emerald-800">{whatsappNumber}</span>) ফাইল সহ মেসেজ পাঠান।
+              </p>
+            </div>
+          )}
+
+          {/* Search Bar & Stats */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+            <div className="text-xs font-black text-slate-700">
+              মোট নিবন্ধিত জিমেইল: <span className="text-blue-600">{toBengaliDigits(whitelistedEmails.length)}</span> টি
+            </div>
+
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
+              <input 
+                type="text" 
+                placeholder="খুঁজুন (Search email)..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none focus:bg-white focus:border-blue-500 w-full sm:w-60"
+              />
+            </div>
+          </div>
+
+          {/* List of Whitelisted Emails */}
+          <div className="max-h-[350px] overflow-y-auto space-y-2 border border-slate-200 rounded-xl p-3 bg-slate-50/50">
+            {filteredEmails.length === 0 ? (
+              <div className="py-12 text-center text-slate-400 space-y-2">
+                <Mail size={32} className="mx-auto text-slate-300" />
+                <p className="text-xs font-bold">কোনো তালিকাভুক্ত জিমেইল আইডি পাওয়া যায়নি</p>
+              </div>
+            ) : (
+              filteredEmails.map((email) => (
+                <div 
+                  key={email}
+                  className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl hover:border-blue-200 transition-all shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-black text-xs">
+                      <User size={16} />
                     </div>
-
-                    {/* Actions / Status Badge */}
-                    <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
-                      <a
-                        href={`https://archive.org/details/${cleanId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-2 bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 rounded-lg text-xs font-bold flex items-center gap-1 transition-all"
-                      >
-                        <ExternalLink size={14} /> প্রিভিউ
-                      </a>
-
-                      {isAdmin ? (
-                        <>
-                          <button
-                            onClick={() => onApproveDoc(doc.id)}
-                            className="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg text-xs font-black flex items-center gap-1 shadow-sm transition-all cursor-pointer"
-                          >
-                            <CheckCircle2 size={14} /> অনুমোদন
-                          </button>
-                          <button
-                            onClick={() => onRejectDoc(doc.id)}
-                            className="px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer"
-                          >
-                            <XCircle size={14} /> বাতিল
-                          </button>
-                        </>
-                      ) : (
-                        <span className="px-3 py-1.5 bg-amber-100 text-amber-800 text-xs font-black rounded-full flex items-center gap-1">
-                          <Clock size={14} /> অপেক্ষমান (Pending)
-                        </span>
-                      )}
+                    <div>
+                      <div className="text-xs font-black text-slate-800 font-mono">{email}</div>
+                      <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                        <CheckCircle2 size={11} /> আজীবন ফ্রি এক্সেস সক্রিয়
+                      </div>
                     </div>
                   </div>
 
-                  {doc.description && (
-                    <p className="text-xs text-slate-600 bg-white p-3 rounded-lg border border-slate-100">
-                      <strong>নোট:</strong> {doc.description}
-                    </p>
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        if (confirm(`আপনি কি "${email}" এর এক্সেস বাতিল করতে চান?`)) {
+                          onRemoveWhitelistedEmail(email);
+                        }
+                      }}
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                      title="এক্সেস বাতিল করুন"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   )}
                 </div>
-              );
-            })
-          )}
+              ))
+            )}
+          </div>
+
         </div>
 
         <div className="p-4 bg-slate-50 border-t border-slate-200 text-right">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-slate-800 text-white text-xs font-black rounded-lg hover:bg-slate-900 transition-all"
+            className="px-6 py-2 bg-slate-800 text-white text-xs font-black rounded-xl hover:bg-slate-900 transition-all cursor-pointer"
           >
             বন্ধ করুন
           </button>

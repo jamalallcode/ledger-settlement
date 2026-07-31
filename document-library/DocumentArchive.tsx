@@ -5,7 +5,7 @@ import {
   Library, Search, Filter, Plus, FileText, Calendar, 
   ExternalLink, Trash2, LayoutGrid, List, X, Edit2,
   ChevronRight, BookOpen, Clock, Download, Eye, Loader2, Sparkles, AlertCircle,
-  Lock, Unlock, ShieldCheck, CheckCircle2, CreditCard, Gift, Zap
+  Lock, Unlock, ShieldCheck, CheckCircle2, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck
 } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { UnlockStatusModal } from './UnlockStatusModal';
@@ -29,28 +29,41 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
   const [editingDoc, setEditingDoc] = useState<ExtendedArchiveDoc | null>(null);
   const [selectedDoc, setSelectedDoc] = useState<ExtendedArchiveDoc | null>(null);
 
-  // Modal States for Contribution & Unlock Flow
+  // Modal States
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [showPendingModal, setShowPendingModal] = useState(false);
 
-  // Demo / Persisted User Access States
-  const [approvedContributions, setApprovedContributions] = useState<number>(() => {
-    const saved = localStorage.getItem('audit_doc_approved_count');
-    return saved !== null ? parseInt(saved, 10) : 3; // Default 3 for interactive demo
+  // Whitelisted Emails State (Sync with localStorage & Supabase)
+  const [whitelistedEmails, setWhitelistedEmails] = useState<string[]>(() => {
+    const saved = localStorage.getItem('audit_doc_whitelisted_emails');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return ['user@gmail.com', 'auditor@gmail.com'];
   });
 
+  // Active Current User Gmail State
+  const [currentUserEmail, setCurrentUserEmail] = useState<string>(() => {
+    return localStorage.getItem('audit_doc_current_user_email') || 'user@gmail.com';
+  });
+
+  // Demo / Subscription / Admin State
   const [isSubscribed, setIsSubscribed] = useState<boolean>(() => {
     return localStorage.getItem('audit_doc_is_subscribed') === 'true';
   });
-
   const [demoAdmin, setDemoAdmin] = useState<boolean>(false);
 
   const effectiveAdmin = isAdmin || demoAdmin;
-  const targetContribution = 5;
-  const isUnlockedByContribution = approvedContributions >= targetContribution;
-  const isFullyUnlocked = effectiveAdmin || isSubscribed || isUnlockedByContribution;
 
-  // New Doc Form State
+  // Access check
+  const isWhitelisted = useMemo(() => {
+    if (!currentUserEmail) return false;
+    return whitelistedEmails.some(e => e.toLowerCase() === currentUserEmail.trim().toLowerCase());
+  }, [currentUserEmail, whitelistedEmails]);
+
+  const isFullyUnlocked = effectiveAdmin || isSubscribed || isWhitelisted;
+
+  // Form state for document addition (Admin only)
   const [newDoc, setNewDoc] = useState({
     title: '',
     category: 'সার্কুলার' as ArchiveDoc['category'],
@@ -98,11 +111,17 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
 
   useEffect(() => {
     fetchDocuments();
+    fetchWhitelistedEmails();
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('audit_doc_approved_count', approvedContributions.toString());
-  }, [approvedContributions]);
+    localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(whitelistedEmails));
+    saveWhitelistedEmailsToDb(whitelistedEmails);
+  }, [whitelistedEmails]);
+
+  useEffect(() => {
+    localStorage.setItem('audit_doc_current_user_email', currentUserEmail);
+  }, [currentUserEmail]);
 
   useEffect(() => {
     localStorage.setItem('audit_doc_is_subscribed', isSubscribed ? 'true' : 'false');
@@ -124,6 +143,35 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
     }
   }, [editingDoc]);
 
+  const fetchWhitelistedEmails = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('settlement_entries')
+        .select('*')
+        .eq('id', 'doc_whitelisted_emails')
+        .single();
+      if (!error && data && data.content) {
+        let list = data.content;
+        if (typeof list === 'string') {
+          try { list = JSON.parse(list); } catch (e) {}
+        }
+        if (Array.isArray(list) && list.length > 0) {
+          setWhitelistedEmails(list);
+        }
+      }
+    } catch (e) {}
+  };
+
+  const saveWhitelistedEmailsToDb = async (list: string[]) => {
+    try {
+      await supabase.from('settlement_entries').upsert({
+        id: 'doc_whitelisted_emails',
+        content: JSON.stringify(list),
+        created_at: new Date().toISOString()
+      });
+    } catch (e) {}
+  };
+
   const fetchDocuments = async () => {
     setIsLoading(true);
     try {
@@ -136,7 +184,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
         const mappedDocs: ExtendedArchiveDoc[] = [];
         
         data.forEach((row: any) => {
-          if (!row || !row.id) return;
+          if (!row || !row.id || row.id === 'doc_whitelisted_emails') return;
 
           let content = row.content;
           if (typeof content === 'string') {
@@ -160,7 +208,40 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
           });
         });
 
-        setDocuments(mappedDocs);
+        // Default initial docs if database is empty
+        if (mappedDocs.length === 0) {
+          const defaultDocs: ExtendedArchiveDoc[] = [
+            {
+              id: 'doc_101',
+              title: 'সরকারি চাকুরিজীবীদের বাড়ি ভাড়া ভাতা পুনর্নির্ধারণ সার্কুলার',
+              category: 'সার্কুলার',
+              archiveId: 'https://archive.org/details/govt_house_rent_circular_2024',
+              docDate: '2024-01-15',
+              memoNo: '০৭.০০.০০০০.১৬১.৩৮.০০১.২৪-৪২',
+              authority: 'অর্থ বিভাগ, অর্থ মন্ত্রণালয়',
+              description: 'জাতীয় বেতন স্কেল ২০১৫ এর আওতায় সরকারি কর্মচারীদের এলাকা ভিত্তিক বাড়ি ভাড়া সংক্রান্ত নতুন গেজেট নির্দেশনা।',
+              tags: 'বাড়ি ভাড়া, বেতন স্কেল, ভাতা',
+              status: 'approved',
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 'doc_102',
+              title: 'অডিট আপত্তি নিষ্পত্তিকরণ গাইডলাইন ও নতুন ম্যানুয়াল',
+              category: 'গেজেট',
+              archiveId: 'https://archive.org/details/audit_objection_manual_bd',
+              docDate: '2023-11-20',
+              memoNo: '১২.০১.০০০০.৫০২.১২.০০৩.২৩-৯৯',
+              authority: 'মহাহিসাব নিরীক্ষক ও নিয়ন্ত্রকের কার্যালয় (CAG)',
+              description: 'সরকারি অফিসে অডিট আপত্তি ব্রডশীট জবাব ও কোয়ালিফাইড রিপোর্ট প্রস্তুতকরণ নির্দেশিকা।',
+              tags: 'অডিট আপত্তি, সিএজি, ব্রডশীট',
+              status: 'approved',
+              createdAt: new Date().toISOString()
+            }
+          ];
+          setDocuments(defaultDocs);
+        } else {
+          setDocuments(mappedDocs);
+        }
       }
     } catch (err) {
       console.error("Fetch Documents Error:", err);
@@ -201,123 +282,117 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
         return segment.split(/[?#]/)[0];
       }
     }
-    
-    const finalId = clean.split(/[?#]/)[0];
-    if (finalId.includes('.archive.org')) return '';
-    return finalId;
+
+    return clean;
   };
 
   const handleAddDocument = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!effectiveAdmin) {
+      alert("দুঃখিত, শুধুমাত্র অ্যাডমিন নতুন সার্কুলার যুক্ত করতে পারেন।");
+      return;
+    }
+
     const cleanId = extractCleanId(newDoc.archiveId);
-    
-    if (!newDoc.title || !cleanId) {
-      return alert("শিরোনাম এবং সঠিক আর্কাইভ লিঙ্ক বা আইডি আবশ্যক!");
+    if (!cleanId) {
+      alert("অনুগ্রহ করে একটি সঠিক Archive.org লিঙ্ক বা আইডি দিন!");
+      return;
     }
 
     const docId = editingDoc ? editingDoc.id : `doc_${Date.now()}`;
-    const initialStatus = effectiveAdmin ? 'approved' : 'pending';
-
-    const docData: ExtendedArchiveDoc = {
-      id: docId,
-      ...newDoc,
+    const payload = {
+      title: newDoc.title,
+      category: newDoc.category,
       archiveId: cleanId,
-      status: editingDoc ? editingDoc.status || 'approved' : initialStatus,
+      docDate: newDoc.docDate,
+      description: newDoc.description,
+      memoNo: newDoc.memoNo,
+      authority: newDoc.authority,
+      tags: newDoc.tags,
+      status: 'approved',
+      uploadedBy: 'Admin',
       createdAt: editingDoc ? editingDoc.createdAt : new Date().toISOString()
     };
 
     try {
-      const { error } = await supabase.from('settlement_entries').upsert({
+      await supabase.from('settlement_entries').upsert({
         id: docId,
-        content: docData
+        content: JSON.stringify(payload),
+        created_at: payload.createdAt
       });
 
-      if (!error) {
-        if (editingDoc) {
-          setDocuments(prev => prev.map(d => d.id === docId ? docData : d));
-        } else {
-          setDocuments(prev => [docData, ...prev]);
-        }
-        
-        setShowAddModal(false);
-        setEditingDoc(null);
-        setNewDoc({ 
-          title: '', 
-          category: 'সার্কুলার', 
-          archiveId: '', 
-          docDate: new Date().toISOString().split('T')[0], 
-          description: '',
-          memoNo: '',
-          authority: '',
-          tags: ''
-        });
+      fetchDocuments();
 
-        if (!effectiveAdmin) {
-          alert("✅ আপনার আপলোডকৃত ফাইলটি জমা নেওয়া হয়েছে! অ্যাডমিন পর্যালোচনার পর অনুমোদন দিলে এটি মূল লাইব্রেরিতে যুক্ত হবে এবং আপনার ফ্রি এক্সেস পয়েন্ট বাড়বে।");
-        } else {
-          alert("✅ ডকুমেন্টটি লাইব্রেরিতে সফলভাবে যুক্ত হয়েছে!");
-        }
-      }
-    } catch (err) {
-      alert("সংরক্ষণে ত্রুটি হয়েছে।");
-    }
-  };
-
-  const handleApproveDoc = async (id: string) => {
-    const targetDoc = documents.find(d => d.id === id);
-    if (!targetDoc) return;
-
-    const updatedDoc: ExtendedArchiveDoc = { ...targetDoc, status: 'approved' };
-    try {
-      const { error } = await supabase.from('settlement_entries').upsert({
-        id: id,
-        content: updatedDoc
+      setShowAddModal(false);
+      setEditingDoc(null);
+      setNewDoc({
+        title: '',
+        category: 'সার্কুলার',
+        archiveId: '',
+        docDate: new Date().toISOString().split('T')[0],
+        description: '',
+        memoNo: '',
+        authority: '',
+        tags: ''
       });
-      if (!error) {
-        setDocuments(prev => prev.map(d => d.id === id ? updatedDoc : d));
-        setApprovedContributions(prev => prev + 1);
-        alert("✅ ডকুমেন্টটি সফলভাবে অনুমোদিত এবং প্রকাশিত হয়েছে!");
-      }
-    } catch (err) {
-      alert("অনুমোদনে সমস্যা হয়েছে।");
-    }
-  };
 
-  const handleRejectDoc = async (id: string) => {
-    if (!window.confirm("আপনি কি এই ডকুমেন্টটি প্রত্যাখ্যান করতে চান?")) return;
-    const targetDoc = documents.find(d => d.id === id);
-    if (!targetDoc) return;
-
-    const updatedDoc: ExtendedArchiveDoc = { ...targetDoc, status: 'rejected' };
-    try {
-      const { error } = await supabase.from('settlement_entries').upsert({
-        id: id,
-        content: updatedDoc
-      });
-      if (!error) {
-        setDocuments(prev => prev.map(d => d.id === id ? updatedDoc : d));
-        alert("❌ ডকুমেন্টটি প্রত্যাখ্যান করা হয়েছে।");
-      }
+      alert(editingDoc ? "ডকুমেন্ট সফলভাবে আপডেট হয়েছে!" : "নতুন ডকুমেন্ট সরাসরি প্রকাশিত হয়েছে!");
     } catch (err) {
-      alert("ত্রুটি হয়েছে।");
+      console.error(err);
+      alert("সংরক্ষণে সমস্যা হয়েছে।");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("আপনি কি নিশ্চিতভাবে এই ডকুমেন্টটি লাইব্রেরি থেকে সরিয়ে ফেলতে চান?")) return;
+    if (!effectiveAdmin) return;
+    if (!confirm("আপনি কি নিশ্চিত যে এই ডকুমেন্টটি মুছে ফেলতে চান?")) return;
+
     try {
-      const { error } = await supabase.from('settlement_entries').delete().eq('id', id);
-      if (!error) setDocuments(prev => prev.filter(d => d.id !== id));
+      await supabase.from('settlement_entries').delete().eq('id', id);
+      setDocuments(prev => prev.filter(d => d.id !== id));
+      if (selectedDoc?.id === id) setSelectedDoc(null);
     } catch (err) {
-      alert("ডিলিট করতে সমস্যা হয়েছে।");
+      console.error(err);
     }
   };
 
-  const copyCitation = (doc: ExtendedArchiveDoc) => {
-    const citation = `${doc.title}${doc.memoNo ? `, স্মারক নং: ${doc.memoNo}` : ''}${doc.docDate ? `, তারিখ: ${formatDateBN(doc.docDate)}` : ''}${doc.authority ? `, ইস্যুকারী: ${doc.authority}` : ''}।`;
-    navigator.clipboard.writeText(citation);
-    alert("রেফারেন্স কপি করা হয়েছে!");
+  const handleAddWhitelistedEmail = (email: string) => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) return;
+    if (!whitelistedEmails.some(e => e.toLowerCase() === trimmed)) {
+      const updated = [...whitelistedEmails, trimmed];
+      setWhitelistedEmails(updated);
+    }
   };
+
+  const handleRemoveWhitelistedEmail = (email: string) => {
+    const updated = whitelistedEmails.filter(e => e.toLowerCase() !== email.toLowerCase());
+    setWhitelistedEmails(updated);
+  };
+
+  const handleVerifyGmail = (email: string) => {
+    const trimmed = email.trim().toLowerCase();
+    setCurrentUserEmail(trimmed);
+    return whitelistedEmails.some(e => e.toLowerCase() === trimmed);
+  };
+
+  const copyCitation = (doc: ExtendedArchiveDoc) => {
+    const text = `স্মারক নং: ${doc.memoNo || 'N/A'}, তারিখ: ${formatPremiumDate(doc.docDate)}, বিষয়: ${doc.title} (${doc.authority || ''})`;
+    navigator.clipboard.writeText(text);
+    alert('অডিট সাইটেশন কপি করা হয়েছে:\n\n' + text);
+  };
+
+  const filteredDocs = useMemo(() => {
+    return documents.filter(doc => {
+      const matchesCategory = activeCategory === 'সকল' || doc.category === activeCategory;
+      const matchesSearch = 
+        doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (doc.memoNo && doc.memoNo.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (doc.authority && doc.authority.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (doc.tags && doc.tags.toLowerCase().includes(searchTerm.toLowerCase()));
+      return matchesCategory && matchesSearch;
+    });
+  }, [documents, activeCategory, searchTerm]);
 
   const handleDocClick = (doc: ExtendedArchiveDoc) => {
     if (isFullyUnlocked) {
@@ -327,715 +402,613 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
     }
   };
 
-  // Pending documents
-  const pendingDocs = useMemo(() => {
-    return documents.filter(doc => doc.status === 'pending');
-  }, [documents]);
-
-  // Approved public documents
-  const filteredDocs = useMemo(() => {
-    if (!documents) return [];
-    
-    return documents
-      .filter(doc => {
-        // Only show approved docs in public library
-        const isApproved = (doc.status || 'approved') === 'approved';
-        if (!isApproved) return false;
-
-        const title = String(doc.title || '').toLowerCase();
-        const description = String(doc.description || '').toLowerCase();
-        const memoNo = String(doc.memoNo || '').toLowerCase();
-        const authority = String(doc.authority || '').toLowerCase();
-        const tags = String(doc.tags || '').toLowerCase();
-        const search = String(searchTerm || '').toLowerCase();
-        
-        const matchesSearch = 
-          title.includes(search) || 
-          description.includes(search) || 
-          memoNo.includes(search) || 
-          authority.includes(search) ||
-          tags.includes(search);
-
-        const matchesCat = activeCategory === 'সকল' || doc.category === activeCategory;
-        return matchesSearch && matchesCat;
-      })
-      .sort((a, b) => new Date(b.docDate).getTime() - new Date(a.docDate).getTime());
-  }, [documents, searchTerm, activeCategory]);
-
   return (
-    <div className="w-full pb-20 relative [transform:translateZ(0)]">
-      {/* Main Content Wrapper */}
-      <div className={`max-w-7xl mx-auto space-y-6 animate-landing-premium transition-all duration-700 ${showAddModal || selectedDoc || showUnlockModal || showPendingModal ? 'opacity-60 scale-[0.98] pointer-events-none' : 'opacity-100 scale-100'}`}>
-        
-        {/* Header Section */}
-        <div className="bg-slate-900 rounded-none p-8 text-white relative overflow-hidden shadow-2xl border border-white/5">
-          <div className="absolute top-0 right-0 p-12 text-white/5 pointer-events-none"><Library size={240} /></div>
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-600/20 blur-[100px] rounded-full pointer-events-none"></div>
-          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-600/10 blur-[100px] rounded-full pointer-events-none"></div>
-          
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-             <div className="space-y-3">
-                <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-none flex items-center justify-center shadow-xl shadow-blue-900/40 border border-white/10">
-                     <Library size={24} className="text-white" />
-                   </div>
-                   <h2 className="text-2xl md:text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/70">
-                     অডিট রেফারেন্স ও ডকুমেন্ট লাইব্রেরি
-                   </h2>
-                </div>
-                <p className="text-slate-400 font-medium max-w-xl text-sm md:text-base leading-relaxed tracking-tight">
-                  সরকারি বিধি-বিধান, সার্কুলার এবং অডিট ক্রাইটেরিয়া এখন এক জায়গায়। দ্রুত রেফারেন্স খুঁজে পেতে স্মারক নম্বর বা বিষয় দিয়ে সার্চ করুন।
-                </p>
-             </div>
-             
-             <div className="flex flex-wrap items-center gap-3">
-               <button 
-                 onClick={() => setShowAddModal(true)} 
-                 className="px-6 py-4 bg-white text-slate-900 hover:bg-blue-50 rounded-none font-black flex items-center gap-2 shadow-2xl active:scale-95 transition-all shrink-0 group cursor-pointer text-sm"
-               >
-                  <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" /> কন্ট্রিবিউট করুন
-               </button>
-             </div>
-          </div>
-        </div>
+    <div className="space-y-10 pb-20">
+      
+      {/* Top Banner / Hero */}
+      <div className="relative overflow-hidden bg-slate-900 rounded-2xl border border-slate-800 p-8 md:p-12 text-white shadow-2xl">
+        <div className="absolute top-0 right-0 -mt-12 -mr-12 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-1/3 -mb-12 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        {/* Access Status & Unlock Bar */}
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-5 rounded-none border border-indigo-500/20 shadow-lg text-white flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black shrink-0 ${isFullyUnlocked ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-400 border border-amber-500/40'}`}>
-              {isFullyUnlocked ? <Unlock size={24} /> : <Lock size={24} />}
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="space-y-4 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-full text-xs font-black tracking-wider uppercase">
+              <Library size={14} /> সরকারি অডিট সার্কুলার ও গেজেট ভল্ট
             </div>
-            
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-400">লাইব্রেরি এক্সেস স্ট্যাটাস:</span>
-                {isFullyUnlocked ? (
-                  <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full text-[11px] font-black uppercase">
-                    🔓 সম্পূর্ণ আনলকড
-                  </span>
-                ) : (
-                  <span className="px-2.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-[11px] font-black uppercase">
-                    🔒 সীমিত (লকড)
-                  </span>
-                )}
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white leading-tight">
+              স্মার্ট অডিট ডকুমেন্ট লাইব্রেরি
+            </h1>
+            <p className="text-slate-300 font-medium text-sm md:text-base leading-relaxed">
+              অর্থ মন্ত্রণালয়, সিএজি অফিস ও বিভিন্ন সরকারি দপ্তরের সকল গুরুতপূর্ণ সার্কুলার, অফিস আদেশ ও গেজেট এক জায়গায়। অডিট সাইটেশন ১-ক্লিকে কপি করুন।
+            </p>
+
+            {/* Access Badge */}
+            <div className="pt-2 flex flex-wrap items-center gap-3">
+              <div className={`px-3 py-1.5 rounded-lg text-xs font-black flex items-center gap-2 border ${isFullyUnlocked ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'}`}>
+                {isFullyUnlocked ? <Unlock size={14} /> : <Lock size={14} />}
+                <span>
+                  {effectiveAdmin ? 'অ্যাডমিন মোড (পূল এক্সেস)' : isSubscribed ? 'সাবস্ক্রিপশন সক্রিয়' : isWhitelisted ? 'Whitelisted Gmail (ফ্রি এক্সেস)' : 'সীমিত এক্সেস (আনলক প্রয়োজন)'}
+                </span>
               </div>
 
-              <div className="text-xs font-bold text-slate-300">
-                {effectiveAdmin ? (
-                  'অ্যাডমিন প্রিভিলেজ (সকল ফাইল উন্মুক্ত)'
-                ) : isSubscribed ? (
-                  'মাসিক সাবস্ক্রিপশন সক্রিয় (৳১৯৯/মাস)'
-                ) : isUnlockedByContribution ? (
-                  'কন্ট্রিবিউশন টার্গেট সম্পন্ন (আজবীন ফ্রি আনলকড)'
-                ) : (
-                  `কনট্রিবিউশন ড্যাশবোর্ড: ${toBengaliDigits(approvedContributions)} / ${toBengaliDigits(targetContribution)} টি অনুমোদিত সার্কুলার জমা হয়েছে`
-                )}
-              </div>
+              {!isFullyUnlocked && (
+                <button
+                  onClick={() => setShowUnlockModal(true)}
+                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30 cursor-pointer"
+                >
+                  <MessageSquare size={14} /> WhatsApp কন্ট্রিবিউট / আনলক করুন
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-            {pendingDocs.length > 0 && (
+          {/* Right Control Actions */}
+          <div className="flex flex-col gap-3 shrink-0">
+            {effectiveAdmin ? (
+              <>
+                <button
+                  onClick={() => {
+                    setEditingDoc(null);
+                    setShowAddModal(true);
+                  }}
+                  className="px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-blue-600/30 transition-all cursor-pointer"
+                >
+                  <Plus size={20} /> নতুন সার্কুলার/ডকুমেন্ট যুক্ত করুন
+                </button>
+                <button
+                  onClick={() => setShowPendingModal(true)}
+                  className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 border border-white/20 transition-all cursor-pointer"
+                >
+                  <UserCheck size={16} className="text-blue-300" /> Gmail এক্সেস রেজিস্টার ({toBengaliDigits(whitelistedEmails.length)})
+                </button>
+              </>
+            ) : (
               <button
-                onClick={() => setShowPendingModal(true)}
-                className="px-4 py-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-none text-xs font-black flex items-center gap-2 transition-all cursor-pointer"
+                onClick={() => setShowUnlockModal(true)}
+                className="px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-emerald-600/30 transition-all cursor-pointer"
               >
-                <Clock size={16} /> অপেক্ষমান ({toBengaliDigits(pendingDocs.length)})
+                <MessageSquare size={20} /> WhatsApp এ ফাইল পাঠিয়ে আনলক করুন
               </button>
             )}
-
-            <button
-              onClick={() => setShowUnlockModal(true)}
-              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-none text-xs font-black flex items-center gap-2 shadow-md transition-all cursor-pointer active:scale-95"
-            >
-              <Zap size={16} className="text-amber-300" /> এক্সেস ও সাবস্ক্রিপশন
-            </button>
           </div>
         </div>
+      </div>
 
-        {/* Controls Bar */}
-        <div className="sticky top-0 md:top-0 z-[999] bg-white border-b border-slate-200/60 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.05)] flex flex-col lg:flex-row items-center gap-4 transition-all duration-500 mb-8 -mx-4 md:mx-0 px-8 md:px-4">
-           <div className="relative flex-1 w-full flex items-center gap-3">
-              <div className="relative flex-1 group">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
-                <input 
-                  type="text" 
-                  placeholder="স্মারক নং, শিরোনাম বা বিষয় দিয়ে খুঁজুন..." 
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-14 pr-6 h-[56px] bg-slate-50/50 border border-slate-100 rounded-none font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500/30 focus:ring-[6px] focus:ring-blue-500/5 transition-all text-sm placeholder:text-slate-400 shadow-inner"
-                />
-              </div>
-              
-              <button 
-                onClick={() => setShowAddModal(true)}
-                className="h-[56px] w-[56px] shrink-0 bg-slate-900 text-white rounded-none flex items-center justify-center shadow-lg hover:bg-black active:scale-95 transition-all duration-300 group cursor-pointer"
-                title="কন্ট্রিবিউট / দ্রুত আপলোড"
+      {/* Filter and Search Bar */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-xl space-y-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          
+          {/* Category Tabs */}
+          <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 lg:pb-0">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${activeCategory === cat ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
               >
-                <Plus size={24} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-500" />
+                {cat}
               </button>
-           </div>
+            ))}
+          </div>
 
-           <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0 justify-center">
-              <div className="flex flex-wrap gap-1.5 p-1.5 bg-slate-50 rounded-none border border-slate-100">
-                {categories.map(cat => (
-                  <button 
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`px-5 py-2.5 rounded-none font-black text-[12px] transition-all duration-300 cursor-pointer ${activeCategory === cat ? 'bg-white text-blue-600 shadow-[0_4px_12px_rgba(0,0,0,0.05)] scale-105' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'}`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-              <div className="h-10 w-[1px] bg-slate-200 mx-1 hidden lg:block"></div>
-              <div className="flex bg-slate-50 p-1.5 rounded-none border border-slate-100">
-                 <button onClick={() => setViewMode('grid')} className={`p-2.5 rounded-none transition-all duration-300 cursor-pointer ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={18} /></button>
-                 <button onClick={() => setViewMode('list')} className={`p-2.5 rounded-none transition-all duration-300 cursor-pointer ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><List size={18} /></button>
-              </div>
-           </div>
+          {/* Search & Layout Toggles */}
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 sm:w-80">
+              <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
+              <input 
+                type="text" 
+                placeholder="শিরোনাম, স্মারক নং বা কিওয়ার্ড খুঁজুন..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
+              />
+              {searchTerm && (
+                <button onClick={() => setSearchTerm('')} className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600">
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex bg-slate-100 p-1 rounded-xl shrink-0">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                title="গ্রিড ভিউ"
+              >
+                <LayoutGrid size={18} />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                title="লিস্ট ভিউ"
+              >
+                <List size={18} />
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Content Area */}
-        {isLoading ? (
-          <div className="py-40 flex flex-col items-center justify-center gap-4">
-             <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-             <p className="font-black text-slate-500 tracking-widest uppercase text-xs">ডকুমেন্টগুলো লোড হচ্ছে...</p>
+        {/* Quick User Gmail Status Banner */}
+        <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-slate-600 font-bold">
+            <span>আপনার টেস্ট জিমেইল:</span>
+            <input 
+              type="email"
+              value={currentUserEmail}
+              onChange={e => setCurrentUserEmail(e.target.value)}
+              className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-blue-700 outline-none focus:bg-white focus:border-blue-500 w-52"
+              placeholder="user@gmail.com"
+            />
+            {isWhitelisted ? (
+              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded text-[10px] flex items-center gap-1">
+                <CheckCircle2 size={12} /> অনুমোদিত (Whitelisted)
+              </span>
+            ) : (
+              <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-black rounded text-[10px]">
+                অনুমোদিত নয়
+              </span>
+            )}
           </div>
-        ) : filteredDocs.length > 0 ? (
-          viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                   {filteredDocs.map((doc) => (
-                     <div 
-                       key={doc.id}
-                       className="group bg-white border border-slate-100 transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 rounded-none flex flex-col h-full relative overflow-hidden"
-                     >
-                        <div className="p-4 flex-1 space-y-5">
-                           <div className="aspect-[4/5] bg-slate-50 rounded-none overflow-hidden relative border border-slate-100 group-hover:border-blue-100 transition-all duration-500">
+
+          <button
+            onClick={() => setShowUnlockModal(true)}
+            className="text-blue-600 font-black text-xs hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            এক্সেস বিস্তারিত ও সাবস্ক্রিপশন বিকল্প <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* Document Grid / List Content */}
+      {isLoading ? (
+        <div className="py-32 flex flex-col items-center justify-center gap-4">
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+          <p className="font-black text-slate-500 tracking-widest uppercase text-xs">ডকুমেন্টগুলো লোড হচ্ছে...</p>
+        </div>
+      ) : filteredDocs.length > 0 ? (
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredDocs.map((doc) => {
+              const cleanId = extractCleanId(doc.archiveId);
+              return (
+                <div 
+                  key={doc.id}
+                  className="group bg-white border border-slate-200/80 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 rounded-2xl flex flex-col h-full relative overflow-hidden"
+                >
+                  <div className="p-4 flex-1 space-y-4">
+                    <div className="aspect-[4/5] bg-slate-50 rounded-xl overflow-hidden relative border border-slate-100 group-hover:border-blue-100 transition-all">
+                      <img 
+                        src={`https://archive.org/services/img/${cleanId}`} 
+                        alt={doc.title}
+                        className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${!isFullyUnlocked ? 'blur-[1.5px] opacity-75' : ''}`}
+                        onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
+                      />
+
+                      {!isFullyUnlocked && (
+                        <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center z-10">
+                          <div className="w-10 h-10 bg-amber-500 text-slate-950 rounded-full flex items-center justify-center shadow-lg mb-2">
+                            <Lock size={20} />
+                          </div>
+                          <span className="text-white text-xs font-black drop-shadow">ফাইল আনলক প্রয়োজন</span>
+                        </div>
+                      )}
+
+                      <div className="absolute top-3 left-3 z-20">
+                        <span className="px-3 py-1 bg-white/90 backdrop-blur-md text-slate-900 text-[10px] font-black rounded-lg uppercase tracking-wider shadow-sm border border-white/50">{doc.category}</span>
+                      </div>
+
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-4 gap-2 z-20">
+                        <button 
+                          onClick={() => handleDocClick(doc)} 
+                          className="flex-1 py-2.5 bg-white text-slate-900 rounded-xl font-black text-xs uppercase tracking-wider shadow-xl hover:bg-blue-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          {isFullyUnlocked ? <Eye size={14} /> : <Lock size={14} />} {isFullyUnlocked ? 'ওপেন করুন' : 'আনলক অপশন'}
+                        </button>
+                        {isFullyUnlocked && (
+                          <button 
+                            onClick={() => window.open(`https://archive.org/download/${cleanId}/${cleanId}.pdf`, '_blank')} 
+                            className="p-2.5 bg-blue-600 text-white rounded-xl shadow-xl hover:bg-blue-700 transition-all cursor-pointer"
+                            title="ডাউনলোড PDF"
+                          >
+                            <Download size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2.5 px-1">
+                      <h4 className="text-base font-black text-slate-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">{doc.title}</h4>
+                      {doc.memoNo && (
+                        <div className="inline-flex items-center px-2.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-black rounded border border-blue-100">
+                          স্মারক: {doc.memoNo}
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 pt-2 border-t border-slate-100">
+                        <div className="flex items-center gap-1">
+                          <Calendar size={12} className="text-slate-300" /> 
+                          <span>{formatPremiumDate(doc.docDate)}</span>
+                        </div>
+                        {doc.authority && (
+                          <span className="truncate max-w-[120px] text-slate-500">{doc.authority}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-slate-50/70 rounded-b-2xl border-t border-slate-100 flex items-center justify-between">
+                    <button 
+                      onClick={() => handleDocClick(doc)} 
+                      className="text-xs font-black text-slate-600 hover:text-blue-600 flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      {isFullyUnlocked ? 'বিস্তারিত দেখুন' : 'আনলক করুন'} <ChevronRight size={14} />
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      <button 
+                        onClick={() => copyCitation(doc)} 
+                        className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all cursor-pointer" 
+                        title="সাইটেশন কপি করুন"
+                      >
+                        <FileText size={16} />
+                      </button>
+                      {effectiveAdmin && (
+                        <>
+                          <button 
+                            onClick={() => setEditingDoc(doc)} 
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
+                            title="এডিট"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(doc.id)} 
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                            title="মুছে ফেলুন"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-900 text-white text-xs">
+                    <th className="p-4 uppercase tracking-wider">ডকুমেন্ট শিরোনাম ও স্মারক</th>
+                    <th className="p-4 uppercase tracking-wider">ক্যাটাগরি</th>
+                    <th className="p-4 uppercase tracking-wider">কর্তৃপক্ষ</th>
+                    <th className="p-4 uppercase tracking-wider">তারিখ</th>
+                    <th className="p-4 uppercase tracking-wider text-right">অ্যাকশন</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {filteredDocs.map((doc) => {
+                    const cleanId = extractCleanId(doc.archiveId);
+                    return (
+                      <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-slate-100 rounded-lg overflow-hidden shrink-0 relative">
                               <img 
-                                src={`https://archive.org/services/img/${extractCleanId(doc.archiveId)}`} 
-                                alt={doc.title}
-                                className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out ${!isFullyUnlocked ? 'blur-[1.5px] opacity-75' : ''}`}
+                                src={`https://archive.org/services/img/${cleanId}`} 
+                                className={`w-full h-full object-cover ${!isFullyUnlocked ? 'blur-[1px]' : ''}`}
                                 onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
                               />
-
-                              {!isFullyUnlocked && (
-                                <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center z-10">
-                                  <div className="w-10 h-10 bg-amber-500 text-slate-950 rounded-full flex items-center justify-center shadow-lg mb-2">
-                                    <Lock size={20} />
-                                  </div>
-                                  <span className="text-white text-xs font-black drop-shadow">ফাইল আনলক প্রয়োজন</span>
-                                </div>
-                              )}
-
-                              <div className="absolute top-4 left-4 z-20">
-                                 <span className="px-4 py-2 bg-white/90 backdrop-blur-md text-slate-900 text-[9px] font-black rounded-none uppercase tracking-[0.15em] border border-white/50 shadow-sm">{doc.category}</span>
-                              </div>
-
-                              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end justify-center p-6 gap-3 z-20">
-                                 <button 
-                                   onClick={() => handleDocClick(doc)} 
-                                   className="flex-1 py-3 bg-white text-slate-900 rounded-none font-black text-[11px] uppercase tracking-widest shadow-xl hover:bg-blue-50 transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-                                 >
-                                   {isFullyUnlocked ? <Eye size={14} /> : <Lock size={14} />} {isFullyUnlocked ? 'ওপেন করুন' : 'আনলক অপশন'}
-                                 </button>
-                                 {isFullyUnlocked && (
-                                   <button 
-                                     onClick={() => {
-                                       const id = extractCleanId(doc.archiveId);
-                                       window.open(`https://archive.org/download/${id}/${id}.pdf`, '_blank');
-                                     }} 
-                                     className="p-3 bg-blue-600 text-white rounded-none shadow-xl hover:bg-blue-700 active:scale-95 transition-all cursor-pointer"
-                                   >
-                                     <Download size={18} />
-                                   </button>
-                                 )}
-                              </div>
-                           </div>
-                           <div className="space-y-3 px-2">
-                              <h4 className="text-lg font-black text-slate-900 leading-[1.2] line-clamp-2 group-hover:text-blue-600 transition-colors tracking-tight">{doc.title}</h4>
-                              {doc.memoNo && (
-                                <div className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-none uppercase tracking-wider border border-blue-100/50">
-                                  স্মারক: {doc.memoNo}
-                                </div>
-                              )}
-                              <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-tight pt-3 border-t border-slate-50/80">
-                                 <div className="flex items-center gap-1.5 group/meta">
-                                   <Calendar size={11} className="text-slate-300 group-hover/meta:text-blue-400 transition-colors" /> 
-                                   <span className="group-hover/meta:text-slate-600 transition-colors">{formatPremiumDate(doc.docDate)}</span>
-                                 </div>
-                                 <div className="flex items-center gap-1.5 group/meta">
-                                   <Clock size={11} className="text-slate-300 group-hover/meta:text-blue-400 transition-colors" /> 
-                                   <span className="group-hover/meta:text-slate-600 transition-colors">{formatPremiumTime(doc.createdAt)}</span>
-                                 </div>
-                              </div>
-                           </div>
-                        </div>
-
-                        <div className="p-4 mt-auto flex items-center justify-between bg-slate-50/30 rounded-b-none border-t border-slate-50">
-                           <button 
-                             onClick={() => handleDocClick(doc)} 
-                             className="text-[11px] font-black text-slate-500 hover:text-blue-600 flex items-center gap-2 transition-colors uppercase tracking-widest cursor-pointer"
-                           >
-                             {isFullyUnlocked ? 'বিস্তারিত দেখুন' : 'ফ্রি আনলক করুন'} <ChevronRight size={14} />
-                           </button>
-
-                           <div className="flex items-center gap-1">
-                              {effectiveAdmin && (
-                                <button 
-                                  onClick={() => setEditingDoc(doc)} 
-                                  className="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-none transition-all cursor-pointer"
-                                >
-                                  <Edit2 size={16} />
-                                </button>
-                              )}
-                              {effectiveAdmin && (
-                                <button 
-                                  onClick={() => handleDelete(doc.id)} 
-                                  className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-none transition-all cursor-pointer"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              )}
-                           </div>
-                        </div>
-                     </div>
-                   ))}
-                </div>
-          ) : (
-            <div className="bg-white rounded-none border border-slate-100 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-900 text-white">
-                      <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">ডকুমেন্ট শিরোনাম ও স্মারক</th>
-                      <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">ক্যাটাগরি</th>
-                      <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">ইস্যুকারী কর্তৃপক্ষ</th>
-                      <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">তারিখ</th>
-                      <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5 text-right">অ্যাকশন</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {filteredDocs.map((doc) => (
-                      <tr key={doc.id} className="hover:bg-slate-50/80 transition-all duration-300 group">
-                        <td className="p-6">
-                          <div className="flex items-center gap-5">
-                            <div className="w-12 h-12 bg-slate-50 rounded-none overflow-hidden shrink-0 border border-slate-100 group-hover:border-blue-200 transition-colors relative">
-                              <img 
-                                 src={`https://archive.org/services/img/${extractCleanId(doc.archiveId)}`} 
-                                 className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ${!isFullyUnlocked ? 'blur-[1px]' : ''}`}
-                                 onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
-                              />
-                              {!isFullyUnlocked && (
-                                <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center text-amber-400">
-                                  <Lock size={14} />
-                                </div>
-                              )}
                             </div>
-                            <div className="space-y-1">
-                              <h4 className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors tracking-tight">{doc.title}</h4>
-                              <p className="text-[11px] font-bold text-slate-400">স্মারক: {doc.memoNo || 'N/A'}</p>
+                            <div>
+                              <div className="font-black text-slate-900">{doc.title}</div>
+                              <div className="text-[11px] font-bold text-slate-400">স্মারক: {doc.memoNo || 'N/A'}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="p-6">
-                          <span className="px-4 py-1.5 bg-slate-50 text-slate-600 text-[10px] font-black rounded-none uppercase tracking-wider border border-slate-100">{doc.category}</span>
+                        <td className="p-4">
+                          <span className="px-2.5 py-1 bg-slate-100 text-slate-700 font-black rounded-lg text-[10px]">
+                            {doc.category}
+                          </span>
                         </td>
-                        <td className="p-6">
-                          <span className="text-[11px] font-bold text-slate-600">{doc.authority || 'অনির্ধারিত'}</span>
-                        </td>
-                        <td className="p-6">
-                          <div className="flex items-center gap-2">
-                            <Calendar size={14} className="text-slate-300" />
-                            <span className="text-[11px] font-bold text-slate-500">{formatPremiumDate(doc.docDate)}</span>
-                          </div>
-                        </td>
-                        <td className="p-6 text-right">
-                          <div className="flex items-center justify-end gap-2.5">
-                             <button 
-                               onClick={() => handleDocClick(doc)} 
-                               className="p-3 bg-white text-slate-600 rounded-none hover:bg-blue-600 hover:text-white transition-all border border-slate-100 shadow-sm cursor-pointer" 
-                               title={isFullyUnlocked ? "বিস্তারিত দেখুন" : "আনলক করুন"}
-                             >
-                               {isFullyUnlocked ? <Eye size={18} /> : <Lock size={18} className="text-amber-500" />}
-                             </button>
-
-                             <button onClick={() => copyCitation(doc)} className="p-3 bg-white text-slate-600 rounded-none hover:bg-amber-500 hover:text-white transition-all border border-slate-100 shadow-sm cursor-pointer" title="রেফারেন্স কপি করুন"><FileText size={18} /></button>
-                             
-                             {isFullyUnlocked && (
-                               <button 
-                                 onClick={() => {
-                                   const id = extractCleanId(doc.archiveId);
-                                   window.open(`https://archive.org/download/${id}/${id}.pdf`, '_blank');
-                                 }} 
-                                 className="p-3 bg-white text-slate-600 rounded-none hover:bg-emerald-600 hover:text-white transition-all border border-slate-100 shadow-sm cursor-pointer" 
-                                 title="সরাসরি ডাউনলোড"
-                               >
-                                 <Download size={18} />
-                               </button>
-                             )}
-
-                             {effectiveAdmin && (
-                               <>
-                                 <button 
-                                   onClick={() => setEditingDoc(doc)} 
-                                   className="p-3 bg-white text-slate-600 rounded-none hover:bg-blue-600 hover:text-white transition-all border border-slate-100 shadow-sm cursor-pointer"
-                                   title="এডিট করুন"
-                                 >
-                                   <Edit2 size={18} />
-                                 </button>
-                                 <button onClick={() => handleDelete(doc.id)} className="p-3 bg-white text-slate-300 hover:bg-red-600 hover:text-white transition-all border border-slate-100 shadow-sm cursor-pointer"><Trash2 size={18} /></button>
-                               </>
-                             )}
+                        <td className="p-4 font-bold text-slate-600">{doc.authority || 'N/A'}</td>
+                        <td className="p-4 font-bold text-slate-500">{formatPremiumDate(doc.docDate)}</td>
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button 
+                              onClick={() => handleDocClick(doc)} 
+                              className="p-2 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg transition-all"
+                              title={isFullyUnlocked ? "ওপেন করুন" : "আনলক করুন"}
+                            >
+                              {isFullyUnlocked ? <Eye size={16} /> : <Lock size={16} className="text-amber-500" />}
+                            </button>
+                            <button 
+                              onClick={() => copyCitation(doc)} 
+                              className="p-2 bg-slate-100 hover:bg-amber-500 hover:text-white rounded-lg transition-all"
+                              title="সাইটেশন কপি"
+                            >
+                              <FileText size={16} />
+                            </button>
+                            {effectiveAdmin && (
+                              <button 
+                                onClick={() => handleDelete(doc.id)} 
+                                className="p-2 bg-slate-100 hover:bg-red-600 hover:text-white rounded-lg transition-all"
+                                title="মুছে ফেলুন"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )
+      ) : (
+        <div className="py-24 bg-white rounded-2xl border-2 border-dashed border-slate-200 text-center space-y-3">
+          <Search size={36} className="mx-auto text-slate-300" />
+          <h3 className="text-lg font-black text-slate-800">কোনো ফাইল পাওয়া যায়নি</h3>
+          <p className="text-xs font-bold text-slate-400">আপনার অনুসন্ধানের সাথে মেলে এমন কোনো ডকুমেন্ট লাইব্রেরিতে নেই।</p>
+        </div>
+      )}
+
+      {/* Selected Document Full View Modal */}
+      {selectedDoc && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
+          <div className="w-full max-w-5xl bg-white rounded-2xl overflow-hidden shadow-2xl border border-slate-100 relative animate-in zoom-in-95 duration-300 my-8">
+            <button 
+              onClick={() => setSelectedDoc(null)}
+              className="absolute top-4 right-4 z-20 p-2.5 bg-slate-900/80 hover:bg-black text-white rounded-full transition-all cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              <div className="bg-slate-950 p-8 text-white flex flex-col justify-center items-center text-center space-y-6 relative overflow-hidden">
+                <div className="w-28 h-28 bg-white/10 rounded-2xl flex items-center justify-center text-blue-400 border border-white/15">
+                  <BookOpen size={56} />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-black text-white">ফুল রিড ও ভিউ মোড</h3>
+                  <p className="text-xs text-slate-400 max-w-xs">
+                    ডকুমেন্টটি ফুল স্ক্রিনে স্বাচ্ছন্দ্যে পড়ার জন্য নিচের বোতামে ক্লিক করুন।
+                  </p>
+                </div>
+                <a 
+                  href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-black text-sm hover:bg-blue-700 transition-all shadow-lg flex items-center gap-2 cursor-pointer"
+                >
+                  <Eye size={18} /> ফাইলটি নতুন ট্যাবে খুলুন
+                </a>
+              </div>
+
+              <div className="p-8 space-y-6 bg-white overflow-y-auto max-h-[80vh]">
+                <div className="space-y-3">
+                  <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-black rounded-lg uppercase border border-blue-100">
+                    {selectedDoc.category}
+                  </span>
+                  <h3 className="text-2xl font-black text-slate-900 leading-tight">{selectedDoc.title}</h3>
+                </div>
+
+                <div className="space-y-2 pt-2 border-t border-slate-100 text-xs font-bold text-slate-700">
+                  <div className="flex justify-between py-1 border-b border-slate-50">
+                    <span className="text-slate-400">তারিখ:</span>
+                    <span>{formatDateBN(selectedDoc.docDate)}</span>
+                  </div>
+                  {selectedDoc.memoNo && (
+                    <div className="flex justify-between py-1 border-b border-slate-50">
+                      <span className="text-slate-400">স্মারক নম্বর:</span>
+                      <span className="font-mono text-blue-700">{selectedDoc.memoNo}</span>
+                    </div>
+                  )}
+                  {selectedDoc.authority && (
+                    <div className="flex justify-between py-1 border-b border-slate-50">
+                      <span className="text-slate-400">ইস্যুকারী কর্তৃপক্ষ:</span>
+                      <span>{selectedDoc.authority}</span>
+                    </div>
+                  )}
+                </div>
+
+                {selectedDoc.description && (
+                  <div className="space-y-1 pt-2">
+                    <span className="text-xs font-black text-slate-400 uppercase tracking-wider">বিবরণ:</span>
+                    <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      {selectedDoc.description}
+                    </p>
+                  </div>
+                )}
+
+                <div className="pt-4 flex gap-3">
+                  <button 
+                    onClick={() => copyCitation(selectedDoc)}
+                    className="flex-1 py-3 bg-amber-500 text-white rounded-xl font-black text-xs hover:bg-amber-600 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <FileText size={16} /> রেফারেন্স কপি করুন
+                  </button>
+                  <button 
+                    onClick={() => setSelectedDoc(null)}
+                    className="py-3 px-6 bg-slate-900 text-white rounded-xl font-black text-xs hover:bg-black transition-all cursor-pointer"
+                  >
+                    বন্ধ করুন
+                  </button>
+                </div>
               </div>
             </div>
-          )
-        ) : (
-          <div className="py-40 bg-white rounded-none border-2 border-dashed border-slate-200 text-center space-y-4">
-             <div className="w-20 h-20 bg-slate-50 rounded-none flex items-center justify-center mx-auto text-slate-300"><Search size={40} /></div>
-             <div className="space-y-1">
-                <h3 className="text-xl font-black text-slate-800">কোনো রেফারেন্স পাওয়া যায়নি</h3>
-                <p className="text-slate-500 font-bold text-sm">আপনার অনুসন্ধানের সাথে মেলে এমন কোনো ফাইল এই মুহূর্তে নেই।</p>
-             </div>
-             {searchTerm && <button onClick={() => setSearchTerm('')} className="text-blue-600 font-black text-xs hover:underline uppercase tracking-widest cursor-pointer">সকল রেজাল্ট দেখুন</button>}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* View Modal */}
-      {selectedDoc && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-400/10 backdrop-blur-md animate-in fade-in duration-500 overflow-y-auto">
-           <div className="w-full max-w-6xl bg-white rounded-none overflow-hidden flex flex-col shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white/40 relative animate-in slide-in-from-bottom-8 zoom-in-95 duration-500">
+      {/* Admin-Only Document Addition Modal */}
+      {showAddModal && effectiveAdmin && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
+          <div className="w-full max-w-2xl bg-white rounded-2xl p-6 md:p-8 shadow-2xl border border-slate-100 space-y-6 animate-in slide-in-from-bottom-6 duration-300 my-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-black">
+                  {editingDoc ? <Edit2 size={20} /> : <Plus size={20} />}
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">
+                    {editingDoc ? 'রেফারেন্স এডিট করুন' : 'নতুন অডিট সার্কুলার / গেজেট যুক্ত করুন'}
+                  </h3>
+                  <p className="text-xs text-slate-400 font-bold">অ্যাডমিন মোড: সরাসরি ভল্টে প্রকাশিত হবে</p>
+                </div>
+              </div>
               <button 
-                onClick={() => setSelectedDoc(null)}
-                className="absolute top-8 right-8 z-[1010] p-3.5 bg-white/80 backdrop-blur-md text-slate-400 hover:text-slate-900 rounded-none hover:bg-white transition-all shadow-sm border border-slate-100 group cursor-pointer"
+                onClick={() => {
+                  setShowAddModal(false);
+                  setEditingDoc(null);
+                }}
+                className="p-2 text-slate-400 hover:text-slate-900 rounded-full hover:bg-slate-100 transition-all"
               >
-                <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+                <X size={20} />
               </button>
-              
-              <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-[550px]">
-                  <div className="flex-[3] bg-slate-900 relative flex flex-col items-center justify-center p-12 text-center space-y-8 overflow-hidden">
-                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500/20 via-transparent to-transparent pointer-events-none"></div>
-                     <div className="w-36 h-36 bg-white/5 rounded-none flex items-center justify-center text-blue-400 mb-2 relative z-10 border border-white/10 shadow-inner">
-                        <BookOpen size={72} strokeWidth={1.2} />
-                     </div>
-                     <div className="space-y-4 max-w-md relative z-10">
-                        <h3 className="text-3xl font-black text-white tracking-tight leading-none">ডকুমেন্টটি পড়ার জন্য প্রস্তুত</h3>
-                        <p className="text-slate-400 font-medium text-base leading-relaxed opacity-80">নিরাপত্তা ও দ্রুত লোডিং নিশ্চিত করতে আমরা ডকুমেন্টটি সরাসরি নতুন ট্যাবে ওপেন করার পরামর্শ দিচ্ছি।</p>
-                     </div>
-                     <a 
-                        href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-12 py-6 bg-white text-slate-900 rounded-none font-black text-lg flex items-center gap-4 shadow-2xl hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all group relative z-10"
-                     >
-                        <Eye size={28} className="group-hover:animate-bounce" /> ডকুমেন্টটি ওপেন করুন
-                     </a>
-                  </div>
-                 <div className="flex-[2] p-12 space-y-10 overflow-y-auto bg-white no-scrollbar border-l border-slate-100">
-                    <div className="space-y-6">
-                       <span className="px-6 py-2 bg-slate-50 text-slate-500 text-[11px] font-black rounded-none uppercase tracking-[0.2em] border border-slate-100 inline-block">{selectedDoc.category}</span>
-                       <h3 className="text-3xl font-black text-slate-900 leading-[1.1] tracking-tight">{selectedDoc.title}</h3>
-                       
-                       <div className="space-y-4 pt-4">
-                          <div className="flex items-center gap-5 text-slate-600 font-bold text-base bg-slate-50/50 p-5 rounded-none border border-slate-100/50">
-                             <div className="w-12 h-12 bg-white rounded-none flex items-center justify-center shadow-sm text-blue-600 border border-slate-50"><Calendar size={22} /></div>
-                             <span>তারিখ: {formatDateBN(selectedDoc.docDate)}</span>
-                          </div>
-                          {selectedDoc.memoNo && (
-                            <div className="flex items-center gap-5 text-slate-600 font-bold text-base bg-slate-50/50 p-5 rounded-none border border-slate-100/50">
-                               <div className="w-12 h-12 bg-white rounded-none flex items-center justify-center shadow-sm text-blue-600 border border-slate-50"><FileText size={22} /></div>
-                               <span>স্মারক নং: {selectedDoc.memoNo}</span>
-                            </div>
-                          )}
-                          {selectedDoc.authority && (
-                            <div className="flex items-center gap-5 text-slate-600 font-bold text-base bg-slate-50/50 p-5 rounded-none border border-slate-100/50">
-                               <div className="w-12 h-12 bg-white rounded-none flex items-center justify-center shadow-sm text-blue-600 border border-slate-50"><Library size={22} /></div>
-                               <span>কর্তৃপক্ষ: {selectedDoc.authority}</span>
-                            </div>
-                          )}
-                       </div>
-                    </div>
-                    
-                    <div className="h-px w-full bg-slate-100"></div>
-                    
-                    <div className="space-y-4">
-                       <h5 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">বিবরণ (Description)</h5>
-                       <p className="text-slate-600 font-medium leading-relaxed text-base whitespace-pre-wrap">{selectedDoc.description || 'কোনো বিবরণ দেওয়া নেই।'}</p>
-                    </div>
+            </div>
 
-                    {selectedDoc.tags && (
-                      <div className="flex flex-wrap gap-2.5">
-                         {selectedDoc.tags.split(',').map(tag => (
-                           <span key={tag} className="px-4 py-2 bg-slate-50 text-slate-500 text-[11px] font-black rounded-none border border-slate-100 hover:bg-white hover:shadow-sm transition-all cursor-default">#{tag.trim()}</span>
-                         ))}
-                      </div>
-                    )}
-                    
-                    <div className="pt-10 grid grid-cols-1 gap-4">
-                       <button 
-                         onClick={() => copyCitation(selectedDoc)}
-                         className="w-full py-5 bg-amber-500 text-white rounded-none font-black text-base flex items-center justify-center gap-3 shadow-xl shadow-amber-100 hover:bg-amber-600 transition-all active:scale-[0.98] cursor-pointer"
-                       >
-                          <FileText size={22} /> রেফারেন্স কপি করুন
-                       </button>
-                       <button 
-                         onClick={() => setSelectedDoc(null)}
-                         className="w-full py-5 bg-slate-900 text-white rounded-none font-black text-base hover:bg-black transition-all active:scale-[0.98] cursor-pointer"
-                       >
-                          বন্ধ করুন
-                       </button>
-                    </div>
-                 </div>
+            <form onSubmit={handleAddDocument} className="space-y-4 text-xs font-bold">
+              <div className="space-y-1.5 bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <label className="text-blue-900 font-black uppercase tracking-wider flex items-center gap-1">
+                  Archive.org লিঙ্ক বা আইডি
+                </label>
+                <div className="flex gap-2">
+                  <input 
+                    type="text"
+                    required
+                    placeholder="https://archive.org/details/your_file_id"
+                    value={newDoc.archiveId}
+                    onChange={e => setNewDoc({ ...newDoc, archiveId: e.target.value })}
+                    className="flex-1 px-4 py-2.5 bg-white border border-blue-200 rounded-xl font-mono text-xs outline-none focus:border-blue-500"
+                  />
+                </div>
               </div>
-           </div>
+
+              <div className="space-y-1.5">
+                <label className="text-slate-600 font-black">ডকুমেন্ট শিরোনাম</label>
+                <input 
+                  type="text"
+                  required
+                  placeholder="যেমন: সরকারি চাকুরিজীবীদের বাড়ি ভাড়া ভাতা বৃদ্ধি সার্কুলার"
+                  value={newDoc.title}
+                  onChange={e => setNewDoc({ ...newDoc, title: e.target.value })}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold outline-none focus:bg-white focus:border-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-slate-600 font-black">ক্যাটাগরি</label>
+                  <select 
+                    value={newDoc.category}
+                    onChange={e => setNewDoc({ ...newDoc, category: e.target.value as any })}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold outline-none focus:bg-white focus:border-blue-500"
+                  >
+                    {categories.filter(c => c !== 'সকল').map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-slate-600 font-black">তারিখ</label>
+                  <input 
+                    type="date"
+                    required
+                    value={newDoc.docDate}
+                    onChange={e => setNewDoc({ ...newDoc, docDate: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold outline-none focus:bg-white focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-slate-600 font-black">স্মারক নম্বর</label>
+                  <input 
+                    type="text"
+                    placeholder="যেমন: ০৭.০০.০০০০.১৬১.৩৮.০০১"
+                    value={newDoc.memoNo}
+                    onChange={e => setNewDoc({ ...newDoc, memoNo: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold outline-none focus:bg-white focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-slate-600 font-black">কর্তৃপক্ষ</label>
+                  <input 
+                    type="text"
+                    placeholder="যেমন: অর্থ বিভাগ / সিএজি অফিস"
+                    value={newDoc.authority}
+                    onChange={e => setNewDoc({ ...newDoc, authority: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold outline-none focus:bg-white focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-slate-600 font-black">বিবরণ</label>
+                <textarea 
+                  placeholder="ডকুমেন্টের প্রয়োজনীয় বিবরণ লিখুন..."
+                  value={newDoc.description}
+                  onChange={e => setNewDoc({ ...newDoc, description: e.target.value })}
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl font-bold outline-none focus:bg-white focus:border-blue-500 min-h-[80px]"
+                ></textarea>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-black hover:bg-slate-200 transition-all"
+                >
+                  বাতিল
+                </button>
+                <button
+                  type="submit"
+                  className="flex-[2] py-3 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+                >
+                  {editingDoc ? 'আপডেট করুন' : 'সরাসরি প্রকাশ করুন'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
-      {/* Add/Edit Modal (With Approval Flow Notice) */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-400/10 backdrop-blur-md animate-in fade-in duration-500 overflow-y-auto">
-           <div className="w-full max-w-3xl bg-white rounded-none p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white/40 space-y-10 animate-in slide-in-from-bottom-8 zoom-in-95 duration-500 no-scrollbar my-8">
-              <div className="flex items-center justify-between border-b border-slate-50 pb-8">
-                 <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-none flex items-center justify-center shadow-inner border border-blue-100/50">
-                      {editingDoc ? <Edit2 size={32} /> : <Plus size={32} />}
-                    </div>
-                    <div className="space-y-1">
-                      <h3 className="text-3xl font-black text-slate-900 tracking-tight">
-                        {editingDoc ? 'রেফারেন্স এডিট করুন' : 'নতুন অডিট সার্কুলার / ডকুমেন্ট কন্ট্রিবিউট'}
-                      </h3>
-                      <p className="text-slate-400 font-bold text-sm">
-                        {effectiveAdmin ? 'অ্যাডমিন মোড: সরাসরি প্রকাশ হবে' : 'আপলোড করার পর অ্যাডমিন রিভিউ সাপেক্ষে প্রকাশিত হবে'}
-                      </p>
-                    </div>
-                 </div>
-                 <button 
-                   onClick={() => {
-                     setShowAddModal(false);
-                     setEditingDoc(null);
-                     setNewDoc({ 
-                       title: '', 
-                       category: 'সার্কুলার', 
-                       archiveId: '', 
-                       docDate: new Date().toISOString().split('T')[0], 
-                       description: '',
-                       memoNo: '',
-                       authority: '',
-                       tags: ''
-                     });
-                   }} 
-                   className="w-12 h-12 flex items-center justify-center text-slate-300 hover:text-slate-900 hover:bg-slate-50 rounded-none transition-all group cursor-pointer"
-                 >
-                   <X size={28} className="group-hover:rotate-90 transition-transform duration-300" />
-                 </button>
-              </div>
-
-              <form onSubmit={handleAddDocument} className="space-y-6">
-                 {/* Approval Flow Info Notice */}
-                 {!effectiveAdmin && (
-                   <div className="bg-amber-50 border border-amber-200 p-4 rounded-none flex items-start gap-3 text-amber-900">
-                     <AlertCircle size={20} className="text-amber-600 shrink-0 mt-0.5" />
-                     <div className="text-xs font-bold leading-relaxed space-y-1">
-                       <span className="font-black">অ্যাডমিন প্রসেসিং নোট:</span>
-                       <p>
-                         আপনার আপলোডটি পর্যালোচনা করে অ্যাডমিন অনুমোদন দিলে এটি সকলের জন্য উন্মুক্ত হবে এবং আপনার ১টি ফ্রি আনলক পয়েন্ট যোগ হবে। (৫টি ফাইল অনুমোদিত হলে আপনার জন্য আজীবন ফ্রি!)
-                       </p>
-                     </div>
-                   </div>
-                 )}
-
-                 <div className="space-y-3 bg-blue-50 p-6 rounded-none border border-blue-100">
-                    <div className="flex items-center gap-2 text-blue-700 font-black text-xs uppercase tracking-widest"><AlertCircle size={14} /> আর্কাইভ লিঙ্ক (Archive Link)</div>
-                    <p className="text-[11px] font-bold text-blue-600 leading-relaxed">
-                      ডকুমেন্টটি <button 
-                        type="button"
-                        onClick={() => {
-                          const w = 800;
-                          const h = 600;
-                          const left = (window.screen.width / 2) - (w / 2);
-                          const top = (window.screen.height / 2) - (h / 2);
-                          window.open('https://archive.org/upload/', 'archive_upload', `width=${w},height=${h},top=${top},left=${left},menubar=no,toolbar=no,location=no,status=no`);
-                        }}
-                        className="underline font-black hover:text-blue-800 transition-colors cursor-pointer"
-                      >Archive.org</button> এ আপলোড করে সেই লিঙ্কটি এখানে দিন।
-                    </p>
-                    <div className="flex gap-2">
-                       <input 
-                         type="text" 
-                         required
-                         placeholder="এখানে লিঙ্ক বা আইডি পেস্ট করুন" 
-                         className="flex-1 px-5 h-[50px] bg-white border border-blue-200 rounded-none font-black text-blue-900 placeholder:text-blue-300 outline-none focus:border-blue-500 transition-all text-sm tracking-widest"
-                         value={newDoc.archiveId}
-                         onChange={e => setNewDoc({...newDoc, archiveId: e.target.value})}
-                       />
-                       <button 
-                         type="button"
-                         onClick={() => {
-                           const id = extractCleanId(newDoc.archiveId);
-                           if (id) window.open(`https://archive.org/details/${id}`, '_blank');
-                           else alert("প্রথমে একটি সঠিক লিঙ্ক দিন!");
-                         }}
-                         className="px-4 bg-blue-100 text-blue-600 rounded-none font-black text-[10px] uppercase hover:bg-blue-200 transition-all border border-blue-200 cursor-pointer"
-                       >
-                         পরীক্ষা করুন
-                       </button>
-                    </div>
-                    {newDoc.archiveId && (
-                      <div className="space-y-1 px-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">শনাক্তকৃত আইডি:</span>
-                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-none border ${!extractCleanId(newDoc.archiveId) ? 'text-red-600 bg-red-50 border-red-100' : 'text-blue-600 bg-blue-100/50 border-blue-100'}`}>
-                            {extractCleanId(newDoc.archiveId) || 'শনাক্ত করা যায়নি'}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                 </div>
-
-                 <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ডকুমেন্ট শিরোনাম</label>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="যেমন: বার্ষিক অডিট সার্কুলার ২০২৪-২৫" 
-                      className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
-                      value={newDoc.title}
-                      onChange={e => setNewDoc({...newDoc, title: e.target.value})}
-                    />
-                 </div>
-
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ক্যাটাগরি</label>
-                       <select 
-                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all cursor-pointer"
-                         value={newDoc.category}
-                         onChange={e => setNewDoc({...newDoc, category: e.target.value as any})}
-                       >
-                          {categories.filter(c => c !== 'সকল').map(c => <option key={c} value={c}>{c}</option>)}
-                       </select>
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ডকুমেন্ট তারিখ</label>
-                       <input 
-                         type="date" 
-                         required
-                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all cursor-pointer"
-                         value={newDoc.docDate}
-                         onChange={e => setNewDoc({...newDoc, docDate: e.target.value})}
-                       />
-                    </div>
-                 </div>
-
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">স্মারক নম্বর (Memo No.)</label>
-                       <input 
-                         type="text" 
-                         placeholder="যেমন: ০৫.০০.০০০০.১২৩.৪৫.৬৭৮" 
-                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
-                         value={newDoc.memoNo}
-                         onChange={e => setNewDoc({...newDoc, memoNo: e.target.value})}
-                       />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ইস্যুকারী কর্তৃপক্ষ</label>
-                       <input 
-                         type="text" 
-                         placeholder="যেমন: অর্থ মন্ত্রণালয় / বাংলাদেশ ব্যাংক" 
-                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
-                         value={newDoc.authority}
-                         onChange={e => setNewDoc({...newDoc, authority: e.target.value})}
-                       />
-                    </div>
-                 </div>
-
-                 <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ট্যাগসমূহ (কমা দিয়ে আলাদা করুন)</label>
-                    <input 
-                      type="text" 
-                      placeholder="যেমন: বোনাস, ভাতা, বেতন কাঠামো" 
-                      className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
-                      value={newDoc.tags}
-                      onChange={e => setNewDoc({...newDoc, tags: e.target.value})}
-                    />
-                 </div>
-
-                 <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">বিবরণ (ঐচ্ছিক)</label>
-                    <textarea 
-                      placeholder="ডকুমেন্টের সারসংক্ষেপ বা গুরুত্বপূর্ণ নোট এখানে লিখুন..." 
-                      className="w-full p-5 min-h-[100px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all resize-none"
-                      value={newDoc.description}
-                      onChange={e => setNewDoc({...newDoc, description: e.target.value})}
-                    ></textarea>
-                 </div>
-
-                 <div className="flex gap-4 pt-4">
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        setShowAddModal(false);
-                        setEditingDoc(null);
-                        setNewDoc({ 
-                          title: '', 
-                          category: 'সার্কুলার', 
-                          archiveId: '', 
-                          docDate: new Date().toISOString().split('T')[0], 
-                          description: '',
-                          memoNo: '',
-                          authority: '',
-                          tags: ''
-                        });
-                      }} 
-                      className="flex-1 py-4 bg-slate-50 text-slate-500 rounded-none font-black text-sm hover:bg-slate-100 transition-all cursor-pointer"
-                    >
-                      বাতিল
-                    </button>
-                    <button type="submit" className="flex-[2] py-4 bg-blue-600 text-white rounded-none font-black text-sm shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-3 cursor-pointer">
-                       <Sparkles size={18} className="text-blue-300" /> {editingDoc ? 'আপডেট করুন' : (effectiveAdmin ? 'সরাসরি প্রকাশ করুন' : 'অনুমোদনের জন্য জমা দিন')}
-                    </button>
-                 </div>
-              </form>
-           </div>
-        </div>
-      )}
-
-      {/* Unlock Status Modal */}
+      {/* Access & Subscription Modal */}
       <UnlockStatusModal
         isOpen={showUnlockModal}
         onClose={() => setShowUnlockModal(false)}
-        approvedCount={approvedContributions}
-        pendingCount={pendingDocs.length}
         isSubscribed={isSubscribed}
         isAdmin={effectiveAdmin}
-        onOpenUpload={() => setShowAddModal(true)}
+        whitelistedEmails={whitelistedEmails}
+        currentUserEmail={currentUserEmail}
+        onVerifyGmail={handleVerifyGmail}
         onActivateSubscription={(trxId, phone) => {
           setIsSubscribed(true);
         }}
         onSetDemoState={(state) => {
-          setApprovedContributions(state.approvedCount);
           setIsSubscribed(state.isSubscribed);
           setDemoAdmin(state.isAdmin);
+          if (state.demoEmail !== undefined) {
+            setCurrentUserEmail(state.demoEmail);
+          }
         }}
       />
 
-      {/* Pending Docs Moderation Modal */}
+      {/* Gmail Access & Whitelist Register Modal (Admin) */}
       <PendingDocsModal
         isOpen={showPendingModal}
         onClose={() => setShowPendingModal(false)}
-        pendingDocs={pendingDocs}
         isAdmin={effectiveAdmin}
-        onApproveDoc={handleApproveDoc}
-        onRejectDoc={handleRejectDoc}
-        extractCleanId={extractCleanId}
+        whitelistedEmails={whitelistedEmails}
+        onAddWhitelistedEmail={handleAddWhitelistedEmail}
+        onRemoveWhitelistedEmail={handleRemoveWhitelistedEmail}
       />
 
     </div>

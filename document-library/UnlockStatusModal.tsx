@@ -1,46 +1,61 @@
 import React, { useState } from 'react';
 import { 
   Lock, Unlock, ShieldCheck, Sparkles, Plus, CheckCircle2, 
-  Clock, AlertCircle, CreditCard, ChevronRight, X, User, Gift, Zap
+  Clock, AlertCircle, CreditCard, ChevronRight, X, User, Gift, Zap, MessageSquare, Mail, Search
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 
 interface UnlockStatusModalProps {
   isOpen: boolean;
   onClose: () => void;
-  approvedCount: number;
-  pendingCount: number;
   isSubscribed: boolean;
   isAdmin?: boolean;
-  onOpenUpload: () => void;
+  whitelistedEmails: string[];
+  currentUserEmail: string;
+  onVerifyGmail: (email: string) => boolean;
   onActivateSubscription: (trxId: string, phone: string) => void;
-  onSetDemoState?: (state: { approvedCount: number; isSubscribed: boolean; isAdmin: boolean }) => void;
+  onSetDemoState?: (state: { isSubscribed: boolean; isAdmin: boolean; demoEmail?: string }) => void;
+  whatsappNumber?: string;
 }
 
 export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
   isOpen,
   onClose,
-  approvedCount,
-  pendingCount,
   isSubscribed,
   isAdmin = false,
-  onOpenUpload,
+  whitelistedEmails = [],
+  currentUserEmail = '',
+  onVerifyGmail,
   onActivateSubscription,
-  onSetDemoState
+  onSetDemoState,
+  whatsappNumber = '8801712345678'
 }) => {
-  const [activeTab, setActiveTab] = useState<'contribute' | 'subscribe' | 'demo'>('contribute');
+  const [activeTab, setActiveTab] = useState<'whatsapp' | 'subscribe' | 'demo'>('whatsapp');
   const [trxId, setTrxId] = useState('');
   const [phone, setPhone] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'bkash' | 'nagad' | 'rocket'>('bkash');
   const [isSubmittingPay, setIsSubmittingPay] = useState(false);
   const [paySuccess, setPaySuccess] = useState(false);
 
+  // Email check state
+  const [checkEmail, setCheckEmail] = useState(currentUserEmail);
+  const [checkStatus, setCheckStatus] = useState<'none' | 'success' | 'failed'>('none');
+
   if (!isOpen) return null;
 
-  const targetCount = 5;
-  const isUnlockedByContribution = approvedCount >= targetCount;
-  const isFullyUnlocked = isAdmin || isSubscribed || isUnlockedByContribution;
-  const progressPercent = Math.min(100, Math.round((approvedCount / targetCount) * 100));
+  const isWhitelisted = whitelistedEmails.some(e => e.toLowerCase() === currentUserEmail.toLowerCase());
+  const isFullyUnlocked = isAdmin || isSubscribed || isWhitelisted;
+
+  const handleVerifySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!checkEmail.trim()) return;
+    const isMatched = onVerifyGmail(checkEmail.trim());
+    if (isMatched) {
+      setCheckStatus('success');
+    } else {
+      setCheckStatus('failed');
+    }
+  };
 
   const handleSubscribeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,8 +71,11 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
     }, 1000);
   };
 
+  const whatsappMessage = encodeURIComponent("নমস্কার, আমি অডিট ডকুমেন্ট লাইব্রেরির জন্য একটি নতুন সার্কুলার/ডকুমেন্ট পাঠাচ্ছি।\n\nআমার জিমেইল আইডি:");
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden relative animate-in slide-in-from-bottom-6 duration-300 my-8">
         
         {/* Header */}
@@ -83,7 +101,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
             </h2>
             
             <p className="text-slate-300 text-sm font-medium max-w-lg leading-relaxed">
-              কনট্রিবিউট করে আজীবন ফ্রি এক্সেস পান অথবা নামমাত্র ফি দিয়ে সাবস্ক্রিপশন সক্রিয় করুন।
+              WhatsApp এ সার্কুলার ও Gmail পাঠিয়ে আজীবন ফ্রি এক্সেস নিন অথবা নামমাত্র ফি দিয়ে সাবস্ক্রিপশন সক্রিয় করুন।
             </p>
 
             {/* Current Status Box */}
@@ -96,11 +114,11 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
                   <div className="text-xs text-slate-300 font-bold">আপনার বর্তমান স্ট্যাটাস:</div>
                   <div className="text-base font-black text-white">
                     {isAdmin ? (
-                      <span className="text-blue-300">অ্যাডমিন (সকল ফাইল আনলকড)</span>
+                      <span className="text-blue-300">অ্যাডমিন (সকল ফাইল উন্মুক্ত)</span>
                     ) : isSubscribed ? (
                       <span className="text-emerald-400">মাসিক সাবস্ক্রিপশন (সক্রিয়)</span>
-                    ) : isUnlockedByContribution ? (
-                      <span className="text-emerald-400">কন্ট্রিবিউটর (আজীবন ফ্রি আনলকড)</span>
+                    ) : isWhitelisted ? (
+                      <span className="text-emerald-400">নিবন্ধিত কন্ট্রিবিউটর (আজীবন ফ্রি আনলকড)</span>
                     ) : (
                       <span className="text-amber-300">সীমিত এক্সেস (লকড)</span>
                     )}
@@ -108,10 +126,10 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
                 </div>
               </div>
 
-              {!isFullyUnlocked && (
+              {currentUserEmail && (
                 <div className="text-right">
-                  <span className="text-xs font-bold text-amber-300 bg-amber-500/20 px-3 py-1 rounded-full border border-amber-400/30 inline-block">
-                    অগ্রগতি: {toBengaliDigits(approvedCount)}/{toBengaliDigits(targetCount)} টি
+                  <span className="text-[11px] font-bold text-slate-300 bg-white/10 px-3 py-1 rounded-full border border-white/20 inline-block font-mono">
+                    {currentUserEmail}
                   </span>
                 </div>
               )}
@@ -122,10 +140,10 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
         {/* Tab Navigation */}
         <div className="flex border-b border-slate-200 bg-slate-50">
           <button
-            onClick={() => setActiveTab('contribute')}
-            className={`flex-1 py-3.5 px-4 font-black text-xs md:text-sm flex items-center justify-center gap-2 border-b-2 transition-all ${activeTab === 'contribute' ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+            onClick={() => setActiveTab('whatsapp')}
+            className={`flex-1 py-3.5 px-4 font-black text-xs md:text-sm flex items-center justify-center gap-2 border-b-2 transition-all ${activeTab === 'whatsapp' ? 'border-emerald-600 text-emerald-700 bg-white' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
           >
-            <Gift size={16} /> ফ্রি কনট্রিবিউশন
+            <MessageSquare size={16} className="text-emerald-600" /> WhatsApp কন্ট্রিবিউশন (ফ্রি)
           </button>
           <button
             onClick={() => setActiveTab('subscribe')}
@@ -144,70 +162,86 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
         {/* Tab Content */}
         <div className="p-6 md:p-8 space-y-6">
 
-          {/* TAB 1: CONTRIBUTE */}
-          {activeTab === 'contribute' && (
+          {/* TAB 1: WHATSAPP CONTRIBUTION */}
+          {activeTab === 'whatsapp' && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              <div className="bg-blue-50/80 border border-blue-100 rounded-xl p-5 space-y-3">
-                <div className="flex items-center gap-2 text-blue-900 font-black text-sm">
-                  <CheckCircle2 size={18} className="text-blue-600 shrink-0" />
-                  কন্ট্রিবিউটর এক্সেস নীতি (আজীবন ফ্রি)
+              
+              {/* How it works info banner */}
+              <div className="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center gap-2 text-emerald-900 font-black text-sm">
+                  <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                  WhatsApp এ ফাইল পাঠান ও আজীবন ফ্রি এক্সেস নিন
                 </div>
-                <p className="text-slate-600 text-xs md:text-sm font-medium leading-relaxed">
-                  আপনি কমপক্ষে <strong>৫টি সরকারি সার্কুলার/অডিট গাইডলাইন</strong> ফাইল লাইব্রেরিতে আপলোড করলে এবং অ্যাডমিন কর্তৃক অনুমোদিত হলে আপনার জন্য অডিট লাইব্রেরির সব ফাইল <strong>আজীবন ১০০% ফ্রি</strong> আনলক হয়ে যাবে।
+                <p className="text-slate-700 text-xs md:text-sm font-medium leading-relaxed">
+                  আপনাকে কোনো ফাইল সরাসরি ওয়েবসাইটে আপলোড করার কষ্ট করতে হবে না। আপনার সংগৃহীত সরকারি সার্কুলার, অফিস আদেশ বা অডিট রেফারেন্স ডকুমেন্টটি আপনার <strong>জিমেইল একাউন্ট (Gmail ID)</strong> সহ আমাদের WhatsApp এ পাঠিয়ে দিন।
+                </p>
+                <div className="bg-white/80 p-3 rounded-xl border border-emerald-100 text-xs text-slate-600 space-y-1">
+                  <div className="font-black text-slate-800">📌 কীভাবে কাজ করে:</div>
+                  <ol className="list-decimal list-inside space-y-1 pl-1 font-medium">
+                    <li>WhatsApp নম্বরে ডকুমেন্ট ও আপনার Gmail আইডি পাঠান।</li>
+                    <li>অ্যাডমিন যাচাই করবেন ডকুমেন্টটি পূর্বে লাইব্রেরিতে আছে কি না।</li>
+                    <li>ডুপ্লিকেট না হলে অ্যাডমিন আপলোড করবেন এবং আপনার Gmail আইডিটি <strong>আজীবন ফ্রি এক্সেস</strong> প্রদান করবেন।</li>
+                  </ol>
+                </div>
+              </div>
+
+              {/* Direct WhatsApp Action Button */}
+              <div className="space-y-2">
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-4 bg-emerald-600 text-white rounded-xl font-black text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-3 cursor-pointer active:scale-[0.99]"
+                >
+                  <MessageSquare size={20} /> WhatsApp এ ডকুমেন্ট ও Gmail পাঠান
+                </a>
+                <p className="text-[11px] text-center font-bold text-slate-400">
+                  WhatsApp নম্বর: <span className="text-emerald-600 font-mono">01712-345678</span>
                 </p>
               </div>
 
-              {/* Progress Tracker */}
-              <div className="space-y-3 bg-slate-50 p-5 rounded-xl border border-slate-200">
-                <div className="flex justify-between items-center text-xs font-black">
-                  <span className="text-slate-700">অনুমোদিত আপলোডের অগ্রগতি:</span>
-                  <span className="text-blue-600">{toBengaliDigits(approvedCount)} / {toBengaliDigits(targetCount)} টি</span>
-                </div>
-                
-                <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
-                  <div 
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 h-full rounded-full transition-all duration-500"
-                    style={{ width: `${progressPercent}%` }}
-                  ></div>
+              <div className="h-px bg-slate-100 w-full my-2"></div>
+
+              {/* Verify Gmail Form */}
+              <form onSubmit={handleVerifySubmit} className="space-y-3 bg-slate-50 p-5 rounded-xl border border-slate-200">
+                <label className="text-xs font-black text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
+                  <Mail size={14} className="text-blue-600" /> আপনার নিবন্ধিত জিমেইল আইডি (Gmail) দিয়ে এক্সেস যাচাই করুন:
+                </label>
+                <div className="flex gap-2">
+                  <input 
+                    type="email" 
+                    required
+                    placeholder="আপনার জিমেইল লিখুন (যেমন: user@gmail.com)"
+                    value={checkEmail}
+                    onChange={e => {
+                      setCheckEmail(e.target.value);
+                      setCheckStatus('none');
+                    }}
+                    className="flex-1 px-4 py-2.5 bg-white border border-slate-300 rounded-xl font-bold text-xs outline-none focus:border-blue-500"
+                  />
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-black text-xs hover:bg-black transition-all shrink-0 cursor-pointer"
+                  >
+                    যাচাই করুন
+                  </button>
                 </div>
 
-                <div className="flex justify-between items-center text-[11px] font-bold text-slate-500 pt-1">
-                  <span>০টি ফাইল</span>
-                  <span>{pendingCount > 0 ? `অপেক্ষমান (Pending): ${toBengaliDigits(pendingCount)}টি` : 'অপেক্ষমান: ০টি'}</span>
-                  <span>৫টি ফাইল (ফ্রি আনলক)</span>
-                </div>
-              </div>
+                {checkStatus === 'success' && (
+                  <div className="p-3 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-black flex items-center gap-2 border border-emerald-200 animate-in fade-in">
+                    <CheckCircle2 size={16} className="text-emerald-600" />
+                    আপনার জিমেইল আইডি সফলভাবে অনুমোদিত হয়েছে! সব ডকুমেন্ট আনলক করা হয়েছে।
+                  </div>
+                )}
 
-              {/* Benefits list */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">কনট্রিবিউটরের সুবিধাসমূহ:</h4>
-                <ul className="space-y-2 text-xs md:text-sm font-bold text-slate-700">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                    সকল সরকারি সার্কুলার ও গ্যাজেট সরাসরি নতুন ট্যাবে ফুলস্ক্রিন রিড মোড।
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                    সরাসরি হাই-স্পিড PDF ডাউনলোড সুবিধা।
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                    অডিট নোটে ব্যবহারের জন্য ১-ক্লিকে অটোমেটিক সাইটেশন (Citation) কপি।
-                  </li>
-                </ul>
-              </div>
+                {checkStatus === 'failed' && (
+                  <div className="p-3 bg-amber-100 text-amber-900 rounded-lg text-xs font-bold flex items-center gap-2 border border-amber-200 animate-in fade-in">
+                    <AlertCircle size={16} className="text-amber-600 shrink-0" />
+                    এই জিমেইল আইডিটি এখনো তালিকাভুক্ত হয়নি। অনুগ্রহ করে WhatsApp এ তথ্য পাঠান অথবা সাবস্ক্রিপশন সক্রিয় করুন।
+                  </div>
+                )}
+              </form>
 
-              <div className="pt-2">
-                <button
-                  onClick={() => {
-                    onClose();
-                    onOpenUpload();
-                  }}
-                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-black text-sm hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
-                >
-                  <Plus size={18} /> নতুন অডিট সার্কুলার/ডকুমেন্ট জমা দিন
-                </button>
-              </div>
             </div>
           )}
 
@@ -239,7 +273,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
                     <div>
                       <span className="text-xs font-black text-indigo-600 uppercase tracking-widest">মাসিক প্রিমিয়াম পাস</span>
                       <h3 className="text-2xl font-black text-slate-900 mt-1">৳ ১৯৯ / মাস</h3>
-                      <p className="text-xs font-bold text-slate-500">কোনো ফাইল আপলোড না করেই instant সকল ডকুমেন্ট এক্সেস করুন।</p>
+                      <p className="text-xs font-bold text-slate-500">কোনো ফাইল না পাঠিয়েই instant সকল ডকুমেন্ট এক্সেস করুন।</p>
                     </div>
                     <div className="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shrink-0">
                       <CreditCard size={28} />
@@ -339,43 +373,43 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
               {onSetDemoState && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
-                    onClick={() => onSetDemoState({ approvedCount: 0, isSubscribed: false, isAdmin: false })}
-                    className="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left font-bold text-xs transition-all space-y-1"
+                    onClick={() => onSetDemoState({ isSubscribed: false, isAdmin: false, demoEmail: '' })}
+                    className="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left font-bold text-xs transition-all space-y-1 cursor-pointer"
                   >
                     <div className="font-black text-slate-900 flex items-center gap-2">
-                      <Lock size={14} className="text-amber-500" /> সাধারণ ইউজার (০টি ফাইল)
+                      <Lock size={14} className="text-amber-500" /> সাধারণ ভিজিটর (অনুমোদন ছাড়া)
                     </div>
                     <div className="text-slate-500 text-[11px]">লাইব্রেরি ফাইল লকড দেখাবে</div>
                   </button>
 
                   <button
-                    onClick={() => onSetDemoState({ approvedCount: 3, isSubscribed: false, isAdmin: false })}
-                    className="p-4 bg-blue-50/50 hover:bg-blue-50 border border-blue-200 rounded-xl text-left font-bold text-xs transition-all space-y-1"
-                  >
-                    <div className="font-black text-blue-900 flex items-center gap-2">
-                      <Clock size={14} className="text-blue-600" /> কন্ট্রিবিউটর (৩টি অনুমোদিত)
-                    </div>
-                    <div className="text-slate-500 text-[11px]">অগ্রগতি ৬০% দেখাবে</div>
-                  </button>
-
-                  <button
-                    onClick={() => onSetDemoState({ approvedCount: 5, isSubscribed: false, isAdmin: false })}
-                    className="p-4 bg-emerald-50/50 hover:bg-emerald-50 border border-emerald-200 rounded-xl text-left font-bold text-xs transition-all space-y-1"
+                    onClick={() => onSetDemoState({ isSubscribed: false, isAdmin: false, demoEmail: 'user@gmail.com' })}
+                    className="p-4 bg-emerald-50/60 hover:bg-emerald-50 border border-emerald-200 rounded-xl text-left font-bold text-xs transition-all space-y-1 cursor-pointer"
                   >
                     <div className="font-black text-emerald-900 flex items-center gap-2">
-                      <Unlock size={14} className="text-emerald-600" /> আজীবন ফ্রি আনলক (৫টি ফাইল)
+                      <CheckCircle2 size={14} className="text-emerald-600" /> Whitelisted Gmail (ফ্রি আনলকড)
                     </div>
-                    <div className="text-slate-500 text-[11px]">সকল ফিচার ফ্রি আনলকড</div>
+                    <div className="text-slate-500 text-[11px]">user@gmail.com দিয়ে আনলকড</div>
                   </button>
 
                   <button
-                    onClick={() => onSetDemoState({ approvedCount: 0, isSubscribed: true, isAdmin: false })}
-                    className="p-4 bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-200 rounded-xl text-left font-bold text-xs transition-all space-y-1"
+                    onClick={() => onSetDemoState({ isSubscribed: true, isAdmin: false })}
+                    className="p-4 bg-indigo-50/60 hover:bg-indigo-50 border border-indigo-200 rounded-xl text-left font-bold text-xs transition-all space-y-1 cursor-pointer"
                   >
                     <div className="font-black text-indigo-900 flex items-center gap-2">
                       <CreditCard size={14} className="text-indigo-600" /> মাসিক সাবস্ক্রাইবার
                     </div>
                     <div className="text-slate-500 text-[11px]">৳১৯৯ সাবস্ক্রিপশন সক্রিয়</div>
+                  </button>
+
+                  <button
+                    onClick={() => onSetDemoState({ isSubscribed: false, isAdmin: true })}
+                    className="p-4 bg-blue-50/60 hover:bg-blue-50 border border-blue-200 rounded-xl text-left font-bold text-xs transition-all space-y-1 cursor-pointer"
+                  >
+                    <div className="font-black text-blue-900 flex items-center gap-2">
+                      <ShieldCheck size={14} className="text-blue-600" /> অ্যাডমিন মোড
+                    </div>
+                    <div className="text-slate-500 text-[11px]">ফাইল যোগ ও Gmail রেজিস্টার করার সুবিধা</div>
                   </button>
                 </div>
               )}
@@ -383,7 +417,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
               <div className="pt-2 text-center">
                 <button
                   onClick={onClose}
-                  className="px-6 py-2.5 bg-slate-900 text-white font-black text-xs rounded-xl hover:bg-black transition-all"
+                  className="px-6 py-2.5 bg-slate-900 text-white font-black text-xs rounded-xl hover:bg-black transition-all cursor-pointer"
                 >
                   উইন্ডো বন্ধ করুন
                 </button>
