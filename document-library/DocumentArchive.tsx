@@ -38,15 +38,28 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
   const [whitelistedEmails, setWhitelistedEmails] = useState<string[]>(() => {
     const saved = localStorage.getItem('audit_doc_whitelisted_emails');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try { 
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
     }
-    return ['user@gmail.com', 'auditor@gmail.com'];
+    return ['approved.auditor@gmail.com'];
   });
 
   // Active Current User Gmail State
   const [currentUserEmail, setCurrentUserEmail] = useState<string>(() => {
-    return localStorage.getItem('audit_doc_current_user_email') || 'user@gmail.com';
+    const saved = localStorage.getItem('audit_doc_current_user_email');
+    if (saved && saved !== 'user@gmail.com') return saved;
+    return 'newuser@gmail.com';
   });
+
+  useEffect(() => {
+    localStorage.setItem('audit_doc_current_user_email', currentUserEmail);
+  }, [currentUserEmail]);
+
+  useEffect(() => {
+    localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(whitelistedEmails));
+  }, [whitelistedEmails]);
 
   // Custom Send Money / Payment Phone Number State
   const [paymentNumber, setPaymentNumber] = useState<string>(() => {

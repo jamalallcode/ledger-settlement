@@ -475,13 +475,13 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
                   </button>
 
                   <button
-                    onClick={() => onSetDemoState({ isSubscribed: false, isAdmin: false, demoEmail: 'user@gmail.com' })}
+                    onClick={() => onSetDemoState({ isSubscribed: false, isAdmin: false, demoEmail: whitelistedEmails[0] || 'approved.auditor@gmail.com' })}
                     className="p-4 bg-emerald-50/60 hover:bg-emerald-50 border border-emerald-200 rounded-xl text-left font-bold text-xs transition-all space-y-1 cursor-pointer"
                   >
                     <div className="font-black text-emerald-900 flex items-center gap-2">
-                      <CheckCircle2 size={14} className="text-emerald-600" /> Whitelisted Gmail (ফ্রি আনলকড)
+                      <CheckCircle2 size={14} className="text-emerald-600" /> Whitelisted Gmail (সকল নথি উন্মুক্ত)
                     </div>
-                    <div className="text-slate-500 text-[11px]">user@gmail.com দিয়ে আনলকড</div>
+                    <div className="text-slate-500 text-[11px]">{whitelistedEmails[0] || 'approved.auditor@gmail.com'} দিয়ে সকল নথি উন্মুক্ত</div>
                   </button>
 
                   <button
