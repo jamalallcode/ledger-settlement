@@ -3,10 +3,26 @@ import { createServer as createViteServer } from "vite";
 import session from "express-session";
 import cookieParser from "cookie-parser";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const CONFIG_FILE = path.join(__dirname, "whatsapp_config.json");
+
+let storedWhatsappNumber = "01712-345678";
+try {
+  if (fs.existsSync(CONFIG_FILE)) {
+    const raw = fs.readFileSync(CONFIG_FILE, "utf-8");
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.whatsappNumber) {
+      storedWhatsappNumber = parsed.whatsappNumber;
+    }
+  }
+} catch (e) {
+  console.error("Error reading whatsapp_config.json", e);
+}
 
 async function startServer() {
   const app = express();
@@ -28,6 +44,25 @@ async function startServer() {
   // API routes go here
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
+  });
+
+  // Global Admin WhatsApp Number API
+  app.get("/api/admin/whatsapp-number", (req, res) => {
+    res.json({ whatsappNumber: storedWhatsappNumber });
+  });
+
+  app.post("/api/admin/whatsapp-number", (req, res) => {
+    const { whatsappNumber } = req.body;
+    if (whatsappNumber && typeof whatsappNumber === "string") {
+      storedWhatsappNumber = whatsappNumber.trim();
+      try {
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify({ whatsappNumber: storedWhatsappNumber }), "utf-8");
+      } catch (e) {
+        console.error("Error writing whatsapp_config.json", e);
+      }
+      return res.json({ success: true, whatsappNumber: storedWhatsappNumber });
+    }
+    return res.status(400).json({ error: "Invalid whatsappNumber" });
   });
 
   // Temporary in-memory store for OTPs
