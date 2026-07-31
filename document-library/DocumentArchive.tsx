@@ -4,17 +4,22 @@ import { ArchiveDoc } from '../types';
 import { 
   Library, Search, Filter, Plus, FileText, Calendar, 
   ExternalLink, Trash2, LayoutGrid, List, X, Edit2,
-  ChevronRight, BookOpen, Clock, Download, Eye, Loader2, Sparkles, AlertCircle
+  ChevronRight, BookOpen, Clock, Download, Eye, Loader2, Sparkles, AlertCircle,
+  Lock, Unlock, ShieldCheck, CheckCircle2, CreditCard, Gift, Zap
 } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
+import { UnlockStatusModal } from './UnlockStatusModal';
+import { PendingDocsModal } from './PendingDocsModal';
 
 interface ExtendedArchiveDoc extends ArchiveDoc {
   memoNo?: string;
   authority?: string;
   tags?: string;
+  status?: 'approved' | 'pending' | 'rejected';
+  uploadedBy?: string;
 }
 
-const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
+const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) => {
   const [documents, setDocuments] = useState<ExtendedArchiveDoc[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,6 +28,27 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingDoc, setEditingDoc] = useState<ExtendedArchiveDoc | null>(null);
   const [selectedDoc, setSelectedDoc] = useState<ExtendedArchiveDoc | null>(null);
+
+  // Modal States for Contribution & Unlock Flow
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [showPendingModal, setShowPendingModal] = useState(false);
+
+  // Demo / Persisted User Access States
+  const [approvedContributions, setApprovedContributions] = useState<number>(() => {
+    const saved = localStorage.getItem('audit_doc_approved_count');
+    return saved !== null ? parseInt(saved, 10) : 3; // Default 3 for interactive demo
+  });
+
+  const [isSubscribed, setIsSubscribed] = useState<boolean>(() => {
+    return localStorage.getItem('audit_doc_is_subscribed') === 'true';
+  });
+
+  const [demoAdmin, setDemoAdmin] = useState<boolean>(false);
+
+  const effectiveAdmin = isAdmin || demoAdmin;
+  const targetContribution = 5;
+  const isUnlockedByContribution = approvedContributions >= targetContribution;
+  const isFullyUnlocked = effectiveAdmin || isSubscribed || isUnlockedByContribution;
 
   // New Doc Form State
   const [newDoc, setNewDoc] = useState({
@@ -75,6 +101,14 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   }, []);
 
   useEffect(() => {
+    localStorage.setItem('audit_doc_approved_count', approvedContributions.toString());
+  }, [approvedContributions]);
+
+  useEffect(() => {
+    localStorage.setItem('audit_doc_is_subscribed', isSubscribed ? 'true' : 'false');
+  }, [isSubscribed]);
+
+  useEffect(() => {
     if (editingDoc) {
       setNewDoc({
         title: editingDoc.title,
@@ -104,7 +138,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
         data.forEach((row: any) => {
           if (!row || !row.id) return;
 
-          // Production Fix: Safe content extraction if it's a string
           let content = row.content;
           if (typeof content === 'string') {
             try { content = JSON.parse(content); } catch (e) { return; }
@@ -121,6 +154,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
             memoNo: String(content.memoNo || ''),
             authority: String(content.authority || ''),
             tags: String(content.tags || ''),
+            status: (content.status as any) || 'approved',
+            uploadedBy: String(content.uploadedBy || ''),
             createdAt: String(content.createdAt || new Date().toISOString())
           });
         });
@@ -134,29 +169,22 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     }
   };
 
-  /**
-   * Robust helper function to extract the Archive ID from various URL formats
-   */
   const extractCleanId = (rawId: string) => {
     if (!rawId) return '';
     let clean = rawId.trim();
     
-    // 1. Handle server-style URLs: iaXXXX.us.archive.org/items/ID/...
     const itemsMatch = clean.match(/archive\.org\/items\/([^\/\?\#\s]+)/i);
     if (itemsMatch && itemsMatch[1]) return itemsMatch[1];
 
-    // 2. Standard details/embed/etc: archive.org/details/ID
     const standardMatch = clean.match(/archive\.org\/(?:details|embed|stream|download|metadata|services\/img)\/([^\/\?\#\s]+)/i);
     if (standardMatch && standardMatch[1]) {
       const id = standardMatch[1];
       if (id.toLowerCase() !== 'upload') return id;
     }
     
-    // 3. Fallback: If it's not a URL, or we couldn't parse it as one
     const segments = clean.split('/').filter(Boolean);
     const ignored = ['http:', 'https:', 'www.archive.org', 'archive.org', 'details', 'embed', 'stream', 'download', 'metadata', 'upload', 'ia'];
     
-    // Look for segments following 'details', 'items', etc in case regex missed it
     const markers = ['details', 'items', 'download', 'stream', 'metadata'];
     for (let i = 0; i < segments.length - 1; i++) {
       if (markers.includes(segments[i].toLowerCase())) {
@@ -169,14 +197,12 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
     for (const segment of segments) {
       const s = segment.toLowerCase();
-      // Ignore empty, ignored list, server names, and purely numeric segments (usually path parts like '24')
       if (s && !ignored.includes(s) && !s.includes('.archive.org') && !/^\d+$/.test(s)) {
         return segment.split(/[?#]/)[0];
       }
     }
     
     const finalId = clean.split(/[?#]/)[0];
-    // If the final result still looks like a server name, it's probably not a valid ID
     if (finalId.includes('.archive.org')) return '';
     return finalId;
   };
@@ -190,10 +216,13 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     }
 
     const docId = editingDoc ? editingDoc.id : `doc_${Date.now()}`;
+    const initialStatus = effectiveAdmin ? 'approved' : 'pending';
+
     const docData: ExtendedArchiveDoc = {
       id: docId,
       ...newDoc,
       archiveId: cleanId,
+      status: editingDoc ? editingDoc.status || 'approved' : initialStatus,
       createdAt: editingDoc ? editingDoc.createdAt : new Date().toISOString()
     };
 
@@ -222,9 +251,55 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
           authority: '',
           tags: ''
         });
+
+        if (!effectiveAdmin) {
+          alert("✅ আপনার আপলোডকৃত ফাইলটি জমা নেওয়া হয়েছে! অ্যাডমিন পর্যালোচনার পর অনুমোদন দিলে এটি মূল লাইব্রেরিতে যুক্ত হবে এবং আপনার ফ্রি এক্সেস পয়েন্ট বাড়বে।");
+        } else {
+          alert("✅ ডকুমেন্টটি লাইব্রেরিতে সফলভাবে যুক্ত হয়েছে!");
+        }
       }
     } catch (err) {
       alert("সংরক্ষণে ত্রুটি হয়েছে।");
+    }
+  };
+
+  const handleApproveDoc = async (id: string) => {
+    const targetDoc = documents.find(d => d.id === id);
+    if (!targetDoc) return;
+
+    const updatedDoc: ExtendedArchiveDoc = { ...targetDoc, status: 'approved' };
+    try {
+      const { error } = await supabase.from('settlement_entries').upsert({
+        id: id,
+        content: updatedDoc
+      });
+      if (!error) {
+        setDocuments(prev => prev.map(d => d.id === id ? updatedDoc : d));
+        setApprovedContributions(prev => prev + 1);
+        alert("✅ ডকুমেন্টটি সফলভাবে অনুমোদিত এবং প্রকাশিত হয়েছে!");
+      }
+    } catch (err) {
+      alert("অনুমোদনে সমস্যা হয়েছে।");
+    }
+  };
+
+  const handleRejectDoc = async (id: string) => {
+    if (!window.confirm("আপনি কি এই ডকুমেন্টটি প্রত্যাখ্যান করতে চান?")) return;
+    const targetDoc = documents.find(d => d.id === id);
+    if (!targetDoc) return;
+
+    const updatedDoc: ExtendedArchiveDoc = { ...targetDoc, status: 'rejected' };
+    try {
+      const { error } = await supabase.from('settlement_entries').upsert({
+        id: id,
+        content: updatedDoc
+      });
+      if (!error) {
+        setDocuments(prev => prev.map(d => d.id === id ? updatedDoc : d));
+        alert("❌ ডকুমেন্টটি প্রত্যাখ্যান করা হয়েছে।");
+      }
+    } catch (err) {
+      alert("ত্রুটি হয়েছে।");
     }
   };
 
@@ -244,12 +319,29 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     alert("রেফারেন্স কপি করা হয়েছে!");
   };
 
+  const handleDocClick = (doc: ExtendedArchiveDoc) => {
+    if (isFullyUnlocked) {
+      setSelectedDoc(doc);
+    } else {
+      setShowUnlockModal(true);
+    }
+  };
+
+  // Pending documents
+  const pendingDocs = useMemo(() => {
+    return documents.filter(doc => doc.status === 'pending');
+  }, [documents]);
+
+  // Approved public documents
   const filteredDocs = useMemo(() => {
     if (!documents) return [];
     
     return documents
       .filter(doc => {
-        // Extra defensive string checks
+        // Only show approved docs in public library
+        const isApproved = (doc.status || 'approved') === 'approved';
+        if (!isApproved) return false;
+
         const title = String(doc.title || '').toLowerCase();
         const description = String(doc.description || '').toLowerCase();
         const memoNo = String(doc.memoNo || '').toLowerCase();
@@ -273,8 +365,9 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   return (
     <div className="w-full pb-20 relative [transform:translateZ(0)]">
       {/* Main Content Wrapper */}
-      <div className={`max-w-7xl mx-auto space-y-8 animate-landing-premium transition-all duration-700 ${showAddModal || selectedDoc ? 'opacity-60 scale-[0.98] pointer-events-none' : 'opacity-100 scale-100'}`}>
-        {/* Header Section - Height Reduced (p-10 to p-8) */}
+      <div className={`max-w-7xl mx-auto space-y-6 animate-landing-premium transition-all duration-700 ${showAddModal || selectedDoc || showUnlockModal || showPendingModal ? 'opacity-60 scale-[0.98] pointer-events-none' : 'opacity-100 scale-100'}`}>
+        
+        {/* Header Section */}
         <div className="bg-slate-900 rounded-none p-8 text-white relative overflow-hidden shadow-2xl border border-white/5">
           <div className="absolute top-0 right-0 p-12 text-white/5 pointer-events-none"><Library size={240} /></div>
           <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-600/20 blur-[100px] rounded-full pointer-events-none"></div>
@@ -294,16 +387,73 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                   সরকারি বিধি-বিধান, সার্কুলার এবং অডিট ক্রাইটেরিয়া এখন এক জায়গায়। দ্রুত রেফারেন্স খুঁজে পেতে স্মারক নম্বর বা বিষয় দিয়ে সার্চ করুন।
                 </p>
              </div>
-             <button 
-               onClick={() => setShowAddModal(true)} 
-               className="px-8 py-4 bg-white text-slate-900 hover:bg-blue-50 rounded-none font-black flex items-center gap-3 shadow-2xl active:scale-95 transition-all shrink-0 group"
-             >
-                <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" /> নতুন রেফারেন্স যুক্ত করুন
-             </button>
+             
+             <div className="flex flex-wrap items-center gap-3">
+               <button 
+                 onClick={() => setShowAddModal(true)} 
+                 className="px-6 py-4 bg-white text-slate-900 hover:bg-blue-50 rounded-none font-black flex items-center gap-2 shadow-2xl active:scale-95 transition-all shrink-0 group cursor-pointer text-sm"
+               >
+                  <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" /> কন্ট্রিবিউট করুন
+               </button>
+             </div>
           </div>
         </div>
 
-        {/* Controls Bar - Sticky, fixed z-index and positioning */}
+        {/* Access Status & Unlock Bar */}
+        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-5 rounded-none border border-indigo-500/20 shadow-lg text-white flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black shrink-0 ${isFullyUnlocked ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-400 border border-amber-500/40'}`}>
+              {isFullyUnlocked ? <Unlock size={24} /> : <Lock size={24} />}
+            </div>
+            
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-400">লাইব্রেরি এক্সেস স্ট্যাটাস:</span>
+                {isFullyUnlocked ? (
+                  <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full text-[11px] font-black uppercase">
+                    🔓 সম্পূর্ণ আনলকড
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-[11px] font-black uppercase">
+                    🔒 সীমিত (লকড)
+                  </span>
+                )}
+              </div>
+
+              <div className="text-xs font-bold text-slate-300">
+                {effectiveAdmin ? (
+                  'অ্যাডমিন প্রিভিলেজ (সকল ফাইল উন্মুক্ত)'
+                ) : isSubscribed ? (
+                  'মাসিক সাবস্ক্রিপশন সক্রিয় (৳১৯৯/মাস)'
+                ) : isUnlockedByContribution ? (
+                  'কন্ট্রিবিউশন টার্গেট সম্পন্ন (আজবীন ফ্রি আনলকড)'
+                ) : (
+                  `কনট্রিবিউশন ড্যাশবোর্ড: ${toBengaliDigits(approvedContributions)} / ${toBengaliDigits(targetContribution)} টি অনুমোদিত সার্কুলার জমা হয়েছে`
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+            {pendingDocs.length > 0 && (
+              <button
+                onClick={() => setShowPendingModal(true)}
+                className="px-4 py-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-none text-xs font-black flex items-center gap-2 transition-all cursor-pointer"
+              >
+                <Clock size={16} /> অপেক্ষমান ({toBengaliDigits(pendingDocs.length)})
+              </button>
+            )}
+
+            <button
+              onClick={() => setShowUnlockModal(true)}
+              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-none text-xs font-black flex items-center gap-2 shadow-md transition-all cursor-pointer active:scale-95"
+            >
+              <Zap size={16} className="text-amber-300" /> এক্সেস ও সাবস্ক্রিপশন
+            </button>
+          </div>
+        </div>
+
+        {/* Controls Bar */}
         <div className="sticky top-0 md:top-0 z-[999] bg-white border-b border-slate-200/60 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.05)] flex flex-col lg:flex-row items-center gap-4 transition-all duration-500 mb-8 -mx-4 md:mx-0 px-8 md:px-4">
            <div className="relative flex-1 w-full flex items-center gap-3">
               <div className="relative flex-1 group">
@@ -319,8 +469,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               
               <button 
                 onClick={() => setShowAddModal(true)}
-                className="h-[56px] w-[56px] shrink-0 bg-slate-900 text-white rounded-none flex items-center justify-center shadow-lg hover:bg-black active:scale-95 transition-all duration-300 group"
-                title="দ্রুত আপলোড"
+                className="h-[56px] w-[56px] shrink-0 bg-slate-900 text-white rounded-none flex items-center justify-center shadow-lg hover:bg-black active:scale-95 transition-all duration-300 group cursor-pointer"
+                title="কন্ট্রিবিউট / দ্রুত আপলোড"
               >
                 <Plus size={24} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-500" />
               </button>
@@ -332,7 +482,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                   <button 
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
-                    className={`px-5 py-2.5 rounded-none font-black text-[12px] transition-all duration-300 ${activeCategory === cat ? 'bg-white text-blue-600 shadow-[0_4px_12px_rgba(0,0,0,0.05)] scale-105' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'}`}
+                    className={`px-5 py-2.5 rounded-none font-black text-[12px] transition-all duration-300 cursor-pointer ${activeCategory === cat ? 'bg-white text-blue-600 shadow-[0_4px_12px_rgba(0,0,0,0.05)] scale-105' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'}`}
                   >
                     {cat}
                   </button>
@@ -340,8 +490,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
               </div>
               <div className="h-10 w-[1px] bg-slate-200 mx-1 hidden lg:block"></div>
               <div className="flex bg-slate-50 p-1.5 rounded-none border border-slate-100">
-                 <button onClick={() => setViewMode('grid')} className={`p-2.5 rounded-none transition-all duration-300 ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={18} /></button>
-                 <button onClick={() => setViewMode('list')} className={`p-2.5 rounded-none transition-all duration-300 ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><List size={18} /></button>
+                 <button onClick={() => setViewMode('grid')} className={`p-2.5 rounded-none transition-all duration-300 cursor-pointer ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={18} /></button>
+                 <button onClick={() => setViewMode('list')} className={`p-2.5 rounded-none transition-all duration-300 cursor-pointer ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><List size={18} /></button>
               </div>
            </div>
         </div>
@@ -365,28 +515,41 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                               <img 
                                 src={`https://archive.org/services/img/${extractCleanId(doc.archiveId)}`} 
                                 alt={doc.title}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
+                                className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out ${!isFullyUnlocked ? 'blur-[1.5px] opacity-75' : ''}`}
                                 onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
                               />
+
+                              {!isFullyUnlocked && (
+                                <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center z-10">
+                                  <div className="w-10 h-10 bg-amber-500 text-slate-950 rounded-full flex items-center justify-center shadow-lg mb-2">
+                                    <Lock size={20} />
+                                  </div>
+                                  <span className="text-white text-xs font-black drop-shadow">ফাইল আনলক প্রয়োজন</span>
+                                </div>
+                              )}
+
                               <div className="absolute top-4 left-4 z-20">
                                  <span className="px-4 py-2 bg-white/90 backdrop-blur-md text-slate-900 text-[9px] font-black rounded-none uppercase tracking-[0.15em] border border-white/50 shadow-sm">{doc.category}</span>
                               </div>
-                              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end justify-center p-6 gap-3">
+
+                              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end justify-center p-6 gap-3 z-20">
                                  <button 
-                                   onClick={() => window.open(`https://archive.org/details/${extractCleanId(doc.archiveId)}`, '_blank')} 
-                                   className="flex-1 py-3 bg-white text-slate-900 rounded-none font-black text-[11px] uppercase tracking-widest shadow-xl hover:bg-blue-50 transition-all active:scale-95"
+                                   onClick={() => handleDocClick(doc)} 
+                                   className="flex-1 py-3 bg-white text-slate-900 rounded-none font-black text-[11px] uppercase tracking-widest shadow-xl hover:bg-blue-50 transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                                  >
-                                   ওপেন করুন
+                                   {isFullyUnlocked ? <Eye size={14} /> : <Lock size={14} />} {isFullyUnlocked ? 'ওপেন করুন' : 'আনলক অপশন'}
                                  </button>
-                                 <button 
-                                   onClick={() => {
-                                     const id = extractCleanId(doc.archiveId);
-                                     window.open(`https://archive.org/download/${id}/${id}.pdf`, '_blank');
-                                   }} 
-                                   className="p-3 bg-blue-600 text-white rounded-none shadow-xl hover:bg-blue-700 active:scale-95 transition-all"
-                                 >
-                                   <Download size={18} />
-                                 </button>
+                                 {isFullyUnlocked && (
+                                   <button 
+                                     onClick={() => {
+                                       const id = extractCleanId(doc.archiveId);
+                                       window.open(`https://archive.org/download/${id}/${id}.pdf`, '_blank');
+                                     }} 
+                                     className="p-3 bg-blue-600 text-white rounded-none shadow-xl hover:bg-blue-700 active:scale-95 transition-all cursor-pointer"
+                                   >
+                                     <Download size={18} />
+                                   </button>
+                                 )}
                               </div>
                            </div>
                            <div className="space-y-3 px-2">
@@ -408,26 +571,28 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                               </div>
                            </div>
                         </div>
+
                         <div className="p-4 mt-auto flex items-center justify-between bg-slate-50/30 rounded-b-none border-t border-slate-50">
                            <button 
-                             onClick={() => setSelectedDoc(doc)} 
-                             className="text-[11px] font-black text-slate-500 hover:text-blue-600 flex items-center gap-2 transition-colors uppercase tracking-widest"
+                             onClick={() => handleDocClick(doc)} 
+                             className="text-[11px] font-black text-slate-500 hover:text-blue-600 flex items-center gap-2 transition-colors uppercase tracking-widest cursor-pointer"
                            >
-                             বিস্তারিত দেখুন <ChevronRight size={14} />
+                             {isFullyUnlocked ? 'বিস্তারিত দেখুন' : 'ফ্রি আনলক করুন'} <ChevronRight size={14} />
                            </button>
+
                            <div className="flex items-center gap-1">
-                              {isAdmin && (
+                              {effectiveAdmin && (
                                 <button 
                                   onClick={() => setEditingDoc(doc)} 
-                                  className="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-none transition-all"
+                                  className="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-none transition-all cursor-pointer"
                                 >
                                   <Edit2 size={16} />
                                 </button>
                               )}
-                              {isAdmin && (
+                              {effectiveAdmin && (
                                 <button 
                                   onClick={() => handleDelete(doc.id)} 
-                                  className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-none transition-all"
+                                  className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-none transition-all cursor-pointer"
                                 >
                                   <Trash2 size={16} />
                                 </button>
@@ -455,12 +620,17 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                       <tr key={doc.id} className="hover:bg-slate-50/80 transition-all duration-300 group">
                         <td className="p-6">
                           <div className="flex items-center gap-5">
-                            <div className="w-12 h-12 bg-slate-50 rounded-none overflow-hidden shrink-0 border border-slate-100 group-hover:border-blue-200 transition-colors">
+                            <div className="w-12 h-12 bg-slate-50 rounded-none overflow-hidden shrink-0 border border-slate-100 group-hover:border-blue-200 transition-colors relative">
                               <img 
                                  src={`https://archive.org/services/img/${extractCleanId(doc.archiveId)}`} 
-                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                 className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ${!isFullyUnlocked ? 'blur-[1px]' : ''}`}
                                  onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
                               />
+                              {!isFullyUnlocked && (
+                                <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center text-amber-400">
+                                  <Lock size={14} />
+                                </div>
+                              )}
                             </div>
                             <div className="space-y-1">
                               <h4 className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors tracking-tight">{doc.title}</h4>
@@ -483,33 +653,38 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                         <td className="p-6 text-right">
                           <div className="flex items-center justify-end gap-2.5">
                              <button 
-                               onClick={() => setSelectedDoc(doc)} 
-                               className="p-3 bg-white text-slate-600 rounded-none hover:bg-blue-600 hover:text-white transition-all border border-slate-100 shadow-sm" 
-                               title="বিস্তারিত দেখুন"
+                               onClick={() => handleDocClick(doc)} 
+                               className="p-3 bg-white text-slate-600 rounded-none hover:bg-blue-600 hover:text-white transition-all border border-slate-100 shadow-sm cursor-pointer" 
+                               title={isFullyUnlocked ? "বিস্তারিত দেখুন" : "আনলক করুন"}
                              >
-                               <Eye size={18} />
+                               {isFullyUnlocked ? <Eye size={18} /> : <Lock size={18} className="text-amber-500" />}
                              </button>
-                             <button onClick={() => copyCitation(doc)} className="p-3 bg-white text-slate-600 rounded-none hover:bg-amber-500 hover:text-white transition-all border border-slate-100 shadow-sm" title="রেফারেন্স কপি করুন"><FileText size={18} /></button>
-                             <button 
-                               onClick={() => {
-                                 const id = extractCleanId(doc.archiveId);
-                                 window.open(`https://archive.org/download/${id}/${id}.pdf`, '_blank');
-                               }} 
-                               className="p-3 bg-white text-slate-600 rounded-none hover:bg-emerald-600 hover:text-white transition-all border border-slate-100 shadow-sm" 
-                               title="সরাসরি ডাউনলোড"
-                             >
-                               <Download size={18} />
-                             </button>
-                             {isAdmin && (
+
+                             <button onClick={() => copyCitation(doc)} className="p-3 bg-white text-slate-600 rounded-none hover:bg-amber-500 hover:text-white transition-all border border-slate-100 shadow-sm cursor-pointer" title="রেফারেন্স কপি করুন"><FileText size={18} /></button>
+                             
+                             {isFullyUnlocked && (
+                               <button 
+                                 onClick={() => {
+                                   const id = extractCleanId(doc.archiveId);
+                                   window.open(`https://archive.org/download/${id}/${id}.pdf`, '_blank');
+                                 }} 
+                                 className="p-3 bg-white text-slate-600 rounded-none hover:bg-emerald-600 hover:text-white transition-all border border-slate-100 shadow-sm cursor-pointer" 
+                                 title="সরাসরি ডাউনলোড"
+                               >
+                                 <Download size={18} />
+                               </button>
+                             )}
+
+                             {effectiveAdmin && (
                                <>
                                  <button 
                                    onClick={() => setEditingDoc(doc)} 
-                                   className="p-3 bg-white text-slate-600 rounded-none hover:bg-blue-600 hover:text-white transition-all border border-slate-100 shadow-sm"
+                                   className="p-3 bg-white text-slate-600 rounded-none hover:bg-blue-600 hover:text-white transition-all border border-slate-100 shadow-sm cursor-pointer"
                                    title="এডিট করুন"
                                  >
                                    <Edit2 size={18} />
                                  </button>
-                                 <button onClick={() => handleDelete(doc.id)} className="p-3 bg-white text-slate-300 hover:bg-red-600 hover:text-white transition-all border border-slate-100 shadow-sm"><Trash2 size={18} /></button>
+                                 <button onClick={() => handleDelete(doc.id)} className="p-3 bg-white text-slate-300 hover:bg-red-600 hover:text-white transition-all border border-slate-100 shadow-sm cursor-pointer"><Trash2 size={18} /></button>
                                </>
                              )}
                           </div>
@@ -528,7 +703,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                 <h3 className="text-xl font-black text-slate-800">কোনো রেফারেন্স পাওয়া যায়নি</h3>
                 <p className="text-slate-500 font-bold text-sm">আপনার অনুসন্ধানের সাথে মেলে এমন কোনো ফাইল এই মুহূর্তে নেই।</p>
              </div>
-             {searchTerm && <button onClick={() => setSearchTerm('')} className="text-blue-600 font-black text-xs hover:underline uppercase tracking-widest">সকল রেজাল্ট দেখুন</button>}
+             {searchTerm && <button onClick={() => setSearchTerm('')} className="text-blue-600 font-black text-xs hover:underline uppercase tracking-widest cursor-pointer">সকল রেজাল্ট দেখুন</button>}
           </div>
         )}
       </div>
@@ -539,7 +714,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
            <div className="w-full max-w-6xl bg-white rounded-none overflow-hidden flex flex-col shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white/40 relative animate-in slide-in-from-bottom-8 zoom-in-95 duration-500">
               <button 
                 onClick={() => setSelectedDoc(null)}
-                className="absolute top-8 right-8 z-[1010] p-3.5 bg-white/80 backdrop-blur-md text-slate-400 hover:text-slate-900 rounded-none hover:bg-white transition-all shadow-sm border border-slate-100 group"
+                className="absolute top-8 right-8 z-[1010] p-3.5 bg-white/80 backdrop-blur-md text-slate-400 hover:text-slate-900 rounded-none hover:bg-white transition-all shadow-sm border border-slate-100 group cursor-pointer"
               >
                 <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
               </button>
@@ -606,13 +781,13 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     <div className="pt-10 grid grid-cols-1 gap-4">
                        <button 
                          onClick={() => copyCitation(selectedDoc)}
-                         className="w-full py-5 bg-amber-500 text-white rounded-none font-black text-base flex items-center justify-center gap-3 shadow-xl shadow-amber-100 hover:bg-amber-600 transition-all active:scale-[0.98]"
+                         className="w-full py-5 bg-amber-500 text-white rounded-none font-black text-base flex items-center justify-center gap-3 shadow-xl shadow-amber-100 hover:bg-amber-600 transition-all active:scale-[0.98] cursor-pointer"
                        >
                           <FileText size={22} /> রেফারেন্স কপি করুন
                        </button>
                        <button 
                          onClick={() => setSelectedDoc(null)}
-                         className="w-full py-5 bg-slate-900 text-white rounded-none font-black text-base hover:bg-black transition-all active:scale-[0.98]"
+                         className="w-full py-5 bg-slate-900 text-white rounded-none font-black text-base hover:bg-black transition-all active:scale-[0.98] cursor-pointer"
                        >
                           বন্ধ করুন
                        </button>
@@ -623,10 +798,10 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
         </div>
       )}
 
-      {/* Add/Edit Modal */}
+      {/* Add/Edit Modal (With Approval Flow Notice) */}
       {showAddModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-400/10 backdrop-blur-md animate-in fade-in duration-500 overflow-y-auto">
-           <div className="w-full max-w-3xl bg-white rounded-none p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white/40 space-y-10 animate-in slide-in-from-bottom-8 zoom-in-95 duration-500 no-scrollbar">
+           <div className="w-full max-w-3xl bg-white rounded-none p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white/40 space-y-10 animate-in slide-in-from-bottom-8 zoom-in-95 duration-500 no-scrollbar my-8">
               <div className="flex items-center justify-between border-b border-slate-50 pb-8">
                  <div className="flex items-center gap-6">
                     <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-none flex items-center justify-center shadow-inner border border-blue-100/50">
@@ -634,9 +809,11 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     </div>
                     <div className="space-y-1">
                       <h3 className="text-3xl font-black text-slate-900 tracking-tight">
-                        {editingDoc ? 'রেফারেন্স এডিট করুন' : 'নতুন রেফারেন্স এন্ট্রি'}
+                        {editingDoc ? 'রেফারেন্স এডিট করুন' : 'নতুন অডিট সার্কুলার / ডকুমেন্ট কন্ট্রিবিউট'}
                       </h3>
-                      <p className="text-slate-400 font-bold text-sm">লাইব্রেরিতে নতুন তথ্য যুক্ত করুন</p>
+                      <p className="text-slate-400 font-bold text-sm">
+                        {effectiveAdmin ? 'অ্যাডমিন মোড: সরাসরি প্রকাশ হবে' : 'আপলোড করার পর অ্যাডমিন রিভিউ সাপেক্ষে প্রকাশিত হবে'}
+                      </p>
                     </div>
                  </div>
                  <button 
@@ -654,13 +831,26 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                        tags: ''
                      });
                    }} 
-                   className="w-12 h-12 flex items-center justify-center text-slate-300 hover:text-slate-900 hover:bg-slate-50 rounded-none transition-all group"
+                   className="w-12 h-12 flex items-center justify-center text-slate-300 hover:text-slate-900 hover:bg-slate-50 rounded-none transition-all group cursor-pointer"
                  >
                    <X size={28} className="group-hover:rotate-90 transition-transform duration-300" />
                  </button>
               </div>
 
               <form onSubmit={handleAddDocument} className="space-y-6">
+                 {/* Approval Flow Info Notice */}
+                 {!effectiveAdmin && (
+                   <div className="bg-amber-50 border border-amber-200 p-4 rounded-none flex items-start gap-3 text-amber-900">
+                     <AlertCircle size={20} className="text-amber-600 shrink-0 mt-0.5" />
+                     <div className="text-xs font-bold leading-relaxed space-y-1">
+                       <span className="font-black">অ্যাডমিন প্রসেসিং নোট:</span>
+                       <p>
+                         আপনার আপলোডটি পর্যালোচনা করে অ্যাডমিন অনুমোদন দিলে এটি সকলের জন্য উন্মুক্ত হবে এবং আপনার ১টি ফ্রি আনলক পয়েন্ট যোগ হবে। (৫টি ফাইল অনুমোদিত হলে আপনার জন্য আজীবন ফ্রি!)
+                       </p>
+                     </div>
+                   </div>
+                 )}
+
                  <div className="space-y-3 bg-blue-50 p-6 rounded-none border border-blue-100">
                     <div className="flex items-center gap-2 text-blue-700 font-black text-xs uppercase tracking-widest"><AlertCircle size={14} /> আর্কাইভ লিঙ্ক (Archive Link)</div>
                     <p className="text-[11px] font-bold text-blue-600 leading-relaxed">
@@ -692,7 +882,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                            if (id) window.open(`https://archive.org/details/${id}`, '_blank');
                            else alert("প্রথমে একটি সঠিক লিঙ্ক দিন!");
                          }}
-                         className="px-4 bg-blue-100 text-blue-600 rounded-none font-black text-[10px] uppercase hover:bg-blue-200 transition-all border border-blue-200"
+                         className="px-4 bg-blue-100 text-blue-600 rounded-none font-black text-[10px] uppercase hover:bg-blue-200 transition-all border border-blue-200 cursor-pointer"
                        >
                          পরীক্ষা করুন
                        </button>
@@ -705,11 +895,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                             {extractCleanId(newDoc.archiveId) || 'শনাক্ত করা যায়নি'}
                           </span>
                         </div>
-                        {newDoc.archiveId.includes('.archive.org') && !extractCleanId(newDoc.archiveId) && (
-                          <p className="text-[10px] font-bold text-red-500 flex items-center gap-1">
-                            <AlertCircle size={10} /> আপনি সম্ভবত সার্ভারের নাম পেস্ট করেছেন। অনুগ্রহ করে আসল আইটেম লিঙ্কটি দিন (যেমন: archive.org/details/ITEM_ID)।
-                          </p>
-                        )}
                       </div>
                     )}
                  </div>
@@ -730,7 +915,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     <div className="space-y-2">
                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ক্যাটাগরি</label>
                        <select 
-                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
+                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all cursor-pointer"
                          value={newDoc.category}
                          onChange={e => setNewDoc({...newDoc, category: e.target.value as any})}
                        >
@@ -742,7 +927,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                        <input 
                          type="date" 
                          required
-                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
+                         className="w-full px-5 h-[55px] bg-slate-50 border border-slate-200 rounded-none font-bold outline-none focus:bg-white focus:border-blue-500 transition-all cursor-pointer"
                          value={newDoc.docDate}
                          onChange={e => setNewDoc({...newDoc, docDate: e.target.value})}
                        />
@@ -793,12 +978,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                     ></textarea>
                  </div>
 
-                 <div className="bg-amber-50 p-4 rounded-none border border-amber-100">
-                    <p className="text-[11px] font-bold text-amber-700 flex items-center gap-2">
-                      <Clock size={14} /> নতুন আপলোড করা ফাইল লাইব্রেরিতে দৃশ্যমান হতে ২-৫ মিনিট সময় লাগতে পারে।
-                    </p>
-                 </div>
-
                  <div className="flex gap-4 pt-4">
                     <button 
                       type="button" 
@@ -816,18 +995,49 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
                           tags: ''
                         });
                       }} 
-                      className="flex-1 py-4 bg-slate-50 text-slate-500 rounded-none font-black text-sm hover:bg-slate-100 transition-all"
+                      className="flex-1 py-4 bg-slate-50 text-slate-500 rounded-none font-black text-sm hover:bg-slate-100 transition-all cursor-pointer"
                     >
                       বাতিল
                     </button>
-                    <button type="submit" className="flex-[2] py-4 bg-blue-600 text-white rounded-none font-black text-sm shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-3">
-                       <Sparkles size={18} className="text-blue-300" /> {editingDoc ? 'আপডেট করুন' : 'আর্কাইভে যুক্ত করুন'}
+                    <button type="submit" className="flex-[2] py-4 bg-blue-600 text-white rounded-none font-black text-sm shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-3 cursor-pointer">
+                       <Sparkles size={18} className="text-blue-300" /> {editingDoc ? 'আপডেট করুন' : (effectiveAdmin ? 'সরাসরি প্রকাশ করুন' : 'অনুমোদনের জন্য জমা দিন')}
                     </button>
                  </div>
               </form>
            </div>
         </div>
       )}
+
+      {/* Unlock Status Modal */}
+      <UnlockStatusModal
+        isOpen={showUnlockModal}
+        onClose={() => setShowUnlockModal(false)}
+        approvedCount={approvedContributions}
+        pendingCount={pendingDocs.length}
+        isSubscribed={isSubscribed}
+        isAdmin={effectiveAdmin}
+        onOpenUpload={() => setShowAddModal(true)}
+        onActivateSubscription={(trxId, phone) => {
+          setIsSubscribed(true);
+        }}
+        onSetDemoState={(state) => {
+          setApprovedContributions(state.approvedCount);
+          setIsSubscribed(state.isSubscribed);
+          setDemoAdmin(state.isAdmin);
+        }}
+      />
+
+      {/* Pending Docs Moderation Modal */}
+      <PendingDocsModal
+        isOpen={showPendingModal}
+        onClose={() => setShowPendingModal(false)}
+        pendingDocs={pendingDocs}
+        isAdmin={effectiveAdmin}
+        onApproveDoc={handleApproveDoc}
+        onRejectDoc={handleRejectDoc}
+        extractCleanId={extractCleanId}
+      />
+
     </div>
   );
 };
