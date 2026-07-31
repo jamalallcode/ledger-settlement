@@ -10,6 +10,7 @@ import {
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { UnlockStatusModal } from './UnlockStatusModal';
 import { PendingDocsModal } from './PendingDocsModal';
+import { recordVisitorLog } from './visitorTracker';
 
 interface ExtendedArchiveDoc extends ArchiveDoc {
   memoNo?: string;
@@ -55,7 +56,9 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
 
   useEffect(() => {
     localStorage.setItem('audit_doc_current_user_email', currentUserEmail);
-  }, [currentUserEmail]);
+    const isW = whitelistedEmails.some(e => e.toLowerCase() === currentUserEmail.toLowerCase());
+    recordVisitorLog(currentUserEmail, isW);
+  }, [currentUserEmail, whitelistedEmails]);
 
   useEffect(() => {
     localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(whitelistedEmails));
@@ -396,7 +399,9 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
   const handleVerifyGmail = (email: string) => {
     const trimmed = email.trim().toLowerCase();
     setCurrentUserEmail(trimmed);
-    return whitelistedEmails.some(e => e.toLowerCase() === trimmed);
+    const isW = whitelistedEmails.some(e => e.toLowerCase() === trimmed);
+    recordVisitorLog(trimmed, isW);
+    return isW;
   };
 
   const copyCitation = (doc: ExtendedArchiveDoc) => {
@@ -482,7 +487,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
                   onClick={() => setShowPendingModal(true)}
                   className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 border border-white/20 transition-all cursor-pointer"
                 >
-                  <UserCheck size={16} className="text-blue-300" /> Gmail এক্সেস রেজিস্টার ({toBengaliDigits(whitelistedEmails.length)})
+                  <UserCheck size={16} className="text-blue-300" /> 📊 ৩ দিনের ভিজিটর লগ ও এক্সেস রেজিস্টার ({toBengaliDigits(whitelistedEmails.length)})
                 </button>
               </>
             ) : (
