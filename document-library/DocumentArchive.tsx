@@ -32,7 +32,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
 
   // Modal States
   const [showUnlockModal, setShowUnlockModal] = useState(false);
-  const [modalInitialTab, setModalInitialTab] = useState<'whatsapp' | 'dupcheck' | 'demo'>('whatsapp');
+  const [modalInitialTab, setModalInitialTab] = useState<'whatsapp' | 'dupcheck'>('whatsapp');
   const [showPendingModal, setShowPendingModal] = useState(false);
 
   // Whitelisted Emails State (Sync with localStorage & Supabase)
