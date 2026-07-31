@@ -41,17 +41,19 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
     if (saved) {
       try { 
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter((e: string) => e.toLowerCase() !== 'approved.auditor@gmail.com');
+        }
       } catch (e) {}
     }
-    return ['approved.auditor@gmail.com'];
+    return [];
   });
 
   // Active Current User Gmail State
   const [currentUserEmail, setCurrentUserEmail] = useState<string>(() => {
     const saved = localStorage.getItem('audit_doc_current_user_email');
-    if (saved && saved !== 'user@gmail.com') return saved;
-    return 'newuser@gmail.com';
+    if (saved && saved !== 'user@gmail.com' && saved !== 'newuser@gmail.com') return saved;
+    return '';
   });
 
   useEffect(() => {

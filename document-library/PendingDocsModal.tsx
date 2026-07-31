@@ -318,7 +318,7 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
                   <Mail size={16} className="text-blue-600 shrink-0 ml-1" />
                   <input 
                     type="text" 
-                    placeholder="নতুন কোন ভিজিটর জিমেইল/মোবাইল নং লিখুন (টেস্ট রেকর্ড)..."
+                    placeholder="নতুন কোন ভিজিটর জিমেইল/মোবাইল নং ম্যানুয়ালি রেকর্ড করতে লিখুন..."
                     value={newVisitorInput}
                     onChange={e => setNewVisitorInput(e.target.value)}
                     className="flex-1 px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-xs font-bold outline-none"
