@@ -89,7 +89,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
             </h2>
             
             <p className="text-slate-300 text-sm font-medium max-w-lg leading-relaxed">
-              WhatsApp এ সার্কুলার/ডকুমেন্ট ও আপনার Gmail আইডি পাঠিয়ে সম্পূর্ণ বিনামূল্যে লাইব্রেরির আজীবন এক্সেস নিন।
+              WhatsApp এ সার্কুলার/ডকুমেন্ট ও আপনার Gmail আইডি পাঠিয়ে সম্পূর্ণ বিনামূল্যে ৬ মাসের জন্য লাইব্রেরির পূর্ণাঙ্গ এক্সেস উপভোগ করুন।
             </p>
 
             {/* Current Status Box */}
@@ -104,7 +104,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
                     {isAdmin ? (
                       <span className="text-blue-300">অ্যাডমিন (সকল ফাইল উন্মুক্ত)</span>
                     ) : isFullyUnlocked ? (
-                      <span className="text-emerald-400">নিবন্ধিত কন্ট্রিবিউটর (আজীবন ফ্রি আনলকড)</span>
+                      <span className="text-emerald-400">নিবন্ধিত কন্ট্রিবিউটর (৬ মাস ফ্রি এক্সেস সক্রিয়)</span>
                     ) : (
                       <span className="text-amber-300">সীমিত এক্সেস (লকড)</span>
                     )}
@@ -150,18 +150,23 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
               <div className="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-5 space-y-3">
                 <div className="flex items-center gap-2 text-emerald-900 font-black text-sm">
                   <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
-                  WhatsApp এ ফাইল পাঠান ও আজীবন ফ্রি এক্সেস নিন
+                  নতুন সার্কুলার পাঠান ও ৬ মাসের ফ্রি এক্সেস নিন (মেয়াদভিত্তিক কন্ট্রিবিউশন)
                 </div>
                 <p className="text-slate-700 text-xs md:text-sm font-medium leading-relaxed">
-                  আপনাকে কোনো ফাইল সরাসরি ওয়েবসাইটে আপলোড করার কষ্ট করতে হবে না। আপনার সংগৃহীত সরকারি সার্কুলার, অফিস আদেশ বা অডিট রেফারেন্স ডকুমেন্টটি আপনার <strong>জিমেইল একাউন্ট (Gmail ID)</strong> সহ আমাদের WhatsApp এ পাঠিয়ে দিন।
+                  লাইব্রেরিকে সর্বদা হালনাগাদ রাখতে এবং মানসম্মত নথির প্রবাহ বজায় রাখতে এই কন্ট্রিবিউশন পদ্ধতি নির্ধারণ করা হয়েছে। আপনার সংগৃহীত অডিট নির্দেশিকা বা নতুন সরকারি সার্কুলারটি আপনার <strong>জিমেইল একাউন্ট (Gmail ID)</strong> সহ WhatsApp এ পাঠিয়ে দিন।
                 </p>
-                <div className="bg-white/80 p-3 rounded-xl border border-emerald-100 text-xs text-slate-600 space-y-1">
-                  <div className="font-black text-slate-800">📌 কীভাবে কাজ করে:</div>
-                  <ol className="list-decimal list-inside space-y-1 pl-1 font-medium">
-                    <li>WhatsApp নম্বরে ডকুমেন্ট ও আপনার Gmail আইডি পাঠান।</li>
-                    <li>অ্যাডমিন যাচাই করবেন ডকুমেন্টটি পূর্বে লাইব্রেরিতে আছে কি না।</li>
-                    <li>ডুপ্লিকেট না হলে অ্যাডমিন আপলোড করবেন এবং আপনার Gmail আইডিটি <strong>আজীবন ফ্রি এক্সেস</strong> প্রদান করবেন।</li>
-                  </ol>
+                <div className="bg-white/80 p-3.5 rounded-xl border border-emerald-100 text-xs text-slate-700 space-y-1.5">
+                  <div className="font-black text-slate-900">📌 মেয়াদভিত্তিক এক্সেস নীতি:</div>
+                  <ul className="space-y-1.5 pl-1 font-medium">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-600 font-bold">•</span>
+                      <span><strong>১টি নথি কন্ট্রিবিউট = ৬ মাসের ফ্রি এক্সেস:</strong> আপনার পাঠানো নতুন সার্কুলার/ডকুমেন্টটি যুক্ত হওয়ার সাথে সাথে আপনার Gmail আইডি ৬ মাসের জন্য আনলক হয়ে যাবে।</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-600 font-bold">•</span>
+                      <span><strong>মেয়াদ নবায়ন:</strong> ৬ মাস অতিক্রান্ত হলে পরবর্তীতে যেকোনো সময় আরেকটি নতুন নথি কন্ট্রিবিউট করে পুনরায় পরবর্তী ৬ মাসের জন্য আনলক বাড়াতে পারবেন।</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
 
