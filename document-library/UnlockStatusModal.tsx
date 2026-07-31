@@ -40,7 +40,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'whatsapp' | 'dupcheck' | 'demo'>(initialTab);
 
-  const activeWaNum = whatsappNumber || paymentNumber || '01712-345678';
+  const activeWaNum = whatsappNumber || paymentNumber || '01789-539494';
   const [isEditingWaNum, setIsEditingWaNum] = useState(false);
   const [tempWaNum, setTempWaNum] = useState(activeWaNum);
 

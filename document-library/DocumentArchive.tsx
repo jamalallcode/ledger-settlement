@@ -68,13 +68,16 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
 
   // Custom Send Money / Payment Phone Number State
   const [paymentNumber, setPaymentNumber] = useState<string>(() => {
-    return localStorage.getItem('audit_doc_payment_number') || '01712-345678';
+    return localStorage.getItem('audit_doc_payment_number') || '01789-539494';
   });
 
   // Fetch admin WhatsApp number from server on load (persists across incognito/all browsers)
   useEffect(() => {
     fetch('/api/admin/whatsapp-number?t=' + Date.now(), { cache: 'no-store' })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Network response was not ok');
+        return res.json();
+      })
       .then(data => {
         if (data && data.whatsappNumber) {
           setPaymentNumber(data.whatsappNumber);

@@ -14,26 +14,34 @@ const getConfigFile = () => {
   return cwdPath;
 };
 
+let inMemoryWhatsappNumber: string | null = null;
+
 const getStoredWhatsappNumber = (): string => {
+  if (inMemoryWhatsappNumber) {
+    return inMemoryWhatsappNumber;
+  }
   try {
     const configPath = getConfigFile();
     if (fs.existsSync(configPath)) {
       const raw = fs.readFileSync(configPath, "utf-8");
       const parsed = JSON.parse(raw);
       if (parsed && parsed.whatsappNumber && typeof parsed.whatsappNumber === "string") {
-        return parsed.whatsappNumber.trim();
+        inMemoryWhatsappNumber = parsed.whatsappNumber.trim();
+        return inMemoryWhatsappNumber;
       }
     }
   } catch (e) {
     console.error("Error reading whatsapp_config.json:", e);
   }
-  return "01712-345678";
+  return "01789-539494";
 };
 
 const saveStoredWhatsappNumber = (num: string) => {
+  const trimmed = num.trim();
+  inMemoryWhatsappNumber = trimmed;
   try {
     const configPath = getConfigFile();
-    fs.writeFileSync(configPath, JSON.stringify({ whatsappNumber: num.trim() }, null, 2), "utf-8");
+    fs.writeFileSync(configPath, JSON.stringify({ whatsappNumber: trimmed }, null, 2), "utf-8");
   } catch (e) {
     console.error("Error writing whatsapp_config.json:", e);
   }

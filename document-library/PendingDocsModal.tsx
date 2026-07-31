@@ -26,7 +26,7 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
   whitelistedEmails = [],
   onAddWhitelistedEmail,
   onRemoveWhitelistedEmail,
-  whatsappNumber = '01712-345678',
+  whatsappNumber = '01789-539494',
   onUpdateWhatsappNumber
 }) => {
   const [activeTab, setActiveTab] = useState<'visitor_log' | 'whitelisted'>('visitor_log');
