@@ -73,7 +73,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
 
   // Fetch admin WhatsApp number from server on load (persists across incognito/all browsers)
   useEffect(() => {
-    fetch('/api/admin/whatsapp-number')
+    fetch('/api/admin/whatsapp-number?t=' + Date.now(), { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (data && data.whatsappNumber) {
@@ -94,7 +94,15 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ whatsappNumber: trimmed })
-    }).catch(err => console.error('Failed to save whatsapp number on server:', err));
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.whatsappNumber) {
+          setPaymentNumber(data.whatsappNumber);
+          localStorage.setItem('audit_doc_payment_number', data.whatsappNumber);
+        }
+      })
+      .catch(err => console.error('Failed to save whatsapp number on server:', err));
   };
 
   useEffect(() => {

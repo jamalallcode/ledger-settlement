@@ -9,20 +9,35 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CONFIG_FILE = path.join(__dirname, "whatsapp_config.json");
+const getConfigFile = () => {
+  const cwdPath = path.join(process.cwd(), "whatsapp_config.json");
+  return cwdPath;
+};
 
-let storedWhatsappNumber = "01712-345678";
-try {
-  if (fs.existsSync(CONFIG_FILE)) {
-    const raw = fs.readFileSync(CONFIG_FILE, "utf-8");
-    const parsed = JSON.parse(raw);
-    if (parsed && parsed.whatsappNumber) {
-      storedWhatsappNumber = parsed.whatsappNumber;
+const getStoredWhatsappNumber = (): string => {
+  try {
+    const configPath = getConfigFile();
+    if (fs.existsSync(configPath)) {
+      const raw = fs.readFileSync(configPath, "utf-8");
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.whatsappNumber && typeof parsed.whatsappNumber === "string") {
+        return parsed.whatsappNumber.trim();
+      }
     }
+  } catch (e) {
+    console.error("Error reading whatsapp_config.json:", e);
   }
-} catch (e) {
-  console.error("Error reading whatsapp_config.json", e);
-}
+  return "01712-345678";
+};
+
+const saveStoredWhatsappNumber = (num: string) => {
+  try {
+    const configPath = getConfigFile();
+    fs.writeFileSync(configPath, JSON.stringify({ whatsappNumber: num.trim() }, null, 2), "utf-8");
+  } catch (e) {
+    console.error("Error writing whatsapp_config.json:", e);
+  }
+};
 
 async function startServer() {
   const app = express();
@@ -48,19 +63,17 @@ async function startServer() {
 
   // Global Admin WhatsApp Number API
   app.get("/api/admin/whatsapp-number", (req, res) => {
-    res.json({ whatsappNumber: storedWhatsappNumber });
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    const whatsappNumber = getStoredWhatsappNumber();
+    res.json({ whatsappNumber });
   });
 
   app.post("/api/admin/whatsapp-number", (req, res) => {
     const { whatsappNumber } = req.body;
     if (whatsappNumber && typeof whatsappNumber === "string") {
-      storedWhatsappNumber = whatsappNumber.trim();
-      try {
-        fs.writeFileSync(CONFIG_FILE, JSON.stringify({ whatsappNumber: storedWhatsappNumber }), "utf-8");
-      } catch (e) {
-        console.error("Error writing whatsapp_config.json", e);
-      }
-      return res.json({ success: true, whatsappNumber: storedWhatsappNumber });
+      const trimmed = whatsappNumber.trim();
+      saveStoredWhatsappNumber(trimmed);
+      return res.json({ success: true, whatsappNumber: trimmed });
     }
     return res.status(400).json({ error: "Invalid whatsappNumber" });
   });
