@@ -71,6 +71,32 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
     return localStorage.getItem('audit_doc_payment_number') || '01712-345678';
   });
 
+  // Fetch admin WhatsApp number from server on load (persists across incognito/all browsers)
+  useEffect(() => {
+    fetch('/api/admin/whatsapp-number')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.whatsappNumber) {
+          setPaymentNumber(data.whatsappNumber);
+          localStorage.setItem('audit_doc_payment_number', data.whatsappNumber);
+        }
+      })
+      .catch(err => console.error('Failed to fetch whatsapp number from server:', err));
+  }, []);
+
+  const handleUpdatePaymentNumber = (num: string) => {
+    const trimmed = num.trim();
+    if (!trimmed) return;
+    setPaymentNumber(trimmed);
+    localStorage.setItem('audit_doc_payment_number', trimmed);
+
+    fetch('/api/admin/whatsapp-number', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ whatsappNumber: trimmed })
+    }).catch(err => console.error('Failed to save whatsapp number on server:', err));
+  };
+
   useEffect(() => {
     localStorage.setItem('audit_doc_payment_number', paymentNumber);
   }, [paymentNumber]);
@@ -1038,7 +1064,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
         currentUserEmail={currentUserEmail}
         whatsappNumber={paymentNumber}
         paymentNumber={paymentNumber}
-        onUpdatePaymentNumber={(num) => setPaymentNumber(num)}
+        onUpdatePaymentNumber={handleUpdatePaymentNumber}
         onVerifyGmail={handleVerifyGmail}
         onActivateSubscription={(trxId, phone) => {
           setIsSubscribed(true);
@@ -1063,7 +1089,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
         onAddWhitelistedEmail={handleAddWhitelistedEmail}
         onRemoveWhitelistedEmail={handleRemoveWhitelistedEmail}
         whatsappNumber={paymentNumber}
-        onUpdateWhatsappNumber={(num) => setPaymentNumber(num)}
+        onUpdateWhatsappNumber={handleUpdatePaymentNumber}
       />
 
     </div>
