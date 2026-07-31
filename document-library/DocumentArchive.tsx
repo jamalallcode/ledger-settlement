@@ -436,7 +436,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
               <div className={`px-3 py-1.5 rounded-lg text-xs font-black flex items-center gap-2 border ${isFullyUnlocked ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'}`}>
                 {isFullyUnlocked ? <Unlock size={14} /> : <Lock size={14} />}
                 <span>
-                  {effectiveAdmin ? 'অ্যাডমিন মোড (পূল এক্সেস)' : isSubscribed ? 'সাবস্ক্রিপশন সক্রিয়' : isWhitelisted ? 'Whitelisted Gmail (ফ্রি এক্সেস)' : 'সীমিত এক্সেস (আনলক প্রয়োজন)'}
+                  {effectiveAdmin ? 'অ্যাডমিন মোড (পূর্ণ এক্সেস)' : isFullyUnlocked ? 'Whitelisted Gmail (ফ্রি এক্সেস)' : 'সীমিত এক্সেস (আনলক প্রয়োজন)'}
                 </span>
               </div>
 
@@ -563,7 +563,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
             onClick={() => setShowUnlockModal(true)}
             className="text-blue-600 font-black text-xs hover:underline flex items-center gap-1 cursor-pointer"
           >
-            এক্সেস বিস্তারিত ও সাবস্ক্রিপশন বিকল্প <ChevronRight size={14} />
+            এক্সেস বিস্তারিত ও আনলক নির্দেশিকা <ChevronRight size={14} />
           </button>
         </div>
       </div>

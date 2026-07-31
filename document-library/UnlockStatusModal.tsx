@@ -34,32 +34,13 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
   paymentNumber = '01712-345678',
   onUpdatePaymentNumber
 }) => {
-  const [activeTab, setActiveTab] = useState<'whatsapp' | 'subscribe' | 'demo'>('whatsapp');
-  const [trxId, setTrxId] = useState('');
-  const [phone, setPhone] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'bkash' | 'nagad' | 'rocket'>('bkash');
-  const [isSubmittingPay, setIsSubmittingPay] = useState(false);
-  const [paySuccess, setPaySuccess] = useState(false);
-
-  // Phone number inline edit state
-  const [isEditingNum, setIsEditingNum] = useState(false);
-  const [customNum, setCustomNum] = useState(paymentNumber);
+  const [activeTab, setActiveTab] = useState<'whatsapp' | 'demo'>('whatsapp');
 
   // Email check state
   const [checkEmail, setCheckEmail] = useState(currentUserEmail);
   const [checkStatus, setCheckStatus] = useState<'none' | 'success' | 'failed'>('none');
 
   if (!isOpen) return null;
-
-  const currentPayNum = paymentNumber || customNum || whatsappNumber;
-
-  const handleSaveNumber = () => {
-    if (!customNum.trim()) return;
-    if (onUpdatePaymentNumber) {
-      onUpdatePaymentNumber(customNum.trim());
-    }
-    setIsEditingNum(false);
-  };
 
   const isWhitelisted = whitelistedEmails.some(e => e.toLowerCase() === currentUserEmail.toLowerCase());
   const isFullyUnlocked = isAdmin || isSubscribed || isWhitelisted;
@@ -75,21 +56,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
     }
   };
 
-  const handleSubscribeSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!trxId.trim() || !phone.trim()) {
-      alert('অনুগ্রহ করে আপনার মোবাইল নম্বর এবং ট্রানজেকশন আইডি (TrxID) প্রদান করুন।');
-      return;
-    }
-    setIsSubmittingPay(true);
-    setTimeout(() => {
-      onActivateSubscription(trxId, phone);
-      setIsSubmittingPay(false);
-      setPaySuccess(true);
-    }, 1000);
-  };
-
-  const cleanNum = currentPayNum.replace(/[^0-9]/g, '');
+  const cleanNum = whatsappNumber.replace(/[^0-9]/g, '');
   const formattedWaNum = cleanNum.startsWith('88') ? cleanNum : `88${cleanNum}`;
   const whatsappMessage = encodeURIComponent("নমস্কার, আমি অডিট ডকুমেন্ট লাইব্রেরির জন্য একটি নতুন সার্কুলার/ডকুমেন্ট পাঠাচ্ছি।\n\nআমার জিমেইল আইডি:");
   const whatsappUrl = `https://wa.me/${formattedWaNum}?text=${whatsappMessage}`;
@@ -114,7 +81,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
 
           <div className="relative z-10 space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-400/20 text-amber-300 border border-amber-400/30 rounded-full text-xs font-black tracking-wider uppercase">
-              <Sparkles size={14} /> এক্সেস ব্যবস্থাপনা ও সাবস্ক্রিপশন
+              <Sparkles size={14} /> এক্সেস ব্যবস্থাপনা ও আনলক
             </div>
             
             <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">
@@ -122,7 +89,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
             </h2>
             
             <p className="text-slate-300 text-sm font-medium max-w-lg leading-relaxed">
-              WhatsApp এ সার্কুলার ও Gmail পাঠিয়ে আজীবন ফ্রি এক্সেস নিন অথবা নামমাত্র ফি দিয়ে সাবস্ক্রিপশন সক্রিয় করুন।
+              WhatsApp এ সার্কুলার/ডকুমেন্ট ও আপনার Gmail আইডি পাঠিয়ে সম্পূর্ণ বিনামূল্যে লাইব্রেরির আজীবন এক্সেস নিন।
             </p>
 
             {/* Current Status Box */}
@@ -136,9 +103,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
                   <div className="text-base font-black text-white">
                     {isAdmin ? (
                       <span className="text-blue-300">অ্যাডমিন (সকল ফাইল উন্মুক্ত)</span>
-                    ) : isSubscribed ? (
-                      <span className="text-emerald-400">মাসিক সাবস্ক্রিপশন (সক্রিয়)</span>
-                    ) : isWhitelisted ? (
+                    ) : isFullyUnlocked ? (
                       <span className="text-emerald-400">নিবন্ধিত কন্ট্রিবিউটর (আজীবন ফ্রি আনলকড)</span>
                     ) : (
                       <span className="text-amber-300">সীমিত এক্সেস (লকড)</span>
@@ -164,13 +129,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
             onClick={() => setActiveTab('whatsapp')}
             className={`flex-1 py-3.5 px-4 font-black text-xs md:text-sm flex items-center justify-center gap-2 border-b-2 transition-all ${activeTab === 'whatsapp' ? 'border-emerald-600 text-emerald-700 bg-white' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
           >
-            <MessageSquare size={16} className="text-emerald-600" /> WhatsApp কন্ট্রিবিউশন (ফ্রি)
-          </button>
-          <button
-            onClick={() => setActiveTab('subscribe')}
-            className={`flex-1 py-3.5 px-4 font-black text-xs md:text-sm flex items-center justify-center gap-2 border-b-2 transition-all ${activeTab === 'subscribe' ? 'border-indigo-600 text-indigo-600 bg-white' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-          >
-            <CreditCard size={16} /> মাসিক সাবস্ক্রিপশন (৳১৯৯)
+            <MessageSquare size={16} className="text-emerald-600" /> WhatsApp কন্ট্রিবিউশন (ফ্রি আনলক)
           </button>
           <button
             onClick={() => setActiveTab('demo')}
@@ -217,7 +176,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
                   <MessageSquare size={20} /> WhatsApp এ ডকুমেন্ট ও Gmail পাঠান
                 </a>
                 <p className="text-[11px] text-center font-bold text-slate-400">
-                  WhatsApp নম্বর: <span className="text-emerald-600 font-mono font-black">{currentPayNum}</span>
+                  WhatsApp নম্বর: <span className="text-emerald-600 font-mono font-black">{whatsappNumber}</span>
                 </p>
               </div>
 
@@ -258,7 +217,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
                 {checkStatus === 'failed' && (
                   <div className="p-3 bg-amber-100 text-amber-900 rounded-lg text-xs font-bold flex items-center gap-2 border border-amber-200 animate-in fade-in">
                     <AlertCircle size={16} className="text-amber-600 shrink-0" />
-                    এই জিমেইল আইডিটি এখনো তালিকাভুক্ত হয়নি। অনুগ্রহ করে WhatsApp এ তথ্য পাঠান অথবা সাবস্ক্রিপশন সক্রিয় করুন।
+                    এই জিমেইল আইডিটি এখনো তালিকাভুক্ত হয়নি। অনুগ্রহ করে WhatsApp এ আপনার ডকুমেন্ট ও Gmail আইডি পাঠান।
                   </div>
                 )}
               </form>
@@ -266,169 +225,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
             </div>
           )}
 
-          {/* TAB 2: SUBSCRIBE */}
-          {activeTab === 'subscribe' && (
-            <div className="space-y-6 animate-in fade-in duration-300">
-              {paySuccess ? (
-                <div className="text-center py-8 space-y-4 bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
-                  <div className="w-16 h-16 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto shadow-lg">
-                    <CheckCircle2 size={36} />
-                  </div>
-                  <h3 className="text-xl font-black text-emerald-900">সাবস্ক্রিপশন সফলভাবে সক্রিয় হয়েছে!</h3>
-                  <p className="text-emerald-700 text-sm font-medium">
-                    আপনার ৩০ দিনের জন্য অডিট ডকুমেন্ট লাইব্রেরির সকল ফাইল আনলক করা হলো। ধন্যবাদ!
-                  </p>
-                  <button
-                    onClick={() => {
-                      setPaySuccess(false);
-                      onClose();
-                    }}
-                    className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all cursor-pointer"
-                  >
-                    লাইব্রেরি ব্রাউজ করুন
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-2xl p-5 flex items-center justify-between gap-4">
-                    <div>
-                      <span className="text-xs font-black text-indigo-600 uppercase tracking-widest">মাসিক প্রিমিয়াম পাস</span>
-                      <h3 className="text-2xl font-black text-slate-900 mt-1">৳ ১৯৯ / মাস</h3>
-                      <p className="text-xs font-bold text-slate-500">কোনো ফাইল না পাঠিয়েই instant সকল ডকুমেন্ট এক্সেস করুন।</p>
-                    </div>
-                    <div className="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shrink-0">
-                      <CreditCard size={28} />
-                    </div>
-                  </div>
-
-                  {/* Payment Methods */}
-                  <form onSubmit={handleSubscribeSubmit} className="space-y-5">
-                    <div className="space-y-2">
-                      <label className="text-xs font-black text-slate-600 uppercase tracking-wider">পেমেন্ট মাধ্যম সিলেক্ট করুন:</label>
-                      <div className="grid grid-cols-3 gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod('bkash')}
-                          className={`p-3 rounded-xl border-2 font-black text-xs transition-all flex flex-col items-center gap-1 ${paymentMethod === 'bkash' ? 'border-pink-500 bg-pink-50/50 text-pink-700' : 'border-slate-200 hover:border-slate-300 text-slate-600'}`}
-                        >
-                          <span className="w-3 h-3 rounded-full bg-pink-600 inline-block"></span>
-                          বিকাশ (bKash)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod('nagad')}
-                          className={`p-3 rounded-xl border-2 font-black text-xs transition-all flex flex-col items-center gap-1 ${paymentMethod === 'nagad' ? 'border-orange-500 bg-orange-50/50 text-orange-700' : 'border-slate-200 hover:border-slate-300 text-slate-600'}`}
-                        >
-                          <span className="w-3 h-3 rounded-full bg-orange-600 inline-block"></span>
-                          নগদ (Nagad)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod('rocket')}
-                          className={`p-3 rounded-xl border-2 font-black text-xs transition-all flex flex-col items-center gap-1 ${paymentMethod === 'rocket' ? 'border-purple-500 bg-purple-50/50 text-purple-700' : 'border-slate-200 hover:border-slate-300 text-slate-600'}`}
-                        >
-                          <span className="w-3 h-3 rounded-full bg-purple-600 inline-block"></span>
-                          রকেট (Rocket)
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs font-bold text-slate-700">
-                      <div className="flex items-center justify-between text-slate-900 font-black gap-2">
-                        <span>সেন্ড মানি নম্বর (Personal):</span>
-                        
-                        {isEditingNum ? (
-                          <div className="flex items-center gap-1.5">
-                            <input 
-                              type="text" 
-                              value={customNum} 
-                              onChange={e => setCustomNum(e.target.value)} 
-                              className="px-2.5 py-1 bg-white border-2 border-blue-500 rounded-lg text-xs font-mono font-bold outline-none text-slate-900 w-36 shadow-inner"
-                              placeholder="017XXXXXXXX"
-                            />
-                            <button 
-                              type="button" 
-                              onClick={handleSaveNumber}
-                              className="p-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all text-xs font-black flex items-center gap-1 cursor-pointer"
-                              title="সেভ করুন"
-                            >
-                              <Check size={14} /> সেভ
-                            </button>
-                            <button 
-                              type="button" 
-                              onClick={() => {
-                                setCustomNum(currentPayNum);
-                                setIsEditingNum(false);
-                              }}
-                              className="px-2 py-1 text-slate-500 hover:text-slate-700 text-xs font-bold"
-                            >
-                              বাতিল
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span className="text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 font-mono text-xs md:text-sm font-black tracking-wide">
-                              {currentPayNum}
-                            </span>
-                            <button 
-                              type="button"
-                              onClick={() => {
-                                setCustomNum(currentPayNum);
-                                setIsEditingNum(true);
-                              }}
-                              className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 shadow-xs cursor-pointer"
-                              title="আপনার নিজের নম্বর সেট করুন"
-                            >
-                              <Edit2 size={12} className="text-blue-600" />
-                              <span>নম্বর পরিবর্তন</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-slate-500 text-[11px] leading-relaxed">
-                        * উল্লেখিত নম্বরে ১৯৯ টাকা সেন্ড মানি (Send Money) করে নিচে আপনার মোবাইল নম্বর ও প্রাপ্ত TrxID প্রদান করুন।
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-black text-slate-600">আপনার মোবাইল নম্বর</label>
-                        <input 
-                          type="text" 
-                          required
-                          placeholder="017XXXXXXXX"
-                          value={phone}
-                          onChange={e => setPhone(e.target.value)}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm outline-none focus:bg-white focus:border-indigo-500"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-black text-slate-600">ট্রানজেকশন আইডি (TrxID)</label>
-                        <input 
-                          type="text" 
-                          required
-                          placeholder="e.g. 9J28XKLM"
-                          value={trxId}
-                          onChange={e => setTrxId(e.target.value)}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm outline-none focus:bg-white focus:border-indigo-500 font-mono uppercase"
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={isSubmittingPay}
-                      className="w-full py-4 bg-indigo-600 text-white rounded-xl font-black text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] disabled:opacity-50"
-                    >
-                      {isSubmittingPay ? 'পেমেন্ট যাচাই করা হচ্ছে...' : 'সাবস্ক্রিপশন নিশ্চিত ও আনলক করুন'}
-                    </button>
-                  </form>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* TAB 3: DEMO SIMULATOR */}
+          {/* TAB 2: DEMO SIMULATOR */}
           {activeTab === 'demo' && (
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs font-bold text-amber-800 flex items-start gap-2">
@@ -458,16 +255,6 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
                       <CheckCircle2 size={14} className="text-emerald-600" /> Whitelisted Gmail (ফ্রি আনলকড)
                     </div>
                     <div className="text-slate-500 text-[11px]">user@gmail.com দিয়ে আনলকড</div>
-                  </button>
-
-                  <button
-                    onClick={() => onSetDemoState({ isSubscribed: true, isAdmin: false })}
-                    className="p-4 bg-indigo-50/60 hover:bg-indigo-50 border border-indigo-200 rounded-xl text-left font-bold text-xs transition-all space-y-1 cursor-pointer"
-                  >
-                    <div className="font-black text-indigo-900 flex items-center gap-2">
-                      <CreditCard size={14} className="text-indigo-600" /> মাসিক সাবস্ক্রাইবার
-                    </div>
-                    <div className="text-slate-500 text-[11px]">৳১৯৯ সাবস্ক্রিপশন সক্রিয়</div>
                   </button>
 
                   <button
