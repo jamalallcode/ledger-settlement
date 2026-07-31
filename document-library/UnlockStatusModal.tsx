@@ -19,7 +19,7 @@ interface UnlockStatusModalProps {
   paymentNumber?: string;
   onUpdatePaymentNumber?: (num: string) => void;
   existingDocuments?: any[];
-  initialTab?: 'whatsapp' | 'dupcheck' | 'demo';
+  initialTab?: 'whatsapp' | 'dupcheck';
 }
 
 export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
@@ -38,7 +38,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
   existingDocuments = [],
   initialTab = 'whatsapp'
 }) => {
-  const [activeTab, setActiveTab] = useState<'whatsapp' | 'dupcheck' | 'demo'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'whatsapp' | 'dupcheck'>(initialTab === 'dupcheck' ? 'dupcheck' : 'whatsapp');
 
   const activeWaNum = whatsappNumber || paymentNumber || '01789-539494';
   const [isEditingWaNum, setIsEditingWaNum] = useState(false);
@@ -203,12 +203,6 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
             className={`py-3.5 px-4 font-black text-xs md:text-sm flex items-center justify-center gap-2 border-b-2 transition-all whitespace-nowrap ${activeTab === 'dupcheck' ? 'border-blue-600 text-blue-700 bg-white' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
           >
             <FileSearch size={16} className="text-blue-600" /> 🔍 ডুপ্লিকেট চেকার
-          </button>
-          <button
-            onClick={() => setActiveTab('demo')}
-            className={`py-3.5 px-4 font-black text-xs flex items-center justify-center gap-1.5 border-b-2 transition-all whitespace-nowrap ${activeTab === 'demo' ? 'border-slate-800 text-slate-900 bg-white' : 'border-transparent text-slate-400 hover:text-slate-700'}`}
-          >
-            <Zap size={14} /> টেস্ট ডেমো
           </button>
         </div>
 
@@ -501,61 +495,6 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
                 </div>
               )}
 
-            </div>
-          )}
-
-          {/* TAB 3: DEMO SIMULATOR */}
-          {activeTab === 'demo' && (
-            <div className="space-y-6 animate-in fade-in duration-300">
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs font-bold text-amber-800 flex items-start gap-2">
-                <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
-                <span>
-                  পরীক্ষা করার সুবিধার্থে এখান থেকে তাৎক্ষণিকভাবে বিভিন্ন ইউজার রোল ও এক্সেস মোড ট্রাই করতে পারেন।
-                </span>
-              </div>
-
-              {onSetDemoState && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <button
-                    onClick={() => onSetDemoState({ isSubscribed: false, isAdmin: false, demoEmail: '' })}
-                    className="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left font-bold text-xs transition-all space-y-1 cursor-pointer"
-                  >
-                    <div className="font-black text-slate-900 flex items-center gap-2">
-                      <Lock size={14} className="text-amber-500" /> সাধারণ ভিজিটর (অনুমোদন ছাড়া)
-                    </div>
-                    <div className="text-slate-500 text-[11px]">লাইব্রেরি ফাইল লকড দেখাবে</div>
-                  </button>
-
-                  <button
-                    onClick={() => onSetDemoState({ isSubscribed: false, isAdmin: false, demoEmail: whitelistedEmails[0] || 'approved.auditor@gmail.com' })}
-                    className="p-4 bg-emerald-50/60 hover:bg-emerald-50 border border-emerald-200 rounded-xl text-left font-bold text-xs transition-all space-y-1 cursor-pointer"
-                  >
-                    <div className="font-black text-emerald-900 flex items-center gap-2">
-                      <CheckCircle2 size={14} className="text-emerald-600" /> Whitelisted Gmail (সকল নথি উন্মুক্ত)
-                    </div>
-                    <div className="text-slate-500 text-[11px]">{whitelistedEmails[0] || 'approved.auditor@gmail.com'} দিয়ে সকল নথি উন্মুক্ত</div>
-                  </button>
-
-                  <button
-                    onClick={() => onSetDemoState({ isSubscribed: false, isAdmin: true })}
-                    className="p-4 bg-blue-50/60 hover:bg-blue-50 border border-blue-200 rounded-xl text-left font-bold text-xs transition-all space-y-1 cursor-pointer"
-                  >
-                    <div className="font-black text-blue-900 flex items-center gap-2">
-                      <ShieldCheck size={14} className="text-blue-600" /> অ্যাডমিন মোড
-                    </div>
-                    <div className="text-slate-500 text-[11px]">ফাইল যোগ ও Gmail রেজিস্টার করার সুবিধা</div>
-                  </button>
-                </div>
-              )}
-
-              <div className="pt-2 text-center">
-                <button
-                  onClick={onClose}
-                  className="px-6 py-2.5 bg-slate-900 text-white font-black text-xs rounded-xl hover:bg-black transition-all cursor-pointer"
-                >
-                  উইন্ডো বন্ধ করুন
-                </button>
-              </div>
             </div>
           )}
 
