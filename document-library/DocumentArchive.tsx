@@ -485,7 +485,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
       </div>
 
       {/* Filter and Search Bar (Sticky Top) */}
-      <div className="sticky top-2 z-30 bg-white/95 backdrop-blur-md p-5 md:p-6 rounded-2xl border border-slate-200/90 shadow-xl space-y-4 transition-all">
+      <div className="sticky -top-4 md:-top-8 z-30 -mx-2 md:-mx-4 px-2 md:px-4 pt-4 md:pt-8 pb-3 bg-white/95 backdrop-blur-md transition-all">
+        <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200/90 shadow-xl space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           
           {/* Category Tabs */}
@@ -580,6 +581,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
             এক্সেস বিস্তারিত ও আনলক নির্দেশিকা <ChevronRight size={14} />
           </button>
         </div>
+      </div>
       </div>
 
       {/* Document Grid / List Content */}
