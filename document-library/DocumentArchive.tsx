@@ -1036,6 +1036,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
         isAdmin={effectiveAdmin}
         whitelistedEmails={whitelistedEmails}
         currentUserEmail={currentUserEmail}
+        whatsappNumber={paymentNumber}
         paymentNumber={paymentNumber}
         onUpdatePaymentNumber={(num) => setPaymentNumber(num)}
         onVerifyGmail={handleVerifyGmail}

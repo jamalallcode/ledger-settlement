@@ -40,6 +40,10 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
   const [tempWaNum, setTempWaNum] = useState(whatsappNumber);
 
   useEffect(() => {
+    setTempWaNum(whatsappNumber);
+  }, [whatsappNumber]);
+
+  useEffect(() => {
     if (isOpen) {
       setVisitorLogs(getInitialVisitorLogs());
     }

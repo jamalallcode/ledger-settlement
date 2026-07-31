@@ -32,8 +32,8 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
   onVerifyGmail,
   onActivateSubscription,
   onSetDemoState,
-  whatsappNumber = '01712-345678',
-  paymentNumber = '01712-345678',
+  whatsappNumber,
+  paymentNumber,
   onUpdatePaymentNumber,
   existingDocuments = [],
   initialTab = 'whatsapp'
@@ -116,7 +116,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
     }
   };
 
-  const cleanNum = whatsappNumber.replace(/[^0-9]/g, '');
+  const cleanNum = (activeWaNum || '').replace(/[^0-9]/g, '');
   const formattedWaNum = cleanNum.startsWith('88') ? cleanNum : `88${cleanNum}`;
   const whatsappMessage = encodeURIComponent("নমস্কার, আমি অডিট ডকুমেন্ট লাইব্রেরির জন্য নতুন সার্কুলার/ডকুমেন্ট পাঠাচ্ছি।\n\nআমার জিমেইল আইডি:");
   const whatsappUrl = `https://wa.me/${formattedWaNum}?text=${whatsappMessage}`;
