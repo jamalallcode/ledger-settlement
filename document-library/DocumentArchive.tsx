@@ -5,7 +5,7 @@ import {
   Library, Search, Filter, Plus, FileText, Calendar, 
   ExternalLink, Trash2, LayoutGrid, List, X, Edit2,
   ChevronRight, BookOpen, Clock, Download, Eye, Loader2, Sparkles, AlertCircle,
-  Lock, Unlock, ShieldCheck, CheckCircle2, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck
+  Lock, Unlock, ShieldCheck, CheckCircle2, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch
 } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { UnlockStatusModal } from './UnlockStatusModal';
@@ -31,6 +31,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
 
   // Modal States
   const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [modalInitialTab, setModalInitialTab] = useState<'whatsapp' | 'dupcheck' | 'demo'>('whatsapp');
   const [showPendingModal, setShowPendingModal] = useState(false);
 
   // Whitelisted Emails State (Sync with localStorage & Supabase)
@@ -518,6 +519,19 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
               )}
             </div>
 
+            {/* Duplicate Checker Button */}
+            <button
+              onClick={() => {
+                setModalInitialTab('dupcheck');
+                setShowUnlockModal(true);
+              }}
+              className="px-3.5 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95 shadow-2xs"
+              title="নতুন ফাইল পাঠানোর আগে ডুপ্লিকেট চেক করুন"
+            >
+              <FileSearch size={16} className="text-blue-600" />
+              <span className="hidden sm:inline">🔍 ডুপ্লিকেট চেকার</span>
+            </button>
+
             <div className="flex bg-slate-100 p-1 rounded-xl shrink-0">
               <button
                 onClick={() => setViewMode('grid')}
@@ -1004,6 +1018,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
         onActivateSubscription={(trxId, phone) => {
           setIsSubscribed(true);
         }}
+        existingDocuments={documents}
+        initialTab={modalInitialTab}
         onSetDemoState={(state) => {
           setIsSubscribed(state.isSubscribed);
           setDemoAdmin(state.isAdmin);
