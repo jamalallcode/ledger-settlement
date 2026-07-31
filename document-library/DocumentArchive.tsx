@@ -1061,6 +1061,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
         whitelistedEmails={whitelistedEmails}
         onAddWhitelistedEmail={handleAddWhitelistedEmail}
         onRemoveWhitelistedEmail={handleRemoveWhitelistedEmail}
+        whatsappNumber={paymentNumber}
+        onUpdateWhatsappNumber={(num) => setPaymentNumber(num)}
       />
 
     </div>

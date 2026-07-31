@@ -16,6 +16,7 @@ interface PendingDocsModalProps {
   onAddWhitelistedEmail: (email: string) => void;
   onRemoveWhitelistedEmail: (email: string) => void;
   whatsappNumber?: string;
+  onUpdateWhatsappNumber?: (num: string) => void;
 }
 
 export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
@@ -25,7 +26,8 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
   whitelistedEmails = [],
   onAddWhitelistedEmail,
   onRemoveWhitelistedEmail,
-  whatsappNumber = '8801712345678'
+  whatsappNumber = '01712-345678',
+  onUpdateWhatsappNumber
 }) => {
   const [activeTab, setActiveTab] = useState<'visitor_log' | 'whitelisted'>('visitor_log');
   const [visitorLogs, setVisitorLogs] = useState<VisitorLog[]>([]);
@@ -34,6 +36,8 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
   const [newEmail, setNewEmail] = useState('');
   const [addedSuccess, setAddedSuccess] = useState(false);
   const [newVisitorInput, setNewVisitorInput] = useState('');
+  const [isEditingWaNum, setIsEditingWaNum] = useState(false);
+  const [tempWaNum, setTempWaNum] = useState(whatsappNumber);
 
   useEffect(() => {
     if (isOpen) {
@@ -143,9 +147,9 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
       <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden relative animate-in slide-in-from-bottom-6 duration-300 my-auto flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 p-6 text-white flex items-center justify-between border-b border-white/10 shrink-0">
+        <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-xl flex items-center justify-center shrink-0">
               <Users size={22} />
             </div>
             <div>
@@ -158,13 +162,36 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
             </div>
           </div>
 
-          <button 
-            onClick={onClose}
-            className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer shrink-0 border border-white/10"
-            title="বন্ধ করুন"
-          >
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Admin WhatsApp number info */}
+            {isAdmin && (
+              <div className="bg-white/10 px-3 py-1.5 rounded-xl border border-white/15 text-xs flex items-center gap-2">
+                <MessageSquare size={14} className="text-emerald-400" />
+                <span className="text-slate-300">WhatsApp:</span>
+                <span className="font-mono font-black text-emerald-300">{whatsappNumber}</span>
+                <button
+                  onClick={() => {
+                    const newNum = prompt('নতুন এডমিন WhatsApp নম্বর লিখুন:', whatsappNumber);
+                    if (newNum && newNum.trim()) {
+                      onUpdateWhatsappNumber?.(newNum.trim());
+                    }
+                  }}
+                  className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-black cursor-pointer transition-colors"
+                  title="WhatsApp নম্বর এডিট করুন"
+                >
+                  এডিট
+                </button>
+              </div>
+            )}
+
+            <button 
+              onClick={onClose}
+              className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer shrink-0 border border-white/10"
+              title="বন্ধ করুন"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Top Navigation Tabs */}

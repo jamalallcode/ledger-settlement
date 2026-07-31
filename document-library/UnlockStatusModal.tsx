@@ -40,6 +40,14 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'whatsapp' | 'dupcheck' | 'demo'>(initialTab);
 
+  const activeWaNum = whatsappNumber || paymentNumber || '01712-345678';
+  const [isEditingWaNum, setIsEditingWaNum] = useState(false);
+  const [tempWaNum, setTempWaNum] = useState(activeWaNum);
+
+  useEffect(() => {
+    setTempWaNum(activeWaNum);
+  }, [activeWaNum]);
+
   // Sync activeTab if initialTab changes
   useEffect(() => {
     if (isOpen) {
@@ -259,9 +267,53 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
                 >
                   <MessageSquare size={20} /> WhatsApp এ ডকুমেন্ট ও Gmail পাঠান
                 </a>
-                <p className="text-[11px] text-center font-bold text-slate-400">
-                  WhatsApp নম্বর: <span className="text-emerald-600 font-mono font-black">{whatsappNumber}</span>
-                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <p className="text-[11px] text-center font-bold text-slate-400">
+                    WhatsApp নম্বর (এডমিন): <span className="text-emerald-600 font-mono font-black">{activeWaNum}</span>
+                  </p>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingWaNum(!isEditingWaNum)}
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline flex items-center gap-1 cursor-pointer"
+                      title="এডমিন: WhatsApp নম্বর এডিট করুন"
+                    >
+                      <Edit2 size={12} /> {isEditingWaNum ? 'বাতিল' : 'এডিট'}
+                    </button>
+                  )}
+                </div>
+
+                {isAdmin && isEditingWaNum && (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-2 animate-in fade-in">
+                    <div className="text-xs font-black text-blue-900 flex items-center justify-between">
+                      <span>এডমিন: নতুন WhatsApp নম্বর সেট করুন:</span>
+                      <button type="button" onClick={() => setIsEditingWaNum(false)} className="text-slate-400 hover:text-slate-600">
+                        <X size={14} />
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        value={tempWaNum}
+                        onChange={e => setTempWaNum(e.target.value)}
+                        placeholder="যেমন: 01712-345678"
+                        className="flex-1 px-3 py-1.5 bg-white border border-blue-300 rounded-lg text-xs font-mono font-bold outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (tempWaNum.trim()) {
+                            onUpdatePaymentNumber?.(tempWaNum.trim());
+                            setIsEditingWaNum(false);
+                          }
+                        }}
+                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-black hover:bg-blue-700 transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        <Check size={14} /> সেভ করুন
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="h-px bg-slate-100 w-full my-2"></div>
