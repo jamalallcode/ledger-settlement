@@ -484,8 +484,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-xl space-y-6">
+      {/* Filter and Search Bar (Sticky Top) */}
+      <div className="sticky top-2 z-30 bg-white/95 backdrop-blur-md p-5 md:p-6 rounded-2xl border border-slate-200/90 shadow-xl space-y-4 transition-all">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           
           {/* Category Tabs */}
