@@ -760,11 +760,12 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
 
       {/* Selected Document Full View Modal */}
       {selectedDoc && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
-          <div className="w-full max-w-5xl bg-white rounded-2xl overflow-hidden shadow-2xl border border-slate-100 relative animate-in zoom-in-95 duration-300 my-8">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 pt-16 md:pt-20 pb-8 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
+          <div className="w-full max-w-5xl bg-white rounded-2xl overflow-hidden shadow-2xl border border-slate-100 relative animate-in zoom-in-95 duration-300 my-auto">
             <button 
               onClick={() => setSelectedDoc(null)}
-              className="absolute top-4 right-4 z-20 p-2.5 bg-slate-900/80 hover:bg-black text-white rounded-full transition-all cursor-pointer"
+              className="absolute top-6 right-6 z-30 p-2.5 bg-slate-900/80 hover:bg-black text-white rounded-full transition-all cursor-pointer border border-white/10 shadow-lg"
+              title="বন্ধ করুন"
             >
               <X size={20} />
             </button>
@@ -848,8 +849,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
 
       {/* Admin-Only Document Addition Modal */}
       {showAddModal && effectiveAdmin && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
-          <div className="w-full max-w-2xl bg-white rounded-2xl p-6 md:p-8 shadow-2xl border border-slate-100 space-y-6 animate-in slide-in-from-bottom-6 duration-300 my-8">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 pt-16 md:pt-20 pb-8 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
+          <div className="w-full max-w-2xl bg-white rounded-2xl p-6 md:p-8 shadow-2xl border border-slate-100 space-y-6 animate-in slide-in-from-bottom-6 duration-300 my-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-black">
