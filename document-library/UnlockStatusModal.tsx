@@ -55,27 +55,6 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
   const [dupQuery, setDupQuery] = useState('');
   const [hasSearchedDup, setHasSearchedDup] = useState(false);
 
-  if (!isOpen) return null;
-
-  const isWhitelisted = whitelistedEmails.some(e => e.toLowerCase() === currentUserEmail.toLowerCase());
-  const isFullyUnlocked = isAdmin || isSubscribed || isWhitelisted;
-
-  const handleVerifySubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!checkEmail.trim()) return;
-    const isMatched = onVerifyGmail(checkEmail.trim());
-    if (isMatched) {
-      setCheckStatus('success');
-    } else {
-      setCheckStatus('failed');
-    }
-  };
-
-  const cleanNum = whatsappNumber.replace(/[^0-9]/g, '');
-  const formattedWaNum = cleanNum.startsWith('88') ? cleanNum : `88${cleanNum}`;
-  const whatsappMessage = encodeURIComponent("নমস্কার, আমি অডিট ডকুমেন্ট লাইব্রেরির জন্য নতুন সার্কুলার/ডকুমেন্ট পাঠাচ্ছি।\n\nআমার জিমেইল আইডি:");
-  const whatsappUrl = `https://wa.me/${formattedWaNum}?text=${whatsappMessage}`;
-
   // Duplicate matching logic
   const normalizeStr = (str: string) => {
     if (!str) return '';
@@ -112,6 +91,27 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
       return false;
     });
   }, [dupQuery, existingDocuments]);
+
+  if (!isOpen) return null;
+
+  const isWhitelisted = whitelistedEmails.some(e => e.toLowerCase() === currentUserEmail.toLowerCase());
+  const isFullyUnlocked = isAdmin || isSubscribed || isWhitelisted;
+
+  const handleVerifySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!checkEmail.trim()) return;
+    const isMatched = onVerifyGmail(checkEmail.trim());
+    if (isMatched) {
+      setCheckStatus('success');
+    } else {
+      setCheckStatus('failed');
+    }
+  };
+
+  const cleanNum = whatsappNumber.replace(/[^0-9]/g, '');
+  const formattedWaNum = cleanNum.startsWith('88') ? cleanNum : `88${cleanNum}`;
+  const whatsappMessage = encodeURIComponent("নমস্কার, আমি অডিট ডকুমেন্ট লাইব্রেরির জন্য নতুন সার্কুলার/ডকুমেন্ট পাঠাচ্ছি।\n\nআমার জিমেইল আইডি:");
+  const whatsappUrl = `https://wa.me/${formattedWaNum}?text=${whatsappMessage}`;
 
   const customWaMessage = encodeURIComponent(
     `নমস্কার, আমি অডিট লাইব্রেরিতে একটি নতুন নথি কন্ট্রিবিউট করতে চাই।\n\n` +
