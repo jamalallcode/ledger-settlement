@@ -587,7 +587,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
               <Library size={14} /> সরকারি অডিট সার্কুলার ও গেজেট ভল্ট
             </div>
             <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white leading-tight">
-              স্মার্ট অডিট ডকুমেন্ট লাইব্রেরি
+              স্মার্ট অডিট ক্রাইটেরিয়া
             </h1>
             <p className="text-slate-300 font-medium text-sm md:text-base leading-relaxed">
               অর্থ মন্ত্রণালয়, সিএজি অফিস ও বিভিন্ন সরকারি দপ্তরের সকল গুরুতপূর্ণ সার্কুলার, অফিস আদেশ ও গেজেট এক জায়গায়। অডিট সাইটেশন <strong className="font-extrabold text-white">১-ক্লিকে</strong> কপি করুন।

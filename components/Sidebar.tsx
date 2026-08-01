@@ -389,7 +389,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'entry', label: 'নতুন এন্ট্রি', icon: FilePlus2, badgeId: 'side-nav-entry', isDropdown: true },
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter, badgeId: 'side-nav-register', isDropdown: true },
     { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return', isDropdown: true },
-    { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, badgeId: 'side-nav-archive' },
+    { id: 'archive', label: 'অডিট ক্রাইটেরিয়া', icon: Library, badgeId: 'side-nav-archive' },
   ];
 
   const IDBadge = ({ id }: { id: string }) => {

@@ -147,7 +147,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     { id: 'setup_receivers', label: 'প্রাপক ব্যবস্থাপনা', icon: Users, color: 'amber', desc: 'প্রাপক তালিকা আপডেট করুন' },
     { id: 'initial_balance', label: 'পূর্ব জের সেটাপ', icon: ShieldCheck, color: 'blue', desc: 'প্রারম্ভিক জের সেটআপ করুন' },
     { id: 'change_pass', label: 'পাসওয়ার্ড পরিবর্তন', icon: KeyRound, color: 'indigo', desc: 'সিকিউরিটি সেটিংস আপডেট করুন' },
-    { id: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, color: 'rose', desc: 'সংরক্ষিত ফাইলসমূহ' }
+    { id: 'archive', label: 'অডিট ক্রাইটেরিয়া', icon: Library, color: 'rose', desc: 'সংরক্ষিত ফাইলসমূহ' }
   ];
 
   return (
@@ -299,7 +299,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     { key: 'entry', label: 'নতুন এন্ট্রি', icon: PlusCircle, color: 'blue' },
                     { key: 'register', label: 'রেজিস্টার দেখুন', icon: FileText, color: 'emerald' },
                     { key: 'return', label: 'রিপোর্ট ও সারাংশ', icon: PieChart, color: 'indigo' },
-                    { key: 'archive', label: 'ডকুমেন্ট লাইব্রেরি', icon: Library, color: 'rose' },
+                    { key: 'archive', label: 'অডিট ক্রাইটেরিয়া', icon: Library, color: 'rose' },
                   ].map((module) => (
                     <div key={module.key} className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${moduleVisibility[module.key as keyof ModuleVisibility] ? `bg-${module.color}-600/5 border-${module.color}-200/50` : 'bg-slate-50 border-slate-200/80'}`}>
                       <div className="flex items-center gap-3">
