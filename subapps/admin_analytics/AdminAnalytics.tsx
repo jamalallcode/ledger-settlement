@@ -62,39 +62,73 @@ const findLetterForSettlement = (
   settlementEntry: any,
   allCorrespondence: any[]
 ): any | null => {
-  if (!settlementEntry || !settlementEntry.letterNoDate) return null;
-  
-  const rawLetterNoDate = settlementEntry.letterNoDate;
-  const engNoDate = toEnglishDigits(rawLetterNoDate).toLowerCase();
-  
-  for (const c of allCorrespondence) {
-    if (!c.letterNo) continue;
-    const cLetterNoEng = toEnglishDigits(c.letterNo).toLowerCase().trim();
-    if (!cLetterNoEng) continue;
+  if (!settlementEntry) return null;
 
-    const escaped = cLetterNoEng.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-    const pattern = new RegExp(`(?:^|[^0-9a-zA-Z])${escaped}(?:$|[^0-9a-zA-Z])`);
-    
-    if (pattern.test(engNoDate)) {
-      if (settlementEntry.ministryName && c.ministryName) {
-        const sMin = settlementEntry.ministryName.replace(/[\s\-\,]/g, '');
-        const cMin = c.ministryName.replace(/[\s\-\,]/g, '');
-        if (sMin && cMin && sMin === cMin) {
-          return c;
+  const getDigits = (str: string | undefined | null): number[] => {
+    if (!str) return [];
+    const eng = toEnglishDigits(str);
+    const matches = eng.match(/\d+/g) || [];
+    return matches.map(m => parseInt(m, 10)).filter(n => !isNaN(n));
+  };
+
+  const sLetterDigits = getDigits(settlementEntry.letterNoDate);
+  const sWorkpaperDigits = getDigits(settlementEntry.workpaperNoDate);
+  const sDiaryDigits = getDigits(settlementEntry.diaryNo);
+
+  const cleanStr = (str: string | undefined | null) => (str || '').replace(/[\s\-\,\.\(\)]/g, '').toLowerCase();
+
+  const sMinistry = cleanStr(settlementEntry.ministryName);
+  const sEntity = cleanStr(settlementEntry.entityName);
+
+  for (const c of allCorrespondence) {
+    const cLetterDigits = getDigits(c.letterNo);
+    const cDiaryDigits = getDigits(c.diaryNo || c.workpaperNoDate);
+    const cMinistry = cleanStr(c.ministryName);
+    const cEntity = cleanStr(c.entityName);
+
+    // 1. Direct match by diary number
+    if (sDiaryDigits.length > 0 && cDiaryDigits.length > 0) {
+      if (sDiaryDigits.some(sd => cDiaryDigits.includes(sd))) {
+        return c;
+      }
+    }
+
+    // 2. Letter number match (integer-based, ignoring leading zeros like 07 vs 7)
+    if (sLetterDigits.length > 0 && cLetterDigits.length > 0) {
+      if (sLetterDigits.some(sl => cLetterDigits.includes(sl))) {
+        if (sMinistry && cMinistry) {
+          if (sMinistry.includes(cMinistry) || cMinistry.includes(sMinistry)) {
+            return c;
+          }
         }
+        if (sEntity && cEntity) {
+          if (sEntity.includes(cEntity) || cEntity.includes(sEntity)) {
+            return c;
+          }
+        }
+        return c;
+      }
+    }
+
+    // 3. Workpaper / Minutes digits match
+    if (sWorkpaperDigits.length > 0 && cDiaryDigits.length > 0) {
+      if (sWorkpaperDigits.some(sw => cDiaryDigits.includes(sw))) {
+        return c;
       }
     }
   }
 
-  for (const c of allCorrespondence) {
-    if (!c.letterNo) continue;
-    const cLetterNoEng = toEnglishDigits(c.letterNo).toLowerCase().trim();
-    if (!cLetterNoEng) continue;
+  // Fallback: string match
+  if (settlementEntry.letterNoDate) {
+    const engNoDate = toEnglishDigits(settlementEntry.letterNoDate).toLowerCase();
+    for (const c of allCorrespondence) {
+      if (!c.letterNo) continue;
+      const cLetterNoEng = toEnglishDigits(c.letterNo).toLowerCase().trim();
+      if (!cLetterNoEng) continue;
 
-    const escaped = cLetterNoEng.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-    const pattern = new RegExp(`(?:^|[^0-9a-zA-Z])${escaped}(?:$|[^0-9a-zA-Z])`);
-    if (pattern.test(engNoDate)) {
-      return c;
+      if (engNoDate.includes(cLetterNoEng)) {
+        return c;
+      }
     }
   }
 
@@ -103,13 +137,16 @@ const findLetterForSettlement = (
 
 const getAuditorForSettlement = (entry: any, correspondenceList: any[]): string => {
   const directName = entry.receiverName || entry.presentedToName;
-  if (directName && directName.trim() !== '') {
-    return directName;
+  if (directName && directName.trim() !== '' && directName.trim() !== 'অনির্ধারিত (Unassigned)' && directName.trim() !== 'অনির্ধারিত') {
+    return directName.trim();
   }
   
   const matchedLetter = findLetterForSettlement(entry, correspondenceList);
   if (matchedLetter) {
-    return matchedLetter.receiverName || matchedLetter.presentedToName || 'অনির্ধারিত (Unassigned)';
+    const matchedAuditor = matchedLetter.receiverName || matchedLetter.presentedToName;
+    if (matchedAuditor && matchedAuditor.trim() !== '' && matchedAuditor.trim() !== 'অনির্ধারিত' && matchedAuditor.trim() !== 'অনির্ধারিত (Unassigned)') {
+      return matchedAuditor.trim();
+    }
   }
   
   return 'অনির্ধারিত (Unassigned)';
@@ -258,7 +295,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     const stats: Record<string, { name: string, letterCount: number, paraCount: number, settledCount: number, designation?: string, image?: string }> = {};
 
     filteredData.forEach(entry => {
-      const rawName = entry.receiverName || 'অনির্ধারিত (Unassigned)';
+      const rawName = entry.receiverName || entry.presentedToName || 'অনির্ধারিত (Unassigned)';
       const normName = normalizeName(rawName);
       const nameKey = rawName === 'অনির্ধারিত (Unassigned)' ? 'অনির্ধারিত (Unassigned)' : normName;
 
@@ -333,7 +370,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       });
     } else {
       data = filteredData.filter(entry => {
-        const rawName = entry.receiverName || 'অনির্ধারিত (Unassigned)';
+        const rawName = entry.receiverName || entry.presentedToName || 'অনির্ধারিত (Unassigned)';
         const normName = normalizeName(rawName);
         return rawName === auditorName || normName === normalizeName(auditorName);
       });

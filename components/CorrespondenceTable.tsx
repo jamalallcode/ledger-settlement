@@ -532,7 +532,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         const isNumericSearch = /^\d+$/.test(normalizedSearch);
         const matchSearch =
           !searchTerm ||
-          (searchTerm === "__UNASSIGNED__" ? !entry.receiverName || entry.receiverName.trim() === "" : 
+          (searchTerm === "__UNASSIGNED__" ? (!entry.receiverName || entry.receiverName.trim() === "") && (!entry.presentedToName || entry.presentedToName.trim() === "") : 
           (() => {
             const engLetter = toEnglishDigits(
               entry.letterNo.toLowerCase(),
