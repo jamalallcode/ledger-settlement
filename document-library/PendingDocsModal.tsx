@@ -147,8 +147,8 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
   const todayVisitorsCount = visitorLogs.filter(log => log.dateStr === todayStr).length;
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 pt-16 md:pt-20 pb-8 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden relative animate-in slide-in-from-bottom-6 duration-300 my-auto flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-0 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
+      <div className="w-full max-w-full h-full bg-white rounded-none shadow-2xl border-0 overflow-hidden relative animate-in slide-in-from-bottom-6 duration-300 flex flex-col">
         
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 shrink-0">
