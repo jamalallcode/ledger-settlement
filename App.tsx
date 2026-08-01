@@ -1033,7 +1033,10 @@ const App: React.FC = () => {
   const approvedCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'approved' || !e.approvalStatus), [correspondenceEntries]);
   
   const unassignedCorrespondence = useMemo(() => {
-    return approvedCorrespondence.filter(e => !e.receiverName || e.receiverName.trim() === "");
+    return approvedCorrespondence.filter(e => 
+      (!e.receiverName || e.receiverName.trim() === "") && 
+      (!e.presentedToName || e.presentedToName.trim() === "")
+    );
   }, [approvedCorrespondence]);
   
   const branchSuggestions: GroupOption[] = useMemo(() => {
