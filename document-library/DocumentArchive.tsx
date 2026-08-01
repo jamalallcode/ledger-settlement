@@ -5,7 +5,7 @@ import {
   Library, Search, Filter, Plus, FileText, Calendar, 
   ExternalLink, Trash2, LayoutGrid, List, X, Edit2,
   ChevronRight, BookOpen, Clock, Download, Eye, Loader2, Sparkles, AlertCircle,
-  Lock, Unlock, ShieldCheck, CheckCircle2, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch
+  Lock, Unlock, ShieldCheck, CheckCircle2, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send
 } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { UnlockStatusModal } from './UnlockStatusModal';
@@ -29,6 +29,12 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingDoc, setEditingDoc] = useState<ExtendedArchiveDoc | null>(null);
   const [selectedDoc, setSelectedDoc] = useState<ExtendedArchiveDoc | null>(null);
+
+  // Document Feedback Modal State
+  const [feedbackDoc, setFeedbackDoc] = useState<ExtendedArchiveDoc | null>(null);
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [feedbackUserName, setFeedbackUserName] = useState('');
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
   // Modal States
   const [showUnlockModal, setShowUnlockModal] = useState(false);
@@ -503,6 +509,26 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
     alert('অডিট সাইটেশন কপি করা হয়েছে:\n\n' + text);
   };
 
+  const handleSendFeedback = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!feedbackDoc || !feedbackMessage.trim()) return;
+
+    const docInfo = `স্মারক: ${feedbackDoc.memoNo || 'N/A'}, শিরোনাম: ${feedbackDoc.title}`;
+    const text = `হ্যালো এডমিন,\n\nআমি অডিট লাইব্রেরির নিচে উল্লেখিত ডকুমেন্ট/সার্কুলারটি সম্পর্কে মতামত জানাতে চাই:\n📌 ${docInfo}\n\n💬 আমার মতামত:\n${feedbackMessage.trim()}\n\nপ্রেরক: ${feedbackUserName || currentUserEmail || 'সাধারণ ব্যবহারকারী'}`;
+
+    const waNum = paymentNumber.replace(/[^0-9]/g, '');
+    const cleanNum = waNum.startsWith('88') ? waNum : '88' + waNum;
+    const waUrl = `https://wa.me/${cleanNum}?text=${encodeURIComponent(text)}`;
+    window.open(waUrl, '_blank');
+
+    setFeedbackSubmitted(true);
+    setTimeout(() => {
+      setFeedbackSubmitted(false);
+      setFeedbackDoc(null);
+      setFeedbackMessage('');
+    }, 2200);
+  };
+
   const filteredDocs = useMemo(() => {
     return documents.filter(doc => {
       const matchesCategory = activeCategory === 'সকল' || doc.category === activeCategory;
@@ -596,7 +622,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
       </div>
 
       {/* Filter and Search Bar (Sticky Top) */}
-      <div className="sticky -top-4 md:-top-8 z-30 -mx-2 md:-mx-4 px-2 md:px-4 pt-4 md:pt-8 pb-3 bg-white/95 backdrop-blur-md transition-all">
+      <div className="sticky top-0 z-30 -mx-2 md:-mx-4 px-2 md:px-4 pt-2 md:pt-3 pb-3 bg-[#eef2f6]/95 backdrop-blur-md transition-all">
         <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200/90 shadow-xl space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           
@@ -782,6 +808,14 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
 
                     <div className="flex items-center gap-1">
                       <button 
+                        onClick={() => setFeedbackDoc(doc)} 
+                        className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold"
+                        title="এই সার্কুলার সম্পর্কে মতামত পাঠান"
+                      >
+                        <MessageSquarePlus size={16} />
+                        <span className="hidden sm:inline">মতামত</span>
+                      </button>
+                      <button 
                         onClick={() => copyCitation(doc)} 
                         className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all cursor-pointer" 
                         title="সাইটেশন কপি করুন"
@@ -813,16 +847,24 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
             })}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-xl">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-900 text-white text-xs">
-                    <th className="p-4 uppercase tracking-wider">ডকুমেন্ট শিরোনাম ও স্মারক</th>
-                    <th className="p-4 uppercase tracking-wider">ক্যাটাগরি</th>
-                    <th className="p-4 uppercase tracking-wider">কর্তৃপক্ষ</th>
-                    <th className="p-4 uppercase tracking-wider">তারিখ</th>
-                    <th className="p-4 uppercase tracking-wider text-right">অ্যাকশন</th>
+                <thead className="sticky top-[125px] md:top-[130px] z-20 shadow-md">
+                  <tr className="bg-slate-900 text-white text-xs font-black">
+                    <th className="p-4 uppercase tracking-wider bg-slate-900">ডকুমেন্ট শিরোনাম ও স্মারক</th>
+                    <th className="p-4 uppercase tracking-wider bg-slate-900">ক্যাটাগরি</th>
+                    <th className="p-4 uppercase tracking-wider bg-slate-900">কর্তৃপক্ষ</th>
+                    <th className="p-4 uppercase tracking-wider text-center bg-slate-900">আপলোডের তারিখ</th>
+                    <th className="p-4 uppercase tracking-wider text-right bg-slate-900">অ্যাকশন</th>
+                  </tr>
+                  {/* ক্রমিক রো (Sequence Row) */}
+                  <tr className="bg-slate-800 text-slate-300 text-[11px] font-mono font-bold text-center border-t border-slate-700/60 divide-x divide-slate-700/60">
+                    <td className="py-1.5 px-3 bg-slate-800">১</td>
+                    <td className="py-1.5 px-3 bg-slate-800">২</td>
+                    <td className="py-1.5 px-3 bg-slate-800">৩</td>
+                    <td className="py-1.5 px-3 bg-slate-800">৪</td>
+                    <td className="py-1.5 px-3 bg-slate-800">৫</td>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
@@ -852,7 +894,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
                           </span>
                         </td>
                         <td className="p-4 font-bold text-slate-600">{doc.authority || 'N/A'}</td>
-                        <td className="p-4 font-bold text-slate-500">{formatPremiumDate(doc.docDate)}</td>
+                        <td className="p-4 font-bold text-slate-500 text-center">{formatPremiumDate(doc.docDate)}</td>
                         <td className="p-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button 
@@ -861,6 +903,13 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
                               title={isDocUnlocked ? "ওপেন করুন" : "আনলক করুন"}
                             >
                               {isDocUnlocked ? <Eye size={16} /> : <Lock size={16} className="text-amber-500" />}
+                            </button>
+                            <button 
+                              onClick={() => setFeedbackDoc(doc)} 
+                              className="p-2 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200/80 rounded-lg transition-all"
+                              title="এই ডকুমেন্ট সম্পর্কে মতামত জানান"
+                            >
+                              <MessageSquarePlus size={16} />
                             </button>
                             <button 
                               onClick={() => copyCitation(doc)} 
@@ -965,7 +1014,17 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
                   </div>
                 )}
 
-                <div className="pt-4 flex gap-3">
+                <div className="pt-4 flex flex-wrap gap-3">
+                  <button 
+                    onClick={() => {
+                      const target = selectedDoc;
+                      setSelectedDoc(null);
+                      setFeedbackDoc(target);
+                    }}
+                    className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                  >
+                    <MessageSquarePlus size={16} /> এডমিনকে মতামত জানান
+                  </button>
                   <button 
                     onClick={() => copyCitation(selectedDoc)}
                     className="flex-1 py-3 bg-amber-500 text-white rounded-xl font-black text-xs hover:bg-amber-600 transition-all flex items-center justify-center gap-2 cursor-pointer"
@@ -981,6 +1040,91 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Feedback / Opinion Modal */}
+      {feedbackDoc && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
+          <div className="w-full max-w-lg bg-white rounded-2xl p-6 md:p-8 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-300 my-auto">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center font-black shrink-0">
+                  <MessageSquarePlus size={22} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">ডকুমেন্ট সম্পর্কে মতামত প্রদান</h3>
+                  <p className="text-xs text-slate-500 font-bold">এডমিনকে আপনার মতামত বা সার্কুলার সম্পর্কিত তথ্য জানান</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => { setFeedbackDoc(null); setFeedbackSubmitted(false); }}
+                className="p-2 text-slate-400 hover:text-slate-900 rounded-full hover:bg-slate-100 transition-all cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Target Document Info Box */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-1">
+              <span className="text-[10px] font-black uppercase text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
+                {feedbackDoc.category}
+              </span>
+              <h4 className="font-black text-slate-900 text-xs md:text-sm leading-snug">{feedbackDoc.title}</h4>
+              {feedbackDoc.memoNo && (
+                <p className="text-[11px] font-bold text-slate-500">স্মারক নং: {feedbackDoc.memoNo}</p>
+              )}
+            </div>
+
+            {feedbackSubmitted ? (
+              <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-xl text-center space-y-2">
+                <CheckCircle2 size={36} className="mx-auto text-emerald-600" />
+                <h4 className="font-black text-emerald-900 text-sm">আপনার মতামত সফলভাবে পাঠানো হয়েছে!</h4>
+                <p className="text-xs text-emerald-700 font-bold">WhatsApp বার্তার মাধ্যমে এডমিনকে অবহিত করা হয়েছে। ধন্যবাদ।</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSendFeedback} className="space-y-4 text-xs font-bold">
+                <div className="space-y-1">
+                  <label className="text-slate-700 font-black">আপনার নাম / জিমেইল (ঐচ্ছিক):</label>
+                  <input 
+                    type="text"
+                    placeholder="যেমন: জহিরুল ইসলাম / user@gmail.com"
+                    value={feedbackUserName}
+                    onChange={e => setFeedbackUserName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-slate-700 font-black">আপনার মতামত বা প্রশ্ন:*</label>
+                  <textarea 
+                    required
+                    rows={4}
+                    placeholder="এই সার্কুলার বা নির্দেশিকা সম্পর্কে আপনার মতামত লিখুন..."
+                    value={feedbackMessage}
+                    onChange={e => setFeedbackMessage(e.target.value)}
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-emerald-500 min-h-[100px]"
+                  ></textarea>
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <button 
+                    type="button"
+                    onClick={() => setFeedbackDoc(null)}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs transition-all cursor-pointer"
+                  >
+                    বাতিল
+                  </button>
+                  <button 
+                    type="submit"
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition-all flex items-center gap-2 shadow-md cursor-pointer"
+                  >
+                    <Send size={15} /> WhatsApp-এ এডমিনকে মতামত জানান
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
