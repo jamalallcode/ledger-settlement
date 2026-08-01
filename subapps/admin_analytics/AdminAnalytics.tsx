@@ -802,6 +802,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                           <th className="px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-left">স্মারক ও তারিখ</th>
                           <th className="px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-left">মন্ত্রণালয় ও প্রতিষ্ঠান</th>
                           <th className="px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-center">অডিট বছর</th>
+                          <th className="px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-center">চিঠির ধরন</th>
                           <th className="px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-left">শাখা ও নিষ্পত্তির ধরন</th>
                           <th className="px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-center">নিষ্পন্নকৃত অনুচ্ছেদ</th>
                           <th className="px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-right">নিষ্পত্তিকৃত টাকা</th>
@@ -809,6 +810,10 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                       </thead>
                       <tbody className="divide-y divide-slate-200">
                         {selectedAuditorDetails.data.map((item, i) => {
+                          const matchedLetter = findLetterForSettlement(item, correspondenceEntries);
+                          const rawType = item.letterType || matchedLetter?.letterType || (item.isMeeting ? (item.meetingType || 'ত্রিপক্ষীয় সভা') : matchedLetter?.isMeeting ? (matchedLetter.meetingType || 'ত্রিপক্ষীয় সভা') : 'সাধারণ');
+                          const typeDisplay = getCleanLetterTypeDisplay(rawType) || 'সাধারণ';
+
                           const rowSettledCount = item.paragraphs?.filter((p: any) => p.status === 'পূর্ণাঙ্গ').length 
                             || parseInt(toEnglishDigits(item.meetingSettledParaCount || '0')) 
                             || 0;
@@ -836,6 +841,11 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                               </td>
                               <td className="px-4 py-3 text-center border border-slate-200">
                                 <span className="text-xs font-bold text-slate-600">{toBengaliDigits(item.auditYear)}</span>
+                              </td>
+                              <td className="px-4 py-3 text-center border border-slate-200">
+                                <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[11px] font-black border border-blue-100">
+                                  {typeDisplay}
+                                </span>
                               </td>
                               <td className="px-4 py-3 text-left border border-slate-200">
                                 <div className="flex flex-col space-y-0.5">
