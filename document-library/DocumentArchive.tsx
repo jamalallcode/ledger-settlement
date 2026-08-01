@@ -590,7 +590,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
               স্মার্ট অডিট ডকুমেন্ট লাইব্রেরি
             </h1>
             <p className="text-slate-300 font-medium text-sm md:text-base leading-relaxed">
-              অর্থ মন্ত্রণালয়, সিএজি অফিস ও বিভিন্ন সরকারি দপ্তরের সকল গুরুতপূর্ণ সার্কুলার, অফিস আদেশ ও গেজেট এক জায়গায়। অডিট সাইটেশন ১-ক্লিকে কপি করুন।
+              অর্থ মন্ত্রণালয়, সিএজি অফিস ও বিভিন্ন সরকারি দপ্তরের সকল গুরুতপূর্ণ সার্কুলার, অফিস আদেশ ও গেজেট এক জায়গায়। অডিট সাইটেশন <strong className="font-black text-white bg-slate-800/90 px-2 py-0.5 rounded border border-slate-700">১-ক্লিকে</strong> কপি করুন।
             </p>
 
             {/* Access Badge */}
