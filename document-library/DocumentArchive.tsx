@@ -870,24 +870,24 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
             })}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl">
-            <div className="overflow-x-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-visible">
+            <div className="w-full overflow-visible">
               <table className="w-full text-left border-collapse">
                 <thead className="sticky z-20 shadow-md transition-all" style={{ top: `${filterBarHeight}px` }}>
                   <tr className="bg-slate-900 text-white text-xs font-black">
-                    <th className="p-4 uppercase tracking-wider bg-slate-900">ডকুমেন্ট শিরোনাম ও স্মারক</th>
-                    <th className="p-4 uppercase tracking-wider bg-slate-900">ক্যাটাগরি</th>
-                    <th className="p-4 uppercase tracking-wider bg-slate-900">কর্তৃপক্ষ</th>
+                    <th className="p-4 uppercase tracking-wider bg-slate-900 text-center">ডকুমেন্ট শিরোনাম ও স্মারক</th>
+                    <th className="p-4 uppercase tracking-wider bg-slate-900 text-center">ক্যাটাগরি</th>
+                    <th className="p-4 uppercase tracking-wider bg-slate-900 text-center">কর্তৃপক্ষ</th>
                     <th className="p-4 uppercase tracking-wider text-center bg-slate-900">আপলোডের তারিখ</th>
-                    <th className="p-4 uppercase tracking-wider text-right bg-slate-900">অ্যাকশন</th>
+                    <th className="p-4 uppercase tracking-wider text-center bg-slate-900">অ্যাকশন</th>
                   </tr>
                   {/* ক্রমিক রো (Sequence Row) */}
                   <tr className="bg-slate-800 text-slate-300 text-[11px] font-mono font-bold text-center border-t border-slate-700/60 divide-x divide-slate-700/60">
-                    <td className="py-1.5 px-3 bg-slate-800">১</td>
-                    <td className="py-1.5 px-3 bg-slate-800">২</td>
-                    <td className="py-1.5 px-3 bg-slate-800">৩</td>
-                    <td className="py-1.5 px-3 bg-slate-800">৪</td>
-                    <td className="py-1.5 px-3 bg-slate-800">৫</td>
+                    <td className="py-1.5 px-3 bg-slate-800 text-center">১</td>
+                    <td className="py-1.5 px-3 bg-slate-800 text-center">২</td>
+                    <td className="py-1.5 px-3 bg-slate-800 text-center">৩</td>
+                    <td className="py-1.5 px-3 bg-slate-800 text-center">৪</td>
+                    <td className="py-1.5 px-3 bg-slate-800 text-center">৫</td>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
@@ -911,15 +911,15 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
                             </div>
                           </div>
                         </td>
-                        <td className="p-4">
+                        <td className="p-4 text-center">
                           <span className="px-2.5 py-1 bg-slate-100 text-slate-700 font-black rounded-lg text-[10px]">
                             {doc.category}
                           </span>
                         </td>
-                        <td className="p-4 font-bold text-slate-600">{doc.authority || 'N/A'}</td>
+                        <td className="p-4 font-bold text-slate-600 text-center">{doc.authority || 'N/A'}</td>
                         <td className="p-4 font-bold text-slate-500 text-center">{formatPremiumDate(doc.docDate)}</td>
-                        <td className="p-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="p-4 text-center">
+                          <div className="flex items-center justify-center gap-2">
                             <button 
                               onClick={() => handleDocClick(doc, isDocUnlocked)} 
                               className="p-2 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg transition-all"
