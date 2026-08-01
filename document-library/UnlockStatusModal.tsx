@@ -12,7 +12,7 @@ interface UnlockStatusModalProps {
   isAdmin?: boolean;
   whitelistedEmails: string[];
   currentUserEmail: string;
-  onVerifyGmail: (email: string) => boolean;
+  onVerifyGmail: (email: string) => boolean | Promise<boolean>;
   onActivateSubscription: (trxId: string, phone: string) => void;
   onSetDemoState?: (state: { isSubscribed: boolean; isAdmin: boolean; demoEmail?: string }) => void;
   whatsappNumber?: string;
@@ -105,10 +105,10 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
   const isWhitelisted = whitelistedEmails.some(e => e.toLowerCase() === currentUserEmail.toLowerCase());
   const isFullyUnlocked = isAdmin || isSubscribed || isWhitelisted;
 
-  const handleVerifySubmit = (e: React.FormEvent) => {
+  const handleVerifySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!checkEmail.trim()) return;
-    const isMatched = onVerifyGmail(checkEmail.trim());
+    const isMatched = await onVerifyGmail(checkEmail.trim());
     if (isMatched) {
       setCheckStatus('success');
     } else {

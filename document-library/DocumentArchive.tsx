@@ -210,6 +210,19 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
 
   const fetchWhitelistedEmails = async () => {
     try {
+      const res = await fetch('/api/admin/whitelisted-emails?t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.emails)) {
+          const list = data.emails.map((e: string) => e.trim().toLowerCase());
+          setWhitelistedEmails(list);
+          localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(list));
+          return;
+        }
+      }
+    } catch (e) {}
+
+    try {
       const { data, error } = await supabase
         .from('settlement_entries')
         .select('*')
@@ -228,6 +241,14 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
   };
 
   const saveWhitelistedEmailsToDb = async (list: string[]) => {
+    try {
+      await fetch('/api/admin/whitelisted-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emails: list })
+      });
+    } catch (e) {}
+
     try {
       await supabase.from('settlement_entries').upsert({
         id: 'doc_whitelisted_emails',
@@ -421,24 +442,57 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
     }
   };
 
-  const handleAddWhitelistedEmail = (email: string) => {
+  const handleAddWhitelistedEmail = async (email: string) => {
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) return;
     if (!whitelistedEmails.some(e => e.toLowerCase() === trimmed)) {
       const updated = [...whitelistedEmails, trimmed];
       setWhitelistedEmails(updated);
+      try {
+        await fetch('/api/admin/whitelisted-emails', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ addEmail: trimmed })
+        });
+      } catch (e) {}
     }
   };
 
-  const handleRemoveWhitelistedEmail = (email: string) => {
-    const updated = whitelistedEmails.filter(e => e.toLowerCase() !== email.toLowerCase());
+  const handleRemoveWhitelistedEmail = async (email: string) => {
+    const trimmed = email.trim().toLowerCase();
+    const updated = whitelistedEmails.filter(e => e.toLowerCase() !== trimmed);
     setWhitelistedEmails(updated);
+    try {
+      await fetch('/api/admin/whitelisted-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ removeEmail: trimmed })
+      });
+    } catch (e) {}
   };
 
-  const handleVerifyGmail = (email: string) => {
+  const handleVerifyGmail = async (email: string): Promise<boolean> => {
     const trimmed = email.trim().toLowerCase();
+    if (!trimmed) return false;
     setCurrentUserEmail(trimmed);
-    const isW = whitelistedEmails.some(e => e.toLowerCase() === trimmed);
+
+    let isW = whitelistedEmails.some(e => e.toLowerCase() === trimmed);
+
+    try {
+      const res = await fetch('/api/admin/whitelisted-emails?t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.emails)) {
+          const latestList = data.emails.map((e: string) => e.trim().toLowerCase());
+          setWhitelistedEmails(latestList);
+          localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(latestList));
+          if (latestList.includes(trimmed)) {
+            isW = true;
+          }
+        }
+      }
+    } catch (e) {}
+
     recordVisitorLog(trimmed, isW);
     return isW;
   };
