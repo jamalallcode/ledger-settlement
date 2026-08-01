@@ -47,6 +47,44 @@ const saveStoredWhatsappNumber = (num: string) => {
   }
 };
 
+const getWhitelistFile = () => {
+  return path.join(process.cwd(), "whitelisted_emails.json");
+};
+
+let inMemoryWhitelistedEmails: string[] | null = null;
+
+const getStoredWhitelistedEmails = (): string[] => {
+  if (inMemoryWhitelistedEmails) {
+    return inMemoryWhitelistedEmails;
+  }
+  try {
+    const file = getWhitelistFile();
+    if (fs.existsSync(file)) {
+      const raw = fs.readFileSync(file, "utf-8");
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        inMemoryWhitelistedEmails = Array.from(new Set(parsed.map(e => String(e).trim().toLowerCase()).filter(Boolean)));
+        return inMemoryWhitelistedEmails;
+      }
+    }
+  } catch (e) {
+    console.error("Error reading whitelisted_emails.json:", e);
+  }
+  return ["websitetogather@gmail.com"];
+};
+
+const saveStoredWhitelistedEmails = (list: string[]) => {
+  const cleanList = Array.from(new Set(list.map(e => String(e).trim().toLowerCase()).filter(Boolean)));
+  inMemoryWhitelistedEmails = cleanList;
+  try {
+    const file = getWhitelistFile();
+    fs.writeFileSync(file, JSON.stringify(cleanList, null, 2), "utf-8");
+  } catch (e) {
+    console.error("Error writing whitelisted_emails.json:", e);
+  }
+  return cleanList;
+};
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -84,6 +122,34 @@ async function startServer() {
       return res.json({ success: true, whatsappNumber: trimmed });
     }
     return res.status(400).json({ error: "Invalid whatsappNumber" });
+  });
+
+  // Whitelisted Emails API
+  app.get("/api/admin/whitelisted-emails", (req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    const emails = getStoredWhitelistedEmails();
+    res.json({ emails });
+  });
+
+  app.post("/api/admin/whitelisted-emails", (req, res) => {
+    const { emails, addEmail, removeEmail } = req.body;
+    let current = getStoredWhitelistedEmails();
+
+    if (Array.isArray(emails)) {
+      current = saveStoredWhitelistedEmails(emails);
+    } else if (addEmail && typeof addEmail === "string") {
+      const trimmed = addEmail.trim().toLowerCase();
+      if (trimmed && !current.includes(trimmed)) {
+        current = saveStoredWhitelistedEmails([...current, trimmed]);
+      }
+    } else if (removeEmail && typeof removeEmail === "string") {
+      const trimmed = removeEmail.trim().toLowerCase();
+      current = saveStoredWhitelistedEmails(current.filter(e => e !== trimmed));
+    } else {
+      current = saveStoredWhitelistedEmails(current);
+    }
+
+    res.json({ success: true, emails: current });
   });
 
   // Temporary in-memory store for OTPs
