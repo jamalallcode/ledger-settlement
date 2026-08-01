@@ -79,8 +79,16 @@ const findLetterForSettlement = (
 
   const sMinistry = cleanStr(settlementEntry.ministryName);
   const sEntity = cleanStr(settlementEntry.entityName);
+  const sParaType = cleanStr(settlementEntry.paraType || settlementEntry.branchName);
 
   for (const c of allCorrespondence) {
+    const cParaType = cleanStr(c.paraType || c.branchName);
+
+    // Branch / paraType must match if both are present
+    if (sParaType && cParaType && sParaType !== cParaType) {
+      continue;
+    }
+
     const cLetterDigits = getDigits(c.letterNo);
     const cDiaryDigits = getDigits(c.diaryNo || c.workpaperNoDate);
     const cMinistry = cleanStr(c.ministryName);
@@ -96,15 +104,12 @@ const findLetterForSettlement = (
     // 2. Letter number match (integer-based, ignoring leading zeros like 07 vs 7)
     if (sLetterDigits.length > 0 && cLetterDigits.length > 0) {
       if (sLetterDigits.some(sl => cLetterDigits.includes(sl))) {
-        if (sMinistry && cMinistry) {
-          if (sMinistry.includes(cMinistry) || cMinistry.includes(sMinistry)) {
-            return c;
-          }
+        // Ensure ministry or entity don't explicitly conflict
+        if (sMinistry && cMinistry && !sMinistry.includes(cMinistry) && !cMinistry.includes(sMinistry)) {
+          continue;
         }
-        if (sEntity && cEntity) {
-          if (sEntity.includes(cEntity) || cEntity.includes(sEntity)) {
-            return c;
-          }
+        if (sEntity && cEntity && !sEntity.includes(cEntity) && !cEntity.includes(sEntity)) {
+          continue;
         }
         return c;
       }
@@ -122,6 +127,10 @@ const findLetterForSettlement = (
   if (settlementEntry.letterNoDate) {
     const engNoDate = toEnglishDigits(settlementEntry.letterNoDate).toLowerCase();
     for (const c of allCorrespondence) {
+      const cParaType = cleanStr(c.paraType || c.branchName);
+      if (sParaType && cParaType && sParaType !== cParaType) {
+        continue;
+      }
       if (!c.letterNo) continue;
       const cLetterNoEng = toEnglishDigits(c.letterNo).toLowerCase().trim();
       if (!cLetterNoEng) continue;
