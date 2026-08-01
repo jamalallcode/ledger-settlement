@@ -30,6 +30,29 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
   const [editingDoc, setEditingDoc] = useState<ExtendedArchiveDoc | null>(null);
   const [selectedDoc, setSelectedDoc] = useState<ExtendedArchiveDoc | null>(null);
 
+  // Sticky Filter Bar Measurement
+  const filterBarRef = useRef<HTMLDivElement>(null);
+  const [filterBarHeight, setFilterBarHeight] = useState<number>(140);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      if (filterBarRef.current) {
+        setFilterBarHeight(filterBarRef.current.offsetHeight);
+      }
+    };
+    updateHeight();
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && filterBarRef.current) {
+      observer = new ResizeObserver(updateHeight);
+      observer.observe(filterBarRef.current);
+    }
+    window.addEventListener('resize', updateHeight);
+    return () => {
+      if (observer) observer.disconnect();
+      window.removeEventListener('resize', updateHeight);
+    };
+  }, []);
+
   // Document Feedback Modal State
   const [feedbackDoc, setFeedbackDoc] = useState<ExtendedArchiveDoc | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState('');
@@ -622,7 +645,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
       </div>
 
       {/* Filter and Search Bar (Sticky Top) */}
-      <div className="sticky top-0 z-30 -mx-2 md:-mx-4 px-2 md:px-4 pt-2 md:pt-3 pb-3 bg-[#eef2f6]/95 backdrop-blur-md transition-all">
+      <div ref={filterBarRef} className="sticky top-0 z-30 -mx-2 md:-mx-4 px-2 md:px-4 pt-2 md:pt-3 pb-3 bg-[#eef2f6] shadow-sm transition-all">
         <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200/90 shadow-xl space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           
@@ -850,7 +873,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xl">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead className="sticky top-[125px] md:top-[130px] z-20 shadow-md">
+                <thead className="sticky z-20 shadow-md transition-all" style={{ top: `${filterBarHeight}px` }}>
                   <tr className="bg-slate-900 text-white text-xs font-black">
                     <th className="p-4 uppercase tracking-wider bg-slate-900">ডকুমেন্ট শিরোনাম ও স্মারক</th>
                     <th className="p-4 uppercase tracking-wider bg-slate-900">ক্যাটাগরি</th>
