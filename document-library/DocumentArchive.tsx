@@ -4,7 +4,7 @@ import { ArchiveDoc } from '../types';
 import { 
   Library, Search, Filter, Plus, FileText, Calendar, 
   ExternalLink, Trash2, LayoutGrid, List, X, Edit2,
-  ChevronRight, BookOpen, Clock, Download, Eye, Loader2, Sparkles, AlertCircle,
+  ChevronRight, BookOpen, Clock, Download, Eye, EyeOff, Loader2, Sparkles, AlertCircle,
   Lock, Unlock, ShieldCheck, CheckCircle2, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send
 } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
@@ -30,9 +30,10 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
   const [editingDoc, setEditingDoc] = useState<ExtendedArchiveDoc | null>(null);
   const [selectedDoc, setSelectedDoc] = useState<ExtendedArchiveDoc | null>(null);
 
-  // Sticky Filter Bar Measurement
+  // Sticky Filter Bar Measurement & Collapse State
   const filterBarRef = useRef<HTMLDivElement>(null);
   const [filterBarHeight, setFilterBarHeight] = useState<number>(140);
+  const [isFilterHidden, setIsFilterHidden] = useState<boolean>(false);
 
   useEffect(() => {
     const updateHeight = () => {
@@ -646,102 +647,135 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
 
       {/* Filter and Search Bar (Sticky Top) */}
       <div ref={filterBarRef} className="sticky top-0 z-30 -mx-2 md:-mx-4 px-2 md:px-4 pt-2 md:pt-3 pb-3 bg-[#eef2f6] shadow-sm transition-all">
-        <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200/90 shadow-xl space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          
-          {/* Category Tabs */}
-          <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 lg:pb-0">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${activeCategory === cat ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {/* Search & Layout Toggles */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1 sm:w-80">
-              <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
-              <input 
-                type="text" 
-                placeholder="শিরোনাম, স্মারক নং বা কিওয়ার্ড খুঁজুন..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
-              />
+        {isFilterHidden ? (
+          <div className="bg-white px-4 py-2.5 rounded-2xl border border-slate-200/90 shadow-md flex items-center justify-between gap-3 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2 text-xs font-black text-slate-700">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+              <span>সার্চ ও ফিল্টার প্যানেল লুকানো রয়েছে</span>
               {searchTerm && (
-                <button onClick={() => setSearchTerm('')} className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600">
-                  <X size={16} />
-                </button>
+                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[10px] font-bold">
+                  সার্চ: "{searchTerm}"
+                </span>
               )}
             </div>
-
-            {/* Duplicate Checker Button */}
             <button
-              onClick={() => {
-                setModalInitialTab('dupcheck');
-                setShowUnlockModal(true);
-              }}
-              className="px-3.5 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95 shadow-2xs"
-              title="নতুন ফাইল পাঠানোর আগে ডুপ্লিকেট চেক করুন"
+              onClick={() => setIsFilterHidden(false)}
+              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
             >
-              <FileSearch size={16} className="text-blue-600" />
-              <span className="hidden sm:inline">🔍 ডুপ্লিকেট চেকার</span>
+              <Eye size={15} />
+              <span>ফিল্টার অপশন দেখান</span>
             </button>
+          </div>
+        ) : (
+          <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200/90 shadow-xl space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              
+              {/* Category Tabs */}
+              <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 lg:pb-0">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${activeCategory === cat ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
 
-            <div className="flex bg-slate-100 p-1 rounded-xl shrink-0">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                title="গ্রিড ভিউ"
-              >
-                <LayoutGrid size={18} />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                title="লিস্ট ভিউ"
-              >
-                <List size={18} />
-              </button>
+              {/* Search & Layout Toggles */}
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1 sm:w-80">
+                  <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
+                  <input 
+                    type="text" 
+                    placeholder="শিরোনাম, স্মারক নং বা কিওয়ার্ড খুঁজুন..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
+                  />
+                  {searchTerm && (
+                    <button onClick={() => setSearchTerm('')} className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600">
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Duplicate Checker Button */}
+                <button
+                  onClick={() => {
+                    setModalInitialTab('dupcheck');
+                    setShowUnlockModal(true);
+                  }}
+                  className="px-3.5 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95 shadow-2xs"
+                  title="নতুন ফাইল পাঠানোর আগে ডুপ্লিকেট চেক করুন"
+                >
+                  <FileSearch size={16} className="text-blue-600" />
+                  <span className="hidden sm:inline">🔍 ডুপ্লিকেট চেকার</span>
+                </button>
+
+                <div className="flex bg-slate-100 p-1 rounded-xl shrink-0">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                    title="গ্রিড ভিউ"
+                  >
+                    <LayoutGrid size={18} />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                    title="লিস্ট ভিউ"
+                  >
+                    <List size={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick User Gmail Status Banner */}
+            <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 text-slate-600 font-bold">
+                <span>আপনার টেস্ট জিমেইল:</span>
+                <input 
+                  type="email"
+                  value={currentUserEmail}
+                  onChange={e => setCurrentUserEmail(e.target.value)}
+                  className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-blue-700 outline-none focus:bg-white focus:border-blue-500 w-52"
+                  placeholder="user@gmail.com"
+                />
+                {isWhitelisted ? (
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded text-[10px] flex items-center gap-1">
+                    <CheckCircle2 size={12} /> অনুমোদিত (সকল নথি উন্মুক্ত)
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-black rounded text-[10px]">
+                    সাধারণ এক্সেস (প্রথম ৫টি নথি ফ্রি, অন্যান্য লকড)
+                  </span>
+                )}
+              </div>
+
+              {/* User Marked Hide Button & Unlock Instructions Link */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsFilterHidden(true)}
+                  className="px-3 py-1 bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-slate-700 rounded-lg font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer border border-slate-200 shadow-2xs active:scale-95"
+                  title="ফিল্টার ও সার্চ অপশনগুলো হাইড করুন"
+                >
+                  <EyeOff size={14} className="text-slate-500 hover:text-red-600" />
+                  <span>হাইড করুন</span>
+                </button>
+
+                <button
+                  onClick={() => setShowUnlockModal(true)}
+                  className="text-blue-600 font-black text-xs hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  এক্সেস বিস্তারিত ও আনলক নির্দেশিকা <ChevronRight size={14} />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Quick User Gmail Status Banner */}
-        <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-slate-600 font-bold">
-            <span>আপনার টেস্ট জিমেইল:</span>
-            <input 
-              type="email"
-              value={currentUserEmail}
-              onChange={e => setCurrentUserEmail(e.target.value)}
-              className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-blue-700 outline-none focus:bg-white focus:border-blue-500 w-52"
-              placeholder="user@gmail.com"
-            />
-            {isWhitelisted ? (
-              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded text-[10px] flex items-center gap-1">
-                <CheckCircle2 size={12} /> অনুমোদিত (সকল নথি উন্মুক্ত)
-              </span>
-            ) : (
-              <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-black rounded text-[10px]">
-                সাধারণ এক্সেস (প্রথম ৫টি নথি ফ্রি, অন্যান্য লকড)
-              </span>
-            )}
-          </div>
-
-          <button
-            onClick={() => setShowUnlockModal(true)}
-            className="text-blue-600 font-black text-xs hover:underline flex items-center gap-1 cursor-pointer"
-          >
-            এক্সেস বিস্তারিত ও আনলক নির্দেশিকা <ChevronRight size={14} />
-          </button>
-        </div>
-      </div>
+        )}
       </div>
 
       {/* Document Grid / List Content */}
