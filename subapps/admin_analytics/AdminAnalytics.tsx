@@ -754,7 +754,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       {/* Detail Modal */}
       <AnimatePresence>
         {selectedAuditorDetails && (
-          <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 md:p-8">
+          <div className="fixed inset-0 z-[999999] flex items-center justify-center p-0 md:p-2">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -763,19 +763,19 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.98, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-5xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              exit={{ opacity: 0, scale: 0.98, y: 10 }}
+              className="relative w-full max-w-full h-full md:h-[96vh] bg-white rounded-none shadow-2xl overflow-hidden flex flex-col"
             >
               {/* Modal Header */}
-              <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-6 md:p-8 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-white">
-                    <FileText size={24} />
+              <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-3 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-white/10 rounded-none flex items-center justify-center text-white">
+                    <FileText size={18} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-white tracking-tight">
+                    <h3 className="text-lg font-black text-white tracking-tight">
                       {selectedAuditorDetails.name} - এর বিস্তারিত তথ্য
                     </h3>
                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
@@ -785,15 +785,15 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                 </div>
                 <button 
                   onClick={() => setSelectedAuditorDetails(null)}
-                  className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-all"
+                  className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-none flex items-center justify-center text-white transition-all cursor-pointer"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
 
               {/* Modal Content */}
-              <div className="flex-1 overflow-y-auto p-6 md:p-8">
-                <div className="overflow-x-auto rounded-2xl border border-slate-100">
+              <div className="flex-1 overflow-y-auto p-3 md:p-4">
+                <div className="w-full overflow-x-auto rounded-none border border-slate-200">
                   {selectedAuditorDetails.type === 'settled_paragraphs' ? (
                     <table className="w-full text-left border-collapse border border-slate-200">
                       <thead>
@@ -843,13 +843,13 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                                 <span className="text-xs font-bold text-slate-600">{toBengaliDigits(item.auditYear)}</span>
                               </td>
                               <td className="px-4 py-3 text-center border border-slate-200">
-                                <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[11px] font-black border border-blue-100">
+                                <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-700 text-[11px] font-black border border-blue-100">
                                   {typeDisplay}
                                 </span>
                               </td>
                               <td className="px-4 py-3 text-left border border-slate-200">
                                 <div className="flex flex-col space-y-0.5">
-                                  <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-black text-slate-600 self-start">
+                                  <span className="inline-block px-1.5 py-0.5 bg-slate-100 text-[9px] font-black text-slate-600 self-start">
                                     {item.paraType}
                                   </span>
                                   <span className="text-[10px] font-bold text-slate-700">
@@ -858,7 +858,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                                 </div>
                               </td>
                               <td className="px-4 py-3 text-center border border-slate-200">
-                                <span className="px-3 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700">
+                                <span className="px-3 py-1 text-[10px] font-black bg-emerald-100 text-emerald-700">
                                   {toBengaliDigits(rowSettledCount)} টি
                                 </span>
                               </td>
@@ -900,12 +900,12 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                                 <p className="text-xs font-bold text-slate-600 max-w-md line-clamp-2">{item.description || '---'}</p>
                               </td>
                               <td className="px-6 py-4 text-center border border-slate-200">
-                                <span className="inline-block px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-black border border-blue-100">
+                                <span className="inline-block px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-black border border-blue-100">
                                   {typeDisplay}
                                 </span>
                               </td>
                               <td className="px-6 py-4 text-center border border-slate-200">
-                                <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
+                                <span className={`px-3 py-1 text-[10px] font-black ${
                                   selectedAuditorDetails.type === 'paragraphs' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
                                 }`}>
                                   {toBengaliDigits(item.totalParas || '০')} টি
@@ -921,13 +921,13 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
               </div>
 
               {/* Modal Footer */}
-              <div className="p-6 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+              <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                   {selectedAuditorDetails.type === 'settled_paragraphs' ? 'মোট নিষ্পত্তিকৃত চিঠিপত্র:' : 'মোট:'} {toBengaliDigits(selectedAuditorDetails.data.length.toString())} টি
                 </p>
                 <button 
                   onClick={() => setSelectedAuditorDetails(null)}
-                  className="px-6 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition-all active:scale-95 cursor-pointer"
+                  className="px-6 py-1.5 bg-slate-800 text-white rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition-all active:scale-95 cursor-pointer"
                 >
                   বন্ধ করুন
                 </button>
