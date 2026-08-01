@@ -147,8 +147,8 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
   const todayVisitorsCount = visitorLogs.filter(log => log.dateStr === todayStr).length;
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 pt-16 md:pt-20 pb-8 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden relative animate-in slide-in-from-bottom-6 duration-300 my-auto flex flex-col max-h-[90vh]">
+    <div className="fixed top-[45px] bottom-0 right-0 left-0 md:left-[126px] z-[9000] flex items-center justify-center p-0 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
+      <div className="w-full max-w-full h-full bg-white rounded-none shadow-2xl border-0 overflow-hidden relative animate-in slide-in-from-bottom-6 duration-300 flex flex-col">
         
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 shrink-0">
@@ -199,10 +199,15 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
         </div>
 
         {/* Top Navigation Tabs */}
-        <div className="flex border-b border-slate-200 bg-slate-100/70 p-1 shrink-0">
+        <div className="flex gap-2 border-b border-slate-200 bg-slate-100/80 p-2 shrink-0">
           <button
+            type="button"
             onClick={() => setActiveTab('visitor_log')}
-            className={`flex-1 py-3 px-4 font-black text-xs flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer ${activeTab === 'visitor_log' ? 'bg-white text-blue-900 shadow-md border border-slate-200' : 'text-slate-600 hover:text-slate-900'}`}
+            className={`flex-1 py-3 px-4 font-black text-xs flex items-center justify-center gap-2 rounded-lg transition-all duration-200 cursor-pointer select-none outline-none focus:outline-none focus:ring-0 border ${
+              activeTab === 'visitor_log' 
+                ? 'bg-white text-blue-900 shadow-sm border-slate-300' 
+                : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60 border-transparent'
+            }`}
           >
             <Clock size={16} className="text-blue-600" />
             <span>বিগত ১ মাসের ভিজিটর লগ</span>
@@ -212,8 +217,13 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('whitelisted')}
-            className={`flex-1 py-3 px-4 font-black text-xs flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer ${activeTab === 'whitelisted' ? 'bg-white text-emerald-900 shadow-md border border-slate-200' : 'text-slate-600 hover:text-slate-900'}`}
+            className={`flex-1 py-3 px-4 font-black text-xs flex items-center justify-center gap-2 rounded-lg transition-all duration-200 cursor-pointer select-none outline-none focus:outline-none focus:ring-0 border ${
+              activeTab === 'whitelisted' 
+                ? 'bg-white text-emerald-900 shadow-sm border-slate-300' 
+                : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60 border-transparent'
+            }`}
           >
             <ShieldCheck size={16} className="text-emerald-600" />
             <span>অনুমোদিত জিমেইল তালিকা</span>
