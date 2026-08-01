@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { toBengaliDigits, parseBengaliNumber, formatDateBN, toEnglishDigits } from '../../utils/numberUtils';
+import { getCleanLetterTypeDisplay } from '../../utils/branchUtils';
 import { 
   BarChart3, Calendar, Users, FileText, 
   ArrowRight, Search, Download, Filter,
@@ -865,34 +866,44 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                         <tr className="bg-slate-50 border-b border-slate-200">
                           <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200">পত্র ও ডায়েরি বিবরণ</th>
                           <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200">বিষয়</th>
+                          <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200">চিঠির ধরণ</th>
                           <th className="px-6 py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200">অনুচ্ছেদ</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200">
-                        {selectedAuditorDetails.data.map((item, i) => (
-                          <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
-                            <td className="px-6 py-4 border border-slate-200">
-                              <div className="flex flex-col space-y-1.5">
-                                <div className="text-xs font-black text-blue-600">
-                                  <span>পত্র নং:</span> {toBengaliDigits(item.letterNo || '---')} | <span>তারিখ:</span> {formatCustomDate(item.letterDate)}
+                        {selectedAuditorDetails.data.map((item, i) => {
+                          const rawType = item.letterType || (item.isMeeting ? (item.meetingType || 'ত্রিপক্ষীয় সভা') : 'সাধারণ');
+                          const typeDisplay = getCleanLetterTypeDisplay(rawType) || 'সাধারণ';
+                          return (
+                            <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
+                              <td className="px-6 py-4 border border-slate-200">
+                                <div className="flex flex-col space-y-1.5">
+                                  <div className="text-xs font-black text-blue-600">
+                                    <span>পত্র নং:</span> {toBengaliDigits(item.letterNo || '---')} | <span>তারিখ:</span> {formatCustomDate(item.letterDate)}
+                                  </div>
+                                  <div className="text-xs font-bold text-slate-700">
+                                    <span>ডায়েরি নং:</span> {toBengaliDigits(item.diaryNo || '---')} | <span>তারিখ:</span> {formatCustomDate(item.receivedDate || item.diaryDate || item.createdAt)}
+                                  </div>
                                 </div>
-                                <div className="text-xs font-bold text-slate-700">
-                                  <span>ডায়েরি নং:</span> {toBengaliDigits(item.diaryNo || '---')} | <span>তারিখ:</span> {formatCustomDate(item.receivedDate || item.diaryDate || item.createdAt)}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 border border-slate-200">
-                              <p className="text-xs font-bold text-slate-600 max-w-md line-clamp-2">{item.description || '---'}</p>
-                            </td>
-                            <td className="px-6 py-4 text-center border border-slate-200">
-                              <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
-                                selectedAuditorDetails.type === 'paragraphs' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
-                              }`}>
-                                {toBengaliDigits(item.totalParas || '০')} টি
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+                              <td className="px-6 py-4 border border-slate-200">
+                                <p className="text-xs font-bold text-slate-600 max-w-md line-clamp-2">{item.description || '---'}</p>
+                              </td>
+                              <td className="px-6 py-4 text-center border border-slate-200">
+                                <span className="inline-block px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-black border border-blue-100">
+                                  {typeDisplay}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center border border-slate-200">
+                                <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
+                                  selectedAuditorDetails.type === 'paragraphs' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
+                                }`}>
+                                  {toBengaliDigits(item.totalParas || '০')} টি
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   )}
