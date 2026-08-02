@@ -16,129 +16,150 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
   if (!isOpen) return null;
 
   const content = (
-    <div className={`bg-white w-full h-full flex flex-col overflow-hidden ${isEmbedded ? 'rounded-3xl shadow-2xl border border-slate-100' : ''}`}>
-      {/* Header */}
-      <div className={`bg-slate-50 flex items-center justify-between shrink-0 border-b border-slate-200 ${isEmbedded ? 'px-4 py-3' : 'px-8 py-5'}`}>
-        <div className="flex items-center gap-4">
-          <div className={`${isEmbedded ? 'w-9 h-9 rounded-xl' : 'w-12 h-12 rounded-2xl'} bg-blue-600/10 flex items-center justify-center border border-blue-600/20`}>
-            <FileText size={isEmbedded ? 18 : 24} className="text-blue-600" />
+    <div className={`bg-white w-full h-full flex flex-col overflow-hidden ${isEmbedded ? 'rounded-2xl shadow-2xl border border-slate-200' : ''}`}>
+      {/* Header - Height significantly reduced */}
+      <div className={`bg-slate-50 flex items-center justify-between shrink-0 border-b border-slate-200 ${isEmbedded ? 'px-4 py-2' : 'px-6 py-2.5'}`}>
+        <div className="flex items-center gap-2.5">
+          <div className={`${isEmbedded ? 'w-7 h-7 rounded-lg' : 'w-9 h-9 rounded-xl'} bg-blue-600/10 flex items-center justify-center border border-blue-600/20 shrink-0`}>
+            <FileText size={isEmbedded ? 15 : 18} className="text-blue-600" />
           </div>
           <div>
-            <h3 className={`text-slate-900 font-black tracking-tight ${isEmbedded ? 'text-[15px]' : 'text-[18px]'}`}>{title}</h3>
-            <p className="text-slate-500 text-[10px] sm:text-[11px] font-bold uppercase tracking-widest">চিঠিপত্রের বিস্তারিত তালিকা</p>
+            <h3 className={`text-slate-900 font-black tracking-tight leading-tight ${isEmbedded ? 'text-[14px]' : 'text-[16px]'}`}>{title}</h3>
+            <p className="text-slate-500 text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider leading-none mt-0.5">চিঠিপত্রের বিস্তারিত তালিকা</p>
           </div>
         </div>
         <button 
           onClick={onClose}
-          className={`${isEmbedded ? 'w-8 h-8 rounded-lg' : 'w-10 h-10 rounded-xl'} flex items-center justify-center bg-white text-slate-400 border border-slate-200 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-200 shadow-sm`}
+          className={`${isEmbedded ? 'w-7 h-7 rounded-lg' : 'w-8 h-8 rounded-xl'} flex items-center justify-center bg-white text-slate-400 border border-slate-200 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-200 shadow-sm shrink-0`}
+          title="বন্ধ করুন"
         >
-          <X size={isEmbedded ? 16 : 20} />
+          <X size={isEmbedded ? 15 : 18} />
         </button>
       </div>
       
-      {/* Content */}
-      <div className={`grow bg-white flex flex-col min-h-0 ${isEmbedded ? 'p-3 sm:p-4' : 'p-4 sm:p-6'}`}>
-        <div className="relative overflow-auto custom-scrollbar flex-1 border border-slate-300 rounded-none bg-white">
+      {/* Content Area - Maximize height for table */}
+      <div className={`grow bg-white flex flex-col min-h-0 ${isEmbedded ? 'p-2 sm:p-2.5' : 'p-3 sm:p-4'}`}>
+        <div className="relative overflow-auto custom-scrollbar flex-1 border border-slate-300 rounded-lg bg-white">
           <table className="w-full border-separate border-spacing-0 table-fixed">
             <colgroup>
-              <col style={{ width: isEmbedded ? '6%' : '80px' }} />
-              <col style={{ width: isEmbedded ? '39%' : '340px' }} />
-              <col style={{ width: isEmbedded ? '19%' : '180px' }} />
-              <col style={{ width: isEmbedded ? '19%' : '180px' }} />
+              <col style={{ width: isEmbedded ? '5%' : '55px' }} />
+              <col style={{ width: isEmbedded ? '32%' : '280px' }} />
+              <col style={{ width: isEmbedded ? '15%' : '140px' }} />
               <col style={{ width: isEmbedded ? '17%' : '160px' }} />
+              <col style={{ width: isEmbedded ? '17%' : '160px' }} />
+              <col style={{ width: isEmbedded ? '14%' : '130px' }} />
             </colgroup>
-            <thead className="sticky top-0 z-30">
+            <thead className="sticky top-0 z-30 bg-slate-100 shadow-sm">
+              {/* Row 1: Header names */}
               <tr>
-                <th className={`sticky top-0 z-30 border-b border-r border-slate-200 text-center font-black text-slate-700 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'py-2 px-1 text-[11px]' : 'py-3.5 px-3 text-[13px]'
+                <th className={`border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                  isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2.5 px-2 text-[12px]'
                 }`}>ক্রমিক</th>
-                <th className={`sticky top-0 z-30 border-b border-r border-slate-200 text-left font-black text-slate-700 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'p-2 text-[11px]' : 'p-3.5 text-[13px]'
+                <th className={`border-b border-r border-slate-300 text-left font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                  isEmbedded ? 'py-1.5 px-2 text-[11px]' : 'py-2.5 px-3 text-[12px]'
                 }`}>চিঠির নাম/বিবরণ</th>
-                <th className={`sticky top-0 z-30 border-b border-r border-slate-200 text-center font-black text-slate-700 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'p-2 text-[11px]' : 'p-3.5 text-[13px]'
+                <th className={`border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                  isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2.5 px-2 text-[12px]'
+                }`}>চিঠির ধরন</th>
+                <th className={`border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                  isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2.5 px-2 text-[12px]'
                 }`}>স্মারক নং ও তারিখ</th>
-                <th className={`sticky top-0 z-30 border-b border-r border-slate-200 text-center font-black text-slate-700 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'p-2 text-[11px]' : 'p-3.5 text-[13px]'
+                <th className={`border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                  isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2.5 px-2 text-[12px]'
                 }`}>ডায়েরি নং ও তারিখ</th>
-                <th className={`sticky top-0 z-30 border-b border-slate-200 text-center font-black text-slate-700 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'py-2 px-1 text-[11px]' : 'py-3.5 px-3 text-[13px]'
+                <th className={`border-b border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                  isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2.5 px-2 text-[12px]'
                 }`}>বর্তমান অবস্থান</th>
+              </tr>
+              {/* Row 2: Serial Numbers row (Requirement 1) */}
+              <tr className="bg-slate-200/70">
+                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200/70">(১)</th>
+                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200/70">(২)</th>
+                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200/70">(৩)</th>
+                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200/70">(৪)</th>
+                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200/70">(৫)</th>
+                <th className="border-b border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200/70">(৬)</th>
               </tr>
             </thead>
             <tbody className="divide-y-0">
               {letters.map((letter, idx) => (
-                <tr key={letter.id || idx} className="no-hover-row group hover:bg-slate-50/80 transition-colors">
-                  <td className={`text-center font-bold text-slate-500 border-b border-r border-slate-200/80 group-last:border-b-0 ${
-                    isEmbedded ? 'py-2 px-1 text-[11px]' : 'py-3.5 px-3 text-[13px]'
+                <tr key={letter.id || idx} className="no-hover-row group hover:bg-blue-50/40 transition-colors">
+                  <td className={`text-center font-extrabold text-slate-600 border-b border-r border-slate-200 group-last:border-b-0 ${
+                    isEmbedded ? 'py-2 px-1 text-[11px]' : 'py-2.5 px-2 text-[12px]'
                   }`}>
                     {toBengaliDigits(idx + 1)}
                   </td>
-                  <td className={`text-left font-bold text-slate-800 border-b border-r border-slate-200/80 group-last:border-b-0 ${
-                    isEmbedded ? 'p-2 text-[11px]' : 'p-3.5 text-[13px]'
+                  <td className={`text-left font-bold text-slate-800 border-b border-r border-slate-200 group-last:border-b-0 ${
+                    isEmbedded ? 'p-2 text-[11px]' : 'p-2.5 text-[12px]'
                   }`}>
-                    <div className="flex flex-col gap-1.5">
-                      <span className="leading-relaxed">{letter.description}</span>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`bg-blue-50 text-blue-600 border border-blue-100 rounded font-black uppercase tracking-wider ${
+                    <span className="leading-relaxed break-words">{letter.description}</span>
+                  </td>
+                  {/* Dedicated Letter Type column (Requirement 3) */}
+                  <td className={`text-center font-bold border-b border-r border-slate-200 group-last:border-b-0 ${
+                    isEmbedded ? 'p-1 text-[10px]' : 'p-2 text-[11px]'
+                  }`}>
+                    <div className="flex flex-col items-center justify-center gap-1">
+                      {letter.letterType && (
+                        <span className={`bg-blue-50 text-blue-700 border border-blue-200 rounded font-black uppercase tracking-wider ${
                           isEmbedded ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px]'
                         }`}>
                           {letter.letterType}
                         </span>
-                        <span className={`bg-emerald-50 text-emerald-600 border border-emerald-100 rounded font-black uppercase tracking-wider ${
+                      )}
+                      {letter.paraType && (
+                        <span className={`bg-emerald-50 text-emerald-700 border border-emerald-200 rounded font-black uppercase tracking-wider ${
                           isEmbedded ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px]'
                         }`}>
                           {letter.paraType}
                         </span>
-                        {letter.archiveNo && (
-                          <span className={`bg-purple-50 text-purple-600 border border-purple-100 rounded font-black uppercase tracking-wider ${
-                            isEmbedded ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px]'
-                          }`}>
-                            আর্কাইভ নং: {letter.archiveNo}
-                          </span>
-                        )}
-                      </div>
+                      )}
+                      {letter.archiveNo && (
+                        <span className={`bg-purple-50 text-purple-700 border border-purple-200 rounded font-black uppercase tracking-wider ${
+                          isEmbedded ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px]'
+                        }`}>
+                          আর্কাইভ: {letter.archiveNo}
+                        </span>
+                      )}
                     </div>
                   </td>
-                  <td className={`text-center font-bold text-slate-700 border-b border-r border-slate-200/80 group-last:border-b-0 ${
-                    isEmbedded ? 'p-2 text-[11px]' : 'p-3.5 text-[13px]'
+                  <td className={`text-center font-bold text-slate-700 border-b border-r border-slate-200 group-last:border-b-0 ${
+                    isEmbedded ? 'p-1.5 text-[10px]' : 'p-2 text-[12px]'
                   }`}>
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="flex items-center gap-1 text-slate-900">
-                        <Hash size={isEmbedded ? 12 : 14} className="text-slate-400 shrink-0" />
-                        <span className="truncate max-w-[100px]">{letter.letterNo}</span>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <div className="flex items-center gap-1 text-slate-900 font-extrabold">
+                        <Hash size={isEmbedded ? 11 : 13} className="text-slate-400 shrink-0" />
+                        <span className="truncate max-w-[110px]">{letter.letterNo}</span>
                       </div>
-                      <div className={`flex items-center gap-1 text-slate-500 ${isEmbedded ? 'text-[11px]' : 'text-[12px]'}`}>
-                        <Calendar size={isEmbedded ? 12 : 14} className="text-slate-400 shrink-0" />
+                      <div className={`flex items-center gap-1 text-slate-500 font-bold ${isEmbedded ? 'text-[10px]' : 'text-[11px]'}`}>
+                        <Calendar size={isEmbedded ? 11 : 13} className="text-slate-400 shrink-0" />
                         <span>{formatDateBN(letter.letterDate)}</span>
                       </div>
                     </div>
                   </td>
-                  <td className={`text-center font-bold text-slate-700 border-b border-r border-slate-200/80 group-last:border-b-0 ${
-                    isEmbedded ? 'p-2 text-[11px]' : 'p-3.5 text-[13px]'
+                  <td className={`text-center font-bold text-slate-700 border-b border-r border-slate-200 group-last:border-b-0 ${
+                    isEmbedded ? 'p-1.5 text-[10px]' : 'p-2 text-[12px]'
                   }`}>
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="flex items-center gap-1 text-slate-900">
-                        <Hash size={isEmbedded ? 12 : 14} className="text-slate-400 shrink-0" />
-                        <span className="truncate max-w-[100px]">{letter.diaryNo}</span>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <div className="flex items-center gap-1 text-slate-900 font-extrabold">
+                        <Hash size={isEmbedded ? 11 : 13} className="text-slate-400 shrink-0" />
+                        <span className="truncate max-w-[110px]">{letter.diaryNo}</span>
                       </div>
-                      <div className={`flex items-center gap-1 text-slate-500 ${isEmbedded ? 'text-[11px]' : 'text-[12px]'}`}>
-                        <Calendar size={isEmbedded ? 12 : 14} className="text-slate-400 shrink-0" />
+                      <div className={`flex items-center gap-1 text-slate-500 font-bold ${isEmbedded ? 'text-[10px]' : 'text-[11px]'}`}>
+                        <Calendar size={isEmbedded ? 11 : 13} className="text-slate-400 shrink-0" />
                         <span>{formatDateBN(letter.diaryDate)}</span>
                       </div>
                     </div>
                   </td>
-                  <td className={`text-center font-bold text-slate-700 border-b border-slate-200/80 group-last:border-b-0 ${
-                    isEmbedded ? 'py-2 px-1 text-[11px]' : 'py-3.5 px-3 text-[13px]'
+                  <td className={`text-center font-bold text-slate-700 border-b border-slate-200 group-last:border-b-0 ${
+                    isEmbedded ? 'py-1.5 px-1 text-[10px]' : 'py-2 px-2 text-[11px]'
                   }`}>
-                    <div className="flex items-center justify-center gap-1.5">
-                      {!isEmbedded && <User size={14} className="text-slate-400 shrink-0" />}
-                      <span className={`rounded-lg font-black shadow-sm border ${
-                        isEmbedded ? 'px-1.5 py-0.5 text-[10px]' : 'px-3 py-1.5 text-[11px]'
+                    <div className="flex items-center justify-center gap-1">
+                      <span className={`rounded-md font-black shadow-2xs border ${
+                        isEmbedded ? 'px-1.5 py-0.5 text-[9.5px]' : 'px-2.5 py-1 text-[10.5px]'
                       } ${
-                        (letter.presentedToName || '').includes('অডিটর') ? 'bg-red-50 text-red-600 border-red-100' :
-                        (letter.presentedToName || '').includes('এএন্ডএও') ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                        (letter.presentedToName || '').includes('উপপরিচালক') ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                        (letter.presentedToName || '').includes('অডিটর') ? 'bg-red-50 text-red-600 border-red-200' :
+                        (letter.presentedToName || '').includes('এএন্ডএও') ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                        (letter.presentedToName || '').includes('উপপরিচালক') ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
                         'bg-slate-100 text-slate-600 border-slate-200'
                       }`}>
                         {letter.presentedToName || 'অডিটর'}
@@ -152,27 +173,27 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
         </div>
         
         {letters.length === 0 && (
-          <div className="py-32 flex flex-col items-center justify-center gap-4">
-            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100">
-              <FileText size={32} className="text-slate-300" />
+          <div className="py-20 flex flex-col items-center justify-center gap-3">
+            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100">
+              <FileText size={24} className="text-slate-300" />
             </div>
-            <p className="text-slate-400 font-bold italic text-lg">কোনো তথ্য পাওয়া যায়নি।</p>
+            <p className="text-slate-400 font-bold italic text-sm">কোনো তথ্য পাওয়া যায়নি।</p>
           </div>
         )}
       </div>
       
-      {/* Footer */}
-      <div className={`bg-slate-50 flex justify-between items-center shrink-0 border-t border-slate-200 ${isEmbedded ? 'px-4 py-3' : 'px-8 py-5'}`}>
-        <div className="flex items-center gap-3">
+      {/* Footer - Height significantly reduced */}
+      <div className={`bg-slate-50 flex justify-between items-center shrink-0 border-t border-slate-200 ${isEmbedded ? 'px-4 py-2' : 'px-6 py-2.5'}`}>
+        <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></div>
-          <div className={`${isEmbedded ? 'text-[12px]' : 'text-[14px]'} font-bold text-slate-600`}>
+          <div className={`${isEmbedded ? 'text-[11.5px]' : 'text-[13px]'} font-bold text-slate-600`}>
             মোট চিঠিপত্র: <span className="text-slate-900 font-black ml-1">{toBengaliDigits(letters.length)} টি</span>
           </div>
         </div>
         <button 
           onClick={onClose}
-          className={`bg-slate-900 text-white rounded-xl font-black hover:bg-slate-800 transition-all shadow-lg active:scale-95 ${
-            isEmbedded ? 'px-4 py-1.5 text-[12px]' : 'px-8 py-2.5 text-[13px]'
+          className={`bg-slate-900 text-white rounded-lg font-black hover:bg-slate-800 transition-all shadow-md active:scale-95 ${
+            isEmbedded ? 'px-3.5 py-1 text-[11.5px]' : 'px-6 py-1.5 text-[12.5px]'
           }`}
         >
           বন্ধ করুন
