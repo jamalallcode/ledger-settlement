@@ -42,12 +42,13 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
         <div className="relative overflow-auto custom-scrollbar flex-1 border border-slate-300 rounded-lg bg-white">
           <table className="w-full border-separate border-spacing-0 table-fixed">
             <colgroup>
-              <col style={{ width: isEmbedded ? '5%' : '55px' }} />
-              <col style={{ width: isEmbedded ? '32%' : '280px' }} />
-              <col style={{ width: isEmbedded ? '15%' : '140px' }} />
-              <col style={{ width: isEmbedded ? '17%' : '160px' }} />
-              <col style={{ width: isEmbedded ? '17%' : '160px' }} />
-              <col style={{ width: isEmbedded ? '14%' : '130px' }} />
+              <col style={{ width: isEmbedded ? '5%' : '50px' }} />
+              <col style={{ width: isEmbedded ? '28%' : '250px' }} />
+              <col style={{ width: isEmbedded ? '12%' : '120px' }} />
+              <col style={{ width: isEmbedded ? '12%' : '120px' }} />
+              <col style={{ width: isEmbedded ? '15%' : '150px' }} />
+              <col style={{ width: isEmbedded ? '15%' : '150px' }} />
+              <col style={{ width: isEmbedded ? '13%' : '120px' }} />
             </colgroup>
             <thead className="sticky top-0 z-30 bg-slate-100 shadow-sm">
               {/* Row 1: Header names */}
@@ -58,6 +59,9 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
                 <th className={`border-b border-r border-slate-300 text-left font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
                   isEmbedded ? 'py-1.5 px-2 text-[11px]' : 'py-2.5 px-3 text-[12px]'
                 }`}>চিঠির নাম/বিবরণ</th>
+                <th className={`border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                  isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2.5 px-2 text-[12px]'
+                }`}>শাখার নাম</th>
                 <th className={`border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
                   isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2.5 px-2 text-[12px]'
                 }`}>চিঠির ধরন</th>
@@ -78,7 +82,8 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
                 <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200/70">(৩)</th>
                 <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200/70">(৪)</th>
                 <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200/70">(৫)</th>
-                <th className="border-b border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200/70">(৬)</th>
+                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200/70">(৬)</th>
+                <th className="border-b border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200/70">(৭)</th>
               </tr>
             </thead>
             <tbody className="divide-y-0">
@@ -94,7 +99,21 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
                   }`}>
                     <span className="leading-relaxed break-words">{letter.description}</span>
                   </td>
-                  {/* Dedicated Letter Type column (Requirement 3) */}
+                  {/* Dedicated Branch Name Column (শাখার নাম) */}
+                  <td className={`text-center font-bold border-b border-r border-slate-200 group-last:border-b-0 ${
+                    isEmbedded ? 'p-1 text-[10px]' : 'p-2 text-[11px]'
+                  }`}>
+                    {letter.paraType ? (
+                      <span className={`bg-emerald-50 text-emerald-700 border border-emerald-200 rounded font-black uppercase tracking-wider inline-block ${
+                        isEmbedded ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px]'
+                      }`}>
+                        {letter.paraType}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 text-[10px]">-</span>
+                    )}
+                  </td>
+                  {/* Dedicated Letter Type column (চিঠির ধরন) */}
                   <td className={`text-center font-bold border-b border-r border-slate-200 group-last:border-b-0 ${
                     isEmbedded ? 'p-1 text-[10px]' : 'p-2 text-[11px]'
                   }`}>
@@ -106,19 +125,15 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
                           {letter.letterType}
                         </span>
                       )}
-                      {letter.paraType && (
-                        <span className={`bg-emerald-50 text-emerald-700 border border-emerald-200 rounded font-black uppercase tracking-wider ${
-                          isEmbedded ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px]'
-                        }`}>
-                          {letter.paraType}
-                        </span>
-                      )}
                       {letter.archiveNo && (
                         <span className={`bg-purple-50 text-purple-700 border border-purple-200 rounded font-black uppercase tracking-wider ${
                           isEmbedded ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px]'
                         }`}>
                           আর্কাইভ: {letter.archiveNo}
                         </span>
+                      )}
+                      {!letter.letterType && !letter.archiveNo && (
+                        <span className="text-slate-400 text-[10px]">-</span>
                       )}
                     </div>
                   </td>
