@@ -1648,7 +1648,7 @@ const App: React.FC = () => {
                 />
               )}
               
-              {activeTab === 'archive' && <DocumentArchive isAdmin={isAdmin} />}
+              {activeTab === 'archive' && <DocumentArchive isAdmin={isAdmin} userEmail={userEmail} />}
 
               {activeTab === 'voting' && <VotingSystem isAdmin={isAdmin} />}
 
