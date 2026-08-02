@@ -39,7 +39,7 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
       
       {/* Content Area - Maximize height for table */}
       <div className={`grow bg-white flex flex-col min-h-0 ${isEmbedded ? 'p-2 sm:p-2.5' : 'p-3 sm:p-4'}`}>
-        <div className="relative overflow-auto custom-scrollbar flex-1 border border-slate-300 rounded-lg bg-white">
+        <div className="relative overflow-auto custom-scrollbar flex-1 border border-slate-300 rounded-none bg-white">
           <table className="w-full border-separate border-spacing-0 table-fixed">
             <colgroup>
               <col style={{ width: isEmbedded ? '5%' : '50px' }} />
@@ -50,28 +50,28 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
               <col style={{ width: isEmbedded ? '15%' : '150px' }} />
               <col style={{ width: isEmbedded ? '13%' : '120px' }} />
             </colgroup>
-            <thead className="sticky top-0 z-30 bg-slate-100 shadow-sm">
+            <thead className="sticky top-0 z-30 bg-slate-100">
               {/* Row 1: Header names */}
               <tr>
-                <th className={`border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                <th className={`border-t border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
                   isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2.5 px-2 text-[12px]'
                 }`}>ক্রমিক</th>
-                <th className={`border-b border-r border-slate-300 text-left font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                <th className={`border-t border-b border-r border-slate-300 text-left font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
                   isEmbedded ? 'py-1.5 px-2 text-[11px]' : 'py-2.5 px-3 text-[12px]'
                 }`}>চিঠির নাম/বিবরণ</th>
-                <th className={`border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                <th className={`border-t border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
                   isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2.5 px-2 text-[12px]'
                 }`}>শাখার নাম</th>
-                <th className={`border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                <th className={`border-t border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
                   isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2.5 px-2 text-[12px]'
                 }`}>চিঠির ধরন</th>
-                <th className={`border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                <th className={`border-t border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
                   isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2.5 px-2 text-[12px]'
                 }`}>স্মারক নং ও তারিখ</th>
-                <th className={`border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                <th className={`border-t border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
                   isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2.5 px-2 text-[12px]'
                 }`}>ডায়েরি নং ও তারিখ</th>
-                <th className={`border-b border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                <th className={`border-t border-b border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
                   isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2.5 px-2 text-[12px]'
                 }`}>বর্তমান অবস্থান</th>
               </tr>
