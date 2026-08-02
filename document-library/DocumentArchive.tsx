@@ -5,7 +5,7 @@ import {
   Library, Search, Filter, Plus, FileText, Calendar, 
   ExternalLink, Trash2, LayoutGrid, List, X, Edit2,
   ChevronRight, BookOpen, Clock, Download, Eye, EyeOff, Loader2, Sparkles, AlertCircle,
-  Lock, Unlock, ShieldCheck, CheckCircle2, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send
+  Lock, Unlock, ShieldCheck, CheckCircle2, XCircle, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send
 } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { UnlockStatusModal } from './UnlockStatusModal';
@@ -20,7 +20,7 @@ interface ExtendedArchiveDoc extends ArchiveDoc {
   uploadedBy?: string;
 }
 
-const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) => {
+const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }> = ({ isAdmin = false, userEmail = null }) => {
   const [documents, setDocuments] = useState<ExtendedArchiveDoc[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -83,8 +83,21 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
   const [currentUserEmail, setCurrentUserEmail] = useState<string>(() => {
     const saved = localStorage.getItem('audit_doc_current_user_email');
     if (saved && saved !== 'user@gmail.com' && saved !== 'newuser@gmail.com') return saved;
-    return '';
+    return userEmail || localStorage.getItem('audit_doc_logged_in_user_email') || '';
   });
+
+  // Session logged-in email
+  const sessionUserEmail = useMemo(() => {
+    const fromProps = userEmail ? userEmail.trim().toLowerCase() : '';
+    const fromStorage = (localStorage.getItem('audit_doc_logged_in_user_email') || '').trim().toLowerCase();
+    return fromProps || fromStorage;
+  }, [userEmail]);
+
+  useEffect(() => {
+    if (userEmail) {
+      localStorage.setItem('audit_doc_logged_in_user_email', userEmail.trim().toLowerCase());
+    }
+  }, [userEmail]);
 
   useEffect(() => {
     localStorage.setItem('audit_doc_current_user_email', currentUserEmail);
@@ -150,11 +163,25 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
 
   const effectiveAdmin = isAdmin || demoAdmin;
 
+  // Check if typed test email matches logged-in session account email
+  const isEmailMismatch = useMemo(() => {
+    if (!sessionUserEmail || !currentUserEmail) return false;
+    const typed = currentUserEmail.trim().toLowerCase();
+    return typed !== sessionUserEmail;
+  }, [sessionUserEmail, currentUserEmail]);
+
   // Access check
   const isWhitelisted = useMemo(() => {
     if (!currentUserEmail) return false;
-    return whitelistedEmails.some(e => e.toLowerCase() === currentUserEmail.trim().toLowerCase());
-  }, [currentUserEmail, whitelistedEmails]);
+    const typed = currentUserEmail.trim().toLowerCase();
+
+    // Security check: If session user email exists, typed test email MUST match session user email
+    if (sessionUserEmail && typed !== sessionUserEmail) {
+      return false;
+    }
+
+    return whitelistedEmails.some(e => e.toLowerCase() === typed);
+  }, [currentUserEmail, sessionUserEmail, whitelistedEmails]);
 
   const isFullyUnlocked = effectiveAdmin || isSubscribed || isWhitelisted;
 
@@ -747,6 +774,10 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) =
                 {isWhitelisted ? (
                   <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded text-[10px] flex items-center gap-1">
                     <CheckCircle2 size={12} /> অনুমোদিত (সকল নথি উন্মুক্ত)
+                  </span>
+                ) : isEmailMismatch ? (
+                  <span className="px-2 py-0.5 bg-red-100 text-red-800 font-black rounded text-[10px] flex items-center gap-1">
+                    <XCircle size={12} /> অননুমোদিত (ভিন্ন জিমেইল আইডি - শুধুমাত্র আপনার নিজস্ব জিমেইল ব্যবহার করুন)
                   </span>
                 ) : (
                   <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-black rounded text-[10px]">
