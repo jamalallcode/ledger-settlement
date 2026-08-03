@@ -361,7 +361,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </button>
                   </div>
                   <p className="text-[9px] font-bold text-slate-400 leading-normal">
-                    * এখানে দেয়া লিংকটি প্রধান নেভিগেশন বারের "যোগাযোগ" বাটনে সেট হবে। যে কেউ এটিতে ক্লিক করে সরাসরি আপনার সাথে যোগাযোগ করতে পারবে।
+                    * এখানে দেয়া লিংকটির মাধ্যমে ব্যবহারকারীরা সরাসরি আপনার সাথে যোগাযোগ করতে পারবে।
                   </p>
                 </div>
               </div>

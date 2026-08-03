@@ -6,11 +6,12 @@ import {
   Upload, ShieldCheck, LogOut, X, KeyRound, Settings, 
   Calendar, ShieldAlert, Filter, Printer, Menu, Fingerprint, 
   Bell, Check, XCircle, UserCheck, BellRing, ArrowRight, Library, Plus,
-  Mail, ClipboardList, AlertTriangle, Sun, Moon, MessageCircle, Send,
+  Mail, ClipboardList, AlertTriangle, Sun, Moon, Link2, Send,
   ChevronLeft
 } from 'lucide-react';
 import { SettlementEntry } from '../types';
 import { toBengaliDigits } from '../utils/numberUtils';
+import { SavedLinksModal } from './SavedLinksModal';
 
 interface NavbarProps {
   activeTab: string;
@@ -82,6 +83,7 @@ const Navbar: React.FC<NavbarProps> = ({
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [showEntryDropdown, setShowEntryDropdown] = useState(false);
   const [showRegisterDropdown, setShowRegisterDropdown] = useState(false);
+  const [showLinksModal, setShowLinksModal] = useState(false);
   
   const toolsRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -167,16 +169,12 @@ const Navbar: React.FC<NavbarProps> = ({
       onClick: () => setActiveTab('return', undefined, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।')
     },
     {
-      id: 'contact',
-      label: 'যোগাযোগ',
-      icon: MessageCircle,
-      isActive: false,
+      id: 'links',
+      label: 'লিংকসমূহ',
+      icon: Link2,
+      isActive: showLinksModal,
       activeClass: 'bg-sky-500/15 text-sky-400 border-sky-500/30 shadow-[0_0_12px_rgba(14,165,233,0.15)] font-black',
-      onClick: () => {
-        if (contactLink) {
-          window.open(contactLink, '_blank');
-        }
-      }
+      onClick: () => setShowLinksModal(true)
     }
   ];
 
@@ -429,6 +427,40 @@ const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden fixed inset-x-0 top-[45px] bg-slate-900/95 backdrop-blur-xl border-b border-slate-800 p-4 shadow-2xl z-[9990] flex flex-col gap-2 animate-in slide-in-from-top-2 duration-200">
+          <div className="grid grid-cols-2 gap-2">
+            {customNavButtons.map((btn) => {
+              const IconComp = btn.icon;
+              return (
+                <button
+                  key={btn.id}
+                  onClick={() => {
+                    btn.onClick();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`p-2.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
+                    btn.isActive
+                      ? `${btn.activeClass}`
+                      : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700'
+                  }`}
+                >
+                  <IconComp size={14} />
+                  <span>{btn.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Saved Links Modal */}
+      <SavedLinksModal 
+        isOpen={showLinksModal} 
+        onClose={() => setShowLinksModal(false)} 
+      />
     </nav>
   );
 };
