@@ -10,7 +10,7 @@ import {
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { UnlockStatusModal } from './UnlockStatusModal';
 import { PendingDocsModal } from './PendingDocsModal';
-import { recordVisitorLog } from './visitorTracker';
+import { recordVisitorLog, isValidIdentifier } from './visitorTracker';
 
 interface ExtendedArchiveDoc extends ArchiveDoc {
   memoNo?: string;
@@ -101,8 +101,10 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
   useEffect(() => {
     localStorage.setItem('audit_doc_current_user_email', currentUserEmail);
-    const isW = whitelistedEmails.some(e => e.toLowerCase() === currentUserEmail.toLowerCase());
-    recordVisitorLog(currentUserEmail, isW);
+    if (currentUserEmail && isValidIdentifier(currentUserEmail)) {
+      const isW = whitelistedEmails.some(e => e.toLowerCase() === currentUserEmail.trim().toLowerCase());
+      recordVisitorLog(currentUserEmail, isW);
+    }
   }, [currentUserEmail, whitelistedEmails]);
 
   useEffect(() => {
