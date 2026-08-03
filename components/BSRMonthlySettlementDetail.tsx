@@ -213,6 +213,12 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  const getTimeframeLabel = (d: Date) => {
+    const s = startOfMonth(d);
+    const e = endOfMonth(d);
+    return `০১/${toBengaliDigits(dateFnsFormat(s, 'MM/yyyy'))} হতে ${toBengaliDigits(dateFnsFormat(e, 'dd/MM/yyyy'))}`;
+  };
+
   const getMonthNameBN = (date: Date) => {
     const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
     return months[date.getMonth()];
@@ -294,34 +300,29 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
         {/* Dynamic Filters & Control buttons */}
         <div className="flex items-center gap-2 flex-wrap justify-center xl:justify-end shrink-0 z-[1010]">
           
-          {/* Cycle Label Pill */}
-          <div className="inline-flex items-center gap-1.5 px-3 bg-sky-50 text-sky-800 rounded-xl text-[11px] font-bold border border-sky-100 shadow-sm h-[38px]">
-            <span className="text-sky-600">সাইকেল:</span> 
-            <span className="text-sky-900 font-extrabold">{toBengaliDigits(activeCycle.label)}</span>
-          </div>
-
-          {/* Month Picker dropdown */}
+          {/* Timeframe Picker dropdown */}
           <div className="relative no-print" ref={dropdownRef}>
             <div 
               onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
-              className={`flex items-center gap-1.5 px-3 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}
+              className={`flex items-center gap-1.5 px-3.5 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}
             >
                <CalendarDays size={14} className="text-blue-600 shrink-0" />
-               <span className="font-extrabold text-[11px] text-slate-800 tracking-tight shrink-0">
-                 {cycleOptions.find(o => o.cycleLabel === activeCycle.label)?.label || toBengaliDigits(activeCycle.label)}
+               <span className="font-extrabold text-[11px] sm:text-[12px] text-slate-800 tracking-tight shrink-0">
+                 {getTimeframeLabel(selectedCycleDate)}
                </span>
                <ChevronDown size={13} className={`text-slate-400 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-blue-500' : ''}`} />
             </div>
             {isCycleDropdownOpen && (
-              <div className="absolute top-[calc(100%+4px)] right-0 lg:left-0 w-[240px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-3 animate-in fade-in duration-200">
+              <div className="absolute top-[calc(100%+4px)] right-0 lg:left-0 w-[260px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-3 animate-in fade-in duration-200">
                 <div className="px-3 py-1 pb-2 border-b border-slate-100 flex items-center justify-between">
                   <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1">
-                    <CalendarDays size={11} className="text-blue-500" /> মাস নির্বাচন করুন
+                    <CalendarDays size={11} className="text-blue-500" /> সময়কাল নির্বাচন করুন
                   </span>
                 </div>
                 <div className="max-h-[220px] overflow-y-auto space-y-1 p-0.5 scrollbar-thin">
                   {cycleOptions.map((opt, idx) => {
-                    const matchesActive = opt.cycleLabel === activeCycle.label;
+                    const matchesActive = dateFnsFormat(opt.date, 'yyyy-MM') === dateFnsFormat(selectedCycleDate, 'yyyy-MM');
+                    const timeframeStr = getTimeframeLabel(opt.date);
                     return (
                       <div
                         key={idx}
@@ -335,7 +336,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                             : "hover:bg-slate-50 text-slate-700 hover:text-blue-600 font-bold bg-white"
                         }`}
                       >
-                        <span className="text-[12px]">{opt.label}</span>
+                        <span className="text-[11.5px]">{timeframeStr}</span>
                         {matchesActive && <Check size={13} className="text-white stroke-[3.5]" />}
                       </div>
                     );
@@ -501,13 +502,6 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
               <X size={14} />
             </button>
           )}
-        </div>
-
-        <div className="flex items-center gap-1 bg-blue-50 border border-blue-100 text-blue-800 rounded-xl px-3 py-1.5 font-bold text-xs">
-          <span>প্রাপ্ত ব্রডশিট জবাবের সংখ্যা:</span>
-          <span className="bg-blue-600 text-white rounded-lg px-2 py-0.5 font-extrabold text-[11px]">
-            {toBengaliDigits(filteredEntries.length.toString())} টি
-          </span>
         </div>
       </div>
 
