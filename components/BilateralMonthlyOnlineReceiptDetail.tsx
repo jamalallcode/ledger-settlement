@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Printer, ChevronDown, FileSpreadsheet, LayoutGrid, Search, X, Landmark, CalendarDays, Check, ArrowLeft } from 'lucide-react';
+import { Printer, ChevronDown, FileSpreadsheet, LayoutGrid, Search, X, Landmark, CalendarDays, Check, ArrowLeft, FileText } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { format as dateFnsFormat, startOfMonth, endOfMonth } from 'date-fns';
 import HighlightText from './HighlightText';
@@ -350,6 +350,13 @@ const BilateralMonthlyOnlineReceiptDetail: React.FC<BilateralMonthlyOnlineReceip
 
       {/* Search and counters */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-3 no-print">
+        <div className="flex items-center gap-2">
+          <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+          <h3 className="text-[13px] sm:text-[14px] font-black text-slate-800 tracking-tight">
+            রেসপনসিবল পার্টি হতে অনলাইনে প্রাপ্ত দ্বিপক্ষীয় সভার মাসিক প্রতিবেদন: {toBengaliDigits(dateFnsFormat(startOfMonthDate, 'dd/MM/yyyy'))} হতে {toBengaliDigits(dateFnsFormat(endOfMonthDate, 'dd/MM/yyyy'))}
+          </h3>
+        </div>
+
         <div className="relative w-full md:w-80">
           <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <Search className="h-4 w-4 text-slate-400" />
@@ -369,13 +376,6 @@ const BilateralMonthlyOnlineReceiptDetail: React.FC<BilateralMonthlyOnlineReceip
               <X size={14} />
             </button>
           )}
-        </div>
-
-        <div className="flex items-center gap-1 bg-blue-50 border border-blue-100 text-blue-800 rounded-xl px-3 py-1.5 font-bold text-xs">
-          <span>মোট অনলাইন প্রাপ্তি এন্ট্রি:</span>
-          <span className="bg-blue-600 text-white rounded-lg px-2 py-0.5 font-extrabold text-[11px]">
-            {toBengaliDigits(filteredEntries.length.toString())} টি
-          </span>
         </div>
       </div>
 

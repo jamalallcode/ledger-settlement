@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Printer, Sparkles, ChevronDown, FileSpreadsheet, LayoutGrid, Search, X, CheckCircle2, CalendarDays, Check, Landmark, ArrowLeftRight } from 'lucide-react';
+import { Printer, Sparkles, ChevronDown, FileSpreadsheet, LayoutGrid, Search, X, CheckCircle2, CalendarDays, Check, Landmark, ArrowLeftRight, FileText } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { format as dateFnsFormat, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import HighlightText from './HighlightText';
@@ -431,8 +431,6 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
           <p><span className="text-slate-500">প্রতিবেদনঃ</span> চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর</p>
           <span className="text-slate-300 hidden md:inline">|</span>
           <p><span className="text-slate-500">শাখা ও ধরণঃ</span> নন এসএফআই শাখা, বিএসআর (BSR)</p>
-          <span className="text-slate-300 hidden md:inline">|</span>
-          <p><span className="text-slate-500">সময়সীমাঃ</span> ০১/{toBengaliDigits(dateFnsFormat(startOfMonthDate, 'MM/yyyy'))} হতে {toBengaliDigits(dateFnsFormat(endOfMonthDate, 'dd/MM/yyyy'))} খ্রিঃ</p>
         </div>
 
         {/* Quick Stats Trigger */}
@@ -483,6 +481,13 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
 
       {/* Search and counters */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-3 no-print">
+        <div className="flex items-center gap-2">
+          <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+          <h3 className="text-[13px] sm:text-[14px] font-black text-slate-800 tracking-tight">
+            ব্রডশিট জবাবের উপর নিষ্পত্তিকৃত জারীপত্রের মাসিক প্রতিবেদন: ({toBengaliDigits(dateFnsFormat(startOfMonthDate, 'dd-MM-yyyy'))} খ্রিঃ হতে {toBengaliDigits(dateFnsFormat(endOfMonthDate, 'dd-MM-yyyy'))} খ্রিঃ তারিখ পর্যন্ত):
+          </h3>
+        </div>
+
         <div className="relative w-full md:w-80">
           <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <Search className="h-4 w-4 text-slate-400" />

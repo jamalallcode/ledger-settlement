@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Printer, Sparkles, ChevronDown, FileSpreadsheet, LayoutGrid, Search, X, CalendarDays, Check, Landmark, ArrowLeftRight } from 'lucide-react';
+import { Printer, Sparkles, ChevronDown, FileSpreadsheet, LayoutGrid, Search, X, CalendarDays, Check, Landmark, ArrowLeftRight, FileText } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { format as dateFnsFormat, startOfMonth, endOfMonth } from 'date-fns';
 import HighlightText from './HighlightText';
@@ -385,18 +385,15 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
         </div>
       </div>
 
-      {/* CamScanner Header Design */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-300 pb-4 mb-4 font-sans">
-        <div className="text-[13px] sm:text-[14.5px] font-black text-slate-900 text-left leading-relaxed">
-          দ্বিপক্ষীয় সভার কার্য বিবরণীর উপর জারীপত্রের মাসিক প্রতিবেদন: ({formattedStartDate} খ্রিঃ হতে {formattedEndDate} খ্রিঃ তারিখ পর্যন্ত)
-        </div>
-        <div className="text-[13px] sm:text-[14.5px] font-black text-slate-900 shrink-0 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-          শাখাঃ নন এসএফআই।
-        </div>
-      </div>
-
       {/* Search and counters */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-3 no-print">
+        <div className="flex items-center gap-2">
+          <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+          <h3 className="text-[13px] sm:text-[14px] font-black text-slate-800 tracking-tight">
+            দ্বিপক্ষীয় সভার কার্য বিবরণীর উপর নিষ্পত্তিকৃত জারীপত্রের মাসিক প্রতিবেদন: ({formattedStartDate} খ্রিঃ হতে {formattedEndDate} খ্রিঃ তারিখ পর্যন্ত)
+          </h3>
+        </div>
+
         <div className="relative w-full md:w-80">
           <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <Search className="h-4 w-4 text-slate-400" />
@@ -417,8 +414,6 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
             </button>
           )}
         </div>
-
-
       </div>
 
       {/* Main Table Section (Strictly matching CamScanner layout) */}
