@@ -859,9 +859,9 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                         </button>
                         {isDocUnlocked && (
                           <button 
-                            onClick={() => window.open(`https://archive.org/download/${cleanId}`, '_blank')} 
+                            onClick={() => window.open(`https://archive.org/details/${cleanId}`, '_blank')} 
                             className="p-2.5 bg-blue-600 text-white rounded-xl shadow-xl hover:bg-blue-700 transition-all cursor-pointer"
-                            title="ডাউনলোড ফাইল"
+                            title="ডাউনলোড"
                           >
                             <Download size={16} />
                           </button>
@@ -996,7 +996,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                             </button>
                             {isDocUnlocked && (
                               <button 
-                                onClick={() => window.open(`https://archive.org/download/${cleanId}`, '_blank')} 
+                                onClick={() => window.open(`https://archive.org/details/${cleanId}`, '_blank')} 
                                 className="p-2 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200/80 rounded-lg transition-all"
                                 title="ডাউনলোড"
                               >
@@ -1076,12 +1076,12 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                     <Eye size={14} /> নতুন ট্যাবে ভিউ করুন
                   </a>
                   <a 
-                    href={`https://archive.org/download/${extractCleanId(selectedDoc.archiveId)}`} 
+                    href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Download size={14} /> সরাসরি ডাউনলোড
+                    <Download size={14} /> সরাসরি ডাউনলোড (Archive.org)
                   </a>
                 </div>
               </div>
