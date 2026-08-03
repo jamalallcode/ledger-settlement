@@ -6,7 +6,7 @@ import {
   Sparkles, Lock, Unlock, ShieldAlert, Download
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
-import { getInitialVisitorLogs, recordVisitorLog, clearAllVisitorLogs, VisitorLog } from './visitorTracker';
+import { getInitialVisitorLogs, recordVisitorLog, clearAllVisitorLogs, isValidIdentifier, VisitorLog } from './visitorTracker';
 
 interface PendingDocsModalProps {
   isOpen: boolean;
@@ -70,9 +70,13 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
 
   const handleAddManualVisitor = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newVisitorInput.trim()) return;
-    const isW = whitelistedEmails.some(e => e.toLowerCase() === newVisitorInput.trim().toLowerCase());
-    const updated = recordVisitorLog(newVisitorInput.trim(), isW);
+    const val = newVisitorInput.trim();
+    if (!val || !isValidIdentifier(val)) {
+      alert('অনুগ্রহ করে একটি সঠিক ইমেইল (যেমন: example@gmail.com) অথবা মোবাইল নম্বর দিন।');
+      return;
+    }
+    const isW = whitelistedEmails.some(e => e.toLowerCase() === val.toLowerCase());
+    const updated = recordVisitorLog(val, isW);
     setVisitorLogs(updated);
     setNewVisitorInput('');
   };
