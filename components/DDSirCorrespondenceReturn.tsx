@@ -805,17 +805,14 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         return cells.map((cell, idx) => {
                           const dateStr = format(cell.dateObj, 'yyyy-MM-dd');
                           const isSelected = dateStr === selectedReportingDate;
-                          const isDisabled = cell.dateObj.getTime() > reportingLimitDate.getTime();
                           
                           let cellCls = "text-[12px] font-bold h-8 flex items-center justify-center rounded-lg transition-all cursor-pointer ";
                           if (isSelected) {
                             cellCls += "bg-blue-600 text-white font-extrabold shadow-md";
-                          } else if (isDisabled) {
-                            cellCls += "text-slate-200 cursor-not-allowed";
                           } else if (cell.isCurrentMonth) {
                             cellCls += "text-slate-800 hover:bg-blue-50 hover:text-blue-600";
                           } else {
-                            cellCls += "text-slate-300 hover:bg-slate-50";
+                            cellCls += "text-slate-400 hover:bg-slate-50";
                           }
 
                           // Check if today
@@ -827,7 +824,6 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                               key={idx}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (isDisabled) return;
                                 setSelectedReportingDate(dateStr);
                                 setIsCalendarOpen(false);
                               }}

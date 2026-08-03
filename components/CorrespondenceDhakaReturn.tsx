@@ -681,7 +681,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                         } else if (cell.isCurrentMonth) {
                           cellCls += "text-slate-800 hover:bg-blue-50 hover:text-blue-600";
                         } else {
-                          cellCls += "text-slate-300 hover:bg-slate-50";
+                          cellCls += "text-slate-400 hover:bg-slate-50";
                         }
 
                         // Check if today
