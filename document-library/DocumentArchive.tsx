@@ -1066,7 +1066,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                     allowFullScreen
                   />
                 </div>
-                <div className="w-full pt-3 flex flex-wrap items-center justify-center gap-2">
+                <div className="w-full pt-3 flex items-center justify-center">
                   <a 
                     href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
                     target="_blank"
@@ -1074,14 +1074,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-1.5 cursor-pointer"
                   >
                     <Eye size={14} /> নতুন ট্যাবে ভিউ করুন
-                  </a>
-                  <a 
-                    href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Download size={14} /> সরাসরি ডাউনলোড (Archive.org)
                   </a>
                 </div>
               </div>
@@ -1096,7 +1088,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
                 <div className="space-y-2 pt-2 border-t border-slate-100 text-xs font-bold text-slate-700">
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="text-slate-400">তারিখ:</span>
+                    <span className="text-slate-400">আপলোডের তারিখ:</span>
                     <span>{formatDateBN(selectedDoc.docDate)}</span>
                   </div>
                   {selectedDoc.memoNo && (
