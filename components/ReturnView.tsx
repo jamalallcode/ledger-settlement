@@ -383,6 +383,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       }
     } else {
       // Monthly!
+      const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
       for (let i = 0; i < 36; i++) {
         const refDate = addMonths(today, -i);
         const month = refDate.getMonth(); // 0 to 11
@@ -395,11 +396,11 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           if (year < 2025 || (year === 2025 && month < 5)) {
             continue;
           }
-          const reprDate = new Date(year, month, 16);
-          const cycle = getCycleForDate(reprDate);
-          if (cycle.start.getTime() > currentCycle.start.getTime()) {
+          const reprDate = new Date(year, month, 1);
+          if (reprDate.getTime() > currentMonthStart.getTime()) {
             continue;
           }
+          const cycle = getCycleForDate(reprDate);
           seen.add(label);
           options.push({ date: reprDate, label, cycleLabel: cycle.label });
         }
