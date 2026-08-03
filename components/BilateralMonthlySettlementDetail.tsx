@@ -234,8 +234,8 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
     return `০১/${toBengaliDigits(dateFnsFormat(s, 'MM/yyyy'))} হতে ${toBengaliDigits(dateFnsFormat(e, 'dd/MM/yyyy'))}`;
   };
 
-  const formattedStartDate = toBengaliDigits(dateFnsFormat(activeCycle.start, 'dd-MM-yyyy'));
-  const formattedEndDate = toBengaliDigits(dateFnsFormat(activeCycle.end, 'dd-MM-yyyy'));
+  const formattedStartDate = toBengaliDigits(dateFnsFormat(startOfMonthDate, 'dd-MM-yyyy'));
+  const formattedEndDate = toBengaliDigits(dateFnsFormat(endOfMonthDate, 'dd-MM-yyyy'));
 
   return (
     <div id="bilateral-monthly-detail-container" className="space-y-5 py-4 w-full animate-report-page relative bg-white p-5 rounded-3xl border border-slate-100 shadow-xl">
@@ -418,12 +418,7 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
           )}
         </div>
 
-        <div className="flex items-center gap-1 bg-blue-50 border border-blue-100 text-blue-800 rounded-xl px-3 py-1.5 font-bold text-xs">
-          <span>মোট দ্বিপক্ষীয় সভার এন্ট্রি:</span>
-          <span className="bg-blue-600 text-white rounded-lg px-2 py-0.5 font-extrabold text-[11px]">
-            {toBengaliDigits(filteredEntries.length.toString())} টি
-          </span>
-        </div>
+
       </div>
 
       {/* Main Table Section (Strictly matching CamScanner layout) */}
