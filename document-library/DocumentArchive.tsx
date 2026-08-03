@@ -859,9 +859,9 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                         </button>
                         {isDocUnlocked && (
                           <button 
-                            onClick={() => window.open(`https://archive.org/download/${cleanId}/${cleanId}.pdf`, '_blank')} 
+                            onClick={() => window.open(`https://archive.org/download/${cleanId}`, '_blank')} 
                             className="p-2.5 bg-blue-600 text-white rounded-xl shadow-xl hover:bg-blue-700 transition-all cursor-pointer"
-                            title="ডাউনলোড PDF"
+                            title="ডাউনলোড ফাইল"
                           >
                             <Download size={16} />
                           </button>
@@ -994,6 +994,15 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                             >
                               {isDocUnlocked ? <Eye size={16} /> : <Lock size={16} className="text-amber-500" />}
                             </button>
+                            {isDocUnlocked && (
+                              <button 
+                                onClick={() => window.open(`https://archive.org/download/${cleanId}`, '_blank')} 
+                                className="p-2 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200/80 rounded-lg transition-all"
+                                title="ডাউনলোড"
+                              >
+                                <Download size={16} />
+                              </button>
+                            )}
                             <button 
                               onClick={() => setFeedbackDoc(doc)} 
                               className="p-2 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200/80 rounded-lg transition-all"
@@ -1048,24 +1057,33 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
             </button>
 
             <div className="grid grid-cols-1 md:grid-cols-2">
-              <div className="bg-slate-950 p-8 text-white flex flex-col justify-center items-center text-center space-y-6 relative overflow-hidden">
-                <div className="w-28 h-28 bg-white/10 rounded-2xl flex items-center justify-center text-blue-400 border border-white/15">
-                  <BookOpen size={56} />
+              <div className="bg-slate-950 p-4 md:p-6 text-white flex flex-col justify-between items-center text-center relative overflow-hidden min-h-[420px]">
+                <div className="w-full h-[360px] md:h-[420px] bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shadow-inner relative">
+                  <iframe
+                    src={`https://archive.org/embed/${extractCleanId(selectedDoc.archiveId)}`}
+                    className="w-full h-full border-0"
+                    title={selectedDoc.title}
+                    allowFullScreen
+                  />
                 </div>
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-black text-white">ফুল রিড ও ভিউ মোড</h3>
-                  <p className="text-xs text-slate-400 max-w-xs">
-                    ডকুমেন্টটি ফুল স্ক্রিনে স্বাচ্ছন্দ্যে পড়ার জন্য নিচের বোতামে ক্লিক করুন।
-                  </p>
+                <div className="w-full pt-3 flex flex-wrap items-center justify-center gap-2">
+                  <a 
+                    href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Eye size={14} /> নতুন ট্যাবে ভিউ করুন
+                  </a>
+                  <a 
+                    href={`https://archive.org/download/${extractCleanId(selectedDoc.archiveId)}`} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Download size={14} /> সরাসরি ডাউনলোড
+                  </a>
                 </div>
-                <a 
-                  href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-black text-sm hover:bg-blue-700 transition-all shadow-lg flex items-center gap-2 cursor-pointer"
-                >
-                  <Eye size={18} /> ফাইলটি নতুন ট্যাবে খুলুন
-                </a>
               </div>
 
               <div className="p-8 space-y-6 bg-white overflow-y-auto max-h-[80vh]">
