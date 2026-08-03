@@ -4,7 +4,7 @@ import { ArchiveDoc } from '../types';
 import { 
   Library, Search, Filter, Plus, FileText, Calendar, 
   ExternalLink, Trash2, LayoutGrid, List, X, Edit2,
-  ChevronRight, BookOpen, Clock, Download, Eye, EyeOff, Loader2, Sparkles, AlertCircle,
+  ChevronRight, BookOpen, Clock, Eye, EyeOff, Loader2, Sparkles, AlertCircle,
   Lock, Unlock, ShieldCheck, CheckCircle2, XCircle, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send
 } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
@@ -853,19 +853,10 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-4 gap-2 z-20">
                         <button 
                           onClick={() => handleDocClick(doc, isDocUnlocked)} 
-                          className="flex-1 py-2.5 bg-white text-slate-900 rounded-xl font-black text-xs uppercase tracking-wider shadow-xl hover:bg-blue-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                          className="w-full py-2.5 bg-white text-slate-900 rounded-xl font-black text-xs uppercase tracking-wider shadow-xl hover:bg-blue-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
                         >
                           {isDocUnlocked ? <Eye size={14} /> : <Lock size={14} />} {isDocUnlocked ? 'ওপেন করুন' : 'আনলক অপশন'}
                         </button>
-                        {isDocUnlocked && (
-                          <button 
-                            onClick={() => window.open(`https://archive.org/details/${cleanId}`, '_blank')} 
-                            className="p-2.5 bg-blue-600 text-white rounded-xl shadow-xl hover:bg-blue-700 transition-all cursor-pointer"
-                            title="ডাউনলোড"
-                          >
-                            <Download size={16} />
-                          </button>
-                        )}
                       </div>
                     </div>
 
@@ -994,15 +985,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                             >
                               {isDocUnlocked ? <Eye size={16} /> : <Lock size={16} className="text-amber-500" />}
                             </button>
-                            {isDocUnlocked && (
-                              <button 
-                                onClick={() => window.open(`https://archive.org/details/${cleanId}`, '_blank')} 
-                                className="p-2 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200/80 rounded-lg transition-all"
-                                title="ডাউনলোড"
-                              >
-                                <Download size={16} />
-                              </button>
-                            )}
                             <button 
                               onClick={() => setFeedbackDoc(doc)} 
                               className="p-2 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200/80 rounded-lg transition-all"
@@ -1066,7 +1048,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                     allowFullScreen
                   />
                 </div>
-                <div className="w-full pt-3 flex flex-wrap items-center justify-center gap-2">
+                <div className="w-full pt-3 flex items-center justify-center">
                   <a 
                     href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
                     target="_blank"
@@ -1074,14 +1056,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-1.5 cursor-pointer"
                   >
                     <Eye size={14} /> নতুন ট্যাবে ভিউ করুন
-                  </a>
-                  <a 
-                    href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Download size={14} /> সরাসরি ডাউনলোড (Archive.org)
                   </a>
                 </div>
               </div>
@@ -1096,7 +1070,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
                 <div className="space-y-2 pt-2 border-t border-slate-100 text-xs font-bold text-slate-700">
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="text-slate-400">তারিখ:</span>
+                    <span className="text-slate-400">আপলোডের তারিখ:</span>
                     <span>{formatDateBN(selectedDoc.docDate)}</span>
                   </div>
                   {selectedDoc.memoNo && (
