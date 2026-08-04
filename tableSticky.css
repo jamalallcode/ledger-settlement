@@ -325,6 +325,39 @@ table tfoot th {
   box-shadow: none !important;
 }
 
+/* Ensure sticky header keeps its top border during scrolling */
+table thead tr:first-child th {
+  border-top: 1px solid #94a3b8 !important;
+}
+
+/* BSR Receipt Return Table Specific Sticky Header & Border Rule (#334155 / slate-700) */
+#table-bsr-receipt-return {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border: none !important;
+}
+
+#table-bsr-receipt-return thead {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20 !important;
+}
+
+#table-bsr-receipt-return thead tr:first-child th {
+  border-top: 1px solid #334155 !important;
+}
+
+#table-bsr-receipt-return thead th,
+#table-bsr-receipt-return tbody td {
+  border-right: 1px solid #334155 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+#table-bsr-receipt-return thead th:first-child,
+#table-bsr-receipt-return tbody td:first-child {
+  border-left: 1px solid #334155 !important;
+}
+
 /* Dark mode border overrides */
 .dark table {
   border-top-color: #4b5563 !important;
