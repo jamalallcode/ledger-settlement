@@ -18,15 +18,23 @@
   .table-container thead,
   .table-container thead tr,
   .table-container thead th,
-  .table-container thead tr:nth-child(2) th,
-  .table-container thead tr:nth-child(3) th,
   .qr-table-container thead,
   .qr-table-container thead tr,
-  .qr-table-container thead th,
-  .qr-table-container thead tr:nth-child(2) th,
+  .qr-table-container thead th {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 250 !important;
+  }
+
+  .table-container thead tr:nth-child(2) th,
+  .qr-table-container thead tr:nth-child(2) th {
+    top: 42px !important;
+  }
+
+  .table-container thead tr:nth-child(3) th,
   .qr-table-container thead tr:nth-child(3) th {
-    position: static !important;
-    top: auto !important;
+    top: 84px !important;
   }
 }
 
@@ -39,19 +47,38 @@
   }
 }
 
-/* Ensure table header as a whole block is always on top */
-.table-container thead {
+/* Ensure table header as a whole block is always on top and sticky under navbar */
+.table-container thead,
+.qr-table-container thead,
+.summary-table-container thead,
+.dd-sir-detailed-table-container thead,
+table thead,
+#table-bsr-receipt-return thead {
+  position: -webkit-sticky !important;
   position: sticky !important;
   top: 0 !important;
   z-index: 250 !important;
   background-color: #f1f5f9 !important;
 }
 
-.table-container thead tr {
+.table-container thead tr,
+.qr-table-container thead tr,
+.summary-table-container thead tr,
+.dd-sir-detailed-table-container thead tr,
+table thead tr,
+#table-bsr-receipt-return thead tr {
   background-color: #f1f5f9 !important;
 }
 
-.table-container thead th {
+.table-container thead th,
+.qr-table-container thead th,
+.summary-table-container thead th,
+.dd-sir-detailed-table-container thead th,
+table thead th,
+#table-bsr-receipt-return thead th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0 !important;
   background-color: #f1f5f9 !important; 
   z-index: 240 !important;
   background-clip: padding-box !important;
@@ -80,9 +107,13 @@
   box-shadow: none !important;
 }
 
-/* Sticky Footer (General) */
+/* Sticky Footer (General) - Always fixed at bottom */
 .table-container tfoot,
-.qr-table-container tfoot {
+.qr-table-container tfoot,
+.summary-table-container tfoot,
+.dd-sir-detailed-table-container tfoot,
+table tfoot,
+#table-bsr-receipt-return tfoot {
   position: -webkit-sticky !important;
   position: sticky !important;
   bottom: 0 !important;
@@ -91,17 +122,32 @@
 }
 
 .table-container tfoot tr,
-.qr-table-container tfoot tr {
+.qr-table-container tfoot tr,
+.summary-table-container tfoot tr,
+.dd-sir-detailed-table-container tfoot tr,
+table tfoot tr,
+#table-bsr-receipt-return tfoot tr {
   background-color: #000000 !important;
 }
 
 .table-container tfoot td, 
 .table-container tfoot th,
 .qr-table-container tfoot td,
-.qr-table-container tfoot th {
+.qr-table-container tfoot th,
+.summary-table-container tfoot td,
+.summary-table-container tfoot th,
+.dd-sir-detailed-table-container tfoot td,
+.dd-sir-detailed-table-container tfoot th,
+table tfoot td,
+table tfoot th,
+#table-bsr-receipt-return tfoot td,
+#table-bsr-receipt-return tfoot th {
   background-color: #000000 !important;
   color: #ffffff !important;
   background-clip: padding-box !important;
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  bottom: 0 !important;
 }
 
 /* QR Specific Sticky Footer (for rows inside tbody) */
@@ -274,13 +320,14 @@ tbody tr.qr-sticky-footer-offset td:hover,
   background-size: 8px !important;
 }
 
-/* DD Sir Summary Table styles to prevent sticky positioning */
+/* DD Sir Summary Table styles with sticky header positioning */
 .summary-table-container thead,
 .summary-table-container thead tr,
 .summary-table-container thead tr th {
-  position: static !important;
-  top: auto !important;
-  box-shadow: none !important;
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 250 !important;
 }
 
 /* DD Sir Detailed Table Sticky Header Adjustment to sit cleanly at top-0 of the scrolling container */
