@@ -4,7 +4,7 @@ import { ChevronLeft, Printer, Database, CheckCircle2, Search, X, ChevronDown, C
 import { toBengaliDigits, formatDateBN, toEnglishDigits } from '../utils/numberUtils';
 import { format as dateFnsFormat } from 'date-fns';
 import HighlightText from './HighlightText';
-import { OFFICE_HEADER } from '../constants';
+import { OFFICE_HEADER, MINISTRY_ENTITY_MAP } from '../constants';
 
 interface ReturnSummaryTableProps {
   reportData: any[];
@@ -87,6 +87,30 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
     return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
   };
 
+  const resolveEntryMinistry = (entry: any): string => {
+    if (entry.ministryName && entry.ministryName.trim()) {
+      return entry.ministryName.trim();
+    }
+    const desc = entry.description || '';
+    const descNorm = desc.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (!descNorm) return '';
+
+    for (const [mName, entities] of Object.entries(MINISTRY_ENTITY_MAP)) {
+      if (descNorm.includes(mName.toLowerCase())) return mName;
+      for (const entity of entities) {
+        const normE = entity.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+        if (descNorm.includes(normE)) {
+          return mName;
+        }
+        const cleanNormE = normE.replace(/(পিএলসি|লি\.|লিমিটেড|গ্রুপ|শাখা|জোন|বিভাগ|কর্পোরেশন|সংস্থা|বোর্ড)/g, '').trim();
+        if (cleanNormE.length > 2 && descNorm.includes(cleanNormE)) {
+          return mName;
+        }
+      }
+    }
+    return '';
+  };
+
   const bsrReceiptEntries = useMemo(() => {
     // Filter existing correspondence entries strictly from Correspondence Register
     return (correspondenceEntries || []).filter((e) => {
@@ -110,26 +134,48 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   }, [correspondenceEntries, activeCycle]);
 
   const groupedBsrEntries = useMemo(() => {
-    const groups: { ministry: string; entries: typeof bsrReceiptEntries }[] = [];
-    const map = new Map<string, typeof bsrReceiptEntries>();
+    const withMinistry = (bsrReceiptEntries || []).map((e, index) => ({
+      ...e,
+      resolvedMinistry: resolveEntryMinistry(e) || '',
+      index,
+    }));
 
-    bsrReceiptEntries.forEach((entry) => {
-      const min = entry.ministryName?.trim() || 'অন্যান্য';
-      if (!map.has(min)) {
-        map.set(min, []);
+    const ministryMap = new Map<string, typeof withMinistry>();
+    withMinistry.forEach(item => {
+      const key = item.resolvedMinistry || '__EMPTY_MINISTRY__';
+      if (!ministryMap.has(key)) {
+        ministryMap.set(key, []);
       }
-      map.get(min)!.push(entry);
+      ministryMap.get(key)!.push(item);
     });
 
-    map.forEach((entries, ministry) => {
-      groups.push({ ministry, entries });
+    let serial = 1;
+    const flatList: Array<{
+      entry: typeof withMinistry[0];
+      serialNo: number;
+      showMinistry: boolean;
+      rowSpan: number;
+      ministryName: string;
+    }> = [];
+
+    ministryMap.forEach((items, key) => {
+      const ministryName = key === '__EMPTY_MINISTRY__' ? '' : key;
+      items.forEach((item, idx) => {
+        flatList.push({
+          entry: item,
+          serialNo: serial++,
+          showMinistry: idx === 0,
+          rowSpan: items.length,
+          ministryName,
+        });
+      });
     });
 
-    return groups;
+    return flatList;
   }, [bsrReceiptEntries]);
 
   const downloadBsrReceiptExcel = () => {
-    const table = document.getElementById('table-bsr-receipt-return');
+    const table = document.getElementById('table-bsr-receipt-custom-return');
     if (!table) return;
 
     const clonedTable = table.cloneNode(true) as HTMLTableElement;
@@ -144,7 +190,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
         <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
         <style>
           table { border-collapse: collapse; width: 100%; }
-          th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: center; font-size: 11px; }
+          th, td { border: 1px solid #334155; padding: 8px 10px; text-align: center; font-size: 11px; vertical-align: middle; }
           th { background-color: #f1f5f9; color: #0f172a; font-weight: bold; }
           .text-left { text-align: left !important; }
         </style>
@@ -300,9 +346,9 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
     }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0, sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0, nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0 });
   }, [filteredStatsReportData, searchTerm, statsGrandTotals, grandTotals, filterMinistry]);
 
-  const reportThStyle1 = "sticky top-0 xl:top-[45px] z-[240] px-0.5 py-2 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 bg-clip-border relative";
-  const reportThStyle2 = "sticky top-[42px] xl:top-[87px] z-[240] px-0.5 py-2 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 bg-clip-border relative";
-  const reportThStyle3 = "sticky top-[80px] xl:top-[125px] z-[240] px-0.5 py-1.5 font-black text-center text-slate-500 text-[8px] leading-tight align-middle h-full bg-slate-200 bg-clip-border relative";
+  const reportThStyle1 = "z-[240] px-0.5 py-2 font-black text-center text-slate-900 text-[8px] leading-tight align-middle bg-slate-200 bg-clip-border relative whitespace-nowrap";
+  const reportThStyle2 = "z-[240] px-0.5 py-2 font-black text-center text-slate-900 text-[8px] leading-tight align-middle bg-slate-200 bg-clip-border relative whitespace-nowrap";
+  const reportThStyle3 = "z-[240] px-0.5 py-1.5 font-black text-center text-slate-500 text-[8px] leading-tight align-middle bg-slate-200 bg-clip-border relative whitespace-nowrap";
   const tdStyle = "px-0.5 py-1 text-[9px] text-center font-bold leading-tight group-hover:bg-blue-100/80 transition-colors text-slate-900 h-[38px] whitespace-normal break-words relative";
   const subTotalTdStyle = "px-0.5 py-1 text-[9px] text-center font-bold leading-tight text-slate-900 h-[38px] whitespace-normal break-words relative";
   const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[10px] bg-slate-200 z-[190] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
@@ -519,7 +565,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
 
         <div id="card-report-table-container" className="bg-white w-full p-1 relative animate-table-entrance overflow-x-auto xl:overflow-visible">
           <div className="table-container qr-table-container overflow-auto xl:overflow-visible relative z-[10] rounded-none">
-          <table id="table-return-summary" className="w-full border-separate table-fixed border-spacing-0 !table-auto">
+          <table id="table-return-summary" className="w-full min-w-[850px] border-separate table-fixed border-spacing-0 !table-auto">
             <colgroup>
               <col className="w-[50px]" />
               <col className="w-[110px]" />
@@ -640,7 +686,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
 
       {/* BSR Receipt Return Modal */}
       {isBsrReceiptOpen && (
-        <div id="bsr-receipt-modal-root" className="fixed inset-0 z-[10000] flex items-start justify-center p-2 sm:p-4 pt-3 sm:pt-5 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300 overflow-hidden">
+        <div id="bsr-receipt-modal-root" className="fixed inset-0 z-[10000] flex items-start justify-center p-4 pt-10 pb-8 overflow-y-auto bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <style dangerouslySetInnerHTML={{ __html: `
             @media print {
               /* Hide other children of section-report-summary */
@@ -666,10 +712,10 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             }
           ` }} />
 
-          <div className="w-full max-w-[98%] xl:max-w-[1450px] h-[92vh] max-h-[95vh] flex flex-col bg-white border border-slate-300 rounded-2xl p-3 sm:p-4 space-y-3 shadow-2xl animate-in zoom-in-95 duration-300 relative overflow-hidden">
+          <div className="w-full max-w-[96vw] xl:max-w-[95vw] 2xl:max-w-[1700px] bg-white border border-slate-300 rounded-2xl p-4 sm:p-7 space-y-6 shadow-2xl animate-in zoom-in-95 duration-300 relative">
             
             {/* Top action controls (hidden when printing) */}
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3 no-print shrink-0">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4 no-print">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center">
                   <ListChecks size={20} />
@@ -713,127 +759,90 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             </div>
 
             {/* Main Report Container */}
-            <div id="bsr-receipt-report-container" className="bg-white p-2 border border-slate-200 rounded-xl shadow-inner overflow-hidden flex flex-col flex-1 min-h-0">
+            <div id="bsr-receipt-report-container" className="bg-white p-2 sm:p-6 border border-slate-200 rounded-xl shadow-inner overflow-hidden">
               {/* Printable Header */}
-              <div className="text-center space-y-0.5 mb-1.5 shrink-0">
-                <h2 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
-                  বিএসআর প্রাপ্তির রিটার্ণ (নন এসএফআই শাখা)।
+              <div className="text-center space-y-2 mb-6">
+                <h2 className="text-base sm:text-lg font-black text-slate-900 leading-normal">
+                  বিএসআর প্রাপ্তির রিটার্ণ (নন এসএফআই শাখা)
                 </h2>
-                <h3 className="text-xs font-bold text-slate-600">
+                <h3 className="text-xs sm:text-sm font-bold text-slate-700">
                   সময়কালঃ {toBengaliDigits(activeCycle.label)} খ্রিঃ পর্যন্ত।
                 </h3>
               </div>
 
-              {/* Table Container with Sticky Header */}
-              <div className="overflow-auto flex-1 min-h-0 border border-slate-700 rounded-lg shadow-sm bg-white">
-                <table id="table-bsr-receipt-return" className="w-full border-separate border-spacing-0 text-slate-900 text-xs sm:text-[13px]">
-                  <thead className="sticky top-0 z-20 bg-slate-50">
-                    <tr className="bg-slate-50 h-[34px]">
-                      <th className="border-r border-b border-slate-700 bg-slate-50 py-1 px-2 font-black text-center text-slate-900 w-[50px] min-w-[50px] whitespace-nowrap">ক্রমিক নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 py-1 px-2 font-black text-center text-slate-900 w-[170px] min-w-[170px] whitespace-nowrap">বিভাগ/মন্ত্রণালয়</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 py-1 px-4 font-black text-left text-slate-900 min-w-[320px] whitespace-nowrap">অডিট প্রতিষ্ঠানের নাম ও নিরীক্ষা সাল</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 py-1 px-2 font-black text-center text-slate-900 w-[130px] min-w-[130px] whitespace-nowrap">ডায়েরি নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 py-1 px-2 font-black text-center text-slate-900 w-[130px] min-w-[130px] whitespace-nowrap">পত্র নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 py-1 px-2 font-black text-center text-slate-900 w-[90px] min-w-[90px] whitespace-nowrap">চিঠির ধরণ</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 py-1 px-2 font-black text-center text-slate-900 w-[85px] min-w-[85px] whitespace-nowrap">আর্কাইভ নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 py-1 px-2 font-black text-center text-slate-900 w-[80px] min-w-[80px] whitespace-nowrap">মন্তব্য</th>
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table id="table-bsr-receipt-custom-return" className="w-full border-separate border-spacing-0 border-l border-t border-slate-700 text-slate-900 text-xs sm:text-[13px]">
+                  <thead>
+                    <tr className="bg-slate-100">
+                      <th className="border-r border-b border-slate-700 bg-slate-100 p-2 font-black text-center text-slate-900 w-[55px]">ক্রমিক নং</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-100 p-2 font-black text-center text-slate-900 w-[135px]">বিভাগ/মন্ত্রণালয়</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-100 p-2 font-black text-center text-slate-900 min-w-[340px] w-[42%]">অডিট প্রতিষ্ঠানের নাম ও নিরীক্ষা সাল</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-100 p-2 font-black text-center text-slate-900 w-[125px]">ডায়েরি নং</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-100 p-2 font-black text-center text-slate-900 w-[125px]">পত্র নং</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-100 p-2 font-black text-center text-slate-900 w-[85px]">চিঠির ধরণ</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-100 p-2 font-black text-center text-slate-900 w-[85px]">আর্কাইভ নং</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-100 p-2 font-black text-center text-slate-900 w-[85px]">মন্তব্য</th>
                     </tr>
-                    <tr className="bg-slate-50 text-[10px] font-bold text-slate-500 h-[22px]">
-                      <th className="border-r border-b border-slate-700 py-0.5 text-center bg-slate-50">১</th>
-                      <th className="border-r border-b border-slate-700 py-0.5 text-center bg-slate-50"></th>
-                      <th className="border-r border-b border-slate-700 py-0.5 text-center bg-slate-50">২</th>
-                      <th className="border-r border-b border-slate-700 py-0.5 text-center bg-slate-50">৩</th>
-                      <th className="border-r border-b border-slate-700 py-0.5 text-center bg-slate-50">৪</th>
-                      <th className="border-r border-b border-slate-700 py-0.5 text-center bg-slate-50">৫</th>
-                      <th className="border-r border-b border-slate-700 py-0.5 text-center bg-slate-50">৬</th>
-                      <th className="border-r border-b border-slate-700 py-0.5 text-center bg-slate-50">৭</th>
+                    <tr className="bg-slate-100 text-[11px] font-bold text-slate-700">
+                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-100">১</th>
+                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-100"></th>
+                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-100">২</th>
+                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-100">৩</th>
+                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-100">৪</th>
+                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-100">৫</th>
+                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-100">৬</th>
+                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-100">৭</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {bsrReceiptEntries.length === 0 ? (
+                    {groupedBsrEntries.length === 0 ? (
                       <tr>
                         <td colSpan={8} className="border-r border-b border-slate-700 py-12 text-center text-slate-500 font-bold bg-white">
                           এই সময়কালে কোন প্রাপ্ত বিএসআর ডাটা পাওয়া যায়নি।
                         </td>
                       </tr>
                     ) : (
-                      (() => {
-                        let globalIdx = 0;
-                        return groupedBsrEntries.map((group) => {
-                          return group.entries.map((row, rowIdx) => {
-                            globalIdx++;
-                            const formattedDiary = `${toBengaliDigits(row.diaryNo || '')}, ${formatDateBN(row.diaryDate)}`;
-                            const formattedLetter = `${toBengaliDigits(row.letterNo || '')}, ${formatDateBN(row.letterDate)}`;
-                            return (
-                              <tr key={row.id} className="hover:bg-slate-50 bg-white transition-colors">
-                                <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center text-slate-700 font-bold">
-                                  {toBengaliDigits(globalIdx)}
-                                </td>
-                                {rowIdx === 0 && (
-                                  <td 
-                                    rowSpan={group.entries.length} 
-                                    className="border-r border-b border-slate-700 p-1 text-center font-bold text-slate-900 bg-white align-middle w-[170px] min-w-[170px]"
-                                  >
-                                    <div className="flex items-center justify-center h-full my-auto mx-auto py-1">
-                                      <span 
-                                        style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }} 
-                                        className="inline-block font-black text-slate-900 text-xs tracking-wider whitespace-nowrap"
-                                      >
-                                        {group.ministry}
-                                      </span>
-                                    </div>
-                                  </td>
-                                )}
-                                <td className="border-r border-b border-slate-700 py-1.5 px-3 text-left font-bold text-slate-900 leading-snug">
-                                  {row.description}
-                                </td>
-                                <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center font-bold text-slate-800">
-                                  {formattedDiary}
-                                </td>
-                                <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center font-bold text-slate-800">
-                                  {formattedLetter}
-                                </td>
-                                <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center font-bold text-slate-800">
-                                  {row.letterType}
-                                </td>
-                                <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center font-bold text-slate-700">
-                                  {row.archiveNo || '-'}
-                                </td>
-                                <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center font-bold text-slate-700">
-                                  {row.remarks || '-'}
-                                </td>
-                              </tr>
-                            );
-                          });
-                        });
-                      })()
+                      groupedBsrEntries.map((item) => {
+                        const row = item.entry;
+                        const formattedDiary = `${toBengaliDigits(row.diaryNo || '')}${row.diaryDate ? `, ${formatDateBN(row.diaryDate)}` : ''}`;
+                        const formattedLetter = `${toBengaliDigits(row.letterNo || '')}${row.letterDate ? `, ${formatDateBN(row.letterDate)}` : ''}`;
+                        return (
+                          <tr key={row.id || `${item.serialNo}-${row.diaryNo}`} className="hover:bg-slate-50 bg-white transition-colors">
+                            <td className="border-r border-b border-slate-700 p-2 text-center text-slate-800 font-bold align-middle">
+                              {toBengaliDigits(item.serialNo.toString())}
+                            </td>
+                            {item.showMinistry && (
+                              <td
+                                rowSpan={item.rowSpan}
+                                className="border-r border-b border-slate-700 p-2.5 text-center font-bold text-slate-900 bg-white align-middle"
+                              >
+                                {item.ministryName || '-'}
+                              </td>
+                            )}
+                            <td className="border-r border-b border-slate-700 p-2.5 text-left px-3.5 font-bold text-slate-900 leading-relaxed align-middle">
+                              {row.description || '-'}
+                            </td>
+                            <td className="border-r border-b border-slate-700 p-2 text-center font-bold text-slate-800 align-middle">
+                              {formattedDiary}
+                            </td>
+                            <td className="border-r border-b border-slate-700 p-2 text-center font-bold text-slate-800 align-middle">
+                              {formattedLetter}
+                            </td>
+                            <td className="border-r border-b border-slate-700 p-2 text-center font-bold text-slate-800 align-middle">
+                              {row.letterType || 'বিএসআর'}
+                            </td>
+                            <td className="border-r border-b border-slate-700 p-2 text-center font-mono font-bold text-slate-700 align-middle">
+                              {row.archiveNo ? toBengaliDigits(row.archiveNo) : '-'}
+                            </td>
+                            <td className="border-r border-b border-slate-700 p-2 text-center font-bold text-slate-700 align-middle">
+                              {row.comments || row.remarks || '-'}
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
-                  <tfoot className="sticky bottom-0 z-20 bg-black text-white font-black shadow-[0_-2px_8px_rgba(0,0,0,0.2)]">
-                    <tr className="bg-black font-black text-white text-xs sm:text-[13px] h-[36px]">
-                      <td colSpan={2} className="border-r border-b border-slate-700 py-1.5 px-2 text-center bg-black font-black text-white">
-                        সর্বমোট:
-                      </td>
-                      <td className="border-r border-b border-slate-700 py-1.5 px-3 text-left bg-black font-black text-white">
-                        মোট প্রাপ্ত বিএসআর পত্র: {toBengaliDigits(bsrReceiptEntries.length)} টি
-                      </td>
-                      <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center bg-black font-black text-white">
-                        {toBengaliDigits(bsrReceiptEntries.length)} টি
-                      </td>
-                      <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center bg-black font-black text-white">
-                        {toBengaliDigits(bsrReceiptEntries.length)} টি
-                      </td>
-                      <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center bg-black font-black text-white">
-                        -
-                      </td>
-                      <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center bg-black font-black text-white">
-                        -
-                      </td>
-                      <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center bg-black font-black text-white">
-                        -
-                      </td>
-                    </tr>
-                  </tfoot>
                 </table>
               </div>
             </div>
