@@ -725,18 +725,18 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
               </div>
 
               {/* Table Container with Sticky Header */}
-              <div className="overflow-auto max-h-[72vh] border-b border-slate-700">
-                <table id="table-bsr-receipt-return" className="w-full border-separate border-spacing-0 border-l border-t border-slate-700 text-slate-900 text-xs sm:text-[13px]">
+              <div className="overflow-auto max-h-[70vh] border border-slate-700 rounded-lg shadow-sm bg-white">
+                <table id="table-bsr-receipt-return" className="w-full border-separate border-spacing-0 border-l border-slate-700 text-slate-900 text-xs sm:text-[13px]">
                   <thead className="sticky top-0 z-20 bg-slate-50 shadow-sm">
                     <tr className="bg-slate-50">
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[50px] min-w-[50px]">ক্রমিক নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[60px] min-w-[60px]">বিভাগ/মন্ত্রণালয়</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-left text-slate-900 px-4 min-w-[320px]">অডিট প্রতিষ্ঠানের নাম ও নিরীক্ষা সাল</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[130px] min-w-[130px]">ডায়েরি নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[130px] min-w-[130px]">পত্র নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[90px] min-w-[90px]">চিঠির ধরণ</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[85px] min-w-[85px]">আর্কাইভ নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[80px] min-w-[80px]">মন্তব্য</th>
+                      <th className="border-t border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[50px] min-w-[50px]">ক্রমিক নং</th>
+                      <th className="border-t border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[60px] min-w-[60px]">বিভাগ/মন্ত্রণালয়</th>
+                      <th className="border-t border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-left text-slate-900 px-4 min-w-[320px]">অডিট প্রতিষ্ঠানের নাম ও নিরীক্ষা সাল</th>
+                      <th className="border-t border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[130px] min-w-[130px]">ডায়েরি নং</th>
+                      <th className="border-t border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[130px] min-w-[130px]">পত্র নং</th>
+                      <th className="border-t border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[90px] min-w-[90px]">চিঠির ধরণ</th>
+                      <th className="border-t border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[85px] min-w-[85px]">আর্কাইভ নং</th>
+                      <th className="border-t border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[80px] min-w-[80px]">মন্তব্য</th>
                     </tr>
                     <tr className="bg-slate-50 text-[10px] font-bold text-slate-500">
                       <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50">১</th>
