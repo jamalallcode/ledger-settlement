@@ -46,6 +46,19 @@ const normalizeName = (name: string | null | undefined): string => {
 
   // Strip common prefixes like "জনাব", "জনাবা", "ডাঃ", "ডা", "ড", "ডক্টর"
   n = n.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '');
+  n = n.replace(/^মো[ঃ:\.]\s*/, '');
+  n = n.replace(/^মোঃ\s*/, '');
+
+  // Normalize vowels, sibilants, virama (hasanta), nukta & nasal marks
+  n = n.replace(/ী/g, 'ি')
+       .replace(/ূ/g, 'ু')
+       .replace(/ষ/g, 'স')
+       .replace(/শ/g, 'স')
+       .replace(/ণ/g, 'ন')
+       .replace(/য়/g, 'য')
+       .replace(/্/g, '')
+       .replace(/ঁ/g, '')
+       .replace(/়/g, '');
 
   return n;
 };

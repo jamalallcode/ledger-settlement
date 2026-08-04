@@ -215,12 +215,28 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
 
       const normalizeName = (name: string | null | undefined) => {
         if (!name) return '';
-        return name
+        let n = name
           .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
           .trim()
           .replace(/\s+/g, ' ')
           .replace(/[:ঃ।\.\-]/g, '')
           .normalize('NFC');
+
+        n = n.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '');
+        n = n.replace(/^মো[ঃ:\.]\s*/, '');
+        n = n.replace(/^মোঃ\s*/, '');
+
+        n = n.replace(/ী/g, 'ি')
+             .replace(/ূ/g, 'ু')
+             .replace(/ষ/g, 'স')
+             .replace(/শ/g, 'স')
+             .replace(/ণ/g, 'ন')
+             .replace(/য়/g, 'য')
+             .replace(/্/g, '')
+             .replace(/ঁ/g, '')
+             .replace(/়/g, '');
+
+        return n;
       };
 
       // 1. Fetch receivers from Database (receivers table)

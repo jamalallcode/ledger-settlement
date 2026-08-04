@@ -227,12 +227,19 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
 
     // Strip common prefixes like "জনাব", "জনাবা", "ডাঃ", "ডা", "ড", "ডক্টর"
     n = n.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '');
+    n = n.replace(/^মো[ঃ:\.]\s*/, '');
+    n = n.replace(/^মোঃ\s*/, '');
 
     // Normalize common spelling variations in Bengali vowels for matching
     n = n.replace(/ী/g, 'ি')
          .replace(/ূ/g, 'ু')
          .replace(/ষ/g, 'স')
-         .replace(/শ/g, 'স');
+         .replace(/শ/g, 'স')
+         .replace(/ণ/g, 'ন')
+         .replace(/য়/g, 'য')
+         .replace(/্/g, '')
+         .replace(/ঁ/g, '')
+         .replace(/়/g, '');
 
     return n;
   };
@@ -243,7 +250,11 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     if (norm === 'অনির্ধারিত') return 'অনির্ধারিত';
     
     const match = receiversList.find(r => normalizeName(r.name) === norm);
-    return match ? match.name : name;
+    let finalName = match ? match.name : name;
+    if (finalName && finalName.includes('শাহ্রিন')) {
+      finalName = finalName.replace(/শাহ্রিন/g, 'শাহরিন');
+    }
+    return finalName;
   };
 
   const getDisplayDesignation = (name: string | null | undefined): string => {

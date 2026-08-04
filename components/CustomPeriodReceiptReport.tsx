@@ -8,6 +8,7 @@ import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberU
 import { isSFI, isNonSFI, getCleanLetterTypeDisplay } from '../utils/branchUtils';
 import { format } from 'date-fns';
 import { MINISTRY_ENTITY_MAP, EMPLOYEES } from '../constants';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const STATIC_MINISTRIES = [
   "আর্থিক প্রতিষ্ঠান বিভাগ",
@@ -62,13 +63,16 @@ const normalizeAuditor = (name: string | null | undefined): string => {
   // Strip punctuation
   n = n.replace(/[:ঃ।\.\-]/g, '').trim();
 
-  // Normalize Bengali vowels & sibilants for robust matching
+  // Normalize Bengali vowels & sibilants & virama/hasanta for robust matching
   n = n.replace(/ী/g, 'ি')
        .replace(/ূ/g, 'ু')
        .replace(/ষ/g, 'স')
        .replace(/শ/g, 'স')
        .replace(/ণ/g, 'ন')
-       .replace(/য়/g, 'য');
+       .replace(/য়/g, 'য')
+       .replace(/্/g, '')      // Strip hasanta so "শাহ্রিন" (হ্+র) matches "শাহরিন" (হ+র)
+       .replace(/ঁ/g, '')      // Strip chandrabindu
+       .replace(/়/g, '');     // Strip nukta
 
   return n.trim();
 };
@@ -82,7 +86,15 @@ const getCleanAuditorDisplayName = (raw: string): string => {
     .normalize('NFC');
 
   clean = clean.replace(/\s*\([^)]*\)\s*/g, ' ').trim();
-  clean = clean.replace(/^(জনাব|জনাবা)\s+/, '').trim();
+  clean = clean.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '').trim();
+  clean = clean.replace(/^মো[ঃ:\.]\s*/, 'মো: ');
+  clean = clean.replace(/^মোঃ\s*/, 'মো: ');
+
+  // Standardize known name spellings to match Receiver Management (প্রাপক ব্যবস্থাপনা) exactly
+  if (clean.includes('শাহ্রিন')) {
+    clean = clean.replace(/শাহ্রিন/g, 'শাহরিন');
+  }
+
   return clean || raw.trim();
 };
 
@@ -230,6 +242,26 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [activeReportMode, setActiveReportMode] = useState<'correspondence' | 'settlement'>('correspondence');
   const [expandedParasMap, setExpandedParasMap] = useState<Record<string, boolean>>({});
+  const [dbReceiversList, setDbReceiversList] = useState<any[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchReceivers = async () => {
+      if (isSupabaseConfigured) {
+        try {
+          const { data } = await supabase
+            .from('receivers')
+            .select('*')
+            .order('name', { ascending: true });
+          if (data && isMounted) {
+            setDbReceiversList(data);
+          }
+        } catch (e) {}
+      }
+    };
+    fetchReceivers();
+    return () => { isMounted = false; };
+  }, []);
 
   const toggleExpandParas = (entryId: string) => {
     setExpandedParasMap(prev => ({ ...prev, [entryId]: !prev[entryId] }));
@@ -396,6 +428,44 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     // 3. Strictly collect auditors belonging to the selected branch
     const branchAuditorsMap = new Map<string, string>(); // norm -> displayName
 
+    // Check inactive/transferred list
+    let inactiveSet = new Set<string>();
+    try {
+      const rawInactive = localStorage.getItem('ledger_inactive_receivers_v1');
+      if (rawInactive) {
+        const parsed = JSON.parse(rawInactive);
+        if (Array.isArray(parsed)) {
+          parsed.forEach((item: string) => inactiveSet.add(normalizeAuditor(item)));
+        }
+      }
+    } catch (e) {}
+
+    // First, populate from Supabase receivers (source of truth matching Receiver Management)
+    if (Array.isArray(dbReceiversList) && dbReceiversList.length > 0) {
+      dbReceiversList.forEach(r => {
+        const branchType = r.para_type || '';
+        if (filterBranch === 'নন এসএফআই' && !isNonSFI(branchType)) return;
+        if (filterBranch === 'এসএফআই' && !isSFI(branchType)) return;
+
+        const rawName = (r.name || '').trim();
+        if (!rawName) return;
+        const norm = normalizeAuditor(rawName);
+        if (!norm) return;
+
+        const isInactive = r.is_active === false || inactiveSet.has(norm);
+        const isTransferred = r.transferred_to && r.transferred_to.trim() !== '';
+
+        const count = periodCounts.get(norm) || 0;
+        if ((isInactive || isTransferred) && count === 0) {
+          return;
+        }
+
+        if (!branchAuditorsMap.has(norm)) {
+          branchAuditorsMap.set(norm, getCleanAuditorDisplayName(rawName));
+        }
+      });
+    }
+
     const targetKeys: Array<{ key: string; branch: string }> = [];
     if (filterBranch === 'নন এসএফআই') {
       targetKeys.push({ key: 'ledger_correspondence_receivers_nonsfi', branch: 'নন এসএফআই' });
@@ -408,18 +478,6 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
         { key: 'ledger_correspondence_receivers_admin', branch: 'প্রশাসন' }
       );
     }
-
-    // Check inactive/transferred list
-    let inactiveSet = new Set<string>();
-    try {
-      const rawInactive = localStorage.getItem('ledger_inactive_receivers_v1');
-      if (rawInactive) {
-        const parsed = JSON.parse(rawInactive);
-        if (Array.isArray(parsed)) {
-          parsed.forEach((item: string) => inactiveSet.add(normalizeAuditor(item)));
-        }
-      }
-    } catch (e) {}
 
     targetKeys.forEach(({ key }) => {
       try {
@@ -494,7 +552,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       }
       return a.name.localeCompare(b.name, 'bn');
     });
-  }, [entries, startDate, endDate, filterBranch]);
+  }, [entries, startDate, endDate, filterBranch, dbReceiversList]);
 
   // Reset filterAuditor if it no longer exists in current branch options
   useEffect(() => {
@@ -1487,7 +1545,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       const hasIssueLetter = !!(entry.issueLetterNo || entry.issueLetterDate || entry.issueLetterNoDate);
                       const issueLetterNo = entry.issueLetterNo || (entry.issueLetterNoDate ? cleanAndFormat(entry.issueLetterNoDate, "জারিপত্র") : '');
                       const issueLetterDate = entry.issueLetterDate || '';
-                      const holderName = entry.presentedToName || entry.receiverName || 'শাখা কর্মকর্তা';
+                      const rawHolder = entry.presentedToName || entry.receiverName || 'শাখা কর্মকর্তা';
+                      const holderName = rawHolder === 'শাখা কর্মকর্তা' ? rawHolder : getCleanAuditorDisplayName(rawHolder);
 
                       // Sent/Received Paras & Amount
                       const totalParas = parseInt(toEnglishDigits(String(entry.totalParas || entry.sentParaCount || (entry.paragraphs ? entry.paragraphs.length : 1))));
