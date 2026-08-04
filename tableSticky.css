@@ -320,22 +320,58 @@ tbody tr.qr-sticky-footer-offset td:hover,
   background-size: 8px !important;
 }
 
-/* DD Sir Summary Table styles with sticky header positioning */
+/* DD Sir Summary Table & Detailed Table Sticky Header and Footer logic */
+.summary-table-container {
+  max-height: 60vh !important;
+  overflow: auto !important;
+  position: relative !important;
+}
+
+.dd-sir-detailed-table-container {
+  max-height: calc(100vh - 200px) !important;
+  min-height: 350px !important;
+  overflow: auto !important;
+  position: relative !important;
+}
+
 .summary-table-container thead,
 .summary-table-container thead tr,
-.summary-table-container thead tr th {
+.summary-table-container thead tr th,
+.dd-sir-detailed-table-container thead,
+.dd-sir-detailed-table-container thead tr,
+.dd-sir-detailed-table-container thead tr th {
   position: -webkit-sticky !important;
   position: sticky !important;
   top: 0 !important;
   z-index: 250 !important;
+  background-color: #e2e8f0 !important;
 }
 
-/* DD Sir Detailed Table Sticky Header Adjustment to sit cleanly at top-0 of the scrolling container */
-@media (min-width: 1280px) {
-  .dd-sir-detailed-table-container thead th,
-  .dd-sir-detailed-table-container thead tr th {
-    top: 0 !important;
-  }
+.summary-table-container tfoot,
+.summary-table-container tfoot tr,
+.summary-table-container tfoot td,
+.summary-table-container tfoot th,
+.dd-sir-detailed-table-container tfoot,
+.dd-sir-detailed-table-container tfoot tr,
+.dd-sir-detailed-table-container tfoot td,
+.dd-sir-detailed-table-container tfoot th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 250 !important;
+  background-clip: padding-box !important;
+}
+
+.summary-table-container tfoot td,
+.summary-table-container tfoot th {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+.dd-sir-detailed-table-container tfoot td,
+.dd-sir-detailed-table-container tfoot th {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
 }
 
 /* Clean Unified 1px Non-Overlapping Borders for ALL Tables */
