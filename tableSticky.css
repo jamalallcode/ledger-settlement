@@ -343,19 +343,21 @@ table thead tr:first-child th {
   z-index: 20 !important;
 }
 
-#table-bsr-receipt-return thead tr:first-child th {
-  border-top: 1px solid #334155 !important;
-}
-
 #table-bsr-receipt-return thead th,
 #table-bsr-receipt-return tbody td {
+  border-top: none !important;
+  border-left: none !important;
   border-right: 1px solid #334155 !important;
   border-bottom: 1px solid #334155 !important;
 }
 
-#table-bsr-receipt-return thead th:first-child,
-#table-bsr-receipt-return tbody td:first-child {
-  border-left: 1px solid #334155 !important;
+#table-bsr-receipt-return thead th:last-child,
+#table-bsr-receipt-return tbody td:last-child {
+  border-right: none !important;
+}
+
+#table-bsr-receipt-return tbody tr:last-child td {
+  border-bottom: none !important;
 }
 
 /* Dark mode border overrides */
