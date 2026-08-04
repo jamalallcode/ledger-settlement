@@ -640,7 +640,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
 
       {/* BSR Receipt Return Modal */}
       {isBsrReceiptOpen && (
-        <div id="bsr-receipt-modal-root" className="fixed inset-0 z-[10000] flex items-start justify-center p-2 sm:p-4 pt-6 pb-6 overflow-y-auto bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+        <div id="bsr-receipt-modal-root" className="fixed inset-0 z-[10000] flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300 overflow-hidden">
           <style dangerouslySetInnerHTML={{ __html: `
             @media print {
               /* Hide other children of section-report-summary */
@@ -666,10 +666,10 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             }
           ` }} />
 
-          <div className="w-full max-w-[98%] xl:max-w-[1450px] bg-white border border-slate-300 rounded-2xl p-3 sm:p-4 space-y-4 shadow-2xl animate-in zoom-in-95 duration-300 relative my-2">
+          <div className="w-full max-w-[98%] xl:max-w-[1450px] max-h-[92vh] flex flex-col bg-white border border-slate-300 rounded-2xl p-3 sm:p-4 space-y-3 shadow-2xl animate-in zoom-in-95 duration-300 relative overflow-hidden">
             
             {/* Top action controls (hidden when printing) */}
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3 no-print">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3 no-print shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center">
                   <ListChecks size={20} />
@@ -713,9 +713,9 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             </div>
 
             {/* Main Report Container */}
-            <div id="bsr-receipt-report-container" className="bg-white p-2 sm:p-3 border border-slate-200 rounded-xl shadow-inner overflow-hidden">
+            <div id="bsr-receipt-report-container" className="bg-white p-2 sm:p-3 border border-slate-200 rounded-xl shadow-inner overflow-hidden flex flex-col flex-1 min-h-0">
               {/* Printable Header */}
-              <div className="text-center space-y-1 mb-4">
+              <div className="text-center space-y-1 mb-3 shrink-0">
                 <h2 className="text-base sm:text-lg font-black text-slate-900 leading-normal">
                   বিএসআর প্রাপ্তির রিটার্ণ (নন এসএফআই শাখা)।
                 </h2>
@@ -725,7 +725,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
               </div>
 
               {/* Table Container with Sticky Header */}
-              <div className="overflow-auto max-h-[70vh] border border-slate-700 rounded-lg shadow-sm bg-white">
+              <div className="overflow-auto flex-1 min-h-0 border border-slate-700 rounded-lg shadow-sm bg-white">
                 <table id="table-bsr-receipt-return" className="w-full border-separate border-spacing-0 border-l border-slate-700 text-slate-900 text-xs sm:text-[13px]">
                   <thead className="sticky top-0 z-20 bg-slate-50 shadow-sm">
                     <tr className="bg-slate-50">
