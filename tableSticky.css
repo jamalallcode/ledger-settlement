@@ -439,7 +439,7 @@ table thead tr:first-child th {
 #table-bsr-receipt-return thead tr:nth-child(2) th {
   position: -webkit-sticky !important;
   position: sticky !important;
-  top: 36px !important;
+  top: 34px !important;
   z-index: 250 !important;
   background-color: #f8fafc !important;
   background-clip: padding-box !important;

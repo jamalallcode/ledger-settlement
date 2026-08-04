@@ -713,13 +713,13 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             </div>
 
             {/* Main Report Container */}
-            <div id="bsr-receipt-report-container" className="bg-white p-2 sm:p-3 border border-slate-200 rounded-xl shadow-inner overflow-hidden flex flex-col flex-1 min-h-0">
+            <div id="bsr-receipt-report-container" className="bg-white p-2 border border-slate-200 rounded-xl shadow-inner overflow-hidden flex flex-col flex-1 min-h-0">
               {/* Printable Header */}
-              <div className="text-center space-y-1 mb-3 shrink-0">
-                <h2 className="text-base sm:text-lg font-black text-slate-900 leading-normal">
+              <div className="text-center space-y-0.5 mb-1.5 shrink-0">
+                <h2 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
                   বিএসআর প্রাপ্তির রিটার্ণ (নন এসএফআই শাখা)।
                 </h2>
-                <h3 className="text-xs sm:text-sm font-bold text-slate-600">
+                <h3 className="text-xs font-bold text-slate-600">
                   সময়কালঃ {toBengaliDigits(activeCycle.label)} খ্রিঃ পর্যন্ত।
                 </h3>
               </div>
@@ -728,25 +728,25 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
               <div className="overflow-auto flex-1 min-h-0 border border-slate-700 rounded-lg shadow-sm bg-white">
                 <table id="table-bsr-receipt-return" className="w-full border-separate border-spacing-0 text-slate-900 text-xs sm:text-[13px]">
                   <thead className="sticky top-0 z-20 bg-slate-50">
-                    <tr className="bg-slate-50">
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[50px] min-w-[50px] whitespace-nowrap">ক্রমিক নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[170px] min-w-[170px] whitespace-nowrap">বিভাগ/মন্ত্রণালয়</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-left text-slate-900 px-4 min-w-[320px] whitespace-nowrap">অডিট প্রতিষ্ঠানের নাম ও নিরীক্ষা সাল</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[130px] min-w-[130px] whitespace-nowrap">ডায়েরি নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[130px] min-w-[130px] whitespace-nowrap">পত্র নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[90px] min-w-[90px] whitespace-nowrap">চিঠির ধরণ</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[85px] min-w-[85px] whitespace-nowrap">আর্কাইভ নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[80px] min-w-[80px] whitespace-nowrap">মন্তব্য</th>
+                    <tr className="bg-slate-50 h-[34px]">
+                      <th className="border-r border-b border-slate-700 bg-slate-50 py-1 px-2 font-black text-center text-slate-900 w-[50px] min-w-[50px] whitespace-nowrap">ক্রমিক নং</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-50 py-1 px-2 font-black text-center text-slate-900 w-[170px] min-w-[170px] whitespace-nowrap">বিভাগ/মন্ত্রণালয়</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-50 py-1 px-4 font-black text-left text-slate-900 min-w-[320px] whitespace-nowrap">অডিট প্রতিষ্ঠানের নাম ও নিরীক্ষা সাল</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-50 py-1 px-2 font-black text-center text-slate-900 w-[130px] min-w-[130px] whitespace-nowrap">ডায়েরি নং</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-50 py-1 px-2 font-black text-center text-slate-900 w-[130px] min-w-[130px] whitespace-nowrap">পত্র নং</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-50 py-1 px-2 font-black text-center text-slate-900 w-[90px] min-w-[90px] whitespace-nowrap">চিঠির ধরণ</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-50 py-1 px-2 font-black text-center text-slate-900 w-[85px] min-w-[85px] whitespace-nowrap">আর্কাইভ নং</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-50 py-1 px-2 font-black text-center text-slate-900 w-[80px] min-w-[80px] whitespace-nowrap">মন্তব্য</th>
                     </tr>
-                    <tr className="bg-slate-50 text-[10px] font-bold text-slate-500">
-                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50">১</th>
-                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50"></th>
-                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50">২</th>
-                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50">৩</th>
-                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50">৪</th>
-                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50">৫</th>
-                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50">৬</th>
-                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50">৭</th>
+                    <tr className="bg-slate-50 text-[10px] font-bold text-slate-500 h-[22px]">
+                      <th className="border-r border-b border-slate-700 py-0.5 text-center bg-slate-50">১</th>
+                      <th className="border-r border-b border-slate-700 py-0.5 text-center bg-slate-50"></th>
+                      <th className="border-r border-b border-slate-700 py-0.5 text-center bg-slate-50">২</th>
+                      <th className="border-r border-b border-slate-700 py-0.5 text-center bg-slate-50">৩</th>
+                      <th className="border-r border-b border-slate-700 py-0.5 text-center bg-slate-50">৪</th>
+                      <th className="border-r border-b border-slate-700 py-0.5 text-center bg-slate-50">৫</th>
+                      <th className="border-r border-b border-slate-700 py-0.5 text-center bg-slate-50">৬</th>
+                      <th className="border-r border-b border-slate-700 py-0.5 text-center bg-slate-50">৭</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -766,13 +766,13 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                             const formattedLetter = `${toBengaliDigits(row.letterNo || '')}, ${formatDateBN(row.letterDate)}`;
                             return (
                               <tr key={row.id} className="hover:bg-slate-50 bg-white transition-colors">
-                                <td className="border-r border-b border-slate-700 p-2 text-center text-slate-700 font-bold">
+                                <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center text-slate-700 font-bold">
                                   {toBengaliDigits(globalIdx)}
                                 </td>
                                 {rowIdx === 0 && (
                                   <td 
                                     rowSpan={group.entries.length} 
-                                    className="border-r border-b border-slate-700 p-1.5 text-center font-bold text-slate-900 bg-white align-middle w-[170px] min-w-[170px]"
+                                    className="border-r border-b border-slate-700 p-1 text-center font-bold text-slate-900 bg-white align-middle w-[170px] min-w-[170px]"
                                   >
                                     <div className="flex items-center justify-center h-full my-auto mx-auto py-1">
                                       <span 
@@ -784,22 +784,22 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                                     </div>
                                   </td>
                                 )}
-                                <td className="border-r border-b border-slate-700 p-2.5 text-left px-4 font-bold text-slate-900 leading-relaxed">
+                                <td className="border-r border-b border-slate-700 py-1.5 px-3 text-left font-bold text-slate-900 leading-snug">
                                   {row.description}
                                 </td>
-                                <td className="border-r border-b border-slate-700 p-2.5 text-center font-bold text-slate-800">
+                                <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center font-bold text-slate-800">
                                   {formattedDiary}
                                 </td>
-                                <td className="border-r border-b border-slate-700 p-2.5 text-center font-bold text-slate-800">
+                                <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center font-bold text-slate-800">
                                   {formattedLetter}
                                 </td>
-                                <td className="border-r border-b border-slate-700 p-2.5 text-center font-bold text-slate-800">
+                                <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center font-bold text-slate-800">
                                   {row.letterType}
                                 </td>
-                                <td className="border-r border-b border-slate-700 p-2.5 text-center font-bold text-slate-700">
+                                <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center font-bold text-slate-700">
                                   {row.archiveNo || '-'}
                                 </td>
-                                <td className="border-r border-b border-slate-700 p-2.5 text-center font-bold text-slate-700">
+                                <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center font-bold text-slate-700">
                                   {row.remarks || '-'}
                                 </td>
                               </tr>
@@ -810,26 +810,26 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                     )}
                   </tbody>
                   <tfoot className="sticky bottom-0 z-20 bg-black text-white font-black shadow-[0_-2px_8px_rgba(0,0,0,0.2)]">
-                    <tr className="bg-black font-black text-white text-xs sm:text-[13px] h-[38px]">
-                      <td colSpan={2} className="border-r border-b border-slate-700 p-2 text-center bg-black font-black text-white">
+                    <tr className="bg-black font-black text-white text-xs sm:text-[13px] h-[36px]">
+                      <td colSpan={2} className="border-r border-b border-slate-700 py-1.5 px-2 text-center bg-black font-black text-white">
                         সর্বমোট:
                       </td>
-                      <td className="border-r border-b border-slate-700 p-2 text-left px-4 bg-black font-black text-white">
+                      <td className="border-r border-b border-slate-700 py-1.5 px-3 text-left bg-black font-black text-white">
                         মোট প্রাপ্ত বিএসআর পত্র: {toBengaliDigits(bsrReceiptEntries.length)} টি
                       </td>
-                      <td className="border-r border-b border-slate-700 p-2 text-center bg-black font-black text-white">
+                      <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center bg-black font-black text-white">
                         {toBengaliDigits(bsrReceiptEntries.length)} টি
                       </td>
-                      <td className="border-r border-b border-slate-700 p-2 text-center bg-black font-black text-white">
+                      <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center bg-black font-black text-white">
                         {toBengaliDigits(bsrReceiptEntries.length)} টি
                       </td>
-                      <td className="border-r border-b border-slate-700 p-2 text-center bg-black font-black text-white">
+                      <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center bg-black font-black text-white">
                         -
                       </td>
-                      <td className="border-r border-b border-slate-700 p-2 text-center bg-black font-black text-white">
+                      <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center bg-black font-black text-white">
                         -
                       </td>
-                      <td className="border-r border-b border-slate-700 p-2 text-center bg-black font-black text-white">
+                      <td className="border-r border-b border-slate-700 py-1.5 px-2 text-center bg-black font-black text-white">
                         -
                       </td>
                     </tr>
