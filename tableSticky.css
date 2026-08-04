@@ -295,7 +295,7 @@ tbody tr.qr-sticky-footer-offset td:hover,
 table {
   border-collapse: separate !important;
   border-spacing: 0 !important;
-  border-top: 1px solid #94a3b8 !important;
+  border-top: none !important;
   border-left: 1px solid #94a3b8 !important;
   border-right: none !important;
   border-bottom: none !important;
@@ -313,7 +313,7 @@ table {
   outline: none !important;
 }
 
-/* Every cell gets right and bottom borders only - preventing double lines */
+/* Every cell gets right and bottom borders, first header row gets top border for sticky scrolling */
 table thead th,
 table tbody td,
 table tfoot td,
@@ -325,9 +325,13 @@ table tfoot th {
   box-shadow: none !important;
 }
 
+table thead tr:first-child th {
+  border-top: 1px solid #94a3b8 !important;
+}
+
 /* Dark mode border overrides */
 .dark table {
-  border-top-color: #4b5563 !important;
+  border-top: none !important;
   border-left-color: #4b5563 !important;
 }
 
@@ -337,4 +341,8 @@ table tfoot th {
 .dark table tfoot th {
   border-right-color: #4b5563 !important;
   border-bottom-color: #4b5563 !important;
+}
+
+.dark table thead tr:first-child th {
+  border-top-color: #4b5563 !important;
 }
