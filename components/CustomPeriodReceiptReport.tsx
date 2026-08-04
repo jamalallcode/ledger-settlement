@@ -43,6 +43,49 @@ const normalizeForSearch = (str: string = '') => {
   return normalized.replace(/\s+/g, ' ').trim();
 };
 
+const normalizeAuditor = (name: string | null | undefined): string => {
+  if (!name) return '';
+  let n = name
+    .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .normalize('NFC');
+
+  // Strip designations like (অডিটর), (এসএএস সুপার), (এএন্ডএও), etc.
+  n = n.replace(/\s*\([^)]*\)\s*/g, ' ').trim();
+
+  // Strip common honorific prefixes
+  n = n.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '');
+  n = n.replace(/^মো[ঃ:\.]\s*/, '');
+  n = n.replace(/^মোঃ\s*/, '');
+
+  // Strip punctuation
+  n = n.replace(/[:ঃ।\.\-]/g, '').trim();
+
+  // Normalize Bengali vowels & sibilants for robust matching
+  n = n.replace(/ী/g, 'ি')
+       .replace(/ূ/g, 'ু')
+       .replace(/ষ/g, 'স')
+       .replace(/শ/g, 'স')
+       .replace(/ণ/g, 'ন')
+       .replace(/য়/g, 'য');
+
+  return n.trim();
+};
+
+const getCleanAuditorDisplayName = (raw: string): string => {
+  if (!raw) return '';
+  let clean = raw
+    .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .normalize('NFC');
+
+  clean = clean.replace(/\s*\([^)]*\)\s*/g, ' ').trim();
+  clean = clean.replace(/^(জনাব|জনাবা)\s+/, '').trim();
+  return clean || raw.trim();
+};
+
 const cleanAndFormat = (info: string | undefined, label: string) => {
   if (!info || info === '-') return `${label}: -`;
   
@@ -321,14 +364,10 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     }
   };
 
-  // Calculate auditor options with letter counts for the selected date range and branch
+  // Calculate auditor options with letter counts for the selected date range and strictly for the selected branch
   const auditorOptionsWithCounts = useMemo(() => {
-    // 1. Gather all entries within date range (and branch if selected)
-    const periodEntries = (entries || []).filter(entry => {
-      const entryDate = entry.diaryDate || '';
-      if (!entryDate) return false;
-      if (entryDate < startDate || entryDate > endDate) return false;
-
+    // 1. Gather all entries matching the selected branch
+    const branchEntries = (entries || []).filter(entry => {
       if (filterBranch !== 'সকল') {
         if (filterBranch === 'এসএফআই' && !isSFI(entry.paraType)) return false;
         if (filterBranch === 'নন এসএফআই' && !isNonSFI(entry.paraType)) return false;
@@ -336,58 +375,116 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       return true;
     });
 
+    // 2. Filter entries within selected date range (diaryDate)
+    const periodEntries = branchEntries.filter(entry => {
+      const entryDate = entry.diaryDate || '';
+      if (!entryDate) return false;
+      return entryDate >= startDate && entryDate <= endDate;
+    });
+
     const periodCounts = new Map<string, number>();
     periodEntries.forEach(entry => {
-      const name = (entry.receiverName || entry.presentedToName || '').trim();
-      if (name) {
-        const norm = normalizeForSearch(name);
-        periodCounts.set(norm, (periodCounts.get(norm) || 0) + 1);
+      const rawName = (entry.receiverName || entry.presentedToName || '').trim();
+      if (rawName) {
+        const norm = normalizeAuditor(rawName);
+        if (norm) {
+          periodCounts.set(norm, (periodCounts.get(norm) || 0) + 1);
+        }
       }
     });
 
-    // Collect all unique auditor names from data, constants, and localStorage
-    const allKnownNames = new Set<string>();
+    // 3. Strictly collect auditors belonging to the selected branch
+    const branchAuditorsMap = new Map<string, string>(); // norm -> displayName
 
-    (entries || []).forEach(e => {
-      const n = (e.receiverName || e.presentedToName || '').trim();
-      if (n) allKnownNames.add(n);
-    });
-
-    if (Array.isArray(EMPLOYEES)) {
-      EMPLOYEES.forEach(emp => {
-        if (emp.includes('অডিটর') || emp.includes('এএন্ডএও') || emp.includes('সুপার')) {
-          allKnownNames.add(emp.trim());
-        }
-      });
+    const targetKeys: Array<{ key: string; branch: string }> = [];
+    if (filterBranch === 'নন এসএফআই') {
+      targetKeys.push({ key: 'ledger_correspondence_receivers_nonsfi', branch: 'নন এসএফআই' });
+    } else if (filterBranch === 'এসএফআই') {
+      targetKeys.push({ key: 'ledger_correspondence_receivers_sfi', branch: 'এসএফআই' });
+    } else {
+      targetKeys.push(
+        { key: 'ledger_correspondence_receivers_nonsfi', branch: 'নন এসএফআই' },
+        { key: 'ledger_correspondence_receivers_sfi', branch: 'এসএফআই' },
+        { key: 'ledger_correspondence_receivers_admin', branch: 'প্রশাসন' }
+      );
     }
 
+    // Check inactive/transferred list
+    let inactiveSet = new Set<string>();
     try {
-      ['ledger_correspondence_receivers_admin', 'ledger_correspondence_receivers_nonsfi', 'ledger_correspondence_receivers_sfi'].forEach(k => {
-        const raw = localStorage.getItem(k);
+      const rawInactive = localStorage.getItem('ledger_inactive_receivers_v1');
+      if (rawInactive) {
+        const parsed = JSON.parse(rawInactive);
+        if (Array.isArray(parsed)) {
+          parsed.forEach((item: string) => inactiveSet.add(normalizeAuditor(item)));
+        }
+      }
+    } catch (e) {}
+
+    targetKeys.forEach(({ key }) => {
+      try {
+        const raw = localStorage.getItem(key);
         if (raw) {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed)) {
             parsed.forEach((p: any) => {
-              if (p && p.name && typeof p.name === 'string') {
-                allKnownNames.add(p.name.trim());
+              const rawName = (typeof p === 'string' ? p : p?.name) || '';
+              if (!rawName) return;
+              const norm = normalizeAuditor(rawName);
+              if (!norm) return;
+
+              const isInactive = p.is_active === false || inactiveSet.has(norm);
+              const isTransferred = p.transferred_to && p.transferred_to.trim() !== '';
+
+              // If auditor is inactive/transferred and has 0 letters in period, skip
+              const count = periodCounts.get(norm) || 0;
+              if ((isInactive || isTransferred) && count === 0) {
+                return;
+              }
+
+              if (!branchAuditorsMap.has(norm)) {
+                branchAuditorsMap.set(norm, getCleanAuditorDisplayName(rawName));
               }
             });
           }
         }
-      });
-    } catch (e) {}
+      } catch (e) {}
+    });
 
-    const result: Array<{ name: string; count: number }> = [];
+    // Fallback: If SFI branch and localStorage is empty, check EMPLOYEES
+    if (branchAuditorsMap.size === 0 && (filterBranch === 'এসএফআই' || filterBranch === 'সকল')) {
+      if (Array.isArray(EMPLOYEES)) {
+        EMPLOYEES.forEach(emp => {
+          if (emp.includes('অডিটর') || emp.includes('এএন্ডএও') || emp.includes('সুপার')) {
+            const norm = normalizeAuditor(emp);
+            if (norm && !branchAuditorsMap.has(norm)) {
+              branchAuditorsMap.set(norm, getCleanAuditorDisplayName(emp));
+            }
+          }
+        });
+      }
+    }
 
-    allKnownNames.forEach(name => {
-      const norm = normalizeForSearch(name);
-      let count = 0;
-      for (const [pNorm, pCount] of periodCounts.entries()) {
-        if (pNorm === norm || pNorm.includes(norm) || norm.includes(pNorm)) {
-          count += pCount;
+    // Also include any auditors found in entries of this branch
+    branchEntries.forEach(entry => {
+      const rawName = (entry.receiverName || entry.presentedToName || '').trim();
+      if (rawName) {
+        const norm = normalizeAuditor(rawName);
+        if (norm && !branchAuditorsMap.has(norm)) {
+          branchAuditorsMap.set(norm, getCleanAuditorDisplayName(rawName));
         }
       }
-      result.push({ name, count });
+    });
+
+    // 4. Build sorted result
+    const result: Array<{ name: string; count: number; norm: string }> = [];
+    branchAuditorsMap.forEach((displayName, norm) => {
+      const count = periodCounts.get(norm) || 0;
+      result.push({
+        name: displayName,
+        count,
+        norm
+      });
     });
 
     // Sort: auditors with letters received in period first (descending count), then alphabetically
@@ -398,6 +495,17 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       return a.name.localeCompare(b.name, 'bn');
     });
   }, [entries, startDate, endDate, filterBranch]);
+
+  // Reset filterAuditor if it no longer exists in current branch options
+  useEffect(() => {
+    if (filterAuditor !== 'সকল') {
+      const filterNorm = normalizeAuditor(filterAuditor);
+      const exists = auditorOptionsWithCounts.some(a => a.norm === filterNorm || a.name === filterAuditor);
+      if (!exists) {
+        setFilterAuditor('সকল');
+      }
+    }
+  }, [filterBranch, auditorOptionsWithCounts, filterAuditor]);
 
   // Filter entries based on selected dates and other controls
   const filteredEntries = useMemo(() => {
@@ -470,15 +578,21 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
       // 3.5 Auditor Filter (গ্রহীতা / অডিটর)
       if (filterAuditor !== 'সকল') {
-        const query = normalizeForSearch(filterAuditor);
-        const receiver = normalizeForSearch(entry.receiverName || '');
-        const presented = normalizeForSearch(entry.presentedToName || '');
-        const matches = receiver === query || 
-                        receiver.includes(query) || 
-                        query.includes(receiver) ||
-                        presented === query ||
-                        presented.includes(query) ||
-                        query.includes(presented);
+        const queryNorm = normalizeAuditor(filterAuditor);
+        const querySearch = normalizeForSearch(filterAuditor);
+        const receiverRaw = entry.receiverName || '';
+        const presentedRaw = entry.presentedToName || '';
+        
+        const receiverNorm = normalizeAuditor(receiverRaw);
+        const presentedNorm = normalizeAuditor(presentedRaw);
+
+        const receiverSearch = normalizeForSearch(receiverRaw);
+        const presentedSearch = normalizeForSearch(presentedRaw);
+
+        const matches = (receiverNorm && queryNorm && (receiverNorm === queryNorm || receiverNorm.includes(queryNorm) || queryNorm.includes(receiverNorm))) ||
+                        (presentedNorm && queryNorm && (presentedNorm === queryNorm || presentedNorm.includes(queryNorm) || queryNorm.includes(presentedNorm))) ||
+                        (receiverSearch && (receiverSearch === querySearch || receiverSearch.includes(querySearch) || querySearch.includes(receiverSearch))) ||
+                        (presentedSearch && (presentedSearch === querySearch || presentedSearch.includes(querySearch) || querySearch.includes(presentedSearch)));
         if (!matches) return false;
       }
 
@@ -648,10 +762,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
       // 6. Auditor search for settlement entries
       if (filterAuditor !== 'সকল') {
-        const query = normalizeForSearch(filterAuditor);
-        const receiver = normalizeForSearch(entry.receiverName || entry.presentedToName || entry.auditorName || '');
-        if (receiver && !receiver.includes(query) && !query.includes(receiver)) {
-          return false;
+        const queryNorm = normalizeAuditor(filterAuditor);
+        const querySearch = normalizeForSearch(filterAuditor);
+        const rawReceiver = entry.receiverName || entry.presentedToName || entry.auditorName || '';
+        const receiverNorm = normalizeAuditor(rawReceiver);
+        const receiverSearch = normalizeForSearch(rawReceiver);
+        if (rawReceiver) {
+          const matches = (receiverNorm && queryNorm && (receiverNorm === queryNorm || receiverNorm.includes(queryNorm) || queryNorm.includes(receiverNorm))) ||
+                          (receiverSearch && (receiverSearch === querySearch || receiverSearch.includes(querySearch) || querySearch.includes(receiverSearch)));
+          if (!matches) return false;
         }
       }
 
