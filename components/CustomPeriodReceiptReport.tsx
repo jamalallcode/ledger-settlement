@@ -7,7 +7,7 @@ import {
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { isSFI, isNonSFI, getCleanLetterTypeDisplay } from '../utils/branchUtils';
 import { format } from 'date-fns';
-import { MINISTRY_ENTITY_MAP } from '../constants';
+import { MINISTRY_ENTITY_MAP, EMPLOYEES } from '../constants';
 
 const STATIC_MINISTRIES = [
   "আর্থিক প্রতিষ্ঠান বিভাগ",
@@ -181,6 +181,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
   const [searchTerm, setSearchTerm] = useState('সকল');
   const [filterBranch, setFilterBranch] = useState('সকল');
+  const [filterAuditor, setFilterAuditor] = useState('সকল');
   const [keywordSearch, setKeywordSearch] = useState('');
   const [filterMinistry, setFilterMinistry] = useState('সকল');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
@@ -320,6 +321,84 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     }
   };
 
+  // Calculate auditor options with letter counts for the selected date range and branch
+  const auditorOptionsWithCounts = useMemo(() => {
+    // 1. Gather all entries within date range (and branch if selected)
+    const periodEntries = (entries || []).filter(entry => {
+      const entryDate = entry.diaryDate || '';
+      if (!entryDate) return false;
+      if (entryDate < startDate || entryDate > endDate) return false;
+
+      if (filterBranch !== 'সকল') {
+        if (filterBranch === 'এসএফআই' && !isSFI(entry.paraType)) return false;
+        if (filterBranch === 'নন এসএফআই' && !isNonSFI(entry.paraType)) return false;
+      }
+      return true;
+    });
+
+    const periodCounts = new Map<string, number>();
+    periodEntries.forEach(entry => {
+      const name = (entry.receiverName || entry.presentedToName || '').trim();
+      if (name) {
+        const norm = normalizeForSearch(name);
+        periodCounts.set(norm, (periodCounts.get(norm) || 0) + 1);
+      }
+    });
+
+    // Collect all unique auditor names from data, constants, and localStorage
+    const allKnownNames = new Set<string>();
+
+    (entries || []).forEach(e => {
+      const n = (e.receiverName || e.presentedToName || '').trim();
+      if (n) allKnownNames.add(n);
+    });
+
+    if (Array.isArray(EMPLOYEES)) {
+      EMPLOYEES.forEach(emp => {
+        if (emp.includes('অডিটর') || emp.includes('এএন্ডএও') || emp.includes('সুপার')) {
+          allKnownNames.add(emp.trim());
+        }
+      });
+    }
+
+    try {
+      ['ledger_correspondence_receivers_admin', 'ledger_correspondence_receivers_nonsfi', 'ledger_correspondence_receivers_sfi'].forEach(k => {
+        const raw = localStorage.getItem(k);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((p: any) => {
+              if (p && p.name && typeof p.name === 'string') {
+                allKnownNames.add(p.name.trim());
+              }
+            });
+          }
+        }
+      });
+    } catch (e) {}
+
+    const result: Array<{ name: string; count: number }> = [];
+
+    allKnownNames.forEach(name => {
+      const norm = normalizeForSearch(name);
+      let count = 0;
+      for (const [pNorm, pCount] of periodCounts.entries()) {
+        if (pNorm === norm || pNorm.includes(norm) || norm.includes(pNorm)) {
+          count += pCount;
+        }
+      }
+      result.push({ name, count });
+    });
+
+    // Sort: auditors with letters received in period first (descending count), then alphabetically
+    return result.sort((a, b) => {
+      if (b.count !== a.count) {
+        return b.count - a.count;
+      }
+      return a.name.localeCompare(b.name, 'bn');
+    });
+  }, [entries, startDate, endDate, filterBranch]);
+
   // Filter entries based on selected dates and other controls
   const filteredEntries = useMemo(() => {
     const filtered = entries.filter(entry => {
@@ -389,6 +468,20 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
         }
       }
 
+      // 3.5 Auditor Filter (গ্রহীতা / অডিটর)
+      if (filterAuditor !== 'সকল') {
+        const query = normalizeForSearch(filterAuditor);
+        const receiver = normalizeForSearch(entry.receiverName || '');
+        const presented = normalizeForSearch(entry.presentedToName || '');
+        const matches = receiver === query || 
+                        receiver.includes(query) || 
+                        query.includes(receiver) ||
+                        presented === query ||
+                        presented.includes(query) ||
+                        query.includes(presented);
+        if (!matches) return false;
+      }
+
       // 4. Keyword / Institution Search
       if (keywordSearch.trim() !== '') {
         const query = normalizeForSearch(keywordSearch);
@@ -434,7 +527,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
         ? diaryNoA.localeCompare(diaryNoB)
         : diaryNoB.localeCompare(diaryNoA);
     });
-  }, [entries, startDate, endDate, filterBranch, searchTerm, keywordSearch, filterMinistry, sortOrder]);
+  }, [entries, startDate, endDate, filterBranch, searchTerm, filterAuditor, keywordSearch, filterMinistry, sortOrder]);
 
   // Calculate statistics for BSR, Bilateral meetings, Trilateral meetings, Working papers, and Others
   const stats = useMemo(() => {
@@ -553,6 +646,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
         if (!matches) return false;
       }
 
+      // 6. Auditor search for settlement entries
+      if (filterAuditor !== 'সকল') {
+        const query = normalizeForSearch(filterAuditor);
+        const receiver = normalizeForSearch(entry.receiverName || entry.presentedToName || entry.auditorName || '');
+        if (receiver && !receiver.includes(query) && !query.includes(receiver)) {
+          return false;
+        }
+      }
+
       return true;
     });
 
@@ -563,7 +665,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
         ? dateB.localeCompare(dateA) 
         : dateA.localeCompare(dateB);
     });
-  }, [settlementEntries, startDate, endDate, filterBranch, filterMinistry, searchTerm, keywordSearch, sortOrder]);
+  }, [settlementEntries, startDate, endDate, filterBranch, filterMinistry, filterAuditor, searchTerm, keywordSearch, sortOrder]);
 
   const { totalSettledCountSum, totalSettledAmountSum } = useMemo(() => {
     let countSum = 0;
@@ -634,6 +736,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
         <h2 style="text-align: center; margin-bottom: 5px; color: #1e3a8a;">${titleText}</h2>
         <p style="text-align: center; margin-top: 0; font-size: 14px; color: #475569;">
           সময়কাল: ${formatDateBN(startDate)} হতে ${formatDateBN(endDate)}
+          ${filterAuditor !== 'সকল' ? ` | অডিটর: ${filterAuditor}` : ''}
         </p>
         ${activeReportMode === 'correspondence' ? `
         <table style="width: 50%; margin: 10px auto; border: none;">
@@ -746,15 +849,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           <h3 className="font-black text-slate-800 text-sm uppercase tracking-wide">রিপোর্ট ফিল্টারিং ও সময়কাল নির্বাচন</h3>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3.5">
           {/* Start Date */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
-              শুরুর তারিখ (দিন/মাস/বছর)
+              শুরুর তারিখ
             </label>
             <div className="relative w-full h-11 flex items-center border-2 border-slate-200 rounded-xl bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 transition-all text-xs shadow-sm">
-              <div className="flex items-center w-full px-3 h-full justify-between">
-                <div className="flex items-center justify-center gap-1 font-bold text-slate-800">
+              <div className="flex items-center w-full px-2 h-full justify-center gap-1.5">
+                <div className="flex items-center justify-center gap-0.5 font-bold text-slate-800">
                   <input 
                     ref={startDayRef}
                     type="text"
@@ -762,7 +865,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     value={startDD}
                     onChange={(e) => handleSegmentChange(e.target.value, 'day', setStartDD, setStartDate, { month: startMM, year: startYYYY }, startMonthRef)}
                     onBlur={(e) => handleSegmentBlur(e.target.value, 'day', setStartDD, setStartDate, { month: startMM, year: startYYYY })}
-                    className="w-6 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
+                    className="w-5 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
                   />
                   <span className="text-slate-300 font-black">/</span>
                   <input 
@@ -772,7 +875,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     value={startMM}
                     onChange={(e) => handleSegmentChange(e.target.value, 'month', setStartMM, setStartDate, { day: startDD, year: startYYYY }, startYearRef)}
                     onBlur={(e) => handleSegmentBlur(e.target.value, 'month', setStartMM, setStartDate, { day: startDD, year: startYYYY })}
-                    className="w-6 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
+                    className="w-5 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
                   />
                   <span className="text-slate-300 font-black">/</span>
                   <input 
@@ -782,12 +885,12 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     value={startYYYY}
                     onChange={(e) => handleSegmentChange(e.target.value, 'year', setStartYYYY, setStartDate, { day: startDD, month: startMM })}
                     onBlur={(e) => handleSegmentBlur(e.target.value, 'year', setStartYYYY, setStartDate, { day: startDD, month: startMM })}
-                    className="w-10 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
+                    className="w-9 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
                   />
                 </div>
-                <div className="flex items-center relative cursor-pointer">
+                <div className="flex items-center relative cursor-pointer ml-0.5">
                   <Calendar 
-                    size={14}
+                    size={13}
                     className="text-slate-400 hover:text-blue-500 transition-colors"
                     onClick={() => startCalendarRef.current?.showPicker()}
                   />
@@ -796,7 +899,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     type="date"
                     value={startDate}
                     onChange={(e) => handleStartDateSelect(e.target.value)}
-                    className="absolute inset-0 opacity-0 w-5 h-5 cursor-pointer"
+                    className="absolute inset-0 opacity-0 w-4 h-4 cursor-pointer"
                   />
                 </div>
               </div>
@@ -806,11 +909,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           {/* End Date */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
-              শেষের তারিখ (দিন/মাস/বছর)
+              শেষের তারিখ
             </label>
             <div className="relative w-full h-11 flex items-center border-2 border-slate-200 rounded-xl bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 transition-all text-xs shadow-sm">
-              <div className="flex items-center w-full px-3 h-full justify-between">
-                <div className="flex items-center justify-center gap-1 font-bold text-slate-800">
+              <div className="flex items-center w-full px-2 h-full justify-center gap-1.5">
+                <div className="flex items-center justify-center gap-0.5 font-bold text-slate-800">
                   <input 
                     ref={endDayRef}
                     type="text"
@@ -818,7 +921,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     value={endDD}
                     onChange={(e) => handleSegmentChange(e.target.value, 'day', setEndDD, setEndDate, { month: endMM, year: endYYYY }, endMonthRef)}
                     onBlur={(e) => handleSegmentBlur(e.target.value, 'day', setEndDD, setEndDate, { month: endMM, year: endYYYY })}
-                    className="w-6 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
+                    className="w-5 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
                   />
                   <span className="text-slate-300 font-black">/</span>
                   <input 
@@ -828,7 +931,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     value={endMM}
                     onChange={(e) => handleSegmentChange(e.target.value, 'month', setEndMM, setEndDate, { day: endDD, year: endYYYY }, endYearRef)}
                     onBlur={(e) => handleSegmentBlur(e.target.value, 'month', setEndMM, setEndDate, { day: endDD, year: endYYYY })}
-                    className="w-6 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
+                    className="w-5 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
                   />
                   <span className="text-slate-300 font-black">/</span>
                   <input 
@@ -838,12 +941,12 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     value={endYYYY}
                     onChange={(e) => handleSegmentChange(e.target.value, 'year', setEndYYYY, setEndDate, { day: endDD, month: endMM })}
                     onBlur={(e) => handleSegmentBlur(e.target.value, 'year', setEndYYYY, setEndDate, { day: endDD, month: endMM })}
-                    className="w-10 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
+                    className="w-9 bg-transparent border-none outline-none text-center font-black p-0 text-xs placeholder-slate-300"
                   />
                 </div>
-                <div className="flex items-center relative cursor-pointer">
+                <div className="flex items-center relative cursor-pointer ml-0.5">
                   <Calendar 
-                    size={14}
+                    size={13}
                     className="text-slate-400 hover:text-blue-500 transition-colors"
                     onClick={() => endCalendarRef.current?.showPicker()}
                   />
@@ -852,7 +955,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     type="date"
                     value={endDate}
                     onChange={(e) => handleEndDateSelect(e.target.value)}
-                    className="absolute inset-0 opacity-0 w-5 h-5 cursor-pointer"
+                    className="absolute inset-0 opacity-0 w-4 h-4 cursor-pointer"
                   />
                 </div>
               </div>
@@ -864,15 +967,22 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
             <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
               শাখা নির্বাচন
             </label>
-            <select 
-              value={filterBranch}
-              onChange={(e) => setFilterBranch(e.target.value)}
-              className="w-full h-11 px-3 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-xs cursor-pointer"
-            >
-              <option value="সকল">সকল শাখা</option>
-              <option value="এসএফআই">এসএফআই (SFI)</option>
-              <option value="নন এসএফআই">নন এসএফআই (Non-SFI)</option>
-            </select>
+            <div className="relative">
+              <select 
+                value={filterBranch}
+                onChange={(e) => setFilterBranch(e.target.value)}
+                className="w-full h-11 pl-3 pr-7 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-xs cursor-pointer appearance-none"
+              >
+                <option value="সকল">সকল শাখা</option>
+                <option value="এসএফআই">এসএফআই (SFI)</option>
+                <option value="নন এসএফআই">নন এসএফআই (Non-SFI)</option>
+              </select>
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
+            </div>
           </div>
 
           {/* Search Term / Letter Type */}
@@ -911,10 +1021,37 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
             </div>
           </div>
 
+          {/* Auditor Filter */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
+              অডিটর নির্বাচন
+            </label>
+            <div className="relative">
+              <select 
+                value={filterAuditor}
+                onChange={(e) => setFilterAuditor(e.target.value)}
+                className="w-full h-11 pl-9 pr-8 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-xs cursor-pointer appearance-none"
+              >
+                <option value="সকল">সকল অডিটর</option>
+                {auditorOptionsWithCounts.map((auditor, idx) => (
+                  <option key={idx} value={auditor.name}>
+                    {auditor.name} ({toBengaliDigits(auditor.count)} টি)
+                  </option>
+                ))}
+              </select>
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
           {/* Keyword Search / Institution */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
-              প্রতিষ্ঠান / কীওয়ার্ড অনুসন্ধান
+              কীওয়ার্ড
             </label>
             <div className="relative">
               <input 
@@ -1100,6 +1237,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           </p>
           <div className="text-[11px] font-bold text-slate-700 bg-slate-100 py-1.5 px-4 rounded-lg inline-block">
             সময়কাল: {formatDateBN(startDate)} হতে {formatDateBN(endDate)}
+            {filterAuditor !== 'সকল' && ` | অডিটর: ${filterAuditor}`}
           </div>
         </div>
 
@@ -1157,7 +1295,12 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
               </div>
             </div>
             
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-2 items-center flex-wrap">
+              {filterAuditor !== 'সকল' && (
+                <div className="text-[11px] font-black text-indigo-700 bg-indigo-50 px-3 py-1 rounded-lg">
+                  অডিটর: {filterAuditor}
+                </div>
+              )}
               {filterMinistry !== 'সকল' && (
                 <div className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-3 py-1 rounded-lg">
                   মন্ত্রণালয়: {filterMinistry}
