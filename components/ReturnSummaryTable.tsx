@@ -809,6 +809,31 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                       })()
                     )}
                   </tbody>
+                  <tfoot className="sticky bottom-0 z-20 bg-slate-100 font-black text-slate-900 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]">
+                    <tr className="bg-slate-100 font-black text-slate-900 text-xs sm:text-[13px] h-[38px]">
+                      <td colSpan={2} className="border-r border-b border-slate-700 p-2 text-center bg-slate-100 font-black text-slate-900">
+                        সর্বমোট:
+                      </td>
+                      <td className="border-r border-b border-slate-700 p-2 text-left px-4 bg-slate-100 font-black text-slate-900">
+                        মোট প্রাপ্ত বিএসআর পত্র: {toBengaliDigits(bsrReceiptEntries.length)} টি
+                      </td>
+                      <td className="border-r border-b border-slate-700 p-2 text-center bg-slate-100 font-black text-slate-900">
+                        {toBengaliDigits(bsrReceiptEntries.length)} টি
+                      </td>
+                      <td className="border-r border-b border-slate-700 p-2 text-center bg-slate-100 font-black text-slate-900">
+                        {toBengaliDigits(bsrReceiptEntries.length)} টি
+                      </td>
+                      <td className="border-r border-b border-slate-700 p-2 text-center bg-slate-100 font-black text-slate-900">
+                        -
+                      </td>
+                      <td className="border-r border-b border-slate-700 p-2 text-center bg-slate-100 font-black text-slate-900">
+                        -
+                      </td>
+                      <td className="border-r border-b border-slate-700 p-2 text-center bg-slate-100 font-black text-slate-900">
+                        -
+                      </td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             </div>
