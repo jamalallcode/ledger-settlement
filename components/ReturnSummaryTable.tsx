@@ -640,7 +640,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
 
       {/* BSR Receipt Return Modal */}
       {isBsrReceiptOpen && (
-        <div id="bsr-receipt-modal-root" className="fixed inset-0 z-[10000] flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300 overflow-hidden">
+        <div id="bsr-receipt-modal-root" className="fixed inset-0 z-[10000] flex items-start justify-center p-2 sm:p-4 pt-3 sm:pt-5 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300 overflow-hidden">
           <style dangerouslySetInnerHTML={{ __html: `
             @media print {
               /* Hide other children of section-report-summary */
@@ -666,7 +666,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             }
           ` }} />
 
-          <div className="w-full max-w-[98%] xl:max-w-[1450px] max-h-[92vh] flex flex-col bg-white border border-slate-300 rounded-2xl p-3 sm:p-4 space-y-3 shadow-2xl animate-in zoom-in-95 duration-300 relative overflow-hidden">
+          <div className="w-full max-w-[98%] xl:max-w-[1450px] max-h-[94vh] flex flex-col bg-white border border-slate-300 rounded-2xl p-3 sm:p-4 space-y-3 shadow-2xl animate-in zoom-in-95 duration-300 relative overflow-hidden">
             
             {/* Top action controls (hidden when printing) */}
             <div className="flex items-center justify-between border-b border-slate-200 pb-3 no-print shrink-0">
@@ -727,16 +727,16 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
               {/* Table Container with Sticky Header */}
               <div className="overflow-auto flex-1 min-h-0 border border-slate-700 rounded-lg shadow-sm bg-white">
                 <table id="table-bsr-receipt-return" className="w-full border-separate border-spacing-0 border-l border-slate-700 text-slate-900 text-xs sm:text-[13px]">
-                  <thead className="sticky top-0 z-20 shadow-sm">
+                  <thead className="sticky top-0 z-20 bg-slate-50">
                     <tr className="bg-slate-50">
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[50px] min-w-[50px] shadow-[inset_0_1px_0_0_#334155]">ক্রমিক নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[140px] min-w-[140px] whitespace-nowrap shadow-[inset_0_1px_0_0_#334155]">বিভাগ/মন্ত্রণালয়</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-left text-slate-900 px-4 min-w-[320px] shadow-[inset_0_1px_0_0_#334155]">অডিট প্রতিষ্ঠানের নাম ও নিরীক্ষা সাল</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[130px] min-w-[130px] shadow-[inset_0_1px_0_0_#334155]">ডায়েরি নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[130px] min-w-[130px] shadow-[inset_0_1px_0_0_#334155]">পত্র নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[90px] min-w-[90px] shadow-[inset_0_1px_0_0_#334155]">চিঠির ধরণ</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[85px] min-w-[85px] shadow-[inset_0_1px_0_0_#334155]">আর্কাইভ নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[80px] min-w-[80px] shadow-[inset_0_1px_0_0_#334155]">মন্তব্য</th>
+                      <th className="border-t border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[50px] min-w-[50px] whitespace-nowrap">ক্রমিক নং</th>
+                      <th className="border-t border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[170px] min-w-[170px] whitespace-nowrap">বিভাগ/মন্ত্রণালয়</th>
+                      <th className="border-t border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-left text-slate-900 px-4 min-w-[320px] whitespace-nowrap">অডিট প্রতিষ্ঠানের নাম ও নিরীক্ষা সাল</th>
+                      <th className="border-t border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[130px] min-w-[130px] whitespace-nowrap">ডায়েরি নং</th>
+                      <th className="border-t border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[130px] min-w-[130px] whitespace-nowrap">পত্র নং</th>
+                      <th className="border-t border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[90px] min-w-[90px] whitespace-nowrap">চিঠির ধরণ</th>
+                      <th className="border-t border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[85px] min-w-[85px] whitespace-nowrap">আর্কাইভ নং</th>
+                      <th className="border-t border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[80px] min-w-[80px] whitespace-nowrap">মন্তব্য</th>
                     </tr>
                     <tr className="bg-slate-50 text-[10px] font-bold text-slate-500">
                       <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50">১</th>
@@ -772,7 +772,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                                 {rowIdx === 0 && (
                                   <td 
                                     rowSpan={group.entries.length} 
-                                    className="border-r border-b border-slate-700 p-1.5 text-center font-bold text-slate-900 bg-white align-middle w-[140px] min-w-[140px]"
+                                    className="border-r border-b border-slate-700 p-1.5 text-center font-bold text-slate-900 bg-white align-middle w-[170px] min-w-[170px]"
                                   >
                                     <div className="flex items-center justify-center h-full my-auto mx-auto py-1">
                                       <span 
