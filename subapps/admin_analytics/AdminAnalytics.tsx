@@ -269,17 +269,17 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
 
   const filteredData = useMemo(() => {
     return correspondenceEntries.filter(entry => {
-      const dateToUse = entry.receivedDate || entry.diaryDate || entry.createdAt;
-      if (!dateToUse) return false;
+      const entryDate = entry.diaryDate || '';
+      if (!entryDate) return false;
       
       try {
-        const entryDate = parseISO(dateToUse);
-        return isWithinInterval(entryDate, {
+        const parsedDate = parseISO(entryDate);
+        return isWithinInterval(parsedDate, {
           start: parseISO(startDate),
           end: parseISO(endDate + 'T23:59:59')
         });
       } catch (e) {
-        return false;
+        return entryDate >= startDate && entryDate <= endDate;
       }
     });
   }, [correspondenceEntries, startDate, endDate]);
@@ -892,7 +892,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                                     <span>পত্র নং:</span> {toBengaliDigits(item.letterNo || '---')} | <span>তারিখ:</span> {formatCustomDate(item.letterDate)}
                                   </div>
                                   <div className="text-xs font-bold text-slate-700">
-                                    <span>ডায়েরি নং:</span> {toBengaliDigits(item.diaryNo || '---')} | <span>তারিখ:</span> {formatCustomDate(item.receivedDate || item.diaryDate || item.createdAt)}
+                                    <span>ডায়েরি নং:</span> {toBengaliDigits(item.diaryNo || '---')} | <span>তারিখ:</span> {formatCustomDate(item.diaryDate || item.receivedDate || item.createdAt)}
                                   </div>
                                 </div>
                               </td>
