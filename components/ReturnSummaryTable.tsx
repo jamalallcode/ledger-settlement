@@ -109,6 +109,25 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
     });
   }, [correspondenceEntries, activeCycle]);
 
+  const groupedBsrEntries = useMemo(() => {
+    const groups: { ministry: string; entries: typeof bsrReceiptEntries }[] = [];
+    const map = new Map<string, typeof bsrReceiptEntries>();
+
+    bsrReceiptEntries.forEach((entry) => {
+      const min = entry.ministryName?.trim() || 'অন্যান্য';
+      if (!map.has(min)) {
+        map.set(min, []);
+      }
+      map.get(min)!.push(entry);
+    });
+
+    map.forEach((entries, ministry) => {
+      groups.push({ ministry, entries });
+    });
+
+    return groups;
+  }, [bsrReceiptEntries]);
+
   const downloadBsrReceiptExcel = () => {
     const table = document.getElementById('table-bsr-receipt-return');
     if (!table) return;
@@ -710,19 +729,21 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                 <table id="table-bsr-receipt-return" className="w-full border-separate border-spacing-0 border-l border-t border-slate-700 text-slate-900 text-xs sm:text-[13px]">
                   <thead>
                     <tr className="bg-slate-50">
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[60px]">১. ক্র. নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[140px]">২. ডায়েরি নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[140px]">৩. পত্র নং</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-left text-slate-900 px-4">৪. অডিট প্রতিষ্ঠানের নাম ও নিরীক্ষা সাল</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[140px]">৫. প্রাপ্ত জবাব (পত্র সংখ্যা)</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[110px]">৬. চিঠির ধরণ</th>
-                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[130px]">৭. আর্কাইভ নং</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[60px]">ক্রমিক নং</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[150px]">বিভাগ/মন্ত্রণালয়</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-left text-slate-900 px-4">অডিট প্রতিষ্ঠানের নাম ও নিরীক্ষা সাল</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[140px]">ডায়েরি নং</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[140px]">পত্র নং</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[100px]">চিঠির ধরণ</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[110px]">আর্কাইভ নং</th>
+                      <th className="border-r border-b border-slate-700 bg-slate-50 p-2 font-black text-center text-slate-900 w-[90px]">মন্তব্য</th>
                     </tr>
                     <tr className="bg-slate-50 text-[10px] font-bold text-slate-500">
                       <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50">১</th>
+                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50"></th>
                       <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50">২</th>
                       <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50">৩</th>
-                      <th className="border-r border-b border-slate-700 py-1 text-left px-4 bg-slate-50">৪</th>
+                      <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50">৪</th>
                       <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50">৫</th>
                       <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50">৬</th>
                       <th className="border-r border-b border-slate-700 py-1 text-center bg-slate-50">৭</th>
@@ -731,40 +752,54 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                   <tbody>
                     {bsrReceiptEntries.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="border-r border-b border-slate-700 py-12 text-center text-slate-500 font-bold bg-white">
+                        <td colSpan={8} className="border-r border-b border-slate-700 py-12 text-center text-slate-500 font-bold bg-white">
                           এই সময়কালে কোন প্রাপ্ত বিএসআর ডাটা পাওয়া যায়নি।
                         </td>
                       </tr>
                     ) : (
-                      bsrReceiptEntries.map((row, idx) => {
-                        const formattedDiary = `${toBengaliDigits(row.diaryNo || '')}, ${formatDateBN(row.diaryDate)}`;
-                        const formattedLetter = `${toBengaliDigits(row.letterNo || '')}, ${formatDateBN(row.letterDate)}`;
-                        return (
-                          <tr key={row.id} className="hover:bg-slate-50 bg-white transition-colors">
-                            <td className="border-r border-b border-slate-700 p-2.5 text-center text-slate-700 font-bold">
-                              {toBengaliDigits((idx + 1).toString().padStart(2, '0'))}.
-                            </td>
-                            <td className="border-r border-b border-slate-700 p-2.5 text-center font-bold text-slate-800">
-                              {formattedDiary}
-                            </td>
-                            <td className="border-r border-b border-slate-700 p-2.5 text-center font-bold text-slate-800">
-                              {formattedLetter}
-                            </td>
-                            <td className="border-r border-b border-slate-700 p-2.5 text-left px-4 font-bold text-slate-900 leading-relaxed">
-                              {row.description}
-                            </td>
-                            <td className="border-r border-b border-slate-700 p-2.5 text-center font-bold text-slate-800">
-                              {toBengaliDigits((row.totalParas || row.sentParaCount || '0').toString().padStart(2, '0'))}
-                            </td>
-                            <td className="border-r border-b border-slate-700 p-2.5 text-center font-black text-red-600">
-                              {row.letterType}
-                            </td>
-                            <td className="border-r border-b border-slate-700 p-2.5 text-center font-mono font-bold text-slate-700">
-                              {row.archiveNo || '-'}
-                            </td>
-                          </tr>
-                        );
-                      })
+                      (() => {
+                        let globalIdx = 0;
+                        return groupedBsrEntries.map((group) => {
+                          return group.entries.map((row, rowIdx) => {
+                            globalIdx++;
+                            const formattedDiary = `${toBengaliDigits(row.diaryNo || '')}, ${formatDateBN(row.diaryDate)}`;
+                            const formattedLetter = `${toBengaliDigits(row.letterNo || '')}, ${formatDateBN(row.letterDate)}`;
+                            return (
+                              <tr key={row.id} className="hover:bg-slate-50 bg-white transition-colors">
+                                <td className="border-r border-b border-slate-700 p-2.5 text-center text-slate-700 font-bold">
+                                  {toBengaliDigits(globalIdx)}
+                                </td>
+                                {rowIdx === 0 && (
+                                  <td 
+                                    rowSpan={group.entries.length} 
+                                    className="border-r border-b border-slate-700 p-2.5 text-center font-bold text-slate-900 bg-white align-middle"
+                                  >
+                                    {group.ministry}
+                                  </td>
+                                )}
+                                <td className="border-r border-b border-slate-700 p-2.5 text-left px-4 font-bold text-slate-900 leading-relaxed">
+                                  {row.description}
+                                </td>
+                                <td className="border-r border-b border-slate-700 p-2.5 text-center font-bold text-slate-800">
+                                  {formattedDiary}
+                                </td>
+                                <td className="border-r border-b border-slate-700 p-2.5 text-center font-bold text-slate-800">
+                                  {formattedLetter}
+                                </td>
+                                <td className="border-r border-b border-slate-700 p-2.5 text-center font-bold text-slate-800">
+                                  {row.letterType}
+                                </td>
+                                <td className="border-r border-b border-slate-700 p-2.5 text-center font-bold text-slate-700">
+                                  {row.archiveNo || '-'}
+                                </td>
+                                <td className="border-r border-b border-slate-700 p-2.5 text-center font-bold text-slate-700">
+                                  {row.remarks || '-'}
+                                </td>
+                              </tr>
+                            );
+                          });
+                        });
+                      })()
                     )}
                   </tbody>
                 </table>
