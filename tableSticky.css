@@ -478,13 +478,6 @@ table thead tr:first-child th {
   border-top: 1px solid #334155 !important;
 }
 
-#table-bsr-receipt-return thead th:last-child,
-#table-bsr-receipt-return tbody td:last-child,
-#table-bsr-receipt-return tfoot td:last-child,
-#table-bsr-receipt-return tfoot th:last-child {
-  border-right: none !important;
-}
-
 #table-bsr-receipt-return tfoot tr:last-child td,
 #table-bsr-receipt-return tfoot tr:last-child th {
   border-bottom: none !important;

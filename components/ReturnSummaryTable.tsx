@@ -666,7 +666,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
             }
           ` }} />
 
-          <div className="w-full max-w-[98%] xl:max-w-[1450px] max-h-[94vh] flex flex-col bg-white border border-slate-300 rounded-2xl p-3 sm:p-4 space-y-3 shadow-2xl animate-in zoom-in-95 duration-300 relative overflow-hidden">
+          <div className="w-full max-w-[98%] xl:max-w-[1450px] h-[92vh] max-h-[95vh] flex flex-col bg-white border border-slate-300 rounded-2xl p-3 sm:p-4 space-y-3 shadow-2xl animate-in zoom-in-95 duration-300 relative overflow-hidden">
             
             {/* Top action controls (hidden when printing) */}
             <div className="flex items-center justify-between border-b border-slate-200 pb-3 no-print shrink-0">
