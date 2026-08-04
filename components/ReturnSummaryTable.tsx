@@ -809,27 +809,27 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                       })()
                     )}
                   </tbody>
-                  <tfoot className="sticky bottom-0 z-20 bg-slate-100 font-black text-slate-900 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]">
-                    <tr className="bg-slate-100 font-black text-slate-900 text-xs sm:text-[13px] h-[38px]">
-                      <td colSpan={2} className="border-r border-b border-slate-700 p-2 text-center bg-slate-100 font-black text-slate-900">
+                  <tfoot className="sticky bottom-0 z-20 bg-black text-white font-black shadow-[0_-2px_8px_rgba(0,0,0,0.2)]">
+                    <tr className="bg-black font-black text-white text-xs sm:text-[13px] h-[38px]">
+                      <td colSpan={2} className="border-r border-b border-slate-700 p-2 text-center bg-black font-black text-white">
                         সর্বমোট:
                       </td>
-                      <td className="border-r border-b border-slate-700 p-2 text-left px-4 bg-slate-100 font-black text-slate-900">
+                      <td className="border-r border-b border-slate-700 p-2 text-left px-4 bg-black font-black text-white">
                         মোট প্রাপ্ত বিএসআর পত্র: {toBengaliDigits(bsrReceiptEntries.length)} টি
                       </td>
-                      <td className="border-r border-b border-slate-700 p-2 text-center bg-slate-100 font-black text-slate-900">
+                      <td className="border-r border-b border-slate-700 p-2 text-center bg-black font-black text-white">
                         {toBengaliDigits(bsrReceiptEntries.length)} টি
                       </td>
-                      <td className="border-r border-b border-slate-700 p-2 text-center bg-slate-100 font-black text-slate-900">
+                      <td className="border-r border-b border-slate-700 p-2 text-center bg-black font-black text-white">
                         {toBengaliDigits(bsrReceiptEntries.length)} টি
                       </td>
-                      <td className="border-r border-b border-slate-700 p-2 text-center bg-slate-100 font-black text-slate-900">
+                      <td className="border-r border-b border-slate-700 p-2 text-center bg-black font-black text-white">
                         -
                       </td>
-                      <td className="border-r border-b border-slate-700 p-2 text-center bg-slate-100 font-black text-slate-900">
+                      <td className="border-r border-b border-slate-700 p-2 text-center bg-black font-black text-white">
                         -
                       </td>
-                      <td className="border-r border-b border-slate-700 p-2 text-center bg-slate-100 font-black text-slate-900">
+                      <td className="border-r border-b border-slate-700 p-2 text-center bg-black font-black text-white">
                         -
                       </td>
                     </tr>
