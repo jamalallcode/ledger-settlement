@@ -786,6 +786,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                         >
                           <span>চাহিদা মোতাবেক</span>
                         </button>
+
+                        {/* ৬. অডিটর পারফরম্যান্স */}
+                        {(isAdmin || moduleVisibility.admin_analytics !== false) && (
+                          <button 
+                            onClick={() => setActiveTab('admin_analytics')}
+                            className={getSubItemCls(activeTab === 'admin_analytics')}
+                          >
+                            <span>অডিটর পারফরম্যান্স</span>
+                          </button>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
