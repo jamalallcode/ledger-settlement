@@ -289,12 +289,12 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
 
   const allData = useMemo(() => [...entries, ...correspondenceEntries], [entries, correspondenceEntries]);
 
-  // Compute auditor names for the selected branch
+  // Compute auditor names for the selected branch (strictly from current active Receiver Management profiles)
   const auditorsForSelectedBranch = useMemo(() => {
     const set = new Set<string>();
 
     Object.values(receiverProfiles).forEach((profile: any) => {
-      if (profile.rawName) {
+      if (profile && profile.rawName) {
         if (selectedBranch === 'all' || isProfileInBranch(profile.para_type, selectedBranch)) {
           if (profile.rawName !== 'অনির্ধারিত' && profile.rawName !== 'অনির্ধারিত (Unassigned)') {
             set.add(profile.rawName);
@@ -303,28 +303,8 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       }
     });
 
-    correspondenceEntries.forEach(entry => {
-      const rawBranch = entry.paraType || entry.branchName;
-      if (selectedBranch === 'all' || isEntryInBranch(rawBranch, selectedBranch)) {
-        const name = (entry.receiverName || entry.presentedToName || '').trim();
-        if (name && name !== 'অনির্ধারিত' && name !== 'অনির্ধারিত (Unassigned)') {
-          set.add(name);
-        }
-      }
-    });
-
-    entries.forEach(entry => {
-      const rawBranch = entry.paraType || entry.branchName;
-      if (selectedBranch === 'all' || isEntryInBranch(rawBranch, selectedBranch)) {
-        const name = getAuditorForSettlement(entry, correspondenceEntries);
-        if (name && name !== 'অনির্ধারিত' && name !== 'অনির্ধারিত (Unassigned)') {
-          set.add(name);
-        }
-      }
-    });
-
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'bn'));
-  }, [selectedBranch, receiverProfiles, correspondenceEntries, entries]);
+  }, [selectedBranch, receiverProfiles]);
 
   // Auto-reset auditor selection if selected auditor is not in the filtered auditor list
   useEffect(() => {
@@ -396,12 +376,13 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     filteredData.forEach(entry => {
       const rawName = entry.receiverName || entry.presentedToName || 'অনির্ধারিত (Unassigned)';
       const normName = normalizeName(rawName);
-      const nameKey = rawName === 'অনির্ধারিত (Unassigned)' ? 'অনির্ধারিত (Unassigned)' : normName;
+      const profile = receiverProfiles[rawName] || receiverProfiles[normName] || {};
+      const displayName = profile.rawName || rawName;
+      const nameKey = rawName === 'অনির্ধারিত (Unassigned)' ? 'অনির্ধারিত (Unassigned)' : (profile.rawName || normName);
 
       if (!stats[nameKey]) {
-        const profile = receiverProfiles[rawName] || receiverProfiles[normName] || {};
         stats[nameKey] = { 
-          name: rawName, 
+          name: displayName, 
           letterCount: 0, 
           paraCount: 0,
           settledCount: 0,
@@ -419,12 +400,13 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     filteredSettlementEntries.forEach(entry => {
       const rawName = getAuditorForSettlement(entry, correspondenceEntries);
       const normName = normalizeName(rawName);
-      const nameKey = rawName === 'অনির্ধারিত (Unassigned)' ? 'অনির্ধারিত (Unassigned)' : normName;
+      const profile = receiverProfiles[rawName] || receiverProfiles[normName] || {};
+      const displayName = profile.rawName || rawName;
+      const nameKey = rawName === 'অনির্ধারিত (Unassigned)' ? 'অনির্ধারিত (Unassigned)' : (profile.rawName || normName);
 
       if (!stats[nameKey]) {
-        const profile = receiverProfiles[rawName] || receiverProfiles[normName] || {};
         stats[nameKey] = { 
-          name: rawName, 
+          name: displayName, 
           letterCount: 0, 
           paraCount: 0,
           settledCount: 0,
