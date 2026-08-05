@@ -454,9 +454,10 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     filteredData.forEach(entry => {
       const rawName = entry.receiverName || entry.presentedToName || 'অনির্ধারিত (Unassigned)';
       const matchedProfile = findMatchingProfile(rawName);
-      const displayName = matchedProfile ? matchedProfile.rawName : rawName;
+      const displayName = matchedProfile ? matchedProfile.rawName : normalizeName(rawName);
       const entryBranch = getCleanBranch(entry.paraType || entry.branchName || matchedProfile?.para_type);
-      const nameKey = `${displayName}_${entryBranch}`;
+      const normKey = cleanPersonKey(displayName) || normalizeName(displayName);
+      const nameKey = `${normKey}_${entryBranch}`;
 
       if (!stats[nameKey]) {
         stats[nameKey] = { 
@@ -479,9 +480,10 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     filteredSettlementEntries.forEach(entry => {
       const rawName = getAuditorForSettlement(entry, correspondenceEntries);
       const matchedProfile = findMatchingProfile(rawName);
-      const displayName = matchedProfile ? matchedProfile.rawName : rawName;
+      const displayName = matchedProfile ? matchedProfile.rawName : normalizeName(rawName);
       const entryBranch = getCleanBranch(entry.paraType || entry.branchName || matchedProfile?.para_type);
-      const nameKey = `${displayName}_${entryBranch}`;
+      const normKey = cleanPersonKey(displayName) || normalizeName(displayName);
+      const nameKey = `${normKey}_${entryBranch}`;
 
       if (!stats[nameKey]) {
         stats[nameKey] = { 
@@ -549,10 +551,10 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     const map = new Map<string, GroupedAuditorStat>();
 
     filteredAuditorStats.forEach(stat => {
-      const key = stat.name;
+      const key = cleanPersonKey(stat.name) || normalizeName(stat.name) || stat.name;
       if (!map.has(key)) {
         map.set(key, {
-          name: stat.name,
+          name: normalizeName(stat.name),
           designation: stat.designation,
           image: stat.image,
           totalLetters: 0,
