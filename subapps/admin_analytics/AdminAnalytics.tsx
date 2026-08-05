@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { toBengaliDigits, parseBengaliNumber, formatDateBN, toEnglishDigits } from '../../utils/numberUtils';
-import { getCleanLetterTypeDisplay } from '../../utils/branchUtils';
+import { getCleanLetterTypeDisplay, isSFI, isNonSFI, isAdminBranch } from '../../utils/branchUtils';
 import { 
   BarChart3, Calendar, Users, FileText, 
   ArrowRight, Search, Download, Filter,
@@ -171,6 +171,8 @@ interface AdminAnalyticsProps {
 const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondenceEntries, onBack }) => {
   const [startDate, setStartDate] = useState<string>(format(new Date(new Date().getFullYear(), 0, 1), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [selectedBranch, setSelectedBranch] = useState<string>('all');
+  const [selectedAuditor, setSelectedAuditor] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [searchQuery, setSearchQuery] = useState('');
   const [showStats, setShowStats] = useState(false);
@@ -203,19 +205,39 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       .normalize('NFC');
   };
 
-  const [receiverProfiles, setReceiverProfiles] = useState<Record<string, { designation?: string, image?: string }>>({});
+  const isEntryInBranch = (entryBranch: string | null | undefined, targetBranch: string): boolean => {
+    if (targetBranch === 'all') return true;
+    if (!entryBranch) return false;
+    if (targetBranch === 'এসএফআই') return isSFI(entryBranch);
+    if (targetBranch === 'নন এসএফআই') return isNonSFI(entryBranch);
+    if (targetBranch === 'প্রশাসন') return isAdminBranch(entryBranch);
+    return entryBranch.trim() === targetBranch.trim();
+  };
+
+  const isProfileInBranch = (profileBranch: string | null | undefined, targetBranch: string): boolean => {
+    if (targetBranch === 'all') return true;
+    if (!profileBranch) return false;
+    if (targetBranch === 'এসএফআই') return isSFI(profileBranch);
+    if (targetBranch === 'নন এসএফআই') return isNonSFI(profileBranch);
+    if (targetBranch === 'প্রশাসন') return isAdminBranch(profileBranch);
+    return profileBranch.trim() === targetBranch.trim();
+  };
+
+  const [receiverProfiles, setReceiverProfiles] = useState<Record<string, { designation?: string, image?: string, para_type?: string, rawName?: string }>>({});
 
   useEffect(() => {
     const fetchReceiverProfiles = async () => {
-      const map: Record<string, { designation?: string, image?: string }> = {};
+      const map: Record<string, { designation?: string, image?: string, para_type?: string, rawName?: string }> = {};
 
-      const addProfile = (name: string, img: string | null, desig: string | null) => {
+      const addProfile = (name: string, img: string | null, desig: string | null, paraType?: string | null) => {
         if (!name) return;
         const nameTrim = name.trim();
         const norm = normalizeName(nameTrim);
         const profileData = { 
           designation: desig || undefined, 
-          image: img || undefined 
+          image: img || undefined,
+          para_type: paraType || undefined,
+          rawName: nameTrim
         };
         map[nameTrim] = profileData;
         map[norm] = profileData;
@@ -226,10 +248,10 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
         try {
           const { data: dbReceivers } = await supabase
             .from('receivers')
-            .select('name, image, designation');
+            .select('name, image, designation, para_type');
           if (dbReceivers) {
             dbReceivers.forEach(r => {
-              addProfile(r.name, r.image, r.designation);
+              addProfile(r.name, r.image, r.designation, r.para_type);
             });
           }
         } catch (err) {
@@ -239,18 +261,18 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
 
       // 2. Fetch from local storage keys
       const localKeys = [
-        'ledger_correspondence_receivers_admin',
-        'ledger_correspondence_receivers_sfi',
-        'ledger_correspondence_receivers_nonsfi'
+        { key: 'ledger_correspondence_receivers_admin', branch: 'প্রশাসন' },
+        { key: 'ledger_correspondence_receivers_sfi', branch: 'এসএফআই' },
+        { key: 'ledger_correspondence_receivers_nonsfi', branch: 'নন এসএফআই' }
       ];
-      localKeys.forEach(key => {
+      localKeys.forEach(({ key, branch }) => {
         try {
           const saved = localStorage.getItem(key);
           if (saved) {
             const items = JSON.parse(saved);
             if (Array.isArray(items)) {
               items.forEach((item: any) => {
-                addProfile(item.name, item.image, item.designation);
+                addProfile(item.name, item.image, item.designation, item.para_type || branch);
               });
             }
           }
@@ -267,39 +289,106 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
 
   const allData = useMemo(() => [...entries, ...correspondenceEntries], [entries, correspondenceEntries]);
 
+  // Compute auditor names for the selected branch
+  const auditorsForSelectedBranch = useMemo(() => {
+    const set = new Set<string>();
+
+    Object.values(receiverProfiles).forEach((profile: any) => {
+      if (profile.rawName) {
+        if (selectedBranch === 'all' || isProfileInBranch(profile.para_type, selectedBranch)) {
+          if (profile.rawName !== 'অনির্ধারিত' && profile.rawName !== 'অনির্ধারিত (Unassigned)') {
+            set.add(profile.rawName);
+          }
+        }
+      }
+    });
+
+    correspondenceEntries.forEach(entry => {
+      const rawBranch = entry.paraType || entry.branchName;
+      if (selectedBranch === 'all' || isEntryInBranch(rawBranch, selectedBranch)) {
+        const name = (entry.receiverName || entry.presentedToName || '').trim();
+        if (name && name !== 'অনির্ধারিত' && name !== 'অনির্ধারিত (Unassigned)') {
+          set.add(name);
+        }
+      }
+    });
+
+    entries.forEach(entry => {
+      const rawBranch = entry.paraType || entry.branchName;
+      if (selectedBranch === 'all' || isEntryInBranch(rawBranch, selectedBranch)) {
+        const name = getAuditorForSettlement(entry, correspondenceEntries);
+        if (name && name !== 'অনির্ধারিত' && name !== 'অনির্ধারিত (Unassigned)') {
+          set.add(name);
+        }
+      }
+    });
+
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'bn'));
+  }, [selectedBranch, receiverProfiles, correspondenceEntries, entries]);
+
+  // Auto-reset auditor selection if selected auditor is not in the filtered auditor list
+  useEffect(() => {
+    if (selectedAuditor !== 'all') {
+      const isAvailable = auditorsForSelectedBranch.some(
+        a => a === selectedAuditor || normalizeName(a) === normalizeName(selectedAuditor)
+      );
+      if (!isAvailable) {
+        setSelectedAuditor('all');
+      }
+    }
+  }, [selectedBranch, auditorsForSelectedBranch]);
+
   const filteredData = useMemo(() => {
     return correspondenceEntries.filter(entry => {
       const entryDate = entry.diaryDate || '';
       if (!entryDate) return false;
       
+      let inDate = false;
       try {
         const parsedDate = parseISO(entryDate);
-        return isWithinInterval(parsedDate, {
+        inDate = isWithinInterval(parsedDate, {
           start: parseISO(startDate),
           end: parseISO(endDate + 'T23:59:59')
         });
       } catch (e) {
-        return entryDate >= startDate && entryDate <= endDate;
+        inDate = entryDate >= startDate && entryDate <= endDate;
       }
+      if (!inDate) return false;
+
+      if (selectedBranch !== 'all') {
+        const rawBranch = entry.paraType || entry.branchName;
+        if (!isEntryInBranch(rawBranch, selectedBranch)) return false;
+      }
+
+      return true;
     });
-  }, [correspondenceEntries, startDate, endDate]);
+  }, [correspondenceEntries, startDate, endDate, selectedBranch]);
 
   const filteredSettlementEntries = useMemo(() => {
     return (entries || []).filter(entry => {
       const entryDate = entry.issueDateISO || (entry.createdAt ? entry.createdAt.split('T')[0] : '');
       if (!entryDate) return false;
       
+      let inDate = false;
       try {
         const parsedDate = parseISO(entryDate);
-        return isWithinInterval(parsedDate, {
+        inDate = isWithinInterval(parsedDate, {
           start: parseISO(startDate),
           end: parseISO(endDate + 'T23:59:59')
         });
       } catch (e) {
-        return entryDate >= startDate && entryDate <= endDate;
+        inDate = entryDate >= startDate && entryDate <= endDate;
       }
+      if (!inDate) return false;
+
+      if (selectedBranch !== 'all') {
+        const rawBranch = entry.paraType || entry.branchName;
+        if (!isEntryInBranch(rawBranch, selectedBranch)) return false;
+      }
+
+      return true;
     });
-  }, [entries, startDate, endDate]);
+  }, [entries, startDate, endDate, selectedBranch]);
 
   const auditorStats = useMemo(() => {
     const stats: Record<string, { name: string, letterCount: number, paraCount: number, settledCount: number, designation?: string, image?: string }> = {};
@@ -354,13 +443,23 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
   }, [filteredData, filteredSettlementEntries, receiverProfiles, correspondenceEntries]);
 
   const filteredAuditorStats = useMemo(() => {
-    if (!searchQuery.trim()) return auditorStats;
-    const query = searchQuery.toLowerCase();
-    return auditorStats.filter(s => 
-      s.name.toLowerCase().includes(query) || 
-      (s.designation && s.designation.toLowerCase().includes(query))
-    );
-  }, [auditorStats, searchQuery]);
+    let result = auditorStats;
+
+    if (selectedAuditor !== 'all') {
+      const targetNorm = normalizeName(selectedAuditor);
+      result = result.filter(s => s.name === selectedAuditor || normalizeName(s.name) === targetNorm);
+    }
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(s => 
+        s.name.toLowerCase().includes(query) || 
+        (s.designation && s.designation.toLowerCase().includes(query))
+      );
+    }
+    
+    return result;
+  }, [auditorStats, selectedAuditor, searchQuery]);
 
   const totalLetters = filteredAuditorStats.reduce((sum, s) => sum + s.letterCount, 0);
   const totalParas = filteredAuditorStats.reduce((sum, s) => sum + s.paraCount, 0);
@@ -457,6 +556,40 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                   className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                 />
               </div>
+            </div>
+
+            {/* Branch Filter Dropdown */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-xl border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all cursor-pointer">
+              <Filter size={12} className="text-blue-600 pointer-events-none shrink-0" />
+              <span className="text-[10px] font-bold text-slate-400 pointer-events-none shrink-0">শাখা:</span>
+              <select 
+                value={selectedBranch}
+                onChange={(e) => setSelectedBranch(e.target.value)}
+                className="bg-transparent text-[11px] font-black text-slate-700 focus:outline-none cursor-pointer pr-1"
+              >
+                <option value="all">সকল শাখা</option>
+                <option value="এসএফআই">এসএফআই</option>
+                <option value="নন এসএফআই">নন এসএফআই</option>
+                <option value="প্রশাসন">প্রশাসন</option>
+              </select>
+            </div>
+
+            {/* Auditor Filter Dropdown */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-xl border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all cursor-pointer max-w-[210px]">
+              <Users size={12} className="text-indigo-600 pointer-events-none shrink-0" />
+              <span className="text-[10px] font-bold text-slate-400 pointer-events-none shrink-0">অডিটর:</span>
+              <select 
+                value={selectedAuditor}
+                onChange={(e) => setSelectedAuditor(e.target.value)}
+                className="bg-transparent text-[11px] font-black text-slate-700 focus:outline-none cursor-pointer pr-1 truncate w-full"
+              >
+                <option value="all">সকল অডিটর</option>
+                {auditorsForSelectedBranch.map((auditorName) => (
+                  <option key={auditorName} value={auditorName}>
+                    {auditorName}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Stats Toggle Button */}
