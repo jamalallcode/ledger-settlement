@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { SettlementEntry } from '../types';
 import { toBengaliDigits } from '../utils/numberUtils';
-import { SavedLinksModal, SavedLink } from './SavedLinksModal';
+import { SavedLinksModal, SavedLink, getSavedLinksFromStorage } from './SavedLinksModal';
 
 interface NavbarProps {
   activeTab: string;
@@ -94,21 +94,7 @@ const Navbar: React.FC<NavbarProps> = ({
   const navigate = useNavigate();
 
   const handleLinksMouseEnter = () => {
-    try {
-      const stored = localStorage.getItem('audit_app_saved_links_v1');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          setSavedLinksList(parsed);
-        } else {
-          setSavedLinksList([]);
-        }
-      } else {
-        setSavedLinksList([]);
-      }
-    } catch (e) {
-      setSavedLinksList([]);
-    }
+    setSavedLinksList(getSavedLinksFromStorage());
     setIsLinksHovered(true);
   };
 

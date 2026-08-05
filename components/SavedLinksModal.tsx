@@ -19,6 +19,37 @@ interface SavedLinksModalProps {
 
 const LOCAL_STORAGE_KEY = 'audit_app_saved_links_v1';
 
+export const DEFAULT_SAVED_LINKS: SavedLink[] = [
+  {
+    id: 'default-sas-exam',
+    title: 'SAS EXAM',
+    url: 'https://sas.cgagov.bd',
+    createdAt: 1700000000000
+  },
+  {
+    id: 'default-mega',
+    title: 'Mega',
+    url: 'https://mega.nz',
+    createdAt: 1700000001000
+  }
+];
+
+export const getSavedLinksFromStorage = (): SavedLink[] => {
+  try {
+    const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (stored !== null) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    }
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(DEFAULT_SAVED_LINKS));
+    return DEFAULT_SAVED_LINKS;
+  } catch (e) {
+    return DEFAULT_SAVED_LINKS;
+  }
+};
+
 export const SavedLinksModal: React.FC<SavedLinksModalProps> = ({ isOpen, onClose }) => {
   const [links, setLinks] = useState<SavedLink[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -37,21 +68,8 @@ export const SavedLinksModal: React.FC<SavedLinksModalProps> = ({ isOpen, onClos
 
   // Load links from localStorage on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          setLinks(parsed);
-          return;
-        }
-      }
-      setLinks([]);
-    } catch (e) {
-      console.error('Failed to load saved links', e);
-      setLinks([]);
-    }
-  }, []);
+    setLinks(getSavedLinksFromStorage());
+  }, [isOpen]);
 
   // Save links to localStorage
   const saveLinksToStorage = (updatedLinks: SavedLink[]) => {
