@@ -528,6 +528,59 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     return result;
   }, [auditorStats, selectedAuditor, searchQuery]);
 
+  interface AuditorBranchStat {
+    branch: string;
+    letterCount: number;
+    paraCount: number;
+    settledCount: number;
+  }
+
+  interface GroupedAuditorStat {
+    name: string;
+    designation?: string;
+    image?: string;
+    totalLetters: number;
+    totalParas: number;
+    totalSettled: number;
+    branches: AuditorBranchStat[];
+  }
+
+  const groupedAuditorStats = useMemo(() => {
+    const map = new Map<string, GroupedAuditorStat>();
+
+    filteredAuditorStats.forEach(stat => {
+      const key = stat.name;
+      if (!map.has(key)) {
+        map.set(key, {
+          name: stat.name,
+          designation: stat.designation,
+          image: stat.image,
+          totalLetters: 0,
+          totalParas: 0,
+          totalSettled: 0,
+          branches: []
+        });
+      }
+
+      const group = map.get(key)!;
+      if (!group.designation && stat.designation) group.designation = stat.designation;
+      if (!group.image && stat.image) group.image = stat.image;
+
+      group.totalLetters += stat.letterCount;
+      group.totalParas += stat.paraCount;
+      group.totalSettled += stat.settledCount;
+
+      group.branches.push({
+        branch: stat.branch || '—',
+        letterCount: stat.letterCount,
+        paraCount: stat.paraCount,
+        settledCount: stat.settledCount
+      });
+    });
+
+    return Array.from(map.values()).sort((a, b) => b.totalLetters - a.totalLetters);
+  }, [filteredAuditorStats]);
+
   const totalLetters = filteredAuditorStats.reduce((sum, s) => sum + s.letterCount, 0);
   const totalParas = filteredAuditorStats.reduce((sum, s) => sum + s.paraCount, 0);
 
@@ -832,72 +885,86 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {filteredAuditorStats.map((stat, idx) => (
-                    <tr key={idx} className="hover:bg-blue-50/30 transition-colors group">
-                      <td className="px-4 py-3 border border-slate-200">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm">
-                            {stat.image ? (
-                              <img src={stat.image} alt={stat.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                            ) : (
-                              <Users size={20} className="text-slate-400 group-hover:text-white" />
-                            )}
-                          </div>
-                          <div>
-                            <span className="text-sm font-black text-slate-700 block">{stat.name}</span>
-                            {stat.designation && (
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{stat.designation}</span>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center border border-slate-200">
-                        <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold border border-slate-200">
-                          {stat.branch || '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center border border-slate-200">
-                        <button 
-                          onClick={() => handleShowDetails(stat.name, 'letters', stat.branch)}
-                          className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-sm font-black hover:bg-blue-100 transition-colors cursor-pointer"
-                        >
-                          {toBengaliDigits(stat.letterCount.toString())}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3 text-center border border-slate-200">
-                        <button 
-                          onClick={() => handleShowDetails(stat.name, 'paragraphs', stat.branch)}
-                          className="px-4 py-1.5 bg-purple-50 text-purple-600 rounded-full text-sm font-black hover:bg-purple-100 transition-colors cursor-pointer"
-                        >
-                          {toBengaliDigits(stat.paraCount.toString())}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3 text-center border border-slate-200">
-                        <button 
-                          onClick={() => handleShowDetails(stat.name, 'settled_paragraphs', stat.branch)}
-                          className="px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-sm font-black hover:bg-emerald-100 transition-colors cursor-pointer"
-                        >
-                          {toBengaliDigits(stat.settledCount.toString())}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3 text-center font-black text-slate-700 border border-slate-200">
-                        <span className="px-3 py-1.5 bg-slate-50 text-slate-700 rounded-full text-xs font-black border border-slate-100">
-                          {toBengaliDigits(getPercentage(stat.settledCount, stat.paraCount).toString())}%
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right border border-slate-200">
-                        <button 
-                          onClick={() => handleShowDetails(stat.name, 'settled_paragraphs', stat.branch)}
-                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all cursor-pointer active:scale-95"
-                          title="বিস্তারিত বিবরণ"
-                        >
-                          <ArrowRight size={18} />
-                        </button>
-                      </td>
-                    </tr>
+                <tbody className="divide-y divide-slate-200 bg-white">
+                  {groupedAuditorStats.map((group, groupIdx) => (
+                    <React.Fragment key={groupIdx}>
+                      {group.branches.map((bStat, bIdx) => (
+                        <tr key={`${groupIdx}_${bIdx}`} className="hover:bg-blue-50/30 transition-colors group">
+                          {bIdx === 0 && (
+                            <td 
+                              rowSpan={group.branches.length} 
+                              className="px-4 py-3 border border-slate-200 align-middle bg-white group-hover:bg-blue-50/10"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm shrink-0">
+                                  {group.image ? (
+                                    <img src={group.image} alt={group.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                  ) : (
+                                    <Users size={20} className="text-slate-400 group-hover:text-white" />
+                                  )}
+                                </div>
+                                <div>
+                                  <span className="text-sm font-black text-slate-700 block">{group.name}</span>
+                                  {group.designation && (
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{group.designation}</span>
+                                  )}
+                                  {group.branches.length > 1 && (
+                                    <span className="inline-block mt-1 text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+                                      মোট {toBengaliDigits(group.branches.length.toString())} শাখায় তথ্য
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          )}
+                          <td className="px-4 py-3 text-center border border-slate-200">
+                            <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold border border-slate-200">
+                              {bStat.branch}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-center border border-slate-200">
+                            <button 
+                              onClick={() => handleShowDetails(group.name, 'letters', bStat.branch)}
+                              className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-sm font-black hover:bg-blue-100 transition-colors cursor-pointer"
+                            >
+                              {toBengaliDigits(bStat.letterCount.toString())}
+                            </button>
+                          </td>
+                          <td className="px-4 py-3 text-center border border-slate-200">
+                            <button 
+                              onClick={() => handleShowDetails(group.name, 'paragraphs', bStat.branch)}
+                              className="px-4 py-1.5 bg-purple-50 text-purple-600 rounded-full text-sm font-black hover:bg-purple-100 transition-colors cursor-pointer"
+                            >
+                              {toBengaliDigits(bStat.paraCount.toString())}
+                            </button>
+                          </td>
+                          <td className="px-4 py-3 text-center border border-slate-200">
+                            <button 
+                              onClick={() => handleShowDetails(group.name, 'settled_paragraphs', bStat.branch)}
+                              className="px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-sm font-black hover:bg-emerald-100 transition-colors cursor-pointer"
+                            >
+                              {toBengaliDigits(bStat.settledCount.toString())}
+                            </button>
+                          </td>
+                          <td className="px-4 py-3 text-center font-black text-slate-700 border border-slate-200">
+                            <span className="px-3 py-1.5 bg-slate-50 text-slate-700 rounded-full text-xs font-black border border-slate-100">
+                              {toBengaliDigits(getPercentage(bStat.settledCount, bStat.paraCount).toString())}%
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right border border-slate-200">
+                            <button 
+                              onClick={() => handleShowDetails(group.name, 'settled_paragraphs', bStat.branch)}
+                              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all cursor-pointer active:scale-95"
+                              title="বিস্তারিত বিবরণ"
+                            >
+                              <ArrowRight size={18} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
                   ))}
-                  {filteredAuditorStats.length === 0 && (
+                  {groupedAuditorStats.length === 0 && (
                     <tr>
                       <td colSpan={7} className="px-8 py-20 text-center border border-slate-200">
                         <div className="flex flex-col items-center gap-4">
@@ -914,59 +981,66 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredAuditorStats.map((stat, idx) => (
-                <div key={idx} className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-xl transition-all duration-500 group">
+              {groupedAuditorStats.map((group, groupIdx) => (
+                <div key={groupIdx} className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-xl transition-all duration-500 group">
                   <div className="flex items-center justify-between mb-6">
                     <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm">
-                      {stat.image ? (
-                        <img src={stat.image} alt={stat.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      {group.image ? (
+                        <img src={group.image} alt={group.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
                         <Users size={28} className="text-slate-300 group-hover:text-white" />
                       )}
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">র‍্যাঙ্ক</span>
-                      <span className="text-xl font-black text-blue-600">#{toBengaliDigits((idx + 1).toString())}</span>
+                      <span className="text-xl font-black text-blue-600">#{toBengaliDigits((groupIdx + 1).toString())}</span>
                     </div>
                   </div>
                   
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     <div>
-                      <h4 className="text-lg font-black text-slate-800 truncate">{stat.name}</h4>
-                      {stat.designation && (
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{stat.designation}</p>
+                      <h4 className="text-lg font-black text-slate-800 truncate">{group.name}</h4>
+                      {group.designation && (
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{group.designation}</p>
                       )}
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
-                      <button 
-                        onClick={() => handleShowDetails(stat.name, 'letters')}
-                        className="p-3 bg-white rounded-2xl border border-slate-100 hover:border-blue-300 transition-all text-left cursor-pointer"
-                      >
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">চিঠি</p>
-                        <p className="text-xl font-black text-slate-800">{toBengaliDigits(stat.letterCount.toString())}</p>
-                      </button>
-                      <button 
-                        onClick={() => handleShowDetails(stat.name, 'paragraphs')}
-                        className="p-3 bg-white rounded-2xl border border-slate-100 hover:border-purple-300 transition-all text-left cursor-pointer"
-                      >
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">অনুচ্ছেদ</p>
-                        <p className="text-xl font-black text-slate-800">{toBengaliDigits(stat.paraCount.toString())}</p>
-                      </button>
-                      <button 
-                        onClick={() => handleShowDetails(stat.name, 'settled_paragraphs')}
-                        className="p-3 bg-white rounded-2xl border border-slate-100 hover:border-emerald-300 transition-all text-left cursor-pointer"
-                      >
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">নিষ্পন্নকৃত</p>
-                        <p className="text-xl font-black text-emerald-600">{toBengaliDigits(stat.settledCount.toString())}</p>
-                      </button>
-                      <div 
-                        className="p-3 bg-white rounded-2xl border border-slate-100 text-left"
-                      >
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">হার (%)</p>
-                        <p className="text-xl font-black text-emerald-600">{toBengaliDigits(getPercentage(stat.settledCount, stat.paraCount).toString())}%</p>
+                    {group.branches.map((bStat, bIdx) => (
+                      <div key={bIdx} className="space-y-2 pt-3 border-t border-slate-200/60 first:border-t-0 first:pt-0">
+                        <div className="flex items-center justify-between">
+                          <span className="px-2.5 py-0.5 bg-slate-200/80 text-slate-700 rounded-full text-[11px] font-bold">
+                            {bStat.branch}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <button 
+                            onClick={() => handleShowDetails(group.name, 'letters', bStat.branch)}
+                            className="p-3 bg-white rounded-2xl border border-slate-100 hover:border-blue-300 transition-all text-left cursor-pointer"
+                          >
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">চিঠি</p>
+                            <p className="text-xl font-black text-slate-800">{toBengaliDigits(bStat.letterCount.toString())}</p>
+                          </button>
+                          <button 
+                            onClick={() => handleShowDetails(group.name, 'paragraphs', bStat.branch)}
+                            className="p-3 bg-white rounded-2xl border border-slate-100 hover:border-purple-300 transition-all text-left cursor-pointer"
+                          >
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">অনুচ্ছেদ</p>
+                            <p className="text-xl font-black text-slate-800">{toBengaliDigits(bStat.paraCount.toString())}</p>
+                          </button>
+                          <button 
+                            onClick={() => handleShowDetails(group.name, 'settled_paragraphs', bStat.branch)}
+                            className="p-3 bg-white rounded-2xl border border-slate-100 hover:border-emerald-300 transition-all text-left cursor-pointer"
+                          >
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">নিষ্পন্নকৃত</p>
+                            <p className="text-xl font-black text-emerald-600">{toBengaliDigits(bStat.settledCount.toString())}</p>
+                          </button>
+                          <div className="p-3 bg-white rounded-2xl border border-slate-100 text-left">
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">হার (%)</p>
+                            <p className="text-xl font-black text-emerald-600">{toBengaliDigits(getPercentage(bStat.settledCount, bStat.paraCount).toString())}%</p>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               ))}
