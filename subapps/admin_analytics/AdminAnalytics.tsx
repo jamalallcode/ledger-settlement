@@ -207,13 +207,21 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
 
   const cleanPersonKey = (name: string): string => {
     if (!name) return '';
-    return name
+    let cleaned = name
       .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
-      .trim()
-      .replace(/^(মো|মোঃ|মুহাম্মদ|মুহা|ড|ডঃ|জনাব|বেগম)\.?\s+/i, '')
+      .trim();
+
+    cleaned = cleaned
+      .replace(/^(জনাব|বেগম|ড|ডঃ|ড\.|মুহাম্মদ|মুহা)\b[:\.\s]*/i, '')
+      .replace(/^(মো|মোঃ|মো\.|মো:)[:\.\s]*/i, '')
+      .replace(/^[:\.\s\-\_\(\)]+/, '')
       .replace(/\s+(খাতুন|বেগম|খানম|চৌধুরী)$/i, '')
+      .replace(/[:\.\(\)]/g, '')
       .replace(/\s+/g, ' ')
+      .trim()
       .normalize('NFC');
+
+    return cleaned || name.trim().normalize('NFC');
   };
 
   const getCleanBranch = (paraType: string | null | undefined): string => {
@@ -444,12 +452,16 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       const norm = normalizeName(rawName);
       const cKey = cleanPersonKey(rawName);
 
-      const candidates = activeReceiverProfiles.filter(p => 
-        p.rawName === rawName ||
-        normalizeName(p.rawName) === norm ||
-        p.cleanKey === cKey ||
-        (p.cleanKey && cKey && (cKey.includes(p.cleanKey) || p.cleanKey.includes(cKey)))
-      );
+      const candidates = activeReceiverProfiles.filter(p => {
+        const pNorm = normalizeName(p.rawName);
+        const pClean = p.cleanKey || cleanPersonKey(p.rawName);
+        return (
+          p.rawName === rawName ||
+          pNorm === norm ||
+          pClean === cKey ||
+          (pClean && cKey && (cKey.includes(pClean) || pClean.includes(cKey)))
+        );
+      });
 
       if (candidates.length === 0) return undefined;
 
@@ -465,7 +477,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     filteredData.forEach(entry => {
       const rawName = entry.receiverName || entry.presentedToName || 'অনির্ধারিত (Unassigned)';
       const matchedProfile = findMatchingProfile(rawName);
-      const displayName = matchedProfile ? matchedProfile.rawName : normalizeName(rawName);
+      const displayName = matchedProfile ? matchedProfile.rawName : rawName;
       const entryBranch = getCleanBranch(entry.paraType || entry.branchName || matchedProfile?.para_type);
       const normKey = cleanPersonKey(displayName) || normalizeName(displayName);
       const nameKey = `${normKey}_${entryBranch}`;
@@ -480,6 +492,13 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           image: matchedProfile?.image,
           branch: entryBranch
         };
+      } else {
+        if (!stats[nameKey].image && matchedProfile?.image) {
+          stats[nameKey].image = matchedProfile.image;
+        }
+        if (!stats[nameKey].designation && matchedProfile?.designation) {
+          stats[nameKey].designation = matchedProfile.designation;
+        }
       }
       
       stats[nameKey].letterCount += 1;
@@ -491,7 +510,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     filteredSettlementEntries.forEach(entry => {
       const rawName = getAuditorForSettlement(entry, correspondenceEntries);
       const matchedProfile = findMatchingProfile(rawName);
-      const displayName = matchedProfile ? matchedProfile.rawName : normalizeName(rawName);
+      const displayName = matchedProfile ? matchedProfile.rawName : rawName;
       const entryBranch = getCleanBranch(entry.paraType || entry.branchName || matchedProfile?.para_type);
       const normKey = cleanPersonKey(displayName) || normalizeName(displayName);
       const nameKey = `${normKey}_${entryBranch}`;
@@ -506,6 +525,13 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           image: matchedProfile?.image,
           branch: entryBranch
         };
+      } else {
+        if (!stats[nameKey].image && matchedProfile?.image) {
+          stats[nameKey].image = matchedProfile.image;
+        }
+        if (!stats[nameKey].designation && matchedProfile?.designation) {
+          stats[nameKey].designation = matchedProfile.designation;
+        }
       }
 
       const rowSettledCount = entry.paragraphs?.filter((p: any) => p.status === 'পূর্ণাঙ্গ').length 
@@ -591,8 +617,29 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       });
     });
 
+    map.forEach((group) => {
+      if (!group.image || !group.designation) {
+        const cKey = cleanPersonKey(group.name);
+        const norm = normalizeName(group.name);
+        const p = activeReceiverProfiles.find(ap => {
+          const apNorm = normalizeName(ap.rawName);
+          const apClean = ap.cleanKey || cleanPersonKey(ap.rawName);
+          return (
+            ap.rawName === group.name ||
+            apNorm === norm ||
+            apClean === cKey ||
+            (apClean && cKey && (cKey.includes(apClean) || apClean.includes(cKey)))
+          );
+        });
+        if (p) {
+          if (!group.image && p.image) group.image = p.image;
+          if (!group.designation && p.designation) group.designation = p.designation;
+        }
+      }
+    });
+
     return Array.from(map.values()).sort((a, b) => b.totalLetters - a.totalLetters);
-  }, [filteredAuditorStats]);
+  }, [filteredAuditorStats, activeReceiverProfiles]);
 
   const totalLetters = filteredAuditorStats.reduce((sum, s) => sum + s.letterCount, 0);
   const totalParas = filteredAuditorStats.reduce((sum, s) => sum + s.paraCount, 0);
