@@ -425,7 +425,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
   }, [entries, startDate, endDate, selectedBranch]);
 
   const auditorStats = useMemo(() => {
-    const stats: Record<string, { name: string, letterCount: number, paraCount: number, settledCount: number, designation?: string, image?: string }> = {};
+    const stats: Record<string, { name: string, letterCount: number, paraCount: number, settledCount: number, designation?: string, image?: string, branch?: string }> = {};
 
     const findMatchingProfile = (rawName: string) => {
       if (!rawName || rawName === 'অনির্ধারিত' || rawName === 'অনির্ধারিত (Unassigned)') return undefined;
@@ -464,7 +464,8 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           paraCount: 0,
           settledCount: 0,
           designation: matchedProfile?.designation,
-          image: matchedProfile?.image
+          image: matchedProfile?.image,
+          branch: matchedProfile?.para_type || getCleanBranch(entry.paraType || entry.branchName)
         };
       }
       
@@ -487,7 +488,8 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           paraCount: 0,
           settledCount: 0,
           designation: matchedProfile?.designation,
-          image: matchedProfile?.image
+          image: matchedProfile?.image,
+          branch: matchedProfile?.para_type || getCleanBranch(entry.paraType || entry.branchName)
         };
       }
 
@@ -773,37 +775,43 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50">
                     <th 
-                      style={{ width: '21.67%' }}
+                      style={{ width: '22%' }}
                       className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest border border-slate-200 text-left"
                     >
                       অডিটরের নাম
                     </th>
                     <th 
-                      style={{ width: '15.67%' }}
+                      style={{ width: '13%' }}
+                      className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200"
+                    >
+                      শাখা
+                    </th>
+                    <th 
+                      style={{ width: '13%' }}
                       className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200"
                     >
                       মোট চিঠি
                     </th>
                     <th 
-                      style={{ width: '15.67%' }}
+                      style={{ width: '13%' }}
                       className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200"
                     >
                       মোট অনুচ্ছেদ
                     </th>
                     <th 
-                      style={{ width: '15.67%' }}
+                      style={{ width: '13%' }}
                       className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200"
                     >
                       নিষ্পন্নকৃত অনুচ্ছেদ
                     </th>
                     <th 
-                      style={{ width: '15.67%' }}
+                      style={{ width: '14%' }}
                       className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center border border-slate-200"
                     >
                       নিষ্পত্তির হার (%)
                     </th>
                     <th 
-                      style={{ width: '15.67%' }}
+                      style={{ width: '12%' }}
                       className="bg-slate-50 px-4 py-3 text-[11px] font-black text-slate-600 uppercase tracking-widest text-right border border-slate-200"
                     >
                       অ্যাকশন
@@ -829,6 +837,11 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                             )}
                           </div>
                         </div>
+                      </td>
+                      <td className="px-4 py-3 text-center border border-slate-200">
+                        <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold border border-slate-200">
+                          {stat.branch || '—'}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-center border border-slate-200">
                         <button 
@@ -872,7 +885,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                   ))}
                   {filteredAuditorStats.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-8 py-20 text-center border border-slate-200">
+                      <td colSpan={7} className="px-8 py-20 text-center border border-slate-200">
                         <div className="flex flex-col items-center gap-4">
                           <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-200">
                             <Search size={40} />
