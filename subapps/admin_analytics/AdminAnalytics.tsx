@@ -455,7 +455,8 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       const rawName = entry.receiverName || entry.presentedToName || 'অনির্ধারিত (Unassigned)';
       const matchedProfile = findMatchingProfile(rawName);
       const displayName = matchedProfile ? matchedProfile.rawName : rawName;
-      const nameKey = displayName;
+      const entryBranch = getCleanBranch(entry.paraType || entry.branchName || matchedProfile?.para_type);
+      const nameKey = `${displayName}_${entryBranch}`;
 
       if (!stats[nameKey]) {
         stats[nameKey] = { 
@@ -465,7 +466,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           settledCount: 0,
           designation: matchedProfile?.designation,
           image: matchedProfile?.image,
-          branch: matchedProfile?.para_type || getCleanBranch(entry.paraType || entry.branchName)
+          branch: entryBranch
         };
       }
       
@@ -479,7 +480,8 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       const rawName = getAuditorForSettlement(entry, correspondenceEntries);
       const matchedProfile = findMatchingProfile(rawName);
       const displayName = matchedProfile ? matchedProfile.rawName : rawName;
-      const nameKey = displayName;
+      const entryBranch = getCleanBranch(entry.paraType || entry.branchName || matchedProfile?.para_type);
+      const nameKey = `${displayName}_${entryBranch}`;
 
       if (!stats[nameKey]) {
         stats[nameKey] = { 
@@ -489,7 +491,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           settledCount: 0,
           designation: matchedProfile?.designation,
           image: matchedProfile?.image,
-          branch: matchedProfile?.para_type || getCleanBranch(entry.paraType || entry.branchName)
+          branch: entryBranch
         };
       }
 
@@ -534,19 +536,31 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     return Math.round((settled / total) * 100 * 10) / 10;
   };
 
-  const handleShowDetails = (auditorName: string, type: 'letters' | 'paragraphs' | 'settled_paragraphs') => {
+  const handleShowDetails = (auditorName: string, type: 'letters' | 'paragraphs' | 'settled_paragraphs', branchName?: string) => {
     let data: any[] = [];
     if (type === 'settled_paragraphs') {
       data = filteredSettlementEntries.filter(entry => {
         const rawName = getAuditorForSettlement(entry, correspondenceEntries);
         const normName = normalizeName(rawName);
-        return rawName === auditorName || normName === normalizeName(auditorName);
+        const matchesAuditor = rawName === auditorName || normName === normalizeName(auditorName) || cleanPersonKey(rawName) === cleanPersonKey(auditorName);
+        if (!matchesAuditor) return false;
+        if (branchName) {
+          const eBranch = getCleanBranch(entry.paraType || entry.branchName);
+          return eBranch === branchName;
+        }
+        return true;
       });
     } else {
       data = filteredData.filter(entry => {
         const rawName = entry.receiverName || entry.presentedToName || 'অনির্ধারিত (Unassigned)';
         const normName = normalizeName(rawName);
-        return rawName === auditorName || normName === normalizeName(auditorName);
+        const matchesAuditor = rawName === auditorName || normName === normalizeName(auditorName) || cleanPersonKey(rawName) === cleanPersonKey(auditorName);
+        if (!matchesAuditor) return false;
+        if (branchName) {
+          const eBranch = getCleanBranch(entry.paraType || entry.branchName);
+          return eBranch === branchName;
+        }
+        return true;
       });
     }
     setSelectedAuditorDetails({ name: auditorName, type, data });
@@ -845,7 +859,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                       </td>
                       <td className="px-4 py-3 text-center border border-slate-200">
                         <button 
-                          onClick={() => handleShowDetails(stat.name, 'letters')}
+                          onClick={() => handleShowDetails(stat.name, 'letters', stat.branch)}
                           className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-sm font-black hover:bg-blue-100 transition-colors cursor-pointer"
                         >
                           {toBengaliDigits(stat.letterCount.toString())}
@@ -853,7 +867,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                       </td>
                       <td className="px-4 py-3 text-center border border-slate-200">
                         <button 
-                          onClick={() => handleShowDetails(stat.name, 'paragraphs')}
+                          onClick={() => handleShowDetails(stat.name, 'paragraphs', stat.branch)}
                           className="px-4 py-1.5 bg-purple-50 text-purple-600 rounded-full text-sm font-black hover:bg-purple-100 transition-colors cursor-pointer"
                         >
                           {toBengaliDigits(stat.paraCount.toString())}
@@ -861,20 +875,20 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                       </td>
                       <td className="px-4 py-3 text-center border border-slate-200">
                         <button 
-                          onClick={() => handleShowDetails(stat.name, 'settled_paragraphs')}
+                          onClick={() => handleShowDetails(stat.name, 'settled_paragraphs', stat.branch)}
                           className="px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-sm font-black hover:bg-emerald-100 transition-colors cursor-pointer"
                         >
                           {toBengaliDigits(stat.settledCount.toString())}
                         </button>
                       </td>
                       <td className="px-4 py-3 text-center font-black text-slate-700 border border-slate-200">
-                        <span className="px-3 py-1.5 bg-slate-50 text-slate-700 rounded-full text-sm font-black border border-slate-100">
+                        <span className="px-3 py-1.5 bg-slate-50 text-slate-700 rounded-full text-xs font-black border border-slate-100">
                           {toBengaliDigits(getPercentage(stat.settledCount, stat.paraCount).toString())}%
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right border border-slate-200">
                         <button 
-                          onClick={() => handleShowDetails(stat.name, 'settled_paragraphs')}
+                          onClick={() => handleShowDetails(stat.name, 'settled_paragraphs', stat.branch)}
                           className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all cursor-pointer active:scale-95"
                           title="বিস্তারিত বিবরণ"
                         >
