@@ -259,8 +259,8 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
 
       const processProfile = (
         name: string, 
-        img: string | null, 
-        desig: string | null, 
+        img: string | null | undefined, 
+        desig: string | null | undefined, 
         paraType?: string | null,
         isActive?: boolean | null,
         transferredTo?: string | null
@@ -268,10 +268,6 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
         if (!name || !name.trim()) return;
         const nameTrim = name.trim();
         if (nameTrim === 'অনির্ধারিত' || nameTrim === 'অনির্ধারিত (Unassigned)') return;
-
-        // Skip inactive or transferred receivers
-        if (isActive === false) return;
-        if (transferredTo && transferredTo.trim() !== '') return;
 
         const cKey = cleanPersonKey(nameTrim);
         const branchClean = getCleanBranch(paraType);
@@ -282,7 +278,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           designation: desig || undefined,
           image: img || undefined,
           para_type: branchClean,
-          is_active: true,
+          is_active: isActive !== false,
           cleanKey: cKey
         };
 
@@ -290,9 +286,13 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           seenKeys.set(branchKey, profileData);
         } else {
           const existing = seenKeys.get(branchKey)!;
-          // Prefer profile with image/designation, or update rawName if cleaner
+          // Prefer profile with image/designation, or update image if cleaner
           if ((!existing.image && profileData.image) || (!existing.designation && profileData.designation)) {
-            seenKeys.set(branchKey, { ...existing, ...profileData });
+            seenKeys.set(branchKey, { 
+              ...existing, 
+              image: profileData.image || existing.image,
+              designation: profileData.designation || existing.designation
+            });
           }
         }
       };
@@ -335,11 +335,23 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
         }
       });
 
+      // 3. Harvest receiver images/designations directly from entries & correspondenceEntries
+      const allEntriesCombined = [...(entries || []), ...(correspondenceEntries || [])];
+      allEntriesCombined.forEach((item: any) => {
+        if (!item) return;
+        const name = item.receiverName || item.presentedToName;
+        const img = item.receiverImage || item.image || item.presentedToImage || item.auditorImage;
+        const desig = item.receiverDesignation || item.designation || item.presentedToDesignation;
+        if (name) {
+          processProfile(name, img, desig, item.paraType || item.branchName);
+        }
+      });
+
       setActiveReceiverProfiles(Array.from(seenKeys.values()));
     };
 
     fetchReceiverProfiles();
-  }, [correspondenceEntries]);
+  }, [correspondenceEntries, entries]);
 
   const allData = useMemo(() => [...entries, ...correspondenceEntries], [entries, correspondenceEntries]);
 
@@ -432,23 +444,22 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       const norm = normalizeName(rawName);
       const cKey = cleanPersonKey(rawName);
 
-      // 1. Exact rawName
-      let match = activeReceiverProfiles.find(p => p.rawName === rawName);
-      if (match) return match;
+      const candidates = activeReceiverProfiles.filter(p => 
+        p.rawName === rawName ||
+        normalizeName(p.rawName) === norm ||
+        p.cleanKey === cKey ||
+        (p.cleanKey && cKey && (cKey.includes(p.cleanKey) || p.cleanKey.includes(cKey)))
+      );
 
-      // 2. Normalized name
-      match = activeReceiverProfiles.find(p => normalizeName(p.rawName) === norm);
-      if (match) return match;
+      if (candidates.length === 0) return undefined;
 
-      // 3. Clean key
-      match = activeReceiverProfiles.find(p => p.cleanKey === cKey);
-      if (match) return match;
+      const bestWithImage = candidates.find(p => p.image);
+      if (bestWithImage) return bestWithImage;
 
-      // 4. Substring / containment match
-      match = activeReceiverProfiles.find(p => p.cleanKey && (cKey.includes(p.cleanKey) || p.cleanKey.includes(cKey)));
-      if (match) return match;
+      const bestWithDesig = candidates.find(p => p.designation);
+      if (bestWithDesig) return bestWithDesig;
 
-      return undefined;
+      return candidates[0];
     };
 
     filteredData.forEach(entry => {
@@ -554,7 +565,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       const key = cleanPersonKey(stat.name) || normalizeName(stat.name) || stat.name;
       if (!map.has(key)) {
         map.set(key, {
-          name: normalizeName(stat.name),
+          name: stat.name,
           designation: stat.designation,
           image: stat.image,
           totalLetters: 0,
