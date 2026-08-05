@@ -7,11 +7,11 @@ import {
   Calendar, ShieldAlert, Filter, Printer, Menu, Fingerprint, 
   Bell, Check, XCircle, UserCheck, BellRing, ArrowRight, Library, Plus,
   Mail, ClipboardList, AlertTriangle, Sun, Moon, Link2, Send,
-  ChevronLeft
+  ChevronLeft, ExternalLink
 } from 'lucide-react';
 import { SettlementEntry } from '../types';
 import { toBengaliDigits } from '../utils/numberUtils';
-import { SavedLinksModal } from './SavedLinksModal';
+import { SavedLinksModal, SavedLink } from './SavedLinksModal';
 
 interface NavbarProps {
   activeTab: string;
@@ -84,12 +84,33 @@ const Navbar: React.FC<NavbarProps> = ({
   const [showEntryDropdown, setShowEntryDropdown] = useState(false);
   const [showRegisterDropdown, setShowRegisterDropdown] = useState(false);
   const [showLinksModal, setShowLinksModal] = useState(false);
+  const [isLinksHovered, setIsLinksHovered] = useState(false);
+  const [savedLinksList, setSavedLinksList] = useState<SavedLink[]>([]);
   
   const toolsRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const entryDropdownRef = useRef<HTMLDivElement>(null);
   const registerDropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  const handleLinksMouseEnter = () => {
+    try {
+      const stored = localStorage.getItem('audit_app_saved_links_v1');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setSavedLinksList(parsed);
+        } else {
+          setSavedLinksList([]);
+        }
+      } else {
+        setSavedLinksList([]);
+      }
+    } catch (e) {
+      setSavedLinksList([]);
+    }
+    setIsLinksHovered(true);
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -216,6 +237,65 @@ const Navbar: React.FC<NavbarProps> = ({
             <div className="flex items-center gap-1">
               {customNavButtons.slice(1).map((btn) => {
                 const IconComp = btn.icon;
+
+                if (btn.id === 'links') {
+                  return (
+                    <div 
+                      key={btn.id}
+                      className="relative"
+                      onMouseEnter={handleLinksMouseEnter}
+                      onMouseLeave={() => setIsLinksHovered(false)}
+                    >
+                      <button
+                        onClick={btn.onClick}
+                        className={`px-3 py-1 text-[11px] font-bold rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1 border border-transparent
+                          ${btn.isActive 
+                            ? `${btn.activeClass}` 
+                            : 'text-zinc-400 hover:text-white hover:bg-zinc-800/40'}`}
+                      >
+                        <IconComp size={11} className={`stroke-[2.5] ${btn.isActive ? '' : 'text-zinc-500'}`} />
+                        <span>{btn.label}</span>
+                        <ChevronDown size={10} className={`transition-transform duration-200 ${isLinksHovered ? 'rotate-180 text-sky-400' : 'text-zinc-500'}`} />
+                      </button>
+
+                      {/* Hover Dropdown showing link names */}
+                      {isLinksHovered && (
+                        <div className="absolute top-full right-0 pt-[10px] z-[10000]">
+                          <div className="w-56 bg-slate-900 border border-slate-800 rounded-none shadow-2xl p-2 animate-in fade-in slide-in-from-top-1 duration-150">
+                            <div className="max-h-60 overflow-y-auto space-y-0.5 custom-scrollbar">
+                              {savedLinksList.length === 0 ? (
+                                <div className="px-3 py-3 text-center text-xs text-slate-400 font-medium">
+                                  কোনো সেভ করা লিংক নেই
+                                </div>
+                              ) : (
+                                savedLinksList.map((link) => (
+                                  <a
+                                    key={link.id}
+                                    href={link.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setIsLinksHovered(false);
+                                    }}
+                                    className="flex items-center justify-between px-3 py-2 text-xs font-bold text-slate-200 hover:text-white hover:bg-slate-800/90 rounded-none transition-all group/item"
+                                  >
+                                    <div className="flex items-center gap-2 truncate pr-2">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 group-hover/item:scale-125 transition-transform shrink-0" />
+                                      <span className="truncate">{link.title}</span>
+                                    </div>
+                                    <ExternalLink size={12} className="text-slate-500 group-hover/item:text-sky-400 shrink-0 transition-colors" />
+                                  </a>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
                 return (
                   <button
                     key={btn.id}
