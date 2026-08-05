@@ -662,8 +662,22 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             const eMin = robustNormalize(e.ministryName || '');
             if (eMin !== normMinistry || !isEntityMatch(e.entityName, entityName)) return false;
             
-            const entryDateRaw = e.issueDateISO || "";
-            const entryDate = entryDateRaw.split("T")[0];
+            const rawDate = selectedReportType?.includes('অনলাইন প্রাপ্তি')
+              ? (e.diaryDate || e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : ''))
+              : (e.issueDateISO || '');
+            
+            if (!rawDate) return false;
+            let entryDate = '';
+            const clean = toEnglishDigits(rawDate).trim();
+            if (clean.includes('/')) {
+              const p = clean.split('/');
+              if (p.length === 3) {
+                entryDate = `${p[2].padStart(4, '20')}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+              }
+            } else {
+              entryDate = clean.split('T')[0].split(' ')[0];
+            }
+
             const dateMatch =
               entryDate !== "" &&
               entryDate >= cycleStartStr &&
@@ -896,8 +910,22 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             const eMin = robustNormalize(e.ministryName || '');
             if (eMin !== normMinistry || !isEntityMatch(e.entityName, entityName)) return false;
             
-            const entryDateRaw = e.issueDateISO || "";
-            const entryDate = entryDateRaw.split("T")[0];
+            const rawDate = targetReportType?.includes('অনলাইন প্রাপ্তি')
+              ? (e.diaryDate || e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : ''))
+              : (e.issueDateISO || '');
+            
+            if (!rawDate) return false;
+            let entryDate = '';
+            const clean = toEnglishDigits(rawDate).trim();
+            if (clean.includes('/')) {
+              const p = clean.split('/');
+              if (p.length === 3) {
+                entryDate = `${p[2].padStart(4, '20')}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+              }
+            } else {
+              entryDate = clean.split('T')[0].split(' ')[0];
+            }
+
             const dateMatch =
               entryDate !== "" &&
               entryDate >= cycleStartStr &&
@@ -1352,6 +1380,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     renderedContent = (
       <BSRMonthlyOnlineReceiptDetail
         entries={entries}
+        correspondenceEntries={correspondenceEntries}
         selectedCycleDate={selectedCycleDate}
         setSelectedCycleDate={setSelectedCycleDate}
         activeCycle={activeCycle}
@@ -1366,6 +1395,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     renderedContent = (
       <BilateralMonthlyOnlineReceiptDetail
         entries={entries}
+        correspondenceEntries={correspondenceEntries}
         selectedCycleDate={selectedCycleDate}
         setSelectedCycleDate={setSelectedCycleDate}
         activeCycle={activeCycle}

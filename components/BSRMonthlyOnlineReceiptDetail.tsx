@@ -1,12 +1,13 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Printer, ChevronDown, FileSpreadsheet, LayoutGrid, Search, X, Landmark, CalendarDays, Check, ArrowLeft, FileText } from 'lucide-react';
-import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { format as dateFnsFormat, startOfMonth, endOfMonth } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
 
 interface BSRMonthlyOnlineReceiptDetailProps {
   entries: SettlementEntry[];
+  correspondenceEntries?: any[];
   selectedCycleDate: Date;
   setSelectedCycleDate: (date: Date) => void;
   activeCycle: any;
@@ -17,8 +18,39 @@ interface BSRMonthlyOnlineReceiptDetailProps {
   onToggleSummaryView?: () => void;
 }
 
+const parseDate = (dateStr: string | null | undefined): Date | null => {
+  if (!dateStr) return null;
+  const cleanStr = toEnglishDigits(dateStr).trim();
+  const parts = cleanStr.split(/[-/.]/);
+  if (parts.length === 3) {
+    let d, m, y;
+    if (parts[0].length === 4) {
+      // YYYY-MM-DD
+      y = parseInt(parts[0]);
+      m = parseInt(parts[1]) - 1;
+      d = parseInt(parts[2].split('T')[0].split(' ')[0]);
+    } else {
+      // DD/MM/YYYY
+      d = parseInt(parts[0]);
+      m = parseInt(parts[1]) - 1;
+      y = parseInt(parts[2].split('T')[0].split(' ')[0]);
+    }
+    const fullY = y < 100 ? 2000 + y : y;
+    const date = new Date(fullY, m, d);
+    if (!isNaN(date.getTime())) {
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    }
+  }
+  const fallback = new Date(cleanStr);
+  if (!isNaN(fallback.getTime())) {
+    return new Date(fallback.getFullYear(), fallback.getMonth(), fallback.getDate());
+  }
+  return null;
+};
+
 const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps> = ({
-  entries,
+  entries = [],
+  correspondenceEntries = [],
   selectedCycleDate,
   setSelectedCycleDate,
   activeCycle,
@@ -56,13 +88,18 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
   const startOfMonthDate = startOfMonth(selectedCycleDate);
   const endOfMonthDate = endOfMonth(selectedCycleDate);
 
-  // Filter entries for Non-SFI and BSR and Online Receipt matching selected calendar month
+  // Filter entries for Non-SFI and BSR and Online Receipt matching selected calendar month strictly by diary date
   const filteredEntries = useMemo(() => {
-    const list: SettlementEntry[] = [];
+    const list: any[] = [];
+    const allEntries = [...(entries || []), ...(correspondenceEntries || [])];
+    const seenIds = new Set<string>();
 
-    entries.forEach(e => {
-      // Filter out entries that don't have a ministry name
-      if (!e.ministryName || !e.ministryName.trim()) return;
+    allEntries.forEach(e => {
+      if (!e) return;
+      if (e.id && seenIds.has(e.id)) return;
+
+      // Filter out entries that don't have a ministry name or description
+      if ((!e.ministryName || !e.ministryName.trim()) && (!e.description || !e.description.trim())) return;
 
       // 1. Filter by Non-SFI branch
       if (robustNormalize(e.paraType || '') !== robustNormalize('নন এসএফআই')) return;
@@ -75,15 +112,22 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
       const isOnline = e.isSentOnline === 'হ্যাঁ' || e.isOnline === 'হ্যাঁ';
       if (!isOnline) return;
 
-      // 4. Filter by Date range of the selected month
-      const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
-      if (!issueDateStr) return;
-      const entryDate = new Date(issueDateStr);
-      if (entryDate < startOfMonthDate || entryDate > endOfMonthDate) return;
+      // 4. Filter strictly by Diary Date (diaryDate) of the selected month
+      const dateToUse = e.diaryDate || e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+      if (!dateToUse) return;
+      
+      const entryDate = parseDate(dateToUse);
+      if (!entryDate) return;
+      
+      const normalizedStart = new Date(startOfMonthDate.getFullYear(), startOfMonthDate.getMonth(), startOfMonthDate.getDate(), 0, 0, 0, 0);
+      const normalizedEnd = new Date(endOfMonthDate.getFullYear(), endOfMonthDate.getMonth(), endOfMonthDate.getDate(), 23, 59, 59, 999);
+      
+      if (entryDate < normalizedStart || entryDate > normalizedEnd) return;
 
       // 5. Ministry filter
       if (filterMinistry && filterMinistry !== 'সকল') {
-        if (robustNormalize(e.ministryName || '') !== robustNormalize(filterMinistry)) return;
+        const entryMinistry = e.ministryName || '';
+        if (robustNormalize(entryMinistry) !== robustNormalize(filterMinistry)) return;
       }
 
       // 6. Search term filter
@@ -92,25 +136,30 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
         const match =
           (e.ministryName || '').toLowerCase().includes(term) ||
           (e.entityName || '').toLowerCase().includes(term) ||
+          (e.description || '').toLowerCase().includes(term) ||
           (e.remarks || '').toLowerCase().includes(term) ||
           (e.archiveNo || '').toLowerCase().includes(term) ||
           (e.letterNoDate || '').toLowerCase().includes(term) ||
+          (e.letterNo || '').toLowerCase().includes(term) ||
           (e.workpaperNoDate || '').toLowerCase().includes(term) ||
-          (e.issueLetterNoDate || '').toLowerCase().includes(term);
+          (e.diaryNo || '').toLowerCase().includes(term) ||
+          (e.issueLetterNoDate || '').toLowerCase().includes(term) ||
+          (e.issueLetterNo || '').toLowerCase().includes(term);
         if (!match) return;
       }
 
+      if (e.id) seenIds.add(e.id);
       list.push(e);
     });
 
     return list;
-  }, [entries, selectedCycleDate, filterMinistry, searchTerm]);
+  }, [entries, correspondenceEntries, selectedCycleDate, filterMinistry, searchTerm]);
 
   // Calculations for total statistics
   const totals = useMemo(() => {
     return filteredEntries.reduce((acc, curr) => {
-      const rowRecommendedCount = parseInt(toEnglishDigits(curr.meetingRecommendedParaCount || curr.meetingSentParaCount || '0')) || curr.paragraphs?.length || 0;
-      const rowSettledCount = curr.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').length || parseInt(toEnglishDigits(curr.meetingSettledParaCount || '0')) || 0;
+      const rowRecommendedCount = parseInt(toEnglishDigits(curr.meetingRecommendedParaCount || curr.meetingSentParaCount || curr.sentParaCount || curr.totalParas || '0')) || curr.paragraphs?.length || 0;
+      const rowSettledCount = curr.paragraphs?.filter((p: any) => p.status === 'পূর্ণাঙ্গ').length || parseInt(toEnglishDigits(curr.meetingSettledParaCount || '0')) || 0;
       const rowUnsettledCount = parseInt(toEnglishDigits(curr.meetingUnsettledParas || '0')) || Math.max(0, rowRecommendedCount - rowSettledCount);
       const rowRaisedCount = parseInt(toEnglishDigits(curr.manualRaisedCount || '1')) || 1;
 
@@ -432,13 +481,17 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
                 </tr>
               ) : (
                 filteredEntries.map((row, idx) => {
-                  const rowRecommendedCount = parseInt(toEnglishDigits(row.meetingRecommendedParaCount || row.meetingSentParaCount || '0')) || row.paragraphs?.length || 0;
-                  const rowSettledCount = row.paragraphs?.filter(p => p.status === 'পূর্ণাঙ্গ').length || parseInt(toEnglishDigits(row.meetingSettledParaCount || '0')) || 0;
+                  const rowRecommendedCount = parseInt(toEnglishDigits(row.meetingRecommendedParaCount || row.meetingSentParaCount || row.sentParaCount || row.totalParas || '0')) || row.paragraphs?.length || 0;
+                  const rowSettledCount = row.paragraphs?.filter((p: any) => p.status === 'পূর্ণাঙ্গ').length || parseInt(toEnglishDigits(row.meetingSettledParaCount || '0')) || 0;
                   const rowUnsettledCount = parseInt(toEnglishDigits(row.meetingUnsettledParas || '0')) || Math.max(0, rowRecommendedCount - rowSettledCount);
                   const rowRaisedCount = parseInt(toEnglishDigits(row.manualRaisedCount || '1')) || 1;
 
+                  const letterNoDateDisplay = row.letterNoDate || (row.letterNo ? `${row.letterNo}${row.letterDate ? `, ${formatDateBN(row.letterDate) || row.letterDate}` : ''}` : '');
+                  const diaryNoDateDisplay = row.workpaperNoDate || (row.diaryNo ? `${row.diaryNo}${row.diaryDate ? `, ${formatDateBN(row.diaryDate) || row.diaryDate}` : ''}` : '');
+                  const issueLetterNoDateDisplay = row.issueLetterNoDate || (row.issueLetterNo ? `${row.issueLetterNo}${row.issueLetterDate ? `, ${formatDateBN(row.issueLetterDate) || row.issueLetterDate}` : ''}` : '');
+
                   return (
-                    <tr key={row.id} className="hover:bg-slate-50/75 bg-white transition-colors group">
+                    <tr key={row.id || idx} className="hover:bg-slate-50/75 bg-white transition-colors group">
                       <td className={`${numTdStyle} text-slate-700 font-extrabold group-hover:text-blue-600`}>
                         {toBengaliDigits((idx + 1).toString())}
                       </td>
@@ -446,9 +499,9 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
                         <div className="font-extrabold text-slate-950 text-[11px] sm:text-[11.5px]">
                           <HighlightText text={row.ministryName} searchTerm={searchTerm} />
                         </div>
-                        {row.entityName && (
+                        {(row.entityName || row.description) && (
                           <div className="text-slate-700 text-[10px] sm:text-[10.5px]">
-                            <HighlightText text={row.entityName} searchTerm={searchTerm} />
+                            <HighlightText text={row.entityName || row.description} searchTerm={searchTerm} />
                           </div>
                         )}
                         {row.branchName && (
@@ -471,16 +524,16 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
                         {toBengaliDigits(rowRaisedCount.toString())}
                       </td>
                       <td className={`${tdStyle} font-bold text-slate-800`}>
-                        <HighlightText text={formatTextValue(row.letterNoDate)} searchTerm={searchTerm} />
+                        <HighlightText text={formatTextValue(letterNoDateDisplay)} searchTerm={searchTerm} />
                       </td>
                       <td className={`${tdStyle} font-bold text-slate-800`}>
-                        <HighlightText text={formatTextValue(row.workpaperNoDate)} searchTerm={searchTerm} />
+                        <HighlightText text={formatTextValue(diaryNoDateDisplay)} searchTerm={searchTerm} />
                       </td>
                       <td className={numTdStyle}>
                         {toBengaliDigits(rowRecommendedCount.toString())}
                       </td>
                       <td className={`${tdStyle} font-bold text-slate-800`}>
-                        <HighlightText text={formatTextValue(row.issueLetterNoDate)} searchTerm={searchTerm} />
+                        <HighlightText text={formatTextValue(issueLetterNoDateDisplay)} searchTerm={searchTerm} />
                       </td>
                       <td className={`${numTdStyle} text-emerald-600 font-black`}>
                         {toBengaliDigits(rowSettledCount.toString())}
