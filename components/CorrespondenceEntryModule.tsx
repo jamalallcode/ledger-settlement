@@ -1916,23 +1916,14 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                           <div 
                             key={idx}
                             onClick={() => {
-                              setFormData({
-                                ...formData, 
-                                receiverName: profile.name,
-                                receiverImage: profile.image || undefined,
-                                receiverDesignation: profile.designation || undefined
-                              });
+                              setFormData({...formData, receiverName: profile.name});
                               setShowReceiverDropdown(false);
                             }}
                             className={`px-5 py-3 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.receiverName === profile.name ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-blue-50 text-slate-700 font-bold'}`}
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden group-hover:border-blue-200 transition-colors">
-                                {profile.image ? (
-                                  <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" />
-                                ) : (
-                                  <User size={14} className="text-slate-300" />
-                                )}
+                                <User size={14} className="text-slate-300" />
                               </div>
                               <div className="flex flex-col">
                                 <span className="text-[13px]">{profile.name}</span>
