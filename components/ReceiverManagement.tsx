@@ -1153,7 +1153,11 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                   className={`group flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-300 ${isInactive ? 'bg-rose-50/45 border-rose-200 shadow-sm shadow-rose-50/20 opacity-90' : 'bg-slate-50 border-slate-100 hover:bg-blue-50/10'} ${themes.borderTheme}`}
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="w-10 sm:w-11 h-10 sm:h-11 bg-white border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                    <div 
+                      onClick={() => isAdmin && openEditModal(profile)}
+                      className={`w-10 sm:w-11 h-10 sm:h-11 bg-white border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden shrink-0 shadow-inner group/avatar relative ${isAdmin ? 'cursor-pointer hover:border-blue-400 hover:shadow-md transition-all' : ''}`}
+                      title={isAdmin ? "ছবি পরিবর্তন বা বাদ দিতে ক্লিক করুন" : profile.name}
+                    >
                       {profile.image ? (
                         <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
@@ -1320,7 +1324,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
 
               <div className="space-y-5">
                 {/* Profile Picture Upload Section (Base64 URL) */}
-                <div className="flex justify-center mb-2">
+                <div className="flex flex-col items-center mb-2">
                   <div className="relative group">
                     <div className="w-24 h-24 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2rem] flex items-center justify-center overflow-hidden group-hover:border-blue-400 transition-all cursor-pointer relative shadow-inner">
                       {tempImage ? (
@@ -1333,11 +1337,51 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                         accept="image/*"
                         onChange={handleImageUpload}
                         className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        title={tempImage ? "ছবি পরিবর্তন করতে ক্লিক করুন" : "ছবি যোগ করতে ক্লিক করুন"}
                       />
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg pointer-events-none">
-                      <Plus size={16} />
-                    </div>
+                    {tempImage ? (
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTempImage(null);
+                        }}
+                        className="absolute -top-1 -right-1 w-8 h-8 bg-rose-600 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-rose-700 transition-all cursor-pointer z-10"
+                        title="ছবি বাদ দিন / মুছে ফেলুন"
+                      >
+                        <X size={16} />
+                      </button>
+                    ) : (
+                      <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg pointer-events-none">
+                        <Plus size={16} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Image control buttons: Upload / Change & Remove */}
+                  <div className="flex items-center gap-2 mt-3">
+                    <label className="cursor-pointer px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-extrabold text-xs rounded-xl border border-blue-200/80 transition-all active:scale-95 flex items-center gap-1.5 shadow-sm">
+                      <Plus size={14} />
+                      {tempImage ? 'ছবি পরিবর্তন করুন' : 'ছবি যোগ করুন'}
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    {tempImage && (
+                      <button
+                        type="button"
+                        onClick={() => setTempImage(null)}
+                        className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-extrabold text-xs rounded-xl border border-rose-200/80 transition-all active:scale-95 flex items-center gap-1.5 shadow-sm cursor-pointer"
+                        title="ছবি মুছে ফেলুন"
+                      >
+                        <Trash size={14} />
+                        ছবি বাদ দিন
+                      </button>
+                    )}
                   </div>
                 </div>
 
