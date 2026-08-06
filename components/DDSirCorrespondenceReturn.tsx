@@ -1292,13 +1292,6 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
              <div className="inline-block px-10 py-1 bg-black text-white text-[15px] font-bold tracking-widest uppercase mb-4">ছক</div>
              <div className="flex justify-between items-end border-b-2 border-slate-300 pb-2.5 px-8">
                 <div className="flex items-center gap-4">
-                  <button 
-                    onClick={() => setShowAuditorStatsModal(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-xl text-[13px] font-black transition-all shadow-md hover:shadow-lg no-print"
-                  >
-                    <BarChart3 size={15} />
-                    পরিসংখ্যান
-                  </button>
                   <span className="font-black text-[15px] text-slate-800">বকেয়া চিঠিপত্রের তালিকা ({filterBranch === 'সকল' ? 'সকল' : filterBranch} শাখা)</span>
                 </div>
                 <span className="font-black text-[15px] text-slate-800">তাং- {reportingDateBN} খ্রি:</span>
