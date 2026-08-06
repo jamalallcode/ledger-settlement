@@ -209,11 +209,18 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     if (!name) return '';
     let cleaned = name
       .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
+      .replace(/[\(\)].*$/, '') // Remove anything in parentheses (e.g. (অডিটর))
       .trim();
 
+    let prev = '';
+    while (cleaned !== prev) {
+      prev = cleaned;
+      cleaned = cleaned
+        .replace(/^(জনাব|জনাবা|ড|ডঃ|ড\.|মুহাম্মদ|মুহা|মো|মোঃ|মো\.|মো:)[:\.\s]*/i, '')
+        .trim();
+    }
+
     cleaned = cleaned
-      .replace(/^(জনাব|বেগম|ড|ডঃ|ড\.|মুহাম্মদ|মুহা)\b[:\.\s]*/i, '')
-      .replace(/^(মো|মোঃ|মো\.|মো:)[:\.\s]*/i, '')
       .replace(/^[:\.\s\-\_\(\)]+/, '')
       .replace(/\s+(খাতুন|বেগম|খানম|চৌধুরী)$/i, '')
       .replace(/[:\.\(\)]/g, '')
@@ -230,6 +237,50 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     if (isNonSFI(paraType)) return 'নন এসএফআই';
     if (isAdminBranch(paraType)) return 'প্রশাসন';
     return paraType.trim();
+  };
+
+  const getAuditorAvatarUrl = (name: string, image?: string): string => {
+    if (image && image.trim()) return image;
+
+    let cleanName = name
+      .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
+      .replace(/[\(\)].*$/, '')
+      .trim();
+
+    let prev = '';
+    while (cleanName !== prev) {
+      prev = cleanName;
+      cleanName = cleanName
+        .replace(/^(জনাব|জনাবা|ড|ডঃ|ড\.|মুহাম্মদ|মুহা|মো|মোঃ|মো\.|মো:)[:\.\s]*/i, '')
+        .trim();
+    }
+
+    const initial = cleanName.charAt(0) || name.trim().charAt(0) || 'অ';
+
+    const colors = [
+      { bg: '#2563eb', fg: '#ffffff' }, // Blue
+      { bg: '#0d9488', fg: '#ffffff' }, // Teal
+      { bg: '#7c3aed', fg: '#ffffff' }, // Purple
+      { bg: '#059669', fg: '#ffffff' }, // Emerald
+      { bg: '#d97706', fg: '#ffffff' }, // Amber
+      { bg: '#dc2626', fg: '#ffffff' }, // Red
+      { bg: '#4f46e5', fg: '#ffffff' }, // Indigo
+      { bg: '#0891b2', fg: '#ffffff' }  // Cyan
+    ];
+
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colorIndex = Math.abs(hash) % colors.length;
+    const { bg, fg } = colors[colorIndex];
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+      <rect width="128" height="128" fill="${bg}" rx="32"/>
+      <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="${fg}" font-family="Arial, sans-serif" font-weight="900" font-size="56">${initial}</text>
+    </svg>`;
+
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   };
 
   const isEntryInBranch = (entryBranch: string | null | undefined, targetBranch: string): boolean => {
@@ -325,7 +376,9 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       const localKeys = [
         { key: 'ledger_correspondence_receivers_admin', branch: 'প্রশাসন' },
         { key: 'ledger_correspondence_receivers_sfi', branch: 'এসএফআই' },
-        { key: 'ledger_correspondence_receivers_nonsfi', branch: 'নন এসএফআই' }
+        { key: 'ledger_correspondence_receivers_nonsfi', branch: 'নন এসএফআই' },
+        { key: 'ledger_receiver_profiles_global_v1', branch: 'এসএফআই' },
+        { key: 'cached_receiver_profiles', branch: 'এসএফআই' }
       ];
       localKeys.forEach(({ key, branch }) => {
         try {
@@ -355,10 +408,66 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
         }
       });
 
+      // 4. Also check cached_settlement_entries and cached_correspondence_entries in localStorage for direct image/designation attachments
+      ['cached_settlement_entries', 'cached_correspondence_entries'].forEach((cachedKey) => {
+        try {
+          const saved = localStorage.getItem(cachedKey);
+          if (saved) {
+            const items = JSON.parse(saved);
+            if (Array.isArray(items)) {
+              items.forEach((item: any) => {
+                const name = item.receiverName || item.presentedToName;
+                const img = item.receiverImage || item.image || item.presentedToImage || item.auditorImage;
+                const desig = item.receiverDesignation || item.designation || item.presentedToDesignation;
+                if (name && (img || desig)) {
+                  processProfile(name, img, desig, item.paraType || item.branchName);
+                }
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Error reading cached entries in Analytics:", e);
+        }
+      });
+
+      // Cross-fill missing image / designation for the same person across different branch keys
+      const personImageMap = new Map<string, string>();
+      const personDesigMap = new Map<string, string>();
+
+      seenKeys.forEach((p) => {
+        const cKey = p.cleanKey || cleanPersonKey(p.rawName);
+        if (p.image && !personImageMap.has(cKey)) {
+          personImageMap.set(cKey, p.image);
+        }
+        if (p.designation && !personDesigMap.has(cKey)) {
+          personDesigMap.set(cKey, p.designation);
+        }
+      });
+
+      seenKeys.forEach((p) => {
+        const cKey = p.cleanKey || cleanPersonKey(p.rawName);
+        const bestImg = personImageMap.get(cKey);
+        const bestDesig = personDesigMap.get(cKey);
+        if (!p.image && bestImg) p.image = bestImg;
+        if (!p.designation && bestDesig) p.designation = bestDesig;
+      });
+
       setActiveReceiverProfiles(Array.from(seenKeys.values()));
     };
 
     fetchReceiverProfiles();
+
+    const handleStorageChange = () => {
+      fetchReceiverProfiles();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleStorageChange);
+    };
   }, [correspondenceEntries, entries]);
 
   const allData = useMemo(() => [...entries, ...correspondenceEntries], [entries, correspondenceEntries]);
@@ -621,7 +730,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       if (!group.image || !group.designation) {
         const cKey = cleanPersonKey(group.name);
         const norm = normalizeName(group.name);
-        const p = activeReceiverProfiles.find(ap => {
+        const matchingProfiles = activeReceiverProfiles.filter(ap => {
           const apNorm = normalizeName(ap.rawName);
           const apClean = ap.cleanKey || cleanPersonKey(ap.rawName);
           return (
@@ -631,9 +740,15 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
             (apClean && cKey && (cKey.includes(apClean) || apClean.includes(cKey)))
           );
         });
-        if (p) {
-          if (!group.image && p.image) group.image = p.image;
-          if (!group.designation && p.designation) group.designation = p.designation;
+
+        const pWithImage = matchingProfiles.find(ap => ap.image);
+        const pWithDesig = matchingProfiles.find(ap => ap.designation);
+
+        if (!group.image && pWithImage?.image) {
+          group.image = pWithImage.image;
+        }
+        if (!group.designation && pWithDesig?.designation) {
+          group.designation = pWithDesig.designation;
         }
       }
     });
@@ -956,12 +1071,13 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                               className="px-4 py-3 border border-slate-200 align-middle bg-white group-hover:bg-blue-50/10"
                             >
                               <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm shrink-0">
-                                  {group.image ? (
-                                    <img src={group.image} alt={group.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                                  ) : (
-                                    <Users size={20} className="text-slate-400 group-hover:text-white" />
-                                  )}
+                                <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 transition-all shadow-sm shrink-0">
+                                  <img 
+                                    src={getAuditorAvatarUrl(group.name, group.image)} 
+                                    alt={group.name} 
+                                    className="w-full h-full object-cover" 
+                                    referrerPolicy="no-referrer" 
+                                  />
                                 </div>
                                 <div>
                                   <span className="text-sm font-black text-slate-700 block">{group.name}</span>
@@ -1044,12 +1160,13 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
               {groupedAuditorStats.map((group, groupIdx) => (
                 <div key={groupIdx} className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-xl transition-all duration-500 group">
                   <div className="flex items-center justify-between mb-6">
-                    <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm">
-                      {group.image ? (
-                        <img src={group.image} alt={group.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      ) : (
-                        <Users size={28} className="text-slate-300 group-hover:text-white" />
-                      )}
+                    <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 transition-all shadow-sm">
+                      <img 
+                        src={getAuditorAvatarUrl(group.name, group.image)} 
+                        alt={group.name} 
+                        className="w-full h-full object-cover" 
+                        referrerPolicy="no-referrer" 
+                      />
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">র‍্যাঙ্ক</span>
