@@ -355,10 +355,66 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
         }
       });
 
+      // 4. Also check cached_settlement_entries and cached_correspondence_entries in localStorage for direct image/designation attachments
+      ['cached_settlement_entries', 'cached_correspondence_entries'].forEach((cachedKey) => {
+        try {
+          const saved = localStorage.getItem(cachedKey);
+          if (saved) {
+            const items = JSON.parse(saved);
+            if (Array.isArray(items)) {
+              items.forEach((item: any) => {
+                const name = item.receiverName || item.presentedToName;
+                const img = item.receiverImage || item.image || item.presentedToImage || item.auditorImage;
+                const desig = item.receiverDesignation || item.designation || item.presentedToDesignation;
+                if (name && (img || desig)) {
+                  processProfile(name, img, desig, item.paraType || item.branchName);
+                }
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Error reading cached entries in Analytics:", e);
+        }
+      });
+
+      // Cross-fill missing image / designation for the same person across different branch keys
+      const personImageMap = new Map<string, string>();
+      const personDesigMap = new Map<string, string>();
+
+      seenKeys.forEach((p) => {
+        const cKey = p.cleanKey || cleanPersonKey(p.rawName);
+        if (p.image && !personImageMap.has(cKey)) {
+          personImageMap.set(cKey, p.image);
+        }
+        if (p.designation && !personDesigMap.has(cKey)) {
+          personDesigMap.set(cKey, p.designation);
+        }
+      });
+
+      seenKeys.forEach((p) => {
+        const cKey = p.cleanKey || cleanPersonKey(p.rawName);
+        const bestImg = personImageMap.get(cKey);
+        const bestDesig = personDesigMap.get(cKey);
+        if (!p.image && bestImg) p.image = bestImg;
+        if (!p.designation && bestDesig) p.designation = bestDesig;
+      });
+
       setActiveReceiverProfiles(Array.from(seenKeys.values()));
     };
 
     fetchReceiverProfiles();
+
+    const handleStorageChange = () => {
+      fetchReceiverProfiles();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleStorageChange);
+    };
   }, [correspondenceEntries, entries]);
 
   const allData = useMemo(() => [...entries, ...correspondenceEntries], [entries, correspondenceEntries]);
@@ -621,7 +677,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       if (!group.image || !group.designation) {
         const cKey = cleanPersonKey(group.name);
         const norm = normalizeName(group.name);
-        const p = activeReceiverProfiles.find(ap => {
+        const matchingProfiles = activeReceiverProfiles.filter(ap => {
           const apNorm = normalizeName(ap.rawName);
           const apClean = ap.cleanKey || cleanPersonKey(ap.rawName);
           return (
@@ -631,9 +687,15 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
             (apClean && cKey && (cKey.includes(apClean) || apClean.includes(cKey)))
           );
         });
-        if (p) {
-          if (!group.image && p.image) group.image = p.image;
-          if (!group.designation && p.designation) group.designation = p.designation;
+
+        const pWithImage = matchingProfiles.find(ap => ap.image);
+        const pWithDesig = matchingProfiles.find(ap => ap.designation);
+
+        if (!group.image && pWithImage?.image) {
+          group.image = pWithImage.image;
+        }
+        if (!group.designation && pWithDesig?.designation) {
+          group.designation = pWithDesig.designation;
         }
       }
     });
