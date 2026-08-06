@@ -176,7 +176,6 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
   const [tempName, setTempName] = useState('');
   const [tempDesignation, setTempDesignation] = useState('');
   const [tempEmployeeId, setTempEmployeeId] = useState('');
-  const [tempImage, setTempImage] = useState<string | null>(null);
   const [tempIsActive, setTempIsActive] = useState(true);
   const [tempTransferredTo, setTempTransferredTo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -527,7 +526,6 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
     setTempName('');
     setTempDesignation('');
     setTempEmployeeId('');
-    setTempImage(null);
     setTempIsActive(true);
     setTempTransferredTo('');
     setSelectedBranches([getCleanBranch(branch)]);
@@ -540,7 +538,6 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
     setTempName(profile.name);
     setTempDesignation(profile.designation || '');
     setTempEmployeeId(profile.employee_id || '');
-    setTempImage(profile.image || null);
     setTempIsActive(profile.is_active !== false);
     setTempTransferredTo(profile.transferred_to || '');
 
@@ -797,7 +794,6 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                 name: tempName.trim(),
                 designation: tempDesignation.trim() || null,
                 employee_id: tempEmployeeId.trim() || null,
-                image: tempImage || null,
                 para_type: b,
                 is_active: true,
                 transferred_to: '',
@@ -813,7 +809,6 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                   name: tempName.trim(),
                   designation: tempDesignation.trim() || null,
                   employee_id: tempEmployeeId.trim() || null,
-                  image: tempImage || null,
                   para_type: b,
                   is_active: false,
                   transferred_to: 'অন্যান্য শাখা',
@@ -859,7 +854,6 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
             name: tempName.trim(),
             designation: tempDesignation.trim() || null,
             employee_id: tempEmployeeId.trim() || null,
-            image: tempImage || null,
             para_type: b,
             is_active: true,
             transferred_to: '',
@@ -875,7 +869,6 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
               name: tempName.trim(),
               designation: tempDesignation.trim() || null,
               employee_id: tempEmployeeId.trim() || null,
-              image: tempImage || null,
               para_type: b,
               is_active: false,
               transferred_to: 'অন্যান্য শাখা',
@@ -962,26 +955,10 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
     setTempName('');
     setTempDesignation('');
     setTempEmployeeId('');
-    setTempImage(null);
     setTempIsActive(true);
     setTempTransferredTo('');
     setEditingId(null);
     setSelectedBranches([]);
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 1024 * 1024) {
-        alert("ছবির সাইজ ১ মেগাবাইটের কম হতে হবে।");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setTempImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   const handleDelete = async (profile: ReceiverProfile) => {
@@ -1154,13 +1131,9 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     <div className="w-10 sm:w-11 h-10 sm:h-11 bg-white border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
-                      {profile.image ? (
-                        <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      ) : (
-                        <div className={`w-full h-full flex items-center justify-center ${themes.avatarBg} font-black text-xs sm:text-sm`}>
-                          {profile.name ? profile.name.slice(0, 1) : <User size={16} />}
-                        </div>
-                      )}
+                      <div className={`w-full h-full flex items-center justify-center ${themes.avatarBg} font-black text-xs sm:text-sm`}>
+                        {profile.name ? profile.name.slice(0, 1) : <User size={16} />}
+                      </div>
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -1260,7 +1233,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
           </div>
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">প্রাপক কর্মী ব্যবস্থাপনা</h2>
-            <p className="text-xs sm:text-sm text-slate-500 font-bold mt-0.5">অফিসের ৩টি ভিন্ন শাখার কর্মকর্তাদের বায়োডাটা, ছবি এবং দায়িত্ব নিয়ন্ত্রণ করুন</p>
+            <p className="text-xs sm:text-sm text-slate-500 font-bold mt-0.5">অফিসের ৩টি ভিন্ন শাখার কর্মকর্তাদের বায়োডাটা এবং দায়িত্ব নিয়ন্ত্রণ করুন</p>
           </div>
         </div>
 
@@ -1319,28 +1292,6 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
               </div>
 
               <div className="space-y-5">
-                {/* Profile Picture Upload Section (Base64 URL) */}
-                <div className="flex justify-center mb-2">
-                  <div className="relative group">
-                    <div className="w-24 h-24 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2rem] flex items-center justify-center overflow-hidden group-hover:border-blue-400 transition-all cursor-pointer relative shadow-inner">
-                      {tempImage ? (
-                        <img src={tempImage} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      ) : (
-                        <User size={32} className="text-slate-300" />
-                      )}
-                      <input 
-                        type="file" 
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      />
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg pointer-events-none">
-                      <Plus size={16} />
-                    </div>
-                  </div>
-                </div>
-
                 {/* Name field */}
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">কর্মকর্তা / কর্মচারীর নাম</label>

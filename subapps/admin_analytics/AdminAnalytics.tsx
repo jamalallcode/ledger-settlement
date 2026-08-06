@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { toBengaliDigits, parseBengaliNumber, formatDateBN, toEnglishDigits } from '../../utils/numberUtils';
 import { getCleanLetterTypeDisplay, isSFI, isNonSFI, isAdminBranch } from '../../utils/branchUtils';
+import { EMPLOYEES } from '../../constants';
 import { 
   BarChart3, Calendar, Users, FileText, 
   ArrowRight, Search, Download, Filter,
@@ -209,6 +210,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     if (!name) return '';
     return name
       .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
+      .replace(/\([^\)]*\)/g, '')
       .trim()
       .replace(/^(মো|মোঃ|মুহাম্মদ|মুহা|ড|ডঃ|জনাব|বেগম)\.?\s+/i, '')
       .replace(/\s+(খাতুন|বেগম|খানম|চৌধুরী)$/i, '')
@@ -235,7 +237,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
 
   const isProfileInBranch = (profileBranch: string | null | undefined, targetBranch: string): boolean => {
     if (targetBranch === 'all') return true;
-    if (!profileBranch) return false;
+    if (!profileBranch || profileBranch === 'সকল শাখা') return true;
     if (targetBranch === 'এসএফআই') return isSFI(profileBranch);
     if (targetBranch === 'নন এসএফআই') return isNonSFI(profileBranch);
     if (targetBranch === 'প্রশাসন') return isAdminBranch(profileBranch);
@@ -266,10 +268,13 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
         transferredTo?: string | null
       ) => {
         if (!name || !name.trim()) return;
-        const nameTrim = name.trim();
-        if (nameTrim === 'অনির্ধারিত' || nameTrim === 'অনির্ধারিত (Unassigned)') return;
+        let nameTrim = name.trim();
+        if (nameTrim.includes('(')) {
+          nameTrim = nameTrim.split('(')[0].trim();
+        }
+        if (!nameTrim || nameTrim === 'অনির্ধারিত' || nameTrim === 'অনির্ধারিত (Unassigned)') return;
 
-        // Skip inactive or transferred receivers
+        // Skip inactive or transferred receivers ONLY IF explicitly inactive for this specific branch
         if (isActive === false) return;
         if (transferredTo && transferredTo.trim() !== '') return;
 
@@ -290,8 +295,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           seenKeys.set(branchKey, profileData);
         } else {
           const existing = seenKeys.get(branchKey)!;
-          // Prefer profile with image/designation, or update rawName if cleaner
-          if ((!existing.image && profileData.image) || (!existing.designation && profileData.designation)) {
+          if (!existing.designation && profileData.designation) {
             seenKeys.set(branchKey, { ...existing, ...profileData });
           }
         }
@@ -335,15 +339,48 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
         }
       });
 
+      // 3. Process EMPLOYEES default list from constants.ts so all default auditors (including নজরুল ইসলাম) are available
+      EMPLOYEES.forEach((fullName) => {
+        let designation = 'অডিটর';
+        let cleanName = fullName;
+        if (fullName.includes('(')) {
+          const parts = fullName.split('(');
+          cleanName = parts[0].trim();
+          const rawDesig = parts[1].replace(')', '').trim();
+          designation = rawDesig || 'অডিটর';
+        }
+        processProfile(cleanName, null, designation, 'এসএফআই', true, '');
+        processProfile(cleanName, null, designation, 'নন এসএফআই', true, '');
+        processProfile(cleanName, null, designation, 'প্রশাসন', true, '');
+      });
+
+      // 4. Scan active correspondence and settlement entries
+      if (Array.isArray(correspondenceEntries)) {
+        correspondenceEntries.forEach(entry => {
+          const rName = entry.receiverName || entry.presentedToName;
+          if (rName) {
+            processProfile(rName, null, 'অডিটর', entry.paraType || entry.branchName || 'এসএফআই', true, '');
+          }
+        });
+      }
+      if (Array.isArray(entries)) {
+        entries.forEach(entry => {
+          const rName = getAuditorForSettlement(entry, correspondenceEntries);
+          if (rName) {
+            processProfile(rName, null, 'অডিটর', entry.paraType || entry.branchName || 'এসএফআই', true, '');
+          }
+        });
+      }
+
       setActiveReceiverProfiles(Array.from(seenKeys.values()));
     };
 
     fetchReceiverProfiles();
-  }, [correspondenceEntries]);
+  }, [correspondenceEntries, entries]);
 
   const allData = useMemo(() => [...entries, ...correspondenceEntries], [entries, correspondenceEntries]);
 
-  // Compute auditor names for the selected branch (strictly from current active Receiver Management profiles)
+  // Compute auditor names for the selected branch (combining receiver profiles & entry records)
   const auditorsForSelectedBranch = useMemo(() => {
     const set = new Set<string>();
 
@@ -899,11 +936,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                             >
                               <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm shrink-0">
-                                  {group.image ? (
-                                    <img src={group.image} alt={group.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                                  ) : (
-                                    <Users size={20} className="text-slate-400 group-hover:text-white" />
-                                  )}
+                                  <Users size={20} className="text-slate-400 group-hover:text-white" />
                                 </div>
                                 <div>
                                   <span className="text-sm font-black text-slate-700 block">{group.name}</span>
@@ -987,11 +1020,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                 <div key={groupIdx} className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-xl transition-all duration-500 group">
                   <div className="flex items-center justify-between mb-6">
                     <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm">
-                      {group.image ? (
-                        <img src={group.image} alt={group.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      ) : (
-                        <Users size={28} className="text-slate-300 group-hover:text-white" />
-                      )}
+                      <Users size={28} className="text-slate-300 group-hover:text-white" />
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">র‍্যাঙ্ক</span>
