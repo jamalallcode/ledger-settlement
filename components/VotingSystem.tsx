@@ -55,9 +55,18 @@ const PremiumVoterSelect: React.FC<{
       >
         {value ? (
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-black text-xs shrink-0 uppercase">
-              {value.slice(0, 2)}
-            </div>
+            {voterImages[value] ? (
+              <img 
+                src={voterImages[value]} 
+                alt={value} 
+                className="w-10 h-10 rounded-xl object-cover border border-slate-200 shrink-0" 
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-black text-xs shrink-0 uppercase">
+                {value.slice(0, 2)}
+              </div>
+            )}
             <div className="flex flex-col text-left min-w-0">
               <span className="font-extrabold text-[15px] text-slate-900 truncate leading-tight">{value}</span>
               <span className="text-[11px] font-bold text-slate-500 truncate mt-0.5">
@@ -97,9 +106,18 @@ const PremiumVoterSelect: React.FC<{
                 className={`px-5 py-2.5 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${value === opt ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-blue-50 text-slate-700'}`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${value === opt ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                    {opt.slice(0, 2)}
-                  </div>
+                  {voterImages[opt] ? (
+                    <img 
+                      src={voterImages[opt]} 
+                      alt={opt} 
+                      className="w-9 h-9 rounded-xl object-cover border border-slate-200 shrink-0" 
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${value === opt ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                      {opt.slice(0, 2)}
+                    </div>
+                  )}
                   <div className="flex flex-col text-left min-w-0">
                     <span className={`font-extrabold text-[14px] truncate leading-tight ${value === opt ? 'text-white' : 'text-slate-800'}`}>{opt}</span>
                     <span className={`text-[10px] font-bold truncate mt-0.5 ${value === opt ? 'text-blue-100' : 'text-slate-400'}`}>
@@ -1243,9 +1261,23 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
                     return (
                       <div key={idx} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-white border border-slate-200 rounded-3xl group hover:border-emerald-400 transition-all shadow-sm">
                         <div className="flex items-center gap-4 flex-1">
-                          <div className="w-10 h-10 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xs shrink-0 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
-                            {toBengaliDigits(idx + 1)}
-                          </div>
+                          {voterImages[voter] ? (
+                            <div className="relative w-10 h-10 shrink-0">
+                              <img 
+                                src={voterImages[voter]} 
+                                alt={voter} 
+                                className="w-10 h-10 rounded-2xl object-cover border border-slate-200 shadow-sm"
+                                referrerPolicy="no-referrer"
+                              />
+                              <div className="absolute -bottom-1 -right-1 bg-emerald-600 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white shadow-sm">
+                                {toBengaliDigits(idx + 1)}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xs shrink-0 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                              {toBengaliDigits(idx + 1)}
+                            </div>
+                          )}
                           
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-3">
