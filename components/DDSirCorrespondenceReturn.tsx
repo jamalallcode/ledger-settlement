@@ -1031,13 +1031,15 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <col className="w-[70px]" />
                 <col className="w-[70px]" />
                 <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
               </colgroup>
               <thead>
                 <tr className="bg-slate-200">
                   <th colSpan={2} className="p-1.5 text-center font-bold text-[13px]">অনিষ্পন্ন কাজের তালিকা</th>
                   <th colSpan={4} className="p-1.5 text-center font-bold text-[13px]">শাখা: {filterBranch === 'সকল' ? 'সকল' : filterBranch}</th>
-                  <th colSpan={3} className="p-1.5 text-center font-bold text-[13px]">মাস: {reportingMonthBN}</th>
-                  <th colSpan={3} className="p-1.5 text-center font-bold text-[13px]">তারিখ: {reportingDateBN} খ্রি:</th>
+                  <th colSpan={4} className="p-1.5 text-center font-bold text-[13px]">মাস: {reportingMonthBN}</th>
+                  <th colSpan={4} className="p-1.5 text-center font-bold text-[13px]">তারিখ: {reportingDateBN} খ্রি:</th>
                 </tr>
                 <tr>
                   <th rowSpan={2} className={thStyle}>ক্রমিক নং</th>
@@ -1055,6 +1057,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   <th colSpan={2} className={thStyle}>ব্রডশীট জবাব</th>
                   <th colSpan={2} className={thStyle}>মিলিকরণ</th>
                   <th colSpan={2} className={thStyle}>অন্যান্য</th>
+                  <th colSpan={2} className={thStyle + " bg-slate-300 text-slate-900 font-black"}>মোট</th>
                 </tr>
                 <tr>
                   <th className={thStyle}>১ মাস-</th>
@@ -1067,83 +1070,116 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   <th className={thStyle}>১ মাস+</th>
                   <th className={thStyle}>১ মাস-</th>
                   <th className={thStyle}>১ মাস+</th>
+                  <th className={thStyle + " bg-slate-300 font-black"}>১ মাস-</th>
+                  <th className={thStyle + " bg-slate-300 font-black"}>১ মাস+</th>
                 </tr>
               </thead>
               <tbody>
-                {reportTableData.length > 0 ? reportTableData.map((row, idx) => (
-                  <tr key={idx} className="no-hover-row group bg-white hover:bg-blue-100/50 transition-all duration-200">
-                    <td className={tdStyle}>{toBengaliDigits(idx + 1)}</td>
-                    <td className={tdStyle + " text-left text-[11px] font-bold group-hover:bg-blue-50/30"}>{getDisplayName(row.name, row.rawName)}</td>
-                    <td 
-                      className={`${tdStyle} ${row.karyapatra.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - কার্যপত্র (১ মাস-)`)}`}
-                      onClick={() => handleCountClick(`${row.name} - কার্যপত্র (১ মাস-)`, row.karyapatra.lessLetters)}
-                    >
-                      {row.karyapatra.less > 0 ? `${toBengaliDigits(row.karyapatra.less)} টি` : '-'}
-                    </td>
-                    <td 
-                      className={`${tdStyle} ${row.karyapatra.more > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - কার্যপত্র (১ মাস+)`)}`}
-                      onClick={() => handleCountClick(`${row.name} - কার্যপত্র (১ মাস+)`, row.karyapatra.moreLetters)}
-                    >
-                      {row.karyapatra.more > 0 ? `${toBengaliDigits(row.karyapatra.more)} টি` : '-'}
-                    </td>
-                    <td 
-                      className={`${tdStyle} ${row.karyabibarani.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - কার্যবিবরণী (১ মাস-)`)}`}
-                      onClick={() => handleCountClick(`${row.name} - কার্যবিবরণী (১ মাস-)`, row.karyabibarani.lessLetters)}
-                    >
-                      {row.karyabibarani.less > 0 ? `${toBengaliDigits(row.karyabibarani.less)} টি` : '-'}
-                    </td>
-                    <td 
-                      className={`${tdStyle} ${row.karyabibarani.more > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - কার্যবিবরণী (১ মাস+)`)}`}
-                      onClick={() => handleCountClick(`${row.name} - কার্যবিবরণী (১ মাস+)`, row.karyabibarani.moreLetters)}
-                    >
-                      {row.karyabibarani.more > 0 ? `${toBengaliDigits(row.karyabibarani.more)} টি` : '-'}
-                    </td>
-                    <td 
-                      className={`${tdStyle} ${row.broadsheet.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - ব্রডশীট (১ মাস-)`)}`}
-                      onClick={() => handleCountClick(`${row.name} - ব্রডশীট (১ মাস-)`, row.broadsheet.lessLetters)}
-                    >
-                      {row.broadsheet.less > 0 ? `${toBengaliDigits(row.broadsheet.less)} টি` : '-'}
-                    </td>
-                    <td 
-                      className={`${tdStyle} ${row.broadsheet.more > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - ব্রডশীট (১ মাস+)`)}`}
-                      onClick={() => handleCountClick(`${row.name} - ব্রডশীট (১ মাস+)`, row.broadsheet.moreLetters)}
-                    >
-                      {row.broadsheet.more > 0 ? `${toBengaliDigits(row.broadsheet.more)} টি` : '-'}
-                    </td>
-                    <td 
-                      className={`${tdStyle} ${row.reconciliation.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - মিলিকরণ (১ মাস-)`)}`}
-                      onClick={() => handleCountClick(`${row.name} - মিলিকরণ (১ মাস-)`, row.reconciliation.lessLetters)}
-                    >
-                      {row.reconciliation.less > 0 ? `${toBengaliDigits(row.reconciliation.less)} টি` : '-'}
-                    </td>
-                    <td 
-                      className={`${tdStyle} ${row.reconciliation.more > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - মিলিকরণ (১ মাস+)`)}`}
-                      onClick={() => handleCountClick(`${row.name} - মিলিকরণ (১ মাস+)`, row.reconciliation.moreLetters)}
-                    >
-                      {row.reconciliation.more > 0 ? `${toBengaliDigits(row.reconciliation.more)} টি` : '-'}
-                    </td>
-                    <td 
-                      className={`${tdStyle} ${row.others.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - অন্যান্য (১ মাস-)`)}`}
-                      onClick={() => handleCountClick(`${row.name} - অন্যান্য (১ মাস-)`, row.others.lessLetters)}
-                    >
-                      {row.others.less > 0 ? `${toBengaliDigits(row.others.less)} টি` : '-'}
-                    </td>
-                    <td 
-                      className={`${tdStyle} ${row.others.more > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - অন্যান্য (১ মাস+)`)}`}
-                      onClick={() => handleCountClick(`${row.name} - অন্যান্য (১ মাস+)`, row.others.moreLetters)}
-                    >
-                      {row.others.more > 0 ? `${toBengaliDigits(row.others.more)} টি` : '-'}
-                    </td>
-                  </tr>
-                )) : (
+                {reportTableData.length > 0 ? reportTableData.map((row, idx) => {
+                  const rowLess = row.karyapatra.less + row.karyabibarani.less + row.broadsheet.less + row.reconciliation.less + row.others.less;
+                  const rowMore = row.karyapatra.more + row.karyabibarani.more + row.broadsheet.more + row.reconciliation.more + row.others.more;
+                  const rowLessLetters = [
+                    ...row.karyapatra.lessLetters,
+                    ...row.karyabibarani.lessLetters,
+                    ...row.broadsheet.lessLetters,
+                    ...row.reconciliation.lessLetters,
+                    ...row.others.lessLetters
+                  ];
+                  const rowMoreLetters = [
+                    ...row.karyapatra.moreLetters,
+                    ...row.karyabibarani.moreLetters,
+                    ...row.broadsheet.moreLetters,
+                    ...row.reconciliation.moreLetters,
+                    ...row.others.moreLetters
+                  ];
+
+                  return (
+                    <tr key={idx} className="no-hover-row group bg-white hover:bg-blue-100/50 transition-all duration-200">
+                      <td className={tdStyle}>{toBengaliDigits(idx + 1)}</td>
+                      <td className={tdStyle + " text-left text-[11px] font-bold group-hover:bg-blue-50/30"}>{getDisplayName(row.name, row.rawName)}</td>
+                      <td 
+                        className={`${tdStyle} ${row.karyapatra.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - কার্যপত্র (১ মাস-)`)}`}
+                        onClick={() => handleCountClick(`${row.name} - কার্যপত্র (১ মাস-)`, row.karyapatra.lessLetters)}
+                      >
+                        {row.karyapatra.less > 0 ? `${toBengaliDigits(row.karyapatra.less)} টি` : '-'}
+                      </td>
+                      <td 
+                        className={`${tdStyle} ${row.karyapatra.more > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - কার্যপত্র (১ মাস+)`)}`}
+                        onClick={() => handleCountClick(`${row.name} - কার্যপত্র (১ মাস+)`, row.karyapatra.moreLetters)}
+                      >
+                        {row.karyapatra.more > 0 ? `${toBengaliDigits(row.karyapatra.more)} টি` : '-'}
+                      </td>
+                      <td 
+                        className={`${tdStyle} ${row.karyabibarani.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - কার্যবিবরণী (১ মাস-)`)}`}
+                        onClick={() => handleCountClick(`${row.name} - কার্যবিবরণী (১ মাস-)`, row.karyabibarani.lessLetters)}
+                      >
+                        {row.karyabibarani.less > 0 ? `${toBengaliDigits(row.karyabibarani.less)} টি` : '-'}
+                      </td>
+                      <td 
+                        className={`${tdStyle} ${row.karyabibarani.more > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - কার্যবিবরণী (১ মাস+)`)}`}
+                        onClick={() => handleCountClick(`${row.name} - কার্যবিবরণী (১ মাস+)`, row.karyabibarani.moreLetters)}
+                      >
+                        {row.karyabibarani.more > 0 ? `${toBengaliDigits(row.karyabibarani.more)} টি` : '-'}
+                      </td>
+                      <td 
+                        className={`${tdStyle} ${row.broadsheet.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - ব্রডশীট (১ মাস-)`)}`}
+                        onClick={() => handleCountClick(`${row.name} - ব্রডশীট (১ মাস-)`, row.broadsheet.lessLetters)}
+                      >
+                        {row.broadsheet.less > 0 ? `${toBengaliDigits(row.broadsheet.less)} টি` : '-'}
+                      </td>
+                      <td 
+                        className={`${tdStyle} ${row.broadsheet.more > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - ব্রডশীট (১ মাস+)`)}`}
+                        onClick={() => handleCountClick(`${row.name} - ব্রডশীট (১ মাস+)`, row.broadsheet.moreLetters)}
+                      >
+                        {row.broadsheet.more > 0 ? `${toBengaliDigits(row.broadsheet.more)} টি` : '-'}
+                      </td>
+                      <td 
+                        className={`${tdStyle} ${row.reconciliation.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - মিলিকরণ (১ মাস-)`)}`}
+                        onClick={() => handleCountClick(`${row.name} - মিলিকরণ (১ মাস-)`, row.reconciliation.lessLetters)}
+                      >
+                        {row.reconciliation.less > 0 ? `${toBengaliDigits(row.reconciliation.less)} টি` : '-'}
+                      </td>
+                      <td 
+                        className={`${tdStyle} ${row.reconciliation.more > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - মিলিকরণ (১ মাস+)`)}`}
+                        onClick={() => handleCountClick(`${row.name} - মিলিকরণ (১ মাস+)`, row.reconciliation.moreLetters)}
+                      >
+                        {row.reconciliation.more > 0 ? `${toBengaliDigits(row.reconciliation.more)} টি` : '-'}
+                      </td>
+                      <td 
+                        className={`${tdStyle} ${row.others.less > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - অন্যান্য (১ মাস-)`)}`}
+                        onClick={() => handleCountClick(`${row.name} - অন্যান্য (১ মাস-)`, row.others.lessLetters)}
+                      >
+                        {row.others.less > 0 ? `${toBengaliDigits(row.others.less)} টি` : '-'}
+                      </td>
+                      <td 
+                        className={`${tdStyle} ${row.others.more > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-700 font-black' : ''} ${getHighlightClass(`${row.name} - অন্যান্য (১ মাস+)`)}`}
+                        onClick={() => handleCountClick(`${row.name} - অন্যান্য (১ মাস+)`, row.others.moreLetters)}
+                      >
+                        {row.others.more > 0 ? `${toBengaliDigits(row.others.more)} টি` : '-'}
+                      </td>
+                      <td 
+                        className={`${tdStyle} bg-slate-100/80 ${rowLess > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-800 font-black' : ''} ${getHighlightClass(`${getDisplayName(row.name, row.rawName)} - মোট (১ মাস-)`)}`}
+                        onClick={() => handleCountClick(`${getDisplayName(row.name, row.rawName)} - মোট (১ মাস-)`, rowLessLetters)}
+                      >
+                        {rowLess > 0 ? `${toBengaliDigits(rowLess)} টি` : '-'}
+                      </td>
+                      <td 
+                        className={`${tdStyle} bg-slate-100/80 ${rowMore > 0 ? 'cursor-pointer hover:bg-blue-200/80 text-blue-800 font-black' : ''} ${getHighlightClass(`${getDisplayName(row.name, row.rawName)} - মোট (১ মাস+)`)}`}
+                        onClick={() => handleCountClick(`${getDisplayName(row.name, row.rawName)} - মোট (১ মাস+)`, rowMoreLetters)}
+                      >
+                        {rowMore > 0 ? `${toBengaliDigits(rowMore)} টি` : '-'}
+                      </td>
+                    </tr>
+                  );
+                }) : (
                   <tr>
-                    <td colSpan={12} className="py-12 text-center italic border border-slate-300 font-bold text-slate-400">কোনো তথ্য পাওয়া যায়নি</td>
+                    <td colSpan={14} className="py-12 text-center italic border border-slate-300 font-bold text-slate-400">কোনো তথ্য পাওয়া যায়নি</td>
                   </tr>
                 )}
               </tbody>
               <tfoot className="no-print">
                 <tr className="bg-slate-900 text-white">
-                  <td colSpan={4} className="border border-slate-700 p-2">
+                  <td colSpan={5} className="border border-slate-700 p-2">
                     <div className="grid grid-cols-2 items-center">
                       <div className="text-right pr-2">
                         <span className="font-bold text-[11px] text-white/80">১ মাসের কম:</span>
@@ -1163,7 +1199,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                       </div>
                     </div>
                   </td>
-                  <td colSpan={4} className="border border-slate-700 p-2">
+                  <td colSpan={5} className="border border-slate-700 p-2">
                     <div className="grid grid-cols-2 items-center">
                       <div className="text-right pr-2">
                         <span className="font-bold text-[11px] text-white/80">মোট কাজ:</span>
