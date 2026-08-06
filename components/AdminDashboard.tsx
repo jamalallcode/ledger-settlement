@@ -298,7 +298,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     { key: 'entry', label: 'নতুন এন্ট্রি', icon: PlusCircle, color: 'blue' },
                     { key: 'register', label: 'রেজিস্টার দেখুন', icon: FileText, color: 'emerald' },
                     { key: 'return', label: 'রিপোর্ট ও সারাংশ', icon: PieChart, color: 'indigo' },
-                    { key: 'admin_analytics', label: 'অডিটর পারফরম্যান্স', icon: BarChart3, color: 'purple' },
                     { key: 'archive', label: 'অডিট ক্রাইটেরিয়া', icon: Library, color: 'rose' },
                   ].map((module) => (
                     <div key={module.key} className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${moduleVisibility[module.key as keyof ModuleVisibility] ? `bg-${module.color}-600/5 border-${module.color}-200/50` : 'bg-slate-50 border-slate-200/80'}`}>
