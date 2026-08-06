@@ -252,10 +252,8 @@ const VotingSystem: React.FC<{ isAdmin?: boolean, initialTab?: 'vote' | 'poll' |
                 name: nameTrim, 
                 para_type: r.para_type || 'এসএফআই' 
               });
-              if (r.image) {
-                imagesMap[nameTrim] = r.image;
-                imagesMap[normalizeName(nameTrim)] = r.image;
-              }
+              imagesMap[nameTrim] = r.image || '';
+              imagesMap[normalizeName(nameTrim)] = r.image || '';
               if (r.designation) {
                 designationsMap[nameTrim] = r.designation;
                 designationsMap[normalizeName(nameTrim)] = r.designation;

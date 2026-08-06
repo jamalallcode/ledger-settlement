@@ -714,11 +714,11 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
         try {
           const saveToDbWithFallback = async (data: any, id?: any) => {
             let error;
-            const isRealDbId = id && 
-              typeof id === 'string' && 
-              !id.startsWith('local-') && 
-              !id.startsWith('corr-rec-') && 
-              !id.startsWith('init-');
+            const idStr = id ? String(id) : '';
+            const isRealDbId = id !== undefined && id !== null && idStr.length > 0 &&
+              !idStr.startsWith('local-') && 
+              !idStr.startsWith('corr-rec-') && 
+              !idStr.startsWith('init-');
 
             if (isRealDbId) {
               const { error: updateError } = await supabase
@@ -748,10 +748,12 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
               // Try to find existing by name and para_type in DB, or insert
               const { data: dbRecs } = await supabase
                 .from('receivers')
-                .select('id, name')
-                .eq('para_type', data.para_type);
+                .select('id, name, para_type');
 
-              const matchedDbRow = dbRecs?.find((r: any) => normalizeName(r.name) === normalizeName(data.name));
+              const matchedDbRow = dbRecs?.find((r: any) => 
+                (normalizeName(r.name) === normalizeName(data.name) || (oldName && normalizeName(r.name) === matchNorm)) &&
+                getCleanBranch(r.para_type) === getCleanBranch(data.para_type)
+              );
 
               if (matchedDbRow && matchedDbRow.id) {
                 const { error: updateError } = await supabase

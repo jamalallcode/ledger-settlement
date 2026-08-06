@@ -170,7 +170,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     if (!name && !fallbackRawName) return null;
     const norm = normalizeName(name || fallbackRawName);
     const match = receiversList.find(r => normalizeName(r.name) === norm);
-    if (match && match.image) return match.image;
+    if (match) return match.image || null;
     const key = fallbackRawName || name || '';
     return receiverImages[key] || receiverImages[norm] || null;
   };
