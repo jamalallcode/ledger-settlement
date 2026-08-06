@@ -232,6 +232,41 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     return paraType.trim();
   };
 
+  const getAuditorAvatarUrl = (name: string, image?: string): string => {
+    if (image && image.trim()) return image;
+
+    const cleanName = name
+      .replace(/^(জনাব|বেগম|ড|ডঃ|ড\.|মুহাম্মদ|মুহা|মো|মোঃ|মো\.|মো:)\s+/i, '')
+      .replace(/[\(\)].*$/, '')
+      .trim() || name;
+    const initial = cleanName.charAt(0) || 'অ';
+
+    const colors = [
+      { bg: '#2563eb', fg: '#ffffff' }, // Blue
+      { bg: '#0d9488', fg: '#ffffff' }, // Teal
+      { bg: '#7c3aed', fg: '#ffffff' }, // Purple
+      { bg: '#059669', fg: '#ffffff' }, // Emerald
+      { bg: '#d97706', fg: '#ffffff' }, // Amber
+      { bg: '#dc2626', fg: '#ffffff' }, // Red
+      { bg: '#4f46e5', fg: '#ffffff' }, // Indigo
+      { bg: '#0891b2', fg: '#ffffff' }  // Cyan
+    ];
+
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colorIndex = Math.abs(hash) % colors.length;
+    const { bg, fg } = colors[colorIndex];
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+      <rect width="128" height="128" fill="${bg}" rx="32"/>
+      <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="${fg}" font-family="Arial, sans-serif" font-weight="900" font-size="56">${initial}</text>
+    </svg>`;
+
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  };
+
   const isEntryInBranch = (entryBranch: string | null | undefined, targetBranch: string): boolean => {
     if (targetBranch === 'all') return true;
     if (!entryBranch) return false;
@@ -1018,12 +1053,13 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                               className="px-4 py-3 border border-slate-200 align-middle bg-white group-hover:bg-blue-50/10"
                             >
                               <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm shrink-0">
-                                  {group.image ? (
-                                    <img src={group.image} alt={group.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                                  ) : (
-                                    <Users size={20} className="text-slate-400 group-hover:text-white" />
-                                  )}
+                                <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 transition-all shadow-sm shrink-0">
+                                  <img 
+                                    src={getAuditorAvatarUrl(group.name, group.image)} 
+                                    alt={group.name} 
+                                    className="w-full h-full object-cover" 
+                                    referrerPolicy="no-referrer" 
+                                  />
                                 </div>
                                 <div>
                                   <span className="text-sm font-black text-slate-700 block">{group.name}</span>
@@ -1106,12 +1142,13 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
               {groupedAuditorStats.map((group, groupIdx) => (
                 <div key={groupIdx} className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-xl transition-all duration-500 group">
                   <div className="flex items-center justify-between mb-6">
-                    <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm">
-                      {group.image ? (
-                        <img src={group.image} alt={group.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      ) : (
-                        <Users size={28} className="text-slate-300 group-hover:text-white" />
-                      )}
+                    <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 transition-all shadow-sm">
+                      <img 
+                        src={getAuditorAvatarUrl(group.name, group.image)} 
+                        alt={group.name} 
+                        className="w-full h-full object-cover" 
+                        referrerPolicy="no-referrer" 
+                      />
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">র‍্যাঙ্ক</span>
