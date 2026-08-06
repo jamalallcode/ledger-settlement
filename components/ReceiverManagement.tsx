@@ -745,13 +745,13 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                 error = finalRetryError;
               }
             } else {
-              // Try to find existing by name and para_type in DB, or insert
+              // Try to find existing by name in DB, or insert
               const { data: dbRecs } = await supabase
                 .from('receivers')
-                .select('id, name')
-                .eq('para_type', data.para_type);
+                .select('id, name, para_type');
 
-              const matchedDbRow = dbRecs?.find((r: any) => normalizeName(r.name) === normalizeName(data.name));
+              const matchedDbRow = dbRecs?.find((r: any) => normalizeName(r.name) === normalizeName(data.name) && getCleanBranch(r.para_type) === getCleanBranch(data.para_type)) ||
+                                   dbRecs?.find((r: any) => normalizeName(r.name) === normalizeName(data.name));
 
               if (matchedDbRow && matchedDbRow.id) {
                 const { error: updateError } = await supabase
@@ -893,15 +893,27 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
         let globalList = globalSaved ? JSON.parse(globalSaved) : [];
         if (!Array.isArray(globalList)) globalList = [];
         globalList = globalList.filter((p: any) => normalizeName(p.name) !== matchNorm && normalizeName(p.name) !== currentNorm);
-        if (tempImage) {
+        if (tempImage || tempDesignation) {
           globalList.push({
             name: tempName.trim(),
             designation: tempDesignation.trim() || null,
-            image: tempImage,
-            para_type: selectedBranches[0] || 'এসএফআই'
+            image: tempImage || null,
+            para_type: selectedBranches[0] || 'এসএফআই',
+            is_active: tempIsActive
           });
         }
         localStorage.setItem('ledger_receiver_profiles_global_v1', JSON.stringify(globalList));
+
+        if (isSupabaseConfigured) {
+          supabase
+            .from('app_settings')
+            .upsert({
+              key: 'global_receiver_profiles',
+              value: JSON.stringify(globalList)
+            })
+            .then(() => {})
+            .catch(err => console.warn("Error syncing profiles to app_settings:", err));
+        }
       } catch (e) {}
 
       // Sync local deactivation storage
