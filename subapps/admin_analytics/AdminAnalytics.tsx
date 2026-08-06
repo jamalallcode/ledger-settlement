@@ -242,6 +242,24 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
   const getAuditorAvatarUrl = (name: string, image?: string): string => {
     if (image && image.trim()) return image;
 
+    // Fallback: Check if any activeReceiverProfile has an image for this auditor
+    if (name) {
+      const cKey = cleanPersonKey(name);
+      const norm = normalizeName(name);
+      const matched = activeReceiverProfiles.find(ap => {
+        if (!ap.image) return false;
+        const apClean = ap.cleanKey || cleanPersonKey(ap.rawName);
+        const apNorm = normalizeName(ap.rawName);
+        return (
+          ap.rawName === name ||
+          apNorm === norm ||
+          apClean === cKey ||
+          (apClean && cKey && (cKey.includes(apClean) || apClean.includes(cKey)))
+        );
+      });
+      if (matched && matched.image) return matched.image;
+    }
+
     let cleanName = name
       .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
       .replace(/[\(\)].*$/, '')
@@ -367,6 +385,26 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
               processProfile(r.name, r.image, r.designation, r.para_type, r.is_active, r.transferred_to);
             });
           }
+
+          // Fetch from app_settings for global profile backups
+          const { data: globalSetting } = await supabase
+            .from('app_settings')
+            .select('value')
+            .eq('key', 'global_receiver_profiles')
+            .maybeSingle();
+
+          if (globalSetting && globalSetting.value) {
+            try {
+              const items = typeof globalSetting.value === 'string' ? JSON.parse(globalSetting.value) : globalSetting.value;
+              if (Array.isArray(items)) {
+                items.forEach((item: any) => {
+                  if (item && item.name) {
+                    processProfile(item.name, item.image, item.designation, item.para_type, item.is_active, item.transferred_to);
+                  }
+                });
+              }
+            } catch (e) {}
+          }
         } catch (err) {
           console.error("Error fetching db receivers in Analytics:", err);
         }
@@ -457,6 +495,10 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
 
     fetchReceiverProfiles();
 
+    const intervalId = setInterval(() => {
+      fetchReceiverProfiles();
+    }, 4000);
+
     const handleStorageChange = () => {
       fetchReceiverProfiles();
     };
@@ -465,6 +507,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     window.addEventListener('focus', handleStorageChange);
 
     return () => {
+      clearInterval(intervalId);
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('focus', handleStorageChange);
     };
