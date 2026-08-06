@@ -1923,7 +1923,11 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden group-hover:border-blue-200 transition-colors">
-                                <User size={14} className="text-slate-300" />
+                                {profile.image ? (
+                                  <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <User size={14} className="text-slate-300" />
+                                )}
                               </div>
                               <div className="flex flex-col">
                                 <span className="text-[13px]">{profile.name}</span>
