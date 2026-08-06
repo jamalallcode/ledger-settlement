@@ -899,7 +899,11 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                             >
                               <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm shrink-0">
-                                  <Users size={20} className="text-slate-400 group-hover:text-white" />
+                                  {group.image ? (
+                                    <img src={group.image} alt={group.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                  ) : (
+                                    <Users size={20} className="text-slate-400 group-hover:text-white" />
+                                  )}
                                 </div>
                                 <div>
                                   <span className="text-sm font-black text-slate-700 block">{group.name}</span>
@@ -983,7 +987,11 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
                 <div key={groupIdx} className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-xl transition-all duration-500 group">
                   <div className="flex items-center justify-between mb-6">
                     <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-600 transition-all shadow-sm">
-                      <Users size={28} className="text-slate-300 group-hover:text-white" />
+                      {group.image ? (
+                        <img src={group.image} alt={group.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <Users size={28} className="text-slate-300 group-hover:text-white" />
+                      )}
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">র‍্যাঙ্ক</span>
