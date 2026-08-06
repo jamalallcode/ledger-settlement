@@ -268,7 +268,10 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     if (!name) return null;
     const norm = normalizeName(name);
     const match = receiversList.find(r => normalizeName(r.name) === norm);
-    return match && match.image ? match.image : (receiverImages[name] || receiverImages[norm] || null);
+    if (match) {
+      return match.image || null;
+    }
+    return receiverImages[name] || receiverImages[norm] || null;
   };
 
   useEffect(() => {
