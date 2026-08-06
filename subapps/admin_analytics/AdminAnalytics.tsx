@@ -237,7 +237,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
 
   const isProfileInBranch = (profileBranch: string | null | undefined, targetBranch: string): boolean => {
     if (targetBranch === 'all') return true;
-    if (!profileBranch || profileBranch === 'সকল শাখা') return true;
+    if (!profileBranch) return false;
     if (targetBranch === 'এসএফআই') return isSFI(profileBranch);
     if (targetBranch === 'নন এসএফআই') return isNonSFI(profileBranch);
     if (targetBranch === 'প্রশাসন') return isAdminBranch(profileBranch);
@@ -261,7 +261,6 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
 
       const processProfile = (
         name: string, 
-        img: string | null, 
         desig: string | null, 
         paraType?: string | null,
         isActive?: boolean | null,
@@ -274,7 +273,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
         }
         if (!nameTrim || nameTrim === 'অনির্ধারিত' || nameTrim === 'অনির্ধারিত (Unassigned)') return;
 
-        // Skip inactive or transferred receivers ONLY IF explicitly inactive for this specific branch
+        // Skip inactive or transferred receivers
         if (isActive === false) return;
         if (transferredTo && transferredTo.trim() !== '') return;
 
@@ -285,7 +284,6 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
         const profileData: ActiveReceiverProfile = {
           rawName: nameTrim,
           designation: desig || undefined,
-          image: img || undefined,
           para_type: branchClean,
           is_active: true,
           cleanKey: cKey
@@ -301,15 +299,17 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
         }
       };
 
+      let dbFetchedCount = 0;
       // 1. Fetch from database (Supabase)
       if (isSupabaseConfigured) {
         try {
           const { data: dbReceivers } = await supabase
             .from('receivers')
-            .select('name, image, designation, para_type, is_active, transferred_to');
-          if (dbReceivers) {
+            .select('name, designation, para_type, is_active, transferred_to');
+          if (dbReceivers && dbReceivers.length > 0) {
+            dbFetchedCount = dbReceivers.length;
             dbReceivers.forEach(r => {
-              processProfile(r.name, r.image, r.designation, r.para_type, r.is_active, r.transferred_to);
+              processProfile(r.name, r.designation, r.para_type, r.is_active, r.transferred_to);
             });
           }
         } catch (err) {
@@ -318,6 +318,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       }
 
       // 2. Fetch from local storage keys
+      let localFetchedCount = 0;
       const localKeys = [
         { key: 'ledger_correspondence_receivers_admin', branch: 'প্রশাসন' },
         { key: 'ledger_correspondence_receivers_sfi', branch: 'এসএফআই' },
@@ -328,9 +329,10 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           const saved = localStorage.getItem(key);
           if (saved) {
             const items = JSON.parse(saved);
-            if (Array.isArray(items)) {
+            if (Array.isArray(items) && items.length > 0) {
+              localFetchedCount += items.length;
               items.forEach((item: any) => {
-                processProfile(item.name, item.image, item.designation, item.para_type || branch, item.is_active, item.transferred_to);
+                processProfile(item.name, item.designation, item.para_type || branch, item.is_active, item.transferred_to);
               });
             }
           }
@@ -339,36 +341,18 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
         }
       });
 
-      // 3. Process EMPLOYEES default list from constants.ts so all default auditors (including নজরুল ইসলাম) are available
-      EMPLOYEES.forEach((fullName) => {
-        let designation = 'অডিটর';
-        let cleanName = fullName;
-        if (fullName.includes('(')) {
-          const parts = fullName.split('(');
-          cleanName = parts[0].trim();
-          const rawDesig = parts[1].replace(')', '').trim();
-          designation = rawDesig || 'অডিটর';
-        }
-        processProfile(cleanName, null, designation, 'এসএফআই', true, '');
-        processProfile(cleanName, null, designation, 'নন এসএফআই', true, '');
-        processProfile(cleanName, null, designation, 'প্রশাসন', true, '');
-      });
-
-      // 4. Scan active correspondence and settlement entries
-      if (Array.isArray(correspondenceEntries)) {
-        correspondenceEntries.forEach(entry => {
-          const rName = entry.receiverName || entry.presentedToName;
-          if (rName) {
-            processProfile(rName, null, 'অডিটর', entry.paraType || entry.branchName || 'এসএফআই', true, '');
+      // 3. Bootstrap from EMPLOYEES into 'এসএফআই' ONLY if Receiver Management has zero receivers total
+      if (dbFetchedCount === 0 && localFetchedCount === 0 && seenKeys.size === 0) {
+        EMPLOYEES.forEach((fullName) => {
+          let designation = 'অডিটর';
+          let cleanName = fullName;
+          if (fullName.includes('(')) {
+            const parts = fullName.split('(');
+            cleanName = parts[0].trim();
+            const rawDesig = parts[1].replace(')', '').trim();
+            designation = rawDesig || 'অডিটর';
           }
-        });
-      }
-      if (Array.isArray(entries)) {
-        entries.forEach(entry => {
-          const rName = getAuditorForSettlement(entry, correspondenceEntries);
-          if (rName) {
-            processProfile(rName, null, 'অডিটর', entry.paraType || entry.branchName || 'এসএফআই', true, '');
-          }
+          processProfile(cleanName, designation, 'এসএফআই', true, '');
         });
       }
 
@@ -376,7 +360,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     };
 
     fetchReceiverProfiles();
-  }, [correspondenceEntries, entries]);
+  }, []);
 
   const allData = useMemo(() => [...entries, ...correspondenceEntries], [entries, correspondenceEntries]);
 
@@ -482,18 +466,45 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       if (match) return match;
 
       // 4. Substring / containment match
-      match = activeReceiverProfiles.find(p => p.cleanKey && (cKey.includes(p.cleanKey) || p.cleanKey.includes(cKey)));
+      match = activeReceiverProfiles.find(p => p.cleanKey && cKey && (cKey.includes(p.cleanKey) || p.cleanKey.includes(cKey)));
       if (match) return match;
 
       return undefined;
     };
 
+    // 1. Pre-initialize stats for all active receiver profiles matching selectedBranch
+    activeReceiverProfiles.forEach(profile => {
+      if (selectedBranch === 'all' || isProfileInBranch(profile.para_type, selectedBranch)) {
+        const normKey = profile.cleanKey || cleanPersonKey(profile.rawName);
+        const nameKey = `${normKey}_${profile.para_type || 'এসএফআই'}`;
+        if (!stats[nameKey]) {
+          stats[nameKey] = { 
+            name: profile.rawName, 
+            letterCount: 0, 
+            paraCount: 0,
+            settledCount: 0,
+            designation: profile.designation,
+            image: profile.image,
+            branch: profile.para_type
+          };
+        }
+      }
+    });
+
+    // 2. Count letter statistics for matching receiver profiles
     filteredData.forEach(entry => {
-      const rawName = entry.receiverName || entry.presentedToName || 'অনির্ধারিত (Unassigned)';
+      const rawName = entry.receiverName || entry.presentedToName;
+      if (!rawName) return;
       const matchedProfile = findMatchingProfile(rawName);
-      const displayName = matchedProfile ? matchedProfile.rawName : normalizeName(rawName);
-      const entryBranch = getCleanBranch(entry.paraType || entry.branchName || matchedProfile?.para_type);
-      const normKey = cleanPersonKey(displayName) || normalizeName(displayName);
+      if (!matchedProfile) return; // Ignore names not registered in Receiver Management
+
+      if (selectedBranch !== 'all' && !isProfileInBranch(matchedProfile.para_type, selectedBranch)) {
+        return;
+      }
+
+      const displayName = matchedProfile.rawName;
+      const entryBranch = matchedProfile.para_type || getCleanBranch(entry.paraType || entry.branchName);
+      const normKey = matchedProfile.cleanKey || cleanPersonKey(displayName);
       const nameKey = `${normKey}_${entryBranch}`;
 
       if (!stats[nameKey]) {
@@ -502,24 +513,30 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           letterCount: 0, 
           paraCount: 0,
           settledCount: 0,
-          designation: matchedProfile?.designation,
-          image: matchedProfile?.image,
+          designation: matchedProfile.designation,
+          image: matchedProfile.image,
           branch: entryBranch
         };
       }
       
       stats[nameKey].letterCount += 1;
-      
-      // Count paragraphs from correspondence entries
       stats[nameKey].paraCount += parseBengaliNumber(entry.totalParas || '0');
     });
 
+    // 3. Count settled paragraphs for matching receiver profiles
     filteredSettlementEntries.forEach(entry => {
       const rawName = getAuditorForSettlement(entry, correspondenceEntries);
+      if (!rawName) return;
       const matchedProfile = findMatchingProfile(rawName);
-      const displayName = matchedProfile ? matchedProfile.rawName : normalizeName(rawName);
-      const entryBranch = getCleanBranch(entry.paraType || entry.branchName || matchedProfile?.para_type);
-      const normKey = cleanPersonKey(displayName) || normalizeName(displayName);
+      if (!matchedProfile) return; // Ignore names not registered in Receiver Management
+
+      if (selectedBranch !== 'all' && !isProfileInBranch(matchedProfile.para_type, selectedBranch)) {
+        return;
+      }
+
+      const displayName = matchedProfile.rawName;
+      const entryBranch = matchedProfile.para_type || getCleanBranch(entry.paraType || entry.branchName);
+      const normKey = matchedProfile.cleanKey || cleanPersonKey(displayName);
       const nameKey = `${normKey}_${entryBranch}`;
 
       if (!stats[nameKey]) {
@@ -528,8 +545,8 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
           letterCount: 0, 
           paraCount: 0,
           settledCount: 0,
-          designation: matchedProfile?.designation,
-          image: matchedProfile?.image,
+          designation: matchedProfile.designation,
+          image: matchedProfile.image,
           branch: entryBranch
         };
       }
@@ -541,7 +558,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     });
 
     return Object.values(stats).sort((a, b) => b.letterCount - a.letterCount);
-  }, [filteredData, filteredSettlementEntries, activeReceiverProfiles, correspondenceEntries]);
+  }, [filteredData, filteredSettlementEntries, activeReceiverProfiles, correspondenceEntries, selectedBranch]);
 
   const filteredAuditorStats = useMemo(() => {
     let result = auditorStats;
