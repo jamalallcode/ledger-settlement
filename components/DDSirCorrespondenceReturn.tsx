@@ -639,6 +639,32 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const grandTotalLess = totals.kpL + totals.kbL + totals.bsL + totals.rcL + totals.otL;
   const grandTotalMore = totals.kpM + totals.kbM + totals.bsM + totals.rcM + totals.otM;
 
+  const columnTotalLetters = useMemo(() => {
+    const kpL: any[] = []; const kpM: any[] = [];
+    const kbL: any[] = []; const kbM: any[] = [];
+    const bsL: any[] = []; const bsM: any[] = [];
+    const rcL: any[] = []; const rcM: any[] = [];
+    const otL: any[] = []; const otM: any[] = [];
+
+    reportTableData.forEach(row => {
+      kpL.push(...row.karyapatra.lessLetters);
+      kpM.push(...row.karyapatra.moreLetters);
+      kbL.push(...row.karyabibarani.lessLetters);
+      kbM.push(...row.karyabibarani.moreLetters);
+      bsL.push(...row.broadsheet.lessLetters);
+      bsM.push(...row.broadsheet.moreLetters);
+      rcL.push(...row.reconciliation.lessLetters);
+      rcM.push(...row.reconciliation.moreLetters);
+      otL.push(...row.others.lessLetters);
+      otM.push(...row.others.moreLetters);
+    });
+
+    const totL = [...kpL, ...kbL, ...bsL, ...rcL, ...otL];
+    const totM = [...kpM, ...kbM, ...bsM, ...rcM, ...otM];
+
+    return { kpL, kpM, kbL, kbM, bsL, bsM, rcL, rcM, otL, otM, totL, totM };
+  }, [reportTableData]);
+
   const summaryStats = useMemo(() => {
     const stats = {
       total: entries.length,
@@ -1178,36 +1204,81 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 )}
               </tbody>
               <tfoot className="no-print">
-                <tr className="bg-slate-900 text-white">
-                  <td colSpan={5} className="border border-slate-700 p-2">
-                    <div className="grid grid-cols-2 items-center">
-                      <div className="text-right pr-2">
-                        <span className="font-bold text-[11px] text-white/80">১ মাসের কম:</span>
-                      </div>
-                      <div className="text-center">
-                        <span className="font-black text-[13px] text-white bg-white/10 px-3 py-1 rounded shadow-inner">{toBengaliDigits(grandTotalLess)} টি</span>
-                      </div>
-                    </div>
+                <tr className="bg-slate-900 text-white font-black">
+                  <td colSpan={2} className="p-2 text-center text-[12px] bg-slate-900 text-white border border-slate-700 align-middle">
+                    সর্বমোট
                   </td>
-                  <td colSpan={4} className="border border-slate-700 p-2">
-                    <div className="grid grid-cols-2 items-center">
-                      <div className="text-right pr-2">
-                        <span className="font-bold text-[11px] text-white/80">১ মাসের বেশি:</span>
-                      </div>
-                      <div className="text-center">
-                        <span className="font-black text-[13px] text-white bg-white/10 px-3 py-1 rounded shadow-inner">{toBengaliDigits(grandTotalMore)} টি</span>
-                      </div>
-                    </div>
+                  <td 
+                    className={`p-1.5 text-center text-[12px] bg-slate-900 border border-slate-700 align-middle ${totals.kpL > 0 ? 'text-sky-300 cursor-pointer hover:bg-slate-800' : 'text-slate-400'}`}
+                    onClick={() => totals.kpL > 0 && handleCountClick('সর্বমোট - কার্যপত্র (১ মাস-)', columnTotalLetters.kpL)}
+                  >
+                    {totals.kpL > 0 ? `${toBengaliDigits(totals.kpL)} টি` : '-'}
                   </td>
-                  <td colSpan={5} className="border border-slate-700 p-2">
-                    <div className="grid grid-cols-2 items-center">
-                      <div className="text-right pr-2">
-                        <span className="font-bold text-[11px] text-white/80">মোট কাজ:</span>
-                      </div>
-                      <div className="text-center">
-                        <span className="font-black text-[13px] text-white bg-white/10 px-3 py-1 rounded shadow-inner">{toBengaliDigits(grandTotalLess + grandTotalMore)} টি</span>
-                      </div>
-                    </div>
+                  <td 
+                    className={`p-1.5 text-center text-[12px] bg-slate-900 border border-slate-700 align-middle ${totals.kpM > 0 ? 'text-sky-300 cursor-pointer hover:bg-slate-800' : 'text-slate-400'}`}
+                    onClick={() => totals.kpM > 0 && handleCountClick('সর্বমোট - কার্যপত্র (১ মাস+)', columnTotalLetters.kpM)}
+                  >
+                    {totals.kpM > 0 ? `${toBengaliDigits(totals.kpM)} টি` : '-'}
+                  </td>
+                  <td 
+                    className={`p-1.5 text-center text-[12px] bg-slate-900 border border-slate-700 align-middle ${totals.kbL > 0 ? 'text-sky-300 cursor-pointer hover:bg-slate-800' : 'text-slate-400'}`}
+                    onClick={() => totals.kbL > 0 && handleCountClick('সর্বমোট - কার্যবিবরণী (১ মাস-)', columnTotalLetters.kbL)}
+                  >
+                    {totals.kbL > 0 ? `${toBengaliDigits(totals.kbL)} টি` : '-'}
+                  </td>
+                  <td 
+                    className={`p-1.5 text-center text-[12px] bg-slate-900 border border-slate-700 align-middle ${totals.kbM > 0 ? 'text-sky-300 cursor-pointer hover:bg-slate-800' : 'text-slate-400'}`}
+                    onClick={() => totals.kbM > 0 && handleCountClick('সর্বমোট - কার্যবিবরণী (১ মাস+)', columnTotalLetters.kbM)}
+                  >
+                    {totals.kbM > 0 ? `${toBengaliDigits(totals.kbM)} টি` : '-'}
+                  </td>
+                  <td 
+                    className={`p-1.5 text-center text-[12px] bg-slate-900 border border-slate-700 align-middle ${totals.bsL > 0 ? 'text-sky-300 cursor-pointer hover:bg-slate-800' : 'text-slate-400'}`}
+                    onClick={() => totals.bsL > 0 && handleCountClick('সর্বমোট - ব্রডশীট (১ মাস-)', columnTotalLetters.bsL)}
+                  >
+                    {totals.bsL > 0 ? `${toBengaliDigits(totals.bsL)} টি` : '-'}
+                  </td>
+                  <td 
+                    className={`p-1.5 text-center text-[12px] bg-slate-900 border border-slate-700 align-middle ${totals.bsM > 0 ? 'text-sky-300 cursor-pointer hover:bg-slate-800' : 'text-slate-400'}`}
+                    onClick={() => totals.bsM > 0 && handleCountClick('সর্বমোট - ব্রডশীট (১ মাস+)', columnTotalLetters.bsM)}
+                  >
+                    {totals.bsM > 0 ? `${toBengaliDigits(totals.bsM)} টি` : '-'}
+                  </td>
+                  <td 
+                    className={`p-1.5 text-center text-[12px] bg-slate-900 border border-slate-700 align-middle ${totals.rcL > 0 ? 'text-sky-300 cursor-pointer hover:bg-slate-800' : 'text-slate-400'}`}
+                    onClick={() => totals.rcL > 0 && handleCountClick('সর্বমোট - মিলিকরণ (১ মাস-)', columnTotalLetters.rcL)}
+                  >
+                    {totals.rcL > 0 ? `${toBengaliDigits(totals.rcL)} টি` : '-'}
+                  </td>
+                  <td 
+                    className={`p-1.5 text-center text-[12px] bg-slate-900 border border-slate-700 align-middle ${totals.rcM > 0 ? 'text-sky-300 cursor-pointer hover:bg-slate-800' : 'text-slate-400'}`}
+                    onClick={() => totals.rcM > 0 && handleCountClick('সর্বমোট - মিলিকরণ (১ মাস+)', columnTotalLetters.rcM)}
+                  >
+                    {totals.rcM > 0 ? `${toBengaliDigits(totals.rcM)} টি` : '-'}
+                  </td>
+                  <td 
+                    className={`p-1.5 text-center text-[12px] bg-slate-900 border border-slate-700 align-middle ${totals.otL > 0 ? 'text-sky-300 cursor-pointer hover:bg-slate-800' : 'text-slate-400'}`}
+                    onClick={() => totals.otL > 0 && handleCountClick('সর্বমোট - অন্যান্য (১ মাস-)', columnTotalLetters.otL)}
+                  >
+                    {totals.otL > 0 ? `${toBengaliDigits(totals.otL)} টি` : '-'}
+                  </td>
+                  <td 
+                    className={`p-1.5 text-center text-[12px] bg-slate-900 border border-slate-700 align-middle ${totals.otM > 0 ? 'text-sky-300 cursor-pointer hover:bg-slate-800' : 'text-slate-400'}`}
+                    onClick={() => totals.otM > 0 && handleCountClick('সর্বমোট - অন্যান্য (১ মাস+)', columnTotalLetters.otM)}
+                  >
+                    {totals.otM > 0 ? `${toBengaliDigits(totals.otM)} টি` : '-'}
+                  </td>
+                  <td 
+                    className={`p-1.5 text-center text-[12px] bg-slate-950 border border-slate-700 align-middle ${grandTotalLess > 0 ? 'text-amber-300 cursor-pointer hover:bg-slate-800' : 'text-slate-400'}`}
+                    onClick={() => grandTotalLess > 0 && handleCountClick('সর্বমোট - মোট (১ মাস-)', columnTotalLetters.totL)}
+                  >
+                    {grandTotalLess > 0 ? `${toBengaliDigits(grandTotalLess)} টি` : '-'}
+                  </td>
+                  <td 
+                    className={`p-1.5 text-center text-[12px] bg-slate-950 border border-slate-700 align-middle ${grandTotalMore > 0 ? 'text-amber-300 cursor-pointer hover:bg-slate-800' : 'text-slate-400'}`}
+                    onClick={() => grandTotalMore > 0 && handleCountClick('সর্বমোট - মোট (১ মাস+)', columnTotalLetters.totM)}
+                  >
+                    {grandTotalMore > 0 ? `${toBengaliDigits(grandTotalMore)} টি` : '-'}
                   </td>
                 </tr>
               </tfoot>
