@@ -1916,7 +1916,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                           <div 
                             key={idx}
                             onClick={() => {
-                              setFormData({...formData, receiverName: profile.name});
+                              setFormData({
+                                ...formData, 
+                                receiverName: profile.name,
+                                receiverImage: profile.image || undefined,
+                                receiverDesignation: profile.designation || undefined
+                              });
                               setShowReceiverDropdown(false);
                             }}
                             className={`px-5 py-3 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.receiverName === profile.name ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-blue-50 text-slate-700 font-bold'}`}

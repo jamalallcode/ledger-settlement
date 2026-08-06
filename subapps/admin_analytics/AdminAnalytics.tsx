@@ -209,11 +209,18 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
     if (!name) return '';
     let cleaned = name
       .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
+      .replace(/[\(\)].*$/, '') // Remove anything in parentheses (e.g. (অডিটর))
       .trim();
 
+    let prev = '';
+    while (cleaned !== prev) {
+      prev = cleaned;
+      cleaned = cleaned
+        .replace(/^(জনাব|জনাবা|ড|ডঃ|ড\.|মুহাম্মদ|মুহা|মো|মোঃ|মো\.|মো:)[:\.\s]*/i, '')
+        .trim();
+    }
+
     cleaned = cleaned
-      .replace(/^(জনাব|বেগম|ড|ডঃ|ড\.|মুহাম্মদ|মুহা)\b[:\.\s]*/i, '')
-      .replace(/^(মো|মোঃ|মো\.|মো:)[:\.\s]*/i, '')
       .replace(/^[:\.\s\-\_\(\)]+/, '')
       .replace(/\s+(খাতুন|বেগম|খানম|চৌধুরী)$/i, '')
       .replace(/[:\.\(\)]/g, '')
@@ -235,11 +242,20 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
   const getAuditorAvatarUrl = (name: string, image?: string): string => {
     if (image && image.trim()) return image;
 
-    const cleanName = name
-      .replace(/^(জনাব|বেগম|ড|ডঃ|ড\.|মুহাম্মদ|মুহা|মো|মোঃ|মো\.|মো:)\s+/i, '')
+    let cleanName = name
+      .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
       .replace(/[\(\)].*$/, '')
-      .trim() || name;
-    const initial = cleanName.charAt(0) || 'অ';
+      .trim();
+
+    let prev = '';
+    while (cleanName !== prev) {
+      prev = cleanName;
+      cleanName = cleanName
+        .replace(/^(জনাব|জনাবা|ড|ডঃ|ড\.|মুহাম্মদ|মুহা|মো|মোঃ|মো\.|মো:)[:\.\s]*/i, '')
+        .trim();
+    }
+
+    const initial = cleanName.charAt(0) || name.trim().charAt(0) || 'অ';
 
     const colors = [
       { bg: '#2563eb', fg: '#ffffff' }, // Blue
@@ -360,7 +376,9 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ entries, correspondence
       const localKeys = [
         { key: 'ledger_correspondence_receivers_admin', branch: 'প্রশাসন' },
         { key: 'ledger_correspondence_receivers_sfi', branch: 'এসএফআই' },
-        { key: 'ledger_correspondence_receivers_nonsfi', branch: 'নন এসএফআই' }
+        { key: 'ledger_correspondence_receivers_nonsfi', branch: 'নন এসএফআই' },
+        { key: 'ledger_receiver_profiles_global_v1', branch: 'এসএফআই' },
+        { key: 'cached_receiver_profiles', branch: 'এসএফআই' }
       ];
       localKeys.forEach(({ key, branch }) => {
         try {

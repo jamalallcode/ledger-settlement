@@ -887,6 +887,23 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
         localStorage.setItem(key, JSON.stringify(items));
       }
 
+      // Update global profile cache for cross-session/Incognito fallback
+      try {
+        const globalSaved = localStorage.getItem('ledger_receiver_profiles_global_v1');
+        let globalList = globalSaved ? JSON.parse(globalSaved) : [];
+        if (!Array.isArray(globalList)) globalList = [];
+        globalList = globalList.filter((p: any) => normalizeName(p.name) !== matchNorm && normalizeName(p.name) !== currentNorm);
+        if (tempImage) {
+          globalList.push({
+            name: tempName.trim(),
+            designation: tempDesignation.trim() || null,
+            image: tempImage,
+            para_type: selectedBranches[0] || 'এসএফআই'
+          });
+        }
+        localStorage.setItem('ledger_receiver_profiles_global_v1', JSON.stringify(globalList));
+      } catch (e) {}
+
       // Sync local deactivation storage
       let inactiveList = getInactiveList();
 
