@@ -37,6 +37,7 @@ import {
   AlertTriangle,
   MessageSquare,
   Edit3,
+  RotateCcw,
   X,
   Eye,
   EyeOff,
@@ -1990,22 +1991,35 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         <CheckCircle2 size={11} className={currentIsSettled === 'হ্যাঁ' ? "text-emerald-600 animate-pulse" : currentIsSettled === 'না' ? "text-rose-500" : "text-amber-500 animate-bounce"} />
                                         নিষ্পত্তি আছে কিনা:
                                       </span>
-                                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-xs ${
-                                        currentIsSettled === 'হ্যাঁ'
-                                          ? 'bg-emerald-500 text-white'
-                                          : currentIsSettled === 'না'
-                                            ? 'bg-rose-500 text-white'
-                                            : 'bg-amber-500 text-white animate-pulse'
-                                      }`}>
-                                        {currentIsSettled === 'হ্যাঁ' ? 'হ্যাঁ' : currentIsSettled === 'না' ? 'না' : 'বাছাই করুন'}
-                                      </span>
+                                      <div className="flex items-center gap-1">
+                                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-xs ${
+                                          currentIsSettled === 'হ্যাঁ'
+                                            ? 'bg-emerald-500 text-white'
+                                            : currentIsSettled === 'না'
+                                              ? 'bg-rose-500 text-white'
+                                              : 'bg-amber-500 text-white animate-pulse'
+                                        }`}>
+                                          {currentIsSettled === 'হ্যাঁ' ? 'হ্যাঁ' : currentIsSettled === 'না' ? 'না' : 'বাছাই করুন'}
+                                        </span>
+                                        {Boolean(currentIsSettled) && isAdmin && (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleInlineChange(entry.id, 'isSettled', '')}
+                                            className="text-[8px] font-black text-slate-500 hover:text-rose-600 bg-white border border-slate-300 hover:border-rose-300 px-1 py-0.5 rounded-md flex items-center gap-0.5 shadow-2xs transition-all cursor-pointer"
+                                            title="বাছাই রিসেট/ক্লিয়ার করুন"
+                                          >
+                                            <RotateCcw size={8} /> ক্লিয়ার
+                                          </button>
+                                        )}
+                                      </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-1 pt-0.5">
                                       <button
                                         type="button"
                                         disabled={!isAdmin}
                                         onClick={() => {
-                                          handleInlineChange(entry.id, 'isSettled', 'হ্যাঁ');
+                                          const nextVal = currentIsSettled === 'হ্যাঁ' ? '' : 'হ্যাঁ';
+                                          handleInlineChange(entry.id, 'isSettled', nextVal);
                                         }}
                                         className={`py-1 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1 ${
                                           currentIsSettled === 'হ্যাঁ'
@@ -2019,7 +2033,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         type="button"
                                         disabled={!isAdmin}
                                         onClick={() => {
-                                          handleInlineChange(entry.id, 'isSettled', 'না');
+                                          const nextVal = currentIsSettled === 'না' ? '' : 'না';
+                                          handleInlineChange(entry.id, 'isSettled', nextVal);
                                         }}
                                         className={`py-1 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1 ${
                                           currentIsSettled === 'না'
