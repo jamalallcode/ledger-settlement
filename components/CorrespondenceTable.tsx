@@ -347,6 +347,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const [pendingChanges, setPendingChanges] = useState<
     Record<string, Partial<CorrespondenceEntry>>
   >({});
+  const [recentlyUpdatedMap, setRecentlyUpdatedMap] = useState<
+    Record<string, boolean>
+  >({});
   const [isUpdating, setIsUpdating] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [expandedCycles, setExpandedCycles] = useState<Record<string, boolean>>(
@@ -783,13 +786,21 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
     setIsUpdating(true);
 
     try {
+      const updatedIds: string[] = [];
       for (const entryId in pendingChanges) {
         const entry = entries.find((e) => e.id === entryId);
         if (entry && onInlineUpdate) {
           await onInlineUpdate({ ...entry, ...pendingChanges[entryId] });
+          updatedIds.push(entryId);
         }
       }
       setPendingChanges({});
+      updatedIds.forEach((id) => {
+        setRecentlyUpdatedMap((prev) => ({ ...prev, [id]: true }));
+        setTimeout(() => {
+          setRecentlyUpdatedMap((prev) => ({ ...prev, [id]: false }));
+        }, 5000);
+      });
     } catch (err) {
       console.error("Update failed", err);
     } finally {
@@ -812,6 +823,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         delete next[entryId];
         return next;
       });
+      setRecentlyUpdatedMap((prev) => ({ ...prev, [entryId]: true }));
+      setTimeout(() => {
+        setRecentlyUpdatedMap((prev) => ({ ...prev, [entryId]: false }));
+      }, 5000);
     } catch (err) {
       console.error("Update failed", err);
     } finally {
@@ -2045,7 +2060,43 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         <X size={11} strokeWidth={3} /> না
                                       </button>
                                     </div>
-                                    {!canFillIssue && (
+                                    {recentlyUpdatedMap[entry.id] ? (
+                                      <div className="mt-1 text-[8.5px] font-black text-emerald-950 bg-gradient-to-r from-emerald-100 via-teal-100 to-emerald-50 border border-emerald-400 rounded-lg p-1.5 flex items-center justify-between leading-tight animate-in zoom-in-95 duration-300 shadow-xs ring-1 ring-emerald-300/80">
+                                        <div className="flex items-center gap-1">
+                                          <CheckCircle2 size={12} className="text-emerald-600 shrink-0 animate-bounce" />
+                                          <span className="text-emerald-900 font-extrabold">
+                                            আপডেট সম্পন্ন হয়েছে! ({currentIsSettled})
+                                          </span>
+                                        </div>
+                                        <span className="text-[7.5px] font-black text-emerald-800 bg-emerald-200/90 px-1 py-0.5 rounded-md shadow-2xs border border-emerald-300 shrink-0">
+                                          সফল
+                                        </span>
+                                      </div>
+                                    ) : pendingChanges[entry.id] && canFillIssue ? (
+                                      <div className="mt-1 text-[8px] font-black text-blue-950 bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-100/70 border border-blue-300 rounded-lg p-1 flex items-center justify-between leading-tight animate-in fade-in duration-200 shadow-2xs">
+                                        <div className="flex items-center gap-1">
+                                          <Save size={11} className="text-blue-600 shrink-0 animate-pulse" />
+                                          <span>'{currentIsSettled}' চয়ন করা হয়েছে। ডানের [💾] চাপুন।</span>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => saveRowChanges(entry.id)}
+                                          className="text-[7.5px] font-black text-white bg-blue-600 hover:bg-blue-700 px-1.5 py-0.5 rounded-md shadow-2xs transition-all shrink-0 cursor-pointer"
+                                        >
+                                          সেভ
+                                        </button>
+                                      </div>
+                                    ) : canFillIssue ? (
+                                      <div className="mt-1 text-[8px] font-black text-emerald-900 bg-gradient-to-r from-emerald-50/90 via-teal-50/70 to-slate-50 border border-emerald-300/80 rounded-lg p-1 flex items-center justify-between leading-tight animate-in fade-in duration-200 shadow-2xs">
+                                        <div className="flex items-center gap-1">
+                                          <CheckCircle2 size={11} className="text-emerald-600 shrink-0" />
+                                          <span>আপডেট সম্পন্ন হয়েছে ({currentIsSettled})</span>
+                                        </div>
+                                        <span className="text-[7px] font-bold text-emerald-700 bg-emerald-100/80 px-1 py-0.2 rounded border border-emerald-200/80 shrink-0">
+                                          সংরক্ষিত
+                                        </span>
+                                      </div>
+                                    ) : (
                                       <div className="mt-1 text-[8px] font-black text-amber-900 bg-amber-100/90 border border-amber-300 rounded-lg p-1.5 flex items-center gap-1.5 leading-tight animate-in fade-in duration-200 shadow-xs">
                                         <AlertTriangle size={12} className="text-amber-600 shrink-0" />
                                         <span>নিষ্পত্তি 'হ্যাঁ' বা 'না' সিলেক্ট না করা পর্যন্ত জারিপত্র নং ও তারিখ ফিলাপ হবে না।</span>
