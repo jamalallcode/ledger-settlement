@@ -124,6 +124,7 @@ export interface CorrespondenceEntry {
   isOnline: string;
   issueLetterNo: string;
   issueLetterDate: string;
+  isSettled?: 'হ্যাঁ' | 'না';
   issueLetterComment?: string;
   archiveNo?: string;
   remarks?: string;

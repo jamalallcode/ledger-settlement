@@ -1950,24 +1950,95 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                         <td className={tdCls}>
                           <div className="space-y-2">
                             {(() => {
-                              const isIssueComplete =
-                                !!currentIssueNo && !!currentIssueDate;
-                              const issueColorCls = isIssueComplete
-                                ? "bg-emerald-600/10 border-emerald-400 ring-2 ring-emerald-50"
-                                : pending.issueLetterNo ||
-                                    pending.issueLetterDate
-                                  ? "bg-amber-600/10 border-amber-400 ring-2 ring-amber-50"
-                                  : "bg-amber-50/50 border-amber-100";
+                              const currentIsSettled =
+                                pending.isSettled !== undefined
+                                  ? pending.isSettled
+                                  : entry.isSettled;
 
-                              const labelColorCls = isIssueComplete
-                                ? "text-emerald-700"
-                                : "text-amber-700";
-                              const iconColorCls = isIssueComplete
-                                ? "text-emerald-500"
-                                : "text-amber-500";
+                              // Unlocked when either 'হ্যাঁ' or 'না' is selected
+                              const canFillIssue =
+                                currentIsSettled === "হ্যাঁ" || currentIsSettled === "না";
+
+                              const isIssueComplete =
+                                canFillIssue && !!currentIssueNo && !!currentIssueDate;
+                              const issueColorCls = !canFillIssue
+                                ? "bg-slate-50 border-slate-200 opacity-80"
+                                : isIssueComplete
+                                  ? "bg-emerald-600/10 border-emerald-400 ring-2 ring-emerald-50"
+                                  : pending.issueLetterNo ||
+                                      pending.issueLetterDate
+                                    ? "bg-amber-600/10 border-amber-400 ring-2 ring-amber-50"
+                                    : "bg-amber-50/50 border-amber-100";
+
+                              const labelColorCls = !canFillIssue
+                                ? "text-slate-500"
+                                : isIssueComplete
+                                  ? "text-emerald-700"
+                                  : "text-amber-700";
+                              const iconColorCls = !canFillIssue
+                                ? "text-slate-400"
+                                : isIssueComplete
+                                  ? "text-emerald-500"
+                                  : "text-amber-500";
 
                               return (
                                 <>
+                                  {/* 1. অপশন: নিষ্পত্তি আছে কিনা: হ্যাঁ অথবা না (উপরে) */}
+                                  <div className="p-2 border rounded-xl bg-gradient-to-b from-slate-50 to-slate-100 border-slate-300 space-y-1.5 shadow-sm mb-1.5">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[9.5px] font-black text-slate-800 tracking-tight flex items-center gap-1">
+                                        <CheckCircle2 size={11} className={currentIsSettled === 'হ্যাঁ' ? "text-emerald-600 animate-pulse" : currentIsSettled === 'না' ? "text-rose-500" : "text-amber-500 animate-bounce"} />
+                                        নিষ্পত্তি আছে কিনা:
+                                      </span>
+                                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-xs ${
+                                        currentIsSettled === 'হ্যাঁ'
+                                          ? 'bg-emerald-500 text-white'
+                                          : currentIsSettled === 'না'
+                                            ? 'bg-rose-500 text-white'
+                                            : 'bg-amber-500 text-white animate-pulse'
+                                      }`}>
+                                        {currentIsSettled === 'হ্যাঁ' ? 'হ্যাঁ' : currentIsSettled === 'না' ? 'না' : 'বাছাই করুন'}
+                                      </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-1 pt-0.5">
+                                      <button
+                                        type="button"
+                                        disabled={!isAdmin}
+                                        onClick={() => {
+                                          handleInlineChange(entry.id, 'isSettled', 'হ্যাঁ');
+                                        }}
+                                        className={`py-1 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1 ${
+                                          currentIsSettled === 'হ্যাঁ'
+                                            ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-300 scale-[1.02]'
+                                            : 'bg-white border border-slate-300 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700'
+                                        } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                                      >
+                                        <Check size={11} strokeWidth={3} /> হ্যাঁ
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={!isAdmin}
+                                        onClick={() => {
+                                          handleInlineChange(entry.id, 'isSettled', 'না');
+                                        }}
+                                        className={`py-1 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1 ${
+                                          currentIsSettled === 'না'
+                                            ? 'bg-rose-600 text-white shadow-md ring-2 ring-rose-300 scale-[1.02]'
+                                            : 'bg-white border border-slate-300 text-slate-700 hover:bg-rose-50 hover:text-rose-700'
+                                        } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                                      >
+                                        <X size={11} strokeWidth={3} /> না
+                                      </button>
+                                    </div>
+                                    {!canFillIssue && (
+                                      <div className="mt-1 text-[8px] font-black text-amber-900 bg-amber-100/90 border border-amber-300 rounded-lg p-1.5 flex items-center gap-1.5 leading-tight animate-in fade-in duration-200 shadow-xs">
+                                        <AlertTriangle size={12} className="text-amber-600 shrink-0" />
+                                        <span>নিষ্পত্তি 'হ্যাঁ' বা 'না' সিলেক্ট না করা পর্যন্ত জারিপত্র নং ও তারিখ ফিলাপ হবে না।</span>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* 2. জারিপত্র নং */}
                                   <div
                                     className={`p-1.5 border rounded-lg space-y-1 transition-colors relative ${issueColorCls}`}
                                   >
@@ -2008,10 +2079,15 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     </div>
                                     <input
                                       type="text"
-                                      placeholder="নং"
-                                      className={`w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none bg-white ${isAdmin ? "focus:border-emerald-400" : "cursor-not-allowed opacity-70"}`}
-                                      value={currentIssueNo}
-                                      disabled={!isAdmin}
+                                      placeholder={canFillIssue ? "নং" : "নিষ্পত্তি নির্বাচন করুন"}
+                                      className={`w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none ${
+                                        !canFillIssue || !isAdmin
+                                          ? "bg-slate-100 text-slate-400 cursor-not-allowed opacity-75"
+                                          : "bg-white focus:border-emerald-400"
+                                      }`}
+                                      value={canFillIssue ? currentIssueNo : ""}
+                                      disabled={!isAdmin || !canFillIssue}
+                                      title={!canFillIssue ? "নিষ্পত্তি 'হ্যাঁ' বা 'না' সিলেক্ট না করা পর্যন্ত জারিপত্র নং ও তারিখ ফিলাপ হবে না।" : ""}
                                       onChange={(e) =>
                                         handleInlineChange(
                                           entry.id,
@@ -2040,6 +2116,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     )}
                                   </div>
 
+                                  {/* 3. জারিপত্র তারিখ */}
                                   <div
                                     className={`p-1.5 border rounded-lg space-y-1 transition-colors ${issueColorCls}`}
                                   >
@@ -2050,7 +2127,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         <Calendar size={8} /> জারিপত্র তারিখ
                                       </div>
                                       <div className="flex items-center gap-1.5">
-                                        {formatDateBN(currentIssueDate) && (
+                                        {canFillIssue && formatDateBN(currentIssueDate) && (
                                           <span
                                             className={`text-[8px] font-black ${isIssueComplete ? "text-emerald-600" : "text-amber-600"}`}
                                           >
@@ -2060,9 +2137,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         <div className="relative flex items-center h-3 w-3">
                                           <Calendar
                                             size={11}
-                                            className={`${iconColorCls} transition-colors ${isAdmin ? "cursor-pointer hover:opacity-80" : "opacity-50"}`}
+                                            className={`${iconColorCls} transition-colors ${isAdmin && canFillIssue ? "cursor-pointer hover:opacity-80" : "opacity-40 cursor-not-allowed"}`}
                                             onClick={(e) => {
-                                              if (!isAdmin) return;
+                                              if (!isAdmin || !canFillIssue) return;
                                               const input =
                                                 e.currentTarget.parentElement?.querySelector(
                                                   "input",
@@ -2072,9 +2149,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                           />
                                           <input
                                             type="date"
-                                            className={`absolute inset-0 opacity-0 w-3 h-3 ${isAdmin ? "cursor-pointer" : "pointer-events-none"}`}
-                                            value={currentIssueDate}
-                                            disabled={!isAdmin}
+                                            className={`absolute inset-0 opacity-0 w-3 h-3 ${isAdmin && canFillIssue ? "cursor-pointer" : "pointer-events-none"}`}
+                                            value={canFillIssue ? currentIssueDate : ""}
+                                            disabled={!isAdmin || !canFillIssue}
                                             onChange={(e) =>
                                               handleInlineChange(
                                                 entry.id,
