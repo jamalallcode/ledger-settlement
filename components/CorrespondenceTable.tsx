@@ -1667,10 +1667,32 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                           {toBengaliDigits(idx + 1)}
                         </td>
                         <td className={tdCls}>
-                          <HighlightText
-                            text={entry.description}
-                            searchTerm={searchTerm}
-                          />
+                          <div className="space-y-1">
+                            {entry.entityName && (
+                              <div className="font-black text-slate-900 text-[10.5px] leading-snug">
+                                <HighlightText
+                                  text={entry.entityName}
+                                  searchTerm={searchTerm}
+                                />
+                              </div>
+                            )}
+                            {entry.auditYear && (
+                              <div className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.5 rounded-md inline-block my-0.5">
+                                <HighlightText
+                                  text={`(${entry.auditYear})`}
+                                  searchTerm={searchTerm}
+                                />
+                              </div>
+                            )}
+                            {entry.description && (
+                              <div className="text-[9.5px] font-medium text-slate-800 leading-snug">
+                                <HighlightText
+                                  text={entry.description}
+                                  searchTerm={searchTerm}
+                                />
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className={tdCls}>
                           <div className="space-y-2">
@@ -1683,6 +1705,28 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                 />
                               </span>
                             </div>
+                            {entry.entityName && (
+                              <div className="flex flex-col">
+                                <span className={labelCls}>১.ক. এনটিটি:</span>
+                                <span className={valCls + " pl-3"}>
+                                  <HighlightText
+                                    text={entry.entityName}
+                                    searchTerm={searchTerm}
+                                  />
+                                </span>
+                              </div>
+                            )}
+                            {entry.auditYear && (
+                              <div className="flex flex-col">
+                                <span className={labelCls}>১.খ. নিরীক্ষা সাল:</span>
+                                <span className={valCls + " pl-3"}>
+                                  <HighlightText
+                                    text={entry.auditYear}
+                                    searchTerm={searchTerm}
+                                  />
+                                </span>
+                              </div>
+                            )}
                             <div className="flex flex-col">
                               <span className={labelCls}>২. শাখার ধরণ:</span>
                               <span className={valCls + " pl-3"}>

@@ -131,6 +131,8 @@ export interface CorrespondenceEntry {
   approvalStatus?: 'approved' | 'pending';
   type?: string;
   ministryName?: string;
+  entityName?: string;
+  auditYear?: string;
 }
 
 export interface GroupOption {
