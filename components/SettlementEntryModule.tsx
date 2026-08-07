@@ -488,46 +488,70 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
   const duplicates = useMemo(() => {
     if (!existingEntries || existingEntries.length === 0) return { letterNo: false, diaryNo: false, issueNo: false, any: false };
-    
-    const findDuplicate = (combinedStr: string | undefined, prefixRegex: RegExp, searchNo: string) => {
-      if (!combinedStr || !searchNo.trim()) return null;
-      // Extract the number part more reliably
-      // The format is "Prefix Number, DatePrefix Date"
+
+    const extractNo = (combinedStr?: string, directNo?: string) => {
+      if (directNo && directNo.trim()) return directNo.trim();
+      if (!combinedStr || !combinedStr.trim()) return '';
       const firstPart = combinedStr.split(',')[0];
-      // Handle cases where the prefix might be missing or just "নং-"
-      const cleanRegex = new RegExp(`(${prefixRegex.source}|নং[:\\-]?\\s*)`, 'g');
-      const extractedNo = firstPart.replace(cleanRegex, '').replace(/\s+/g, '');
-      
-      const engExtracted = toEnglishDigits(extractedNo);
-      const engSearch = toEnglishDigits(searchNo.replace(/\s+/g, ''));
-      
-      return engExtracted === engSearch;
+      const cleanRegex = /(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g;
+      return firstPart.replace(cleanRegex, '').replace(/\s+/g, '');
     };
 
-    const letterDuplicate = letterNoPart ? existingEntries.find(e => {
-      if (initialEntry && e.id === initialEntry.id) return false;
-      return findDuplicate(e.letterNoDate, /পত্র\s+নং[:\-]?\s*/g, letterNoPart);
-    }) : null;
-
-    const diaryDuplicate = diaryNoPart ? existingEntries.find(e => {
-      if (initialEntry && e.id === initialEntry.id) return false;
-      return findDuplicate(e.workpaperNoDate, /ডায়েরি\s+নং[:\-]?\s*/g, diaryNoPart);
-    }) : null;
-
-    const issueDuplicate = issueNoPart ? existingEntries.find(e => {
-      if (initialEntry && e.id === initialEntry.id) return false;
-      return findDuplicate(e.issueLetterNoDate, /জারিপত্র\s+নং[:\-]?\s*/g, issueNoPart);
-    }) : null;
-
-    return {
-      letterNo: !!letterDuplicate,
-      diaryNo: !!diaryDuplicate,
-      issueNo: !!issueDuplicate,
-      letterEntryId: letterDuplicate?.id,
-      diaryEntryId: diaryDuplicate?.id,
-      issueEntryId: issueDuplicate?.id,
-      any: !!letterDuplicate || !!diaryDuplicate || !!issueDuplicate
+    const checkMatch = (a: string, b: string) => {
+      if (!a || !b || !a.trim() || !b.trim()) return null;
+      return toEnglishDigits(a.trim()) === toEnglishDigits(b.trim());
     };
+
+    const curL = letterNoPart.trim();
+    const curD = diaryNoPart.trim();
+    const curI = issueNoPart.trim();
+
+    if (!curL && !curD && !curI) {
+      return { letterNo: false, diaryNo: false, issueNo: false, any: false };
+    }
+
+    const matchedEntry = existingEntries.find((e: any) => {
+      if (initialEntry && e.id === initialEntry.id) return false;
+
+      const exL = extractNo(e.letterNoDate, e.letterNo);
+      const exD = extractNo(e.workpaperNoDate, e.diaryNo);
+      const exI = extractNo(e.issueLetterNoDate, e.issueNo);
+
+      const letterMatch = checkMatch(curL, exL);
+      const diaryMatch = checkMatch(curD, exD);
+      const issueMatch = checkMatch(curI, exI);
+
+      // If any identifier that is present in both current inputs and existing entry does NOT match, then it is NOT a duplicate!
+      if (letterMatch === false || diaryMatch === false || issueMatch === false) {
+        return false;
+      }
+
+      const matchCount = (letterMatch === true ? 1 : 0) + (diaryMatch === true ? 1 : 0) + (issueMatch === true ? 1 : 0);
+
+      return matchCount > 0;
+    });
+
+    if (matchedEntry) {
+      const exL = extractNo(matchedEntry.letterNoDate, matchedEntry.letterNo);
+      const exD = extractNo(matchedEntry.workpaperNoDate, matchedEntry.diaryNo);
+      const exI = extractNo(matchedEntry.issueLetterNoDate, matchedEntry.issueNo);
+
+      const matchedL = !!curL && checkMatch(curL, exL) === true;
+      const matchedD = !!curD && checkMatch(curD, exD) === true;
+      const matchedI = !!curI && checkMatch(curI, exI) === true;
+
+      return {
+        letterNo: matchedL,
+        diaryNo: matchedD,
+        issueNo: matchedI,
+        letterEntryId: matchedL ? matchedEntry.id : undefined,
+        diaryEntryId: matchedD ? matchedEntry.id : undefined,
+        issueEntryId: matchedI ? matchedEntry.id : undefined,
+        any: true
+      };
+    }
+
+    return { letterNo: false, diaryNo: false, issueNo: false, any: false };
   }, [letterNoPart, diaryNoPart, issueNoPart, existingEntries, initialEntry]);
 
   const isDuplicate = duplicates.any;
