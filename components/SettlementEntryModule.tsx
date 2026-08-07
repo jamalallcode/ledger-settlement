@@ -371,30 +371,42 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     }));
 
     // Auto-fill Letter No & Date
-    if (letter.letterNo) setLetterNoPart(letter.letterNo);
+    setLetterNoPart(letter.letterNo || '');
     if (letter.letterDate) {
       const { d, m, y } = parseDateComponents(letter.letterDate);
-      if (d) setLetterDay(d);
-      if (m) setLetterMonth(m);
-      if (y) setLetterYear(y);
+      setLetterDay(d || '');
+      setLetterMonth(m || '');
+      setLetterYear(y || '');
+    } else {
+      setLetterDay('');
+      setLetterMonth('');
+      setLetterYear('');
     }
 
     // Auto-fill Diary No & Date
-    if (letter.diaryNo) setDiaryNoPart(letter.diaryNo);
+    setDiaryNoPart(letter.diaryNo || '');
     if (letter.diaryDate) {
       const { d, m, y } = parseDateComponents(letter.diaryDate);
-      if (d) setDiaryDay(d);
-      if (m) setDiaryMonth(m);
-      if (y) setDiaryYear(y);
+      setDiaryDay(d || '');
+      setDiaryMonth(m || '');
+      setDiaryYear(y || '');
+    } else {
+      setDiaryDay('');
+      setDiaryMonth('');
+      setDiaryYear('');
     }
 
     // Auto-fill Issue No & Date
-    if (letter.issueLetterNo) setIssueNoPart(letter.issueLetterNo);
+    setIssueNoPart(letter.issueLetterNo || '');
     if (letter.issueLetterDate) {
       const { d, m, y } = parseDateComponents(letter.issueLetterDate);
-      if (d) setDayPart(d);
-      if (m) setMonthPart(m);
-      if (y) setYearPart(y);
+      setDayPart(d || '');
+      setMonthPart(m || '');
+      setYearPart(y || '');
+    } else {
+      setDayPart('');
+      setMonthPart('');
+      setYearPart('');
     }
 
     // Raw inputs update for numeric fields
