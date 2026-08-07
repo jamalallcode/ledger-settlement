@@ -300,6 +300,13 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const filteredCorrespondenceEntries = useMemo(() => {
     if (!correspondenceEntries || correspondenceEntries.length === 0) return [];
 
+    const extractNoFromCombined = (combinedStr?: string) => {
+      if (!combinedStr || !combinedStr.trim()) return '';
+      const firstPart = combinedStr.split(',')[0];
+      const cleanRegex = /(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g;
+      return firstPart.replace(cleanRegex, '').replace(/\s+/g, '');
+    };
+
     // 1. Filter letters that have isSettled === 'হ্যাঁ'
     // 2. Filter letters that have BOTH issueLetterNo and issueLetterDate
     // 3. Filter letters that are NOT already in existingEntries (মীমাংসা রেজিস্টার)
@@ -316,18 +323,29 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       const cDiary = (entry.diaryNo || '').trim();
       const cLetter = (entry.letterNo || '').trim();
 
-      const isAlreadySettled = existingEntries.some((se: any) => {
-        const seIssue = (se.issueNo || '').trim();
-        const seDiary = (se.diaryNo || '').trim();
-        const seLetter = (se.letterNo || '').trim();
+      const engCIssue = toEnglishDigits(cIssue);
+      const engCDiary = toEnglishDigits(cDiary);
+      const engCLetter = toEnglishDigits(cLetter);
 
-        if (cIssue && seIssue && (cIssue === seIssue || toEnglishDigits(cIssue) === toEnglishDigits(seIssue))) {
+      const isAlreadySettled = existingEntries.some((se: any) => {
+        if (se.correspondenceId && se.correspondenceId === entry.id) return true;
+        if (se.letterId && se.letterId === entry.id) return true;
+
+        const seIssue = (se.issueNo || extractNoFromCombined(se.issueLetterNoDate) || '').trim();
+        const seDiary = (se.diaryNo || extractNoFromCombined(se.workpaperNoDate) || '').trim();
+        const seLetter = (se.letterNo || extractNoFromCombined(se.letterNoDate) || '').trim();
+
+        const engSeIssue = toEnglishDigits(seIssue);
+        const engSeDiary = toEnglishDigits(seDiary);
+        const engSeLetter = toEnglishDigits(seLetter);
+
+        if (engCIssue && engSeIssue && engCIssue === engSeIssue) {
           return true;
         }
-        if (cDiary && seDiary && (cDiary === seDiary || toEnglishDigits(cDiary) === toEnglishDigits(seDiary))) {
+        if (engCDiary && engSeDiary && engCDiary === engSeDiary) {
           return true;
         }
-        if (cLetter && seLetter && (cLetter === seLetter || toEnglishDigits(cLetter) === toEnglishDigits(seLetter))) {
+        if (engCLetter && engSeLetter && engCLetter === engSeLetter) {
           return true;
         }
         return false;
