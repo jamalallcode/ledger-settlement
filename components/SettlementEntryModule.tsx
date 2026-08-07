@@ -1325,35 +1325,31 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             <SegmentedInput id="field-7b" num={getSerial()} icon={Calendar} label="পত্রের তারিখ" color="amber" noValue="DATE_ONLY" dayValue={letterDay} monthValue={letterMonth} yearValue={letterYear} noSetter={()=>{}} daySetter={setLetterDay} monthSetter={setLetterMonth} yearSetter={setLetterYear} dayRef={letterDayRef} monthRef={letterMonthRef} yearRef={letterYearRef} isFocused={isLetterFocused} focusSetter={setIsLetterFocused} />
 
             {/* 8.ক & 8.খ. ডায়েরি নং & ডায়েরি তারিখ */}
-            {formData.meetingType === 'বিএসআর' && (
-              <>
-                <div id="field-8a" className={`${colWrapperCls} ${duplicates.diaryNo ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50/70 border-emerald-100'}`}>
-                  <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <BookOpen size={14} className="text-emerald-600 shrink-0" /> ডায়েরি নং:</label>
-                  <input 
-                    type="text" 
-                    className={duplicates.diaryNo ? `${inputBaseCls} border-amber-500 ring-4 ring-amber-50` : getDynamicInputCls(diaryNoPart)} 
-                    value={diaryNoPart} 
-                    onChange={e => setDiaryNoPart(toBengaliDigits(e.target.value))} 
-                    placeholder="নং লিখুন"
-                  />
-                  {duplicates.diaryNo && (
-                    <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1">
-                        <AlertCircle size={10} /> এই ডায়েরি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => navigateToEntry?.(duplicates.diaryEntryId!, 'settlement', diaryNoPart)}
-                        className="text-amber-700 hover:text-amber-900 underline underline-offset-2 flex items-center gap-1"
-                      >
-                        দেখুন <ArrowRightCircle size={10} />
-                      </button>
-                    </div>
-                  )}
+            <div id="field-8a" className={`${colWrapperCls} ${duplicates.diaryNo ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50/70 border-emerald-100'}`}>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <BookOpen size={14} className="text-emerald-600 shrink-0" /> ডায়েরি নং:</label>
+              <input 
+                type="text" 
+                className={duplicates.diaryNo ? `${inputBaseCls} border-amber-500 ring-4 ring-amber-50` : getDynamicInputCls(diaryNoPart)} 
+                value={diaryNoPart} 
+                onChange={e => setDiaryNoPart(toBengaliDigits(e.target.value))} 
+                placeholder="নং লিখুন"
+              />
+              {duplicates.diaryNo && (
+                <div className="mt-2 text-[10px] font-black text-amber-600 animate-in slide-in-from-top-1 flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-1">
+                    <AlertCircle size={10} /> এই ডায়েরি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigateToEntry?.(duplicates.diaryEntryId!, 'settlement', diaryNoPart)}
+                    className="text-amber-700 hover:text-amber-900 underline underline-offset-2 flex items-center gap-1"
+                  >
+                    দেখুন <ArrowRightCircle size={10} />
+                  </button>
                 </div>
-                <SegmentedInput id="field-8b" num={getSerial()} icon={Calendar} label="ডায়েরি তারিখ" color="emerald" noValue="DATE_ONLY" dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryYear} noSetter={()=>{}} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} error={diaryDateError} />
-              </>
-            )}
+              )}
+            </div>
+            <SegmentedInput id="field-8b" num={getSerial()} icon={Calendar} label="ডায়েরি তারিখ" color="emerald" noValue="DATE_ONLY" dayValue={diaryDay} monthValue={diaryMonth} yearValue={diaryYear} noSetter={()=>{}} daySetter={setDiaryDay} monthSetter={setDiaryMonth} yearSetter={setDiaryYear} dayRef={diaryDayRef} monthRef={diaryMonthRef} yearRef={diaryYearRef} isFocused={isDiaryFocused} focusSetter={setIsDiaryFocused} error={diaryDateError} />
 
             {/* 9.ক & 9.খ. জারিপত্র নং & জারিপত্র তারিখ */}
             <div id="field-9a" className={`${colWrapperCls} ${duplicates.issueNo ? 'bg-amber-50 border-amber-200' : 'bg-amber-50/70 border-amber-100'}`}>
