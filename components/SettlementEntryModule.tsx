@@ -299,12 +299,45 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
   const filteredCorrespondenceEntries = useMemo(() => {
     if (!correspondenceEntries || correspondenceEntries.length === 0) return [];
-    if (!letterSearchQuery.trim()) return correspondenceEntries.slice(0, 15);
+
+    // 1. Filter letters that have BOTH issueLetterNo and issueLetterDate
+    // 2. Filter letters that are NOT already in existingEntries (মীমাংসা রেজিস্টার)
+    const validUnsettledEntries = correspondenceEntries.filter((entry: any) => {
+      const hasIssueNo = Boolean(entry.issueLetterNo && entry.issueLetterNo.trim());
+      const hasIssueDate = Boolean(entry.issueLetterDate && entry.issueLetterDate.trim());
+      if (!hasIssueNo || !hasIssueDate) return false;
+
+      // Check if already in settlement register (existingEntries)
+      const cIssue = (entry.issueLetterNo || '').trim();
+      const cDiary = (entry.diaryNo || '').trim();
+      const cLetter = (entry.letterNo || '').trim();
+
+      const isAlreadySettled = existingEntries.some((se: any) => {
+        const seIssue = (se.issueNo || '').trim();
+        const seDiary = (se.diaryNo || '').trim();
+        const seLetter = (se.letterNo || '').trim();
+
+        if (cIssue && seIssue && (cIssue === seIssue || toEnglishDigits(cIssue) === toEnglishDigits(seIssue))) {
+          return true;
+        }
+        if (cDiary && seDiary && (cDiary === seDiary || toEnglishDigits(cDiary) === toEnglishDigits(seDiary))) {
+          return true;
+        }
+        if (cLetter && seLetter && (cLetter === seLetter || toEnglishDigits(cLetter) === toEnglishDigits(seLetter))) {
+          return true;
+        }
+        return false;
+      });
+
+      return !isAlreadySettled;
+    });
+
+    if (!letterSearchQuery.trim()) return validUnsettledEntries.slice(0, 15);
 
     const query = letterSearchQuery.toLowerCase().trim();
     const engQuery = toEnglishDigits(query);
 
-    return correspondenceEntries.filter((entry: any) => {
+    return validUnsettledEntries.filter((entry: any) => {
       const diaryNo = (entry.diaryNo || '').toLowerCase();
       const diaryNoEng = toEnglishDigits(diaryNo);
       const letterNo = (entry.letterNo || '').toLowerCase();
@@ -324,7 +357,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         entity.includes(query)
       );
     }).slice(0, 30);
-  }, [correspondenceEntries, letterSearchQuery]);
+  }, [correspondenceEntries, existingEntries, letterSearchQuery]);
 
   const parseDateComponents = (dateStr?: string) => {
     if (!dateStr || !dateStr.trim()) return { d: '', m: '', y: '' };
