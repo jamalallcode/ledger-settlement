@@ -339,15 +339,16 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         const engSeDiary = toEnglishDigits(seDiary);
         const engSeLetter = toEnglishDigits(seLetter);
 
-        if (engCIssue && engSeIssue && engCIssue === engSeIssue) {
-          return true;
-        }
-        if (engCDiary && engSeDiary && engCDiary === engSeDiary) {
-          return true;
-        }
-        if (engCLetter && engSeLetter && engCLetter === engSeLetter) {
-          return true;
-        }
+        const issueMatch = Boolean(engCIssue && engSeIssue && engCIssue === engSeIssue);
+        const diaryMatch = Boolean(engCDiary && engSeDiary && engCDiary === engSeDiary);
+        const letterMatch = Boolean(engCLetter && engSeLetter && engCLetter === engSeLetter);
+
+        // Require multiple matching identifiers (or exact ID match) to consider it the exact same letter
+        if (issueMatch && diaryMatch && letterMatch) return true;
+        if (issueMatch && diaryMatch && (!engCLetter || !engSeLetter)) return true;
+        if (issueMatch && letterMatch && (!engCDiary || !engSeDiary)) return true;
+        if (diaryMatch && letterMatch && (!engCIssue || !engSeIssue)) return true;
+
         return false;
       });
 
