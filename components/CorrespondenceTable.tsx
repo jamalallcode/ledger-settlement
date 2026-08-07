@@ -35,6 +35,7 @@ import {
   LayoutGrid,
   CalendarDays,
   AlertTriangle,
+  AlertCircle,
   MessageSquare,
   Edit3,
   RotateCcw,
@@ -349,6 +350,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   >({});
   const [recentlyUpdatedMap, setRecentlyUpdatedMap] = useState<
     Record<string, boolean>
+  >({});
+  const [validationErrorMap, setValidationErrorMap] = useState<
+    Record<string, string>
   >({});
   const [isUpdating, setIsUpdating] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -767,11 +771,36 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, [expandedCycles, groupedEntries]);
 
+  const checkIssueValidation = (entryData: Partial<CorrespondenceEntry>): string | null => {
+    const isSettled = entryData.isSettled;
+    if (isSettled === "হ্যাঁ" || isSettled === "না") {
+      const hasIssueNo = Boolean(entryData.issueLetterNo && String(entryData.issueLetterNo).trim());
+      const hasIssueDate = Boolean(entryData.issueLetterDate && String(entryData.issueLetterDate).trim());
+
+      if (!hasIssueNo && !hasIssueDate) {
+        return "আপনি জারিপত্র নং ও তারিখ লেখেন নি।";
+      }
+      if (!hasIssueNo) {
+        return "আপনি জারিপত্র নম্বর লেখেন নি।";
+      }
+      if (!hasIssueDate) {
+        return "আপনি জারিপত্র তারিখ লেখেন নি।";
+      }
+    }
+    return null;
+  };
+
   const handleInlineChange = (
     entryId: string,
     field: keyof CorrespondenceEntry,
     value: any,
   ) => {
+    setValidationErrorMap((prev) => {
+      if (!prev[entryId]) return prev;
+      const next = { ...prev };
+      delete next[entryId];
+      return next;
+    });
     setPendingChanges((prev) => ({
       ...prev,
       [entryId]: {
@@ -783,6 +812,26 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
   const saveAllChanges = async () => {
     if (Object.keys(pendingChanges).length === 0) return;
+
+    let hasError = false;
+    const newValidationErrors: Record<string, string> = {};
+
+    for (const entryId in pendingChanges) {
+      const entry = entries.find((e) => e.id === entryId);
+      if (!entry) continue;
+      const merged = { ...entry, ...pendingChanges[entryId] };
+      const errorMsg = checkIssueValidation(merged);
+      if (errorMsg) {
+        hasError = true;
+        newValidationErrors[entryId] = `সংরক্ষণ করা হয়নি! ${errorMsg}`;
+      }
+    }
+
+    if (hasError) {
+      setValidationErrorMap((prev) => ({ ...prev, ...newValidationErrors }));
+      return;
+    }
+
     setIsUpdating(true);
 
     try {
@@ -795,6 +844,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         }
       }
       setPendingChanges({});
+      setValidationErrorMap({});
       updatedIds.forEach((id) => {
         setRecentlyUpdatedMap((prev) => ({ ...prev, [id]: true }));
         setTimeout(() => {
@@ -811,13 +861,33 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const saveRowChanges = async (entryId: string) => {
     const rowChanges = pendingChanges[entryId];
     if (!rowChanges) return;
+
+    const entry = entries.find((e) => e.id === entryId);
+    if (!entry) return;
+
+    const merged = { ...entry, ...rowChanges };
+    const errorMsg = checkIssueValidation(merged);
+
+    if (errorMsg) {
+      // BLOCK SAVE! DO NOT call onInlineUpdate!
+      setValidationErrorMap((prev) => ({
+        ...prev,
+        [entryId]: `সংরক্ষণ করা হয়নি! ${errorMsg}`,
+      }));
+      return;
+    }
+
     setIsUpdating(true);
 
     try {
-      const entry = entries.find((e) => e.id === entryId);
-      if (entry && onInlineUpdate) {
-        await onInlineUpdate({ ...entry, ...rowChanges });
+      if (onInlineUpdate) {
+        await onInlineUpdate(merged);
       }
+      setValidationErrorMap((prev) => {
+        const next = { ...prev };
+        delete next[entryId];
+        return next;
+      });
       setPendingChanges((prev) => {
         const next = { ...prev };
         delete next[entryId];
@@ -2060,48 +2130,106 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         <X size={11} strokeWidth={3} /> না
                                       </button>
                                     </div>
-                                    {recentlyUpdatedMap[entry.id] ? (
-                                      <div className="mt-1 text-[8.5px] font-black text-emerald-950 bg-gradient-to-r from-emerald-100 via-teal-100 to-emerald-50 border border-emerald-400 rounded-lg p-1.5 flex items-center justify-between leading-tight animate-in zoom-in-95 duration-300 shadow-xs ring-1 ring-emerald-300/80">
-                                        <div className="flex items-center gap-1">
-                                          <CheckCircle2 size={12} className="text-emerald-600 shrink-0 animate-bounce" />
-                                          <span className="text-emerald-900 font-extrabold">
-                                            আপডেট সম্পন্ন হয়েছে! ({currentIsSettled})
-                                          </span>
+                                    {(() => {
+                                      const missingIssueInfoMsg = (() => {
+                                        if (!currentIssueNo && !currentIssueDate) {
+                                          return "আপনি জারিপত্র নং ও তারিখ লেখেন নি।";
+                                        }
+                                        if (!currentIssueNo) {
+                                          return "আপনি জারিপত্র নম্বর লেখেন নি।";
+                                        }
+                                        if (!currentIssueDate) {
+                                          return "আপনি জারিপত্র তারিখ লেখেন নি।";
+                                        }
+                                        return null;
+                                      })();
+
+                                      if (validationErrorMap[entry.id]) {
+                                        return (
+                                          <div className="mt-1 text-[8.5px] font-black text-rose-950 bg-gradient-to-r from-rose-100 via-rose-50 to-red-50 border border-rose-400 rounded-lg p-1.5 flex items-center justify-between leading-tight animate-in zoom-in-95 duration-300 shadow-xs ring-1 ring-rose-300">
+                                            <div className="flex items-center gap-1">
+                                              <AlertCircle size={12} className="text-rose-600 shrink-0 animate-bounce" />
+                                              <span className="text-rose-950 font-extrabold">
+                                                {validationErrorMap[entry.id]}
+                                              </span>
+                                            </div>
+                                            <span className="text-[7.5px] font-black text-white bg-rose-600 px-1 py-0.5 rounded-md shadow-2xs shrink-0">
+                                              ব্যর্থ
+                                            </span>
+                                          </div>
+                                        );
+                                      }
+
+                                      if (recentlyUpdatedMap[entry.id]) {
+                                        return (
+                                          <div className="mt-1 text-[8.5px] font-black text-emerald-950 bg-gradient-to-r from-emerald-100 via-teal-100 to-emerald-50 border border-emerald-400 rounded-lg p-1.5 flex items-center justify-between leading-tight animate-in zoom-in-95 duration-300 shadow-xs ring-1 ring-emerald-300/80">
+                                            <div className="flex items-center gap-1">
+                                              <CheckCircle2 size={12} className="text-emerald-600 shrink-0 animate-bounce" />
+                                              <span className="text-emerald-900 font-extrabold">
+                                                আপডেট সম্পন্ন হয়েছে! ({currentIsSettled})
+                                              </span>
+                                            </div>
+                                            <span className="text-[7.5px] font-black text-emerald-800 bg-emerald-200/90 px-1 py-0.5 rounded-md shadow-2xs border border-emerald-300 shrink-0">
+                                              সফল
+                                            </span>
+                                          </div>
+                                        );
+                                      }
+
+                                      if (pendingChanges[entry.id] && canFillIssue) {
+                                        return (
+                                          <div className="mt-1 text-[8px] font-black text-blue-950 bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-100/70 border border-blue-300 rounded-lg p-1 flex items-center justify-between leading-tight animate-in fade-in duration-200 shadow-2xs">
+                                            <div className="flex items-center gap-1">
+                                              <Save size={11} className="text-blue-600 shrink-0 animate-pulse" />
+                                              <span>
+                                                '{currentIsSettled}' চয়ন করা হয়েছে।{missingIssueInfoMsg ? " (জারিপত্র নং/তারিখ আবশ্যক)" : ""} ডানের [💾] চাপুন।
+                                              </span>
+                                            </div>
+                                            <button
+                                              type="button"
+                                              onClick={() => saveRowChanges(entry.id)}
+                                              className="text-[7.5px] font-black text-white bg-blue-600 hover:bg-blue-700 px-1.5 py-0.5 rounded-md shadow-2xs transition-all shrink-0 cursor-pointer"
+                                            >
+                                              সেভ
+                                            </button>
+                                          </div>
+                                        );
+                                      }
+
+                                      if (canFillIssue) {
+                                        if (missingIssueInfoMsg) {
+                                          return (
+                                            <div className="mt-1 text-[8px] font-black text-amber-900 bg-amber-50/90 border border-amber-300/80 rounded-lg p-1 flex items-center justify-between leading-tight animate-in fade-in duration-200 shadow-2xs">
+                                              <div className="flex items-center gap-1">
+                                                <AlertTriangle size={11} className="text-amber-600 shrink-0" />
+                                                <span>{missingIssueInfoMsg}</span>
+                                              </div>
+                                              <span className="text-[7px] font-bold text-amber-800 bg-amber-100 px-1 py-0.2 rounded border border-amber-200 shrink-0">
+                                                অসম্পূর্ণ
+                                              </span>
+                                            </div>
+                                          );
+                                        }
+                                        return (
+                                          <div className="mt-1 text-[8px] font-black text-emerald-900 bg-gradient-to-r from-emerald-50/90 via-teal-50/70 to-slate-50 border border-emerald-300/80 rounded-lg p-1 flex items-center justify-between leading-tight animate-in fade-in duration-200 shadow-2xs">
+                                            <div className="flex items-center gap-1">
+                                              <CheckCircle2 size={11} className="text-emerald-600 shrink-0" />
+                                              <span>আপডেট সম্পন্ন হয়েছে ({currentIsSettled})</span>
+                                            </div>
+                                            <span className="text-[7px] font-bold text-emerald-700 bg-emerald-100/80 px-1 py-0.2 rounded border border-emerald-200/80 shrink-0">
+                                              সংরক্ষিত
+                                            </span>
+                                          </div>
+                                        );
+                                      }
+
+                                      return (
+                                        <div className="mt-1 text-[8px] font-black text-amber-900 bg-amber-100/90 border border-amber-300 rounded-lg p-1.5 flex items-center gap-1.5 leading-tight animate-in fade-in duration-200 shadow-xs">
+                                          <AlertTriangle size={12} className="text-amber-600 shrink-0" />
+                                          <span>নিষ্পত্তি 'হ্যাঁ' বা 'না' সিলেক্ট না করা পর্যন্ত জারিপত্র নং ও তারিখ ফিলাপ হবে না।</span>
                                         </div>
-                                        <span className="text-[7.5px] font-black text-emerald-800 bg-emerald-200/90 px-1 py-0.5 rounded-md shadow-2xs border border-emerald-300 shrink-0">
-                                          সফল
-                                        </span>
-                                      </div>
-                                    ) : pendingChanges[entry.id] && canFillIssue ? (
-                                      <div className="mt-1 text-[8px] font-black text-blue-950 bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-100/70 border border-blue-300 rounded-lg p-1 flex items-center justify-between leading-tight animate-in fade-in duration-200 shadow-2xs">
-                                        <div className="flex items-center gap-1">
-                                          <Save size={11} className="text-blue-600 shrink-0 animate-pulse" />
-                                          <span>'{currentIsSettled}' চয়ন করা হয়েছে। ডানের [💾] চাপুন।</span>
-                                        </div>
-                                        <button
-                                          type="button"
-                                          onClick={() => saveRowChanges(entry.id)}
-                                          className="text-[7.5px] font-black text-white bg-blue-600 hover:bg-blue-700 px-1.5 py-0.5 rounded-md shadow-2xs transition-all shrink-0 cursor-pointer"
-                                        >
-                                          সেভ
-                                        </button>
-                                      </div>
-                                    ) : canFillIssue ? (
-                                      <div className="mt-1 text-[8px] font-black text-emerald-900 bg-gradient-to-r from-emerald-50/90 via-teal-50/70 to-slate-50 border border-emerald-300/80 rounded-lg p-1 flex items-center justify-between leading-tight animate-in fade-in duration-200 shadow-2xs">
-                                        <div className="flex items-center gap-1">
-                                          <CheckCircle2 size={11} className="text-emerald-600 shrink-0" />
-                                          <span>আপডেট সম্পন্ন হয়েছে ({currentIsSettled})</span>
-                                        </div>
-                                        <span className="text-[7px] font-bold text-emerald-700 bg-emerald-100/80 px-1 py-0.2 rounded border border-emerald-200/80 shrink-0">
-                                          সংরক্ষিত
-                                        </span>
-                                      </div>
-                                    ) : (
-                                      <div className="mt-1 text-[8px] font-black text-amber-900 bg-amber-100/90 border border-amber-300 rounded-lg p-1.5 flex items-center gap-1.5 leading-tight animate-in fade-in duration-200 shadow-xs">
-                                        <AlertTriangle size={12} className="text-amber-600 shrink-0" />
-                                        <span>নিষ্পত্তি 'হ্যাঁ' বা 'না' সিলেক্ট না করা পর্যন্ত জারিপত্র নং ও তারিখ ফিলাপ হবে না।</span>
-                                      </div>
-                                    )}
+                                      );
+                                    })()}
                                   </div>
 
                                   {/* 2. জারিপত্র নং */}
