@@ -336,7 +336,7 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
             >
               <LayoutGrid size={14} className="text-sky-600 shrink-0" />
               <span className="font-extrabold text-[11px] text-sky-800 tracking-tight shrink-0 max-w-[140px] truncate">
-                {filterMinistry || 'সকল মন্ত্রণালয়'}
+                {filterMinistry === 'সকল' ? 'মন্ত্রণালয়সমূহ' : filterMinistry}
               </span>
               <ChevronDown size={13} className={`text-sky-500 shrink-0 transition-transform duration-300 ${isMinistryDropdownOpen ? 'rotate-180 text-sky-600' : ''}`} />
             </div>
@@ -355,7 +355,7 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
                       filterMinistry === 'সকল' ? 'bg-sky-600 text-white' : 'hover:bg-slate-50 text-slate-700 hover:text-sky-600 bg-white'
                     }`}
                   >
-                    <span>সকল মন্ত্রণালয়</span>
+                    <span>মন্ত্রণালয়সমূহ</span>
                     {filterMinistry === 'সকল' && <Check size={13} className="text-white stroke-[3.5]" />}
                   </div>
                   {ministryGroups.map((m, idx) => {

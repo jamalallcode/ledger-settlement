@@ -82,7 +82,7 @@ const Navbar: React.FC<NavbarProps> = ({
   const [showToolsDropdown, setShowToolsDropdown] = useState(false);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [showEntryDropdown, setShowEntryDropdown] = useState(false);
-  const [showRegisterDropdown, setShowRegisterDropdown] = useState(false);
+  const [isEntryHovered, setIsEntryHovered] = useState(false);
   const [showLinksModal, setShowLinksModal] = useState(false);
   const [isLinksHovered, setIsLinksHovered] = useState(false);
   const [savedLinksList, setSavedLinksList] = useState<SavedLink[]>([]);
@@ -90,7 +90,6 @@ const Navbar: React.FC<NavbarProps> = ({
   const toolsRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const entryDropdownRef = useRef<HTMLDivElement>(null);
-  const registerDropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   const handleLinksMouseEnter = () => {
@@ -106,84 +105,16 @@ const Navbar: React.FC<NavbarProps> = ({
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setShowNotifDropdown(false);
       }
+      if (entryDropdownRef.current && !entryDropdownRef.current.contains(e.target as Node)) {
+        setShowEntryDropdown(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const customNavButtons = [
-    {
-      id: 'landing',
-      label: 'হোম',
-      icon: Home,
-      isActive: activeTab === 'landing',
-      onClick: () => setActiveTab('landing')
-    },
-    {
-      id: 'correspondence-entry',
-      label: 'চিঠিপত্র এন্ট্রি',
-      icon: Mail,
-      isActive: activeTab === 'entry' && entryModule === 'correspondence',
-      activeClass: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.15)] font-black',
-      onClick: () => setActiveTab('entry', 'correspondence')
-    },
-    {
-      id: 'settlement-entry',
-      label: 'মীমাংসা এন্ট্রি',
-      icon: Plus,
-      isActive: activeTab === 'entry' && entryModule === 'settlement',
-      activeClass: 'bg-blue-500/15 text-blue-400 border-blue-500/30 shadow-[0_0_12px_rgba(59,130,246,0.15)] font-black',
-      onClick: () => setActiveTab('entry', 'settlement')
-    },
-    {
-      id: 'correspondence-register',
-      label: 'চিঠিপত্র রেজি:',
-      icon: Library,
-      isActive: activeTab === 'register' && registerSubModule === 'correspondence',
-      activeClass: 'bg-violet-500/15 text-violet-400 border-violet-500/30 shadow-[0_0_12px_rgba(139,92,246,0.15)] font-black',
-      onClick: () => setActiveTab('register', 'correspondence')
-    },
-    {
-      id: 'settlement-register',
-      label: 'মীমাংসিত রেজি:',
-      icon: CheckCircle2,
-      isActive: activeTab === 'register' && registerSubModule === 'settlement',
-      activeClass: 'bg-rose-500/15 text-rose-400 border-rose-500/30 shadow-[0_0_12px_rgba(244,63,94,0.15)] font-black',
-      onClick: () => setActiveTab('register', 'settlement')
-    },
-    {
-      id: 'paragraphs',
-      label: 'অনুচ্ছেদ',
-      icon: ClipboardList,
-      isActive: activeTab === 'return' && reportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।',
-      activeClass: 'bg-amber-500/15 text-amber-400 border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.15)] font-black',
-      onClick: () => setActiveTab('return', undefined, 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')
-    },
-    {
-      id: 'dhaka-return',
-      label: 'ঢাকা রিটার্ণ',
-      icon: Send,
-      isActive: activeTab === 'return' && reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।',
-      activeClass: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30 shadow-[0_0_12px_rgba(99,102,241,0.15)] font-black',
-      onClick: () => setActiveTab('return', undefined, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')
-    },
-    {
-      id: 'ddsir-return',
-      label: 'ডিডি স্যার রিটার্ণ',
-      icon: UserCheck,
-      isActive: activeTab === 'return' && reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।',
-      activeClass: 'bg-purple-500/15 text-purple-400 border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.15)] font-black',
-      onClick: () => setActiveTab('return', undefined, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।')
-    },
-    {
-      id: 'links',
-      label: 'লিংকসমূহ',
-      icon: Link2,
-      isActive: showLinksModal,
-      activeClass: 'bg-sky-500/15 text-sky-400 border-sky-500/30 shadow-[0_0_12px_rgba(14,165,233,0.15)] font-black',
-      onClick: () => setShowLinksModal(true)
-    }
-  ];
+  const isEntryActive = activeTab === 'entry';
+  const isArchiveActive = activeTab === 'archive';
 
   return (
     <nav className="sticky top-0 z-[9991] bg-slate-900 border-b border-slate-800 h-[45px] shadow-2xl no-print relative">
@@ -202,100 +133,95 @@ const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
           
-          {/* Custom Capsule/Pill Navigation Bar (Exact clone of user's requested style) */}
-          <div className="hidden lg:flex items-center bg-zinc-950 border border-zinc-800/80 h-9 px-1.5 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.5)] select-none">
+          {/* Custom Capsule/Pill Navigation Bar */}
+          <div className="hidden lg:flex items-center bg-slate-900 border border-slate-800 h-9 px-1.5 rounded-full shadow-lg select-none">
             {/* Left brand/Logo/Home Circle Button */}
             <button
               onClick={() => setActiveTab('landing')}
               className={`group relative flex items-center justify-center w-7 h-7 rounded-full transition-all duration-300 transform hover:scale-105 active:scale-95
                 ${activeTab === 'landing'
-                  ? 'bg-white text-zinc-950 shadow-[0_0_10px_rgba(255,255,255,0.4)]'
-                  : 'bg-white hover:bg-slate-100 text-zinc-900 shadow-md'}`}
+                  ? 'bg-blue-600 text-white shadow-[0_0_10px_rgba(37,99,235,0.4)]'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-200 shadow-md'}`}
               title="হোম"
             >
               <Home size={13} className="stroke-[3]" />
             </button>
 
             {/* Vertical capsule separator */}
-            <div className="h-4 w-[1px] bg-zinc-800/80 mx-2" />
+            <div className="h-4 w-[1px] bg-slate-800 mx-2" />
 
             {/* Nav Link Buttons inside Capsule */}
             <div className="flex items-center gap-1">
-              {customNavButtons.slice(1).map((btn) => {
-                const IconComp = btn.icon;
+              {/* 1. নতুন এন্ট্রি (Dropdown) */}
+              <div 
+                ref={entryDropdownRef}
+                className="relative"
+                onMouseEnter={() => setIsEntryHovered(true)}
+                onMouseLeave={() => setIsEntryHovered(false)}
+              >
+                <button
+                  onClick={() => setShowEntryDropdown(!showEntryDropdown)}
+                  className={`px-3 py-1 text-[11px] font-bold rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1.5 border border-transparent
+                    ${isEntryActive
+                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.15)] font-black'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/80'}`}
+                >
+                  <FilePlus2 size={12} className={`stroke-[2.5] ${isEntryActive ? 'text-emerald-400' : 'text-slate-400'}`} />
+                  <span>নতুন এন্ট্রি</span>
+                  <ChevronDown size={10} className={`transition-transform duration-200 ${isEntryHovered || showEntryDropdown ? 'rotate-180 text-emerald-400' : 'text-slate-400'}`} />
+                </button>
 
-                if (btn.id === 'links') {
-                  return (
-                    <div 
-                      key={btn.id}
-                      className="relative"
-                      onMouseEnter={handleLinksMouseEnter}
-                      onMouseLeave={() => setIsLinksHovered(false)}
-                    >
+                {/* Entry Dropdown Menu */}
+                {(isEntryHovered || showEntryDropdown) && (
+                  <div className="absolute top-full left-0 pt-[10px] z-[10000]">
+                    <div className="w-48 bg-slate-900 border border-slate-800 rounded-none shadow-2xl p-1.5 animate-in fade-in slide-in-from-top-1 duration-150 backdrop-blur-xl">
                       <button
-                        onClick={btn.onClick}
-                        className={`px-3 py-1 text-[11px] font-bold rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1 border border-transparent
-                          ${btn.isActive 
-                            ? `${btn.activeClass}` 
-                            : 'text-zinc-400 hover:text-white hover:bg-zinc-800/40'}`}
+                        onClick={() => {
+                          setActiveTab('entry', 'correspondence');
+                          setShowEntryDropdown(false);
+                          setIsEntryHovered(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-none transition-all text-left ${
+                          activeTab === 'entry' && entryModule === 'correspondence'
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                            : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+                        }`}
                       >
-                        <IconComp size={11} className={`stroke-[2.5] ${btn.isActive ? '' : 'text-zinc-500'}`} />
-                        <span>{btn.label}</span>
-                        <ChevronDown size={10} className={`transition-transform duration-200 ${isLinksHovered ? 'rotate-180 text-sky-400' : 'text-zinc-500'}`} />
+                        <Mail size={13} className="text-emerald-400" />
+                        <span>চিঠিপত্র এন্ট্রি</span>
                       </button>
 
-                      {/* Hover Dropdown showing link names */}
-                      {isLinksHovered && (
-                        <div className="absolute top-full right-0 pt-[10px] z-[10000]">
-                          <div className="w-56 bg-slate-900 border border-slate-800 rounded-none shadow-2xl p-2 animate-in fade-in slide-in-from-top-1 duration-150">
-                            <div className="max-h-60 overflow-y-auto space-y-0.5 custom-scrollbar">
-                              {savedLinksList.length === 0 ? (
-                                <div className="px-3 py-3 text-center text-xs text-slate-400 font-medium">
-                                  কোনো সেভ করা লিংক নেই
-                                </div>
-                              ) : (
-                                savedLinksList.map((link) => (
-                                  <a
-                                    key={link.id}
-                                    href={link.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setIsLinksHovered(false);
-                                    }}
-                                    className="flex items-center justify-between px-3 py-2 text-xs font-bold text-slate-200 hover:text-white hover:bg-slate-800/90 rounded-none transition-all group/item"
-                                  >
-                                    <div className="flex items-center gap-2 truncate pr-2">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 group-hover/item:scale-125 transition-transform shrink-0" />
-                                      <span className="truncate">{link.title}</span>
-                                    </div>
-                                    <ExternalLink size={12} className="text-slate-500 group-hover/item:text-sky-400 shrink-0 transition-colors" />
-                                  </a>
-                                ))
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                      <button
+                        onClick={() => {
+                          setActiveTab('entry', 'settlement');
+                          setShowEntryDropdown(false);
+                          setIsEntryHovered(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-none transition-all text-left mt-0.5 ${
+                          activeTab === 'entry' && entryModule === 'settlement'
+                            ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                            : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+                        }`}
+                      >
+                        <Plus size={13} className="text-blue-400" />
+                        <span>মীমাংসা এন্ট্রি</span>
+                      </button>
                     </div>
-                  );
-                }
+                  </div>
+                )}
+              </div>
 
-                return (
-                  <button
-                    key={btn.id}
-                    onClick={btn.onClick}
-                    className={`px-3 py-1 text-[11px] font-bold rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1 border border-transparent
-                      ${btn.isActive 
-                        ? `${btn.activeClass}` 
-                        : 'text-zinc-400 hover:text-white hover:bg-zinc-800/40'}`}
-                  >
-                    <IconComp size={11} className={`stroke-[2.5] ${btn.isActive ? '' : 'text-zinc-500'}`} />
-                    <span>{btn.label}</span>
-                  </button>
-                );
-              })}
+              {/* 2. অডিট ক্রাইটেরিয়া */}
+              <button
+                onClick={() => setActiveTab('archive')}
+                className={`px-3 py-1 text-[11px] font-bold rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1.5 border border-transparent
+                  ${isArchiveActive
+                    ? 'bg-rose-500/15 text-rose-400 border-rose-500/30 shadow-[0_0_12px_rgba(244,63,94,0.15)] font-black'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/80'}`}
+              >
+                <Library size={12} className={`stroke-[2.5] ${isArchiveActive ? 'text-rose-400' : 'text-slate-400'}`} />
+                <span>অডিট ক্রাইটেরিয়া</span>
+              </button>
             </div>
           </div>
         </div>
@@ -316,7 +242,7 @@ const Navbar: React.FC<NavbarProps> = ({
               </button>
 
               {showNotifDropdown && (
-                <div className="absolute top-[calc(100%+12px)] right-0 w-80 sm:w-96 bg-slate-900 border-2 border-amber-500/50 rounded-[2rem] shadow-2xl overflow-hidden z-[5010] animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="absolute top-[calc(100%+12px)] right-0 w-80 sm:w-96 bg-slate-900 border-2 border-amber-500/50 rounded-none shadow-2xl overflow-hidden z-[5010] animate-in fade-in slide-in-from-top-4 duration-300">
                   {/* Moderation Pending (Admin Only) */}
                   {pendingEntries.length > 0 && (
                     <div className="flex flex-col">
@@ -451,7 +377,7 @@ const Navbar: React.FC<NavbarProps> = ({
                   <Settings size={16} />
                 </button>
                 {showToolsDropdown && (
-                  <div className="absolute top-[calc(100%+12px)] right-0 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 z-[5010]">
+                  <div className="absolute top-[calc(100%+12px)] right-0 w-64 bg-slate-900 border border-slate-800 rounded-none shadow-2xl p-4 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 z-[5010]">
                     {/* System Tools (Admin Only) */}
                     <div className="space-y-3">
                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">সিস্টেম টুলস</span>
@@ -498,26 +424,76 @@ const Navbar: React.FC<NavbarProps> = ({
       {isMobileMenuOpen && (
         <div className="lg:hidden fixed inset-x-0 top-[45px] bg-slate-900/95 backdrop-blur-xl border-b border-slate-800 p-4 shadow-2xl z-[9990] flex flex-col gap-2 animate-in slide-in-from-top-2 duration-200">
           <div className="grid grid-cols-2 gap-2">
-            {customNavButtons.map((btn) => {
-              const IconComp = btn.icon;
-              return (
-                <button
-                  key={btn.id}
-                  onClick={() => {
-                    btn.onClick();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`p-2.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
-                    btn.isActive
-                      ? `${btn.activeClass}`
-                      : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700'
-                  }`}
-                >
-                  <IconComp size={14} />
-                  <span>{btn.label}</span>
-                </button>
-              );
-            })}
+            <button
+              onClick={() => {
+                setActiveTab('landing');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`p-2.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
+                activeTab === 'landing'
+                  ? 'bg-blue-600 text-white border-blue-500 shadow-md'
+                  : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700'
+              }`}
+            >
+              <Home size={14} />
+              <span>হোম</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('entry', 'correspondence');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`p-2.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
+                activeTab === 'entry' && entryModule === 'correspondence'
+                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 font-black'
+                  : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700'
+              }`}
+            >
+              <Mail size={14} />
+              <span>চিঠিপত্র এন্ট্রি</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('entry', 'settlement');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`p-2.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
+                activeTab === 'entry' && entryModule === 'settlement'
+                  ? 'bg-blue-500/15 text-blue-400 border-blue-500/30 font-black'
+                  : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700'
+              }`}
+            >
+              <Plus size={14} />
+              <span>মীমাংসা এন্ট্রি</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('archive');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`p-2.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
+                isArchiveActive
+                  ? 'bg-rose-500/15 text-rose-400 border-rose-500/30 font-black'
+                  : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700'
+              }`}
+            >
+              <Library size={14} />
+              <span>অডিট ক্রাইটেরিয়া</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setShowLinksModal(true);
+                setIsMobileMenuOpen(false);
+              }}
+              className="p-2.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700"
+            >
+              <Link2 size={14} />
+              <span>লিংকসমূহ</span>
+            </button>
           </div>
         </div>
       )}
