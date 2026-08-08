@@ -121,6 +121,58 @@ const renderMeetingType = (meetingType: string | undefined) => {
   return `${trimmed} সভা`;
 };
 
+const getSettlementTypeDisplay = (entry: any): string => {
+  if (entry.isMeeting && entry.meetingType) {
+    return renderMeetingType(entry.meetingType);
+  }
+
+  // Check paragraphs array if present
+  if (entry.paragraphs && entry.paragraphs.length > 0) {
+    const hasPartial = entry.paragraphs.some((p: any) => p.status === 'আংশিক');
+    const fullCount = entry.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ').length;
+    const totalParasCount = entry.paragraphs.length;
+
+    if (hasPartial) {
+      return 'আংশিক নিষ্পন্ন';
+    }
+    if (fullCount > 0 && fullCount < totalParasCount) {
+      return 'আংশিক নিষ্পন্ন';
+    }
+    if (fullCount === totalParasCount && totalParasCount > 0) {
+      return 'পূর্ণাঙ্গ নিষ্পন্ন';
+    }
+  }
+
+  // Check numeric fields
+  const partialCount = parseInt(toEnglishDigits(String(entry.meetingPartialSettledParaCount || '0')));
+  if (partialCount > 0) {
+    return 'আংশিক নিষ্পন্ন';
+  }
+
+  const fullCount = parseInt(toEnglishDigits(String(entry.meetingFullSettledParaCount || '0')));
+  const settledCount = parseInt(toEnglishDigits(String(entry.meetingSettledParaCount || '0')));
+  const sentCount = parseInt(toEnglishDigits(String(entry.meetingSentParaCount || '0')));
+
+  if (fullCount > 0 && sentCount > 0 && fullCount < sentCount) {
+    return 'আংশিক নিষ্পন্ন';
+  }
+
+  if (settledCount > 0 && sentCount > 0 && settledCount < sentCount) {
+    return 'আংশিক নিষ্পন্ন';
+  }
+
+  // Check explicit status string
+  if (entry.settlementStatus === 'আংশিক' || entry.status === 'আংশিক' || entry.isPartial) {
+    return 'আংশিক নিষ্পন্ন';
+  }
+
+  if (entry.settlementStatus === 'পূর্ণাঙ্গ' || entry.status === 'পূর্ণাঙ্গ' || entry.isFull) {
+    return 'পূর্ণাঙ্গ নিষ্পন্ন';
+  }
+
+  return 'পূর্ণাঙ্গ নিষ্পন্ন';
+};
+
 const getEntryMinistry = (ent: any): string => {
   if (ent.ministryName) {
     return ent.ministryName;
@@ -2042,7 +2094,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                               <div>
                                 <span className="font-black text-slate-700 text-[10px]">২. </span>
                                 <span className="font-black text-slate-900 text-[10.5px]">
-                                  {entry.isMeeting ? renderMeetingType(entry.meetingType) : 'সাধারণ নিষ্পত্তি'}
+                                  {getSettlementTypeDisplay(entry)}
                                 </span>
                               </div>
                             </div>
