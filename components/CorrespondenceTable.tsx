@@ -1525,11 +1525,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
       <div id="correspondence-register-table-container" className="table-container border border-slate-300 rounded-sm relative z-[1] shadow-xl bg-white max-w-full">
         <table className="w-full border-separate border-spacing-0 table-fixed">
           <colgroup>
-            <col className="w-[32px]" />
-            <col className="w-[165px]" />
-            <col className="w-[140px]" />
-            <col className="w-[140px]" />
-            <col className="w-[130px]" />
+            <col className="w-[30px]" />
+            <col className="w-[145px]" />
+            <col className="w-[145px]" />
+            <col className="w-[135px]" />
+            <col className="w-[112px]" />
             <col className="w-[125px]" />
             <col className="w-[55px]" />
           </colgroup>
@@ -1808,24 +1808,24 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                           {toBengaliDigits(idx + 1)}
                         </td>
                         <td className="border border-slate-300 p-2 sm:p-2.5 text-left align-top transition-colors group-hover:bg-blue-50/50 break-words relative">
-                          <div className="space-y-1.5 text-slate-950 font-bold">
+                          <div className="text-slate-950 font-bold">
                             {entry.description ? (
-                              <div className="font-extrabold text-slate-950 text-[12px] sm:text-[12.5px] leading-snug tracking-tight">
+                              <div className="font-bold text-slate-800 text-[10px] leading-relaxed tracking-normal break-words">
                                 <HighlightText
                                   text={entry.description}
                                   searchTerm={searchTerm}
                                 />
                               </div>
                             ) : (
-                              <span className="text-slate-400 font-bold text-[11px]">-</span>
+                              <span className="text-slate-400 font-bold text-[10px]">-</span>
                             )}
                           </div>
                         </td>
                         <td className={tdCls}>
-                          <div className="space-y-2">
-                            <div className="flex flex-col">
-                              <span className={labelCls}>১. মন্ত্রণালয়:</span>
-                              <span className={valCls + " pl-3"}>
+                          <div className="space-y-1">
+                            <div className="text-[10px] leading-snug">
+                              <span className="font-bold text-emerald-800">১. মন্ত্রণালয়: </span>
+                              <span className="font-black text-slate-950">
                                 <HighlightText
                                   text={entry.ministryName || 'প্রযোজ্য নয়'}
                                   searchTerm={searchTerm}
@@ -1833,9 +1833,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               </span>
                             </div>
                             {entry.entityName && (
-                              <div className="flex flex-col">
-                                <span className={labelCls}>১.ক. এনটিটি:</span>
-                                <span className={valCls + " pl-3"}>
+                              <div className="text-[10px] leading-snug">
+                                <span className="font-bold text-emerald-800">১.ক. এনটিটি: </span>
+                                <span className="font-black text-slate-950">
                                   <HighlightText
                                     text={entry.entityName}
                                     searchTerm={searchTerm}
@@ -1844,9 +1844,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               </div>
                             )}
                             {entry.auditYear && (
-                              <div className="flex flex-col">
-                                <span className={labelCls}>১.খ. নিরীক্ষা সাল:</span>
-                                <span className={valCls + " pl-3"}>
+                              <div className="text-[10px] leading-snug">
+                                <span className="font-bold text-emerald-800">১.খ. নিরীক্ষা সাল: </span>
+                                <span className="font-black text-slate-950">
                                   <HighlightText
                                     text={entry.auditYear}
                                     searchTerm={searchTerm}
@@ -1854,51 +1854,45 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                 </span>
                               </div>
                             )}
-                            <div className="flex flex-col">
-                              <span className={labelCls}>২. শাখার ধরণ:</span>
-                              <span className={valCls + " pl-3"}>
+                            <div className="text-[10px] leading-snug">
+                              <span className="font-bold text-emerald-800">২. শাখার ধরণ: </span>
+                              <span className="font-black text-slate-950">
                                 <HighlightText
                                   text={entry.paraType}
                                   searchTerm={searchTerm}
                                 />
                               </span>
                             </div>
-                            <div className="flex flex-col">
-                              <span className={labelCls}>৩. পত্রের ধরণ:</span>
-                              <span className={valCls + " pl-3"}>
+                            <div className="text-[10px] leading-snug">
+                              <span className="font-bold text-emerald-800">৩. পত্রের ধরণ: </span>
+                              <span className="font-black text-slate-950">
                                 <HighlightText
                                   text={getCleanLetterTypeDisplay(entry.letterType)}
                                   searchTerm={searchTerm}
                                 />
                               </span>
                             </div>
-                            <div className="flex flex-col">
-                              <span className={labelCls}>
-                                ৪. পত্র নং ও তারিখ:
-                              </span>
-                              <span className={valCls + " pl-3"}>
+                            <div className="text-[10px] leading-snug">
+                              <span className="font-bold text-emerald-800">৪. পত্র নং ও তারিখ: </span>
+                              <span className="font-black text-slate-950">
                                 <HighlightText
                                   text={`${entry.letterNo}, ${formatDateBN(entry.letterDate)}`}
                                   searchTerm={searchTerm}
                                 />
                               </span>
                             </div>
-                            <div className="flex flex-col">
-                              <span className={labelCls}>
-                                ৫. প্রেরিত অনু: সংখ্যা:
-                              </span>
-                              <span className={valCls + " pl-3"}>
+                            <div className="text-[10px] leading-snug">
+                              <span className="font-bold text-emerald-800">৫. প্রেরিত অনু: সংখ্যা: </span>
+                              <span className="font-black text-slate-950">
                                 <HighlightText
                                   text={`${toBengaliDigits(entry.totalParas)} টি`}
                                   searchTerm={searchTerm}
                                 />
                               </span>
                             </div>
-                            <div className="flex flex-col">
-                              <span className={labelCls}>
-                                ৬. মোট জড়িত টাকা:
-                              </span>
-                              <span className={valCls + " pl-3"}>
+                            <div className="text-[10px] leading-snug">
+                              <span className="font-bold text-emerald-800">৬. মোট জড়িত টাকা: </span>
+                              <span className="font-black text-slate-950">
                                 <HighlightText
                                   text={toBengaliDigits(entry.totalAmount)}
                                   searchTerm={searchTerm}
@@ -1908,68 +1902,56 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                           </div>
                         </td>
                         <td className={tdCls}>
-                          <div className="space-y-2">
-                            <div className="flex flex-col">
-                              <span className={labelCls}>
-                                ১. ডায়েরি নং ও তারিখ:
-                              </span>
-                              <span className={valCls + " pl-3"}>
+                          <div className="space-y-1">
+                            <div className="text-[10px] leading-snug">
+                              <span className="font-bold text-emerald-800">১. ডায়েরি নং ও তারিখ: </span>
+                              <span className="font-black text-slate-950">
                                 <HighlightText
                                   text={`${entry.diaryNo}, ${formatDateBN(entry.diaryDate)}`}
                                   searchTerm={searchTerm}
                                 />
                               </span>
                             </div>
-                            <div className="flex flex-col">
-                              <span className={labelCls}>
-                                ২. শাখায় প্রাপ্তির তারিখ:
-                              </span>
-                              <span className={valCls + " pl-3"}>
+                            <div className="text-[10px] leading-snug">
+                              <span className="font-bold text-emerald-800">২. শাখায় প্রাপ্তির তারিখ: </span>
+                              <span className="font-black text-slate-950">
                                 <HighlightText
                                   text={formatDateBN(entry.receiptDate)}
                                   searchTerm={searchTerm}
                                 />
                               </span>
                             </div>
-                            <div className="flex flex-col">
-                              <span className={labelCls}>
-                                ৩. ডিজিটাল নথি নং-:
-                              </span>
-                              <span className={valCls + " pl-3"}>
+                            <div className="text-[10px] leading-snug">
+                              <span className="font-bold text-emerald-800">৩. ডিজিটাল নথি নং-: </span>
+                              <span className="font-black text-slate-950">
                                 <HighlightText
-                                  text={entry.digitalFileNo}
+                                  text={entry.digitalFileNo || '-'}
                                   searchTerm={searchTerm}
                                 />
                               </span>
                             </div>
-                            <div className="flex flex-col">
-                              <span className={labelCls}>
-                                ৪. গ্রহণের তারিখ:
-                              </span>
-                              <span className={valCls + " pl-3"}>
+                            <div className="text-[10px] leading-snug">
+                              <span className="font-bold text-emerald-800">৪. গ্রহণের তারিখ: </span>
+                              <span className="font-black text-slate-950">
                                 <HighlightText
                                   text={formatDateBN(entry.receivedDate)}
                                   searchTerm={searchTerm}
                                 />
                               </span>
                             </div>
-                            <div className="flex flex-col">
-                              <span className={labelCls}>
-                                ৫. অনলাইনে প্রাপ্তি:
-                              </span>
-                              <span className={valCls + " pl-3"}>
+                            <div className="text-[10px] leading-snug">
+                              <span className="font-bold text-emerald-800">৫. অনলাইনে প্রাপ্তি: </span>
+                              <span className="font-black text-slate-950">
                                 <HighlightText
-                                  text={entry.isOnline}
+                                  text={entry.isOnline || '-'}
                                   searchTerm={searchTerm}
                                 />
                               </span>
                             </div>
                             {entry.archiveNo && (
-                              <div className="flex flex-col">
-                                <span className={labelCls}>
-                                  ৬. আর্কাইভ নং:
-                                </span>
-                                <span className={valCls + " pl-3 text-purple-600 font-extrabold"}>
+                              <div className="text-[10px] leading-snug">
+                                <span className="font-bold text-emerald-800">৬. আর্কাইভ নং: </span>
+                                <span className="font-black text-purple-700">
                                   <HighlightText
                                     text={entry.archiveNo}
                                     searchTerm={searchTerm}
