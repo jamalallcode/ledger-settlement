@@ -396,7 +396,19 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const [filterParaType, setFilterParaType] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterReceiver, setFilterReceiver] = useState("");
+  const [filterStatus, setFilterStatus] = useState(""); // "", "চলমান", "নিষ্পন্ন"
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date | null>(null);
+
+  const [unsettledClickNoticeMap, setUnsettledClickNoticeMap] = useState<
+    Record<string, boolean>
+  >({});
+
+  const triggerUnsettledNotice = (entryId: string) => {
+    setUnsettledClickNoticeMap((prev) => ({ ...prev, [entryId]: true }));
+    setTimeout(() => {
+      setUnsettledClickNoticeMap((prev) => ({ ...prev, [entryId]: false }));
+    }, 4000);
+  };
 
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
@@ -521,6 +533,23 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
     );
   };
 
+  const { ongoingCount, settledCount } = useMemo(() => {
+    let ongoing = 0;
+    let settled = 0;
+    entries.forEach((e) => {
+      const hasIssue = Boolean(
+        (e.issueLetterNo && String(e.issueLetterNo).trim()) ||
+        (e.issueLetterDate && String(e.issueLetterDate).trim())
+      );
+      if (!hasIssue) {
+        ongoing++;
+      } else {
+        settled++;
+      }
+    });
+    return { ongoingCount: ongoing, settledCount: settled };
+  }, [entries]);
+
   const uniqueReceivers = useMemo(() => {
     const receivers = new Set<string>();
     entries.forEach(entry => {
@@ -616,7 +645,22 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             entry.diaryDate <= format(activeCycle.end, "yyyy-MM-dd");
         }
 
-        return matchSearch && matchBranch && matchType && matchReceiver && matchCycle;
+        const matchStatus = (() => {
+          if (!filterStatus) return true;
+          const hasIssue = Boolean(
+            (entry.issueLetterNo && String(entry.issueLetterNo).trim()) ||
+            (entry.issueLetterDate && String(entry.issueLetterDate).trim())
+          );
+          if (filterStatus === "চলমান") {
+            return !hasIssue;
+          }
+          if (filterStatus === "নিষ্পন্ন") {
+            return hasIssue || entry.isSettled === "হ্যাঁ" || entry.isSettled === "না";
+          }
+          return true;
+        })();
+
+        return matchSearch && matchBranch && matchType && matchReceiver && matchCycle && matchStatus;
       })
       .sort((a, b) => {
         const dateA = a.diaryDate || "";
@@ -628,7 +672,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         }
         return dateB.localeCompare(dateA);
       });
-  }, [entries, searchTerm, filterParaType, filterType, filterReceiver, activeCycle]);
+  }, [entries, searchTerm, filterParaType, filterType, filterReceiver, filterStatus, activeCycle]);
 
   const stats = useMemo(() => {
     const total = filteredEntries.length;
@@ -924,11 +968,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
     setFilterParaType("");
     setFilterType("");
     setFilterReceiver("");
+    setFilterStatus("");
     setSelectedCycleDate(null);
     onClearHighlight?.();
   };
 
-  const isFiltered = searchTerm || filterParaType || filterType || filterReceiver || selectedCycleDate;
+  const isFiltered = searchTerm || filterParaType || filterType || filterReceiver || filterStatus || selectedCycleDate;
 
   return (
     <div
@@ -1173,6 +1218,57 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         id="correspondence-filters"
         className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate"
       >
+        {/* Status Quick Filter Bar (চলমান / সম্পন্ন) */}
+        <div className="flex items-center gap-2 pb-3 border-b border-slate-100 flex-wrap">
+          <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest mr-1 flex items-center gap-1">
+            <Filter size={12} className="text-blue-600" /> চিঠি ফিল্টার:
+          </span>
+          <button
+            type="button"
+            onClick={() => setFilterStatus("")}
+            className={`px-3 py-1.5 rounded-xl font-black text-[11.5px] transition-all flex items-center gap-1.5 cursor-pointer ${
+              filterStatus === ""
+                ? "bg-slate-900 text-white shadow-sm ring-2 ring-slate-400/50"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200"
+            }`}
+          >
+            সকল চিঠি ({toBengaliDigits(entries.length)})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterStatus("চলমান")}
+            className={`px-3 py-1.5 rounded-xl font-black text-[11.5px] transition-all flex items-center gap-1.5 cursor-pointer ${
+              filterStatus === "চলমান"
+                ? "bg-amber-500 text-white shadow-md ring-2 ring-amber-300"
+                : "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
+            }`}
+          >
+            <Clock size={13} className={filterStatus === "চলমান" ? "animate-spin" : ""} />
+            চলমান চিঠি ({toBengaliDigits(ongoingCount)})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterStatus("নিষ্পন্ন")}
+            className={`px-3 py-1.5 rounded-xl font-black text-[11.5px] transition-all flex items-center gap-1.5 cursor-pointer ${
+              filterStatus === "নিষ্পন্ন"
+                ? "bg-emerald-600 text-white shadow-md ring-2 ring-emerald-300"
+                : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+            }`}
+          >
+            <CheckCircle2 size={13} />
+            নিষ্পন্ন চিঠি ({toBengaliDigits(settledCount)})
+          </button>
+          {isFiltered && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="ml-auto text-[11px] font-black text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3 py-1.5 rounded-xl flex items-center gap-1 transition-all cursor-pointer"
+            >
+              <RotateCcw size={12} /> ফিল্টার রিসেট
+            </button>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {/* Cycle Selection */}
           <div className="space-y-1.5" ref={cycleDropdownRef}>
@@ -2070,19 +2166,19 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               return (
                                 <>
                                   {/* 1. অপশন: নিষ্পত্তি আছে কিনা: হ্যাঁ অথবা না (উপরে) */}
-                                  <div className="p-2 border rounded-xl bg-gradient-to-b from-slate-50 to-slate-100 border-slate-300 space-y-1.5 shadow-sm mb-1.5">
+                                  <div className="p-2 border rounded-xl bg-gradient-to-br from-white via-slate-50 to-slate-100/80 border-slate-300/90 space-y-1.5 shadow-xs mb-1.5 transition-all">
                                     <div className="flex items-center justify-between">
                                       <span className="text-[9.5px] font-black text-slate-800 tracking-tight flex items-center gap-1">
-                                        <CheckCircle2 size={11} className={currentIsSettled === 'হ্যাঁ' ? "text-emerald-600 animate-pulse" : currentIsSettled === 'না' ? "text-rose-500" : "text-amber-500 animate-bounce"} />
+                                        <CheckCircle2 size={12} className={currentIsSettled === 'হ্যাঁ' ? "text-emerald-600 animate-pulse" : currentIsSettled === 'না' ? "text-rose-500" : "text-amber-500"} />
                                         নিষ্পত্তি আছে কিনা:
                                       </span>
                                       <div className="flex items-center gap-1">
-                                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-xs ${
+                                        <span className={`text-[8.5px] font-black px-2 py-0.5 rounded-full shadow-2xs border flex items-center gap-1 transition-all ${
                                           currentIsSettled === 'হ্যাঁ'
-                                            ? 'bg-emerald-500 text-white'
+                                            ? 'bg-emerald-600 text-white border-emerald-500 ring-1 ring-emerald-300/50'
                                             : currentIsSettled === 'না'
-                                              ? 'bg-rose-500 text-white'
-                                              : 'bg-amber-500 text-white animate-pulse'
+                                              ? 'bg-rose-600 text-white border-rose-500 ring-1 ring-rose-300/50'
+                                              : 'bg-amber-500 text-white border-amber-400 animate-pulse'
                                         }`}>
                                           {currentIsSettled === 'হ্যাঁ' ? 'হ্যাঁ' : currentIsSettled === 'না' ? 'না' : 'বাছাই করুন'}
                                         </span>
@@ -2090,15 +2186,15 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                           <button
                                             type="button"
                                             onClick={() => handleInlineChange(entry.id, 'isSettled', '')}
-                                            className="text-[8px] font-black text-slate-500 hover:text-rose-600 bg-white border border-slate-300 hover:border-rose-300 px-1 py-0.5 rounded-md flex items-center gap-0.5 shadow-2xs transition-all cursor-pointer"
-                                            title="বাছাই রিসেট/ক্লিয়ার করুন"
+                                            className="text-[8px] font-black text-slate-500 hover:text-rose-600 bg-white border border-slate-300 hover:border-rose-300 px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-2xs transition-all cursor-pointer"
+                                            title="বাছাই ক্লিয়ার করুন"
                                           >
                                             <RotateCcw size={8} /> ক্লিয়ার
                                           </button>
                                         )}
                                       </div>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-1 pt-0.5">
+                                    <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60">
                                       <button
                                         type="button"
                                         disabled={!isAdmin}
@@ -2106,13 +2202,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                           const nextVal = currentIsSettled === 'হ্যাঁ' ? '' : 'হ্যাঁ';
                                           handleInlineChange(entry.id, 'isSettled', nextVal);
                                         }}
-                                        className={`py-1 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1 ${
+                                        className={`py-1.5 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1.5 ${
                                           currentIsSettled === 'হ্যাঁ'
-                                            ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-300 scale-[1.02]'
-                                            : 'bg-white border border-slate-300 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700'
-                                        } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                                            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md ring-2 ring-emerald-400/60 scale-[1.02]'
+                                            : 'bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 border border-transparent'
+                                        } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
                                       >
-                                        <Check size={11} strokeWidth={3} /> হ্যাঁ
+                                        <Check size={12} strokeWidth={3} /> হ্যাঁ
                                       </button>
                                       <button
                                         type="button"
@@ -2121,13 +2217,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                           const nextVal = currentIsSettled === 'না' ? '' : 'না';
                                           handleInlineChange(entry.id, 'isSettled', nextVal);
                                         }}
-                                        className={`py-1 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1 ${
+                                        className={`py-1.5 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1.5 ${
                                           currentIsSettled === 'না'
-                                            ? 'bg-rose-600 text-white shadow-md ring-2 ring-rose-300 scale-[1.02]'
-                                            : 'bg-white border border-slate-300 text-slate-700 hover:bg-rose-50 hover:text-rose-700'
-                                        } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                                            ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-md ring-2 ring-rose-400/60 scale-[1.02]'
+                                            : 'bg-white text-slate-700 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 border border-transparent'
+                                        } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
                                       >
-                                        <X size={11} strokeWidth={3} /> না
+                                        <X size={12} strokeWidth={3} /> না
                                       </button>
                                     </div>
                                     {(() => {
@@ -2223,18 +2319,109 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         );
                                       }
 
-                                      return (
-                                        <div className="mt-1 text-[8px] font-black text-amber-900 bg-amber-100/90 border border-amber-300 rounded-lg p-1.5 flex items-center gap-1.5 leading-tight animate-in fade-in duration-200 shadow-xs">
-                                          <AlertTriangle size={12} className="text-amber-600 shrink-0" />
-                                          <span>নিষ্পত্তি 'হ্যাঁ' বা 'না' সিলেক্ট না করা পর্যন্ত জারিপত্র নং ও তারিখ ফিলাপ হবে না।</span>
-                                        </div>
-                                      );
+                                      if (unsettledClickNoticeMap[entry.id]) {
+                                        return (
+                                          <div className="mt-1 text-[8px] font-black text-amber-900 bg-amber-100/90 border border-amber-300 rounded-lg p-1.5 flex items-center gap-1.5 leading-tight animate-in zoom-in-95 duration-200 shadow-xs ring-1 ring-amber-300">
+                                            <AlertTriangle size={12} className="text-amber-600 shrink-0 animate-bounce" />
+                                            <span>নিষ্পত্তি 'হ্যাঁ' বা 'না' সিলেক্ট না করা পর্যন্ত জারিপত্র নং ও তারিখ ফিলাপ হবে না।</span>
+                                          </div>
+                                        );
+                                      }
+
+                                      return null;
                                     })()}
                                   </div>
 
                                   {/* 2. জারিপত্র নং */}
                                   <div
-                                    className={`p-1.5 border rounded-lg space-y-1 transition-colors relative ${issueColorCls}`}
+                                    onClick={() => {
+                                      if (!canFillIssue) triggerUnsettledNotice(entry.id);
+                                    }}
+                                    className={`p-1.5 border rounded-lg space-y-1 transition-colors relative ${issueColorCls} ${!canFillIssue ? 'cursor-pointer' : ''}`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div
+                                        className={`text-[9px] font-bold uppercase tracking-tighter flex items-center gap-1 ${labelColorCls}`}
+                                      >
+                                        <Hash size={8} /> জারিপত্র নং
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        {currentIssueComment && (
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedCommentText(currentIssueComment);
+                                            }}
+                                            className="text-amber-500 hover:text-amber-600 active:scale-95 p-0.5 rounded transition-all animate-pulse"
+                                            title="মন্তব্য দেখুন"
+                                          >
+                                            <MessageSquare size={10} fill="currentColor" className="text-amber-500" />
+                                          </button>
+                                        )}
+                                        {isAdmin && (
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setEditingCommentId(editingCommentId === entry.id ? null : entry.id);
+                                            }}
+                                            className={`${editingCommentId === entry.id ? 'text-blue-600' : 'text-slate-400 hover:text-blue-500'} p-0.5 rounded transition-colors`}
+                                            title="মন্তব্য লিখুন/সম্পাদনা করুন"
+                                          >
+                                            <Edit3 size={10} />
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <input
+                                      type="text"
+                                      placeholder={canFillIssue ? "নং" : "নিষ্পত্তি নির্বাচন করুন"}
+                                      className={`w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none ${
+                                        !canFillIssue || !isAdmin
+                                          ? "bg-slate-100 text-slate-400 cursor-pointer opacity-75"
+                                          : "bg-white focus:border-emerald-400"
+                                      }`}
+                                      value={canFillIssue ? currentIssueNo : ""}
+                                      disabled={!isAdmin || !canFillIssue}
+                                      onClick={() => {
+                                        if (!canFillIssue) triggerUnsettledNotice(entry.id);
+                                      }}
+                                      title={!canFillIssue ? "নিষ্পত্তি 'হ্যাঁ' বা 'না' সিলেক্ট না করা পর্যন্ত জারিপত্র নং ও তারিখ ফিলাপ হবে না।" : ""}
+                                      onChange={(e) =>
+                                        handleInlineChange(
+                                          entry.id,
+                                          "issueLetterNo",
+                                          toBengaliDigits(e.target.value),
+                                        )
+                                      }
+                                    />
+                                    {isAdmin && editingCommentId === entry.id && (
+                                      <div className="mt-1 pt-1 border-t border-dashed border-slate-200 space-y-1">
+                                        <div className="text-[7.5px] font-bold text-slate-400">মন্তব্য লিখুন:</div>
+                                        <input
+                                          type="text"
+                                          placeholder="ডামি জারিপত্র নং-এর কারণ"
+                                          className="w-full h-5 px-1 border border-slate-200 rounded text-[9px] font-bold outline-none bg-slate-50 focus:bg-white focus:border-blue-400"
+                                          value={currentIssueComment}
+                                          onChange={(e) =>
+                                            handleInlineChange(
+                                              entry.id,
+                                              "issueLetterComment",
+                                              e.target.value,
+                                            )
+                                          }
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* 3. জারিপত্র তারিখ */}
+                                  <div
+                                    onClick={() => {
+                                      if (!canFillIssue) triggerUnsettledNotice(entry.id);
+                                    }}
+                                    className={`p-1.5 border rounded-lg space-y-1 transition-colors ${issueColorCls} ${!canFillIssue ? 'cursor-pointer' : ''}`}
                                   >
                                     <div className="flex items-center justify-between">
                                       <div
