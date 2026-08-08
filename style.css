@@ -241,11 +241,20 @@ tbody tr:not(.no-hover-row):hover td {
   color: #93c5fd !important; /* light blue text */
 }
 
-/* Ensure highlights inside <mark> tags are readable in Dark Mode */
+/* Ensure text inside mark tags is normal, clear, and unstyled */
+mark {
+  background-color: transparent !important;
+  color: inherit !important;
+  font-weight: inherit !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
 .dark mark {
-  background-color: #f59e0b !important; /* amber-500 */
-  color: #0b0f19 !important; /* deep dark background */
-  border-color: #d97706 !important; /* amber-600 */
+  background-color: transparent !important;
+  color: inherit !important;
+  border-color: transparent !important;
 }
 
 /* Secondary and primary text alignments in Dark Mode */
