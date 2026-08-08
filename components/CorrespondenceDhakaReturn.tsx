@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Printer, ChevronLeft, Search, X, ChevronDown, Check, LayoutGrid, FileText, ChevronRight, Sparkles, BarChart3, Calendar, FileSpreadsheet } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
-import { getCleanLetterTypeDisplay } from '../utils/branchUtils';
+import { getCleanLetterTypeDisplay, isSFI, isNonSFI } from '../utils/branchUtils';
 import { OFFICE_HEADER } from '../constants';
 import { format as dateFnsFormat } from 'date-fns';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -17,6 +17,60 @@ interface CorrespondenceDhakaReturnProps {
   IDBadge: React.FC<{ id: string }>;
   showFilters: boolean;
 }
+
+export const isExcludedFromDhakaReturn = (letterType: string | null | undefined): boolean => {
+  if (!letterType) return false;
+  const lt = letterType.trim();
+  return (
+    lt === 'মিলিকরণ' ||
+    lt.includes('মিলিকরণ') ||
+    lt === 'অন্যান্য' ||
+    lt.includes('অন্যান্য') ||
+    lt.includes('কার্যপত্র')
+  );
+};
+
+export const isTrilateralLetter = (entry: any): boolean => {
+  if (!entry) return false;
+  const lt = (entry.letterType || '').trim();
+  if (isExcludedFromDhakaReturn(lt)) return false;
+  if (lt === 'বিএসআর' || lt.includes('বিএসআর')) return false;
+  return (
+    lt === 'ত্রিপক্ষীয় সভা' ||
+    lt === 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)' ||
+    lt === 'ত্রিপক্ষীয় সভার কার্যবিবরণী' ||
+    lt === 'কার্যবিবরণী (ত্রি-সভা)' ||
+    lt === 'কার্যবিবরনী (ত্রি-সভা)' ||
+    lt === 'ত্রিপক্ষীয় সভা' ||
+    lt === 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)' ||
+    lt.includes('ত্রিপক্ষীয়') ||
+    lt.includes('ত্রিপক্ষীয়') ||
+    lt.includes('ত্রি-সভা') ||
+    (lt.includes('কার্যবিবরণী') && (isSFI(entry.paraType) || lt.includes('ত্রি'))) ||
+    (lt.includes('কার্যবিবরনী') && (isSFI(entry.paraType) || lt.includes('ত্রি')))
+  );
+};
+
+export const isBilateralLetter = (entry: any): boolean => {
+  if (!entry) return false;
+  const lt = (entry.letterType || '').trim();
+  if (isExcludedFromDhakaReturn(lt)) return false;
+  if (lt === 'বিএসআর' || lt.includes('বিএসআর')) return false;
+  return (
+    lt === 'দ্বিপক্ষীয় সভা' ||
+    lt === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)' ||
+    lt === 'দ্বিপক্ষীয় সভার কার্যবিবরণী' ||
+    lt === 'কার্যবিবরণী (দ্বি-সভা)' ||
+    lt === 'কার্যবিবরনী (দ্বি-সভা)' ||
+    lt === 'দ্বিপক্ষীয় সভা' ||
+    lt === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)' ||
+    lt.includes('দ্বিপক্ষীয়') ||
+    lt.includes('দ্বিপক্ষীয়') ||
+    lt.includes('দ্বি-সভা') ||
+    (lt.includes('কার্যবিবরণী') && (isNonSFI(entry.paraType) || lt.includes('দ্বি'))) ||
+    (lt.includes('কার্যবিবরনী') && (isNonSFI(entry.paraType) || lt.includes('দ্বি')))
+  );
+};
 
 const parseDate = (dateStr: string | null | undefined) => {
   if (!dateStr) return null;
@@ -403,11 +457,9 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   const filteredData = useMemo(() => {
     let data = correspondenceEntries || [];
 
-    // 1. Basic exclusions for Dhaka Return
-    data = data.filter(e => {
-      const isExcludedType = e.letterType === 'মিলিকরণ' || (e.letterType || '').includes('কার্যপত্র');
-      return !isExcludedType;
-    });
+    // 1. Basic exclusions for Dhaka Return:
+    // Exclude 'অন্যান্য', 'কার্যপত্র (দ্বি-সভা)', 'কার্যপত্র (ত্রি-সভা)', and 'মিলিকরণ'
+    data = data.filter(e => !isExcludedFromDhakaReturn(e.letterType));
 
     // 2. Filter by selected date (As of Date)
     const reportingDateObj = selectedMonthDate;
@@ -455,11 +507,23 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     
     if (filterLetterType !== 'সকল') {
       if (filterLetterType === 'বিএসআর') {
-        data = data.filter(e => e.letterType === 'বিএসআর');
-      } else if (filterLetterType === 'কার্যবিবরণী (ত্রি-সভা)') {
-        data = data.filter(e => (e.letterType || '').includes('কার্যবিবরণী') && e.paraType === 'এসএফআই');
-      } else if (filterLetterType === 'কার্যবিবরণী (দ্বি-সভা)') {
-        data = data.filter(e => (e.letterType || '').includes('কার্যবিবরণী') && e.paraType === 'নন এসএফআই');
+        data = data.filter(e => e.letterType === 'বিএসআর' || (e.letterType || '').includes('বিএসআর'));
+      } else if (
+        filterLetterType === 'কার্যবিবরণী (ত্রি-সভা)' || 
+        filterLetterType === 'কার্যবিবরনী (ত্রি-সভা)' ||
+        filterLetterType.includes('ত্রি-সভা') ||
+        filterLetterType.includes('ত্রিপক্ষীয়') ||
+        filterLetterType.includes('ত্রিপক্ষীয়')
+      ) {
+        data = data.filter(e => isTrilateralLetter(e));
+      } else if (
+        filterLetterType === 'কার্যবিবরণী (দ্বি-সভা)' || 
+        filterLetterType === 'কার্যবিবরনী (দ্বি-সভা)' ||
+        filterLetterType.includes('দ্বি-সভা') ||
+        filterLetterType.includes('দ্বিপক্ষীয়') ||
+        filterLetterType.includes('দ্বিপক্ষীয়')
+      ) {
+        data = data.filter(e => isBilateralLetter(e));
       } else {
         data = data.filter(e => e.letterType === filterLetterType);
       }
@@ -542,16 +606,16 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       const paras = parseInt(toEnglishDigits(e.totalParas || '0')) || 0;
       stats.totalParas += paras;
 
-      if (e.paraType === 'এসএফআই') {
+      if (e.paraType === 'এসএফআই' || isSFI(e.paraType)) {
         stats.sfi.total++;
         stats.sfi.paras += paras;
-        if (e.letterType === 'বিএসআর') stats.sfi.bsr++;
-        if (e.letterType?.includes('কার্যবিবরণী')) stats.sfi.kb++;
-      } else if (e.paraType === 'নন এসএফআই') {
+        if (e.letterType === 'বিএসআর' || (e.letterType || '').includes('বিএসআর')) stats.sfi.bsr++;
+        if (isTrilateralLetter(e)) stats.sfi.kb++;
+      } else if (e.paraType === 'নন এসএফআই' || isNonSFI(e.paraType)) {
         stats.nonSfi.total++;
         stats.nonSfi.paras += paras;
-        if (e.letterType === 'বিএসআর') stats.nonSfi.bsr++;
-        if (e.letterType?.includes('কার্যবিবরণী')) stats.nonSfi.kb++;
+        if (e.letterType === 'বিএসআর' || (e.letterType || '').includes('বিএসআর')) stats.nonSfi.bsr++;
+        if (isBilateralLetter(e)) stats.nonSfi.kb++;
       }
     });
     return stats;
@@ -850,10 +914,10 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                   <td className={`${tdS} text-left px-2 transition-colors`}>{entry.description}</td>
                   <td className={tdS}>{entry.diaryNo}<br/>{formatDateBN(entry.diaryDate)}</td>
                   <td className={tdS}>{entry.letterNo}<br/>{formatDateBN(entry.letterDate)}</td>
-                  <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'এসএফআই' ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                  <td className={tdS}>{entry.letterType === 'বিএসআর' && entry.paraType === 'নন এসএফআই' ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                  <td className={tdS}>{(entry.letterType.includes('ত্রিপক্ষীয়') || entry.letterType.includes('ত্রি-সভা') || entry.letterType === 'কার্যপত্র' || entry.letterType === 'কার্যবিবরণী') && entry.paraType === 'এসএফআই' ? `${getCleanLetterTypeDisplay(entry.letterType)} (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                  <td className={tdS}>{(entry.letterType.includes('দ্বিপক্ষীয়') || entry.letterType.includes('দ্বি-সভা') || entry.letterType === 'কার্যপত্র' || entry.letterType === 'কার্যবিবরণী') && entry.paraType === 'নন এসএফআই' ? `${getCleanLetterTypeDisplay(entry.letterType)} (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                  <td className={tdS}>{(entry.letterType === 'বিএসআর' || (entry.letterType || '').includes('বিএসআর')) && (entry.paraType === 'এসএফআই' || isSFI(entry.paraType)) ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                  <td className={tdS}>{(entry.letterType === 'বিএসআর' || (entry.letterType || '').includes('বিএসআর')) && (entry.paraType === 'নন এসএফআই' || isNonSFI(entry.paraType)) ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                  <td className={tdS}>{isTrilateralLetter(entry) ? `${getCleanLetterTypeDisplay(entry.letterType)} (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                  <td className={tdS}>{isBilateralLetter(entry) ? `${getCleanLetterTypeDisplay(entry.letterType)} (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                   <td className={tdS}>-</td>
                   <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
                   <td className={tdS}>{formatDateBN(entry.presentationDate)}</td>

@@ -829,8 +829,14 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       // Must be received ON OR BEFORE reportingLimitDate
       const isBeforeOrOnReportingDate = diaryDateObj.getTime() <= reportingLimitDate.getTime();
       
-      // Exclude specific letter types as requested (Milikaran, Karjapatra)
-      const isExcludedType = e.letterType === 'মিলিকরণ' || e.letterType.includes('কার্যপত্র');
+      // Exclude specific letter types as requested (Milikaran, Karjapatra, Other)
+      const lt = (e.letterType || '').trim();
+      const isExcludedType = 
+        lt === 'মিলিকরণ' || 
+        lt.includes('মিলিকরণ') || 
+        lt === 'অন্যান্য' || 
+        lt.includes('অন্যান্য') || 
+        lt.includes('কার্যপত্র');
       if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && isExcludedType) return false;
 
       const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
