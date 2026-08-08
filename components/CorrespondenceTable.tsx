@@ -412,6 +412,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   };
 
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
   const [isReceiverDropdownOpen, setIsReceiverDropdownOpen] = useState(false);
@@ -430,6 +431,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   }, [highlightSearch, onClearHighlight]);
 
   const cycleDropdownRef = useRef<HTMLDivElement>(null);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
   const receiverDropdownRef = useRef<HTMLDivElement>(null);
@@ -445,6 +447,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         !cycleDropdownRef.current.contains(event.target as Node)
       )
         setIsCycleDropdownOpen(false);
+      if (
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(event.target as Node)
+      )
+        setIsStatusDropdownOpen(false);
       if (
         branchDropdownRef.current &&
         !branchDropdownRef.current.contains(event.target as Node)
@@ -1219,115 +1226,66 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         id="correspondence-filters"
         className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate"
       >
-        {/* Status Quick Filter Bar (চলমান / সম্পন্ন) */}
-        <div className="flex items-center gap-2 pb-3 border-b border-slate-100 flex-wrap">
-          <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest mr-1 flex items-center gap-1">
-            <Filter size={12} className="text-blue-600" /> চিঠি ফিল্টার:
-          </span>
-          <button
-            type="button"
-            onClick={() => setFilterStatus("")}
-            className={`px-3 py-1.5 rounded-xl font-black text-[11.5px] transition-all flex items-center gap-1.5 cursor-pointer ${
-              filterStatus === ""
-                ? "bg-slate-900 text-white shadow-sm ring-2 ring-slate-400/50"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200"
-            }`}
-          >
-            সকল চিঠি ({toBengaliDigits(entries.length)})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilterStatus("চলমান")}
-            className={`px-3 py-1.5 rounded-xl font-black text-[11.5px] transition-all flex items-center gap-1.5 cursor-pointer ${
-              filterStatus === "চলমান"
-                ? "bg-amber-500 text-white shadow-md ring-2 ring-amber-300"
-                : "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
-            }`}
-          >
-            <Clock size={13} className={filterStatus === "চলমান" ? "animate-spin" : ""} />
-            চলমান চিঠি ({toBengaliDigits(ongoingCount)})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilterStatus("নিষ্পন্ন")}
-            className={`px-3 py-1.5 rounded-xl font-black text-[11.5px] transition-all flex items-center gap-1.5 cursor-pointer ${
-              filterStatus === "নিষ্পন্ন"
-                ? "bg-emerald-600 text-white shadow-md ring-2 ring-emerald-300"
-                : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
-            }`}
-          >
-            <CheckCircle2 size={13} />
-            নিষ্পন্ন চিঠি ({toBengaliDigits(settledCount)})
-          </button>
-          {isFiltered && (
+        {isFiltered && (
+          <div className="flex justify-end pb-1">
             <button
               type="button"
               onClick={clearFilters}
-              className="ml-auto text-[11px] font-black text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3 py-1.5 rounded-xl flex items-center gap-1 transition-all cursor-pointer"
+              className="text-[11px] font-black text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3 py-1 rounded-xl flex items-center gap-1 transition-all cursor-pointer"
             >
               <RotateCcw size={12} /> ফিল্টার রিসেট
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {/* Cycle Selection */}
-          <div className="space-y-1.5" ref={cycleDropdownRef}>
+          {/* Status Selection (চলমান / সকল / নিষ্পন্ন) */}
+          <div className="space-y-1.5" ref={statusDropdownRef}>
             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">
-              সময়কাল নির্বাচন (সাইকেল)
+              চিঠি ফিল্টার
             </label>
             <div
-              onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)}
-              className={customDropdownCls(isCycleDropdownOpen)}
+              onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+              className={customDropdownCls(isStatusDropdownOpen)}
             >
-              <CalendarDays size={18} className="text-blue-600" />
+              <Clock size={18} className="text-amber-500" />
               <span className="font-bold text-[13px] text-slate-900 truncate">
-                {!selectedCycleDate
-                  ? "সকল সাইকেল"
-                  : cycleOptions.find(
-                      (o) => o.cycleLabel === activeCycle?.label,
-                    )?.label || toBengaliDigits(activeCycle?.label || "")}
+                {filterStatus === ""
+                  ? `সকল চিঠি (${toBengaliDigits(entries.length)})`
+                  : filterStatus === "চলমান"
+                  ? `চলমান চিঠি (${toBengaliDigits(ongoingCount)})`
+                  : `নিষ্পন্ন চিঠি (${toBengaliDigits(settledCount)})`}
               </span>
               <ChevronDown
                 size={14}
-                className={`text-slate-400 ml-auto transition-transform duration-300 ${isCycleDropdownOpen ? "rotate-180 text-blue-600" : ""}`}
+                className={`text-slate-400 ml-auto transition-transform duration-300 ${isStatusDropdownOpen ? "rotate-180 text-blue-600" : ""}`}
               />
 
-              {isCycleDropdownOpen && (
+              {isStatusDropdownOpen && (
                 <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
                   <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
                     <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
                       <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
-                        <CalendarSearch size={12} /> সাইকেল নির্বাচন
+                        <Filter size={12} /> অবস্থা নির্বাচন
                       </span>
                     </div>
                     <div className="p-2 space-y-1">
-                      <div
-                        key="all"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedCycleDate(null);
-                          setIsCycleDropdownOpen(false);
-                        }}
-                        className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${!selectedCycleDate ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
-                      >
-                        <span className="text-[13px]">সকল সাইকেল</span>
-                        {!selectedCycleDate && (
-                          <Check size={16} strokeWidth={3} />
-                        )}
-                      </div>
-                      {cycleOptions.map((opt, idx) => (
+                      {[
+                        { val: "চলমান", label: `চলমান চিঠি (${toBengaliDigits(ongoingCount)})` },
+                        { val: "", label: `সকল চিঠি (${toBengaliDigits(entries.length)})` },
+                        { val: "নিষ্পন্ন", label: `নিষ্পন্ন চিঠি (${toBengaliDigits(settledCount)})` },
+                      ].map((opt, idx) => (
                         <div
                           key={idx}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedCycleDate(opt.date);
-                            setIsCycleDropdownOpen(false);
+                            setFilterStatus(opt.val);
+                            setIsStatusDropdownOpen(false);
                           }}
-                          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${opt.cycleLabel === activeCycle?.label ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                          className={`flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterStatus === opt.val ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
                         >
                           <span className="text-[13px]">{opt.label}</span>
-                          {opt.cycleLabel === activeCycle?.label && (
+                          {filterStatus === opt.val && (
                             <Check size={16} strokeWidth={3} />
                           )}
                         </div>
