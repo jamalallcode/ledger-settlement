@@ -39,6 +39,7 @@ import {
   MessageSquare,
   Edit3,
   RotateCcw,
+  Filter,
   X,
   Eye,
   EyeOff,
