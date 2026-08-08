@@ -1809,47 +1809,15 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                         </td>
                         <td className="border border-slate-300 p-2 sm:p-2.5 text-left align-top transition-colors group-hover:bg-blue-50/50 break-words relative">
                           <div className="space-y-1.5 text-slate-950 font-bold">
-                            {entry.entityName && (
-                              <div className="font-black text-slate-950 text-[12px] sm:text-[12.5px] leading-snug tracking-tight">
-                                <HighlightText
-                                  text={entry.entityName}
-                                  searchTerm={searchTerm}
-                                />
-                                {entry.auditYear && (
-                                  <span className="font-extrabold text-slate-900 text-[11.5px] sm:text-[12px] ml-1">
-                                    (
-                                    <HighlightText
-                                      text={entry.auditYear}
-                                      searchTerm={searchTerm}
-                                    />
-                                    )
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                            {!entry.entityName && entry.auditYear && (
-                              <div className="font-extrabold text-slate-900 text-[11.5px] sm:text-[12px] leading-snug">
-                                (
-                                <HighlightText
-                                  text={entry.auditYear}
-                                  searchTerm={searchTerm}
-                                />
-                                )
-                              </div>
-                            )}
-                            {entry.description && (
-                              <div
-                                className={`font-extrabold text-slate-950 text-[12px] sm:text-[12.5px] leading-snug tracking-tight ${
-                                  entry.entityName
-                                    ? "text-slate-900 text-[11.5px] sm:text-[12px] mt-1"
-                                    : ""
-                                }`}
-                              >
+                            {entry.description ? (
+                              <div className="font-extrabold text-slate-950 text-[12px] sm:text-[12.5px] leading-snug tracking-tight">
                                 <HighlightText
                                   text={entry.description}
                                   searchTerm={searchTerm}
                                 />
                               </div>
+                            ) : (
+                              <span className="text-slate-400 font-bold text-[11px]">-</span>
                             )}
                           </div>
                         </td>
