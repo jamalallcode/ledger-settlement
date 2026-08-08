@@ -960,12 +960,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
   // Header font-black
   const thCls =
-    "sticky top-0 border border-slate-300 px-1 py-2 text-center align-middle font-black text-slate-900 text-[8px] bg-slate-200 z-[110] shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
-  // Data cells reverted to font-bold
+    "sticky top-0 border border-slate-300 px-1.5 py-2.5 text-center align-middle font-black text-slate-900 text-[10.5px] sm:text-[11px] bg-slate-200 z-[110] shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
+  // Data cells font-bold
   const tdCls =
-    "border border-slate-300 px-1.5 py-1.5 text-[9px] text-slate-800 font-bold leading-tight align-top transition-colors group-hover:bg-blue-50/50 break-words relative";
-  const labelCls = "text-[10px] font-bold text-emerald-700 shrink-0";
-  const valCls = "text-[9px] font-black text-slate-900";
+    "border border-slate-300 px-2 py-2 text-[10px] sm:text-[10.5px] text-slate-800 font-bold leading-tight align-top transition-colors group-hover:bg-blue-50/50 break-words relative";
+  const labelCls = "text-[10px] font-bold text-emerald-800 shrink-0";
+  const valCls = "text-[10px] font-black text-slate-950";
   const customDropdownCls = (isOpen: boolean) =>
     `relative flex items-center gap-3 px-4 h-[48px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? "border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]" : "border-slate-300 shadow-sm hover:border-slate-400"}`;
 
@@ -1525,13 +1525,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
       <div id="correspondence-register-table-container" className="table-container border border-slate-300 rounded-sm relative z-[1] shadow-xl bg-white max-w-full">
         <table className="w-full border-separate border-spacing-0 table-fixed">
           <colgroup>
-            <col className="w-[30px]" />
-            <col className="w-[110px]" />
+            <col className="w-[32px]" />
+            <col className="w-[165px]" />
             <col className="w-[140px]" />
             <col className="w-[140px]" />
             <col className="w-[130px]" />
-            <col className="w-[120px]" />
-            <col className="w-[50px]" />
+            <col className="w-[125px]" />
+            <col className="w-[55px]" />
           </colgroup>
           <thead>
             <tr className="h-[40px]">
@@ -1807,26 +1807,44 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                         <td className={tdCls + " text-center font-black"}>
                           {toBengaliDigits(idx + 1)}
                         </td>
-                        <td className={tdCls}>
-                          <div className="space-y-1">
+                        <td className="border border-slate-300 p-2 sm:p-2.5 text-left align-top transition-colors group-hover:bg-blue-50/50 break-words relative">
+                          <div className="space-y-1.5 text-slate-950 font-bold">
                             {entry.entityName && (
-                              <div className="font-black text-slate-900 text-[10.5px] leading-snug">
+                              <div className="font-black text-slate-950 text-[12px] sm:text-[12.5px] leading-snug tracking-tight">
                                 <HighlightText
                                   text={entry.entityName}
                                   searchTerm={searchTerm}
                                 />
+                                {entry.auditYear && (
+                                  <span className="font-extrabold text-slate-900 text-[11.5px] sm:text-[12px] ml-1">
+                                    (
+                                    <HighlightText
+                                      text={entry.auditYear}
+                                      searchTerm={searchTerm}
+                                    />
+                                    )
+                                  </span>
+                                )}
                               </div>
                             )}
-                            {entry.auditYear && (
-                              <div className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.5 rounded-md inline-block my-0.5">
+                            {!entry.entityName && entry.auditYear && (
+                              <div className="font-extrabold text-slate-900 text-[11.5px] sm:text-[12px] leading-snug">
+                                (
                                 <HighlightText
-                                  text={`(${entry.auditYear})`}
+                                  text={entry.auditYear}
                                   searchTerm={searchTerm}
                                 />
+                                )
                               </div>
                             )}
                             {entry.description && (
-                              <div className="text-[9.5px] font-medium text-slate-800 leading-snug">
+                              <div
+                                className={`font-extrabold text-slate-950 text-[12px] sm:text-[12.5px] leading-snug tracking-tight ${
+                                  entry.entityName
+                                    ? "text-slate-900 text-[11.5px] sm:text-[12px] mt-1"
+                                    : ""
+                                }`}
+                              >
                                 <HighlightText
                                   text={entry.description}
                                   searchTerm={searchTerm}
