@@ -4,6 +4,7 @@ import { LayoutDashboard, FilePlus2, ListFilter, PieChart, Home, ChevronLeft, Sp
 import { toBengaliDigits } from '../utils/numberUtils';
 import { signInWithGoogle } from '../lib/supabase';
 import { ModuleVisibility } from '../types';
+import { SavedLinksModal, getSavedLinksFromStorage, SavedLink } from './SavedLinksModal';
 
 interface SidebarProps {
   activeTab: string;
@@ -182,6 +183,15 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isQuarterlyExpanded, setIsQuarterlyExpanded] = useState(false);
   const [isDetailedExpanded, setIsDetailedExpanded] = useState(false);
   const [isSetupExpanded, setIsSetupExpanded] = useState(false);
+  const [isLinksExpanded, setIsLinksExpanded] = useState(false);
+  const [savedLinks, setSavedLinks] = useState<SavedLink[]>([]);
+  const [showLinksModal, setShowLinksModal] = useState(false);
+
+  useEffect(() => {
+    if (isLinksExpanded || showLinksModal) {
+      setSavedLinks(getSavedLinksFromStorage());
+    }
+  }, [isLinksExpanded, showLinksModal]);
   
   // Auto-expand based on activeTab
   useEffect(() => {
@@ -390,6 +400,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'register', label: 'রেজিস্টার', icon: ListFilter, badgeId: 'side-nav-register', isDropdown: true },
     { id: 'return', label: 'রিটার্ণ ও সারাংশ', icon: PieChart, badgeId: 'side-nav-return', isDropdown: true },
     { id: 'archive', label: 'অডিট ক্রাইটেরিয়া', icon: Library, badgeId: 'side-nav-archive' },
+    { id: 'links', label: 'লিংকসমূহ', icon: LinkIcon, badgeId: 'side-nav-links', isDropdown: true },
   ];
 
   const IDBadge = ({ id }: { id: string }) => {
@@ -461,6 +472,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                         setIsRegisterExpanded(!isRegisterExpanded);
                       } else if (item.id === 'return') {
                         setIsReturnExpanded(!isReturnExpanded);
+                      } else if (item.id === 'links') {
+                        setIsLinksExpanded(!isLinksExpanded);
+                        setSavedLinks(getSavedLinksFromStorage());
                       } else if (item.id === 'change_pass') {
                         if (onOpenChangePassword) onOpenChangePassword();
                       } else {
@@ -478,7 +492,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                       <ChevronDown size={10} className={`transition-transform duration-300 ${
                         (item.id === 'entry' && isEntryExpanded) || 
                         (item.id === 'register' && isRegisterExpanded) || 
-                        (item.id === 'return' && isReturnExpanded) ? 'rotate-180' : ''
+                        (item.id === 'return' && isReturnExpanded) ||
+                        (item.id === 'links' && isLinksExpanded) ? 'rotate-180' : ''
                       }`} />
                     )}
                   </button>
@@ -789,27 +804,66 @@ const Sidebar: React.FC<SidebarProps> = ({
                       </motion.div>
                     )}
                   </AnimatePresence>
+
+                  {/* Nested Sub-menu for Saved Links */}
+                  <AnimatePresence>
+                    {item.id === 'links' && isLinksExpanded && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="pl-2 py-1 space-y-1 overflow-hidden"
+                      >
+                        {savedLinks.length === 0 ? (
+                          <div className="text-[9px] text-slate-500 px-2 py-1 italic">
+                            কোনো সেভ করা লিংক নেই
+                          </div>
+                        ) : (
+                          savedLinks.map((link) => (
+                            <a
+                              key={link.id}
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-all truncate group cursor-pointer"
+                              title={link.url}
+                            >
+                              <span className="truncate">{link.title}</span>
+                              <Globe size={10} className="text-slate-500 group-hover:text-blue-400 shrink-0 ml-1" />
+                            </a>
+                          ))
+                        )}
+                        <button
+                          onClick={() => setShowLinksModal(true)}
+                          className="w-full flex items-center justify-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black text-sky-400 hover:bg-sky-500/10 transition-all cursor-pointer mt-0.5 border border-sky-500/20"
+                        >
+                          <Plus size={10} />
+                          <span>যুক্ত / সেট করুন</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               );
             })}
-
-            {/* Dashboard Section - Moved out of Settings */}
-            {isAdmin && (
-              <div className="pt-1 relative">
-                <button 
-                  id="side-nav-dashboard" 
-                  onClick={() => setActiveTab('dashboard')} 
-                  className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group cursor-pointer ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
-                >
-                  <IDBadge id="side-nav-dashboard" />
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px]">ড্যাশবোর্ড</span>
-                  </div>
-                </button>
-              </div>
-            )}
           </nav>
         </div>
+
+        {/* Dashboard Section - Positioned at the bottom of the sidebar */}
+        {isAdmin && (
+          <div id="sidebar-footer-dashboard" className="p-1.5 mt-auto shrink-0 relative border-t border-slate-800/80 bg-slate-900/90">
+            <IDBadge id="side-nav-dashboard" />
+            <button 
+              id="side-nav-dashboard" 
+              onClick={() => setActiveTab('dashboard')} 
+              className={`w-full flex items-center justify-center gap-1.5 px-1.5 py-1.5 rounded-lg font-bold transition-all relative group cursor-pointer ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
+            >
+              <LayoutDashboard size={12} className="stroke-[2.5]" />
+              <span className="text-[10px]">ড্যাশবোর্ড</span>
+            </button>
+          </div>
+        )}
 
       </div>
 
@@ -1068,6 +1122,12 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
       )}
+
+      {/* Saved Links Modal */}
+      <SavedLinksModal 
+        isOpen={showLinksModal} 
+        onClose={() => setShowLinksModal(false)} 
+      />
 
     </>
   );

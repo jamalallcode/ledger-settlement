@@ -222,17 +222,117 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
   onEdit,
   isAdmin
 }) => {
-  const [startDate, setStartDate] = useState('2025-07-01');
-  const [endDate, setEndDate] = useState('2026-06-30');
+  // Calculate initial default start date (earliest diary date) & end date (today)
+  const initialDates = useMemo(() => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const todayISO = `${yyyy}-${mm}-${dd}`;
+
+    let minDate = '';
+
+    const normalizeDateStr = (raw: any): string => {
+      if (!raw || typeof raw !== 'string') return '';
+      const eng = toEnglishDigits(raw.trim());
+      if (/^\d{4}-\d{2}-\d{2}$/.test(eng)) {
+        return eng;
+      }
+      const parts = eng.split(/[\/\.-]/);
+      if (parts.length === 3) {
+        if (parts[0].length === 4) {
+          return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+        } else if (parts[2].length === 4) {
+          return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        }
+      }
+      return '';
+    };
+
+    const processItem = (rawDate: any) => {
+      const iso = normalizeDateStr(rawDate);
+      if (iso) {
+        if (!minDate || iso < minDate) {
+          minDate = iso;
+        }
+      }
+    };
+
+    if (Array.isArray(entries)) {
+      entries.forEach(e => {
+        if (e.diaryDate) {
+          processItem(e.diaryDate);
+        } else {
+          processItem(e.receiptDate || e.letterDate);
+        }
+      });
+    }
+
+    if (Array.isArray(settlementEntries)) {
+      settlementEntries.forEach(s => {
+        processItem(s.branchReceiptDate || s.issueDateISO || s.actualEntryDate);
+      });
+    }
+
+    return {
+      start: minDate || todayISO,
+      end: todayISO
+    };
+  }, [entries, settlementEntries]);
+
+  const [startDate, setStartDate] = useState(initialDates.start);
+  const [endDate, setEndDate] = useState(initialDates.end);
 
   // Segment states in Bengali digits as standard in this app
-  const [startDD, setStartDD] = useState('০১');
-  const [startMM, setStartMM] = useState('০৭');
-  const [startYYYY, setStartYYYY] = useState('২০২৫');
+  const [startDD, setStartDD] = useState(() => {
+    const parts = initialDates.start.split('-');
+    return parts.length === 3 ? toBengaliDigits(parts[2]) : '০১';
+  });
+  const [startMM, setStartMM] = useState(() => {
+    const parts = initialDates.start.split('-');
+    return parts.length === 3 ? toBengaliDigits(parts[1]) : '০৭';
+  });
+  const [startYYYY, setStartYYYY] = useState(() => {
+    const parts = initialDates.start.split('-');
+    return parts.length === 3 ? toBengaliDigits(parts[0]) : '২০২৫';
+  });
 
-  const [endDD, setEndDD] = useState('৩০');
-  const [endMM, setEndMM] = useState('০৬');
-  const [endYYYY, setEndYYYY] = useState('২০২৬');
+  const [endDD, setEndDD] = useState(() => {
+    const parts = initialDates.end.split('-');
+    return parts.length === 3 ? toBengaliDigits(parts[2]) : '৩০';
+  });
+  const [endMM, setEndMM] = useState(() => {
+    const parts = initialDates.end.split('-');
+    return parts.length === 3 ? toBengaliDigits(parts[1]) : '০৬';
+  });
+  const [endYYYY, setEndYYYY] = useState(() => {
+    const parts = initialDates.end.split('-');
+    return parts.length === 3 ? toBengaliDigits(parts[0]) : '২০২৬';
+  });
+
+  // Sync initial dates when entries load or change (without overwriting if already set)
+  const isInitialDatesSet = useRef(false);
+  useEffect(() => {
+    if (!isInitialDatesSet.current && (entries.length > 0 || settlementEntries.length > 0)) {
+      isInitialDatesSet.current = true;
+      setStartDate(initialDates.start);
+      setEndDate(initialDates.end);
+
+      const startParts = initialDates.start.split('-');
+      if (startParts.length === 3) {
+        setStartYYYY(toBengaliDigits(startParts[0]));
+        setStartMM(toBengaliDigits(startParts[1]));
+        setStartDD(toBengaliDigits(startParts[2]));
+      }
+
+      const endParts = initialDates.end.split('-');
+      if (endParts.length === 3) {
+        setEndYYYY(toBengaliDigits(endParts[0]));
+        setEndMM(toBengaliDigits(endParts[1]));
+        setEndDD(toBengaliDigits(endParts[2]));
+      }
+    }
+  }, [initialDates, entries.length, settlementEntries.length]);
 
   const [searchTerm, setSearchTerm] = useState('সকল');
   const [filterBranch, setFilterBranch] = useState('সকল');
