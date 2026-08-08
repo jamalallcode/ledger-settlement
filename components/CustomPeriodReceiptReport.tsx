@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Calendar, FileText, User, Users, BookOpen, Printer, Search, RefreshCw, 
   ChevronLeft, LayoutGrid, Sparkles, FileSpreadsheet, ArrowRight,
-  ShieldCheck, Mail, Info, FileEdit, ArrowUpDown
+  ShieldCheck, Mail, Info, FileEdit, ArrowUpDown, Clock
 } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { isSFI, isNonSFI, getCleanLetterTypeDisplay } from '../utils/branchUtils';
@@ -340,7 +340,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
   const [keywordSearch, setKeywordSearch] = useState('');
   const [filterMinistry, setFilterMinistry] = useState('সকল');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
-  const [activeReportMode, setActiveReportMode] = useState<'correspondence' | 'settlement'>('correspondence');
+  const [activeReportMode, setActiveReportMode] = useState<'correspondence' | 'settlement' | 'pending'>('correspondence');
   const [expandedParasMap, setExpandedParasMap] = useState<Record<string, boolean>>({});
   const [dbReceiversList, setDbReceiversList] = useState<any[]>([]);
 
@@ -801,6 +801,14 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     });
   }, [entries, startDate, endDate, filterBranch, searchTerm, filterAuditor, keywordSearch, filterMinistry, sortOrder]);
 
+  // Pending / ongoing work entries (letters without issue letter no and date)
+  const pendingEntries = useMemo(() => {
+    return filteredEntries.filter(entry => {
+      const hasIssue = !!(entry.issueLetterNo || entry.issueLetterDate || entry.issueLetterNoDate);
+      return !hasIssue;
+    });
+  }, [filteredEntries]);
+
   // Calculate statistics for BSR, Bilateral meetings, Trilateral meetings, Working papers, and Others
   const stats = useMemo(() => {
     let bsrCount = 0;
@@ -808,6 +816,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     let trilateralCount = 0;
     let workingPaperCount = 0;
     let othersCount = 0;
+
+    const targetEntries = activeReportMode === 'pending' ? pendingEntries : filteredEntries;
 
     const robustNormalize = (str: string = '') => {
       if (!str) return '';
@@ -820,7 +830,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       return normalized.replace(/\s+/g, ' ').trim();
     };
 
-    filteredEntries.forEach(entry => {
+    targetEntries.forEach(entry => {
       const type = robustNormalize(entry.letterType || '');
       
       // 1. Working papers count (কার্যপত্র)
@@ -851,9 +861,9 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       trilateral: trilateralCount,
       workingPaper: workingPaperCount,
       others: othersCount,
-      total: filteredEntries.length
+      total: targetEntries.length
     };
-  }, [filteredEntries]);
+  }, [filteredEntries, pendingEntries, activeReportMode]);
 
   const filteredSettlementEntries = useMemo(() => {
     const filtered = (settlementEntries || []).filter(entry => {
@@ -976,10 +986,14 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
     const filename = activeReportMode === 'correspondence'
       ? `চাহিদা_মোতাবেক_প্রাপ্তি_রিপোর্ট_${startDate}_হতে_${endDate}.xls`
+      : activeReportMode === 'pending'
+      ? `চলমান_পেন্ডিং_কাজ_রিপোর্ট_${startDate}_হতে_${endDate}.xls`
       : `চাহিদা_মোতাবেক_মীমাংসিত_অনুচ্ছেদ_রিপোর্ট_${startDate}_হতে_${endDate}.xls`;
 
     const titleText = activeReportMode === 'correspondence'
       ? 'চাহিদা মোতাবেক প্রাপ্তি রিপোর্ট'
+      : activeReportMode === 'pending'
+      ? 'চলমান/পেন্ডিং কাজের রিপোর্ট'
       : 'চাহিদা মোতাবেক নিষ্পন্নকৃত অডিট অনুচ্ছেদ ও টাকার রিপোর্ট';
 
     const template = `
@@ -1370,7 +1384,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       </div>
 
       {/* STATISTICS CARDS (Bento Grid Style) */}
-      {activeReportMode === 'correspondence' ? (
+      {activeReportMode === 'correspondence' || activeReportMode === 'pending' ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {/* BSR Card */}
           <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
@@ -1510,7 +1524,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
         <div className="hidden print:block text-center space-y-2 p-6 border-b border-slate-300">
           <h1 className="text-2xl font-black text-slate-900 uppercase">হিসাব মহানিয়ন্ত্রক এর কার্যালয়</h1>
           <p className="text-xs font-bold text-slate-600">
-            {activeReportMode === 'correspondence' ? 'প্রাপ্ত চিঠিপত্র ও সভার সারসংক্ষেপ রিপোর্ট' : 'নিষ্পন্নকৃত অডিট অনুচ্ছেদ ও টাকার রিপোর্ট'}
+            {activeReportMode === 'correspondence'
+              ? 'প্রাপ্ত চিঠিপত্র ও সভার সারসংক্ষেপ রিপোর্ট'
+              : activeReportMode === 'pending'
+              ? 'চলমান/পেন্ডিং কাজের রিপোর্ট'
+              : 'নিষ্পন্নকৃত অডিট অনুচ্ছেদ ও টাকার রিপোর্ট'}
           </p>
           <div className="text-[11px] font-bold text-slate-700 bg-slate-100 py-1.5 px-4 rounded-lg inline-block">
             সময়কাল: {formatDateBN(startDate)} হতে {formatDateBN(endDate)}
@@ -1519,28 +1537,54 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
         </div>
 
         <div className="p-2 sm:p-3 md:p-3">
-          {/* Toggle Report Mode Control */}
-          <div className="flex items-center gap-2 p-1 bg-slate-100 border border-slate-200 rounded-2xl w-fit mb-6 no-print">
-            <button
-              onClick={() => setActiveReportMode('correspondence')}
-              className={`px-5 py-2.5 rounded-xl text-[11.5px] font-black transition-all cursor-pointer ${
-                activeReportMode === 'correspondence'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              চিঠিপত্র প্রাপ্তি রিপোর্ট ({toBengaliDigits(filteredEntries.length)} টি)
-            </button>
-            <button
-              onClick={() => setActiveReportMode('settlement')}
-              className={`px-5 py-2.5 rounded-xl text-[11.5px] font-black transition-all cursor-pointer ${
-                activeReportMode === 'settlement'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              মীমাংসিত অনুচ্ছেদ রিপোর্ট ({toBengaliDigits(filteredSettlementEntries.length)} টি)
-            </button>
+          {/* Toggle Report Mode Control - Engraved / Embedded Segmented Style */}
+          <div className="flex items-center p-1.5 bg-slate-200/90 border border-slate-300/80 rounded-2xl w-fit mb-6 no-print shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] max-w-full overflow-x-auto">
+            <div className="flex items-center gap-0">
+              <button
+                type="button"
+                onClick={() => setActiveReportMode('correspondence')}
+                className={`px-4 sm:px-5 py-2.5 rounded-xl text-[11.5px] font-black transition-all duration-200 cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                  activeReportMode === 'correspondence'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md shadow-emerald-900/20 scale-[1.01]'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-300/60'
+                }`}
+              >
+                <FileText size={14} className={activeReportMode === 'correspondence' ? 'text-emerald-100' : 'text-slate-500'} />
+                <span>চিঠিপত্র প্রাপ্তি রিপোর্ট ({toBengaliDigits(filteredEntries.length)} টি)</span>
+              </button>
+
+              {/* Inset Engraved Divider */}
+              <div className="h-6 w-[2px] bg-slate-300/90 shadow-[1px_0_0_0_rgba(255,255,255,0.9)] mx-1 shrink-0" />
+
+              <button
+                type="button"
+                onClick={() => setActiveReportMode('settlement')}
+                className={`px-4 sm:px-5 py-2.5 rounded-xl text-[11.5px] font-black transition-all duration-200 cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                  activeReportMode === 'settlement'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-md shadow-blue-900/20 scale-[1.01]'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-300/60'
+                }`}
+              >
+                <ShieldCheck size={14} className={activeReportMode === 'settlement' ? 'text-blue-100' : 'text-slate-500'} />
+                <span>মীমাংসিত অনুচ্ছেদ রিপোর্ট ({toBengaliDigits(filteredSettlementEntries.length)} টি)</span>
+              </button>
+
+              {/* Inset Engraved Divider */}
+              <div className="h-6 w-[2px] bg-slate-300/90 shadow-[1px_0_0_0_rgba(255,255,255,0.9)] mx-1 shrink-0" />
+
+              <button
+                type="button"
+                onClick={() => setActiveReportMode('pending')}
+                className={`px-4 sm:px-5 py-2.5 rounded-xl text-[11.5px] font-black transition-all duration-200 cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                  activeReportMode === 'pending'
+                    ? 'bg-gradient-to-r from-amber-600 to-orange-700 text-white shadow-md shadow-amber-900/20 scale-[1.01]'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-300/60'
+                }`}
+              >
+                <Clock size={14} className={activeReportMode === 'pending' ? 'text-amber-100' : 'text-slate-500'} />
+                <span>চলমান/পেন্ডিং কাজ ({toBengaliDigits(pendingEntries.length)} টি)</span>
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3 no-print flex-wrap gap-y-2">
@@ -1548,8 +1592,18 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
               <div className="flex items-center gap-2">
                 <LayoutGrid size={18} className="text-blue-600" />
                 <h3 className="font-black text-slate-800 text-sm uppercase">
-                  {activeReportMode === 'correspondence' ? 'প্রাপ্ত তথ্যের তালিকা' : 'মীমাংসিত অনুচ্ছেদের তালিকা'} 
-                  ({toBengaliDigits(activeReportMode === 'correspondence' ? filteredEntries.length : filteredSettlementEntries.length)} টি)
+                  {activeReportMode === 'correspondence'
+                    ? 'প্রাপ্ত তথ্যের তালিকা'
+                    : activeReportMode === 'pending'
+                    ? 'চলমান/পেন্ডিং কাজের তালিকা'
+                    : 'মীমাংসিত অনুচ্ছেদের তালিকা'} 
+                  ({toBengaliDigits(
+                    activeReportMode === 'correspondence'
+                      ? filteredEntries.length
+                      : activeReportMode === 'pending'
+                      ? pendingEntries.length
+                      : filteredSettlementEntries.length
+                  )} টি)
                 </h3>
               </div>
               
@@ -1590,43 +1644,45 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           </div>
 
           {/* TABLE */}
-          {activeReportMode === 'correspondence' ? (
-            filteredEntries.length > 0 ? (
-              <div className="table-container overflow-x-auto rounded-2xl shadow-inner border border-slate-200">
-                <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
-                  <colgroup>
-                    <col className="w-[4%]" />
-                    <col className="w-[17%]" />
-                    <col className="w-[21%]" />
-                    <col className="w-[15%]" />
-                    <col className="w-[calc(13%+5px)]" style={{ width: 'calc(13% + 5px)' }} />
-                    <col className="w-[calc(16%-5px)]" style={{ width: 'calc(16% - 5px)' }} />
-                    <col className="w-[14%]" />
-                  </colgroup>
-                  <thead className="sticky top-0 xl:top-[45px] z-30 shadow-sm bg-slate-200">
-                    {/* Header Row 1: Titles (Black Text) */}
-                    <tr className="bg-slate-200 text-slate-900 text-[11px] font-black tracking-wider">
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">ক্র: নং</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">প্রতিষ্ঠানের বিবরণ</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">পত্র ও ডায়েরির বিবরণ</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">বর্তমান অবস্থান / জারিপত্র</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">প্রাপ্ত অনুচ্ছেদ ও টাকা</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">নিষ্পত্তিকৃত তথ্য</th>
-                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-slate-300 font-black">অনিষ্পন্ন তথ্য ও মন্তব্য</th>
-                    </tr>
-                    {/* Header Row 2: Sub-header Numbers (1-7) */}
-                    <tr className="bg-slate-100 text-slate-900 text-[11px] font-black text-center">
-                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">১</th>
-                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">২</th>
-                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৩</th>
-                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৪</th>
-                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৫</th>
-                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৬</th>
-                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-slate-300">৭</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 bg-white">
-                    {filteredEntries.map((entry, index) => {
+          {activeReportMode === 'correspondence' || activeReportMode === 'pending' ? (
+            (() => {
+              const displayEntries = activeReportMode === 'pending' ? pendingEntries : filteredEntries;
+              return displayEntries.length > 0 ? (
+                <div className="table-container overflow-x-auto rounded-2xl shadow-inner border border-slate-200">
+                  <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
+                    <colgroup>
+                      <col className="w-[4%]" />
+                      <col className="w-[17%]" />
+                      <col className="w-[21%]" />
+                      <col className="w-[15%]" />
+                      <col className="w-[calc(13%+5px)]" style={{ width: 'calc(13% + 5px)' }} />
+                      <col className="w-[calc(16%-5px)]" style={{ width: 'calc(16% - 5px)' }} />
+                      <col className="w-[14%]" />
+                    </colgroup>
+                    <thead className="sticky top-0 xl:top-[45px] z-30 shadow-sm bg-slate-200">
+                      {/* Header Row 1: Titles (Black Text) */}
+                      <tr className="bg-slate-200 text-slate-900 text-[11px] font-black tracking-wider">
+                        <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">ক্র: নং</th>
+                        <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">প্রতিষ্ঠানের বিবরণ</th>
+                        <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">পত্র ও ডায়েরির বিবরণ</th>
+                        <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">বর্তমান অবস্থান / জারিপত্র</th>
+                        <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">প্রাপ্ত অনুচ্ছেদ ও টাকা</th>
+                        <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">নিষ্পত্তিকৃত তথ্য</th>
+                        <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-slate-300 font-black">অনিষ্পন্ন তথ্য ও মন্তব্য</th>
+                      </tr>
+                      {/* Header Row 2: Sub-header Numbers (1-7) */}
+                      <tr className="bg-slate-100 text-slate-900 text-[11px] font-black text-center">
+                        <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">১</th>
+                        <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">২</th>
+                        <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৩</th>
+                        <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৪</th>
+                        <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৫</th>
+                        <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৬</th>
+                        <th className="bg-slate-100 text-slate-900 py-1 border-b border-slate-300">৭</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 bg-white">
+                      {displayEntries.map((entry, index) => {
                       const auditEntity = entry.entityName || entry.description || 'নির্ধারিত নয়';
                       const ministryName = getEntryMinistry(entry) || entry.ministryName || 'নির্ধারিত নয়';
 
@@ -1880,10 +1936,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
             ) : (
               <div className="py-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-3">
                 <Info className="mx-auto text-slate-400" size={32} />
-                <p className="text-slate-500 font-bold text-sm">নির্বাচিত সময়কাল এবং ফিল্টার অনুযায়ী কোনো চিঠি পাওয়া যায়নি।</p>
+                <p className="text-slate-500 font-bold text-sm">
+                  {activeReportMode === 'pending'
+                    ? 'নির্বাচিত সময়কাল এবং ফিল্টার অনুযায়ী কোনো চলমান বা পেন্ডিং চিঠি পাওয়া যায়নি।'
+                    : 'নির্বাচিত সময়কাল এবং ফিল্টার অনুযায়ী কোনো চিঠি পাওয়া যায়নি।'}
+                </p>
                 <p className="text-[11px] text-slate-400">অনুগ্রহ করে সময়কাল বা ফিল্টার অপশন পরিবর্তন করে পুনরায় চেষ্টা করুন।</p>
               </div>
-            )
+            );
+            })()
           ) : (
             filteredSettlementEntries.length > 0 ? (
               <div className="table-container overflow-x-auto rounded-2xl shadow-inner">
