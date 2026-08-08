@@ -122,10 +122,6 @@ const renderMeetingType = (meetingType: string | undefined) => {
 };
 
 const getSettlementTypeDisplay = (entry: any): string => {
-  if (entry.isMeeting && entry.meetingType) {
-    return renderMeetingType(entry.meetingType);
-  }
-
   // Check paragraphs array if present
   if (entry.paragraphs && entry.paragraphs.length > 0) {
     const hasPartial = entry.paragraphs.some((p: any) => p.status === 'আংশিক');
@@ -133,20 +129,20 @@ const getSettlementTypeDisplay = (entry: any): string => {
     const totalParasCount = entry.paragraphs.length;
 
     if (hasPartial) {
-      return 'আংশিক নিষ্পন্ন';
+      return 'আংশিক';
     }
     if (fullCount > 0 && fullCount < totalParasCount) {
-      return 'আংশিক নিষ্পন্ন';
+      return 'আংশিক';
     }
     if (fullCount === totalParasCount && totalParasCount > 0) {
-      return 'পূর্ণাঙ্গ নিষ্পন্ন';
+      return 'পূর্ণাঙ্গ';
     }
   }
 
   // Check numeric fields
   const partialCount = parseInt(toEnglishDigits(String(entry.meetingPartialSettledParaCount || '0')));
   if (partialCount > 0) {
-    return 'আংশিক নিষ্পন্ন';
+    return 'আংশিক';
   }
 
   const fullCount = parseInt(toEnglishDigits(String(entry.meetingFullSettledParaCount || '0')));
@@ -154,23 +150,23 @@ const getSettlementTypeDisplay = (entry: any): string => {
   const sentCount = parseInt(toEnglishDigits(String(entry.meetingSentParaCount || '0')));
 
   if (fullCount > 0 && sentCount > 0 && fullCount < sentCount) {
-    return 'আংশিক নিষ্পন্ন';
+    return 'আংশিক';
   }
 
   if (settledCount > 0 && sentCount > 0 && settledCount < sentCount) {
-    return 'আংশিক নিষ্পন্ন';
+    return 'আংশিক';
   }
 
   // Check explicit status string
   if (entry.settlementStatus === 'আংশিক' || entry.status === 'আংশিক' || entry.isPartial) {
-    return 'আংশিক নিষ্পন্ন';
+    return 'আংশিক';
   }
 
   if (entry.settlementStatus === 'পূর্ণাঙ্গ' || entry.status === 'পূর্ণাঙ্গ' || entry.isFull) {
-    return 'পূর্ণাঙ্গ নিষ্পন্ন';
+    return 'পূর্ণাঙ্গ';
   }
 
-  return 'পূর্ণাঙ্গ নিষ্পন্ন';
+  return 'পূর্ণাঙ্গ';
 };
 
 const getEntryMinistry = (ent: any): string => {
