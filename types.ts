@@ -124,6 +124,7 @@ export interface CorrespondenceEntry {
   isOnline: string;
   issueLetterNo: string;
   issueLetterDate: string;
+  isSettled?: 'হ্যাঁ' | 'না';
   issueLetterComment?: string;
   archiveNo?: string;
   remarks?: string;
@@ -131,6 +132,8 @@ export interface CorrespondenceEntry {
   approvalStatus?: 'approved' | 'pending';
   type?: string;
   ministryName?: string;
+  entityName?: string;
+  auditYear?: string;
 }
 
 export interface GroupOption {

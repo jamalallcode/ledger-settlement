@@ -3,7 +3,7 @@ import {
   Mail, X, FileText, Calendar, Hash, Banknote, BookOpen, 
   Inbox, Computer, User, CheckCircle2, Layout, Sparkles, 
   ListOrdered, ArrowRightCircle, ShieldCheck, AlertCircle, Trash2, Search, ChevronDown, Check, Plus, CalendarRange, ArrowRight, Send, FileEdit, ClipboardCheck, Globe,
-  Building
+  Building, Building2
 } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { getCycleForDate } from '../utils/cycleHelper';
@@ -12,7 +12,7 @@ import { SFI_RECEIVERS } from '../utils/sfi';
 import { NONSFI_RECEIVERS } from '../utils/nonsfi';
 import { isSFI, isNonSFI, isAdminBranch, getBranchVariations } from '../utils/branchUtils';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { MINISTRY_ENTITY_MAP } from '../constants';
+import { MINISTRY_ENTITY_MAP, AUDIT_YEARS_OPTIONS } from '../constants';
 
 /**
  * @security-protocol LOCKED_MODE
@@ -585,6 +585,371 @@ const PremiumMinistrySelect = ({ value, onChange, IDBadge }: any) => {
 };
 
 /**
+ * Premium Dropdown for Entity Selection
+ */
+const PremiumEntitySelect = ({ value, onChange, ministryName, IDBadge }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [customEntities, setCustomEntities] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('custom_entities');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+
+  const ministryEntities = ministryName && MINISTRY_ENTITY_MAP[ministryName] ? MINISTRY_ENTITY_MAP[ministryName] : [];
+
+  const defaultOptions = ministryEntities.map((ent: string, idx: number) => ({
+    id: `entity-opt-${idx}`,
+    label: ent,
+    value: ent,
+    icon: Building2,
+    color: 'purple'
+  }));
+
+  const options = [
+    ...defaultOptions,
+    ...customEntities.map((ce: string, idx: number) => ({
+      id: `custom-entity-opt-${idx}`,
+      label: ce,
+      value: ce,
+      icon: Building2,
+      color: 'purple'
+    }))
+  ];
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+        setIsAddingNew(false);
+        setNewItemName('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleAddNewEntity = () => {
+    const cleanName = newItemName.trim();
+    if (!cleanName) return;
+    if (options.some(opt => opt.value === cleanName)) {
+      alert("এই এনটিটিটি ইতিমধ্যে রয়েছে।");
+      return;
+    }
+    const next = [...customEntities, cleanName];
+    setCustomEntities(next);
+    localStorage.setItem('custom_entities', JSON.stringify(next));
+    onChange(cleanName);
+    setIsAddingNew(false);
+    setNewItemName('');
+    setIsOpen(false);
+  };
+
+  const selectedOpt = options.find(opt => opt.value === value);
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <IDBadge id="corr-field-entity-custom" />
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`${inputCls} flex items-center justify-between cursor-pointer group hover:border-purple-400 hover:ring-4 hover:ring-purple-50 transition-all duration-300 ${isOpen ? 'border-purple-500 ring-4 ring-purple-50 bg-white shadow-md' : (value ? 'border-emerald-500 shadow-sm' : 'border-slate-300 shadow-sm')}`}
+      >
+        <div className="flex items-center gap-3">
+          {selectedOpt ? (
+            <>
+              <div className="w-8 h-8 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center shadow-sm">
+                <Building2 size={16} />
+              </div>
+              <span className="text-slate-900 font-black">{selectedOpt.label}</span>
+            </>
+          ) : (
+            <>
+              <div className="w-8 h-8 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center">
+                <Building2 size={16} />
+              </div>
+              <span className="text-slate-400 font-bold">{value || "এনটিটি বাছুন..."}</span>
+            </>
+          )}
+        </div>
+        <ChevronDown size={18} className={`text-slate-400 transition-transform duration-500 ${isOpen ? 'rotate-180 text-purple-600' : 'group-hover:text-purple-500'}`} />
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-purple-600 animate-out duration-200">
+          {isAddingNew ? (
+            <div className="p-3 space-y-3">
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Sparkles size={11} className="text-purple-500" /> নতুন এনটিটি যুক্ত করুন
+              </div>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-purple-500"
+                placeholder="এনটিটির নাম..."
+                value={newItemName}
+                onChange={e => setNewItemName(e.target.value)}
+                autoFocus
+              />
+              <div className="flex gap-2 justify-end">
+                <button 
+                  type="button"
+                  onClick={() => { setIsAddingNew(false); setNewItemName(''); }}
+                  className="px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black hover:bg-slate-200"
+                >বাতিল</button>
+                <button 
+                  type="button"
+                  onClick={handleAddNewEntity}
+                  className="px-2.5 py-1.5 bg-purple-600 text-white rounded-lg text-[10px] font-black hover:bg-purple-700"
+                >সংরক্ষণ</button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-1.5 space-y-0.5">
+              <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <Sparkles size={11} className="text-purple-500" /> এনটিটি নির্বাচন করুন
+                </span>
+              </div>
+              <div className="max-h-60 overflow-y-auto no-scrollbar space-y-0.5">
+                {options.map((opt) => (
+                  <div 
+                    key={opt.id}
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
+                      value === opt.value ? `bg-purple-50 text-purple-700 shadow-sm` : 'hover:bg-slate-50 text-slate-600'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                        value === opt.value ? `bg-purple-600 text-white` : 'bg-slate-100 text-slate-400'
+                      }`}>
+                        <Building2 size={14} />
+                      </div>
+                      <span className={`text-[12.5px] font-black transition-colors ${value === opt.value ? `text-purple-700` : 'text-slate-700'}`}>{opt.label}</span>
+                    </div>
+                    {value === opt.value && (
+                      <div className="w-5 h-5 bg-purple-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300">
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div 
+                onClick={() => setIsAddingNew(true)}
+                className="px-3 py-2.5 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all hover:bg-purple-50 text-purple-600 font-black border-t border-dashed border-slate-100 mt-1 shrink-0"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                    <Plus size={14} />
+                  </div>
+                  <span className="text-[12.5px] font-black">নতুন যুক্ত করুন</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Premium Dropdown for Audit Year Selection with Direct Custom Input
+ */
+const PremiumAuditYearSelect = ({ value, onChange, IDBadge }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const [customYears, setCustomYears] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('custom_audit_years');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [filterText, setFilterText] = useState('');
+
+  const defaultYears = AUDIT_YEARS_OPTIONS[0].options;
+
+  const defaultOptions = defaultYears.map((yr: string, idx: number) => ({
+    id: `audit-yr-opt-${idx}`,
+    label: yr,
+    value: yr,
+    icon: Calendar,
+    color: 'emerald'
+  }));
+
+  const options = [
+    ...defaultOptions,
+    ...customYears.map((cy: string, idx: number) => ({
+      id: `custom-audit-yr-opt-${idx}`,
+      label: cy,
+      value: cy,
+      icon: Calendar,
+      color: 'emerald'
+    }))
+  ];
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+        setFilterText('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelectOrAdd = (valToSelect: string) => {
+    const clean = valToSelect.trim();
+    if (!clean) return;
+    if (!options.some(opt => opt.value === clean)) {
+      const next = [...customYears, clean];
+      setCustomYears(next);
+      localStorage.setItem('custom_audit_years', JSON.stringify(next));
+    }
+    onChange(clean);
+    setFilterText('');
+    setIsOpen(false);
+  };
+
+  const filteredOptions = options.filter(opt => 
+    opt.label.toLowerCase().includes(filterText.toLowerCase()) || 
+    opt.value.toLowerCase().includes(filterText.toLowerCase())
+  );
+
+  const isFilterExactMatch = options.some(opt => opt.value.trim() === filterText.trim());
+
+  const selectedOpt = options.find(opt => opt.value === value) || (value ? { label: value, value } : null);
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <IDBadge id="corr-field-audit-year-custom" />
+      <div 
+        onClick={() => {
+          const nextState = !isOpen;
+          setIsOpen(nextState);
+          if (nextState) {
+            setTimeout(() => searchInputRef.current?.focus(), 50);
+          }
+        }}
+        className={`${inputCls} flex items-center justify-between cursor-pointer group hover:border-emerald-400 hover:ring-4 hover:ring-emerald-50 transition-all duration-300 ${isOpen ? 'border-emerald-500 ring-4 ring-emerald-50 bg-white shadow-md' : (value ? 'border-emerald-500 shadow-sm' : 'border-slate-300 shadow-sm')}`}
+      >
+        <div className="flex items-center gap-3">
+          {selectedOpt ? (
+            <>
+              <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
+                <Calendar size={16} />
+              </div>
+              <span className="text-slate-900 font-black">{selectedOpt.label}</span>
+            </>
+          ) : (
+            <>
+              <div className="w-8 h-8 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center">
+                <Calendar size={16} />
+              </div>
+              <span className="text-slate-400 font-bold">{value || "সাল বাছুন..."}</span>
+            </>
+          )}
+        </div>
+        <ChevronDown size={18} className={`text-slate-400 transition-transform duration-500 ${isOpen ? 'rotate-180 text-emerald-600' : 'group-hover:text-emerald-500'}`} />
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg z-[1000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600 animate-out duration-200">
+          <div className="p-2 space-y-2">
+            <div className="px-2 pt-1 flex items-center justify-between">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Sparkles size={11} className="text-emerald-500" /> সাল নির্বাচন করুন
+              </span>
+            </div>
+
+            {/* Custom Audit Year / Search Input Field - Marked in Image 1 */}
+            <div className="px-1">
+              <input
+                ref={searchInputRef}
+                type="text"
+                className="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-emerald-500 focus:bg-white bg-slate-50 transition-all placeholder:text-slate-400"
+                placeholder="সাল লিখুন বা খুঁজুন (যেমন: ২০২৪-২৫)..."
+                value={filterText}
+                onChange={e => setFilterText(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (filterText.trim()) {
+                      handleSelectOrAdd(filterText.trim());
+                    }
+                  }
+                }}
+              />
+            </div>
+
+            <div className="max-h-52 overflow-y-auto no-scrollbar space-y-0.5 px-0.5">
+              {filterText.trim() && !isFilterExactMatch && (
+                <div 
+                  onClick={() => handleSelectOrAdd(filterText.trim())}
+                  className="px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all font-black border border-emerald-200 mb-1"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-6 h-6 rounded-md bg-emerald-600 text-white flex items-center justify-center">
+                      <Plus size={14} />
+                    </div>
+                    <span className="text-[12px]">কাস্টম সাল যুক্ত করুন: "{filterText.trim()}"</span>
+                  </div>
+                  <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded font-black">Enter ↵</span>
+                </div>
+              )}
+
+              {filteredOptions.map((opt) => (
+                <div 
+                  key={opt.id}
+                  onClick={() => handleSelectOrAdd(opt.value)}
+                  className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
+                    value === opt.value ? `bg-emerald-50 text-emerald-700 shadow-sm` : 'hover:bg-slate-50 text-slate-600'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                      value === opt.value ? `bg-emerald-600 text-white` : 'bg-slate-100 text-slate-400'
+                    }`}>
+                      <Calendar size={14} />
+                    </div>
+                    <span className={`text-[12.5px] font-black transition-colors ${value === opt.value ? `text-emerald-700` : 'text-slate-700'}`}>{opt.label}</span>
+                  </div>
+                  {value === opt.value && (
+                    <div className="w-5 h-5 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300">
+                      <Check size={12} strokeWidth={3} />
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {filteredOptions.length === 0 && !filterText.trim() && (
+                <div className="p-3 text-center text-xs text-slate-400 font-bold">কোন সাল পাওয়া যায়নি</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
  * Segmented Date Input Component (Mirrored from Settlement Module Logic)
  * Handles auto-padding, max limits, smart year expansion, and auto-focus jump.
  */
@@ -730,6 +1095,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const [formData, setFormData] = useState({
     description: '',
     ministryName: '',
+    entityName: '',
+    auditYear: '',
     paraType: 'এসএফআই',
     letterType: 'বিএসআর',
     letterNo: '',
@@ -1251,6 +1618,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       setFormData({
         description: initialEntry.description || '',
         ministryName: initialEntry.ministryName || '',
+        entityName: initialEntry.entityName || '',
+        auditYear: initialEntry.auditYear || '',
         paraType: initialEntry.paraType || 'এসএফআই',
         letterType: initialEntry.letterType || 'বিএসআর',
         letterNo: initialEntry.letterNo || '',
@@ -1383,6 +1752,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     setFormData({
       description: '',
       ministryName: '',
+      entityName: '',
+      auditYear: '',
       paraType: 'এসএফআই',
       letterType: 'বিএসআর',
       letterNo: '',
@@ -1505,7 +1876,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
       // 2. Audit Year validation
       const yearRegex = /[0-9]{4}|[০-৯]{4}/;
-      if (!yearRegex.test(desc)) {
+      if (!yearRegex.test(desc) && !formData.auditYear) {
         if (!hasWarnedAuditYear) {
           setShowAuditYearWarning(true);
           alert("আপনি নিরীক্ষা সাল উল্লেখ করেন নি");
@@ -1614,10 +1985,65 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         <fieldset className="space-y-8 border-none p-0 m-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             
-            {/* Field 1 - Full Width Description with Suggestions */}
-            <div className={`${colWrapper} border-emerald-100 lg:col-span-4`} ref={descriptionRef}>
+            {/* --- Section: পত্রের অন্যান্য তথ্য --- */}
+            <div className={sectionHeaderCls}>
+               <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
+               <h4 className={sectionTitleCls}>পত্রের অন্যান্য তথ্য</h4>
+            </div>
+
+            {/* Field Ministry */}
+            <div className={`${colWrapper} border-sky-100`}>
+              <label className={labelCls}>
+                <span className={numBadge}>ম</span> 
+                <Building size={14} className="text-sky-600" /> 
+                মন্ত্রণালয়:
+              </label>
+              <PremiumMinistrySelect 
+                value={formData.ministryName}
+                onChange={(val: string) => {
+                  const desc = (formData.description || '').trim();
+                  const descLower = desc.toLowerCase();
+                  const hasBank = descLower.includes('ব্যাংক') || descLower.includes('bank');
+                  const hasMillsOrJute = descLower.includes('মিল') || descLower.includes('মিলস') || descLower.includes('জুট') || descLower.includes('mill') || descLower.includes('mills') || descLower.includes('jute');
+
+                  if (hasBank && val !== "আর্থিক প্রতিষ্ঠান বিভাগ") {
+                    if (!window.confirm("আপনি কি সঠিক মন্ত্রণালয় সিলেক্ট করেছেন?")) {
+                      return;
+                    }
+                  } else if (hasMillsOrJute && val !== "পাট মন্ত্রণালয়") {
+                    if (!window.confirm("আপনি কি সঠিক মন্ত্রণালয় সিলেক্ট করেছেন?")) {
+                      return;
+                    }
+                  }
+                  setFormData({...formData, ministryName: val});
+                }}
+                IDBadge={IDBadge}
+              />
+            </div>
+
+            {/* Field Entity */}
+            <div className={`${colWrapper} border-purple-100`}>
+              <label className={labelCls}>
+                <span className={numBadge}>এ</span> 
+                <Building2 size={14} className="text-purple-600" /> 
+                এনটিটি:
+              </label>
+              <PremiumEntitySelect 
+                value={formData.entityName}
+                onChange={(val: string) => setFormData({...formData, entityName: val})}
+                ministryName={formData.ministryName}
+                IDBadge={IDBadge}
+              />
+            </div>
+
+            {/* Field Description - Double Width */}
+            <div className={`${colWrapper} border-emerald-100 col-span-1 md:col-span-2 lg:col-span-2 xl:col-span-2`} ref={descriptionRef}>
               <IDBadge id="corr-field-1" />
-              <label className={labelCls}><span className={numBadge}>১</span> <FileText size={14} className="text-emerald-600" /> পত্রের বিবরণ নিরীক্ষা সালসহ:</label>
+              <label className={labelCls}>
+                <span className={numBadge}>১</span> 
+                <FileText size={14} className="text-emerald-600" /> 
+                পত্রের বিবরণ:
+              </label>
               <div className="relative group">
                 <input 
                   ref={descriptionInputRef}
@@ -1685,38 +2111,16 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               </div>
             </div>
 
-            {/* --- Section: পিত্রের অন্যান্য তথ্য --- */}
-            <div className={sectionHeaderCls}>
-               <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
-               <h4 className={sectionTitleCls}>পত্রের অন্যান্য তথ্য</h4>
-            </div>
-
-            {/* Field Ministry */}
-            <div className={`${colWrapper} border-sky-100`}>
+            {/* Field Audit Year */}
+            <div className={`${colWrapper} border-emerald-100`}>
               <label className={labelCls}>
-                <span className={numBadge}>ম</span> 
-                <Building size={14} className="text-sky-600" /> 
-                মন্ত্রণালয়:
+                <span className={numBadge}>স</span> 
+                <Calendar size={14} className="text-emerald-600" /> 
+                নিরীক্ষা সাল:
               </label>
-              <PremiumMinistrySelect 
-                value={formData.ministryName}
-                onChange={(val: string) => {
-                  const desc = (formData.description || '').trim();
-                  const descLower = desc.toLowerCase();
-                  const hasBank = descLower.includes('ব্যাংক') || descLower.includes('bank');
-                  const hasMillsOrJute = descLower.includes('মিল') || descLower.includes('মিলস') || descLower.includes('জুট') || descLower.includes('mill') || descLower.includes('mills') || descLower.includes('jute');
-
-                  if (hasBank && val !== "আর্থিক প্রতিষ্ঠান বিভাগ") {
-                    if (!window.confirm("আপনি কি সঠিক মন্ত্রণালয় সিলেক্ট করেছেন?")) {
-                      return;
-                    }
-                  } else if (hasMillsOrJute && val !== "পাট মন্ত্রণালয়") {
-                    if (!window.confirm("আপনি কি সঠিক মন্ত্রণালয় সিলেক্ট করেছেন?")) {
-                      return;
-                    }
-                  }
-                  setFormData({...formData, ministryName: val});
-                }}
+              <PremiumAuditYearSelect 
+                value={formData.auditYear}
+                onChange={(val: string) => setFormData({...formData, auditYear: val})}
                 IDBadge={IDBadge}
               />
             </div>
