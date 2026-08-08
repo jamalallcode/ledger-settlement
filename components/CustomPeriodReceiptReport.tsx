@@ -1708,31 +1708,33 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       const totalParas = parseInt(toEnglishDigits(String(entry.totalParas || entry.sentParaCount || (entry.paragraphs ? entry.paragraphs.length : 1))));
                       const totalAmount = parseFloat(toEnglishDigits(String(entry.totalAmount || entry.sentParaInvolvedAmount || entry.involvedAmount || 0)));
 
-                      // Settlement stats calculation
+                      // Settlement stats calculation - Only calculate if letter has been issued (hasIssueLetter is true)
                       let settledCount = 0;
                       let settledAmount = 0;
                       let settledParas: any[] = [];
 
-                      if (entry.paragraphs && entry.paragraphs.length > 0) {
-                        settledParas = entry.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0);
-                        settledCount = settledParas.length;
-                        settledAmount = entry.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0);
-                      } else {
-                        const matchedS = (settlementEntries || []).find((s: any) => {
-                          const sLetter = normalizeForSearch(s.letterNoDate || '');
-                          const sWork = normalizeForSearch(s.workpaperNoDate || '');
-                          const eLetter = normalizeForSearch(entry.letterNo || '');
-                          const eDiary = normalizeForSearch(entry.diaryNo || '');
-                          return (eLetter && sLetter.includes(eLetter)) || (eDiary && sWork.includes(eDiary));
-                        });
-
-                        if (matchedS && matchedS.paragraphs && matchedS.paragraphs.length > 0) {
-                          settledParas = matchedS.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0);
+                      if (hasIssueLetter) {
+                        if (entry.paragraphs && entry.paragraphs.length > 0) {
+                          settledParas = entry.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0);
                           settledCount = settledParas.length;
-                          settledAmount = matchedS.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0);
+                          settledAmount = entry.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0);
                         } else {
-                          settledCount = parseInt(toEnglishDigits(String(entry.meetingSettledParaCount || '0')));
-                          settledAmount = parseFloat(toEnglishDigits(String(entry.meetingSettledAmount || (entry.totalRec || 0) + (entry.totalAdj || 0))));
+                          const matchedS = (settlementEntries || []).find((s: any) => {
+                            const sLetter = normalizeForSearch(s.letterNoDate || '');
+                            const sWork = normalizeForSearch(s.workpaperNoDate || '');
+                            const eLetter = normalizeForSearch(entry.letterNo || '');
+                            const eDiary = normalizeForSearch(entry.diaryNo || '');
+                            return (eLetter && sLetter.includes(eLetter)) || (eDiary && sWork.includes(eDiary));
+                          });
+
+                          if (matchedS && matchedS.paragraphs && matchedS.paragraphs.length > 0) {
+                            settledParas = matchedS.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0);
+                            settledCount = settledParas.length;
+                            settledAmount = matchedS.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0);
+                          } else {
+                            settledCount = parseInt(toEnglishDigits(String(entry.meetingSettledParaCount || '0')));
+                            settledAmount = parseFloat(toEnglishDigits(String(entry.meetingSettledAmount || (entry.totalRec || 0) + (entry.totalAdj || 0))));
+                          }
                         }
                       }
 
