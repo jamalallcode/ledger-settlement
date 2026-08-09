@@ -1825,27 +1825,77 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       let settledParas: any[] = [];
 
                       if (hasIssueLetter) {
-                        if (entry.paragraphs && entry.paragraphs.length > 0) {
-                          settledParas = entry.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0);
-                          settledCount = settledParas.length;
-                          settledAmount = entry.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0);
-                        } else {
-                          const matchedS = (settlementEntries || []).find((s: any) => {
-                            const sLetter = normalizeForSearch(s.letterNoDate || '');
-                            const sWork = normalizeForSearch(s.workpaperNoDate || '');
-                            const eLetter = normalizeForSearch(entry.letterNo || '');
-                            const eDiary = normalizeForSearch(entry.diaryNo || '');
-                            return (eLetter && sLetter.includes(eLetter)) || (eDiary && sWork.includes(eDiary));
-                          });
+                        const getPureDigits = (val?: string) => {
+                          if (!val) return '';
+                          return toEnglishDigits(String(val)).replace(/\D/g, '');
+                        };
 
-                          if (matchedS && matchedS.paragraphs && matchedS.paragraphs.length > 0) {
-                            settledParas = matchedS.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0);
+                        const eIssue = getPureDigits(entry.issueLetterNo || entry.issueLetterNoDate);
+                        const eDiary = getPureDigits(entry.diaryNo || entry.workpaperNoDate);
+                        const eLetter = getPureDigits(entry.letterNo || entry.letterNoDate);
+
+                        const matchedSettlementEntries = (settlementEntries || []).filter((s: any) => {
+                          if (s.correspondenceId && s.correspondenceId === entry.id) return true;
+                          if (s.letterId && s.letterId === entry.id) return true;
+
+                          const sIssue = getPureDigits(s.issueNo || s.issueLetterNo || s.issueLetterNoDate);
+                          const sDiary = getPureDigits(s.diaryNo || s.workpaperNoDate);
+                          const sLetter = getPureDigits(s.letterNo || s.letterNoDate);
+
+                          const issueMatch = Boolean(eIssue && sIssue && eIssue === sIssue);
+                          const diaryMatch = Boolean(eDiary && sDiary && eDiary === sDiary);
+                          const letterMatch = Boolean(eLetter && sLetter && eLetter === sLetter);
+
+                          if (issueMatch && diaryMatch && letterMatch) return true;
+                          if (issueMatch && diaryMatch && (!eLetter || !sLetter)) return true;
+                          if (issueMatch && letterMatch && (!eDiary || !sDiary)) return true;
+                          if (diaryMatch && letterMatch && (!eIssue || !sIssue)) return true;
+                          if (issueMatch && !eDiary && !eLetter) return true;
+
+                          return false;
+                        });
+
+                        if (matchedSettlementEntries.length > 0) {
+                          matchedSettlementEntries.forEach((matchedS: any) => {
+                            if (matchedS.paragraphs && matchedS.paragraphs.length > 0) {
+                              const sParas = matchedS.paragraphs.filter((p: any) => 
+                                p.status === 'পূর্ণাঙ্গ' || 
+                                (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0 || 
+                                (p.involvedAmount || 0) > 0
+                              );
+                              settledParas.push(...sParas);
+                              sParas.forEach((p: any) => {
+                                const recAdj = (p.recoveredAmount || 0) + (p.adjustedAmount || 0);
+                                const pAmount = recAdj > 0 ? recAdj : (p.involvedAmount || p.totalAmount || 0);
+                                settledAmount += pAmount;
+                              });
+                            } else {
+                              const sCount = parseInt(toEnglishDigits(String(matchedS.meetingSettledParaCount || '0')));
+                              const sAmt = parseFloat(toEnglishDigits(String(matchedS.meetingSettledAmount || (matchedS.totalRec || 0) + (matchedS.totalAdj || 0))));
+                              settledCount += sCount;
+                              settledAmount += sAmt;
+                            }
+                          });
+                          if (settledParas.length > 0) {
                             settledCount = settledParas.length;
-                            settledAmount = matchedS.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0);
-                          } else {
-                            settledCount = parseInt(toEnglishDigits(String(entry.meetingSettledParaCount || '0')));
-                            settledAmount = parseFloat(toEnglishDigits(String(entry.meetingSettledAmount || (entry.totalRec || 0) + (entry.totalAdj || 0))));
                           }
+                        } else if (entry.paragraphs && entry.paragraphs.length > 0) {
+                          settledParas = entry.paragraphs.filter((p: any) => 
+                            p.status === 'পূর্ণাঙ্গ' || 
+                            (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0 || 
+                            (p.involvedAmount || 0) > 0
+                          );
+                          settledCount = settledParas.length;
+                          entry.paragraphs.forEach((p: any) => {
+                            if (p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0 || (p.involvedAmount || 0) > 0) {
+                              const recAdj = (p.recoveredAmount || 0) + (p.adjustedAmount || 0);
+                              const pAmount = recAdj > 0 ? recAdj : (p.involvedAmount || p.totalAmount || 0);
+                              settledAmount += pAmount;
+                            }
+                          });
+                        } else {
+                          settledCount = parseInt(toEnglishDigits(String(entry.meetingSettledParaCount || '0')));
+                          settledAmount = parseFloat(toEnglishDigits(String(entry.meetingSettledAmount || (entry.totalRec || 0) + (entry.totalAdj || 0))));
                         }
                       }
 
