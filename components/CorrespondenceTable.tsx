@@ -416,6 +416,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
   const [isReceiverDropdownOpen, setIsReceiverDropdownOpen] = useState(false);
+  const [isOngoingDropdownOpen, setIsOngoingDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (highlightSearch) {
@@ -435,6 +436,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
   const receiverDropdownRef = useRef<HTMLDivElement>(null);
+  const ongoingDropdownRef = useRef<HTMLDivElement>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
   const summaryButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -467,6 +469,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         !receiverDropdownRef.current.contains(event.target as Node)
       )
         setIsReceiverDropdownOpen(false);
+      if (
+        ongoingDropdownRef.current &&
+        !ongoingDropdownRef.current.contains(event.target as Node)
+      )
+        setIsOngoingDropdownOpen(false);
       if (
         summaryRef.current &&
         !summaryRef.current.contains(event.target as Node) &&
@@ -967,7 +974,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const labelCls = "text-[10px] font-bold text-emerald-800 shrink-0";
   const valCls = "text-[10px] font-black text-slate-950";
   const customDropdownCls = (isOpen: boolean) =>
-    `relative flex items-center gap-3 px-4 h-[48px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? "border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]" : "border-slate-300 shadow-sm hover:border-slate-400"}`;
+    `relative flex items-center gap-1.5 px-2.5 h-[42px] bg-white border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? "border-blue-600 ring-4 ring-blue-50 shadow-md z-[1010]" : "border-slate-300 shadow-sm hover:border-slate-400"}`;
 
   const hasChanges = Object.keys(pendingChanges).length > 0;
 
@@ -1238,8 +1245,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {/* Status Selection (চলমান / সকল / নিষ্পন্ন) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          {/* Status Selection (চিঠি ফিল্টার) */}
           <div className="space-y-1.5" ref={statusDropdownRef}>
             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">
               চিঠি ফিল্টার
@@ -1248,8 +1255,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
               onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
               className={customDropdownCls(isStatusDropdownOpen)}
             >
-              <Clock size={18} className="text-amber-500" />
-              <span className="font-bold text-[13px] text-slate-900 truncate">
+              <Clock size={16} className="text-amber-500 shrink-0" />
+              <span className="font-bold text-[12px] text-slate-900 truncate">
                 {filterStatus === ""
                   ? `সকল চিঠি (${toBengaliDigits(entries.length)})`
                   : filterStatus === "চলমান"
@@ -1258,13 +1265,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
               </span>
               <ChevronDown
                 size={14}
-                className={`text-slate-400 ml-auto transition-transform duration-300 ${isStatusDropdownOpen ? "rotate-180 text-blue-600" : ""}`}
+                className={`text-slate-400 ml-1.5 shrink-0 transition-transform duration-300 ${isStatusDropdownOpen ? "rotate-180 text-blue-600" : ""}`}
               />
 
               {isStatusDropdownOpen && (
-                <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[200px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
                   <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
-                    <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                    <div className="px-3 py-2.5 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
                       <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
                         <Filter size={12} /> অবস্থা নির্বাচন
                       </span>
@@ -1282,9 +1289,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                             setFilterStatus(opt.val);
                             setIsStatusDropdownOpen(false);
                           }}
-                          className={`flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterStatus === opt.val ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                          className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterStatus === opt.val ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
                         >
-                          <span className="text-[13px]">{opt.label}</span>
+                          <span className="text-[12px]">{opt.label}</span>
                           {filterStatus === opt.val && (
                             <Check size={16} strokeWidth={3} />
                           )}
@@ -1306,19 +1313,19 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
               onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
               className={customDropdownCls(isBranchDropdownOpen)}
             >
-              <LayoutGrid className="text-blue-600" size={16} />
-              <span className="font-bold text-[13px] text-slate-900 truncate">
+              <LayoutGrid className="text-blue-600 shrink-0" size={16} />
+              <span className="font-bold text-[12px] text-slate-900 truncate">
                 {filterParaType === "" ? "সকল শাখা" : filterParaType}
               </span>
               <ChevronDown
                 size={14}
-                className={`text-slate-400 ml-auto transition-transform duration-300 ${isBranchDropdownOpen ? "rotate-180 text-blue-600" : ""}`}
+                className={`text-slate-400 ml-1.5 shrink-0 transition-transform duration-300 ${isBranchDropdownOpen ? "rotate-180 text-blue-600" : ""}`}
               />
 
               {isBranchDropdownOpen && (
-                <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[200px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
                   <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
-                    <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                    <div className="px-3 py-2.5 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
                       <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
                         <LayoutGrid size={12} /> শাখা নির্বাচন
                       </span>
@@ -1337,9 +1344,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                             setFilterParaType(opt.val);
                             setIsBranchDropdownOpen(false);
                           }}
-                          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterParaType === opt.val ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                          className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterParaType === opt.val ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
                         >
-                          <span className="text-[13px]">{opt.label}</span>
+                          <span className="text-[12px]">{opt.label}</span>
                           {filterParaType === opt.val && (
                             <Check size={16} strokeWidth={3} />
                           )}
@@ -1361,19 +1368,19 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
               onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)}
               className={customDropdownCls(isTypeDropdownOpen)}
             >
-              <FileText className="text-blue-600" size={16} />
-              <span className="font-bold text-[13px] text-slate-900 truncate">
+              <FileText className="text-blue-600 shrink-0" size={16} />
+              <span className="font-bold text-[12px] text-slate-900 truncate">
                 {filterType === "" ? "সকল ধরণ" : getCleanLetterTypeDisplay(filterType)}
               </span>
               <ChevronDown
                 size={14}
-                className={`text-slate-400 ml-auto transition-transform duration-300 ${isTypeDropdownOpen ? "rotate-180 text-blue-600" : ""}`}
+                className={`text-slate-400 ml-1.5 shrink-0 transition-transform duration-300 ${isTypeDropdownOpen ? "rotate-180 text-blue-600" : ""}`}
               />
 
               {isTypeDropdownOpen && (
-                <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[200px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
                   <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
-                    <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                    <div className="px-3 py-2.5 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
                       <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
                         <FileText size={12} /> ধরণ নির্বাচন
                       </span>
@@ -1395,9 +1402,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                             setFilterType(opt.val);
                             setIsTypeDropdownOpen(false);
                           }}
-                          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterType === opt.val ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                          className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterType === opt.val ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
                         >
-                          <span className="text-[13px]">{opt.label}</span>
+                          <span className="text-[12px]">{opt.label}</span>
                           {filterType === opt.val && (
                             <Check size={16} strokeWidth={3} />
                           )}
@@ -1410,102 +1417,163 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             </div>
           </div>
 
-            {/* Receiver Selection */}
-            <div className="space-y-1.5" ref={receiverDropdownRef}>
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">
-                প্রাপক/গ্রহীতা
-              </label>
-              <div
-                onClick={() => setIsReceiverDropdownOpen(!isReceiverDropdownOpen)}
-                className={customDropdownCls(isReceiverDropdownOpen)}
-              >
-                <Users className="text-blue-600 font-bold" size={16} />
-                <span className="font-bold text-[13px] text-slate-900 truncate">
-                  {filterReceiver === "" ? "সকল প্রাপক" : filterReceiver}
-                </span>
-                <ChevronDown
-                  size={14}
-                  className={`text-slate-400 ml-auto transition-transform duration-300 ${isReceiverDropdownOpen ? "rotate-180 text-blue-600" : ""}`}
-                />
+          {/* Receiver Selection */}
+          <div className="space-y-1.5" ref={receiverDropdownRef}>
+            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">
+              প্রাপক/গ্রহীতা
+            </label>
+            <div
+              onClick={() => setIsReceiverDropdownOpen(!isReceiverDropdownOpen)}
+              className={customDropdownCls(isReceiverDropdownOpen)}
+            >
+              <Users className="text-blue-600 font-bold shrink-0" size={16} />
+              <span className="font-bold text-[12px] text-slate-900 truncate">
+                {filterReceiver === "" ? "সকল প্রাপক" : filterReceiver}
+              </span>
+              <ChevronDown
+                size={14}
+                className={`text-slate-400 ml-1.5 shrink-0 transition-transform duration-300 ${isReceiverDropdownOpen ? "rotate-180 text-blue-600" : ""}`}
+              />
 
-                {isReceiverDropdownOpen && (
-                  <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
-                    <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
-                      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
-                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
-                          <Users size={12} /> প্রাপক নির্বাচন
-                        </span>
+              {isReceiverDropdownOpen && (
+                <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[200px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                  <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
+                    <div className="px-3 py-2.5 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                        <Users size={12} /> প্রাপক নির্বাচন
+                      </span>
+                    </div>
+                    <div className="p-2 space-y-1">
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFilterReceiver("");
+                          setIsReceiverDropdownOpen(false);
+                        }}
+                        className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterReceiver === "" ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                      >
+                        <span className="text-[12px]">সকল প্রাপক</span>
+                        {filterReceiver === "" && (
+                          <Check size={16} strokeWidth={3} />
+                        )}
                       </div>
-                      <div className="p-2 space-y-1">
+                      {uniqueReceivers.map((receiver, idx) => (
                         <div
+                          key={idx}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setFilterReceiver("");
+                            setFilterReceiver(receiver);
                             setIsReceiverDropdownOpen(false);
                           }}
-                          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterReceiver === "" ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                          className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterReceiver === receiver ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
                         >
-                          <span className="text-[13px]">সকল প্রাপক</span>
-                          {filterReceiver === "" && (
+                          <span className="text-[12px]">{receiver}</span>
+                          {filterReceiver === receiver && (
                             <Check size={16} strokeWidth={3} />
                           )}
                         </div>
-                        {uniqueReceivers.map((receiver, idx) => (
-                          <div
-                            key={idx}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setFilterReceiver(receiver);
-                              setIsReceiverDropdownOpen(false);
-                            }}
-                            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterReceiver === receiver ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
-                          >
-                            <span className="text-[13px]">{receiver}</span>
-                            {filterReceiver === receiver && (
-                              <Check size={16} strokeWidth={3} />
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                      ))}
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Search Input */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center justify-between">
-                <span>অনুসন্ধান</span>
-              </label>
-              <div className="relative">
-                <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600"
-                  size={16}
-                />
-                <input
-                  type="text"
-                  value={searchTerm === "__UNASSIGNED__" ? "অনির্ধারিত এন্ট্রি" : searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="বিবরণ, জারিপত্র বা নং দিয়ে খুঁজুন..."
-                  className={`w-full pl-9 pr-9 h-[48px] bg-white border rounded-xl font-bold text-[13px] outline-none focus:ring-4 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold ${
-                    searchTerm === "__UNASSIGNED__"
-                      ? "border-red-300 text-red-700 focus:border-red-600 focus:ring-red-50"
-                      : "border-slate-300 text-slate-900 focus:border-blue-600 focus:ring-blue-50"
-                  }`}
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 font-bold text-[15px]"
-                    title="অনুসন্ধান মুছুন"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Ongoing Filter Option (চলমান - Position 5 marked with arrow) */}
+          <div className="space-y-1.5" ref={ongoingDropdownRef}>
+            <label className="text-[11px] font-bold text-amber-600 uppercase tracking-widest ml-1 flex items-center gap-1">
+              <span>চলমান</span>
+            </label>
+            <div
+              onClick={() => setIsOngoingDropdownOpen(!isOngoingDropdownOpen)}
+              className={customDropdownCls(isOngoingDropdownOpen)}
+            >
+              <Clock size={16} className="text-amber-500 shrink-0" />
+              <span className="font-bold text-[12px] text-slate-900 truncate">
+                {filterStatus === "চলমান"
+                  ? `চলমান (${toBengaliDigits(ongoingCount)})`
+                  : filterStatus === "নিষ্পন্ন"
+                  ? `নিষ্পন্ন (${toBengaliDigits(settledCount)})`
+                  : `সকল চিঠি`}
+              </span>
+              <ChevronDown
+                size={14}
+                className={`text-slate-400 ml-1.5 shrink-0 transition-transform duration-300 ${isOngoingDropdownOpen ? "rotate-180 text-amber-600" : ""}`}
+              />
+
+              {isOngoingDropdownOpen && (
+                <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                  <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
+                    <div className="px-3 py-2.5 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                      <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest flex items-center gap-2">
+                        <Clock size={12} /> চলমান ফিল্টার
+                      </span>
+                    </div>
+                    <div className="p-2 space-y-1">
+                      {[
+                        { val: "চলমান", label: `চলমান চিঠি (${toBengaliDigits(ongoingCount)})`, desc: "জারিপত্র নং ও তারিখহীন চিঠি" },
+                        { val: "", label: `সকল চিঠি (${toBengaliDigits(entries.length)})`, desc: "সকল চিঠি" },
+                        { val: "নিষ্পন্ন", label: `নিষ্পন্ন চিঠি (${toBengaliDigits(settledCount)})`, desc: "জারিপত্র নং ও তারিখপ্রাপ্ত চিঠি" },
+                      ].map((opt, idx) => (
+                        <div
+                          key={idx}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFilterStatus(opt.val);
+                            setIsOngoingDropdownOpen(false);
+                          }}
+                          className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterStatus === opt.val ? "!bg-amber-500 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                        >
+                          <div className="flex flex-col text-left">
+                            <span className="text-[12px] font-bold">{opt.label}</span>
+                            <span className="text-[9.5px] opacity-75">{opt.desc}</span>
+                          </div>
+                          {filterStatus === opt.val && (
+                            <Check size={16} strokeWidth={3} />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Search Input */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center justify-between">
+              <span>অনুসন্ধান</span>
+            </label>
+            <div className="relative">
+              <Search
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-blue-600"
+                size={15}
+              />
+              <input
+                type="text"
+                value={searchTerm === "__UNASSIGNED__" ? "অনির্ধারিত এন্ট্রি" : searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="বিবরণ, জারিপত্র বা নং..."
+                className={`w-full pl-8 pr-7 h-[42px] bg-white border rounded-xl font-bold text-[12px] outline-none focus:ring-4 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-bold ${
+                  searchTerm === "__UNASSIGNED__"
+                    ? "border-red-300 text-red-700 focus:border-red-600 focus:ring-red-50"
+                    : "border-slate-300 text-slate-900 focus:border-blue-600 focus:ring-blue-50"
+                }`}
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 font-bold text-[14px]"
+                  title="অনুসন্ধান মুছুন"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
         </div>
 
       {!showCycleHeaders && (

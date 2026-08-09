@@ -121,6 +121,122 @@ const renderMeetingType = (meetingType: string | undefined) => {
   return `${trimmed} সভা`;
 };
 
+const getSettlementTypeDisplay = (entry: any): string => {
+  // Check paragraphs array if present
+  if (entry.paragraphs && entry.paragraphs.length > 0) {
+    const hasPartial = entry.paragraphs.some((p: any) => p.status === 'আংশিক');
+    const fullCount = entry.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ').length;
+    const totalParasCount = entry.paragraphs.length;
+
+    if (hasPartial) {
+      return 'আংশিক';
+    }
+    if (fullCount > 0 && fullCount < totalParasCount) {
+      return 'আংশিক';
+    }
+    if (fullCount === totalParasCount && totalParasCount > 0) {
+      return 'পূর্ণাঙ্গ';
+    }
+  }
+
+  // Check numeric fields
+  const partialCount = parseInt(toEnglishDigits(String(entry.meetingPartialSettledParaCount || '0')));
+  if (partialCount > 0) {
+    return 'আংশিক';
+  }
+
+  const fullCount = parseInt(toEnglishDigits(String(entry.meetingFullSettledParaCount || '0')));
+  const settledCount = parseInt(toEnglishDigits(String(entry.meetingSettledParaCount || '0')));
+  const sentCount = parseInt(toEnglishDigits(String(entry.meetingSentParaCount || '0')));
+
+  if (fullCount > 0 && sentCount > 0 && fullCount < sentCount) {
+    return 'আংশিক';
+  }
+
+  if (settledCount > 0 && sentCount > 0 && settledCount < sentCount) {
+    return 'আংশিক';
+  }
+
+  // Check explicit status string
+  if (entry.settlementStatus === 'আংশিক' || entry.status === 'আংশিক' || entry.isPartial) {
+    return 'আংশিক';
+  }
+
+  if (entry.settlementStatus === 'পূর্ণাঙ্গ' || entry.status === 'পূর্ণাঙ্গ' || entry.isFull) {
+    return 'পূর্ণাঙ্গ';
+  }
+
+  return 'পূর্ণাঙ্গ';
+};
+
+const getSettlementEntryStats = (entry: any) => {
+  let fullCount = 0;
+  let partialCount = 0;
+  let settledAmount = 0;
+  let fullAmount = 0;
+  let partialAmount = 0;
+  let fullParas: string[] = [];
+  let partialParas: string[] = [];
+  let allParas: string[] = [];
+
+  if (entry.paragraphs && entry.paragraphs.length > 0) {
+    entry.paragraphs.forEach((p: any) => {
+      const pNum = p.paraNo || p.paragraphNo || p.number || '';
+      const rec = (p.recoveredAmount || 0) + (p.adjustedAmount || 0);
+      if (p.status === 'পূর্ণাঙ্গ') {
+        fullCount++;
+        fullAmount += rec;
+        if (pNum) fullParas.push(String(pNum));
+      } else if (p.status === 'আংশিক' || (rec > 0 && p.status !== 'পূর্ণাঙ্গ')) {
+        partialCount++;
+        partialAmount += rec;
+        if (pNum) partialParas.push(String(pNum));
+      }
+      if (pNum && (p.status === 'পূর্ণাঙ্গ' || p.status === 'আংশিক' || rec > 0)) {
+        allParas.push(String(pNum));
+      }
+    });
+    settledAmount = fullAmount + partialAmount;
+  } else {
+    const hasFullField = entry.meetingFullSettledParaCount !== undefined && entry.meetingFullSettledParaCount !== null && entry.meetingFullSettledParaCount !== '';
+    const hasPartialField = entry.meetingPartialSettledParaCount !== undefined && entry.meetingPartialSettledParaCount !== null && entry.meetingPartialSettledParaCount !== '';
+
+    if (hasFullField || hasPartialField) {
+      fullCount = parseInt(toEnglishDigits(String(entry.meetingFullSettledParaCount || entry.fullSettledCount || '0')));
+      partialCount = parseInt(toEnglishDigits(String(entry.meetingPartialSettledParaCount || entry.partialSettledCount || '0')));
+    } else {
+      const totalSettled = parseInt(toEnglishDigits(String(entry.meetingSettledParaCount || '0')));
+      if (entry.settlementStatus === 'আংশিক' || entry.status === 'আংশিক' || entry.isPartial) {
+        partialCount = totalSettled;
+        fullCount = 0;
+      } else {
+        fullCount = totalSettled;
+        partialCount = 0;
+      }
+    }
+
+    settledAmount = entry.meetingSettledAmount !== undefined && entry.meetingSettledAmount !== null && entry.meetingSettledAmount !== ''
+      ? parseFloat(toEnglishDigits(String(entry.meetingSettledAmount)))
+      : ((entry.totalRec || 0) + (entry.totalAdj || 0));
+
+    if (fullCount > 0 && partialCount === 0) {
+      fullAmount = settledAmount;
+    } else if (partialCount > 0 && fullCount === 0) {
+      partialAmount = settledAmount;
+    } else {
+      fullAmount = 0;
+      partialAmount = settledAmount;
+    }
+
+    const rawParas = String(entry.meetingSettledParas || entry.settledParas || entry.meetingUnsettledParas || '');
+    if (rawParas) {
+      allParas = rawParas.split(/[,;\s]+/).filter(Boolean);
+    }
+  }
+
+  return { fullCount, partialCount, settledAmount, fullAmount, partialAmount, fullParas, partialParas, allParas };
+};
+
 const getEntryMinistry = (ent: any): string => {
   if (ent.ministryName) {
     return ent.ministryName;
@@ -958,14 +1074,9 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     let countSum = 0;
     let amountSum = 0;
     filteredSettlementEntries.forEach(entry => {
-      const count = entry.paragraphs?.filter((p: any) => p.status === 'পূর্ণাঙ্গ').length 
-        || parseInt(toEnglishDigits(entry.meetingSettledParaCount || '0')) 
-        || 0;
-      const amount = entry.paragraphs && entry.paragraphs.length > 0 
-        ? entry.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0) 
-        : ((entry.totalRec || 0) + (entry.totalAdj || 0));
-      countSum += count;
-      amountSum += amount;
+      const { fullCount, settledAmount } = getSettlementEntryStats(entry);
+      countSum += fullCount;
+      amountSum += settledAmount;
     });
     return { totalSettledCountSum: countSum, totalSettledAmountSum: amountSum };
   }, [filteredSettlementEntries]);
@@ -1708,31 +1819,33 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       const totalParas = parseInt(toEnglishDigits(String(entry.totalParas || entry.sentParaCount || (entry.paragraphs ? entry.paragraphs.length : 1))));
                       const totalAmount = parseFloat(toEnglishDigits(String(entry.totalAmount || entry.sentParaInvolvedAmount || entry.involvedAmount || 0)));
 
-                      // Settlement stats calculation
+                      // Settlement stats calculation - Only calculate if letter has been issued (hasIssueLetter is true)
                       let settledCount = 0;
                       let settledAmount = 0;
                       let settledParas: any[] = [];
 
-                      if (entry.paragraphs && entry.paragraphs.length > 0) {
-                        settledParas = entry.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0);
-                        settledCount = settledParas.length;
-                        settledAmount = entry.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0);
-                      } else {
-                        const matchedS = (settlementEntries || []).find((s: any) => {
-                          const sLetter = normalizeForSearch(s.letterNoDate || '');
-                          const sWork = normalizeForSearch(s.workpaperNoDate || '');
-                          const eLetter = normalizeForSearch(entry.letterNo || '');
-                          const eDiary = normalizeForSearch(entry.diaryNo || '');
-                          return (eLetter && sLetter.includes(eLetter)) || (eDiary && sWork.includes(eDiary));
-                        });
-
-                        if (matchedS && matchedS.paragraphs && matchedS.paragraphs.length > 0) {
-                          settledParas = matchedS.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0);
+                      if (hasIssueLetter) {
+                        if (entry.paragraphs && entry.paragraphs.length > 0) {
+                          settledParas = entry.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0);
                           settledCount = settledParas.length;
-                          settledAmount = matchedS.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0);
+                          settledAmount = entry.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0);
                         } else {
-                          settledCount = parseInt(toEnglishDigits(String(entry.meetingSettledParaCount || '0')));
-                          settledAmount = parseFloat(toEnglishDigits(String(entry.meetingSettledAmount || (entry.totalRec || 0) + (entry.totalAdj || 0))));
+                          const matchedS = (settlementEntries || []).find((s: any) => {
+                            const sLetter = normalizeForSearch(s.letterNoDate || '');
+                            const sWork = normalizeForSearch(s.workpaperNoDate || '');
+                            const eLetter = normalizeForSearch(entry.letterNo || '');
+                            const eDiary = normalizeForSearch(entry.diaryNo || '');
+                            return (eLetter && sLetter.includes(eLetter)) || (eDiary && sWork.includes(eDiary));
+                          });
+
+                          if (matchedS && matchedS.paragraphs && matchedS.paragraphs.length > 0) {
+                            settledParas = matchedS.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0);
+                            settledCount = settledParas.length;
+                            settledAmount = matchedS.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0);
+                          } else {
+                            settledCount = parseInt(toEnglishDigits(String(entry.meetingSettledParaCount || '0')));
+                            settledAmount = parseFloat(toEnglishDigits(String(entry.meetingSettledAmount || (entry.totalRec || 0) + (entry.totalAdj || 0))));
+                          }
                         }
                       }
 
@@ -1951,11 +2064,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                 <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                   <colgroup>
                     <col className="w-[5%]" />
-                    <col className="w-[21%]" />
-                    <col className="w-[17%]" />
+                    <col className="w-[19%]" />
+                    <col className="w-[18%]" />
                     <col className="w-[9%]" />
-                    <col className="w-[14%]" />
-                    <col className="w-[11%]" />
+                    <col className="w-[16%]" />
+                    <col className="w-[10%]" />
                     <col className="w-[11%]" />
                     <col className="w-[12%]" />
                   </colgroup>
@@ -1985,13 +2098,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredSettlementEntries.map((entry, index) => {
-                      const rowSettledCount = entry.paragraphs?.filter((p: any) => p.status === 'পূর্ণাঙ্গ').length 
-                        || parseInt(toEnglishDigits(entry.meetingSettledParaCount || '0')) 
-                        || 0;
+                      const { fullCount, partialCount, settledAmount, fullAmount, partialAmount, fullParas, partialParas, allParas } = getSettlementEntryStats(entry);
+                      const rowSettledCount = (fullCount + partialCount) || fullCount || partialCount;
+                      const rowSettledAmount = settledAmount;
 
-                      const rowSettledAmount = entry.paragraphs && entry.paragraphs.length > 0 
-                        ? entry.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0) 
-                        : ((entry.totalRec || 0) + (entry.totalAdj || 0));
+                      const fullParasText = fullParas.length > 0 ? fullParas.map(toBengaliDigits).join(', ') : '';
+                      const partialParasText = partialParas.length > 0 ? partialParas.map(toBengaliDigits).join(', ') : '';
+                      const allParasText = allParas.length > 0 
+                        ? allParas.map(toBengaliDigits).join(', ') 
+                        : ([fullParasText, partialParasText].filter(Boolean).join(', '));
 
                       return (
                         <tr key={entry.id || index} className="hover:bg-blue-50/20 transition-colors group">
@@ -2037,15 +2152,50 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                   {entry.paraType}
                                 </span>
                               </div>
-                              <div>
-                                <span className="font-black text-slate-700 text-[10px]">২. </span>
-                                <span className="font-black text-slate-900 text-[10.5px]">
-                                  {entry.isMeeting ? renderMeetingType(entry.meetingType) : 'সাধারণ নিষ্পত্তি'}
-                                </span>
-                              </div>
+                              {fullCount > 0 && partialCount > 0 ? (
+                                <div className="space-y-0.5 pt-0.5">
+                                  <div 
+                                    className="cursor-help hover:text-blue-700 transition-colors"
+                                    title={fullParasText ? `পূর্ণাঙ্গ নিষ্পন্ন অনুচ্ছেদ নং: ${fullParasText}` : `পূর্ণাঙ্গ অনুচ্ছেদ: ${toBengaliDigits(fullCount)} টি`}
+                                  >
+                                    <span className="font-black text-slate-700 text-[10px]">২. </span>
+                                    <span className="font-black text-slate-900 text-[10.5px]">
+                                      পূর্ণাঙ্গ = {toBengaliDigits(fullCount)} টি ({toBengaliDigits(fullAmount || 0)})
+                                    </span>
+                                  </div>
+                                  <div 
+                                    className="cursor-help hover:text-amber-900 transition-colors"
+                                    title={partialParasText ? `আংশিক নিষ্পন্ন অনুচ্ছেদ নং: ${partialParasText}` : `আংশিক অনুচ্ছেদ: ${toBengaliDigits(partialCount)} টি`}
+                                  >
+                                    <span className="font-black text-slate-700 text-[10px]">৩. </span>
+                                    <span className="font-black text-amber-800 text-[10.5px]">
+                                      আংশিক = {toBengaliDigits(partialCount)} টি ({toBengaliDigits(partialAmount || 0)})
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div 
+                                  className="cursor-help hover:text-blue-700 transition-colors"
+                                  title={allParasText ? `সকল নিষ্পন্ন অনুচ্ছেদ নং: ${allParasText}` : `নিষ্পন্ন অনুচ্ছেদ: ${toBengaliDigits(rowSettledCount)} টি`}
+                                >
+                                  <span className="font-black text-slate-700 text-[10px]">২. </span>
+                                  <span className="font-black text-slate-900 text-[10.5px]">
+                                    {fullCount > 0 ? (
+                                      <>পূর্ণাঙ্গ = {toBengaliDigits(fullCount)} টি ({toBengaliDigits(fullAmount || settledAmount)})</>
+                                    ) : partialCount > 0 ? (
+                                      <>আংশিক = {toBengaliDigits(partialCount)} টি ({toBengaliDigits(partialAmount || settledAmount)})</>
+                                    ) : (
+                                      <>{getSettlementTypeDisplay(entry)} ({toBengaliDigits(settledAmount)})</>
+                                    )}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-center text-[11px] font-black text-slate-700 border-r border-slate-200">
+                          <td 
+                            className="px-4 py-3 text-center text-[11px] font-black text-slate-700 border-r border-slate-200 cursor-help hover:bg-blue-100/50 hover:text-blue-700 transition-colors"
+                            title={allParasText ? `সকল নিষ্পন্নকৃত অনুচ্ছেদ নং: ${allParasText}` : `নিষ্পন্নকৃত অনুচ্ছেদ সংখ্যা: ${toBengaliDigits(rowSettledCount)} টি`}
+                          >
                             {toBengaliDigits(rowSettledCount)} টি
                           </td>
                           <td className="px-4 py-3 text-right text-[11.5px] font-black text-slate-900 border-r border-slate-200">
