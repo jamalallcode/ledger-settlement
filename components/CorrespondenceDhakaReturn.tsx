@@ -874,17 +874,17 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
             <colgroup>
               <col className="w-[40px]" />
-              <col className="w-[174px]" />
-              <col className="w-[74px]" />
-              <col className="w-[74px]" />
+              <col className="w-[224px]" />
+              <col className="w-[64px]" />
+              <col className="w-[64px]" />
               <col className="w-[55px]" />
-              <col className="w-[69px]" />
+              <col className="w-[59px]" />
               <col className="w-[55px]" />
               <col className="w-[55px]" />
               <col className="w-[55px]" />
               <col className="w-[60px]" />
-              <col className="w-[64px]" />
-              <col className="w-[70px]" />
+              <col className="w-[54px]" />
+              <col className="w-[60px]" />
               <col className="w-[50px]" />
             </colgroup>
             <thead>
