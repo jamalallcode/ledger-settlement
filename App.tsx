@@ -1453,6 +1453,7 @@ const App: React.FC = () => {
               contactLink={contactLink}
               onGoBack={goBack}
               hasHistory={navHistory.length > 0}
+              moduleVisibility={moduleVisibility}
             />
           </div>
         )}
@@ -1653,7 +1654,7 @@ const App: React.FC = () => {
 
               {activeTab === 'voting' && <VotingSystem isAdmin={isAdmin} />}
 
-              {activeTab === 'dashboard' && (
+              {activeTab === 'dashboard' && isAdmin && (
                 <AdminDashboard 
                   isAdmin={isAdmin}
                   entries={entries}
