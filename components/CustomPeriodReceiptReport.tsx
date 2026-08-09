@@ -2064,11 +2064,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                 <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                   <colgroup>
                     <col className="w-[5%]" />
-                    <col className="w-[21%]" />
-                    <col className="w-[17%]" />
+                    <col className="w-[19%]" />
+                    <col className="w-[18%]" />
                     <col className="w-[9%]" />
-                    <col className="w-[14%]" />
-                    <col className="w-[11%]" />
+                    <col className="w-[16%]" />
+                    <col className="w-[10%]" />
                     <col className="w-[11%]" />
                     <col className="w-[12%]" />
                   </colgroup>
