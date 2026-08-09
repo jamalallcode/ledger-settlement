@@ -1303,10 +1303,10 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               <colgroup>
                 <col className="w-[30px]" />
                 <col className="w-[50px]" />
-                <col className="w-[160px]" />
-                <col className="w-[95px]" />
-                <col className="w-[95px]" />
-                <col className="w-[120px]" />
+                <col className="w-[190px]" />
+                <col className="w-[85px]" />
+                <col className="w-[85px]" />
+                <col className="w-[110px]" />
                 <col className="w-[80px]" />
                 <col className="w-[100px]" />
                 <col className="w-[90px]" />
@@ -1322,6 +1322,13 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   <th className={stickyThStyle}>উপস্থাপনের তারিখ</th>
                   <th className={stickyThStyle}>বর্তমান অবস্থান</th>
                   <th className={stickyThStyle}>মন্তব্য</th>
+                </tr>
+                <tr className="h-[24px] bg-slate-200">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                    <th key={n} className={`${stickyThStyle} text-[9.5px] font-bold text-slate-700 py-0.5 border-t border-slate-300`}>
+                      {toBengaliDigits(n.toString())}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
