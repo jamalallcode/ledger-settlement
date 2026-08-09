@@ -169,6 +169,41 @@ const getSettlementTypeDisplay = (entry: any): string => {
   return 'পূর্ণাঙ্গ';
 };
 
+const getSettlementEntryStats = (entry: any) => {
+  let fullCount = 0;
+  let partialCount = 0;
+  let settledAmount = 0;
+
+  if (entry.paragraphs && entry.paragraphs.length > 0) {
+    fullCount = entry.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ').length;
+    partialCount = entry.paragraphs.filter((p: any) => p.status === 'আংশিক' || ((p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0 && p.status !== 'পূর্ণাঙ্গ')).length;
+    settledAmount = entry.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0);
+  } else {
+    const hasFullField = entry.meetingFullSettledParaCount !== undefined && entry.meetingFullSettledParaCount !== null && entry.meetingFullSettledParaCount !== '';
+    const hasPartialField = entry.meetingPartialSettledParaCount !== undefined && entry.meetingPartialSettledParaCount !== null && entry.meetingPartialSettledParaCount !== '';
+
+    if (hasFullField || hasPartialField) {
+      fullCount = parseInt(toEnglishDigits(String(entry.meetingFullSettledParaCount || entry.fullSettledCount || '0')));
+      partialCount = parseInt(toEnglishDigits(String(entry.meetingPartialSettledParaCount || entry.partialSettledCount || '0')));
+    } else {
+      const totalSettled = parseInt(toEnglishDigits(String(entry.meetingSettledParaCount || '0')));
+      if (entry.settlementStatus === 'আংশিক' || entry.status === 'আংশিক' || entry.isPartial) {
+        partialCount = totalSettled;
+        fullCount = 0;
+      } else {
+        fullCount = totalSettled;
+        partialCount = 0;
+      }
+    }
+
+    settledAmount = entry.meetingSettledAmount !== undefined && entry.meetingSettledAmount !== null && entry.meetingSettledAmount !== ''
+      ? parseFloat(toEnglishDigits(String(entry.meetingSettledAmount)))
+      : ((entry.totalRec || 0) + (entry.totalAdj || 0));
+  }
+
+  return { fullCount, partialCount, settledAmount };
+};
+
 const getEntryMinistry = (ent: any): string => {
   if (ent.ministryName) {
     return ent.ministryName;
@@ -1006,14 +1041,9 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     let countSum = 0;
     let amountSum = 0;
     filteredSettlementEntries.forEach(entry => {
-      const count = entry.paragraphs?.filter((p: any) => p.status === 'পূর্ণাঙ্গ').length 
-        || parseInt(toEnglishDigits(entry.meetingSettledParaCount || '0')) 
-        || 0;
-      const amount = entry.paragraphs && entry.paragraphs.length > 0 
-        ? entry.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0) 
-        : ((entry.totalRec || 0) + (entry.totalAdj || 0));
-      countSum += count;
-      amountSum += amount;
+      const { fullCount, settledAmount } = getSettlementEntryStats(entry);
+      countSum += fullCount;
+      amountSum += settledAmount;
     });
     return { totalSettledCountSum: countSum, totalSettledAmountSum: amountSum };
   }, [filteredSettlementEntries]);
@@ -2035,13 +2065,9 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredSettlementEntries.map((entry, index) => {
-                      const rowSettledCount = entry.paragraphs?.filter((p: any) => p.status === 'পূর্ণাঙ্গ').length 
-                        || parseInt(toEnglishDigits(entry.meetingSettledParaCount || '0')) 
-                        || 0;
-
-                      const rowSettledAmount = entry.paragraphs && entry.paragraphs.length > 0 
-                        ? entry.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0) 
-                        : ((entry.totalRec || 0) + (entry.totalAdj || 0));
+                      const { fullCount, partialCount, settledAmount } = getSettlementEntryStats(entry);
+                      const rowSettledCount = fullCount;
+                      const rowSettledAmount = settledAmount;
 
                       return (
                         <tr key={entry.id || index} className="hover:bg-blue-50/20 transition-colors group">
@@ -2087,12 +2113,29 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                   {entry.paraType}
                                 </span>
                               </div>
-                              <div>
-                                <span className="font-black text-slate-700 text-[10px]">২. </span>
-                                <span className="font-black text-slate-900 text-[10.5px]">
-                                  {getSettlementTypeDisplay(entry)}
-                                </span>
-                              </div>
+                              {fullCount > 0 && partialCount > 0 ? (
+                                <div className="space-y-0.5 pt-0.5">
+                                  <div>
+                                    <span className="font-black text-slate-700 text-[10px]">২. </span>
+                                    <span className="font-black text-slate-900 text-[10.5px]">
+                                      পূর্ণাঙ্গ = {toBengaliDigits(fullCount)} টি
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="font-black text-slate-700 text-[10px]">৩. </span>
+                                    <span className="font-black text-amber-800 text-[10.5px]">
+                                      আংশিক = {toBengaliDigits(partialCount)} টি
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <span className="font-black text-slate-700 text-[10px]">২. </span>
+                                  <span className="font-black text-slate-900 text-[10.5px]">
+                                    {fullCount > 0 ? 'পূর্ণাঙ্গ' : (partialCount > 0 ? 'আংশিক' : getSettlementTypeDisplay(entry))}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="px-4 py-3 text-center text-[11px] font-black text-slate-700 border-r border-slate-200">
