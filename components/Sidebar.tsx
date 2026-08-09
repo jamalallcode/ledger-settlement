@@ -64,7 +64,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     change_pass: true,
     admin_analytics: true,
     audit_details: true,
-    links: true,
   },
   userEmail = null,
   isSidebarOpen = true,
@@ -455,7 +454,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <nav id="sidebar-nav" className="py-1 px-1.5 space-y-0.5 relative">
             <IDBadge id="sidebar-nav" />
             {menuItems.map((item) => {
-              const isVisible = (moduleVisibility as any)[item.id] !== false && (!(item as any).adminOnly || isAdmin);
+              const isVisible = isAdmin || ((moduleVisibility as any)[item.id] !== false && !(item as any).adminOnly);
               if (!isVisible) return null;
               if ((item as any).adminOnly && !isAdmin) return null;
 

@@ -4,7 +4,7 @@ import {
   PieChart, FileText, Mail, PlusCircle, ArrowRight,
   Settings, KeyRound, Fingerprint, Library, BellRing,
   Sparkles, CheckCircle2, AlertCircle, Clock, Eye, EyeOff,
-  CalendarRange, MessageCircle, Menu, Link as LinkIcon
+  CalendarRange, MessageCircle, Menu
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -299,7 +299,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     { key: 'register', label: 'রেজিস্টার দেখুন', icon: FileText, color: 'emerald' },
                     { key: 'return', label: 'রিপোর্ট ও সারাংশ', icon: PieChart, color: 'indigo' },
                     { key: 'archive', label: 'অডিট ক্রাইটেরিয়া', icon: Library, color: 'rose' },
-                    { key: 'links', label: 'লিংকসমূহ', icon: LinkIcon, color: 'purple' },
                   ].map((module) => (
                     <div key={module.key} className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${moduleVisibility[module.key as keyof ModuleVisibility] ? `bg-${module.color}-600/5 border-${module.color}-200/50` : 'bg-slate-50 border-slate-200/80'}`}>
                       <div className="flex items-center gap-3">

@@ -180,5 +180,4 @@ export interface ModuleVisibility {
   admin_analytics: boolean;
   audit_details: boolean;
   navbar?: boolean;
-  links?: boolean;
 }
