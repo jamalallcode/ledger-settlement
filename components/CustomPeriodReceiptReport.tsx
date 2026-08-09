@@ -1819,75 +1819,81 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       const totalParas = parseInt(toEnglishDigits(String(entry.totalParas || entry.sentParaCount || (entry.paragraphs ? entry.paragraphs.length : 1))));
                       const totalAmount = parseFloat(toEnglishDigits(String(entry.totalAmount || entry.sentParaInvolvedAmount || entry.involvedAmount || 0)));
 
-                      // Settlement stats calculation - Only calculate if letter has been issued (hasIssueLetter is true)
+                      // Settlement stats calculation - Pull from Settlement Register (settlementEntries)
                       let settledCount = 0;
                       let settledAmount = 0;
                       let settledParas: any[] = [];
 
-                      if (hasIssueLetter) {
-                        const getPureDigits = (val?: string) => {
-                          if (!val) return '';
-                          return toEnglishDigits(String(val)).replace(/\D/g, '');
-                        };
+                      const extractPureNo = (directNo?: string, combinedStr?: string) => {
+                        let str = (directNo && String(directNo).trim()) ? String(directNo) : (combinedStr || '');
+                        if (!str) return '';
+                        const firstPart = str.split(/,|\bতারিখ\b|তারিখ/i)[0] || str;
+                        return toEnglishDigits(firstPart).replace(/\D/g, '');
+                      };
 
-                        const eIssue = getPureDigits(entry.issueLetterNo || entry.issueLetterNoDate);
-                        const eDiary = getPureDigits(entry.diaryNo || entry.workpaperNoDate);
-                        const eLetter = getPureDigits(entry.letterNo || entry.letterNoDate);
+                      const eIssue = extractPureNo(entry.issueLetterNo, entry.issueLetterNoDate);
+                      const eDiary = extractPureNo(entry.diaryNo, entry.workpaperNoDate);
+                      const eLetter = extractPureNo(entry.letterNo, entry.letterNoDate);
 
-                        const matchedSettlementEntries = (settlementEntries || []).filter((s: any) => {
-                          if (s.correspondenceId && s.correspondenceId === entry.id) return true;
-                          if (s.letterId && s.letterId === entry.id) return true;
+                      const matchedSettlementEntries = (settlementEntries || []).filter((s: any) => {
+                        if (s.correspondenceId && s.correspondenceId === entry.id) return true;
+                        if (s.letterId && s.letterId === entry.id) return true;
 
-                          const sIssue = getPureDigits(s.issueNo || s.issueLetterNo || s.issueLetterNoDate);
-                          const sDiary = getPureDigits(s.diaryNo || s.workpaperNoDate);
-                          const sLetter = getPureDigits(s.letterNo || s.letterNoDate);
+                        const sIssue = extractPureNo(s.issueNo || s.issueLetterNo, s.issueLetterNoDate);
+                        const sDiary = extractPureNo(s.diaryNo, s.workpaperNoDate);
+                        const sLetter = extractPureNo(s.letterNo, s.letterNoDate);
 
-                          const issueMatch = Boolean(eIssue && sIssue && eIssue === sIssue);
-                          const diaryMatch = Boolean(eDiary && sDiary && eDiary === sDiary);
-                          const letterMatch = Boolean(eLetter && sLetter && eLetter === sLetter);
+                        const issueMatch = Boolean(eIssue && sIssue && eIssue === sIssue);
+                        const diaryMatch = Boolean(eDiary && sDiary && eDiary === sDiary);
+                        const letterMatch = Boolean(eLetter && sLetter && eLetter === sLetter);
 
-                          if (issueMatch && diaryMatch && letterMatch) return true;
-                          if (issueMatch && diaryMatch && (!eLetter || !sLetter)) return true;
-                          if (issueMatch && letterMatch && (!eDiary || !sDiary)) return true;
-                          if (diaryMatch && letterMatch && (!eIssue || !sIssue)) return true;
-                          if (issueMatch && !eDiary && !eLetter) return true;
+                        if (issueMatch && diaryMatch && letterMatch) return true;
+                        if (issueMatch && diaryMatch) return true;
+                        if (issueMatch && letterMatch) return true;
+                        if (diaryMatch && letterMatch) return true;
+                        if (issueMatch && !eDiary && !eLetter) return true;
+                        if (diaryMatch && !eIssue && !eLetter) return true;
+                        if (letterMatch && !eIssue && !eDiary) return true;
 
-                          return false;
-                        });
+                        return false;
+                      });
 
-                        if (matchedSettlementEntries.length > 0) {
-                          matchedSettlementEntries.forEach((matchedS: any) => {
-                            if (matchedS.paragraphs && matchedS.paragraphs.length > 0) {
-                              const sParas = matchedS.paragraphs.filter((p: any) => 
-                                p.status === 'পূর্ণাঙ্গ' || 
-                                (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0 || 
-                                (p.involvedAmount || 0) > 0
-                              );
-                              settledParas.push(...sParas);
-                              sParas.forEach((p: any) => {
-                                const recAdj = (p.recoveredAmount || 0) + (p.adjustedAmount || 0);
-                                const pAmount = recAdj > 0 ? recAdj : (p.involvedAmount || p.totalAmount || 0);
-                                settledAmount += pAmount;
-                              });
-                            } else {
-                              const sCount = parseInt(toEnglishDigits(String(matchedS.meetingSettledParaCount || '0')));
-                              const sAmt = parseFloat(toEnglishDigits(String(matchedS.meetingSettledAmount || (matchedS.totalRec || 0) + (matchedS.totalAdj || 0))));
-                              settledCount += sCount;
-                              settledAmount += sAmt;
-                            }
-                          });
-                          if (settledParas.length > 0) {
-                            settledCount = settledParas.length;
+                      if (matchedSettlementEntries.length > 0) {
+                        matchedSettlementEntries.forEach((matchedS: any) => {
+                          let sAmtFromParas = 0;
+                          if (matchedS.paragraphs && matchedS.paragraphs.length > 0) {
+                            const sParas = matchedS.paragraphs.filter((p: any) => 
+                              p.status === 'পূর্ণাঙ্গ' || 
+                              (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0
+                            );
+                            settledParas.push(...sParas);
+                            sParas.forEach((p: any) => {
+                              const recAdj = (p.recoveredAmount || 0) + (p.adjustedAmount || 0);
+                              const pAmount = recAdj > 0 ? recAdj : (p.involvedAmount || p.totalAmount || 0);
+                              sAmtFromParas += pAmount;
+                            });
                           }
-                        } else if (entry.paragraphs && entry.paragraphs.length > 0) {
+                          
+                          const fallbackAmt = parseFloat(toEnglishDigits(String(matchedS.meetingSettledAmount || (matchedS.totalRec || 0) + (matchedS.totalAdj || 0) || 0)));
+                          settledAmount += (sAmtFromParas > 0 ? sAmtFromParas : fallbackAmt);
+
+                          const fallbackCount = parseInt(toEnglishDigits(String(matchedS.meetingSettledParaCount || '0')));
+                          if (matchedS.paragraphs && matchedS.paragraphs.length > 0) {
+                            const pCount = matchedS.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0).length;
+                            settledCount += (pCount > 0 ? pCount : fallbackCount);
+                          } else {
+                            settledCount += fallbackCount;
+                          }
+                        });
+                      } else if (hasIssueLetter) {
+                        if (entry.paragraphs && entry.paragraphs.length > 0) {
                           settledParas = entry.paragraphs.filter((p: any) => 
                             p.status === 'পূর্ণাঙ্গ' || 
-                            (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0 || 
-                            (p.involvedAmount || 0) > 0
+                            (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0
                           );
                           settledCount = settledParas.length;
                           entry.paragraphs.forEach((p: any) => {
-                            if (p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0 || (p.involvedAmount || 0) > 0) {
+                            if (p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0) {
                               const recAdj = (p.recoveredAmount || 0) + (p.adjustedAmount || 0);
                               const pAmount = recAdj > 0 ? recAdj : (p.involvedAmount || p.totalAmount || 0);
                               settledAmount += pAmount;
