@@ -1303,12 +1303,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               <colgroup>
                 <col className="w-[30px]" />
                 <col className="w-[50px]" />
-                <col className="w-[220px]" />
+                <col className="w-[250px]" />
                 <col className="w-[75px]" />
                 <col className="w-[75px]" />
-                <col className="w-[100px]" />
+                <col className="w-[85px]" />
                 <col className="w-[80px]" />
-                <col className="w-[100px]" />
+                <col className="w-[85px]" />
                 <col className="w-[90px]" />
               </colgroup>
               <thead>
