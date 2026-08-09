@@ -173,11 +173,30 @@ const getSettlementEntryStats = (entry: any) => {
   let fullCount = 0;
   let partialCount = 0;
   let settledAmount = 0;
+  let fullAmount = 0;
+  let partialAmount = 0;
+  let fullParas: string[] = [];
+  let partialParas: string[] = [];
+  let allParas: string[] = [];
 
   if (entry.paragraphs && entry.paragraphs.length > 0) {
-    fullCount = entry.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ').length;
-    partialCount = entry.paragraphs.filter((p: any) => p.status === 'আংশিক' || ((p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0 && p.status !== 'পূর্ণাঙ্গ')).length;
-    settledAmount = entry.paragraphs.reduce((sum: number, p: any) => sum + ((p.recoveredAmount || 0) + (p.adjustedAmount || 0)), 0);
+    entry.paragraphs.forEach((p: any) => {
+      const pNum = p.paraNo || p.paragraphNo || p.number || '';
+      const rec = (p.recoveredAmount || 0) + (p.adjustedAmount || 0);
+      if (p.status === 'পূর্ণাঙ্গ') {
+        fullCount++;
+        fullAmount += rec;
+        if (pNum) fullParas.push(String(pNum));
+      } else if (p.status === 'আংশিক' || (rec > 0 && p.status !== 'পূর্ণাঙ্গ')) {
+        partialCount++;
+        partialAmount += rec;
+        if (pNum) partialParas.push(String(pNum));
+      }
+      if (pNum && (p.status === 'পূর্ণাঙ্গ' || p.status === 'আংশিক' || rec > 0)) {
+        allParas.push(String(pNum));
+      }
+    });
+    settledAmount = fullAmount + partialAmount;
   } else {
     const hasFullField = entry.meetingFullSettledParaCount !== undefined && entry.meetingFullSettledParaCount !== null && entry.meetingFullSettledParaCount !== '';
     const hasPartialField = entry.meetingPartialSettledParaCount !== undefined && entry.meetingPartialSettledParaCount !== null && entry.meetingPartialSettledParaCount !== '';
@@ -199,9 +218,23 @@ const getSettlementEntryStats = (entry: any) => {
     settledAmount = entry.meetingSettledAmount !== undefined && entry.meetingSettledAmount !== null && entry.meetingSettledAmount !== ''
       ? parseFloat(toEnglishDigits(String(entry.meetingSettledAmount)))
       : ((entry.totalRec || 0) + (entry.totalAdj || 0));
+
+    if (fullCount > 0 && partialCount === 0) {
+      fullAmount = settledAmount;
+    } else if (partialCount > 0 && fullCount === 0) {
+      partialAmount = settledAmount;
+    } else {
+      fullAmount = 0;
+      partialAmount = settledAmount;
+    }
+
+    const rawParas = String(entry.meetingSettledParas || entry.settledParas || entry.meetingUnsettledParas || '');
+    if (rawParas) {
+      allParas = rawParas.split(/[,;\s]+/).filter(Boolean);
+    }
   }
 
-  return { fullCount, partialCount, settledAmount };
+  return { fullCount, partialCount, settledAmount, fullAmount, partialAmount, fullParas, partialParas, allParas };
 };
 
 const getEntryMinistry = (ent: any): string => {
@@ -2065,9 +2098,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredSettlementEntries.map((entry, index) => {
-                      const { fullCount, partialCount, settledAmount } = getSettlementEntryStats(entry);
-                      const rowSettledCount = fullCount;
+                      const { fullCount, partialCount, settledAmount, fullAmount, partialAmount, fullParas, partialParas, allParas } = getSettlementEntryStats(entry);
+                      const rowSettledCount = (fullCount + partialCount) || fullCount || partialCount;
                       const rowSettledAmount = settledAmount;
+
+                      const fullParasText = fullParas.length > 0 ? fullParas.map(toBengaliDigits).join(', ') : '';
+                      const partialParasText = partialParas.length > 0 ? partialParas.map(toBengaliDigits).join(', ') : '';
+                      const allParasText = allParas.length > 0 
+                        ? allParas.map(toBengaliDigits).join(', ') 
+                        : ([fullParasText, partialParasText].filter(Boolean).join(', '));
 
                       return (
                         <tr key={entry.id || index} className="hover:bg-blue-50/20 transition-colors group">
@@ -2115,30 +2154,48 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                               </div>
                               {fullCount > 0 && partialCount > 0 ? (
                                 <div className="space-y-0.5 pt-0.5">
-                                  <div>
+                                  <div 
+                                    className="cursor-help hover:text-blue-700 transition-colors"
+                                    title={fullParasText ? `পূর্ণাঙ্গ নিষ্পন্ন অনুচ্ছেদ নং: ${fullParasText}` : `পূর্ণাঙ্গ অনুচ্ছেদ: ${toBengaliDigits(fullCount)} টি`}
+                                  >
                                     <span className="font-black text-slate-700 text-[10px]">২. </span>
                                     <span className="font-black text-slate-900 text-[10.5px]">
-                                      পূর্ণাঙ্গ = {toBengaliDigits(fullCount)} টি
+                                      পূর্ণাঙ্গ = {toBengaliDigits(fullCount)} টি [{toBengaliDigits(fullAmount || 0)}/-]
                                     </span>
                                   </div>
-                                  <div>
+                                  <div 
+                                    className="cursor-help hover:text-amber-900 transition-colors"
+                                    title={partialParasText ? `আংশিক নিষ্পন্ন অনুচ্ছেদ নং: ${partialParasText}` : `আংশিক অনুচ্ছেদ: ${toBengaliDigits(partialCount)} টি`}
+                                  >
                                     <span className="font-black text-slate-700 text-[10px]">৩. </span>
                                     <span className="font-black text-amber-800 text-[10.5px]">
-                                      আংশিক = {toBengaliDigits(partialCount)} টি
+                                      আংশিক = {toBengaliDigits(partialCount)} টি [{toBengaliDigits(partialAmount || 0)}/-]
                                     </span>
                                   </div>
                                 </div>
                               ) : (
-                                <div>
+                                <div 
+                                  className="cursor-help hover:text-blue-700 transition-colors"
+                                  title={allParasText ? `সকল নিষ্পন্ন অনুচ্ছেদ নং: ${allParasText}` : `নিষ্পন্ন অনুচ্ছেদ: ${toBengaliDigits(rowSettledCount)} টি`}
+                                >
                                   <span className="font-black text-slate-700 text-[10px]">২. </span>
                                   <span className="font-black text-slate-900 text-[10.5px]">
-                                    {fullCount > 0 ? 'পূর্ণাঙ্গ' : (partialCount > 0 ? 'আংশিক' : getSettlementTypeDisplay(entry))}
+                                    {fullCount > 0 ? (
+                                      <>পূর্ণাঙ্গ = {toBengaliDigits(fullCount)} টি [{toBengaliDigits(fullAmount || settledAmount)}/-]</>
+                                    ) : partialCount > 0 ? (
+                                      <>আংশিক = {toBengaliDigits(partialCount)} টি [{toBengaliDigits(partialAmount || settledAmount)}/-]</>
+                                    ) : (
+                                      <>{getSettlementTypeDisplay(entry)} [{toBengaliDigits(settledAmount)}/-]</>
+                                    )}
                                   </span>
                                 </div>
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-center text-[11px] font-black text-slate-700 border-r border-slate-200">
+                          <td 
+                            className="px-4 py-3 text-center text-[11px] font-black text-slate-700 border-r border-slate-200 cursor-help hover:bg-blue-100/50 hover:text-blue-700 transition-colors"
+                            title={allParasText ? `সকল নিষ্পন্নকৃত অনুচ্ছেদ নং: ${allParasText}` : `নিষ্পন্নকৃত অনুচ্ছেদ সংখ্যা: ${toBengaliDigits(rowSettledCount)} টি`}
+                          >
                             {toBengaliDigits(rowSettledCount)} টি
                           </td>
                           <td className="px-4 py-3 text-right text-[11.5px] font-black text-slate-900 border-r border-slate-200">
