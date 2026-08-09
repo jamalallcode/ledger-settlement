@@ -9,7 +9,7 @@ import {
   Mail, ClipboardList, AlertTriangle, Sun, Moon, Link2, Send,
   ChevronLeft, ExternalLink
 } from 'lucide-react';
-import { SettlementEntry } from '../types';
+import { SettlementEntry, ModuleVisibility } from '../types';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { SavedLinksModal, SavedLink, getSavedLinksFromStorage } from './SavedLinksModal';
 
@@ -43,6 +43,7 @@ interface NavbarProps {
   contactLink?: string;
   onGoBack?: () => void;
   hasHistory?: boolean;
+  moduleVisibility?: ModuleVisibility;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
@@ -74,7 +75,8 @@ const Navbar: React.FC<NavbarProps> = ({
   reportType = null,
   contactLink = 'https://wa.me/8801700000000',
   onGoBack,
-  hasHistory = false
+  hasHistory = false,
+  moduleVisibility
 }) => {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
@@ -484,16 +486,18 @@ const Navbar: React.FC<NavbarProps> = ({
               <span>অডিট ক্রাইটেরিয়া</span>
             </button>
 
-            <button
-              onClick={() => {
-                setShowLinksModal(true);
-                setIsMobileMenuOpen(false);
-              }}
-              className="p-2.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700"
-            >
-              <Link2 size={14} />
-              <span>লিংকসমূহ</span>
-            </button>
+            {(isAdmin || moduleVisibility?.links !== false) && (
+              <button
+                onClick={() => {
+                  setShowLinksModal(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                className="p-2.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700"
+              >
+                <Link2 size={14} />
+                <span>লিংকসমূহ</span>
+              </button>
+            )}
           </div>
         </div>
       )}

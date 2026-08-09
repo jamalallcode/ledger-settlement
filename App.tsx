@@ -148,6 +148,7 @@ const App: React.FC = () => {
     admin_analytics: true,
     audit_details: true,
     navbar: true,
+    links: true,
   });
   
   const [contactLink, setContactLink] = useState<string>(() => {
@@ -1452,6 +1453,7 @@ const App: React.FC = () => {
               contactLink={contactLink}
               onGoBack={goBack}
               hasHistory={navHistory.length > 0}
+              moduleVisibility={moduleVisibility}
             />
           </div>
         )}
@@ -1652,7 +1654,7 @@ const App: React.FC = () => {
 
               {activeTab === 'voting' && <VotingSystem isAdmin={isAdmin} />}
 
-              {activeTab === 'dashboard' && (
+              {activeTab === 'dashboard' && isAdmin && (
                 <AdminDashboard 
                   isAdmin={isAdmin}
                   entries={entries}
