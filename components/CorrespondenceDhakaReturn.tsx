@@ -874,16 +874,16 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
             <colgroup>
               <col className="w-[40px]" />
-              <col className="w-[150px]" />
-              <col className="w-[80px]" />
-              <col className="w-[80px]" />
+              <col className="w-[174px]" />
+              <col className="w-[74px]" />
+              <col className="w-[74px]" />
               <col className="w-[55px]" />
-              <col className="w-[75px]" />
+              <col className="w-[69px]" />
               <col className="w-[55px]" />
               <col className="w-[55px]" />
               <col className="w-[55px]" />
               <col className="w-[60px]" />
-              <col className="w-[70px]" />
+              <col className="w-[64px]" />
               <col className="w-[70px]" />
               <col className="w-[50px]" />
             </colgroup>
@@ -905,6 +905,13 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                 <th className={thS}>ত্রি-পক্ষীয় (SFI)</th>
                 <th className={thS}>দ্বি-পক্ষীয় (NON-SFI)</th>
                 <th className={thS}>অন্যান্য</th>
+              </tr>
+              <tr className="h-[26px] bg-slate-200">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(n => (
+                  <th key={n} className={`${thS} text-[9px] font-bold text-slate-700 py-0.5`}>
+                    {toBengaliDigits(n.toString())}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
