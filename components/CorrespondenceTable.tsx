@@ -1226,18 +1226,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         id="correspondence-filters"
         className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate"
       >
-        {isFiltered && (
-          <div className="flex justify-end pb-1">
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="text-[11px] font-black text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3 py-1 rounded-xl flex items-center gap-1 transition-all cursor-pointer"
-            >
-              <RotateCcw size={12} /> ফিল্টার রিসেট
-            </button>
-          </div>
-        )}
-
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {/* Status Selection (চলমান / সকল / নিষ্পন্ন) */}
           <div className="space-y-1.5" ref={statusDropdownRef}>
