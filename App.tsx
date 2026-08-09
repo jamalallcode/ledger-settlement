@@ -148,6 +148,7 @@ const App: React.FC = () => {
     admin_analytics: true,
     audit_details: true,
     navbar: true,
+    links: true,
   });
   
   const [contactLink, setContactLink] = useState<string>(() => {

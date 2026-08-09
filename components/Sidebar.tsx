@@ -64,6 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     change_pass: true,
     admin_analytics: true,
     audit_details: true,
+    links: true,
   },
   userEmail = null,
   isSidebarOpen = true,
