@@ -2160,7 +2160,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                   >
                                     <span className="font-black text-slate-700 text-[10px]">২. </span>
                                     <span className="font-black text-slate-900 text-[10.5px]">
-                                      পূর্ণাঙ্গ = {toBengaliDigits(fullCount)} টি [{toBengaliDigits(fullAmount || 0)}/-]
+                                      পূর্ণাঙ্গ = {toBengaliDigits(fullCount)} টি ({toBengaliDigits(fullAmount || 0)})
                                     </span>
                                   </div>
                                   <div 
@@ -2169,7 +2169,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                   >
                                     <span className="font-black text-slate-700 text-[10px]">৩. </span>
                                     <span className="font-black text-amber-800 text-[10.5px]">
-                                      আংশিক = {toBengaliDigits(partialCount)} টি [{toBengaliDigits(partialAmount || 0)}/-]
+                                      আংশিক = {toBengaliDigits(partialCount)} টি ({toBengaliDigits(partialAmount || 0)})
                                     </span>
                                   </div>
                                 </div>
@@ -2181,11 +2181,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                   <span className="font-black text-slate-700 text-[10px]">২. </span>
                                   <span className="font-black text-slate-900 text-[10.5px]">
                                     {fullCount > 0 ? (
-                                      <>পূর্ণাঙ্গ = {toBengaliDigits(fullCount)} টি [{toBengaliDigits(fullAmount || settledAmount)}/-]</>
+                                      <>পূর্ণাঙ্গ = {toBengaliDigits(fullCount)} টি ({toBengaliDigits(fullAmount || settledAmount)})</>
                                     ) : partialCount > 0 ? (
-                                      <>আংশিক = {toBengaliDigits(partialCount)} টি [{toBengaliDigits(partialAmount || settledAmount)}/-]</>
+                                      <>আংশিক = {toBengaliDigits(partialCount)} টি ({toBengaliDigits(partialAmount || settledAmount)})</>
                                     ) : (
-                                      <>{getSettlementTypeDisplay(entry)} [{toBengaliDigits(settledAmount)}/-]</>
+                                      <>{getSettlementTypeDisplay(entry)} ({toBengaliDigits(settledAmount)})</>
                                     )}
                                   </span>
                                 </div>
