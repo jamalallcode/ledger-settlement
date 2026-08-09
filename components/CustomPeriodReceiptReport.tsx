@@ -1825,9 +1825,12 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       let settledParas: any[] = [];
 
                       const extractPureNo = (directNo?: string, combinedStr?: string) => {
-                        let str = (directNo && String(directNo).trim()) ? String(directNo) : (combinedStr || '');
-                        if (!str) return '';
-                        const firstPart = str.split(/,|\bতারিখ\b|তারিখ/i)[0] || str;
+                        if (directNo && String(directNo).trim()) {
+                          return toEnglishDigits(String(directNo)).replace(/\D/g, '');
+                        }
+                        if (!combinedStr || !combinedStr.trim()) return '';
+                        const str = String(combinedStr);
+                        const firstPart = str.split(/[\(,\/–—]|\bতারিখ\b|তারিখ/i)[0] || str;
                         return toEnglishDigits(firstPart).replace(/\D/g, '');
                       };
 
@@ -1861,47 +1864,44 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       if (matchedSettlementEntries.length > 0) {
                         matchedSettlementEntries.forEach((matchedS: any) => {
                           let sAmtFromParas = 0;
+                          let sCountFromParas = 0;
+
                           if (matchedS.paragraphs && matchedS.paragraphs.length > 0) {
-                            const sParas = matchedS.paragraphs.filter((p: any) => 
-                              p.status === 'পূর্ণাঙ্গ' || 
-                              (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0
-                            );
-                            settledParas.push(...sParas);
-                            sParas.forEach((p: any) => {
+                            matchedS.paragraphs.forEach((p: any) => {
+                              const isSettledStatus = !p.status || p.status === 'পূর্ণাঙ্গ' || p.status === 'মীমাংসিত' || p.status === 'নিষ্পন্ন';
                               const recAdj = (p.recoveredAmount || 0) + (p.adjustedAmount || 0);
-                              const pAmount = recAdj > 0 ? recAdj : (p.involvedAmount || p.totalAmount || 0);
-                              sAmtFromParas += pAmount;
+
+                              if (isSettledStatus || recAdj > 0) {
+                                sCountFromParas += 1;
+                                const pAmount = recAdj > 0 ? recAdj : (p.involvedAmount || p.totalAmount || 0);
+                                sAmtFromParas += pAmount;
+                                settledParas.push(p);
+                              }
                             });
                           }
-                          
-                          const fallbackAmt = parseFloat(toEnglishDigits(String(matchedS.meetingSettledAmount || (matchedS.totalRec || 0) + (matchedS.totalAdj || 0) || 0)));
-                          settledAmount += (sAmtFromParas > 0 ? sAmtFromParas : fallbackAmt);
 
-                          const fallbackCount = parseInt(toEnglishDigits(String(matchedS.meetingSettledParaCount || '0')));
-                          if (matchedS.paragraphs && matchedS.paragraphs.length > 0) {
-                            const pCount = matchedS.paragraphs.filter((p: any) => p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0).length;
-                            settledCount += (pCount > 0 ? pCount : fallbackCount);
-                          } else {
-                            settledCount += fallbackCount;
-                          }
+                          const fallbackCount = parseInt(toEnglishDigits(String(matchedS.meetingSettledParaCount || matchedS.meetingFullSettledParaCount || '0')));
+                          const fallbackAmt = parseFloat(toEnglishDigits(String(matchedS.meetingSettledAmount || (matchedS.totalRec || 0) + (matchedS.totalAdj || 0) || matchedS.involvedAmount || 0)));
+
+                          settledCount += (sCountFromParas > 0 ? sCountFromParas : fallbackCount);
+                          settledAmount += (sAmtFromParas > 0 ? sAmtFromParas : fallbackAmt);
                         });
                       } else if (hasIssueLetter) {
                         if (entry.paragraphs && entry.paragraphs.length > 0) {
-                          settledParas = entry.paragraphs.filter((p: any) => 
-                            p.status === 'পূর্ণাঙ্গ' || 
-                            (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0
-                          );
-                          settledCount = settledParas.length;
                           entry.paragraphs.forEach((p: any) => {
-                            if (p.status === 'পূর্ণাঙ্গ' || (p.recoveredAmount || 0) + (p.adjustedAmount || 0) > 0) {
-                              const recAdj = (p.recoveredAmount || 0) + (p.adjustedAmount || 0);
+                            const isSettledStatus = !p.status || p.status === 'পূর্ণাঙ্গ' || p.status === 'মীমাংসিত' || p.status === 'নিষ্পন্ন';
+                            const recAdj = (p.recoveredAmount || 0) + (p.adjustedAmount || 0);
+
+                            if (isSettledStatus || recAdj > 0) {
+                              settledParas.push(p);
                               const pAmount = recAdj > 0 ? recAdj : (p.involvedAmount || p.totalAmount || 0);
                               settledAmount += pAmount;
                             }
                           });
+                          settledCount = settledParas.length;
                         } else {
-                          settledCount = parseInt(toEnglishDigits(String(entry.meetingSettledParaCount || '0')));
-                          settledAmount = parseFloat(toEnglishDigits(String(entry.meetingSettledAmount || (entry.totalRec || 0) + (entry.totalAdj || 0))));
+                          settledCount = parseInt(toEnglishDigits(String(entry.meetingSettledParaCount || entry.meetingFullSettledParaCount || '0')));
+                          settledAmount = parseFloat(toEnglishDigits(String(entry.meetingSettledAmount || (entry.totalRec || 0) + (entry.totalAdj || 0) || 0)));
                         }
                       }
 
