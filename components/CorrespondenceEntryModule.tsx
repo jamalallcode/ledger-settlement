@@ -1062,7 +1062,7 @@ const SegmentedInput = ({
 
 interface CorrespondenceEntryModuleProps {
   onAdd: (data: any) => void;
-  onViewRegister: () => void;
+  onViewRegister: (entryId?: string) => void;
   onBackToMenu: () => void;
   isLayoutEditable?: boolean;
   initialEntry?: any;
@@ -1083,6 +1083,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   existingEntries = [],
   navigateToEntry
 }) => {
+  const [lastCreatedId, setLastCreatedId] = useState<string | null>(null);
   // Admin check for receiver management
   const adminEmails = ['websitetogather@gmail.com'];
   const isReceiverAdmin = isAdmin || (userEmail && adminEmails.includes(userEmail));
@@ -1896,7 +1897,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         localStorage.setItem('ledger_correspondence_descriptions', JSON.stringify(updatedDesc));
       }
 
-      onAdd(formData);
+      const res = onAdd(formData);
+      if (res && res.id) {
+        setLastCreatedId(res.id);
+      } else if (res && typeof res.then === 'function') {
+        res.then((r: any) => { if (r && r.id) setLastCreatedId(r.id); });
+      }
       setIsSuccess(true);
       resetForm();
       setTimeout(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, 100);
@@ -2465,7 +2471,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                     নতুন চিঠি এন্ট্রি দিন <Plus size={20} />
                   </button>
                   <button 
-                    onClick={onViewRegister}
+                    onClick={() => onViewRegister(lastCreatedId || undefined)}
                     className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-3 active:scale-95 group cursor-pointer"
                   >
                     চিঠিপত্র প্রাপ্তি রেজিস্টার দেখুন <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
