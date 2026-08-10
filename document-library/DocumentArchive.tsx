@@ -100,18 +100,18 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       if (!currentUserEmail || currentUserEmail === 'user@gmail.com' || currentUserEmail === 'newuser@gmail.com') {
         setCurrentUserEmail(clean);
       }
-    } else if (currentUserEmail && isValidIdentifier(currentUserEmail) && !localStorage.getItem('audit_doc_logged_in_user_email')) {
-      localStorage.setItem('audit_doc_logged_in_user_email', currentUserEmail.trim().toLowerCase());
     }
-  }, [userEmail, currentUserEmail]);
+  }, [userEmail]);
 
   useEffect(() => {
     localStorage.setItem('audit_doc_current_user_email', currentUserEmail);
     if (currentUserEmail && isValidIdentifier(currentUserEmail)) {
-      const isW = whitelistedEmails.some(e => e.toLowerCase() === currentUserEmail.trim().toLowerCase());
+      const typed = currentUserEmail.trim().toLowerCase();
+      const session = sessionUserEmail ? sessionUserEmail.trim().toLowerCase() : '';
+      const isW = (session ? typed === session : false) && whitelistedEmails.some(e => e.toLowerCase() === typed);
       recordVisitorLog(currentUserEmail, isW);
     }
-  }, [currentUserEmail, whitelistedEmails]);
+  }, [currentUserEmail, sessionUserEmail, whitelistedEmails]);
 
   // Demo / Subscription / Admin State
   const [isSubscribed, setIsSubscribed] = useState<boolean>(() => {
@@ -271,18 +271,30 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
   // Check if typed test email matches logged-in session account email
   const isEmailMismatch = useMemo(() => {
-    if (!sessionUserEmail || !currentUserEmail) return false;
-    const typed = currentUserEmail.trim().toLowerCase();
-    return typed !== sessionUserEmail;
+    const typed = currentUserEmail ? currentUserEmail.trim().toLowerCase() : '';
+    const session = sessionUserEmail ? sessionUserEmail.trim().toLowerCase() : '';
+    if (!typed) return false;
+    if (session) {
+      return typed !== session;
+    }
+    return false;
   }, [sessionUserEmail, currentUserEmail]);
 
   // Access check
   const isWhitelisted = useMemo(() => {
-    if (!currentUserEmail) return false;
-    const typed = currentUserEmail.trim().toLowerCase();
+    const typed = currentUserEmail ? currentUserEmail.trim().toLowerCase() : '';
+    const session = sessionUserEmail ? sessionUserEmail.trim().toLowerCase() : '';
+    if (!typed) return false;
 
-    // Security check: If session user email exists, typed test email MUST match session user email
-    if (sessionUserEmail && typed !== sessionUserEmail) {
+    // STRICT SECURITY MANDATE:
+    // Whitelist access is strictly denied if typed email differs from the authenticated session email.
+    // Typing another person's email (even if that email is approved/whitelisted) CANNOT grant whitelist access!
+    if (session && typed !== session) {
+      return false;
+    }
+
+    // If there is no authenticated session email, typing someone else's email in test box cannot grant whitelist access
+    if (!session) {
       return false;
     }
 
@@ -1528,6 +1540,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
         isAdmin={effectiveAdmin}
         whitelistedEmails={whitelistedEmails}
         currentUserEmail={currentUserEmail}
+        sessionUserEmail={sessionUserEmail}
         whatsappNumber={paymentNumber}
         paymentNumber={paymentNumber}
         onUpdatePaymentNumber={handleUpdatePaymentNumber}

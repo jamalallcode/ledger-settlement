@@ -516,6 +516,7 @@ const App: React.FC = () => {
     const handleAdminSync = (email?: string) => {
       console.log("handleAdminSync called with email:", email);
       if (email) {
+        localStorage.setItem('audit_doc_logged_in_user_email', email.trim().toLowerCase());
         if (email === 'websitetogather@gmail.com') {
           console.log("User is admin based on email");
           setUserEmail(email);
