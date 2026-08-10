@@ -91,19 +91,28 @@ export const signInWithGoogle = async () => {
     return;
   }
   
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: window.location.origin,
-    },
-  });
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
 
-  if (error) {
-    console.error('গুগল লগইন ত্রুটি:', error.message);
-    alert('গুগল লগইন ব্যর্থ হয়েছে: ' + error.message);
+    if (error) {
+      console.error('গুগল লগইন ত্রুটি:', error.message);
+      if (error.message.includes('provider is not enabled') || error.message.includes('Unsupported provider')) {
+        alert('সুপাবেজ (Supabase) ড্যাশবোর্ডে Google Provider টি Enable করা নেই। দয়া করে Supabase Dashboard > Authentication > Providers > Google টি Enable করুন।');
+      } else {
+        alert('গুগল লগইন ব্যর্থ হয়েছে: ' + error.message);
+      }
+    }
+    
+    return { data, error };
+  } catch (err: any) {
+    console.error('Google Sign-in exception:', err);
+    alert('গুগল সাইন-ইন সম্পন্ন করা সম্ভব হয়নি। সুপাবেজ ড্যাশবোর্ডে Google Provider টি Enable করা আছে কিনা তা চেক করুন।');
   }
-  
-  return { data, error };
 };
 
 export const supabase = isSupabaseConfigured 
