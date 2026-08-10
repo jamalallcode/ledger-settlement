@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { supabase, signInWithGoogle } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { ArchiveDoc } from '../types';
 import { 
   Library, Search, Filter, Plus, FileText, Calendar, 
@@ -269,37 +269,12 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     localStorage.setItem('audit_doc_payment_number', paymentNumber);
   }, [paymentNumber]);
 
-  // Check if typed test email matches logged-in session account email
-  const isEmailMismatch = useMemo(() => {
-    const typed = currentUserEmail ? currentUserEmail.trim().toLowerCase() : '';
-    const session = sessionUserEmail ? sessionUserEmail.trim().toLowerCase() : '';
-    if (!typed) return false;
-    if (session) {
-      return typed !== session;
-    }
-    return false;
-  }, [sessionUserEmail, currentUserEmail]);
-
-  // Access check
+  // Access check based on entered identifier/email
   const isWhitelisted = useMemo(() => {
     const typed = currentUserEmail ? currentUserEmail.trim().toLowerCase() : '';
-    const session = sessionUserEmail ? sessionUserEmail.trim().toLowerCase() : '';
     if (!typed) return false;
-
-    // STRICT SECURITY MANDATE:
-    // Whitelist access is strictly denied if typed email differs from the authenticated session email.
-    // Typing another person's email (even if that email is approved/whitelisted) CANNOT grant whitelist access!
-    if (session && typed !== session) {
-      return false;
-    }
-
-    // If there is no authenticated session email, typing someone else's email in test box cannot grant whitelist access
-    if (!session) {
-      return false;
-    }
-
     return whitelistedEmails.some(e => e.toLowerCase() === typed);
-  }, [currentUserEmail, sessionUserEmail, whitelistedEmails]);
+  }, [currentUserEmail, whitelistedEmails]);
 
   const isFullyUnlocked = effectiveAdmin || isSubscribed || isWhitelisted;
 
@@ -801,43 +776,19 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
               <div className={`px-3 py-1.5 rounded-lg text-xs font-black flex items-center gap-2 border ${isFullyUnlocked ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'}`}>
                 {isFullyUnlocked ? <Unlock size={14} /> : <Lock size={14} />}
                 <span>
-                  {effectiveAdmin ? 'অ্যাডমিন মোড (সকল নথি উন্মুক্ত)' : isWhitelisted ? 'Whitelisted Gmail (সকল নথি উন্মুক্ত)' : 'প্রথম ৫টি নথি ফ্রি (অন্যান্য লকড)'}
+                  {effectiveAdmin ? 'অ্যাডমিন মোড (সকল নথি উন্মুক্ত)' : isWhitelisted ? 'অনুমোদিত ব্যবহারকারী (সকল নথি উন্মুক্ত)' : 'প্রথম ৫টি নথি ফ্রি (অন্যান্য লকড)'}
                 </span>
               </div>
 
-              {sessionUserEmail ? (
-                <div className="px-3 py-1.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-lg text-xs font-black flex items-center gap-2">
-                  <CheckCircle2 size={14} className="text-emerald-400" />
-                  <span>গুগল ভেরিফাইড: {sessionUserEmail}</span>
-                  <button
-                    onClick={async () => {
-                      if (confirm('আপনি কি গুগল অ্যাকাউন্ট থেকে সাইন-আউট করতে চান?')) {
-                        await supabase.auth.signOut();
-                        localStorage.removeItem('audit_doc_logged_in_user_email');
-                        window.location.reload();
-                      }
-                    }}
-                    className="ml-2 text-[10px] bg-red-500/20 hover:bg-red-500/40 text-red-300 px-2 py-0.5 rounded border border-red-500/30 transition-all cursor-pointer"
-                  >
-                    সাইন-আউট
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={signInWithGoogle}
-                  className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-900 rounded-lg text-xs font-black transition-all flex items-center gap-2 shadow-md cursor-pointer active:scale-95 border border-slate-200"
-                  title="গুগল দিয়ে সরাসরি সাইন-ইন করুন"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                  </svg>
-                  <span>Sign in with Google</span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setShowUnlockModal(true)}
+                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1.5 shadow-md cursor-pointer active:scale-95 border border-blue-500"
+                title="ইমেইল/নম্বর দিয়ে এক্সেস যাচাই করুন"
+              >
+                <ShieldCheck size={15} />
+                <span>এক্সেস যাচাই / আনলক করুন</span>
+              </button>
 
               {!isFullyUnlocked && (
                 <button
@@ -970,41 +921,24 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
               </div>
             </div>
 
-            {/* Quick User Gmail Status Banner */}
+            {/* Quick User Identifier / Email Input */}
             <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2 text-slate-600 font-bold">
-                <span>আপনার টেস্ট জিমেইল:</span>
+                <span>আপনার ইমেইল / নাম্বার:</span>
                 <input 
                   type="email"
                   value={currentUserEmail}
                   onChange={e => setCurrentUserEmail(e.target.value)}
-                  className={`px-2.5 py-1 border rounded-lg text-xs font-mono font-bold outline-none focus:bg-white focus:border-blue-500 w-52 transition-all ${
-                    isEmailMismatch ? 'text-red-700 border-red-300 bg-red-50/60' : 'text-blue-700 border-slate-200 bg-slate-50'
-                  }`}
+                  className="px-2.5 py-1 border border-slate-200 bg-slate-50 text-blue-700 rounded-lg text-xs font-mono font-bold outline-none focus:bg-white focus:border-blue-500 w-52 transition-all"
                   placeholder="user@gmail.com"
                 />
-                {isEmailMismatch ? (
-                  <span className="px-2 py-0.5 bg-red-100 text-red-900 font-black rounded text-[10px] flex items-center gap-1.5 border border-red-200 shadow-2xs">
-                    <XCircle size={13} className="text-red-600 shrink-0" />
-                    <span>অননুমোদিত (ভিন্ন জিমেইল আইডি - আপনার মূল আইডি {sessionUserEmail} ছাড়া অন্য কোনো আইডি গ্রহণযোগ্য নয়)</span>
-                    {sessionUserEmail && (
-                      <button
-                        type="button"
-                        onClick={() => setCurrentUserEmail(sessionUserEmail)}
-                        className="ml-1 px-2 py-0.5 bg-red-200 hover:bg-red-300 text-red-950 rounded text-[9px] font-black cursor-pointer transition-all shadow-2xs active:scale-95 shrink-0"
-                        title="মূল আইডিতে ফেরত যান"
-                      >
-                        মূল আইডিতে ফিরুন
-                      </button>
-                    )}
-                  </span>
-                ) : isWhitelisted ? (
+                {isWhitelisted ? (
                   <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded text-[10px] flex items-center gap-1 border border-emerald-200">
-                    <CheckCircle2 size={12} /> অনুমোদিত (সকল নথি উন্মুক্ত)
+                    <CheckCircle2 size={12} /> অনুমোদিত কন্ট্রিবিউটর (সকল নথি উন্মুক্ত)
                   </span>
                 ) : (
                   <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-black rounded text-[10px] border border-amber-200">
-                    সাধারণ এক্সেস (প্রথম ৫টি নথি ফ্রি, অন্যান্য লকড)
+                    সাধারণ এক্সেস (প্রথম ৫টি ফ্রি, অন্যান্য লকড)
                   </span>
                 )}
               </div>
