@@ -382,19 +382,20 @@ const App: React.FC = () => {
     console.log("handleTabChange called with tab:", tab, "subModule:", subModule, "rType:", rType, "searchTerm:", searchTerm);
     
     pushHistory();
+    setViewSingleEntryId(null);
     
     // If clicking Document Library (archive) and there are pending items, go to moderation
-    if (tab === 'archive' && isAdmin && totalPendingCount > 0) {
+    if (tab === 'archive') {
       setActiveTab('register');
-      setRegisterSubModule('correspondence');
-      setShowPendingOnly(true);
+      setRegisterSubModule(subModule || 'correspondence');
+      setShowPendingOnly(totalPendingCount > 0);
       setResetKey(0);
       return;
     }
 
     if (tab === 'moderation') {
       setActiveTab('register');
-      setRegisterSubModule('correspondence');
+      setRegisterSubModule(subModule || 'correspondence');
       setShowPendingOnly(true);
       setResetKey(0);
       return;
@@ -409,7 +410,6 @@ const App: React.FC = () => {
     // Reset moderation view when switching tabs unless explicitly going to moderation
     if (tab !== 'register') {
       setShowPendingOnly(false);
-      setViewSingleEntryId(null);
     }
     
     // Handle Direct Entry Modules
@@ -440,13 +440,16 @@ const App: React.FC = () => {
       setReportType(null);
     }
 
-    setShowPendingOnly(false);
+    if (tab !== 'register') {
+      setShowPendingOnly(false);
+    }
   };
 
   const [highlightSearch, setHighlightSearch] = useState<string | null>(null);
 
   const navigateToEntry = (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => {
     pushHistory();
+    setViewSingleEntryId(null);
     setActiveTab('register');
     setRegisterSubModule(type);
     
@@ -459,6 +462,8 @@ const App: React.FC = () => {
     if (searchNo) {
       setHighlightSearch(searchNo);
       setShowRegisterFilters(true);
+    } else {
+      setHighlightSearch(null);
     }
     // Scroll to top first to ensure the table is visible
     if (mainScrollRef.current) {
