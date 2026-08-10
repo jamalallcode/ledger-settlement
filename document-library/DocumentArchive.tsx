@@ -95,9 +95,15 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
   useEffect(() => {
     if (userEmail) {
-      localStorage.setItem('audit_doc_logged_in_user_email', userEmail.trim().toLowerCase());
+      const clean = userEmail.trim().toLowerCase();
+      localStorage.setItem('audit_doc_logged_in_user_email', clean);
+      if (!currentUserEmail || currentUserEmail === 'user@gmail.com' || currentUserEmail === 'newuser@gmail.com') {
+        setCurrentUserEmail(clean);
+      }
+    } else if (currentUserEmail && isValidIdentifier(currentUserEmail) && !localStorage.getItem('audit_doc_logged_in_user_email')) {
+      localStorage.setItem('audit_doc_logged_in_user_email', currentUserEmail.trim().toLowerCase());
     }
-  }, [userEmail]);
+  }, [userEmail, currentUserEmail]);
 
   useEffect(() => {
     localStorage.setItem('audit_doc_current_user_email', currentUserEmail);
@@ -926,19 +932,32 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                   type="email"
                   value={currentUserEmail}
                   onChange={e => setCurrentUserEmail(e.target.value)}
-                  className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-blue-700 outline-none focus:bg-white focus:border-blue-500 w-52"
+                  className={`px-2.5 py-1 border rounded-lg text-xs font-mono font-bold outline-none focus:bg-white focus:border-blue-500 w-52 transition-all ${
+                    isEmailMismatch ? 'text-red-700 border-red-300 bg-red-50/60' : 'text-blue-700 border-slate-200 bg-slate-50'
+                  }`}
                   placeholder="user@gmail.com"
                 />
-                {isWhitelisted ? (
-                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded text-[10px] flex items-center gap-1">
+                {isEmailMismatch ? (
+                  <span className="px-2 py-0.5 bg-red-100 text-red-900 font-black rounded text-[10px] flex items-center gap-1.5 border border-red-200 shadow-2xs">
+                    <XCircle size={13} className="text-red-600 shrink-0" />
+                    <span>অননুমোদিত (ভিন্ন জিমেইল আইডি - আপনার মূল আইডি {sessionUserEmail} ছাড়া অন্য কোনো আইডি গ্রহণযোগ্য নয়)</span>
+                    {sessionUserEmail && (
+                      <button
+                        type="button"
+                        onClick={() => setCurrentUserEmail(sessionUserEmail)}
+                        className="ml-1 px-2 py-0.5 bg-red-200 hover:bg-red-300 text-red-950 rounded text-[9px] font-black cursor-pointer transition-all shadow-2xs active:scale-95 shrink-0"
+                        title="মূল আইডিতে ফেরত যান"
+                      >
+                        মূল আইডিতে ফিরুন
+                      </button>
+                    )}
+                  </span>
+                ) : isWhitelisted ? (
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded text-[10px] flex items-center gap-1 border border-emerald-200">
                     <CheckCircle2 size={12} /> অনুমোদিত (সকল নথি উন্মুক্ত)
                   </span>
-                ) : isEmailMismatch ? (
-                  <span className="px-2 py-0.5 bg-red-100 text-red-800 font-black rounded text-[10px] flex items-center gap-1">
-                    <XCircle size={12} /> অননুমোদিত (ভিন্ন জিমেইল আইডি - শুধুমাত্র আপনার নিজস্ব জিমেইল ব্যবহার করুন)
-                  </span>
                 ) : (
-                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-black rounded text-[10px]">
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-black rounded text-[10px] border border-amber-200">
                     সাধারণ এক্সেস (প্রথম ৫টি নথি ফ্রি, অন্যান্য লকড)
                   </span>
                 )}
