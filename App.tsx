@@ -232,6 +232,9 @@ const App: React.FC = () => {
     };
   }, []);
 
+  const [justSubmittedEntryId, setJustSubmittedEntryId] = useState<string | null>(null);
+  const [viewSingleEntryId, setViewSingleEntryId] = useState<string | null>(null);
+
   const pendingEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'pending'), [entries]);
   const pendingCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'pending'), [correspondenceEntries]);
   const totalPendingCount = pendingEntries.length + pendingCorrespondence.length;
@@ -406,6 +409,7 @@ const App: React.FC = () => {
     // Reset moderation view when switching tabs unless explicitly going to moderation
     if (tab !== 'register') {
       setShowPendingOnly(false);
+      setViewSingleEntryId(null);
     }
     
     // Handle Direct Entry Modules
@@ -900,6 +904,8 @@ const App: React.FC = () => {
       }
     }
     
+    setJustSubmittedEntryId(entryToSync.id);
+
     // OFFLINE HANDLING
     if (!navigator.onLine) {
       const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
@@ -908,6 +914,7 @@ const App: React.FC = () => {
     } else {
       await supabase.from('settlement_entries').upsert({ id: entryToSync.id, content: entryToSync });
     }
+    return entryToSync;
   };
 
   // Specialized update handler for inline fields (date/person) to avoid jumping tabs
@@ -929,10 +936,20 @@ const App: React.FC = () => {
     }
   };
 
-  const handleViewRegister = (module: 'settlement' | 'correspondence') => {
+  const handleViewRegister = (module: 'settlement' | 'correspondence', entryId?: string) => {
     pushHistory();
     setActiveTab('register');
     setRegisterSubModule(module);
+
+    const targetId = entryId || justSubmittedEntryId;
+    if (!isAdmin && targetId) {
+      setViewSingleEntryId(targetId);
+      const isPending = entries.some(e => e.id === targetId && e.approvalStatus === 'pending') || 
+                        correspondenceEntries.some(e => e.id === targetId && e.approvalStatus === 'pending');
+      setShowPendingOnly(isPending);
+    } else {
+      setViewSingleEntryId(null);
+    }
   };
 
   const handleApproveEntry = async (id: string) => {
@@ -1032,6 +1049,34 @@ const App: React.FC = () => {
 
   const approvedEntries = useMemo(() => entries.filter(e => e.approvalStatus === 'approved' || !e.approvalStatus), [entries]);
   const approvedCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'approved' || !e.approvalStatus), [correspondenceEntries]);
+
+  const displayedPendingEntries = useMemo(() => {
+    if (!isAdmin && viewSingleEntryId) {
+      return pendingEntries.filter(e => e.id === viewSingleEntryId);
+    }
+    return pendingEntries;
+  }, [pendingEntries, isAdmin, viewSingleEntryId]);
+
+  const displayedPendingCorrespondence = useMemo(() => {
+    if (!isAdmin && viewSingleEntryId) {
+      return pendingCorrespondence.filter(e => e.id === viewSingleEntryId);
+    }
+    return pendingCorrespondence;
+  }, [pendingCorrespondence, isAdmin, viewSingleEntryId]);
+
+  const displayedApprovedEntries = useMemo(() => {
+    if (!isAdmin && viewSingleEntryId) {
+      return approvedEntries.filter(e => e.id === viewSingleEntryId);
+    }
+    return approvedEntries;
+  }, [approvedEntries, isAdmin, viewSingleEntryId]);
+
+  const displayedApprovedCorrespondence = useMemo(() => {
+    if (!isAdmin && viewSingleEntryId) {
+      return approvedCorrespondence.filter(e => e.id === viewSingleEntryId);
+    }
+    return approvedCorrespondence;
+  }, [approvedCorrespondence, isAdmin, viewSingleEntryId]);
   
   const unassignedCorrespondence = useMemo(() => {
     return approvedCorrespondence.filter(e => 
@@ -1516,12 +1561,27 @@ const App: React.FC = () => {
               
               {activeTab === 'register' && (
                 <div className="w-full relative">
+                  {!isAdmin && viewSingleEntryId && (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between text-emerald-900 text-sm font-bold no-print mb-4 gap-3">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 size={18} className="text-emerald-600" />
+                        <span>আপনি সম্প্রতি জমাকৃত এন্ট্রিটি দেখছেন।</span>
+                      </div>
+                      <button 
+                        onClick={() => setViewSingleEntryId(null)}
+                        className="px-4 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-black hover:bg-emerald-700 transition-all shadow-sm cursor-pointer"
+                      >
+                        সকল এন্ট্রি দেখুন
+                      </button>
+                    </div>
+                  )}
+
                   {showPendingOnly ? (
                     <div className="space-y-8 animate-in fade-in duration-700">
                       <div className="flex items-center justify-between no-print mb-4">
                       </div>
 
-                      {(pendingEntries.length > 0 || pendingCorrespondence.length > 0) ? (
+                      {(displayedPendingEntries.length > 0 || displayedPendingCorrespondence.length > 0) ? (
                         <div className="bg-amber-50/50 border-2 border-dashed border-amber-200 p-8 rounded-[2.5rem] text-center space-y-3">
                            <h3 className="text-xl font-black text-amber-900">অপেক্ষমাণ এন্ট্রি মডোরেশন</h3>
                            <p className="text-sm font-bold text-amber-700">নিচের এন্ট্রিগুলো যাচাই করে অনুমোদন দিন। অনুমোদন না পাওয়া পর্যন্ত এগুলো রিপোর্ট বা রেজিস্টারে আসবে না।</p>
@@ -1546,13 +1606,13 @@ const App: React.FC = () => {
                         </div>
                       )}
                       
-                      {pendingCorrespondence.length > 0 && (
+                      {displayedPendingCorrespondence.length > 0 && (
                         <div className="space-y-4">
                           <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl w-fit font-black text-sm border border-emerald-100">
                             <Mail size={16} /> প্রাপ্ত চিঠিপত্র অপেক্ষমাণ
                           </div>
                           <CorrespondenceTable 
-                            entries={pendingCorrespondence} 
+                            entries={displayedPendingCorrespondence} 
                             onBack={() => {}}
                             isAdmin={isAdmin}
                             onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }}
@@ -1566,14 +1626,14 @@ const App: React.FC = () => {
                         </div>
                       )}
 
-                      {pendingEntries.length > 0 && (
+                      {displayedPendingEntries.length > 0 && (
                         <div className="space-y-4">
                           <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl w-fit font-black text-sm border border-blue-100">
                             <ClipboardList size={16} /> মীমাংসা রেজিস্টার অপেক্ষমাণ
                           </div>
                           <SettlementTable 
                             key={`pending-list`} 
-                            entries={pendingEntries} 
+                            entries={displayedPendingEntries} 
                             onDelete={handleDelete} 
                             onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }} 
                             showFilters={false} 
@@ -1595,7 +1655,7 @@ const App: React.FC = () => {
 
                           <SettlementTable 
                             key={`register-reset-${resetKey}`} 
-                            entries={approvedEntries} 
+                            entries={displayedApprovedEntries} 
                             onDelete={handleDelete} 
                             onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }} 
                             showFilters={showRegisterFilters} 
@@ -1611,7 +1671,7 @@ const App: React.FC = () => {
                           </div>
 
                           <CorrespondenceTable 
-                            entries={approvedCorrespondence} 
+                            entries={displayedApprovedCorrespondence} 
                             onBack={() => { pushHistory(); setActiveTab('landing'); }} 
                             isAdmin={isAdmin}
                             onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }}

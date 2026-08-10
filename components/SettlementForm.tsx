@@ -5,8 +5,8 @@ import SettlementEntryModule from './SettlementEntryModule';
 import CorrespondenceEntryModule from './CorrespondenceEntryModule';
 
 interface SettlementFormProps {
-  onAdd: (entry: Omit<SettlementEntry, 'id' | 'sl' | 'createdAt'> | SettlementEntry) => void;
-  onViewRegister: (module: 'settlement' | 'correspondence') => void;
+  onAdd: (entry: Omit<SettlementEntry, 'id' | 'sl' | 'createdAt'> | SettlementEntry) => any;
+  onViewRegister: (module: 'settlement' | 'correspondence', entryId?: string) => void;
   nextSl: number;
   branchSuggestions: GroupOption[];
   initialEntry?: SettlementEntry | any | null;
@@ -56,14 +56,14 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, 
   };
 
   if (mainModule === 'correspondence') {
-    return <CorrespondenceEntryModule onBackToMenu={onCancel || (() => setMainModule(null))} onViewRegister={() => onViewRegister('correspondence')} onAdd={onAdd} isLayoutEditable={isLayoutEditable} initialEntry={initialEntry} isAdmin={isAdmin} userEmail={userEmail} existingEntries={correspondenceEntries} navigateToEntry={navigateToEntry} />;
+    return <CorrespondenceEntryModule onBackToMenu={onCancel || (() => setMainModule(null))} onViewRegister={(entryId) => onViewRegister('correspondence', entryId)} onAdd={onAdd} isLayoutEditable={isLayoutEditable} initialEntry={initialEntry} isAdmin={isAdmin} userEmail={userEmail} existingEntries={correspondenceEntries} navigateToEntry={navigateToEntry} />;
   }
 
   if (mainModule === 'settlement') {
     return (
       <SettlementEntryModule 
         onAdd={onAdd}
-        onViewRegister={() => onViewRegister('settlement')}
+        onViewRegister={(entryId) => onViewRegister('settlement', entryId)}
         nextSl={nextSl}
         branchSuggestions={branchSuggestions}
         initialEntry={initialEntry}

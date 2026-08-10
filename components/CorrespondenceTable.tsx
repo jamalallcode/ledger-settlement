@@ -642,6 +642,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           if (filterType === "কার্যপত্র (ত্রি-সভা)") {
             return entry.letterType === "কার্যপত্র (ত্রি-সভা)" || entry.letterType === "ত্রিপক্ষীয় সভা (কার্যপত্র)";
           }
+          if (filterType === "মিলকরণ" || filterType === "মিলিকরণ") {
+            return entry.letterType === "মিলকরণ" || entry.letterType === "মিলিকরণ" || (entry.letterType || '').includes("মিলকরণ") || (entry.letterType || '').includes("মিলিকরণ");
+          }
           return entry.letterType === filterType;
         })();
         const matchReceiver = !filterReceiver || entry.receiverName === filterReceiver;
@@ -701,6 +704,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         }
         if (type === "দ্বিপক্ষীয় সভা (কার্যবিবরণী)") {
           return e.letterType === "দ্বিপক্ষীয় সভা (কার্যবিবরণী)" || e.letterType === "দ্বিপক্ষীয় সভা";
+        }
+        if (type === "মিলিকরণ" || type === "মিলকরণ") {
+          return e.letterType === "মিলিকরণ" || e.letterType === "মিলকরণ" || (e.letterType || '').includes("মিলকরণ") || (e.letterType || '').includes("মিলিকরণ");
         }
         return e.letterType === type;
       }).length;
@@ -763,6 +769,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           }
           if (type === "দ্বিপক্ষীয় সভা (কার্যবিবরণী)") {
             return e.letterType === "দ্বিপক্ষীয় সভা (কার্যবিবরণী)" || e.letterType === "দ্বিপক্ষীয় সভা";
+          }
+          if (type === "মিলিকরণ" || type === "মিলকরণ") {
+            return e.letterType === "মিলিকরণ" || e.letterType === "মিলকরণ" || (e.letterType || '').includes("মিলকরণ") || (e.letterType || '').includes("মিলিকরণ");
           }
           return e.letterType === type;
         }).length;
@@ -1374,6 +1383,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                         { val: "কার্যপত্র (দ্বি-সভা)", label: "কার্যপত্র (দ্বি-সভা)" },
                         { val: "ত্রিপক্ষীয় সভা", label: "ত্রিপক্ষীয় সভা" },
                         { val: "কার্যপত্র (ত্রি-সভা)", label: "কার্যপত্র (ত্রি-সভা)" },
+                        { val: "মিলকরণ", label: "মিলকরণ" },
                         { val: "অন্যান্য", label: "অন্যান্য" },
                       ].map((opt, idx) => (
                         <div
@@ -1630,7 +1640,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   টি
                                 </span>
                               </div>
-                              <div className="grid grid-cols-3 gap-2">
+                              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                                 <div className="flex flex-col">
                                   <span className="text-[9px] font-bold text-emerald-600 uppercase">
                                     বিএসআর
@@ -1664,6 +1674,17 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     টি
                                   </span>
                                 </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[9px] font-bold text-emerald-600 uppercase">
+                                    মিলকরণ
+                                  </span>
+                                  <span className="text-[12px] font-black text-slate-800">
+                                    {toBengaliDigits(
+                                      cycleStats[group.label]?.sfi.reconciliation || 0,
+                                    )}{" "}
+                                    টি
+                                  </span>
+                                </div>
                               </div>
                             </div>
 
@@ -1681,7 +1702,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   টি
                                 </span>
                               </div>
-                              <div className="grid grid-cols-3 gap-2">
+                              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                                 <div className="flex flex-col">
                                   <span className="text-[9px] font-bold text-amber-600 uppercase">
                                     বিএসআর
@@ -1712,6 +1733,18 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   <span className="text-[12px] font-black text-slate-800">
                                     {toBengaliDigits(
                                       cycleStats[group.label]?.nonSfi.biMin ||
+                                        0,
+                                    )}{" "}
+                                    টি
+                                  </span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[9px] font-bold text-amber-600 uppercase">
+                                    মিলকরণ
+                                  </span>
+                                  <span className="text-[12px] font-black text-slate-800">
+                                    {toBengaliDigits(
+                                      cycleStats[group.label]?.nonSfi.reconciliation ||
                                         0,
                                     )}{" "}
                                     টি

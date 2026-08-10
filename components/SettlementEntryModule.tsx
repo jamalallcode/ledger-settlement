@@ -168,8 +168,8 @@ const SegmentedInput = ({
 };
 
 interface SettlementEntryModuleProps {
-  onAdd: (entry: Omit<SettlementEntry, 'id' | 'sl' | 'createdAt'> | SettlementEntry) => void;
-  onViewRegister: () => void;
+  onAdd: (entry: Omit<SettlementEntry, 'id' | 'sl' | 'createdAt'> | SettlementEntry) => any;
+  onViewRegister: (entryId?: string) => void;
   nextSl: number;
   branchSuggestions: GroupOption[];
   initialEntry?: SettlementEntry | null;
@@ -196,6 +196,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   showAuditDetails = true,
   correspondenceEntries = []
 }) => {
+  const [lastCreatedId, setLastCreatedId] = useState<string | null>(null);
+
   const dynamicAuditYearsOptions = useMemo(() => {
     const years = new Set<string>();
     // First, populate with default years from AUDIT_YEARS_OPTIONS
@@ -1004,7 +1006,12 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         isSentOnline: (formData as any).isOnline
       };
 
-      onAdd(finalData);
+      const res = onAdd(finalData);
+      if (res && res.id) {
+        setLastCreatedId(res.id);
+      } else if (res && typeof res.then === 'function') {
+        res.then((r: any) => { if (r && r.id) setLastCreatedId(r.id); });
+      }
       isSubmitting.current = false;
       resetForm();
     }, 0);
@@ -2154,7 +2161,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                       নতুন মীমাংসা এন্ট্রি দিন <Plus size={20} />
                     </button>
                     <button 
-                      onClick={onViewRegister}
+                      onClick={() => onViewRegister(lastCreatedId || undefined)}
                       className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-3 active:scale-95 group"
                     >
                       মীমাংসা রেজিস্টারটি দেখুন <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
