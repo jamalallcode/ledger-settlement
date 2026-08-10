@@ -384,16 +384,6 @@ const App: React.FC = () => {
     pushHistory();
     setViewSingleEntryId(null);
     
-    // If clicking Document Library (archive) and there are pending items, go to moderation
-    if (tab === 'archive') {
-      setActiveTab('register');
-      const targetSubModule = subModule || (pendingEntries.length > 0 ? 'settlement' : 'correspondence');
-      setRegisterSubModule(targetSubModule);
-      setShowPendingOnly(totalPendingCount > 0);
-      setResetKey(0);
-      return;
-    }
-
     if (tab === 'moderation') {
       setActiveTab('register');
       const targetSubModule = subModule || (pendingEntries.length > 0 ? 'settlement' : 'correspondence');
@@ -1558,7 +1548,7 @@ const App: React.FC = () => {
                   isLockedMode={isLockedMode} 
                   isAdmin={isAdmin}
                   pendingCount={totalPendingCount}
-                  onShowPending={() => handleTabChange('archive')}
+                  onShowPending={() => handleTabChange('moderation')}
                   moduleVisibility={moduleVisibility}
                   onOpenSpecialLogin={() => setShowAdminLogin(true)}
                 />
