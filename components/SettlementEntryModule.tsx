@@ -1609,7 +1609,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
             {/* 14. মন্তব্য: */}
             {formData.meetingType === 'বিএসআর' && (
-              <div id="field-18" className={`${col3Style} lg:col-span-2 md:col-span-2`}>
+              <div id="field-18" className={`${col3Style} col-span-1 md:col-span-2 lg:col-span-4 w-full`}>
                 <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <MessageSquare size={14} className="text-purple-600 shrink-0" /> মন্তব্য:</label>
                 <input type="text" className={getDynamicInputCls(formData.remarks)} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
               </div>
@@ -1637,7 +1637,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                 <SegmentedInput id="field-22b" icon={FileEdit} num={getSerial()} label="কার্যপত্র তারিখ" color="purple" noValue="DATE_ONLY" dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} noSetter={()=>{}} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} isFocused={isWpFocused} focusSetter={setIsWpFocused} />
                 <SegmentedInput id="field-22c" icon={Calendar} num={getSerial()} label="কার্যবিবরণী প্রাপ্তির তারিখ" color="purple" noValue="DATE_ONLY" dayValue={mrDay} monthValue={mrMonth} yearValue={mrYear} noSetter={()=>{}} daySetter={setMrDay} monthSetter={setMrMonth} yearSetter={setMrYear} dayRef={mrDayRef} monthRef={mrMonthRef} yearRef={mrYearRef} isFocused={isMrFocused} focusSetter={setIsMrFocused} />
                 
-                <div id="field-18" className={`${col3Style} lg:col-span-2 md:col-span-2`}>
+                <div id="field-18" className={`${col3Style} col-span-1 md:col-span-2 lg:col-span-4 w-full`}>
                   <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <MessageSquare size={14} className="text-purple-600 shrink-0" /> মন্তব্য:</label>
                   <input type="text" className={getDynamicInputCls(formData.remarks)} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
                 </div>
