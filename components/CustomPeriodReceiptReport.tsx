@@ -2270,10 +2270,10 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           >
                             {toBengaliDigits(rowSettledCount)} টি
                           </td>
-                          <td className="px-4 py-3 text-right text-[11.5px] font-black text-slate-900 border-r border-slate-200">
+                          <td className="px-4 py-3 text-center text-[11.5px] font-black text-slate-900 border-r border-slate-200">
                             {toBengaliDigits(rowSettledAmount || '০')}
                           </td>
-                          <td className="px-4 py-3 text-right text-[11.5px] font-black text-rose-800 border-r border-slate-200">
+                          <td className="px-4 py-3 text-center text-[11.5px] font-black text-rose-800 border-r border-slate-200">
                             {toBengaliDigits(rowUnsettledAmount || '০')}
                           </td>
                           <td className="px-4 py-3 text-justify break-words text-[11px] font-semibold text-slate-800 border-r border-slate-200 relative pb-7">
@@ -2302,10 +2302,10 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       <td className="px-4 py-3 text-center text-[11px] border-r border-slate-200 font-black">
                         {toBengaliDigits(totalSettledCountSum)} টি
                       </td>
-                      <td className="px-4 py-3 text-right text-[11.5px] border-r border-slate-200 font-black">
+                      <td className="px-4 py-3 text-center text-[11.5px] border-r border-slate-200 font-black">
                         {toBengaliDigits(totalSettledAmountSum || '০')}
                       </td>
-                      <td className="px-4 py-3 text-right text-[11.5px] border-r border-slate-200 font-black text-rose-800">
+                      <td className="px-4 py-3 text-center text-[11.5px] border-r border-slate-200 font-black text-rose-800">
                         {toBengaliDigits(totalUnsettledAmountSum || '০')}
                       </td>
                       <td className="px-4 py-3 border-r border-slate-200"></td>
