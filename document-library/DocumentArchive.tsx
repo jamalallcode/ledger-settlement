@@ -107,6 +107,112 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     }
   }, [currentUserEmail, whitelistedEmails]);
 
+  // Demo / Subscription / Admin State
+  const [isSubscribed, setIsSubscribed] = useState<boolean>(() => {
+    return localStorage.getItem('audit_doc_is_subscribed') === 'true';
+  });
+  const [demoAdmin, setDemoAdmin] = useState<boolean>(false);
+  const effectiveAdmin = isAdmin || demoAdmin;
+
+  // Active Single Session Lock State & Functions
+  const [sessionLockedNotice, setSessionLockedNotice] = useState<string | null>(null);
+
+  const getSessionToken = () => {
+    let tok = sessionStorage.getItem('audit_active_session_token');
+    if (!tok) {
+      tok = 'st_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+      sessionStorage.setItem('audit_active_session_token', tok);
+    }
+    return tok;
+  };
+
+  const registerActiveSession = async (email: string) => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed || !isValidIdentifier(trimmed)) return;
+    const token = getSessionToken();
+
+    try {
+      await fetch('/api/user/active-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmed, sessionToken: token, action: 'register' })
+      });
+    } catch (e) {}
+
+    try {
+      await supabase.from('settlement_entries').upsert({
+        id: 'session_' + trimmed,
+        content: JSON.stringify({ token, timestamp: Date.now() }),
+        created_at: new Date().toISOString()
+      });
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    const trimmedEmail = currentUserEmail ? currentUserEmail.trim().toLowerCase() : '';
+    if (!trimmedEmail || !isValidIdentifier(trimmedEmail) || effectiveAdmin) {
+      return;
+    }
+
+    const token = getSessionToken();
+
+    // Register active session when email is set
+    registerActiveSession(trimmedEmail);
+
+    const checkActiveSession = async () => {
+      let isValid = true;
+
+      // 1. Check Server API
+      try {
+        const res = await fetch(`/api/user/active-session?email=${encodeURIComponent(trimmedEmail)}&token=${encodeURIComponent(token)}&t=${Date.now()}`, { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.isValid === false) {
+            isValid = false;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Check Supabase
+      if (isValid) {
+        try {
+          const { data } = await supabase
+            .from('settlement_entries')
+            .select('content')
+            .eq('id', 'session_' + trimmedEmail)
+            .single();
+
+          if (data && data.content) {
+            let parsed: any = null;
+            try { parsed = typeof data.content === 'string' ? JSON.parse(data.content) : data.content; } catch(e) {}
+            if (parsed && parsed.token && parsed.token !== token) {
+              isValid = false;
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (!isValid) {
+        // Terminate local session
+        setCurrentUserEmail('');
+        localStorage.removeItem('audit_doc_current_user_email');
+        setSessionLockedNotice(`⚠️ অন্য একটি ডিভাইস বা ব্রাউজার থেকে এই জিমেইল (${trimmedEmail}) দিয়ে নতুন সেশন শুরু করার কারণে আপনার এই বর্তমান সেশনটি স্বয়ংক্রিয়ভাবে বন্ধ করা হয়েছে।`);
+      }
+    };
+
+    const intervalId = setInterval(checkActiveSession, 4000);
+
+    const handleFocus = () => {
+      checkActiveSession();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [currentUserEmail, effectiveAdmin]);
+
   useEffect(() => {
     localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(whitelistedEmails));
   }, [whitelistedEmails]);
@@ -156,14 +262,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
   useEffect(() => {
     localStorage.setItem('audit_doc_payment_number', paymentNumber);
   }, [paymentNumber]);
-
-  // Demo / Subscription / Admin State
-  const [isSubscribed, setIsSubscribed] = useState<boolean>(() => {
-    return localStorage.getItem('audit_doc_is_subscribed') === 'true';
-  });
-  const [demoAdmin, setDemoAdmin] = useState<boolean>(false);
-
-  const effectiveAdmin = isAdmin || demoAdmin;
 
   // Check if typed test email matches logged-in session account email
   const isEmailMismatch = useMemo(() => {
@@ -591,6 +689,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) return false;
     setCurrentUserEmail(trimmed);
+    registerActiveSession(trimmed);
 
     let isW = whitelistedEmails.some(e => e.toLowerCase() === trimmed);
 
@@ -1439,6 +1538,27 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
         whatsappNumber={paymentNumber}
         onUpdateWhatsappNumber={handleUpdatePaymentNumber}
       />
+
+      {/* Active Session Lock Notice Modal */}
+      {sessionLockedNotice && (
+        <div className="fixed inset-0 z-[9999] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 text-center shadow-2xl border border-red-200">
+            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600 shadow-inner">
+              <Lock size={28} />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2">সক্রিয় সেশন স্থগিত করা হয়েছে</h3>
+            <p className="text-sm text-slate-600 leading-relaxed mb-6 font-medium">
+              {sessionLockedNotice}
+            </p>
+            <button
+              onClick={() => setSessionLockedNotice(null)}
+              className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg transition-colors cursor-pointer"
+            >
+              ঠিক আছে (বন্ধ করুন)
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

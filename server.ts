@@ -85,6 +85,40 @@ const saveStoredWhitelistedEmails = (list: string[]) => {
   return cleanList;
 };
 
+const getSessionsFile = () => {
+  return path.join(process.cwd(), "active_sessions.json");
+};
+
+let inMemoryActiveSessions: Record<string, { token: string; timestamp: number }> | null = null;
+
+const getStoredActiveSessions = (): Record<string, { token: string; timestamp: number }> => {
+  if (inMemoryActiveSessions) {
+    return inMemoryActiveSessions;
+  }
+  try {
+    const file = getSessionsFile();
+    if (fs.existsSync(file)) {
+      const raw = fs.readFileSync(file, "utf-8");
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        inMemoryActiveSessions = parsed;
+        return inMemoryActiveSessions;
+      }
+    }
+  } catch (e) {}
+  inMemoryActiveSessions = {};
+  return inMemoryActiveSessions;
+};
+
+const saveStoredActiveSessions = (sessions: Record<string, { token: string; timestamp: number }>) => {
+  inMemoryActiveSessions = sessions;
+  try {
+    const file = getSessionsFile();
+    fs.writeFileSync(file, JSON.stringify(sessions, null, 2), "utf-8");
+  } catch (e) {}
+  return sessions;
+};
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -151,6 +185,59 @@ async function startServer() {
     }
 
     res.json({ success: true, emails: current });
+  });
+
+  // Active User Session Lock API
+  app.get("/api/user/active-session", (req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    const email = (req.query.email as string || "").trim().toLowerCase();
+    const token = (req.query.token as string || "").trim();
+
+    if (!email) {
+      return res.json({ isValid: true });
+    }
+
+    const sessions = getStoredActiveSessions();
+    const current = sessions[email];
+
+    if (!current || !current.token || current.token === token) {
+      return res.json({ isValid: true });
+    }
+
+    return res.json({
+      isValid: false,
+      currentToken: current.token,
+      message: "অন্য ডিভাইস বা ব্রাউজার থেকে এই জিমেইল দিয়ে লগইন করায় সেশন স্থগিত করা হয়েছে।"
+    });
+  });
+
+  app.post("/api/user/active-session", (req, res) => {
+    const { email, sessionToken, action } = req.body;
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ error: "Invalid email" });
+    }
+    const trimmed = email.trim().toLowerCase();
+    const token = String(sessionToken || "").trim();
+    const sessions = getStoredActiveSessions();
+
+    if (action === "register" || !sessions[trimmed]) {
+      sessions[trimmed] = { token, timestamp: Date.now() };
+      saveStoredActiveSessions(sessions);
+      return res.json({ success: true, activeToken: token, isValid: true });
+    }
+
+    const current = sessions[trimmed];
+    if (!current || !current.token || current.token === token) {
+      sessions[trimmed] = { token, timestamp: Date.now() };
+      saveStoredActiveSessions(sessions);
+      return res.json({ isValid: true, activeToken: token });
+    }
+
+    return res.json({
+      isValid: false,
+      currentToken: current.token,
+      message: "অন্য ডিভাইস বা ব্রাউজার থেকে এই জিমেইল দিয়ে লগইন করায় সেশন স্থগিত করা হয়েছে।"
+    });
   });
 
   // Temporary in-memory store for OTPs
