@@ -240,7 +240,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
   useEffect(() => {
     localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(whitelistedEmails));
-    saveWhitelistedEmailsToDb(whitelistedEmails);
   }, [whitelistedEmails]);
 
   useEffect(() => {
@@ -268,15 +267,24 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
   }, [editingDoc]);
 
   const fetchWhitelistedEmails = async () => {
+    let serverList: string[] = [];
+    let supabaseList: string[] = [];
+    let localList: string[] = [];
+
+    try {
+      const saved = localStorage.getItem('audit_doc_whitelisted_emails');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) localList = parsed;
+      }
+    } catch (e) {}
+
     try {
       const res = await fetch('/api/admin/whitelisted-emails?t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data && Array.isArray(data.emails)) {
-          const list = data.emails.map((e: string) => e.trim().toLowerCase());
-          setWhitelistedEmails(list);
-          localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(list));
-          return;
+          serverList = data.emails;
         }
       }
     } catch (e) {}
@@ -292,11 +300,40 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
         if (typeof list === 'string') {
           try { list = JSON.parse(list); } catch (e) {}
         }
-        if (Array.isArray(list) && list.length > 0) {
-          setWhitelistedEmails(list);
+        if (Array.isArray(list)) {
+          supabaseList = list;
         }
       }
     } catch (e) {}
+
+    const merged = Array.from(
+      new Set(
+        [...serverList, ...supabaseList, ...localList]
+          .map(e => String(e).trim().toLowerCase())
+          .filter(e => Boolean(e) && e !== 'approved.auditor@gmail.com')
+      )
+    );
+
+    setWhitelistedEmails(merged);
+    localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(merged));
+
+    if (merged.length > 0) {
+      try {
+        await fetch('/api/admin/whitelisted-emails', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emails: merged })
+        });
+      } catch (e) {}
+
+      try {
+        await supabase.from('settlement_entries').upsert({
+          id: 'doc_whitelisted_emails',
+          content: JSON.stringify(merged),
+          created_at: new Date().toISOString()
+        });
+      } catch (e) {}
+    }
   };
 
   const saveWhitelistedEmailsToDb = async (list: string[]) => {
@@ -505,13 +542,23 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) return;
     if (!whitelistedEmails.some(e => e.toLowerCase() === trimmed)) {
-      const updated = [...whitelistedEmails, trimmed];
+      const updated = Array.from(new Set([...whitelistedEmails, trimmed]));
       setWhitelistedEmails(updated);
+      localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(updated));
+
       try {
         await fetch('/api/admin/whitelisted-emails', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ addEmail: trimmed })
+        });
+      } catch (e) {}
+
+      try {
+        await supabase.from('settlement_entries').upsert({
+          id: 'doc_whitelisted_emails',
+          content: JSON.stringify(updated),
+          created_at: new Date().toISOString()
         });
       } catch (e) {}
     }
@@ -521,11 +568,21 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     const trimmed = email.trim().toLowerCase();
     const updated = whitelistedEmails.filter(e => e.toLowerCase() !== trimmed);
     setWhitelistedEmails(updated);
+    localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(updated));
+
     try {
       await fetch('/api/admin/whitelisted-emails', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ removeEmail: trimmed })
+      });
+    } catch (e) {}
+
+    try {
+      await supabase.from('settlement_entries').upsert({
+        id: 'doc_whitelisted_emails',
+        content: JSON.stringify(updated),
+        created_at: new Date().toISOString()
       });
     } catch (e) {}
   };
