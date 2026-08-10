@@ -482,7 +482,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         setActiveTab(item.id);
                       }
                     }} 
-                    className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group cursor-pointer ${activeTab === item.id || (item.id === 'archive' && activeTab === 'register' && showPendingOnly) ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
+                    className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group cursor-pointer ${activeTab === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}
                   >
                     <IDBadge id={item.badgeId} />
                     <div className="flex items-center gap-1.5">
