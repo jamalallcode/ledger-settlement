@@ -179,3 +179,79 @@ export const clearAllVisitorLogs = (): VisitorLog[] => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
   return [];
 };
+
+export interface AuditLogItem {
+  id: string;
+  actionType: 'WHITELIST_ADD' | 'WHITELIST_REMOVE' | 'LOG_DELETE' | 'LOGS_CLEAR' | 'MANUAL_VISITOR_ADD';
+  description: string;
+  targetIdentifier?: string;
+  timestamp: number;
+  formattedDate: string;
+  formattedTime: string;
+  performedBy: string;
+}
+
+const AUDIT_STORAGE_KEY = 'audit_doc_action_history';
+
+export const getAuditLogs = (): AuditLogItem[] => {
+  const saved = localStorage.getItem(AUDIT_STORAGE_KEY);
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (e) {}
+  }
+  return [
+    {
+      id: 'audit-init-1',
+      actionType: 'WHITELIST_ADD',
+      description: 'ডিফল্ট সিস্টেম ইনিশিয়ালাইজেশন ও সিকিউরিটি ফিল্টার সক্রিয় করা হয়েছে',
+      targetIdentifier: 'System Security',
+      timestamp: Date.now() - 3600000,
+      formattedDate: 'আজ',
+      formattedTime: '১০:০০ AM',
+      performedBy: 'System Admin'
+    }
+  ];
+};
+
+export const recordAuditLog = (
+  actionType: AuditLogItem['actionType'],
+  description: string,
+  targetIdentifier?: string,
+  performedBy: string = 'Admin'
+): AuditLogItem[] => {
+  const logs = getAuditLogs();
+  const now = new Date();
+  const months = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+  const day = toBengaliDigits(now.getDate().toString().padStart(2, '0'));
+  const month = months[now.getMonth()];
+  const year = toBengaliDigits(now.getFullYear().toString());
+  const formattedDate = `${day} ${month}, ${year} (আজ)`;
+
+  let hours = now.getHours();
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12 || 12;
+  const formattedTime = `${toBengaliDigits(hours.toString().padStart(2, '0'))}:${toBengaliDigits(minutes)} ${ampm}`;
+
+  const newEntry: AuditLogItem = {
+    id: `audit-${Date.now()}`,
+    actionType,
+    description,
+    targetIdentifier,
+    timestamp: Date.now(),
+    formattedDate,
+    formattedTime,
+    performedBy
+  };
+
+  logs.unshift(newEntry);
+  localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(logs));
+  return logs;
+};
+
+export const clearAuditLogs = (): AuditLogItem[] => {
+  localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify([]));
+  return [];
+};
+
