@@ -61,6 +61,10 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
     e.preventDefault();
     if (!newEmail.trim()) return;
     const clean = newEmail.trim();
+    if (!isValidIdentifier(clean)) {
+      alert('অনুগ্রহ করে একটি সঠিক ও পূর্ণাঙ্গ ইমেইল অ্যাড্রেস লিখুন (যেমন: user@gmail.com)।');
+      return;
+    }
     onAddWhitelistedEmail(clean);
     recordAuditLog('WHITELIST_ADD', 'নতুন জিমেইল আইডি সরাসরি হোয়াইটলিস্টে যোগ করা হয়েছে', clean, 'Admin');
     setAuditLogs(getAuditLogs());
@@ -462,14 +466,25 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
                             {v.formattedDate} • {v.formattedTime} ({toBengaliDigits(v.visitCount)} বার)
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleQuickWhitelistVisitor(v.identifier)}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl transition-all flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
-                        >
-                          <CheckCircle2 size={13} />
-                          <span>এপ্রুভ</span>
-                        </button>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleQuickWhitelistVisitor(v.identifier)}
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                            title="অনুমোদন দিন"
+                          >
+                            <CheckCircle2 size={13} />
+                            <span>এপ্রুভ</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteVisitorLog(v.id)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer border border-transparent hover:border-red-100"
+                            title="ভুল বা ভুয়া লগ মুছে ফেলুন"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>

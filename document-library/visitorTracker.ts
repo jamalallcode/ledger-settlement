@@ -39,7 +39,28 @@ export const isValidIdentifier = (identifier: string): boolean => {
   if (clean.includes('@')) {
     // Valid email must follow user@domain.tld pattern with at least 2 char TLD
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return emailRegex.test(clean);
+    if (!emailRegex.test(clean)) return false;
+
+    // Reject incomplete or domain typos like 'gmail.co', 'gmai.com', 'gmail.c', etc.
+    const parts = clean.split('@');
+    if (parts.length === 2) {
+      const domain = parts[1];
+      // Check specific common typos for major providers
+      if (
+        domain === 'gmail.co' || 
+        domain === 'gmail.c' || 
+        domain === 'gmail.con' || 
+        domain === 'gmail.cm' || 
+        domain === 'gmai.com' || 
+        domain === 'gmai.co' || 
+        domain === 'yahoo.co' || 
+        domain === 'hotmail.co' ||
+        domain.endsWith('.co.com')
+      ) {
+        return false;
+      }
+    }
+    return true;
   }
 
   // Check if it's a mobile/phone number (11 digits or +8801...)
