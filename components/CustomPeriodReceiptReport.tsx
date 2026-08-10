@@ -1070,15 +1070,19 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     });
   }, [settlementEntries, startDate, endDate, filterBranch, filterMinistry, filterAuditor, searchTerm, keywordSearch, sortOrder]);
 
-  const { totalSettledCountSum, totalSettledAmountSum } = useMemo(() => {
+  const { totalSettledCountSum, totalSettledAmountSum, totalUnsettledAmountSum } = useMemo(() => {
     let countSum = 0;
     let amountSum = 0;
+    let unsettledSum = 0;
     filteredSettlementEntries.forEach(entry => {
       const { fullCount, settledAmount } = getSettlementEntryStats(entry);
       countSum += fullCount;
       amountSum += settledAmount;
+      const totalInvolved = entry.involvedAmount || entry.totalAmount || (entry.paragraphs && entry.paragraphs.length > 0 ? entry.paragraphs.reduce((sum: number, p: any) => sum + (p.involvedAmount || p.totalAmount || 0), 0) : 0);
+      const rowUnsettled = Math.max(0, totalInvolved - settledAmount);
+      unsettledSum += rowUnsettled;
     });
-    return { totalSettledCountSum: countSum, totalSettledAmountSum: amountSum };
+    return { totalSettledCountSum: countSum, totalSettledAmountSum: amountSum, totalUnsettledAmountSum: unsettledSum };
   }, [filteredSettlementEntries]);
 
   // Print function
@@ -2125,14 +2129,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
               <div className="table-container overflow-x-auto rounded-2xl shadow-inner">
                 <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                   <colgroup>
-                    <col className="w-[5%]" />
-                    <col className="w-[19%]" />
+                    <col className="w-[4%]" />
                     <col className="w-[18%]" />
-                    <col className="w-[9%]" />
-                    <col className="w-[16%]" />
+                    <col className="w-[17%]" />
+                    <col className="w-[8%]" />
+                    <col className="w-[15%]" />
+                    <col className="w-[8%]" />
                     <col className="w-[10%]" />
-                    <col className="w-[11%]" />
-                    <col className="w-[12%]" />
+                    <col className="w-[10%]" />
+                    <col className="w-[10%]" />
                   </colgroup>
                   <thead className="sticky top-0 xl:top-[45px] z-30 shadow-sm bg-slate-200">
                     {/* Header Row 1: Titles */}
@@ -2144,9 +2149,10 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">শাখা ও নিষ্পত্তির ধরন</th>
                       <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">নিষ্পন্নকৃত অনুচ্ছেদের সংখ্যা</th>
                       <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">নিষ্পত্তিকৃত টাকা (টাকা)</th>
+                      <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">অনিষ্পন্ন টাকা (টাকা)</th>
                       <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-slate-300 font-black">মন্তব্য</th>
                     </tr>
-                    {/* Header Row 2: Sub-header Numbers (1-8) */}
+                    {/* Header Row 2: Sub-header Numbers (1-9) */}
                     <tr className="bg-slate-100 text-slate-900 text-[11px] font-black text-center">
                       <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">১</th>
                       <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">২</th>
@@ -2155,7 +2161,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৫</th>
                       <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৬</th>
                       <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৭</th>
-                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-slate-300">৮</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৮</th>
+                      <th className="bg-slate-100 text-slate-900 py-1 border-b border-slate-300">৯</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -2163,6 +2170,9 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       const { fullCount, partialCount, settledAmount, fullAmount, partialAmount, fullParas, partialParas, allParas } = getSettlementEntryStats(entry);
                       const rowSettledCount = (fullCount + partialCount) || fullCount || partialCount;
                       const rowSettledAmount = settledAmount;
+
+                      const totalInvolved = entry.involvedAmount || entry.totalAmount || (entry.paragraphs && entry.paragraphs.length > 0 ? entry.paragraphs.reduce((sum: number, p: any) => sum + (p.involvedAmount || p.totalAmount || 0), 0) : 0);
+                      const rowUnsettledAmount = Math.max(0, totalInvolved - rowSettledAmount);
 
                       const fullParasText = fullParas.length > 0 ? fullParas.map(toBengaliDigits).join(', ') : '';
                       const partialParasText = partialParas.length > 0 ? partialParas.map(toBengaliDigits).join(', ') : '';
@@ -2263,6 +2273,9 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           <td className="px-4 py-3 text-right text-[11.5px] font-black text-slate-900 border-r border-slate-200">
                             {toBengaliDigits(rowSettledAmount || '০')}
                           </td>
+                          <td className="px-4 py-3 text-right text-[11.5px] font-black text-rose-800 border-r border-slate-200">
+                            {toBengaliDigits(rowUnsettledAmount || '০')}
+                          </td>
                           <td className="px-4 py-3 text-justify break-words text-[11px] font-semibold text-slate-800 border-r border-slate-200 relative pb-7">
                             {entry.remarks || '-'}
                             <div className="no-print absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -2291,6 +2304,9 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       </td>
                       <td className="px-4 py-3 text-right text-[11.5px] border-r border-slate-200 font-black">
                         {toBengaliDigits(totalSettledAmountSum || '০')}
+                      </td>
+                      <td className="px-4 py-3 text-right text-[11.5px] border-r border-slate-200 font-black text-rose-800">
+                        {toBengaliDigits(totalUnsettledAmountSum || '০')}
                       </td>
                       <td className="px-4 py-3 border-r border-slate-200"></td>
                     </tr>
