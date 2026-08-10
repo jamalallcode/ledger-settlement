@@ -135,16 +135,17 @@ async function startServer() {
     const { emails, addEmail, removeEmail } = req.body;
     let current = getStoredWhitelistedEmails();
 
-    if (Array.isArray(emails)) {
-      current = saveStoredWhitelistedEmails(emails);
-    } else if (addEmail && typeof addEmail === "string") {
-      const trimmed = addEmail.trim().toLowerCase();
-      if (trimmed && !current.includes(trimmed)) {
-        current = saveStoredWhitelistedEmails([...current, trimmed]);
-      }
-    } else if (removeEmail && typeof removeEmail === "string") {
+    if (removeEmail && typeof removeEmail === "string") {
       const trimmed = removeEmail.trim().toLowerCase();
       current = saveStoredWhitelistedEmails(current.filter(e => e !== trimmed));
+    } else if (addEmail && typeof addEmail === "string") {
+      const trimmed = addEmail.trim().toLowerCase();
+      if (trimmed) {
+        current = saveStoredWhitelistedEmails([...current, trimmed]);
+      }
+    } else if (Array.isArray(emails)) {
+      const incoming = emails.map(e => String(e).trim().toLowerCase()).filter(Boolean);
+      current = saveStoredWhitelistedEmails([...current, ...incoming]);
     } else {
       current = saveStoredWhitelistedEmails(current);
     }
