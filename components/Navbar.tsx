@@ -255,36 +255,58 @@ const Navbar: React.FC<NavbarProps> = ({
                         </span>
                       </div>
                       <div className="max-h-[180px] overflow-y-auto no-scrollbar py-1 bg-slate-900/50 backdrop-blur-xl border-b border-slate-800">
-                        {pendingEntries.map((entry) => (
-                          <div key={entry.id} className="px-5 py-3 hover:bg-slate-800/80 border-b border-slate-850 last:border-0 group transition-all">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[12px] font-black text-slate-100 truncate group-hover:text-amber-400 transition-colors">{entry.entityName}</p>
-                                <p className="text-[10px] font-bold text-slate-500 truncate mt-0.5">{entry.branchName}</p>
-                                <div className="mt-2 flex items-center gap-2">
-                                  <span className="text-[8px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full uppercase font-black tracking-tighter">{entry.paraType}</span>
-                                  <span className="text-[9px] text-blue-400 font-bold">{toBengaliDigits(entry.auditYear)}</span>
+                        {pendingEntries.map((entry) => {
+                          const isCorrespondence = 'diaryNo' in entry || 'letterNo' in entry;
+                          const title = isCorrespondence 
+                            ? (entry.description || entry.subject || "নতুন চিঠিপত্র এন্ট্রি")
+                            : (entry.entityName || "নতুন মীমাংসা এন্ট্রি");
+                          const subtitle = isCorrespondence
+                            ? `ডায়েরি নং: ${toBengaliDigits(entry.diaryNo || "")} ${entry.diaryDate ? `(${entry.diaryDate})` : ''}`
+                            : `${entry.branchName || ''} ${entry.auditYear ? `(${toBengaliDigits(entry.auditYear)})` : ''}`;
+
+                          return (
+                            <div 
+                              key={entry.id} 
+                              onClick={() => {
+                                setActiveTab('register', isCorrespondence ? 'correspondence' : 'settlement');
+                                setShowPendingOnly(true);
+                                setShowNotifDropdown(false);
+                              }}
+                              className="px-5 py-3 hover:bg-slate-800/80 border-b border-slate-850 last:border-0 group transition-all cursor-pointer"
+                            >
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[12px] font-black text-slate-100 truncate group-hover:text-amber-400 transition-colors">{title}</p>
+                                  <p className="text-[10px] font-bold text-slate-500 truncate mt-0.5">{subtitle}</p>
+                                  <div className="mt-2 flex items-center gap-2">
+                                    <span className="text-[8px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full uppercase font-black tracking-tighter">
+                                      {entry.paraType || (isCorrespondence ? "চিঠিপত্র" : "মীমাংসা")}
+                                    </span>
+                                    <span className="text-[9px] text-amber-400 font-bold bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
+                                      অপেক্ষমাণ এন্ট্রি
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+                                  <button 
+                                    onClick={() => onApprove?.(entry.id)}
+                                    className="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm border border-emerald-500/20 cursor-pointer"
+                                    title="অনুমোদন দিন"
+                                  >
+                                    <Check size={14} strokeWidth={3} />
+                                  </button>
+                                  <button 
+                                    onClick={() => onReject?.(entry.id)}
+                                    className="p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm border border-red-500/20 cursor-pointer"
+                                    title="বাতিল করুন"
+                                  >
+                                    <XCircle size={14} />
+                                  </button>
                                 </div>
                               </div>
-                              <div className="flex flex-col gap-2">
-                                <button 
-                                  onClick={() => onApprove?.(entry.id)}
-                                  className="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm border border-emerald-500/20"
-                                  title="অনুমোদন দিন"
-                                >
-                                  <Check size={14} strokeWidth={3} />
-                                </button>
-                                <button 
-                                  onClick={() => onReject?.(entry.id)}
-                                  className="p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm border border-red-500/20"
-                                  title="বাতিল করুন"
-                                >
-                                  <XCircle size={14} />
-                                </button>
-                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -344,8 +366,14 @@ const Navbar: React.FC<NavbarProps> = ({
 
                   {pendingEntries.length > 0 && (
                     <button 
-                      onClick={() => { setActiveTab('archive'); setShowNotifDropdown(false); }}
-                      className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-amber-500 text-[10px] font-black uppercase tracking-widest transition-all border-t border-slate-700 flex items-center justify-center gap-2"
+                      onClick={() => { 
+                        const firstPending = pendingEntries[0];
+                        const isCorr = firstPending && ('diaryNo' in firstPending || 'letterNo' in firstPending);
+                        setActiveTab('register', isCorr ? 'correspondence' : 'settlement');
+                        setShowPendingOnly(true);
+                        setShowNotifDropdown(false); 
+                      }}
+                      className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-amber-500 text-[10px] font-black uppercase tracking-widest transition-all border-t border-slate-700 flex items-center justify-center gap-2 cursor-pointer"
                     >
                       বিস্তারিত তালিকা দেখুন <ArrowRight size={14} />
                     </button>

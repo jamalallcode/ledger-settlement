@@ -382,7 +382,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           if (filterStatus === "no-paras" && matchStatus)
             return matchDate && matchType && matchParaType;
 
-          if (!hasMeaningfulContent) return false;
+          if (!hasMeaningfulContent && !isAdminView) return false;
 
           return (
             matchDate &&

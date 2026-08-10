@@ -387,7 +387,8 @@ const App: React.FC = () => {
     // If clicking Document Library (archive) and there are pending items, go to moderation
     if (tab === 'archive') {
       setActiveTab('register');
-      setRegisterSubModule(subModule || 'correspondence');
+      const targetSubModule = subModule || (pendingEntries.length > 0 ? 'settlement' : 'correspondence');
+      setRegisterSubModule(targetSubModule);
       setShowPendingOnly(totalPendingCount > 0);
       setResetKey(0);
       return;
@@ -395,7 +396,8 @@ const App: React.FC = () => {
 
     if (tab === 'moderation') {
       setActiveTab('register');
-      setRegisterSubModule(subModule || 'correspondence');
+      const targetSubModule = subModule || (pendingEntries.length > 0 ? 'settlement' : 'correspondence');
+      setRegisterSubModule(targetSubModule);
       setShowPendingOnly(true);
       setResetKey(0);
       return;
