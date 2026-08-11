@@ -1930,20 +1930,20 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
                           {/* Col 2: অডিট প্রতিষ্ঠান ও মন্ত্রণালয় */}
                           <td className="px-3 py-3 text-left border-r border-slate-200">
-                            <div className="space-y-1 text-[11px] text-justify">
+                            <div className="space-y-1 text-[10.5px] leading-snug">
                               <div>
                                 <span className="font-black text-emerald-700">১. প্রতিষ্ঠানের নাম: </span>
-                                <span className="font-medium text-slate-800 leading-snug">{auditEntity}</span>
+                                <span className="font-bold text-slate-900">{auditEntity}</span>
                               </div>
                               {hasSeparateEntity && (
-                                <div className="pt-0.5">
+                                <div>
                                   <span className="font-black text-emerald-700">২. এনটিটি: </span>
-                                  <span className="font-medium text-slate-800">{entry.entityName}</span>
+                                  <span className="font-bold text-slate-900">{entry.entityName}</span>
                                 </div>
                               )}
-                              <div className="pt-0.5">
+                              <div>
                                 <span className="font-black text-emerald-700">{hasSeparateEntity ? '৩.' : '২.'} মন্ত্রণালয়: </span>
-                                <span className="font-medium text-slate-800">{ministryName}</span>
+                                <span className="font-bold text-slate-900">{ministryName}</span>
                               </div>
                             </div>
                           </td>
