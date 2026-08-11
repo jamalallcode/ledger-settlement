@@ -238,17 +238,17 @@ const getSettlementEntryStats = (entry: any) => {
 };
 
 const getSentParasCountForEntry = (entry: any, correspondenceEntries: any[] = []): number => {
-  if (entry.meetingSentParaCount !== undefined && entry.meetingSentParaCount !== null && entry.meetingSentParaCount !== '') {
+  if (entry.meetingSentParaCount !== undefined && entry.meetingSentParaCount !== null && String(entry.meetingSentParaCount).trim() !== '') {
     const val = parseInt(toEnglishDigits(String(entry.meetingSentParaCount)));
-    if (!isNaN(val) && val > 0) return val;
+    if (!isNaN(val) && val >= 0) return val;
   }
-  if (entry.sentParaCount !== undefined && entry.sentParaCount !== null && entry.sentParaCount !== '') {
+  if (entry.sentParaCount !== undefined && entry.sentParaCount !== null && String(entry.sentParaCount).trim() !== '') {
     const val = parseInt(toEnglishDigits(String(entry.sentParaCount)));
-    if (!isNaN(val) && val > 0) return val;
+    if (!isNaN(val) && val >= 0) return val;
   }
-  if (entry.totalParas !== undefined && entry.totalParas !== null && entry.totalParas !== '') {
+  if (entry.totalParas !== undefined && entry.totalParas !== null && String(entry.totalParas).trim() !== '') {
     const val = parseInt(toEnglishDigits(String(entry.totalParas)));
-    if (!isNaN(val) && val > 0) return val;
+    if (!isNaN(val) && val >= 0) return val;
   }
 
   const extractPureNo = (directNo?: string, combinedStr?: string) => {
@@ -278,10 +278,20 @@ const getSentParasCountForEntry = (entry: any, correspondenceEntries: any[] = []
   });
 
   if (matchedCorr) {
-    const corrParas = matchedCorr.totalParas || matchedCorr.sentParaCount || (matchedCorr.paragraphs ? matchedCorr.paragraphs.length : 0);
-    if (corrParas) {
-      const val = parseInt(toEnglishDigits(String(corrParas)));
-      if (!isNaN(val) && val > 0) return val;
+    if (matchedCorr.sentParaCount !== undefined && matchedCorr.sentParaCount !== null && String(matchedCorr.sentParaCount).trim() !== '') {
+      const val = parseInt(toEnglishDigits(String(matchedCorr.sentParaCount)));
+      if (!isNaN(val) && val >= 0) return val;
+    }
+    if (matchedCorr.meetingSentParaCount !== undefined && matchedCorr.meetingSentParaCount !== null && String(matchedCorr.meetingSentParaCount).trim() !== '') {
+      const val = parseInt(toEnglishDigits(String(matchedCorr.meetingSentParaCount)));
+      if (!isNaN(val) && val >= 0) return val;
+    }
+    if (matchedCorr.totalParas !== undefined && matchedCorr.totalParas !== null && String(matchedCorr.totalParas).trim() !== '') {
+      const val = parseInt(toEnglishDigits(String(matchedCorr.totalParas)));
+      if (!isNaN(val) && val >= 0) return val;
+    }
+    if (matchedCorr.paragraphs && matchedCorr.paragraphs.length > 0) {
+      return matchedCorr.paragraphs.length;
     }
   }
 
@@ -2286,7 +2296,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                               <div className="flex flex-wrap items-baseline gap-x-1">
                                 <span className="font-bold text-emerald-700">১. প্রেরিত অনুচ্ছেদ সংখ্যা: </span>
                                 <span className="font-bold text-slate-900">
-                                  {sentParasCount > 0 ? `${toBengaliDigits(sentParasCount)} টি` : '-'}
+                                  {sentParasCount >= 0 ? `${toBengaliDigits(sentParasCount)} টি` : '-'}
                                 </span>
                               </div>
                               <div className="flex flex-wrap items-baseline gap-x-1">
@@ -2373,7 +2383,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       <td className="px-3 py-3 text-left text-[11px] border-r border-slate-200 font-black text-emerald-900">
                         <div className="flex flex-wrap items-baseline gap-x-1">
                           <span className="font-bold text-emerald-800 dark:text-emerald-300">মোট প্রেরিত অনু: সংখ্যা: </span>
-                          <span className="font-black text-white">{totalSentParaCountSum > 0 ? `${toBengaliDigits(totalSentParaCountSum)} টি` : '-'}</span>
+                          <span className="font-black text-white">{totalSentParaCountSum >= 0 ? `${toBengaliDigits(totalSentParaCountSum)} টি` : '-'}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-center text-[11px] border-r border-slate-200 font-black">
