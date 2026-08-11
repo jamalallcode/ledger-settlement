@@ -1798,7 +1798,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     </thead>
                     <tbody className="divide-y divide-slate-200 bg-white">
                       {displayEntries.map((entry, index) => {
-                      const auditEntity = entry.entityName || entry.description || 'নির্ধারিত নয়';
+                      const auditEntity = entry.description || entry.entityName || 'নির্ধারিত নয়';
+                      const hasSeparateEntity = Boolean(entry.entityName && entry.description && entry.entityName !== entry.description);
                       const ministryName = getEntryMinistry(entry) || entry.ministryName || 'নির্ধারিত নয়';
 
                       const paraType = entry.paraType || 'এসএফআই';
@@ -1934,6 +1935,12 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                 <span className="font-black text-slate-700">১. অডিট প্রতিষ্ঠানের নাম: </span>
                                 <span className="font-bold text-slate-900 block leading-snug">{auditEntity}</span>
                               </div>
+                              {hasSeparateEntity && (
+                                <div className="pt-0.5">
+                                  <span className="font-black text-slate-700">১.ক. এনটিটি: </span>
+                                  <span className="font-bold text-slate-900">{entry.entityName}</span>
+                                </div>
+                              )}
                               <div className="pt-0.5">
                                 <span className="font-black text-slate-700">২. মন্ত্রণালয়ের নাম: </span>
                                 <span className="font-bold text-blue-800 block">{ministryName}</span>
