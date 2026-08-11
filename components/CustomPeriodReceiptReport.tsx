@@ -237,7 +237,7 @@ const getSettlementEntryStats = (entry: any) => {
   return { fullCount, partialCount, settledAmount, fullAmount, partialAmount, fullParas, partialParas, allParas };
 };
 
-const getSentParasCountForEntry = (entry: any, correspondenceEntries: any[] = []): number => {
+const findMatchedCorrForEntry = (entry: any, correspondenceEntries: any[] = []): any => {
   const extractPureNo = (directNo?: string, combinedStr?: string) => {
     if (directNo && String(directNo).trim()) {
       return toEnglishDigits(String(directNo)).replace(/\D/g, '');
@@ -282,7 +282,7 @@ const getSentParasCountForEntry = (entry: any, correspondenceEntries: any[] = []
   const sLetter = extractPureNo(entry.letterNo, entry.letterNoDate);
   const sDate = extractDateStr(entry.letterNoDate || entry.letterDate);
 
-  const matchedCorr = (correspondenceEntries || []).find((c: any) => {
+  return (correspondenceEntries || []).find((c: any) => {
     // 1. Explicit ID match
     if (c.id && (c.id === entry.correspondenceId || c.id === entry.letterId)) return true;
 
@@ -327,6 +327,10 @@ const getSentParasCountForEntry = (entry: any, correspondenceEntries: any[] = []
 
     return Boolean(issueMatch || diaryMatch || letterMatch);
   });
+};
+
+const getSentParasCountForEntry = (entry: any, correspondenceEntries: any[] = []): number => {
+  const matchedCorr = findMatchedCorrForEntry(entry, correspondenceEntries);
 
   if (matchedCorr) {
     if (matchedCorr.sentParaCount !== undefined && matchedCorr.sentParaCount !== null && String(matchedCorr.sentParaCount).trim() !== '') {
@@ -2301,8 +2305,13 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       const rawAllParas = allParas.length > 0 ? allParas : [...fullParas, ...partialParas];
                       const allParasText = formatParasText(rawAllParas);
 
-                      // Derive sent paragraph count (from settlement entry or matched correspondence/letter entry)
+                      // Derive sent paragraph count and letter type (from settlement entry or matched correspondence/letter entry)
+                      const matchedCorr = findMatchedCorrForEntry(entry, entries);
                       const sentParasCount = getSentParasCountForEntry(entry, entries);
+                      const rawType = entry.letterType || entry.meetingType || matchedCorr?.letterType || matchedCorr?.meetingType;
+                      const letterTypeDisplay = rawType 
+                        ? (getCleanLetterTypeDisplay(rawType) || (entry.isMeeting ? renderMeetingType(rawType) : rawType)) 
+                        : (entry.isMeeting ? (entry.meetingType ? renderMeetingType(entry.meetingType) : 'দ্বিপক্ষীয় সভা') : 'বিএসআর');
 
                       return (
                         <tr key={entry.id || index} className="hover:bg-blue-50/20 transition-colors group">
@@ -2355,13 +2364,19 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                   {entry.paraType}
                                 </span>
                               </div>
+                              <div className="flex flex-wrap items-baseline gap-x-1">
+                                <span className="font-bold text-emerald-700">৩. পত্রের ধরন: </span>
+                                <span className="font-bold text-slate-900">
+                                  {letterTypeDisplay}
+                                </span>
+                              </div>
                               {fullCount > 0 && partialCount > 0 ? (
                                 <div className="space-y-0.5 pt-0.5 text-[11px]">
                                   <div 
                                     className="cursor-help hover:text-blue-700 transition-colors"
                                     title={fullParasText ? `পূর্ণাঙ্গ নিষ্পন্ন অনুচ্ছেদ নং: ${fullParasText}` : `পূর্ণাঙ্গ অনুচ্ছেদ: ${toBengaliDigits(fullCount)} টি`}
                                   >
-                                    <span className="font-bold text-emerald-700">৩. </span>
+                                    <span className="font-bold text-emerald-700">৪. </span>
                                     <span className="font-bold text-slate-900">
                                       পূর্ণাঙ্গ = {toBengaliDigits(fullCount)} টি ({toBengaliDigits(fullAmount || 0)})
                                     </span>
@@ -2370,7 +2385,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                     className="cursor-help hover:text-amber-900 transition-colors"
                                     title={partialParasText ? `আংশিক নিষ্পন্ন অনুচ্ছেদ নং: ${partialParasText}` : `আংশিক অনুচ্ছেদ: ${toBengaliDigits(partialCount)} টি`}
                                   >
-                                    <span className="font-bold text-emerald-700">৪. </span>
+                                    <span className="font-bold text-emerald-700">৫. </span>
                                     <span className="font-bold text-amber-800">
                                       আংশিক = {toBengaliDigits(partialCount)} টি ({toBengaliDigits(partialAmount || 0)})
                                     </span>
@@ -2381,7 +2396,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                   className="cursor-help hover:text-blue-700 transition-colors"
                                   title={allParasText ? `সকল নিষ্পন্ন অনুচ্ছেদ নং: ${allParasText}` : `নিষ্পন্ন অনুচ্ছেদ: ${toBengaliDigits(rowSettledCount)} টি`}
                                 >
-                                  <span className="font-bold text-emerald-700">৩. </span>
+                                  <span className="font-bold text-emerald-700">৪. </span>
                                   <span className="font-bold text-slate-900">
                                     {fullCount > 0 ? (
                                       <>পূর্ণাঙ্গ = {toBengaliDigits(fullCount)} টি ({toBengaliDigits(fullAmount || settledAmount)})</>
