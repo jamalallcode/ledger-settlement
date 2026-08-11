@@ -1766,10 +1766,10 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                 <div className="table-container overflow-x-auto rounded-2xl shadow-inner border border-slate-200">
                   <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                     <colgroup>
-                      <col className="w-[4%]" />
-                      <col className="w-[17%]" />
+                      <col className="w-[calc(4%+5px)]" style={{ width: 'calc(4% + 5px)' }} />
+                      <col className="w-[calc(17%+15px)]" style={{ width: 'calc(17% + 15px)' }} />
                       <col className="w-[21%]" />
-                      <col className="w-[15%]" />
+                      <col className="w-[calc(15%-20px)]" style={{ width: 'calc(15% - 20px)' }} />
                       <col className="w-[calc(13%+5px)]" style={{ width: 'calc(13% + 5px)' }} />
                       <col className="w-[calc(16%-5px)]" style={{ width: 'calc(16% - 5px)' }} />
                       <col className="w-[14%]" />
@@ -1930,7 +1930,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
                           {/* Col 2: অডিট প্রতিষ্ঠান ও মন্ত্রণালয় */}
                           <td className="px-3 py-3 text-left border-r border-slate-200">
-                            <div className="space-y-1 text-[10.5px] leading-snug">
+                            <div className="space-y-1 text-[10.5px] leading-snug text-justify">
                               <div>
                                 <span className="font-black text-emerald-700">১. প্রতিষ্ঠানের নাম: </span>
                                 <span className="font-bold text-slate-900">{auditEntity}</span>
@@ -1952,44 +1952,44 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           <td className="px-3 py-3 text-left border-r border-slate-200">
                             <div className="space-y-1 text-[10.5px] leading-snug">
                               <div>
-                                <span className="font-black text-slate-700">১. শাখার নাম: </span>
+                                <span className="font-black text-emerald-700">১. শাখার নাম: </span>
                                 <span className="font-bold text-emerald-800 bg-emerald-50 px-1 py-0.5 rounded text-[9.5px]">{paraType}</span>
                               </div>
                               <div>
-                                <span className="font-black text-slate-700">২. পত্রের ধরন: </span>
+                                <span className="font-black text-emerald-700">২. পত্রের ধরন: </span>
                                 <span className="font-bold text-slate-900">{letterTypeDisplay}</span>
                               </div>
                               <div>
-                                <span className="font-black text-slate-700">৩. ডায়েরী নম্বর ও তারিখ: </span>
+                                <span className="font-black text-emerald-700">৩. ডায়েরী নম্বর ও তারিখ: </span>
                                 <span className="font-bold text-slate-900">{diaryNo}</span>
                                 {diaryDate !== '-' && <span className="text-slate-800 font-bold"> ({formatDateBN(diaryDate)})</span>}
                               </div>
                               <div>
-                                <span className="font-black text-slate-700">৪. পত্র নম্বর ও তারিখ: </span>
+                                <span className="font-black text-emerald-700">৪. পত্র নম্বর ও তারিখ: </span>
                                 <span className="font-bold text-slate-900">{letterNo}</span>
                                 {letterDate !== '-' && <span className="text-slate-800 font-bold"> ({formatDateBN(letterDate)})</span>}
                               </div>
                               {auditYear !== '-' && (
                                 <div>
-                                  <span className="font-black text-slate-700">৫. নিরীক্ষা বছর: </span>
+                                  <span className="font-black text-emerald-700">৫. নিরীক্ষা বছর: </span>
                                   <span className="font-bold text-slate-900">{toBengaliDigits(auditYear)}</span>
                                 </div>
                               )}
                               {receiptDate !== '-' && (
                                 <div>
-                                  <span className="font-black text-slate-700">৬. শাখায় প্রাপ্তির তারিখ: </span>
+                                  <span className="font-black text-emerald-700">৬. শাখায় প্রাপ্তির তারিখ: </span>
                                   <span className="font-bold text-slate-800">{formatDateBN(receiptDate)}</span>
                                 </div>
                               )}
                               {presentationDate !== '-' && (
                                 <div>
-                                  <span className="font-black text-slate-700">৭. গ্রহণের তারিখ: </span>
+                                  <span className="font-black text-emerald-700">৭. গ্রহণের তারিখ: </span>
                                   <span className="font-bold text-slate-800">{formatDateBN(presentationDate)}</span>
                                 </div>
                               )}
                               {archiveNo !== '-' && (
                                 <div>
-                                  <span className="font-black text-slate-700">৮. আর্কাইভ নং: </span>
+                                  <span className="font-black text-emerald-700">৮. আর্কাইভ নং: </span>
                                   <span className="font-bold text-purple-700">{toBengaliDigits(archiveNo)}</span>
                                 </div>
                               )}
