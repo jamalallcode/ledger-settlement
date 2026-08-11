@@ -290,14 +290,8 @@ const getSentParasCountForEntry = (entry: any, correspondenceEntries: any[] = []
       const val = parseInt(toEnglishDigits(String(matchedCorr.totalParas)));
       if (!isNaN(val) && val >= 0) return val;
     }
-    if (matchedCorr.paragraphs && matchedCorr.paragraphs.length > 0) {
-      return matchedCorr.paragraphs.length;
-    }
   }
 
-  if (entry.paragraphs && entry.paragraphs.length > 0) {
-    return entry.paragraphs.length;
-  }
   return 0;
 };
 
