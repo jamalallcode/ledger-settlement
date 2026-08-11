@@ -237,6 +237,60 @@ const getSettlementEntryStats = (entry: any) => {
   return { fullCount, partialCount, settledAmount, fullAmount, partialAmount, fullParas, partialParas, allParas };
 };
 
+const getSentParasCountForEntry = (entry: any, correspondenceEntries: any[] = []): number => {
+  if (entry.meetingSentParaCount !== undefined && entry.meetingSentParaCount !== null && entry.meetingSentParaCount !== '') {
+    const val = parseInt(toEnglishDigits(String(entry.meetingSentParaCount)));
+    if (!isNaN(val) && val > 0) return val;
+  }
+  if (entry.sentParaCount !== undefined && entry.sentParaCount !== null && entry.sentParaCount !== '') {
+    const val = parseInt(toEnglishDigits(String(entry.sentParaCount)));
+    if (!isNaN(val) && val > 0) return val;
+  }
+  if (entry.totalParas !== undefined && entry.totalParas !== null && entry.totalParas !== '') {
+    const val = parseInt(toEnglishDigits(String(entry.totalParas)));
+    if (!isNaN(val) && val > 0) return val;
+  }
+
+  const extractPureNo = (directNo?: string, combinedStr?: string) => {
+    if (directNo && String(directNo).trim()) {
+      return toEnglishDigits(String(directNo)).replace(/\D/g, '');
+    }
+    if (!combinedStr || !combinedStr.trim()) return '';
+    const str = String(combinedStr);
+    const firstPart = str.split(/[\(,\/–—]|\bতারিখ\b|তারিখ/i)[0] || str;
+    return toEnglishDigits(firstPart).replace(/\D/g, '');
+  };
+
+  const sIssue = extractPureNo(entry.issueNo || entry.issueLetterNo, entry.issueLetterNoDate);
+  const sDiary = extractPureNo(entry.diaryNo, entry.workpaperNoDate);
+  const sLetter = extractPureNo(entry.letterNo, entry.letterNoDate);
+
+  const matchedCorr = (correspondenceEntries || []).find((c: any) => {
+    if (c.id && (c.id === entry.correspondenceId || c.id === entry.letterId)) return true;
+    const cIssue = extractPureNo(c.issueLetterNo, c.issueLetterNoDate);
+    const cDiary = extractPureNo(c.diaryNo, c.workpaperNoDate);
+    const cLetter = extractPureNo(c.letterNo, c.letterNoDate);
+
+    if (sIssue && cIssue && sIssue === cIssue) return true;
+    if (sDiary && cDiary && sDiary === cDiary) return true;
+    if (sLetter && cLetter && sLetter === cLetter) return true;
+    return false;
+  });
+
+  if (matchedCorr) {
+    const corrParas = matchedCorr.totalParas || matchedCorr.sentParaCount || (matchedCorr.paragraphs ? matchedCorr.paragraphs.length : 0);
+    if (corrParas) {
+      const val = parseInt(toEnglishDigits(String(corrParas)));
+      if (!isNaN(val) && val > 0) return val;
+    }
+  }
+
+  if (entry.paragraphs && entry.paragraphs.length > 0) {
+    return entry.paragraphs.length;
+  }
+  return 0;
+};
+
 const getEntryMinistry = (ent: any): string => {
   if (ent.ministryName) {
     return ent.ministryName;
@@ -1070,10 +1124,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     });
   }, [settlementEntries, startDate, endDate, filterBranch, filterMinistry, filterAuditor, searchTerm, keywordSearch, sortOrder]);
 
-  const { totalSettledCountSum, totalSettledAmountSum, totalUnsettledAmountSum } = useMemo(() => {
+  const { totalSettledCountSum, totalSettledAmountSum, totalUnsettledAmountSum, totalSentParaCountSum } = useMemo(() => {
     let countSum = 0;
     let amountSum = 0;
     let unsettledSum = 0;
+    let sentParaSum = 0;
     filteredSettlementEntries.forEach(entry => {
       const { fullCount, settledAmount } = getSettlementEntryStats(entry);
       countSum += fullCount;
@@ -1081,9 +1136,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       const totalInvolved = entry.involvedAmount || entry.totalAmount || (entry.paragraphs && entry.paragraphs.length > 0 ? entry.paragraphs.reduce((sum: number, p: any) => sum + (p.involvedAmount || p.totalAmount || 0), 0) : 0);
       const rowUnsettled = Math.max(0, totalInvolved - settledAmount);
       unsettledSum += rowUnsettled;
+      sentParaSum += getSentParasCountForEntry(entry, entries);
     });
-    return { totalSettledCountSum: countSum, totalSettledAmountSum: amountSum, totalUnsettledAmountSum: unsettledSum };
-  }, [filteredSettlementEntries]);
+    return { 
+      totalSettledCountSum: countSum, 
+      totalSettledAmountSum: amountSum, 
+      totalUnsettledAmountSum: unsettledSum,
+      totalSentParaCountSum: sentParaSum
+    };
+  }, [filteredSettlementEntries, entries]);
 
   // Print function
   const handlePrint = () => {
@@ -1179,6 +1240,10 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
         <table style="width: 50%; margin: 10px auto; border: none;">
           <tr style="background-color: #e2e8f0;">
             <th colSpan="2" style="padding: 8px; text-align: center; color: #000; background: #e2e8f0 !important; border: none;">মীমাংসার সারসংক্ষেপ</th>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: none; font-weight: bold;">মোট প্রেরিত অনু: সংখ্যা</td>
+            <td style="padding: 8px; text-align: center; font-weight: bold; border: none; color: #1e3a8a;">${toBengaliDigits(totalSentParaCountSum)} টি</td>
           </tr>
           <tr>
             <td style="padding: 8px; border: none; font-weight: bold;">মোট নিষ্পত্তি হওয়া অনুচ্ছেদের সংখ্যা</td>
@@ -2177,59 +2242,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                         : ([fullParasText, partialParasText].filter(Boolean).join(', '));
 
                       // Derive sent paragraph count (from settlement entry or matched correspondence/letter entry)
-                      const sentParasCount = (() => {
-                        if (entry.meetingSentParaCount !== undefined && entry.meetingSentParaCount !== null && entry.meetingSentParaCount !== '') {
-                          const val = parseInt(toEnglishDigits(String(entry.meetingSentParaCount)));
-                          if (!isNaN(val) && val > 0) return val;
-                        }
-                        if (entry.sentParaCount !== undefined && entry.sentParaCount !== null && entry.sentParaCount !== '') {
-                          const val = parseInt(toEnglishDigits(String(entry.sentParaCount)));
-                          if (!isNaN(val) && val > 0) return val;
-                        }
-                        if (entry.totalParas !== undefined && entry.totalParas !== null && entry.totalParas !== '') {
-                          const val = parseInt(toEnglishDigits(String(entry.totalParas)));
-                          if (!isNaN(val) && val > 0) return val;
-                        }
-
-                        const extractPureNo = (directNo?: string, combinedStr?: string) => {
-                          if (directNo && String(directNo).trim()) {
-                            return toEnglishDigits(String(directNo)).replace(/\D/g, '');
-                          }
-                          if (!combinedStr || !combinedStr.trim()) return '';
-                          const str = String(combinedStr);
-                          const firstPart = str.split(/[\(,\/–—]|\bতারিখ\b|তারিখ/i)[0] || str;
-                          return toEnglishDigits(firstPart).replace(/\D/g, '');
-                        };
-
-                        const sIssue = extractPureNo(entry.issueNo || entry.issueLetterNo, entry.issueLetterNoDate);
-                        const sDiary = extractPureNo(entry.diaryNo, entry.workpaperNoDate);
-                        const sLetter = extractPureNo(entry.letterNo, entry.letterNoDate);
-
-                        const matchedCorr = (entries || []).find((c: any) => {
-                          if (c.id && (c.id === entry.correspondenceId || c.id === entry.letterId)) return true;
-                          const cIssue = extractPureNo(c.issueLetterNo, c.issueLetterNoDate);
-                          const cDiary = extractPureNo(c.diaryNo, c.workpaperNoDate);
-                          const cLetter = extractPureNo(c.letterNo, c.letterNoDate);
-
-                          if (sIssue && cIssue && sIssue === cIssue) return true;
-                          if (sDiary && cDiary && sDiary === cDiary) return true;
-                          if (sLetter && cLetter && sLetter === cLetter) return true;
-                          return false;
-                        });
-
-                        if (matchedCorr) {
-                          const corrParas = matchedCorr.totalParas || matchedCorr.sentParaCount || (matchedCorr.paragraphs ? matchedCorr.paragraphs.length : 0);
-                          if (corrParas) {
-                            const val = parseInt(toEnglishDigits(String(corrParas)));
-                            if (!isNaN(val) && val > 0) return val;
-                          }
-                        }
-
-                        if (entry.paragraphs && entry.paragraphs.length > 0) {
-                          return entry.paragraphs.length;
-                        }
-                        return 0;
-                      })();
+                      const sentParasCount = getSentParasCountForEntry(entry, entries);
 
                       return (
                         <tr key={entry.id || index} className="hover:bg-blue-50/20 transition-colors group">
@@ -2256,15 +2269,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                             <div className="flex flex-col space-y-1.5 text-[11px]">
                               <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
                                 <span className="font-bold text-emerald-700 shrink-0">১. পত্র নং ও তারিখ:</span>
-                                <span className="font-bold text-slate-900 break-words">{cleanAndFormat(entry.letterNoDate, "").replace(/^:\s*/, "")}</span>
+                                <span className="font-black text-slate-900 break-words">{cleanAndFormat(entry.letterNoDate, "").replace(/^:\s*/, "")}</span>
                               </div>
                               <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
                                 <span className="font-bold text-emerald-700 shrink-0">২. ডায়েরি নং ও তারিখ:</span>
-                                <span className="font-semibold text-slate-800 break-words">{cleanAndFormat(entry.workpaperNoDate, "").replace(/^:\s*/, "")}</span>
+                                <span className="font-black text-slate-900 break-words">{cleanAndFormat(entry.workpaperNoDate, "").replace(/^:\s*/, "")}</span>
                               </div>
                               <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
                                 <span className="font-bold text-emerald-700 shrink-0">৩. জারিপত্র নং ও তারিখ:</span>
-                                <span className="font-semibold text-slate-800 break-words">{cleanAndFormat(entry.issueLetterNoDate, "").replace(/^:\s*/, "")}</span>
+                                <span className="font-black text-slate-900 break-words">{cleanAndFormat(entry.issueLetterNoDate, "").replace(/^:\s*/, "")}</span>
                               </div>
                             </div>
                           </td>
@@ -2356,7 +2369,13 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                   </tbody>
                   <tfoot>
                     <tr className="bg-slate-100 font-black text-slate-900 border-t-2 border-slate-300">
-                      <td colSpan={4} className="px-4 py-3 text-center text-xs border-r border-slate-200 font-black">সর্বমোট:</td>
+                      <td colSpan={3} className="px-4 py-3 text-center text-xs border-r border-slate-200 font-black">সর্বমোট:</td>
+                      <td className="px-3 py-3 text-left text-[11px] border-r border-slate-200 font-black text-emerald-900">
+                        <div className="flex flex-wrap items-baseline gap-x-1">
+                          <span className="font-bold text-emerald-800">মোট প্রেরিত অনু: সংখ্যা: </span>
+                          <span className="font-black text-slate-900">{totalSentParaCountSum > 0 ? `${toBengaliDigits(totalSentParaCountSum)} টি` : '-'}</span>
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-center text-[11px] border-r border-slate-200 font-black">
                         {toBengaliDigits(totalSettledCountSum)} টি
                       </td>
