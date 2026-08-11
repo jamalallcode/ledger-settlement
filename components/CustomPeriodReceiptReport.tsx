@@ -1927,7 +1927,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
                           {/* Col 2: অডিট প্রতিষ্ঠান ও মন্ত্রণালয় */}
                           <td className="px-3 py-3 text-left border-r border-slate-200">
-                            <div className="space-y-1 text-[11px] leading-snug text-justify">
+                            <div className="space-y-1 text-[10.5px] leading-snug text-justify">
                               <div>
                                 <span className="font-black text-emerald-700">১. প্রতিষ্ঠানের নাম: </span>
                                 <span className="font-bold text-slate-900">{auditEntity}</span>
@@ -1947,10 +1947,10 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
                           {/* Col 3: পত্র ও ডায়েরির বিবরণ */}
                           <td className="px-3 py-3 text-left border-r border-slate-200">
-                            <div className="space-y-1 text-[11px] leading-snug">
+                            <div className="space-y-1 text-[10.5px] leading-snug">
                               <div>
                                 <span className="font-black text-emerald-700">১. শাখার নাম: </span>
-                                <span className="font-bold text-emerald-800 bg-emerald-50 px-1 py-0.5 rounded text-[11px]">{paraType}</span>
+                                <span className="font-bold text-emerald-800 bg-emerald-50 px-1 py-0.5 rounded text-[9.5px]">{paraType}</span>
                               </div>
                               <div>
                                 <span className="font-black text-emerald-700">২. পত্রের ধরন: </span>
@@ -1987,12 +1987,12 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                               <div>
                                 <span className="font-black text-emerald-700">৮. বর্তমান অবস্থান: </span>
                                 {hasIssueLetter ? (
-                                  <span className="font-bold text-emerald-900 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200 text-[11px] inline-block">
+                                  <span className="font-bold text-emerald-900 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200 text-[10px] inline-block">
                                     {issueLetterNo && `জারিপত্র নং: ${issueLetterNo}`}
                                     {issueLetterDate && ` (${formatDateBN(issueLetterDate)})`}
                                   </span>
                                 ) : (
-                                  <span className="font-bold text-amber-950 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 text-[11px] inline-block">
+                                  <span className="font-bold text-amber-950 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 text-[10.5px] inline-block">
                                     <span className="font-black">{holderName}</span>
                                   </span>
                                 )}
@@ -2010,30 +2010,30 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           <td className="px-3 py-3 text-left border-r border-slate-200">
                             <div className="space-y-1.5 text-[11px]">
                               <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
-                                <span className="font-black text-slate-700 text-[11px]">১. প্রেরিত মোট অনুচ্ছেদ:</span>
-                                <span className="font-black text-slate-900 text-[11px] break-all">{toBengaliDigits(totalParas)} টি</span>
+                                <span className="font-black text-slate-700 text-[10px]">১. প্রেরিত মোট অনুচ্ছেদ:</span>
+                                <span className="font-black text-slate-900 text-xs break-all">{toBengaliDigits(totalParas)} টি</span>
                               </div>
                               <div className="flex flex-wrap items-baseline gap-x-1.5 break-words pt-0.5">
-                                <span className="font-black text-slate-700 text-[11px]">২. মোট জড়িত টাকা:</span>
-                                <span className="font-black text-blue-900 text-[11px] break-all">{toBengaliDigits(totalAmount)}</span>
+                                <span className="font-black text-slate-700 text-[10px]">২. মোট জড়িত টাকা:</span>
+                                <span className="font-black text-blue-900 text-xs break-all">{toBengaliDigits(totalAmount)}</span>
                               </div>
                             </div>
                           </td>
 
-                          {/* Col 5: নিষ্পত্তিকৃত তথ্য */}
+                          {/* Col 6: নিষ্পত্তিকৃত তথ্য */}
                           <td className="px-3 py-3 text-left border-r border-slate-200">
                             <div className="space-y-1 text-[11px]">
                               <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
-                                <span className="font-black text-slate-700 text-[11px]">১. মোট অনুচ্ছেদ:</span>
-                                <span className="font-black text-emerald-700 text-[11px] break-all">{toBengaliDigits(settledCount)} টি</span>
+                                <span className="font-black text-slate-700 text-[10px]">১. মোট অনুচ্ছেদ:</span>
+                                <span className="font-black text-emerald-700 text-xs break-all">{toBengaliDigits(settledCount)} টি</span>
                               </div>
                               <div className="flex flex-wrap items-baseline gap-x-1.5 break-words pt-0.5">
-                                <span className="font-black text-slate-700 text-[11px]">২. মোট টাকা:</span>
-                                <span className="font-black text-emerald-900 text-[11px] break-all">{toBengaliDigits(settledAmount)}</span>
+                                <span className="font-black text-slate-700 text-[10px]">২. মোট টাকা:</span>
+                                <span className="font-black text-emerald-900 text-xs break-all">{toBengaliDigits(settledAmount)}</span>
                               </div>
                               {settledParas.length > 0 && (
                                 <div className="pt-1.5 border-t border-slate-100 flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                                  <span className="font-black text-slate-700 text-[11px] shrink-0">
+                                  <span className="font-black text-slate-700 text-[10px] shrink-0">
                                     ৩. অনুচ্ছেদ নং:
                                   </span>
                                   {(() => {
@@ -2046,7 +2046,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                     }).join(', ');
 
                                     return (
-                                      <span className="inline-flex items-center gap-1 text-[11px]">
+                                      <span className="inline-flex items-center gap-1 text-[10.5px]">
                                         <span className="font-bold text-emerald-900 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 inline">
                                           {paraNumbersStr}
                                           {hasMore && !isExpanded && '...'}
@@ -2058,7 +2058,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                               e.stopPropagation();
                                               toggleExpandParas(entryKey);
                                             }}
-                                            className="ml-1 inline-flex items-center text-[11px] font-black text-blue-600 hover:text-blue-800 underline cursor-pointer no-print whitespace-nowrap"
+                                            className="ml-1 inline-flex items-center text-[10px] font-black text-blue-600 hover:text-blue-800 underline cursor-pointer no-print whitespace-nowrap"
                                           >
                                             {isExpanded ? 'কম দেখুন' : 'আরো দেখুন'}
                                           </button>
@@ -2071,20 +2071,20 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                             </div>
                           </td>
 
-                          {/* Col 6: অনিষ্পন্ন তথ্য ও মন্তব্য (এবং হোভারে এডিট বাটন) */}
+                          {/* Col 7: অনিষ্পন্ন তথ্য ও মন্তব্য (এবং হোভারে এডিট বাটন) */}
                           <td className="px-3 py-3 text-left relative">
                             <div className="space-y-1.5 text-[11px] pr-2 pb-7">
                               <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
-                                <span className="font-black text-slate-700 text-[11px]">১. মোট অনুচ্ছেদ:</span>
-                                <span className="font-black text-rose-700 text-[11px] break-all">{toBengaliDigits(unsettledCount)} টি</span>
+                                <span className="font-black text-slate-700 text-[10px]">১. মোট অনুচ্ছেদ:</span>
+                                <span className="font-black text-rose-700 text-xs break-all">{toBengaliDigits(unsettledCount)} টি</span>
                               </div>
                               <div className="flex flex-wrap items-baseline gap-x-1.5 break-words pt-0.5">
-                                <span className="font-black text-slate-700 text-[11px]">২. মোট টাকা:</span>
-                                <span className="font-black text-rose-800 text-[11px] break-all">{toBengaliDigits(unsettledAmount)}</span>
+                                <span className="font-black text-slate-700 text-[10px]">২. মোট টাকা:</span>
+                                <span className="font-black text-rose-800 text-xs break-all">{toBengaliDigits(unsettledAmount)}</span>
                               </div>
                               <div>
-                                <span className="font-black text-slate-700 block text-[11px] mb-0.5">৩. মন্তব্য:</span>
-                                <p className="text-[11px] font-medium text-slate-800 leading-tight">
+                                <span className="font-black text-slate-700 block text-[10px] mb-0.5">৩. মন্তব্য:</span>
+                                <p className="text-[10.5px] font-medium text-slate-800 leading-tight">
                                   {remarks}
                                 </p>
                               </div>
@@ -2184,53 +2184,53 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           <td className="px-2 py-3 text-center text-[11px] font-black text-slate-800 border-r border-slate-200 whitespace-nowrap">
                             {toBengaliDigits(index + 1)}
                           </td>
-                          <td className="px-3 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
+                          <td className="px-3 py-3 text-left text-[11px] font-medium text-slate-800 border-r border-slate-200">
                             <div className="flex flex-col space-y-1 text-[11px]">
                               <div>
-                                <span className="font-black text-emerald-700">১. </span>
-                                <span className="font-black text-slate-900">{entry.ministryName}</span>
+                                <span className="font-bold text-emerald-700">১. মন্ত্রণালয়: </span>
+                                <span className="font-bold text-slate-900">{entry.ministryName || '-'}</span>
                               </div>
                               <div>
-                                <span className="font-black text-emerald-700">২. </span>
-                                <span className="text-[11px] text-slate-800 font-medium">{entry.entityName} ({entry.branchName})</span>
+                                <span className="font-bold text-emerald-700">২. প্রতিষ্ঠান: </span>
+                                <span className="font-semibold text-slate-800">{entry.entityName ? `${entry.entityName}${entry.branchName ? ` (${entry.branchName})` : ''}` : '-'}</span>
                               </div>
                             </div>
                           </td>
-                          <td className="px-3 py-3 text-left text-[11px] font-bold text-slate-800 border-r border-slate-200">
+                          <td className="px-3 py-3 text-left text-[11px] font-medium text-slate-800 border-r border-slate-200">
                             <div className="flex flex-col space-y-1 text-[11px]">
                               <div>
-                                <span className="font-black text-emerald-700">১. </span>
-                                <span className="font-bold text-slate-900">{cleanAndFormat(entry.letterNoDate, "পত্র নং ও তারিখ")}</span>
+                                <span className="font-bold text-emerald-700">১. পত্র নং ও তারিখ: </span>
+                                <span className="font-bold text-slate-900">{cleanAndFormat(entry.letterNoDate, "").replace(/^:\s*/, "")}</span>
                               </div>
                               <div>
-                                <span className="font-black text-emerald-700">২. </span>
-                                <span className="text-[11px] text-slate-800 font-bold">{cleanAndFormat(entry.workpaperNoDate, "ডায়েরি নং ও তারিখ")}</span>
+                                <span className="font-bold text-emerald-700">২. ডায়েরি নং ও তারিখ: </span>
+                                <span className="font-semibold text-slate-800">{cleanAndFormat(entry.workpaperNoDate, "").replace(/^:\s*/, "")}</span>
                               </div>
                               <div>
-                                <span className="font-black text-emerald-700">৩. </span>
-                                <span className="text-[11px] text-slate-800 font-bold">{cleanAndFormat(entry.issueLetterNoDate, "জারিপত্র নং ও তারিখ")}</span>
+                                <span className="font-bold text-emerald-700">৩. জারিপত্র নং ও তারিখ: </span>
+                                <span className="font-semibold text-slate-800">{cleanAndFormat(entry.issueLetterNoDate, "").replace(/^:\s*/, "")}</span>
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-center text-[11px] font-black text-slate-900 border-r border-slate-200">
+                          <td className="px-4 py-3 text-center text-[11px] font-bold text-slate-900 border-r border-slate-200">
                             {toBengaliDigits(entry.auditYear)}
                           </td>
-                          <td className="px-3 py-3 text-left text-[11px] font-bold text-slate-700 border-r border-slate-200">
-                            <div className="space-y-1">
+                          <td className="px-3 py-3 text-left text-[11px] font-medium text-slate-700 border-r border-slate-200">
+                            <div className="space-y-1 text-[11px]">
                               <div>
-                                <span className="font-black text-slate-700 text-[10px]">১. </span>
-                                <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-black text-slate-600">
+                                <span className="font-bold text-slate-700">১. </span>
+                                <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-[11px] font-bold text-slate-600">
                                   {entry.paraType}
                                 </span>
                               </div>
                               {fullCount > 0 && partialCount > 0 ? (
-                                <div className="space-y-0.5 pt-0.5">
+                                <div className="space-y-0.5 pt-0.5 text-[11px]">
                                   <div 
                                     className="cursor-help hover:text-blue-700 transition-colors"
                                     title={fullParasText ? `পূর্ণাঙ্গ নিষ্পন্ন অনুচ্ছেদ নং: ${fullParasText}` : `পূর্ণাঙ্গ অনুচ্ছেদ: ${toBengaliDigits(fullCount)} টি`}
                                   >
-                                    <span className="font-black text-slate-700 text-[10px]">২. </span>
-                                    <span className="font-black text-slate-900 text-[10.5px]">
+                                    <span className="font-bold text-slate-700">২. </span>
+                                    <span className="font-bold text-slate-900">
                                       পূর্ণাঙ্গ = {toBengaliDigits(fullCount)} টি ({toBengaliDigits(fullAmount || 0)})
                                     </span>
                                   </div>
@@ -2238,8 +2238,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                     className="cursor-help hover:text-amber-900 transition-colors"
                                     title={partialParasText ? `আংশিক নিষ্পন্ন অনুচ্ছেদ নং: ${partialParasText}` : `আংশিক অনুচ্ছেদ: ${toBengaliDigits(partialCount)} টি`}
                                   >
-                                    <span className="font-black text-slate-700 text-[10px]">৩. </span>
-                                    <span className="font-black text-amber-800 text-[10.5px]">
+                                    <span className="font-bold text-slate-700">৩. </span>
+                                    <span className="font-bold text-amber-800">
                                       আংশিক = {toBengaliDigits(partialCount)} টি ({toBengaliDigits(partialAmount || 0)})
                                     </span>
                                   </div>
@@ -2249,8 +2249,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                   className="cursor-help hover:text-blue-700 transition-colors"
                                   title={allParasText ? `সকল নিষ্পন্ন অনুচ্ছেদ নং: ${allParasText}` : `নিষ্পন্ন অনুচ্ছেদ: ${toBengaliDigits(rowSettledCount)} টি`}
                                 >
-                                  <span className="font-black text-slate-700 text-[10px]">২. </span>
-                                  <span className="font-black text-slate-900 text-[10.5px]">
+                                  <span className="font-bold text-slate-700">২. </span>
+                                  <span className="font-bold text-slate-900">
                                     {fullCount > 0 ? (
                                       <>পূর্ণাঙ্গ = {toBengaliDigits(fullCount)} টি ({toBengaliDigits(fullAmount || settledAmount)})</>
                                     ) : partialCount > 0 ? (
@@ -2264,15 +2264,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                             </div>
                           </td>
                           <td 
-                            className="px-4 py-3 text-center text-[11px] font-black text-slate-700 border-r border-slate-200 cursor-help hover:bg-blue-100/50 hover:text-blue-700 transition-colors"
+                            className="px-4 py-3 text-center text-[11px] font-bold text-slate-700 border-r border-slate-200 cursor-help hover:bg-blue-100/50 hover:text-blue-700 transition-colors"
                             title={allParasText ? `সকল নিষ্পন্নকৃত অনুচ্ছেদ নং: ${allParasText}` : `নিষ্পন্নকৃত অনুচ্ছেদ সংখ্যা: ${toBengaliDigits(rowSettledCount)} টি`}
                           >
                             {toBengaliDigits(rowSettledCount)} টি
                           </td>
-                          <td className="px-4 py-3 text-center text-[11.5px] font-black text-slate-900 border-r border-slate-200">
+                          <td className="px-4 py-3 text-center text-[11px] font-bold text-slate-900 border-r border-slate-200">
                             {toBengaliDigits(rowSettledAmount || '০')}
                           </td>
-                          <td className="px-4 py-3 text-center text-[11.5px] font-black text-rose-800 border-r border-slate-200">
+                          <td className="px-4 py-3 text-center text-[11px] font-bold text-rose-800 border-r border-slate-200">
                             {toBengaliDigits(rowUnsettledAmount || '০')}
                           </td>
                           <td className="px-4 py-3 text-justify break-words text-[11px] font-semibold text-slate-800 border-r border-slate-200 relative pb-7">
