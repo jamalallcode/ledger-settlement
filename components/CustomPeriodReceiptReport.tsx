@@ -1767,12 +1767,11 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                   <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                     <colgroup>
                       <col className="w-[3.5%]" />
-                      <col className="w-[26%]" />
-                      <col className="w-[21%]" />
-                      <col className="w-[11.5%]" />
-                      <col className="w-[12%]" />
-                      <col className="w-[12%]" />
-                      <col className="w-[14%]" />
+                      <col className="w-[28%]" />
+                      <col className="w-[23.5%]" />
+                      <col className="w-[15%]" />
+                      <col className="w-[15%]" />
+                      <col className="w-[15%]" />
                     </colgroup>
                     <thead className="sticky top-0 xl:top-[45px] z-30 shadow-sm bg-slate-200">
                       {/* Header Row 1: Titles (Black Text) */}
@@ -1780,20 +1779,18 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                         <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">ক্র: নং</th>
                         <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">অডিটি প্রতিষ্ঠানের নাম ও অন্যান্য</th>
                         <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">পত্র ও ডায়েরির বিবরণ</th>
-                        <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">বর্তমান অবস্থান / জারিপত্র</th>
                         <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">প্রাপ্ত অনুচ্ছেদ ও টাকা</th>
                         <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">নিষ্পত্তিকৃত তথ্য</th>
                         <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-slate-300 font-black">অনিষ্পন্ন তথ্য ও মন্তব্য</th>
                       </tr>
-                      {/* Header Row 2: Sub-header Numbers (1-7) */}
+                      {/* Header Row 2: Sub-header Numbers (1-6) */}
                       <tr className="bg-slate-100 text-slate-900 text-[11px] font-black text-center">
                         <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">১</th>
                         <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">২</th>
                         <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৩</th>
                         <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৪</th>
                         <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৫</th>
-                        <th className="bg-slate-100 text-slate-900 py-1 border-b border-r border-slate-300">৬</th>
-                        <th className="bg-slate-100 text-slate-900 py-1 border-b border-slate-300">৭</th>
+                        <th className="bg-slate-100 text-slate-900 py-1 border-b border-slate-300">৬</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 bg-white">
@@ -1987,34 +1984,29 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                   <span className="font-bold text-slate-800">{formatDateBN(presentationDate)}</span>
                                 </div>
                               )}
+                              <div>
+                                <span className="font-black text-emerald-700">৮. বর্তমান অবস্থান: </span>
+                                {hasIssueLetter ? (
+                                  <span className="font-bold text-emerald-900 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200 text-[10px] inline-block">
+                                    {issueLetterNo && `জারিপত্র নং: ${issueLetterNo}`}
+                                    {issueLetterDate && ` (${formatDateBN(issueLetterDate)})`}
+                                  </span>
+                                ) : (
+                                  <span className="font-bold text-amber-950 bg-amber-50 px-1 py-0.5 rounded border border-amber-200 text-[10px] inline-block">
+                                    চিঠিটি এখনো যার কাছে আছে: <span className="font-black">{holderName}</span>
+                                  </span>
+                                )}
+                              </div>
                               {archiveNo !== '-' && (
                                 <div>
-                                  <span className="font-black text-emerald-700">৮. আর্কাইভ নং: </span>
+                                  <span className="font-black text-emerald-700">৯. আর্কাইভ নং: </span>
                                   <span className="font-bold text-purple-700">{toBengaliDigits(archiveNo)}</span>
                                 </div>
                               )}
                             </div>
                           </td>
 
-                          {/* Col 4: বর্তমান অবস্থান / জারিপত্র */}
-                          <td className="px-3 py-3 text-left border-r border-slate-200">
-                            <div className="space-y-1.5 text-[11px]">
-                              <span className="font-black text-slate-700 block text-[10.5px]">১. চিঠিটির বর্তমান অবস্থান:</span>
-                              {hasIssueLetter ? (
-                                <div className="bg-emerald-50 text-emerald-900 p-2 rounded-xl border border-emerald-200 shadow-2xs space-y-0.5">
-                                  {issueLetterNo && <span className="block text-[10px] font-bold">জারিপত্র নং: {issueLetterNo}</span>}
-                                  {issueLetterDate && <span className="block text-[10px] font-bold text-emerald-900">তারিখ: {formatDateBN(issueLetterDate)}</span>}
-                                </div>
-                              ) : (
-                                <div className="bg-amber-50 text-amber-900 p-2 rounded-xl border border-amber-200 shadow-2xs space-y-0.5">
-                                  <span className="font-bold block text-[10px] text-amber-700">চিঠিটি এখনো যার কাছে আছে:</span>
-                                  <span className="font-black block text-[11px] text-amber-950">{holderName}</span>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Col 5: প্রাপ্ত অনুচ্ছেদ ও টাকা */}
+                          {/* Col 4: প্রাপ্ত অনুচ্ছেদ ও টাকা */}
                           <td className="px-3 py-3 text-left border-r border-slate-200">
                             <div className="space-y-1.5 text-[11px]">
                               <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
