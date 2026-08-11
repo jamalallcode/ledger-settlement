@@ -1778,7 +1778,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       {/* Header Row 1: Titles (Black Text) */}
                       <tr className="bg-slate-200 text-slate-900 text-[11px] font-black tracking-wider">
                         <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">ক্র: নং</th>
-                        <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">প্রতিষ্ঠানের বিবরণ</th>
+                        <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">অডিটি প্রতিষ্ঠানের নাম ও অন্যান্য</th>
                         <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">পত্র ও ডায়েরির বিবরণ</th>
                         <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">বর্তমান অবস্থান / জারিপত্র</th>
                         <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">প্রাপ্ত অনুচ্ছেদ ও টাকা</th>
@@ -1932,8 +1932,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           <td className="px-3 py-3 text-left border-r border-slate-200">
                             <div className="space-y-1 text-[11px]">
                               <div>
-                                <span className="font-black text-slate-700">১. অডিট প্রতিষ্ঠানের নাম: </span>
-                                <span className="font-bold text-slate-900 block leading-snug">{auditEntity}</span>
+                                <span className="font-black text-slate-700">১. প্রতিষ্ঠানের নাম: </span>
+                                <span className="font-bold text-slate-900 leading-snug">{auditEntity}</span>
                               </div>
                               {hasSeparateEntity && (
                                 <div className="pt-0.5">
@@ -1942,8 +1942,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                 </div>
                               )}
                               <div className="pt-0.5">
-                                <span className="font-black text-slate-700">২. মন্ত্রণালয়ের নাম: </span>
-                                <span className="font-bold text-blue-800 block">{ministryName}</span>
+                                <span className="font-black text-slate-700">২. মন্ত্রণালয়: </span>
+                                <span className="font-bold text-blue-800">{ministryName}</span>
                               </div>
                             </div>
                           </td>
