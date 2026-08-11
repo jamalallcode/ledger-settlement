@@ -248,20 +248,84 @@ const getSentParasCountForEntry = (entry: any, correspondenceEntries: any[] = []
     return toEnglishDigits(firstPart).replace(/\D/g, '');
   };
 
+  const normalizeStr = (str?: string) => {
+    if (!str) return '';
+    return toEnglishDigits(String(str))
+      .toLowerCase()
+      .replace(/[\s\-\,\.\(\)\/\\\_:;\']/g, '')
+      .trim();
+  };
+
+  const extractDateStr = (str?: string) => {
+    if (!str) return '';
+    const eng = toEnglishDigits(String(str));
+    const m = eng.match(/\b(\d{1,4})[\/\.-](\d{1,2})[\/\.-](\d{2,4})\b/);
+    if (!m) return '';
+    let y = '', mth = '', d = '';
+    if (m[1].length === 4) {
+      y = m[1]; mth = m[2].padStart(2, '0'); d = m[3].padStart(2, '0');
+    } else if (m[3].length === 4) {
+      d = m[1].padStart(2, '0'); mth = m[2].padStart(2, '0'); y = m[3];
+    } else {
+      d = m[1].padStart(2, '0'); mth = m[2].padStart(2, '0'); y = m[3].padStart(2, '0');
+    }
+    return `${y}-${mth}-${d}`;
+  };
+
+  const sMinistry = normalizeStr(getEntryMinistry(entry) || entry.ministryName);
+  const sEntity = normalizeStr(entry.entityName);
+  const sBranch = normalizeStr(entry.paraType || entry.branchName);
+  const sLetterType = normalizeStr(entry.letterType || entry.meetingType);
+
   const sIssue = extractPureNo(entry.issueNo || entry.issueLetterNo, entry.issueLetterNoDate);
   const sDiary = extractPureNo(entry.diaryNo, entry.workpaperNoDate);
   const sLetter = extractPureNo(entry.letterNo, entry.letterNoDate);
+  const sDate = extractDateStr(entry.letterNoDate || entry.letterDate);
 
   const matchedCorr = (correspondenceEntries || []).find((c: any) => {
+    // 1. Explicit ID match
     if (c.id && (c.id === entry.correspondenceId || c.id === entry.letterId)) return true;
-    const cIssue = extractPureNo(c.issueLetterNo, c.issueLetterNoDate);
-    const cDiary = extractPureNo(c.diaryNo, c.workpaperNoDate);
-    const cLetter = extractPureNo(c.letterNo, c.letterNoDate);
 
-    if (sIssue && cIssue && sIssue === cIssue) return true;
-    if (sDiary && cDiary && sDiary === cDiary) return true;
-    if (sLetter && cLetter && sLetter === cLetter) return true;
-    return false;
+    // 2. Validate ministry
+    const cMinistry = normalizeStr(c.ministryName);
+    if (sMinistry && cMinistry && !sMinistry.includes(cMinistry) && !cMinistry.includes(sMinistry)) {
+      return false;
+    }
+
+    // 3. Validate entity / organization
+    const cEntity = normalizeStr(c.entityName);
+    if (sEntity && cEntity && !sEntity.includes(cEntity) && !cEntity.includes(sEntity)) {
+      return false;
+    }
+
+    // 4. Validate branch / paraType (শাখা)
+    const cBranch = normalizeStr(c.paraType || c.branchName);
+    if (sBranch && cBranch && sBranch !== cBranch) {
+      return false;
+    }
+
+    // 5. Validate letter type (চিঠির ধরন)
+    const cLetterType = normalizeStr(c.letterType);
+    if (sLetterType && cLetterType && !sLetterType.includes(cLetterType) && !cLetterType.includes(sLetterType)) {
+      return false;
+    }
+
+    const cIssue = extractPureNo(c.issueLetterNo || c.issueNo, c.issueLetterDate || c.issueLetterNoDate);
+    const cDiary = extractPureNo(c.diaryNo, c.diaryDate || c.workpaperNoDate);
+    const cLetter = extractPureNo(c.letterNo, c.letterNoDate || c.letterDate);
+    const cDate = extractDateStr(c.letterDate || c.letterNoDate);
+
+    // 6. Check for conflict in issue, diary or letter dates
+    if (sIssue && cIssue && sIssue !== cIssue) return false;
+    if (sDiary && cDiary && sDiary !== cDiary) return false;
+    if (sDate && cDate && sDate !== cDate) return false;
+
+    // 7. Ensure at least one identifier actually matches
+    const issueMatch = sIssue && cIssue && sIssue === cIssue;
+    const diaryMatch = sDiary && cDiary && sDiary === cDiary;
+    const letterMatch = sLetter && cLetter && sLetter === cLetter;
+
+    return Boolean(issueMatch || diaryMatch || letterMatch);
   });
 
   if (matchedCorr) {
