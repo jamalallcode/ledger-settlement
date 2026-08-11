@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Calendar, FileText, User, Users, BookOpen, Printer, Search, RefreshCw, 
   ChevronLeft, LayoutGrid, Sparkles, FileSpreadsheet, ArrowRight,
-  ShieldCheck, Mail, Info, FileEdit, ArrowUpDown, Clock
+  ShieldCheck, Mail, Info, FileEdit, ArrowUpDown, Clock, X
 } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { isSFI, isNonSFI, getCleanLetterTypeDisplay } from '../utils/branchUtils';
@@ -508,6 +508,20 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
       end: todayISO
     };
   }, [entries, settlementEntries]);
+
+  const [paraModalData, setParaModalData] = useState<{
+    isOpen: boolean;
+    title: string;
+    ministry?: string;
+    entity?: string;
+    letterInfo?: string;
+    fullParas: (string | number)[];
+    partialParas: (string | number)[];
+    allParas: (string | number)[];
+    fullAmount?: number;
+    partialAmount?: number;
+    totalAmount?: number;
+  } | null>(null);
 
   const [startDate, setStartDate] = useState(initialDates.start);
   const [endDate, setEndDate] = useState(initialDates.end);
@@ -2373,31 +2387,77 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                               {fullCount > 0 && partialCount > 0 ? (
                                 <div className="space-y-0.5 pt-0.5 text-[11px]">
                                   <div 
-                                    className="cursor-help hover:text-blue-700 transition-colors"
-                                    title={fullParasText ? `পূর্ণাঙ্গ নিষ্পন্ন অনুচ্ছেদ নং: ${fullParasText}` : `পূর্ণাঙ্গ অনুচ্ছেদ: ${toBengaliDigits(fullCount)} টি`}
+                                    className="cursor-pointer hover:text-blue-700 transition-colors group/item"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setParaModalData({
+                                        isOpen: true,
+                                        title: 'পূর্ণাঙ্গ নিষ্পন্ন অনুচ্ছেদসমূহের তালিকা',
+                                        ministry: getEntryMinistry(entry) || entry.ministryName,
+                                        entity: entry.entityName,
+                                        letterInfo: entry.letterNoDate,
+                                        fullParas,
+                                        partialParas: [],
+                                        allParas: fullParas,
+                                        fullAmount,
+                                        totalAmount: fullAmount
+                                      });
+                                    }}
+                                    title="অনুচ্ছেদ নম্বরসমূহ দেখতে ক্লিক করুন"
                                   >
                                     <span className="font-bold text-emerald-700">৪. </span>
-                                    <span className="font-bold text-slate-900">
+                                    <span className="font-bold text-slate-900 underline decoration-dotted underline-offset-2 hover:text-blue-700">
                                       পূর্ণাঙ্গ = {toBengaliDigits(fullCount)} টি ({toBengaliDigits(fullAmount || 0)})
                                     </span>
                                   </div>
                                   <div 
-                                    className="cursor-help hover:text-amber-900 transition-colors"
-                                    title={partialParasText ? `আংশিক নিষ্পন্ন অনুচ্ছেদ নং: ${partialParasText}` : `আংশিক অনুচ্ছেদ: ${toBengaliDigits(partialCount)} টি`}
+                                    className="cursor-pointer hover:text-amber-900 transition-colors group/item"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setParaModalData({
+                                        isOpen: true,
+                                        title: 'আংশিক নিষ্পন্ন অনুচ্ছেদসমূহের তালিকা',
+                                        ministry: getEntryMinistry(entry) || entry.ministryName,
+                                        entity: entry.entityName,
+                                        letterInfo: entry.letterNoDate,
+                                        fullParas: [],
+                                        partialParas,
+                                        allParas: partialParas,
+                                        partialAmount,
+                                        totalAmount: partialAmount
+                                      });
+                                    }}
+                                    title="অনুচ্ছেদ নম্বরসমূহ দেখতে ক্লিক করুন"
                                   >
                                     <span className="font-bold text-emerald-700">৫. </span>
-                                    <span className="font-bold text-amber-800">
+                                    <span className="font-bold text-amber-800 underline decoration-dotted underline-offset-2 hover:text-amber-900">
                                       আংশিক = {toBengaliDigits(partialCount)} টি ({toBengaliDigits(partialAmount || 0)})
                                     </span>
                                   </div>
                                 </div>
                               ) : (
                                 <div 
-                                  className="cursor-help hover:text-blue-700 transition-colors"
-                                  title={allParasText ? `সকল নিষ্পন্ন অনুচ্ছেদ নং: ${allParasText}` : `নিষ্পন্ন অনুচ্ছেদ: ${toBengaliDigits(rowSettledCount)} টি`}
+                                  className="cursor-pointer hover:text-blue-700 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setParaModalData({
+                                      isOpen: true,
+                                      title: 'নিষ্পন্নকৃত অনুচ্ছেদসমূহের তালিকা',
+                                      ministry: getEntryMinistry(entry) || entry.ministryName,
+                                      entity: entry.entityName,
+                                      letterInfo: entry.letterNoDate,
+                                      fullParas,
+                                      partialParas,
+                                      allParas: rawAllParas,
+                                      fullAmount,
+                                      partialAmount,
+                                      totalAmount: settledAmount
+                                    });
+                                  }}
+                                  title="অনুচ্ছেদ নম্বরসমূহ দেখতে ক্লিক করুন"
                                 >
                                   <span className="font-bold text-emerald-700">৪. </span>
-                                  <span className="font-bold text-slate-900">
+                                  <span className="font-bold text-slate-900 underline decoration-dotted underline-offset-2 hover:text-blue-700">
                                     {fullCount > 0 ? (
                                       <>পূর্ণাঙ্গ = {toBengaliDigits(fullCount)} টি ({toBengaliDigits(fullAmount || settledAmount)})</>
                                     ) : partialCount > 0 ? (
@@ -2411,10 +2471,28 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                             </div>
                           </td>
                           <td 
-                            className="px-4 py-3 text-center text-[11px] font-bold text-slate-700 border-r border-slate-200 cursor-help hover:bg-blue-100/50 hover:text-blue-700 transition-colors"
-                            title={allParasText ? `সকল নিষ্পন্নকৃত অনুচ্ছেদ নং: ${allParasText}` : `নিষ্পন্নকৃত অনুচ্ছেদ সংখ্যা: ${toBengaliDigits(rowSettledCount)} টি`}
+                            className="px-4 py-3 text-center text-[11px] font-bold text-slate-700 border-r border-slate-200 cursor-pointer hover:bg-blue-100/60 hover:text-blue-700 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setParaModalData({
+                                isOpen: true,
+                                title: 'নিষ্পন্নকৃত অনুচ্ছেদসমূহের বিস্তারিত তালিকা',
+                                ministry: getEntryMinistry(entry) || entry.ministryName,
+                                entity: entry.entityName,
+                                letterInfo: entry.letterNoDate,
+                                fullParas,
+                                partialParas,
+                                allParas: rawAllParas,
+                                fullAmount,
+                                partialAmount,
+                                totalAmount: settledAmount
+                              });
+                            }}
+                            title="অনুচ্ছেদ নম্বরসমূহ দেখতে ক্লিক করুন"
                           >
-                            {toBengaliDigits(rowSettledCount)} টি
+                            <span className="inline-flex items-center gap-1 bg-slate-100 hover:bg-emerald-700 hover:text-white px-2.5 py-1 rounded-lg transition-all shadow-sm font-extrabold text-slate-800">
+                              {toBengaliDigits(rowSettledCount)} টি
+                            </span>
                           </td>
                           <td className="px-4 py-3 text-center text-[11px] font-bold text-slate-900 border-r border-slate-200">
                             {toBengaliDigits(rowSettledAmount || '০')}
@@ -2475,6 +2553,154 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           )}
         </div>
       </div>
+
+      {/* Paragraph List Modal Popup */}
+      {paraModalData && paraModalData.isOpen && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          onClick={() => setParaModalData(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden transform transition-all flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-gradient-to-r from-emerald-800 to-teal-800 text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl shrink-0">
+                  <BookOpen size={20} className="text-emerald-200" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-white leading-tight">
+                    {paraModalData.title || 'নিষ্পন্নকৃত অনুচ্ছেদসমূহের তালিকা'}
+                  </h3>
+                  {paraModalData.ministry && (
+                    <p className="text-xs text-emerald-100/90 font-medium mt-0.5">
+                      {paraModalData.ministry} {paraModalData.entity ? `• ${paraModalData.entity}` : ''}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setParaModalData(null)}
+                className="p-1.5 rounded-lg text-emerald-100 hover:text-white hover:bg-white/20 transition-colors cursor-pointer shrink-0"
+                title="বন্ধ করুন"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-5 text-slate-800">
+              {paraModalData.letterInfo && (
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-xs flex flex-wrap gap-x-4 gap-y-1 font-semibold text-slate-700">
+                  <span>স্মারক/পত্র নং ও তারিখ: <strong className="text-slate-900">{paraModalData.letterInfo}</strong></span>
+                </div>
+              )}
+
+              {/* Full Paras */}
+              {paraModalData.fullParas && paraModalData.fullParas.length > 0 && (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-sm text-emerald-800 flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span>
+                      পূর্ণাঙ্গ নিষ্পন্ন অনুচ্ছেদ ({toBengaliDigits(paraModalData.fullParas.length)} টি)
+                    </span>
+                    {paraModalData.fullAmount !== undefined && paraModalData.fullAmount > 0 && (
+                      <span className="text-xs font-bold px-2.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-md">
+                        টাকা: {toBengaliDigits(paraModalData.fullAmount)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {paraModalData.fullParas.map((p, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300/80 rounded-xl text-xs font-extrabold shadow-sm transition-colors"
+                      >
+                        অনুচ্ছেদ নং {toBengaliDigits(p)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Partial Paras */}
+              {paraModalData.partialParas && paraModalData.partialParas.length > 0 && (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-sm text-amber-800 flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
+                      আংশিক নিষ্পন্ন অনুচ্ছেদ ({toBengaliDigits(paraModalData.partialParas.length)} টি)
+                    </span>
+                    {paraModalData.partialAmount !== undefined && paraModalData.partialAmount > 0 && (
+                      <span className="text-xs font-bold px-2.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-md">
+                        টাকা: {toBengaliDigits(paraModalData.partialAmount)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {paraModalData.partialParas.map((p, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 rounded-xl text-xs font-extrabold shadow-sm transition-colors"
+                      >
+                        অনুচ্ছেদ নং {toBengaliDigits(p)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Combined or generic fallback if no separate full/partial list */}
+              {(!paraModalData.fullParas || paraModalData.fullParas.length === 0) &&
+               (!paraModalData.partialParas || paraModalData.partialParas.length === 0) &&
+               paraModalData.allParas && paraModalData.allParas.length > 0 && (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-sm text-slate-800 flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-slate-600 inline-block"></span>
+                      সকল নিষ্পন্ন অনুচ্ছেদ ({toBengaliDigits(paraModalData.allParas.length)} টি)
+                    </span>
+                    {paraModalData.totalAmount !== undefined && paraModalData.totalAmount > 0 && (
+                      <span className="text-xs font-bold px-2.5 py-0.5 bg-slate-100 text-slate-800 border border-slate-200 rounded-md">
+                        টাকা: {toBengaliDigits(paraModalData.totalAmount)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {paraModalData.allParas.map((p, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-300 rounded-xl text-xs font-extrabold shadow-sm transition-colors"
+                      >
+                        অনুচ্ছেদ নং {toBengaliDigits(p)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Empty state inside modal */}
+              {(!paraModalData.allParas || paraModalData.allParas.length === 0) && (
+                <div className="text-center py-6 text-slate-500 font-medium text-xs">
+                  কোনো নির্দিষ্ট অনুচ্ছেদ নম্বর নথিভুক্ত পাওয়া যায়নি।
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
+              <button
+                onClick={() => setParaModalData(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
