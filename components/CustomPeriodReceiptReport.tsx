@@ -1767,9 +1767,9 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                   <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                     <colgroup>
                       <col className="w-[4%]" />
-                      <col className="w-[calc(17%+50px)]" style={{ width: 'calc(17% + 50px)' }} />
+                      <col className="w-[calc(17%+80px)]" style={{ width: 'calc(17% + 80px)' }} />
                       <col className="w-[21%]" />
-                      <col className="w-[calc(15%-50px)]" style={{ width: 'calc(15% - 50px)' }} />
+                      <col className="w-[calc(15%-80px)]" style={{ width: 'calc(15% - 80px)' }} />
                       <col className="w-[calc(13%+5px)]" style={{ width: 'calc(13% + 5px)' }} />
                       <col className="w-[calc(16%-5px)]" style={{ width: 'calc(16% - 5px)' }} />
                       <col className="w-[14%]" />
