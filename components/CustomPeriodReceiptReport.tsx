@@ -1767,9 +1767,9 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                   <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                     <colgroup>
                       <col className="w-[4%]" />
-                      <col className="w-[calc(17%+20px)]" style={{ width: 'calc(17% + 20px)' }} />
+                      <col className="w-[calc(17%+50px)]" style={{ width: 'calc(17% + 50px)' }} />
                       <col className="w-[21%]" />
-                      <col className="w-[calc(15%-20px)]" style={{ width: 'calc(15% - 20px)' }} />
+                      <col className="w-[calc(15%-50px)]" style={{ width: 'calc(15% - 50px)' }} />
                       <col className="w-[calc(13%+5px)]" style={{ width: 'calc(13% + 5px)' }} />
                       <col className="w-[calc(16%-5px)]" style={{ width: 'calc(16% - 5px)' }} />
                       <col className="w-[14%]" />
@@ -1932,7 +1932,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           <td className="px-3 py-3 text-left border-r border-slate-200">
                             <div className="space-y-1 text-[10.5px] leading-snug text-justify">
                               <div>
-                                <span className="font-black text-emerald-700">১. প্রতিষ্ঠানের নাম: </span>
+                                <span className="font-black text-emerald-700">১. প্রতিষ্ঠান: </span>
                                 <span className="font-bold text-slate-900">{auditEntity}</span>
                               </div>
                               {hasSeparateEntity && (
