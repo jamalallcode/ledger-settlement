@@ -203,6 +203,34 @@
     </style>
     <script type="application/javascript">
       window.process = { env: { API_KEY: '' } };
+      // Suppress Web Vitals / INP performance overlay popups
+      if (typeof window !== 'undefined') {
+        const suppressINP = () => {
+          document.querySelectorAll('div').forEach(el => {
+            if (el.textContent && el.textContent.includes('INP Issue') && el.textContent.includes('Event handlers')) {
+              el.style.setProperty('display', 'none', 'important');
+              el.remove();
+            }
+          });
+        };
+        const inpObserver = new MutationObserver((mutations) => {
+          for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+              if (node.nodeType === 1) {
+                const el = node as HTMLElement;
+                if (el.textContent && el.textContent.includes('INP Issue')) {
+                  el.style.setProperty('display', 'none', 'important');
+                  setTimeout(() => el.remove(), 0);
+                }
+              }
+            }
+          }
+        });
+        window.addEventListener('DOMContentLoaded', () => {
+          inpObserver.observe(document.body, { childList: true, subtree: true });
+          setInterval(suppressINP, 500);
+        });
+      }
     </script>
   </head>
   <body class="bg-white overflow-x-hidden">

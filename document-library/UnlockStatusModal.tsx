@@ -310,7 +310,6 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
                     value={checkEmail}
                     onChange={e => {
                       setCheckEmail(e.target.value);
-                      onUpdateUserEmail(e.target.value);
                     }}
                     className="flex-1 px-4 py-3 bg-white border border-slate-300 rounded-xl font-mono font-bold text-xs md:text-sm text-slate-800 outline-none focus:border-emerald-500 shadow-inner"
                   />

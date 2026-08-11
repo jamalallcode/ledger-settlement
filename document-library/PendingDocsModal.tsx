@@ -84,11 +84,13 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
   };
 
   const handleRemoveEmailWithAudit = (email: string) => {
-    if (confirm(`আপনি কি "${email}" এর এক্সেস বাতিল করতে চান?`)) {
-      onRemoveWhitelistedEmail(email);
-      recordAuditLog('WHITELIST_REMOVE', 'ব্যবহারকারীর হোয়াইটলিস্ট এক্সেস বাতিল করা হয়েছে', email, 'Admin');
-      setAuditLogs(getAuditLogs());
-    }
+    setTimeout(() => {
+      if (confirm(`আপনি কি "${email}" এর এক্সেস বাতিল করতে চান?`)) {
+        onRemoveWhitelistedEmail(email);
+        recordAuditLog('WHITELIST_REMOVE', 'ব্যবহারকারীর হোয়াইটলিস্ট এক্সেস বাতিল করা হয়েছে', email, 'Admin');
+        setAuditLogs(getAuditLogs());
+      }
+    }, 10);
   };
 
   const handleAddManualVisitor = (e: React.FormEvent) => {
@@ -107,28 +109,34 @@ export const PendingDocsModal: React.FC<PendingDocsModalProps> = ({
   };
 
   const handleDeleteVisitorLog = (id: string) => {
-    const targetLog = visitorLogs.find(l => l.id === id);
-    const updated = visitorLogs.filter(l => l.id !== id);
-    setVisitorLogs(updated);
-    localStorage.setItem('audit_doc_visitor_logs', JSON.stringify(updated));
-    recordAuditLog('LOG_DELETE', 'ভিজিটর সাইন-ইন লগ মুছে ফেলা হয়েছে', targetLog?.identifier || id, 'Admin');
-    setAuditLogs(getAuditLogs());
+    setTimeout(() => {
+      const targetLog = visitorLogs.find(l => l.id === id);
+      const updated = visitorLogs.filter(l => l.id !== id);
+      setVisitorLogs(updated);
+      localStorage.setItem('audit_doc_visitor_logs', JSON.stringify(updated));
+      recordAuditLog('LOG_DELETE', 'ভিজিটর সাইন-ইন লগ মুছে ফেলা হয়েছে', targetLog?.identifier || id, 'Admin');
+      setAuditLogs(getAuditLogs());
+    }, 10);
   };
 
   const handleClearAllLogs = () => {
-    if (confirm('আপনি কি সকল ভিজিটর লগ মুছে ফেলতে চান?')) {
-      const cleared = clearAllVisitorLogs();
-      setVisitorLogs(cleared);
-      recordAuditLog('LOGS_CLEAR', 'সকল ভিজিটর প্রবেশ লগ রিসেট করা হয়েছে', 'All Logs', 'Admin');
-      setAuditLogs(getAuditLogs());
-    }
+    setTimeout(() => {
+      if (confirm('আপনি কি সকল ভিজিটর লগ মুছে ফেলতে চান?')) {
+        const cleared = clearAllVisitorLogs();
+        setVisitorLogs(cleared);
+        recordAuditLog('LOGS_CLEAR', 'সকল ভিজিটর প্রবেশ লগ রিসেট করা হয়েছে', 'All Logs', 'Admin');
+        setAuditLogs(getAuditLogs());
+      }
+    }, 10);
   };
 
   const handleClearAuditLogs = () => {
-    if (confirm('আপনি কি সকল অডিট হিস্ট্রি ইতিহাস মুছে ফেলতে চান?')) {
-      const cleared = clearAuditLogs();
-      setAuditLogs(cleared);
-    }
+    setTimeout(() => {
+      if (confirm('আপনি কি সকল অডিট হিস্ট্রি ইতিহাস মুছে ফেলতে চান?')) {
+        const cleared = clearAuditLogs();
+        setAuditLogs(cleared);
+      }
+    }, 10);
   };
 
   // Export Visitor logs to CSV
