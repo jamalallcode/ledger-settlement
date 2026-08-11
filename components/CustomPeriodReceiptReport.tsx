@@ -238,19 +238,6 @@ const getSettlementEntryStats = (entry: any) => {
 };
 
 const getSentParasCountForEntry = (entry: any, correspondenceEntries: any[] = []): number => {
-  if (entry.meetingSentParaCount !== undefined && entry.meetingSentParaCount !== null && String(entry.meetingSentParaCount).trim() !== '') {
-    const val = parseInt(toEnglishDigits(String(entry.meetingSentParaCount)));
-    if (!isNaN(val) && val >= 0) return val;
-  }
-  if (entry.sentParaCount !== undefined && entry.sentParaCount !== null && String(entry.sentParaCount).trim() !== '') {
-    const val = parseInt(toEnglishDigits(String(entry.sentParaCount)));
-    if (!isNaN(val) && val >= 0) return val;
-  }
-  if (entry.totalParas !== undefined && entry.totalParas !== null && String(entry.totalParas).trim() !== '') {
-    const val = parseInt(toEnglishDigits(String(entry.totalParas)));
-    if (!isNaN(val) && val >= 0) return val;
-  }
-
   const extractPureNo = (directNo?: string, combinedStr?: string) => {
     if (directNo && String(directNo).trim()) {
       return toEnglishDigits(String(directNo)).replace(/\D/g, '');
