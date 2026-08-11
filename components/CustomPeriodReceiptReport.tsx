@@ -1933,17 +1933,17 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                             <div className="space-y-1 text-[11px] text-justify">
                               <div>
                                 <span className="font-black text-emerald-700">১. প্রতিষ্ঠানের নাম: </span>
-                                <span className="font-bold text-slate-900 leading-snug">{auditEntity}</span>
+                                <span className="font-medium text-slate-800 leading-snug">{auditEntity}</span>
                               </div>
                               {hasSeparateEntity && (
                                 <div className="pt-0.5">
                                   <span className="font-black text-emerald-700">২. এনটিটি: </span>
-                                  <span className="font-bold text-slate-900">{entry.entityName}</span>
+                                  <span className="font-medium text-slate-800">{entry.entityName}</span>
                                 </div>
                               )}
                               <div className="pt-0.5">
                                 <span className="font-black text-emerald-700">{hasSeparateEntity ? '৩.' : '২.'} মন্ত্রণালয়: </span>
-                                <span className="font-bold text-blue-800">{ministryName}</span>
+                                <span className="font-medium text-slate-800">{ministryName}</span>
                               </div>
                             </div>
                           </td>
