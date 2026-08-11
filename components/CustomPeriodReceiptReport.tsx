@@ -2372,8 +2372,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       <td colSpan={3} className="px-4 py-3 text-center text-xs border-r border-slate-200 font-black">সর্বমোট:</td>
                       <td className="px-3 py-3 text-left text-[11px] border-r border-slate-200 font-black text-emerald-900">
                         <div className="flex flex-wrap items-baseline gap-x-1">
-                          <span className="font-bold text-emerald-800">মোট প্রেরিত অনু: সংখ্যা: </span>
-                          <span className="font-black text-slate-900">{totalSentParaCountSum > 0 ? `${toBengaliDigits(totalSentParaCountSum)} টি` : '-'}</span>
+                          <span className="font-bold text-emerald-800 dark:text-emerald-300">মোট প্রেরিত অনু: সংখ্যা: </span>
+                          <span className="font-black text-white">{totalSentParaCountSum > 0 ? `${toBengaliDigits(totalSentParaCountSum)} টি` : '-'}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-center text-[11px] border-r border-slate-200 font-black">
