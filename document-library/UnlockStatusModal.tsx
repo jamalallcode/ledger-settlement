@@ -42,7 +42,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
   existingDocuments = [],
   initialTab = 'whatsapp'
 }) => {
-  const [activeTab, setActiveTab] = useState<'pin' | 'whatsapp' | 'dupcheck'>('pin');
+  const [activeTab, setActiveTab] = useState<'gmail' | 'pin' | 'whatsapp' | 'dupcheck'>('gmail');
 
   const activeWaNum = whatsappNumber || paymentNumber || '01789-539494';
   const [isEditingWaNum, setIsEditingWaNum] = useState(false);
@@ -254,6 +254,12 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
         {/* Tab Navigation */}
         <div className="flex border-b border-slate-200 bg-slate-50 overflow-x-auto">
           <button
+            onClick={() => setActiveTab('gmail')}
+            className={`py-3.5 px-4 font-black text-xs md:text-sm flex items-center justify-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === 'gmail' ? 'border-emerald-600 text-emerald-700 bg-white' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+          >
+            <Mail size={16} className="text-emerald-600" /> অনুমোদিত জিমেইল আইডি
+          </button>
+          <button
             onClick={() => setActiveTab('pin')}
             className={`py-3.5 px-4 font-black text-xs md:text-sm flex items-center justify-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === 'pin' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
           >
@@ -276,7 +282,71 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
         {/* Tab Content */}
         <div className="p-6 md:p-8 space-y-6">
 
-          {/* TAB 0: ACCESS CODE / PIN UNLOCK */}
+          {/* TAB 0: GMAIL WHITELIST ACCESS */}
+          {activeTab === 'gmail' && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              
+              {/* Notice Banner */}
+              <div className="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center gap-2 text-emerald-900 font-black text-sm">
+                  <Mail size={18} className="text-emerald-600 shrink-0" />
+                  জিমেইল আইডি দিয়ে অ্যাক্সেস আনলক
+                </div>
+                <p className="text-slate-700 text-xs md:text-sm font-medium leading-relaxed">
+                  এডমিন তার ড্যাশবোর্ড থেকে যেসব জিমেইল আইডি অনুমোদন দিয়েছেন, সেই অনুমোদিত জিমেইল আইডি নিচে লিখলেই অডিট ক্রাইটেরিয়ার সকল তথ্য উন্মুক্ত হয়ে যাবে। কোনো জটিল পাসওয়ার্ড বা সাইন ইন করার প্রয়োজন নেই।
+                </p>
+              </div>
+
+              {/* Email Form / Status */}
+              <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                <label className="text-xs font-black text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
+                  <Mail size={15} className="text-emerald-600" /> আপনার জিমেইল আইডি (Gmail ID):
+                </label>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input 
+                    type="email" 
+                    placeholder="যেমন: name@gmail.com"
+                    value={checkEmail}
+                    onChange={e => {
+                      setCheckEmail(e.target.value);
+                      onUpdateUserEmail(e.target.value);
+                    }}
+                    className="flex-1 px-4 py-3 bg-white border border-slate-300 rounded-xl font-mono font-bold text-xs md:text-sm text-slate-800 outline-none focus:border-emerald-500 shadow-inner"
+                  />
+                </div>
+
+                {isWhitelisted ? (
+                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-2">
+                    <div className="flex items-center gap-2 text-emerald-900 font-black text-xs md:text-sm">
+                      <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                      <span>আপনার জিমেইল আইডিটি এডমিন কর্তৃক অনুমোদিত!</span>
+                    </div>
+                    <p className="text-xs text-emerald-800 font-medium">
+                      আপনার জন্য অডিট ক্রাইটেরিয়ার সকল সার্কুলার ও নথিপত্র সফলভাবে আনলক করা হয়েছে।
+                    </p>
+                  </div>
+                ) : checkEmail ? (
+                  <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl space-y-2">
+                    <div className="flex items-center gap-2 text-rose-900 font-black text-xs md:text-sm">
+                      <AlertCircle size={18} className="text-rose-600 shrink-0" />
+                      <span>এই জিমেইল আইডিটি ({checkEmail}) অনুমোদনপ্রাপ্ত নয়!</span>
+                    </div>
+                    <p className="text-xs text-slate-600 font-medium">
+                      এডমিনের অনুমোদন পেতে হোয়াটসঅ্যাপে আপনার জিমেইল আইডিটি পাঠিয়ে অনুরোধ করুন।
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 font-medium">
+                    উপরে আপনার অনুমোদিত জিমেইল আইডিটি লিখুন।
+                  </p>
+                )}
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 1: ACCESS CODE / PIN UNLOCK */}
           {activeTab === 'pin' && (
             <div className="space-y-6 animate-in fade-in duration-300">
               

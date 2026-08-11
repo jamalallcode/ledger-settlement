@@ -966,54 +966,39 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
               </div>
             </div>
 
-            {/* Quick Access Code / Device PIN Section */}
+            {/* Quick Approved Gmail ID Section */}
             <div className="pt-2 border-t border-slate-100 space-y-2 text-xs">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <form onSubmit={handleVerifyPin} className="flex flex-wrap items-center gap-2">
-                  <span className="font-bold text-slate-700 flex items-center gap-1">
-                    <KeyRound size={14} className="text-indigo-600" />
-                    <span>অ্যাক্সেস কোড (PIN):</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                    <Mail size={15} className="text-emerald-600" />
+                    <span>আপনার অনুমোদিত জিমেইল আইডি:</span>
                   </span>
 
-                  {pinState.isUnlocked ? (
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-black rounded-lg text-xs flex items-center gap-1.5 border border-emerald-200 shadow-2xs font-mono">
-                        <CheckCircle2 size={14} className="text-emerald-600" />
-                        <span>কোড: {pinState.activePin} (অনুমোদিত ডিভাইস: {toBengaliDigits((pinState.deviceCount || 1).toString())}/২)</span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleLogoutPin}
-                        className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-[11px] font-bold border border-red-200 transition-all active:scale-95"
-                      >
-                        লগআউট
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="text"
-                        value={pinInput}
-                        onChange={e => setPinInput(e.target.value)}
-                        className="px-3 py-1 border border-slate-200 bg-slate-50 text-indigo-700 rounded-lg text-xs font-mono font-black uppercase outline-none focus:bg-white focus:border-indigo-500 w-44 tracking-wider transition-all"
-                        placeholder="যেমন: AUDIT2026"
-                      />
-                      <button
-                        type="submit"
-                        className="px-3.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-lg text-xs transition-all shadow-xs active:scale-95 flex items-center gap-1"
-                      >
-                        <KeyRound size={13} />
-                        <span>কোড যাচাই করুন</span>
-                      </button>
-                    </div>
-                  )}
+                  <input 
+                    type="email"
+                    value={currentUserEmail}
+                    onChange={e => setCurrentUserEmail(e.target.value)}
+                    className="px-3 py-1.5 border border-slate-200 bg-slate-50 text-emerald-800 rounded-xl text-xs font-mono font-bold outline-none focus:bg-white focus:border-emerald-500 w-60 shadow-inner transition-all"
+                    placeholder="যেমন: user@gmail.com"
+                  />
 
-                  {!pinState.isUnlocked && !isFullyUnlocked && (
-                    <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-black rounded text-[10px] border border-amber-200">
+                  {isWhitelisted ? (
+                    <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-black rounded-lg text-xs flex items-center gap-1.5 border border-emerald-200 shadow-2xs">
+                      <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+                      <span>অনুমোদিত জিমেইল আইডি (সকল নথি উন্মুক্ত)</span>
+                    </span>
+                  ) : currentUserEmail ? (
+                    <span className="px-2.5 py-1 bg-rose-100 text-rose-800 font-bold rounded-lg text-[11px] border border-rose-200 flex items-center gap-1">
+                      <AlertCircle size={13} className="text-rose-600 shrink-0" />
+                      <span>এই জিমেইল আইডিটি অনুমোদনপ্রাপ্ত নয়! এডমিনের অনুমোদন প্রয়োজন।</span>
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 bg-amber-100 text-amber-800 font-black rounded-lg text-[10px] border border-amber-200">
                       সাধারণ এক্সেস (প্রথম ৫টি ফ্রি, অন্যান্য লকড)
                     </span>
                   )}
-                </form>
+                </div>
 
                 {/* User Marked Hide Button & Unlock Instructions Link */}
                 <div className="flex items-center gap-3">
@@ -1028,30 +1013,18 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
                   <button
                     onClick={() => setShowUnlockModal(true)}
-                    className="text-indigo-600 font-black text-xs hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-emerald-700 font-black text-xs hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     এক্সেস বিস্তারিত ও আনলক নির্দেশিকা <ChevronRight size={14} />
                   </button>
                 </div>
               </div>
 
-              {/* Pin verification message banner */}
-              {pinMessage && (
-                <div className={`p-2 rounded-lg text-xs font-bold flex items-center gap-2 border ${
-                  pinMessage.type === 'success' 
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
-                    : 'bg-rose-50 text-rose-800 border-rose-200'
-                }`}>
-                  {pinMessage.type === 'success' ? <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> : <AlertCircle size={14} className="text-rose-600 shrink-0" />}
-                  <span>{pinMessage.text}</span>
-                </div>
-              )}
-
-              {/* Device rule note */}
-              <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-lg border border-slate-100">
-                <Smartphone size={13} className="text-indigo-600 shrink-0" />
+              {/* Info hint note */}
+              <div className="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5 bg-emerald-50/60 p-2 rounded-xl border border-emerald-100">
+                <Sparkles size={13} className="text-emerald-600 shrink-0" />
                 <span>
-                  <strong>বিশেষ বিজ্ঞপ্তি:</strong> প্রতিটি অ্যাক্সেস কোড সর্বোচ্চ ২টি ডিভাইসে (যেমন: মোবাইল ও ল্যাপটপ) অটোমেটিক ডিভাইস-লক সহ ব্যবহার করতে পারবেন।
+                  <strong>নির্দেশনা:</strong> এডমিন যে জিমেইল আইডিতে অনুমোদন দেবেন, এখানে সেই জিমেইল আইডিটি ইনপুট দিলেই অডিট ক্রাইটেরিয়ার সকল সংরক্ষিত ফাইল উন্মুক্ত হয়ে যাবে।
                 </span>
               </div>
             </div>
