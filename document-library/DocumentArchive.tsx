@@ -5,12 +5,13 @@ import {
   Library, Search, Filter, Plus, FileText, Calendar, 
   ExternalLink, Trash2, LayoutGrid, List, X, Edit2,
   ChevronRight, BookOpen, Clock, Eye, EyeOff, Loader2, Sparkles, AlertCircle,
-  Lock, Unlock, ShieldCheck, CheckCircle2, XCircle, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send
+  Lock, Unlock, ShieldCheck, CheckCircle2, XCircle, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send, KeyRound, Smartphone
 } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { UnlockStatusModal } from './UnlockStatusModal';
 import { PendingDocsModal } from './PendingDocsModal';
 import { recordVisitorLog, isValidIdentifier } from './visitorTracker';
+import { checkCurrentDeviceUnlock, verifyAndActivatePin, deactivateCurrentDevicePin } from '../utils/pinManager';
 
 interface ExtendedArchiveDoc extends ArchiveDoc {
   memoNo?: string;
@@ -269,14 +270,58 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     localStorage.setItem('audit_doc_payment_number', paymentNumber);
   }, [paymentNumber]);
 
-  // Access check based on entered identifier/email
+  // Device-bound PIN unlock state
+  const [pinState, setPinState] = useState<{
+    isUnlocked: boolean;
+    activePin?: string;
+    userName?: string;
+    deviceCount?: number;
+  }>({ isUnlocked: false });
+  const [pinInput, setPinInput] = useState('');
+  const [pinMessage, setPinMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    checkCurrentDeviceUnlock().then(res => {
+      if (res.isUnlocked) {
+        setPinState(res);
+      }
+    });
+  }, []);
+
+  const handleVerifyPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pinInput.trim()) return;
+    setPinMessage(null);
+    const res = await verifyAndActivatePin(pinInput);
+    if (res.success) {
+      setPinMessage({ type: 'success', text: res.message });
+      setPinState({
+        isUnlocked: true,
+        activePin: res.codeItem?.code || pinInput.trim().toUpperCase(),
+        userName: res.userName,
+        deviceCount: res.deviceCount
+      });
+      setPinInput('');
+    } else {
+      setPinMessage({ type: 'error', text: res.message });
+    }
+  };
+
+  const handleLogoutPin = () => {
+    deactivateCurrentDevicePin();
+    setPinState({ isUnlocked: false });
+    setPinMessage({ type: 'success', text: 'কোডটি এই ডিভাইস থেকে সফলভাবে সরানো হয়েছে।' });
+    setTimeout(() => setPinMessage(null), 3000);
+  };
+
+  // Access check based on entered identifier/email or activated PIN
   const isWhitelisted = useMemo(() => {
     const typed = currentUserEmail ? currentUserEmail.trim().toLowerCase() : '';
     if (!typed) return false;
     return whitelistedEmails.some(e => e.toLowerCase() === typed);
   }, [currentUserEmail, whitelistedEmails]);
 
-  const isFullyUnlocked = effectiveAdmin || isSubscribed || isWhitelisted;
+  const isFullyUnlocked = effectiveAdmin || isSubscribed || isWhitelisted || pinState.isUnlocked;
 
   // Form state for document addition (Admin only)
   const [newDoc, setNewDoc] = useState({
@@ -921,45 +966,66 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
               </div>
             </div>
 
-            {/* Quick User Identifier / Email Input */}
-            <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2 text-slate-600 font-bold">
-                <span>আপনার ইমেইল / নাম্বার:</span>
-                <input 
-                  type="email"
-                  value={currentUserEmail}
-                  onChange={e => setCurrentUserEmail(e.target.value)}
-                  className="px-2.5 py-1 border border-slate-200 bg-slate-50 text-blue-700 rounded-lg text-xs font-mono font-bold outline-none focus:bg-white focus:border-blue-500 w-52 transition-all"
-                  placeholder="user@gmail.com"
-                />
-                {isWhitelisted ? (
-                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded text-[10px] flex items-center gap-1 border border-emerald-200">
-                    <CheckCircle2 size={12} /> অনুমোদিত কন্ট্রিবিউটর (সকল নথি উন্মুক্ত)
+            {/* Quick Approved Gmail ID Section */}
+            <div className="pt-2 border-t border-slate-100 space-y-2 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                    <Mail size={15} className="text-emerald-600" />
+                    <span>আপনার অনুমোদিত জিমেইল আইডি:</span>
                   </span>
-                ) : (
-                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-black rounded text-[10px] border border-amber-200">
-                    সাধারণ এক্সেস (প্রথম ৫টি ফ্রি, অন্যান্য লকড)
-                  </span>
-                )}
+
+                  <input 
+                    type="email"
+                    value={currentUserEmail}
+                    onChange={e => setCurrentUserEmail(e.target.value)}
+                    className="px-3 py-1.5 border border-slate-200 bg-slate-50 text-emerald-800 rounded-xl text-xs font-mono font-bold outline-none focus:bg-white focus:border-emerald-500 w-60 shadow-inner transition-all"
+                    placeholder="যেমন: user@gmail.com"
+                  />
+
+                  {isWhitelisted ? (
+                    <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-black rounded-lg text-xs flex items-center gap-1.5 border border-emerald-200 shadow-2xs">
+                      <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+                      <span>অনুমোদিত জিমেইল আইডি (সকল নথি উন্মুক্ত)</span>
+                    </span>
+                  ) : currentUserEmail ? (
+                    <span className="px-2.5 py-1 bg-rose-100 text-rose-800 font-bold rounded-lg text-[11px] border border-rose-200 flex items-center gap-1">
+                      <AlertCircle size={13} className="text-rose-600 shrink-0" />
+                      <span>এই জিমেইল আইডিটি অনুমোদনপ্রাপ্ত নয়! এডমিনের অনুমোদন প্রয়োজন।</span>
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 bg-amber-100 text-amber-800 font-black rounded-lg text-[10px] border border-amber-200">
+                      সাধারণ এক্সেস (প্রথম ৫টি ফ্রি, অন্যান্য লকড)
+                    </span>
+                  )}
+                </div>
+
+                {/* User Marked Hide Button & Unlock Instructions Link */}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setIsFilterHidden(true)}
+                    className="px-3 py-1 bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-slate-700 rounded-lg font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer border border-slate-200 shadow-2xs active:scale-95"
+                    title="ফিল্টার ও সার্চ অপশনগুলো হাইড করুন"
+                  >
+                    <EyeOff size={14} className="text-slate-500 hover:text-red-600" />
+                    <span>হাইড করুন</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowUnlockModal(true)}
+                    className="text-emerald-700 font-black text-xs hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    এক্সেস বিস্তারিত ও আনলক নির্দেশিকা <ChevronRight size={14} />
+                  </button>
+                </div>
               </div>
 
-              {/* User Marked Hide Button & Unlock Instructions Link */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setIsFilterHidden(true)}
-                  className="px-3 py-1 bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-slate-700 rounded-lg font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer border border-slate-200 shadow-2xs active:scale-95"
-                  title="ফিল্টার ও সার্চ অপশনগুলো হাইড করুন"
-                >
-                  <EyeOff size={14} className="text-slate-500 hover:text-red-600" />
-                  <span>হাইড করুন</span>
-                </button>
-
-                <button
-                  onClick={() => setShowUnlockModal(true)}
-                  className="text-blue-600 font-black text-xs hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  এক্সেস বিস্তারিত ও আনলক নির্দেশিকা <ChevronRight size={14} />
-                </button>
+              {/* Info hint note */}
+              <div className="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5 bg-emerald-50/60 p-2 rounded-xl border border-emerald-100">
+                <Sparkles size={13} className="text-emerald-600 shrink-0" />
+                <span>
+                  <strong>নির্দেশনা:</strong> এডমিন যে জিমেইল আইডিতে অনুমোদন দেবেন, এখানে সেই জিমেইল আইডিটি ইনপুট দিলেই অডিট ক্রাইটেরিয়ার সকল সংরক্ষিত ফাইল উন্মুক্ত হয়ে যাবে।
+                </span>
               </div>
             </div>
           </div>

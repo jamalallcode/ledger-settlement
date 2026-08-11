@@ -4,11 +4,13 @@ import {
   PieChart, FileText, Mail, PlusCircle, ArrowRight,
   Settings, KeyRound, Fingerprint, Library, BellRing,
   Sparkles, CheckCircle2, AlertCircle, Clock, Eye, EyeOff,
-  CalendarRange, MessageCircle, Menu, Link as LinkIcon
+  CalendarRange, MessageCircle, Menu, Link as LinkIcon, ChevronLeft
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { ModuleVisibility } from '../types';
+import { AccessCodeManager } from './AccessCodeManager';
+import { WhitelistedEmailManager } from './WhitelistedEmailManager';
 
 interface AdminDashboardProps {
   isAdmin: boolean;
@@ -52,6 +54,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 }) => {
   if (!isAdmin) return null;
 
+  const [adminSubView, setAdminSubView] = useState<'overview' | 'gmail_whitelist' | 'access_codes'>('overview');
   const [localContactLink, setLocalContactLink] = useState(contactLink);
   const [isSaved, setIsSaved] = useState(false);
 
@@ -140,14 +143,56 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   ];
 
   const quickActions = [
+    { id: 'gmail_whitelist', label: 'অনুমোদিত জিমেইল আইডি (Whitelist)', icon: Mail, color: 'emerald', desc: 'অডিট ক্রাইটেরিয়ার সকল ফাইল দেখার জন্য জিমেইল অনুমোদন দিন' },
+    { id: 'access_codes', label: 'অ্যাক্সেস কোড ও ডিভাইস পিন', icon: KeyRound, color: 'purple', desc: 'ব্যবহারকারীর জন্য ডিভাইস-বাউন্ড কোড প্যানেল' },
     { id: 'moderation', label: 'মডারেশন কিউ', icon: ShieldCheck, color: 'amber', desc: 'অপেক্ষমাণ এন্ট্রিগুলো যাচাই ও অনুমোদন করুন' },
     { id: 'unassigned', label: 'অনির্ধারিত এন্ট্রি', icon: AlertCircle, color: 'rose', desc: 'প্রাপকহীন চিঠিপত্রসমূহ' },
-    { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, color: 'purple', desc: 'ভোট প্রদান ও ফলাফল' },
+    { id: 'voting', label: 'গোপন ব্যালট', icon: Fingerprint, color: 'indigo', desc: 'ভোট প্রদান ও ফলাফল' },
     { id: 'setup_receivers', label: 'প্রাপক ব্যবস্থাপনা', icon: Users, color: 'amber', desc: 'প্রাপক তালিকা আপডেট করুন' },
     { id: 'initial_balance', label: 'পূর্ব জের সেটাপ', icon: ShieldCheck, color: 'blue', desc: 'প্রারম্ভিক জের সেটআপ করুন' },
-    { id: 'change_pass', label: 'পাসওয়ার্ড পরিবর্তন', icon: KeyRound, color: 'indigo', desc: 'সিকিউরিটি সেটিংস আপডেট করুন' },
+    { id: 'change_pass', label: 'পাসওয়ার্ড পরিবর্তন', icon: KeyRound, color: 'emerald', desc: 'সিকিউরিটি সেটিংস আপডেট করুন' },
     { id: 'archive', label: 'অডিট ক্রাইটেরিয়া', icon: Library, color: 'rose', desc: 'সংরক্ষিত ফাইলসমূহ' }
   ];
+
+  if (adminSubView === 'gmail_whitelist') {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300">
+        <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+          <button
+            onClick={() => setAdminSubView('overview')}
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+          >
+            <ChevronLeft size={16} />
+            <span>এডমিন ড্যাশবোর্ডে ফিরে যান</span>
+          </button>
+          <span className="text-xs font-bold text-slate-500">
+            অনুমোদিত জিমেইল আইডি ব্যবস্থাপনা (Whitelist)
+          </span>
+        </div>
+        <WhitelistedEmailManager />
+      </div>
+    );
+  }
+
+  if (adminSubView === 'access_codes') {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300">
+        <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+          <button
+            onClick={() => setAdminSubView('overview')}
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+          >
+            <ChevronLeft size={16} />
+            <span>এডমিন ড্যাশবোর্ডে ফিরে যান</span>
+          </button>
+          <span className="text-xs font-bold text-slate-500">
+            ডিভাইস-বাউন্ড অ্যাক্সেস কোড ব্যবস্থাপনা
+          </span>
+        </div>
+        <AccessCodeManager />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -231,7 +276,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <button 
                   key={idx}
                   onClick={() => {
-                    if (action.id === 'change_pass') {
+                    if (action.id === 'gmail_whitelist') {
+                      setAdminSubView('gmail_whitelist');
+                    } else if (action.id === 'access_codes') {
+                      setAdminSubView('access_codes');
+                    } else if (action.id === 'change_pass') {
                       onOpenChangePassword();
                     } else if (action.id === 'initial_balance') {
                       setActiveTab('return', null, 'প্রারম্ভিক জের সেটআপ: মাসিক');
