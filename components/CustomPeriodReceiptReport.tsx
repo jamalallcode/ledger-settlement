@@ -2239,11 +2239,16 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       const totalInvolved = entry.involvedAmount || entry.totalAmount || (entry.paragraphs && entry.paragraphs.length > 0 ? entry.paragraphs.reduce((sum: number, p: any) => sum + (p.involvedAmount || p.totalAmount || 0), 0) : 0);
                       const rowUnsettledAmount = Math.max(0, totalInvolved - rowSettledAmount);
 
-                      const fullParasText = fullParas.length > 0 ? fullParas.map(toBengaliDigits).join(', ') : '';
-                      const partialParasText = partialParas.length > 0 ? partialParas.map(toBengaliDigits).join(', ') : '';
-                      const allParasText = allParas.length > 0 
-                        ? allParas.map(toBengaliDigits).join(', ') 
-                        : ([fullParasText, partialParasText].filter(Boolean).join(', '));
+                      const formatParasText = (list: (string | number)[]) => {
+                        if (!list || list.length === 0) return '';
+                        if (list.length <= 8) return list.map(toBengaliDigits).join(', ');
+                        return list.slice(0, 8).map(toBengaliDigits).join(', ') + `... (মোট ${toBengaliDigits(list.length)} টি)`;
+                      };
+
+                      const fullParasText = formatParasText(fullParas);
+                      const partialParasText = formatParasText(partialParas);
+                      const rawAllParas = allParas.length > 0 ? allParas : [...fullParas, ...partialParas];
+                      const allParasText = formatParasText(rawAllParas);
 
                       // Derive sent paragraph count (from settlement entry or matched correspondence/letter entry)
                       const sentParasCount = getSentParasCountForEntry(entry, entries);
