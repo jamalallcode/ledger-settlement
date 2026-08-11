@@ -1767,12 +1767,12 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                   <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                     <colgroup>
                       <col className="w-[4%]" />
-                      <col className="w-[calc(17%+80px)]" style={{ width: 'calc(17% + 80px)' }} />
-                      <col className="w-[21%]" />
-                      <col className="w-[calc(15%-80px)]" style={{ width: 'calc(15% - 80px)' }} />
-                      <col className="w-[calc(13%+5px)]" style={{ width: 'calc(13% + 5px)' }} />
-                      <col className="w-[calc(16%-5px)]" style={{ width: 'calc(16% - 5px)' }} />
-                      <col className="w-[14%]" />
+                      <col className="w-[calc(17%+130px)]" style={{ width: 'calc(17% + 130px)' }} />
+                      <col className="w-[calc(21%-10px)]" style={{ width: 'calc(21% - 10px)' }} />
+                      <col className="w-[calc(15%-90px)]" style={{ width: 'calc(15% - 90px)' }} />
+                      <col className="w-[calc(13%-5px)]" style={{ width: 'calc(13% - 5px)' }} />
+                      <col className="w-[calc(16%-15px)]" style={{ width: 'calc(16% - 15px)' }} />
+                      <col className="w-[calc(14%-10px)]" style={{ width: 'calc(14% - 10px)' }} />
                     </colgroup>
                     <thead className="sticky top-0 xl:top-[45px] z-30 shadow-sm bg-slate-200">
                       {/* Header Row 1: Titles (Black Text) */}
