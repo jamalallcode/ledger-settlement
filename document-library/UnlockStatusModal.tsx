@@ -2,9 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   Lock, Unlock, ShieldCheck, Sparkles, Plus, CheckCircle2, 
-  Clock, AlertCircle, CreditCard, ChevronRight, X, User, Gift, Zap, MessageSquare, Mail, Search, Edit2, Check, FileSearch, HelpCircle, FileText
+  Clock, AlertCircle, CreditCard, ChevronRight, X, User, Gift, Zap, MessageSquare, Mail, Search, Edit2, Check, FileSearch, HelpCircle, FileText, KeyRound, Smartphone 
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
+import { verifyAndActivatePin, checkCurrentDeviceUnlock, deactivateCurrentDevicePin } from '../utils/pinManager';
 
 interface UnlockStatusModalProps {
   isOpen: boolean;
@@ -41,22 +42,68 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
   existingDocuments = [],
   initialTab = 'whatsapp'
 }) => {
-  const [activeTab, setActiveTab] = useState<'whatsapp' | 'dupcheck'>(initialTab === 'dupcheck' ? 'dupcheck' : 'whatsapp');
+  const [activeTab, setActiveTab] = useState<'pin' | 'whatsapp' | 'dupcheck'>('pin');
 
   const activeWaNum = whatsappNumber || paymentNumber || '01789-539494';
   const [isEditingWaNum, setIsEditingWaNum] = useState(false);
   const [tempWaNum, setTempWaNum] = useState(activeWaNum);
 
+  // PIN Unlock State
+  const [pinInput, setPinInput] = useState('');
+  const [pinStatus, setPinStatus] = useState<{
+    type: 'none' | 'success' | 'failed';
+    text?: string;
+    isUnlocked?: boolean;
+    activePin?: string;
+    deviceCount?: number;
+  }>({ type: 'none' });
+
   useEffect(() => {
     setTempWaNum(activeWaNum);
   }, [activeWaNum]);
 
-  // Sync activeTab if initialTab changes
   useEffect(() => {
     if (isOpen) {
-      setActiveTab(initialTab);
+      checkCurrentDeviceUnlock().then(res => {
+        if (res.isUnlocked) {
+          setPinStatus({
+            type: 'success',
+            text: `অ্যাক্সেস সক্রিয়! এই ডিভাইসে আপনার কোডটি অনুমোদিত রয়েছে (${res.deviceCount}/২ ডিভাইস নিবন্ধিত)।`,
+            isUnlocked: true,
+            activePin: res.activePin,
+            deviceCount: res.deviceCount
+          });
+        }
+      });
     }
-  }, [isOpen, initialTab]);
+  }, [isOpen]);
+
+  const handleVerifyPinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pinInput.trim()) return;
+    const res = await verifyAndActivatePin(pinInput);
+    if (res.success) {
+      setPinStatus({
+        type: 'success',
+        text: res.message,
+        isUnlocked: true,
+        activePin: res.codeItem?.code || pinInput.trim().toUpperCase(),
+        deviceCount: res.deviceCount
+      });
+      setPinInput('');
+    } else {
+      setPinStatus({
+        type: 'failed',
+        text: res.message,
+        isUnlocked: false
+      });
+    }
+  };
+
+  const handleLogoutPinInModal = () => {
+    deactivateCurrentDevicePin();
+    setPinStatus({ type: 'none', isUnlocked: false });
+  };
 
   // Email check state
   const [checkEmail, setCheckEmail] = useState(currentUserEmail);
@@ -112,7 +159,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
     (sessEmail ? currEmail === sessEmail : false) &&
     whitelistedEmails.some(e => e.toLowerCase() === currEmail)
   );
-  const isFullyUnlocked = isAdmin || isSubscribed || isWhitelisted;
+  const isFullyUnlocked = isAdmin || isSubscribed || isWhitelisted || Boolean(pinStatus.isUnlocked);
 
   const handleVerifySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,14 +254,20 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
         {/* Tab Navigation */}
         <div className="flex border-b border-slate-200 bg-slate-50 overflow-x-auto">
           <button
+            onClick={() => setActiveTab('pin')}
+            className={`py-3.5 px-4 font-black text-xs md:text-sm flex items-center justify-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === 'pin' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+          >
+            <KeyRound size={16} className="text-indigo-600" /> অ্যাক্সেস কোড (PIN)
+          </button>
+          <button
             onClick={() => setActiveTab('whatsapp')}
-            className={`py-3.5 px-4 font-black text-xs md:text-sm flex items-center justify-center gap-2 border-b-2 transition-all whitespace-nowrap ${activeTab === 'whatsapp' ? 'border-emerald-600 text-emerald-700 bg-white' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+            className={`py-3.5 px-4 font-black text-xs md:text-sm flex items-center justify-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === 'whatsapp' ? 'border-emerald-600 text-emerald-700 bg-white' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
           >
             <MessageSquare size={16} className="text-emerald-600" /> WhatsApp কন্ট্রিবিউশন
           </button>
           <button
             onClick={() => setActiveTab('dupcheck')}
-            className={`py-3.5 px-4 font-black text-xs md:text-sm flex items-center justify-center gap-2 border-b-2 transition-all whitespace-nowrap ${activeTab === 'dupcheck' ? 'border-blue-600 text-blue-700 bg-white' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+            className={`py-3.5 px-4 font-black text-xs md:text-sm flex items-center justify-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === 'dupcheck' ? 'border-blue-600 text-blue-700 bg-white' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
           >
             <FileSearch size={16} className="text-blue-600" /> 🔍 ডুপ্লিকেট চেকার
           </button>
@@ -222,6 +275,95 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
 
         {/* Tab Content */}
         <div className="p-6 md:p-8 space-y-6">
+
+          {/* TAB 0: ACCESS CODE / PIN UNLOCK */}
+          {activeTab === 'pin' && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              
+              {/* Notice Banner */}
+              <div className="bg-indigo-50/90 border border-indigo-200 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center gap-2 text-indigo-900 font-black text-sm">
+                  <KeyRound size={18} className="text-indigo-600 shrink-0" />
+                  গোপন অ্যাক্সেস কোড / পিন (Device-Bound PIN) দিয়ে আনলক করুন
+                </div>
+                <p className="text-slate-700 text-xs md:text-sm font-medium leading-relaxed">
+                  এডমিন কর্তৃক প্রদানকৃত আপনার ইউনিক অ্যাক্সেস কোডটি নিচে ইনপুট দিন। কোড ইনপুট দেওয়ামাত্র আপনার ডিভাইসটি নিবন্ধিত হবে এবং আপনি অডিট ক্রাইটেরিয়ার সকল নথি দেখতে পাবেন।
+                </p>
+
+                <div className="bg-white/90 p-3.5 rounded-xl border border-indigo-100 text-xs text-slate-800 space-y-2 shadow-2xs">
+                  <div className="font-black text-indigo-900 flex items-center gap-1.5">
+                    <Smartphone size={14} className="text-indigo-600" />
+                    <span>⚠️ ডিভাইস সিকিউরিটি নিয়মাবলী:</span>
+                  </div>
+                  <p className="text-slate-600 font-medium text-[11px] leading-relaxed">
+                    প্রতিটি অ্যাক্সেস কোড <strong>সর্বোচ্চ ২টি ডিভাইসে (যেমন: ১টি স্মার্টফোন ও ১টি ল্যাপটপ)</strong> ব্যবহার করা যাবে। যদি আপনি এই কোডটি অন্য কাউকে দেন এবং তিনি ৩য় কোনো ডিভাইসে প্রবেশ করার চেষ্টা করেন, তবে সিস্টেম দেখাবে: <span className="text-rose-600 font-bold">“এই অ্যাক্সেস কোডটি ইতোমধ্যে সর্বোচ্চ ২টি ডিভাইসে ব্যবহার করা হয়ে গেছে!”</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Pin Form */}
+              <form onSubmit={handleVerifyPinSubmit} className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                <label className="text-xs font-black text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
+                  <KeyRound size={15} className="text-indigo-600" /> আপনার অ্যাক্সেস কোড (PIN) লিখুন:
+                </label>
+
+                {pinStatus.isUnlocked ? (
+                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-3">
+                    <div className="flex items-center gap-2 text-emerald-900 font-black text-xs md:text-sm">
+                      <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                      <span>{pinStatus.text || 'আপনার ডিভাইসে কোডটি সক্রিয় রয়েছে!'}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-emerald-100">
+                      <span className="text-xs font-mono font-bold text-emerald-800">
+                        সক্রিয় কোড: {pinStatus.activePin}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleLogoutPinInModal}
+                        className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-xs font-bold border border-red-200 transition-all cursor-pointer active:scale-95"
+                      >
+                        ডিভাইস থেকে কোড সরান
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="যেমন: AUDIT2026"
+                      value={pinInput}
+                      onChange={e => {
+                        setPinInput(e.target.value);
+                        setPinStatus({ type: 'none' });
+                      }}
+                      className="flex-1 px-4 py-3 bg-white border border-slate-300 rounded-xl font-mono font-black text-xs md:text-sm text-indigo-700 uppercase outline-none focus:border-indigo-500 tracking-wider shadow-inner"
+                    />
+                    <button
+                      type="submit"
+                      className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs md:text-sm transition-all shrink-0 cursor-pointer shadow-md shadow-indigo-500/20 active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      <KeyRound size={16} />
+                      <span>যাচাই ও আনলক</span>
+                    </button>
+                  </div>
+                )}
+
+                {pinStatus.type === 'failed' && (
+                  <div className="p-4 bg-rose-50 text-rose-900 rounded-xl text-xs font-bold flex items-start gap-2.5 border border-rose-200 animate-in fade-in">
+                    <AlertCircle size={18} className="text-rose-600 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="font-black text-rose-800">{pinStatus.text}</p>
+                      <p className="text-[11px] text-slate-600 font-normal">
+                        আপনার যদি নতুন কোডের প্রয়োজন হয়, এডমিনের সাথে যোগাযোগ করুন।
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </form>
+
+            </div>
+          )}
 
           {/* TAB 1: WHATSAPP CONTRIBUTION */}
           {activeTab === 'whatsapp' && (

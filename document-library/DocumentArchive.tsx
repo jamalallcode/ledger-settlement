@@ -5,12 +5,13 @@ import {
   Library, Search, Filter, Plus, FileText, Calendar, 
   ExternalLink, Trash2, LayoutGrid, List, X, Edit2,
   ChevronRight, BookOpen, Clock, Eye, EyeOff, Loader2, Sparkles, AlertCircle,
-  Lock, Unlock, ShieldCheck, CheckCircle2, XCircle, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send
+  Lock, Unlock, ShieldCheck, CheckCircle2, XCircle, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send, KeyRound, Smartphone
 } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { UnlockStatusModal } from './UnlockStatusModal';
 import { PendingDocsModal } from './PendingDocsModal';
 import { recordVisitorLog, isValidIdentifier } from './visitorTracker';
+import { checkCurrentDeviceUnlock, verifyAndActivatePin, deactivateCurrentDevicePin } from '../utils/pinManager';
 
 interface ExtendedArchiveDoc extends ArchiveDoc {
   memoNo?: string;
@@ -269,14 +270,58 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     localStorage.setItem('audit_doc_payment_number', paymentNumber);
   }, [paymentNumber]);
 
-  // Access check based on entered identifier/email
+  // Device-bound PIN unlock state
+  const [pinState, setPinState] = useState<{
+    isUnlocked: boolean;
+    activePin?: string;
+    userName?: string;
+    deviceCount?: number;
+  }>({ isUnlocked: false });
+  const [pinInput, setPinInput] = useState('');
+  const [pinMessage, setPinMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    checkCurrentDeviceUnlock().then(res => {
+      if (res.isUnlocked) {
+        setPinState(res);
+      }
+    });
+  }, []);
+
+  const handleVerifyPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pinInput.trim()) return;
+    setPinMessage(null);
+    const res = await verifyAndActivatePin(pinInput);
+    if (res.success) {
+      setPinMessage({ type: 'success', text: res.message });
+      setPinState({
+        isUnlocked: true,
+        activePin: res.codeItem?.code || pinInput.trim().toUpperCase(),
+        userName: res.userName,
+        deviceCount: res.deviceCount
+      });
+      setPinInput('');
+    } else {
+      setPinMessage({ type: 'error', text: res.message });
+    }
+  };
+
+  const handleLogoutPin = () => {
+    deactivateCurrentDevicePin();
+    setPinState({ isUnlocked: false });
+    setPinMessage({ type: 'success', text: 'কোডটি এই ডিভাইস থেকে সফলভাবে সরানো হয়েছে।' });
+    setTimeout(() => setPinMessage(null), 3000);
+  };
+
+  // Access check based on entered identifier/email or activated PIN
   const isWhitelisted = useMemo(() => {
     const typed = currentUserEmail ? currentUserEmail.trim().toLowerCase() : '';
     if (!typed) return false;
     return whitelistedEmails.some(e => e.toLowerCase() === typed);
   }, [currentUserEmail, whitelistedEmails]);
 
-  const isFullyUnlocked = effectiveAdmin || isSubscribed || isWhitelisted;
+  const isFullyUnlocked = effectiveAdmin || isSubscribed || isWhitelisted || pinState.isUnlocked;
 
   // Form state for document addition (Admin only)
   const [newDoc, setNewDoc] = useState({
@@ -921,45 +966,93 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
               </div>
             </div>
 
-            {/* Quick User Identifier / Email Input */}
-            <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2 text-slate-600 font-bold">
-                <span>আপনার ইমেইল / নাম্বার:</span>
-                <input 
-                  type="email"
-                  value={currentUserEmail}
-                  onChange={e => setCurrentUserEmail(e.target.value)}
-                  className="px-2.5 py-1 border border-slate-200 bg-slate-50 text-blue-700 rounded-lg text-xs font-mono font-bold outline-none focus:bg-white focus:border-blue-500 w-52 transition-all"
-                  placeholder="user@gmail.com"
-                />
-                {isWhitelisted ? (
-                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded text-[10px] flex items-center gap-1 border border-emerald-200">
-                    <CheckCircle2 size={12} /> অনুমোদিত কন্ট্রিবিউটর (সকল নথি উন্মুক্ত)
+            {/* Quick Access Code / Device PIN Section */}
+            <div className="pt-2 border-t border-slate-100 space-y-2 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <form onSubmit={handleVerifyPin} className="flex flex-wrap items-center gap-2">
+                  <span className="font-bold text-slate-700 flex items-center gap-1">
+                    <KeyRound size={14} className="text-indigo-600" />
+                    <span>অ্যাক্সেস কোড (PIN):</span>
                   </span>
-                ) : (
-                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-black rounded text-[10px] border border-amber-200">
-                    সাধারণ এক্সেস (প্রথম ৫টি ফ্রি, অন্যান্য লকড)
-                  </span>
-                )}
+
+                  {pinState.isUnlocked ? (
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-black rounded-lg text-xs flex items-center gap-1.5 border border-emerald-200 shadow-2xs font-mono">
+                        <CheckCircle2 size={14} className="text-emerald-600" />
+                        <span>কোড: {pinState.activePin} (অনুমোদিত ডিভাইস: {toBengaliDigits((pinState.deviceCount || 1).toString())}/২)</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleLogoutPin}
+                        className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-[11px] font-bold border border-red-200 transition-all active:scale-95"
+                      >
+                        লগআউট
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="text"
+                        value={pinInput}
+                        onChange={e => setPinInput(e.target.value)}
+                        className="px-3 py-1 border border-slate-200 bg-slate-50 text-indigo-700 rounded-lg text-xs font-mono font-black uppercase outline-none focus:bg-white focus:border-indigo-500 w-44 tracking-wider transition-all"
+                        placeholder="যেমন: AUDIT2026"
+                      />
+                      <button
+                        type="submit"
+                        className="px-3.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-lg text-xs transition-all shadow-xs active:scale-95 flex items-center gap-1"
+                      >
+                        <KeyRound size={13} />
+                        <span>কোড যাচাই করুন</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {!pinState.isUnlocked && !isFullyUnlocked && (
+                    <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-black rounded text-[10px] border border-amber-200">
+                      সাধারণ এক্সেস (প্রথম ৫টি ফ্রি, অন্যান্য লকড)
+                    </span>
+                  )}
+                </form>
+
+                {/* User Marked Hide Button & Unlock Instructions Link */}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setIsFilterHidden(true)}
+                    className="px-3 py-1 bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-slate-700 rounded-lg font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer border border-slate-200 shadow-2xs active:scale-95"
+                    title="ফিল্টার ও সার্চ অপশনগুলো হাইড করুন"
+                  >
+                    <EyeOff size={14} className="text-slate-500 hover:text-red-600" />
+                    <span>হাইড করুন</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowUnlockModal(true)}
+                    className="text-indigo-600 font-black text-xs hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    এক্সেস বিস্তারিত ও আনলক নির্দেশিকা <ChevronRight size={14} />
+                  </button>
+                </div>
               </div>
 
-              {/* User Marked Hide Button & Unlock Instructions Link */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setIsFilterHidden(true)}
-                  className="px-3 py-1 bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-slate-700 rounded-lg font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer border border-slate-200 shadow-2xs active:scale-95"
-                  title="ফিল্টার ও সার্চ অপশনগুলো হাইড করুন"
-                >
-                  <EyeOff size={14} className="text-slate-500 hover:text-red-600" />
-                  <span>হাইড করুন</span>
-                </button>
+              {/* Pin verification message banner */}
+              {pinMessage && (
+                <div className={`p-2 rounded-lg text-xs font-bold flex items-center gap-2 border ${
+                  pinMessage.type === 'success' 
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+                    : 'bg-rose-50 text-rose-800 border-rose-200'
+                }`}>
+                  {pinMessage.type === 'success' ? <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> : <AlertCircle size={14} className="text-rose-600 shrink-0" />}
+                  <span>{pinMessage.text}</span>
+                </div>
+              )}
 
-                <button
-                  onClick={() => setShowUnlockModal(true)}
-                  className="text-blue-600 font-black text-xs hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  এক্সেস বিস্তারিত ও আনলক নির্দেশিকা <ChevronRight size={14} />
-                </button>
+              {/* Device rule note */}
+              <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-lg border border-slate-100">
+                <Smartphone size={13} className="text-indigo-600 shrink-0" />
+                <span>
+                  <strong>বিশেষ বিজ্ঞপ্তি:</strong> প্রতিটি অ্যাক্সেস কোড সর্বোচ্চ ২টি ডিভাইসে (যেমন: মোবাইল ও ল্যাপটপ) অটোমেটিক ডিভাইস-লক সহ ব্যবহার করতে পারবেন।
+                </span>
               </div>
             </div>
           </div>
