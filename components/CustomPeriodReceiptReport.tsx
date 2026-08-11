@@ -1992,8 +1992,8 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                     {issueLetterDate && ` (${formatDateBN(issueLetterDate)})`}
                                   </span>
                                 ) : (
-                                  <span className="font-bold text-amber-950 bg-amber-50 px-1 py-0.5 rounded border border-amber-200 text-[10px] inline-block">
-                                    চিঠিটি এখনো যার কাছে আছে: <span className="font-black">{holderName}</span>
+                                  <span className="font-bold text-amber-950 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 text-[10.5px] inline-block">
+                                    <span className="font-black">{holderName}</span>
                                   </span>
                                 )}
                               </div>
