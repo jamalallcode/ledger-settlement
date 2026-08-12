@@ -1883,84 +1883,89 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                           </div>
                         </td>
                         <td className={tdCls}>
-                          <div className="space-y-1">
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">১. মন্ত্রণালয়: </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={entry.ministryName || 'প্রযোজ্য নয়'}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                            {entry.entityName && (
-                              <div className="text-[10px] leading-snug">
-                                <span className="font-bold text-emerald-800">১.ক. এনটিটি: </span>
-                                <span className="font-black text-slate-950">
-                                  <HighlightText
-                                    text={entry.entityName}
-                                    searchTerm={searchTerm}
-                                  />
-                                </span>
+                          {(() => {
+                            let itemIdx = 1;
+                            return (
+                              <div className="space-y-1">
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মন্ত্রণালয়: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={entry.ministryName || 'প্রযোজ্য নয়'}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                {entry.entityName && (
+                                  <div className="text-[10px] leading-snug">
+                                    <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. এনটিটি: </span>
+                                    <span className="font-black text-slate-950">
+                                      <HighlightText
+                                        text={entry.entityName}
+                                        searchTerm={searchTerm}
+                                      />
+                                    </span>
+                                  </div>
+                                )}
+                                {entry.auditYear && (
+                                  <div className="text-[10px] leading-snug">
+                                    <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. নিরীক্ষা সাল: </span>
+                                    <span className="font-black text-slate-950">
+                                      <HighlightText
+                                        text={entry.auditYear}
+                                        searchTerm={searchTerm}
+                                      />
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. শাখার ধরণ: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={entry.paraType}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. পত্রের ধরণ: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={getCleanLetterTypeDisplay(entry.letterType)}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. পত্র নং ও তারিখ: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={`${entry.letterNo}, ${formatDateBN(entry.letterDate)}`}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. প্রেরিত অনু: সংখ্যা: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={`${toBengaliDigits(entry.totalParas)} টি`}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট জড়িত টাকা: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={toBengaliDigits(entry.totalAmount)}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
                               </div>
-                            )}
-                            {entry.auditYear && (
-                              <div className="text-[10px] leading-snug">
-                                <span className="font-bold text-emerald-800">১.খ. নিরীক্ষা সাল: </span>
-                                <span className="font-black text-slate-950">
-                                  <HighlightText
-                                    text={entry.auditYear}
-                                    searchTerm={searchTerm}
-                                  />
-                                </span>
-                              </div>
-                            )}
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">২. শাখার ধরণ: </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={entry.paraType}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">৩. পত্রের ধরণ: </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={getCleanLetterTypeDisplay(entry.letterType)}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">৪. পত্র নং ও তারিখ: </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={`${entry.letterNo}, ${formatDateBN(entry.letterDate)}`}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">৫. প্রেরিত অনু: সংখ্যা: </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={`${toBengaliDigits(entry.totalParas)} টি`}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">৬. মোট জড়িত টাকা: </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={toBengaliDigits(entry.totalAmount)}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                          </div>
+                            );
+                          })()}
                         </td>
                         <td className={tdCls}>
                           <div className="space-y-1">
