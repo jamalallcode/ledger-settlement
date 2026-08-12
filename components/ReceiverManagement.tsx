@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Plus, FileEdit, Trash, X, ShieldCheck, Sparkles, AlertCircle, Loader2, FileText, Check, ArrowLeft } from 'lucide-react';
+import { User, Plus, FileEdit, Trash, X, ShieldCheck, Sparkles, AlertCircle, Loader2, FileText, Check, ArrowLeft, RefreshCw } from 'lucide-react';
 import { SFI_RECEIVERS } from '../utils/sfi';
 import { NONSFI_RECEIVERS } from '../utils/nonsfi';
 import { isSFI, isNonSFI, isAdminBranch, getBranchVariations } from '../utils/branchUtils';
@@ -35,6 +35,22 @@ interface ReceiverProfile {
 
 const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
 
+const KNOWN_ALIASES: Record<string, string> = {
+  'শাহের': 'মোসা: সাহেরা খাতুন',
+  'সাহেরা': 'মোসা: সাহেরা খাতুন',
+  'সাহেরা খাতুন': 'মোসা: সাহেরা খাতুন',
+  'মোসা সাহেরা খাতুন': 'মোসা: সাহেরা খাতুন',
+  'সাহেরা আক্তার': 'মোসা: সাহেরা খাতুন',
+  'মো: জামাল উদ্দিন': 'জামাল উদ্দিন',
+  'মোঃ জামাল উদ্দিন': 'জামাল উদ্দিন',
+  'মো: জামাল উদ্দিন': 'জামাল উদ্দিন',
+  'মোঃ জামাল উদ্দিন': 'জামাল উদ্দিন',
+  'জামাল উদ্দীন': 'জামাল উদ্দিন',
+  'জনাব জামাল উদ্দিন': 'জামাল উদ্দিন',
+  'জামাল উদ্দিন (অডিটর)': 'জামাল উদ্দিন',
+  'মো: জামাল উদ্দিন (অডিটর)': 'জামাল উদ্দিন',
+};
+
 const normalizeName = (name: string | null | undefined): string => {
   if (!name) return '';
   let n = name
@@ -48,6 +64,8 @@ const normalizeName = (name: string | null | undefined): string => {
   n = n.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '');
   n = n.replace(/^মো[ঃ:\.]\s*/, '');
   n = n.replace(/^মোঃ\s*/, '');
+  n = n.replace(/^মোসা[ঃ:\.]\s*/, '');
+  n = n.replace(/^মোসাঃ\s*/, '');
 
   // Normalize vowels, sibilants, virama (hasanta), nukta & nasal marks
   n = n.replace(/ী/g, 'ি')
@@ -61,6 +79,37 @@ const normalizeName = (name: string | null | undefined): string => {
        .replace(/়/g, '');
 
   return n;
+};
+
+const isNameMatching = (testName: string | null | undefined, targetOldName: string, targetMatchNorm: string): boolean => {
+  if (!testName) return false;
+  const rawTest = testName.trim();
+  if (!rawTest) return false;
+  
+  if (rawTest === targetOldName) return true;
+  if (KNOWN_ALIASES[rawTest] && KNOWN_ALIASES[rawTest] === targetOldName) return true;
+  
+  const testNorm = normalizeName(rawTest);
+  if (testNorm && targetMatchNorm && testNorm === targetMatchNorm) return true;
+  
+  const cleanRawTest = rawTest.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়|মোঃ|মো:|মোসা:|মোসা|অডিটর)\s*/g, '').trim();
+  const cleanTarget = targetOldName.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়|মোঃ|মো:|মোসা:|মোসা|অডিটর)\s*/g, '').trim();
+  
+  if (cleanRawTest && cleanTarget) {
+    if (cleanRawTest === cleanTarget) return true;
+    const cleanTestNorm = normalizeName(cleanRawTest);
+    const cleanTargetNorm = normalizeName(cleanTarget);
+    if (cleanTestNorm && cleanTargetNorm && cleanTestNorm === cleanTargetNorm) return true;
+
+    // Substring / root word match (min 4 chars)
+    if (cleanTestNorm.length >= 4 && cleanTargetNorm.length >= 4) {
+      if (cleanTargetNorm.includes(cleanTestNorm) || cleanTestNorm.includes(cleanTargetNorm)) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
 };
 
 const getCleanBranch = (type: string | null | undefined): string => {
@@ -266,6 +315,119 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
         finalReceivers = bootstrapped;
       }
 
+      // 2b. STRICT DEDUPLICATION AND PURGE PASS
+      // Group by branch and eliminate duplicate receiver cards (e.g. "মো: জামাল উদ্দিন" vs "জামাল উদ্দিন")
+      const dbIdsToDelete: (string | number)[] = [];
+      const deduplicatedFinalReceivers: ReceiverProfile[] = [];
+
+      const branchGroups: Record<string, ReceiverProfile[]> = {
+        'প্রশাসন': [],
+        'এসএফআই': [],
+        'নন এসএফআই': []
+      };
+
+      finalReceivers.forEach(r => {
+        const b = getCleanBranch(r.para_type);
+        if (branchGroups[b]) {
+          branchGroups[b].push({ ...r, para_type: b as any });
+        } else {
+          branchGroups['নন এসএফআই'].push({ ...r, para_type: 'নন এসএফআই' });
+        }
+      });
+
+      Object.keys(branchGroups).forEach(branchName => {
+        const list = branchGroups[branchName];
+        const uniqueInBranch: ReceiverProfile[] = [];
+
+        list.forEach(item => {
+          if (!item.name || !item.name.trim()) return;
+          const itemTrim = item.name.trim();
+
+          // Target canonical clean name
+          let targetCleanName = itemTrim;
+          if (KNOWN_ALIASES[itemTrim]) {
+            targetCleanName = KNOWN_ALIASES[itemTrim];
+          } else {
+            const empMatch = EMPLOYEES.find(e => {
+              let cleanE = e.split('(')[0].replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '').trim();
+              return isNameMatching(itemTrim, cleanE, normalizeName(cleanE));
+            });
+            if (empMatch) {
+              targetCleanName = empMatch.split('(')[0].replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '').trim();
+            }
+          }
+
+          const itemNorm = normalizeName(targetCleanName);
+
+          const existingIndex = uniqueInBranch.findIndex(ex => {
+            if (ex.name === targetCleanName) return true;
+            if (KNOWN_ALIASES[ex.name] === targetCleanName || KNOWN_ALIASES[targetCleanName] === ex.name) return true;
+            const exNorm = normalizeName(ex.name);
+            return exNorm === itemNorm || isNameMatching(ex.name, targetCleanName, itemNorm) || isNameMatching(targetCleanName, ex.name, exNorm);
+          });
+
+          if (existingIndex === -1) {
+            uniqueInBranch.push({
+              ...item,
+              name: targetCleanName
+            });
+          } else {
+            const existing = uniqueInBranch[existingIndex];
+            existing.name = targetCleanName;
+            if (item.is_active && !existing.is_active) {
+              existing.is_active = true;
+            }
+
+            const isRealDbId = item.id && !String(item.id).startsWith('local-') && !String(item.id).startsWith('corr-rec-') && !String(item.id).startsWith('init-');
+            if (isRealDbId && item.id !== existing.id) {
+              dbIdsToDelete.push(item.id);
+            }
+          }
+        });
+
+        deduplicatedFinalReceivers.push(...uniqueInBranch);
+      });
+
+      finalReceivers = deduplicatedFinalReceivers;
+
+      // Purge duplicates from DB if configured
+      if (isSupabaseConfigured && dbIdsToDelete.length > 0) {
+        try {
+          for (const dupId of dbIdsToDelete) {
+            await supabase.from('receivers').delete().eq('id', dupId);
+          }
+        } catch (err) {
+          console.warn('Error purging duplicate receivers from DB:', err);
+        }
+      }
+
+      // Purge duplicates from local storage keys
+      const receiverLocalKeys = [
+        'ledger_correspondence_receivers_admin',
+        'ledger_correspondence_receivers_sfi',
+        'ledger_correspondence_receivers_nonsfi'
+      ];
+      receiverLocalKeys.forEach(key => {
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          try {
+            let items = JSON.parse(saved);
+            const origLen = items.length;
+            items = items.filter((it: any) => {
+              if (!it || !it.name) return false;
+              if (dbIdsToDelete.includes(it.id)) return false;
+              if (KNOWN_ALIASES[it.name.trim()]) return false;
+              return true;
+            });
+            if (items.length !== origLen) {
+              localStorage.setItem(key, JSON.stringify(items));
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      });
+
       // 3. Scan correspondence entries to find recipient names that are added on descriptions but not saved in database
       let correspondenceNamesByBranch: Record<string, string[]> = {
         'প্রশাসন': [],
@@ -408,6 +570,20 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
           if (!name || !name.trim()) return;
           const norm = normalizeName(name);
           const compKey = `${norm}_${b}`;
+
+          // Check if this name matches an official active receiver in finalReceivers
+          const matchingOfficial = finalReceivers.find(r => isNameMatching(name, r.name, normalizeName(r.name)));
+          if (matchingOfficial) {
+            // Merge counts to official receiver profile instead of creating a ghost duplicate profile
+            const officialNorm = normalizeName(matchingOfficial.name);
+            const officialCompKey = `${officialNorm}_${b}`;
+            if (compKey !== officialCompKey) {
+              entryCounts[officialCompKey] = (entryCounts[officialCompKey] || 0) + (entryCounts[compKey] || 0);
+              entryDetails[officialCompKey] = [...(entryDetails[officialCompKey] || []), ...(entryDetails[compKey] || [])];
+            }
+            return;
+          }
+
           if (!existingNormalizedNames.has(compKey)) {
             // Check if this person is active in another branch or marked inactive
             const isActiveInOtherBranch = finalReceivers.some(
@@ -518,9 +694,191 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
     }
   };
 
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const reconcileSystemWideNames = async (
+    customReceivers?: ReceiverProfile[],
+    passedEntries?: any[],
+    passedCorrEntries?: any[]
+  ) => {
+    const sourceList = customReceivers || receiversList;
+    const officialActiveReceivers = Array.from(
+      new Set(
+        sourceList
+          .filter(r => r.name && r.name.trim() && r.source !== 'correspondence')
+          .map(r => r.name.trim())
+      )
+    );
+
+    if (officialActiveReceivers.length === 0) return 0;
+
+    let updatedEntries = passedEntries || entries ? [...(passedEntries || entries || [])] : [];
+    let updatedCorrEntries = passedCorrEntries || correspondenceEntries ? [...(passedCorrEntries || correspondenceEntries || [])] : [];
+    let totalChanged = 0;
+
+    const resolveToOfficial = (rawName: string | null | undefined): string | null => {
+      if (!rawName) return null;
+      const trimmed = rawName.trim();
+      if (!trimmed) return null;
+
+      if (officialActiveReceivers.includes(trimmed)) return null;
+
+      if (KNOWN_ALIASES[trimmed] && officialActiveReceivers.includes(KNOWN_ALIASES[trimmed])) {
+        return KNOWN_ALIASES[trimmed];
+      }
+
+      for (const official of officialActiveReceivers) {
+        if (isNameMatching(trimmed, official, normalizeName(official))) {
+          return official;
+        }
+      }
+
+      return null;
+    };
+
+    updatedEntries = updatedEntries.map(e => {
+      if (!e) return e;
+      let changed = false;
+      let newEntry = { ...e };
+      const resolvedRec = resolveToOfficial(newEntry.receiverName);
+      if (resolvedRec && resolvedRec !== newEntry.receiverName) {
+        newEntry.receiverName = resolvedRec;
+        changed = true;
+      }
+      const resolvedPres = resolveToOfficial(newEntry.presentedToName);
+      if (resolvedPres && resolvedPres !== newEntry.presentedToName) {
+        newEntry.presentedToName = resolvedPres;
+        changed = true;
+      }
+      if (changed) totalChanged++;
+      return newEntry;
+    });
+
+    updatedCorrEntries = updatedCorrEntries.map(e => {
+      if (!e) return e;
+      let changed = false;
+      let newEntry = { ...e };
+      const resolvedRec = resolveToOfficial(newEntry.receiverName);
+      if (resolvedRec && resolvedRec !== newEntry.receiverName) {
+        newEntry.receiverName = resolvedRec;
+        changed = true;
+      }
+      const resolvedPres = resolveToOfficial(newEntry.presentedToName);
+      if (resolvedPres && resolvedPres !== newEntry.presentedToName) {
+        newEntry.presentedToName = resolvedPres;
+        changed = true;
+      }
+      if (changed) totalChanged++;
+      return newEntry;
+    });
+
+    // Update localStorage CORR_STORAGE_KEY
+    const savedCorr = localStorage.getItem(CORR_STORAGE_KEY);
+    if (savedCorr) {
+      try {
+        let corrList = JSON.parse(savedCorr);
+        let corrChanged = false;
+        corrList = corrList.map((entry: any) => {
+          if (!entry) return entry;
+          let entryUpdated = false;
+          const resRec = resolveToOfficial(entry.receiverName);
+          if (resRec && resRec !== entry.receiverName) {
+            entry.receiverName = resRec;
+            entryUpdated = true;
+          }
+          const resPres = resolveToOfficial(entry.presentedToName);
+          if (resPres && resPres !== entry.presentedToName) {
+            entry.presentedToName = resPres;
+            entryUpdated = true;
+          }
+          if (entryUpdated) corrChanged = true;
+          return entry;
+        });
+        if (corrChanged) {
+          localStorage.setItem(CORR_STORAGE_KEY, JSON.stringify(corrList));
+        }
+      } catch (e) {
+        console.error('Error updating local CORR_STORAGE_KEY during reconcile:', e);
+      }
+    }
+
+    // Update Supabase if configured
+    if (isSupabaseConfigured) {
+      try {
+        const { data: dbEntries, error: entriesError } = await supabase
+          .from('settlement_entries')
+          .select('id, content');
+        if (!entriesError && dbEntries) {
+          for (const row of dbEntries) {
+            let content = row.content;
+            if (typeof content === 'string') {
+              try { content = JSON.parse(content); } catch (e) { continue; }
+            }
+            if (!content) continue;
+
+            let contentChanged = false;
+            const resRec = resolveToOfficial(content.receiverName);
+            if (resRec && resRec !== content.receiverName) {
+              content.receiverName = resRec;
+              contentChanged = true;
+            }
+            const resPres = resolveToOfficial(content.presentedToName);
+            if (resPres && resPres !== content.presentedToName) {
+              content.presentedToName = resPres;
+              contentChanged = true;
+            }
+            if (contentChanged) {
+              await supabase
+                .from('settlement_entries')
+                .update({ content: content })
+                .eq('id', row.id);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase sync warning during reconcile:', err);
+      }
+    }
+
+    if (totalChanged > 0) {
+      localStorage.setItem('cached_settlement_entries', JSON.stringify(updatedEntries));
+      localStorage.setItem('cached_correspondence_entries', JSON.stringify(updatedCorrEntries));
+      if (onUpdateEntries) {
+        onUpdateEntries(updatedEntries, updatedCorrEntries);
+      }
+      window.dispatchEvent(new Event('storage'));
+    }
+
+    return totalChanged;
+  };
+
+  const handleManualSyncAllNames = async () => {
+    setIsSyncing(true);
+    try {
+      const changed = await reconcileSystemWideNames();
+      await fetchReceivers();
+      if (changed > 0) {
+        alert(`সফলভাবে ${toBengaliDigits(changed.toString())}টি পুরাতন ডাটা ও ভিন্ন নামের এন্ট্রি (যেমন: শাহের -> মোসা: সাহেরা খাতুন, মো: জামাল উদ্দিন -> জামাল উদ্দিন) বর্তমান অফিশিয়াল নামে আপডেট করা হয়েছে!`);
+      } else {
+        alert('সকল নাম ও পুরোনো ডাটা ইতোমধ্যেই নতুন ও অফিশিয়াল নামের সাথে পুরোপুরি সিঙ্ক ও সামঞ্জস্যপূর্ণ অবস্থায় রয়েছে।');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('সিঙ্ক করার সময় একটি সমস্যা হয়েছে।');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   useEffect(() => {
     fetchReceivers();
   }, [entries, correspondenceEntries]);
+
+  useEffect(() => {
+    if (receiversList.length > 0) {
+      reconcileSystemWideNames(receiversList);
+    }
+  }, [receiversList.length]);
 
   const openAddModal = (branch: string) => {
     setEditingId(null);
@@ -590,7 +948,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
               .from('receivers')
               .select('id, name');
             if (!recErr && dbRecs) {
-              const matchedDbRecs = dbRecs.filter(r => normalizeName(r.name) === matchNorm);
+              const matchedDbRecs = dbRecs.filter(r => isNameMatching(r.name, oldName, matchNorm));
               for (const r of matchedDbRecs) {
                 await supabase
                   .from('receivers')
@@ -609,9 +967,18 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                 if (typeof content === 'string') {
                   try { content = JSON.parse(content); } catch (e) { continue; }
                 }
-                const eNorm = content && content.receiverName ? normalizeName(content.receiverName) : '';
-                if (eNorm && (eNorm === matchNorm || eNorm.includes(matchNorm) || matchNorm.includes(eNorm))) {
+                if (!content) continue;
+
+                let contentChanged = false;
+                if (isNameMatching(content.receiverName, oldName, matchNorm)) {
                   content.receiverName = newNameClean;
+                  contentChanged = true;
+                }
+                if (isNameMatching(content.presentedToName, oldName, matchNorm)) {
+                  content.presentedToName = newNameClean;
+                  contentChanged = true;
+                }
+                if (contentChanged) {
                   await supabase
                     .from('settlement_entries')
                     .update({ content: content })
@@ -637,7 +1004,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
               let items = JSON.parse(saved);
               let updated = false;
               items = items.map((it: any) => {
-                if (it && it.name && normalizeName(it.name) === matchNorm) {
+                if (it && it.name && isNameMatching(it.name, oldName, matchNorm)) {
                   updated = true;
                   return { ...it, name: newNameClean };
                 }
@@ -659,11 +1026,16 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
             let dbEntries = JSON.parse(savedCorr);
             let updated = false;
             dbEntries = dbEntries.map((entry: any) => {
-              const eNorm = entry && entry.receiverName ? normalizeName(entry.receiverName) : '';
-              if (eNorm && (eNorm === matchNorm || eNorm.includes(matchNorm) || matchNorm.includes(eNorm))) {
-                updated = true;
-                return { ...entry, receiverName: newNameClean };
+              let entryUpdated = false;
+              if (entry && isNameMatching(entry.receiverName, oldName, matchNorm)) {
+                entry = { ...entry, receiverName: newNameClean };
+                entryUpdated = true;
               }
+              if (entry && isNameMatching(entry.presentedToName, oldName, matchNorm)) {
+                entry = { ...entry, presentedToName: newNameClean };
+                entryUpdated = true;
+              }
+              if (entryUpdated) updated = true;
               return entry;
             });
             if (updated) {
@@ -923,19 +1295,37 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
         const newNameClean = tempName.trim();
         
         updatedEntries = updatedEntries.map(entry => {
-          const eNorm = entry && entry.receiverName ? normalizeName(entry.receiverName) : '';
-          if (eNorm && (eNorm === matchNorm || eNorm.includes(matchNorm) || matchNorm.includes(eNorm))) {
+          let itemChanged = false;
+          let newEntry = { ...entry };
+          if (isNameMatching(newEntry.receiverName, oldName, matchNorm)) {
+            newEntry.receiverName = newNameClean;
+            itemChanged = true;
+          }
+          if (isNameMatching(newEntry.presentedToName, oldName, matchNorm)) {
+            newEntry.presentedToName = newNameClean;
+            itemChanged = true;
+          }
+          if (itemChanged) {
             entriesChanged = true;
-            return { ...entry, receiverName: newNameClean };
+            return newEntry;
           }
           return entry;
         });
 
         updatedCorrEntries = updatedCorrEntries.map(entry => {
-          const eNorm = entry && entry.receiverName ? normalizeName(entry.receiverName) : '';
-          if (eNorm && (eNorm === matchNorm || eNorm.includes(matchNorm) || matchNorm.includes(eNorm))) {
+          let itemChanged = false;
+          let newEntry = { ...entry };
+          if (isNameMatching(newEntry.receiverName, oldName, matchNorm)) {
+            newEntry.receiverName = newNameClean;
+            itemChanged = true;
+          }
+          if (isNameMatching(newEntry.presentedToName, oldName, matchNorm)) {
+            newEntry.presentedToName = newNameClean;
+            itemChanged = true;
+          }
+          if (itemChanged) {
             entriesChanged = true;
-            return { ...entry, receiverName: newNameClean };
+            return newEntry;
           }
           return entry;
         });
@@ -1274,16 +1664,29 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
           </div>
         </div>
 
-        {onBack && (
+        <div className="flex items-center gap-2.5 self-start sm:self-center flex-wrap">
           <button 
             type="button"
-            onClick={onBack}
-            className="flex items-center gap-2 px-5 py-2.5 bg-rose-50 text-rose-700 hover:bg-rose-100/80 border border-rose-100 hover:border-rose-300 rounded-2xl font-black text-xs transition-all hover:shadow active:scale-95 self-start sm:self-center cursor-pointer shadow-sm"
+            onClick={handleManualSyncAllNames}
+            disabled={isSyncing}
+            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-2xl font-black text-xs transition-all shadow-sm active:scale-95 cursor-pointer disabled:opacity-50"
+            title="পুরাতন ও ভিন্ন বানানের নাম অফিশিয়াল নামের সাথে অটো-সিঙ্ক করুন"
           >
-            <X size={16} className="stroke-[2.5]" />
-            বাতিল / বন্ধ করুন
+            <RefreshCw size={16} className={`stroke-[2.5] ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'সিঙ্ক হচ্ছে...' : 'নাম সিঙ্ক করুন'}
           </button>
-        )}
+
+          {onBack && (
+            <button 
+              type="button"
+              onClick={onBack}
+              className="flex items-center gap-2 px-5 py-2.5 bg-rose-50 text-rose-700 hover:bg-rose-100/80 border border-rose-100 hover:border-rose-300 rounded-2xl font-black text-xs transition-all hover:shadow active:scale-95 cursor-pointer shadow-sm"
+            >
+              <X size={16} className="stroke-[2.5]" />
+              বাতিল / বন্ধ করুন
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
