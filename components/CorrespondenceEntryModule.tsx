@@ -1118,7 +1118,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     remarks: '',
     meetingDate: initialEntry?.meetingDate || '',
     meetingDiscussedParaCount: initialEntry?.meetingDiscussedParaCount || '',
-    meetingRecommendedParaCount: initialEntry?.meetingRecommendedParaCount || ''
+    meetingRecommendedParaCount: initialEntry?.meetingRecommendedParaCount || '',
+    sentToDhakaDate: initialEntry?.sentToDhakaDate || '',
+    returnedFromDhakaDate: initialEntry?.returnedFromDhakaDate || ''
   });
 
   // Date segments state for each date field
@@ -1646,7 +1648,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         remarks: initialEntry.remarks || '',
         meetingDate: initialEntry.meetingDate || '',
         meetingDiscussedParaCount: initialEntry.meetingDiscussedParaCount || '',
-        meetingRecommendedParaCount: initialEntry.meetingRecommendedParaCount || ''
+        meetingRecommendedParaCount: initialEntry.meetingRecommendedParaCount || '',
+        sentToDhakaDate: initialEntry.sentToDhakaDate || '',
+        returnedFromDhakaDate: initialEntry.returnedFromDhakaDate || ''
       });
       
       setSegmentsFromDate(initialEntry.letterDate, setLd, setLm, setLy);

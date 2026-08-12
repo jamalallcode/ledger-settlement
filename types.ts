@@ -138,6 +138,8 @@ export interface CorrespondenceEntry {
   meetingDate?: string;
   meetingDiscussedParaCount?: string;
   meetingRecommendedParaCount?: string;
+  sentToDhakaDate?: string;
+  returnedFromDhakaDate?: string;
 }
 
 export interface GroupOption {
