@@ -814,7 +814,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             {/* Render form fields sequentially */}
             {fields.map((f, idx) => (
               <p key={idx} className="text-[10px] leading-tight">
-                <span className="font-black text-emerald-700">{f.label}:</span>{" "}
+                <span className="font-black text-emerald-700">
+                  {f.label}{f.label.includes("নং") ? "-" : ":"}
+                </span>{" "}
                 <span className={f.isBold === false ? "font-medium text-slate-800 italic whitespace-pre-wrap" : "font-bold text-slate-900"}>
                   {f.highlight ? (
                     <HighlightText text={f.value} searchTerm={searchTerm} />
@@ -981,7 +983,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                 </div>
                 <div>
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-                    {item.label}
+                    {item.label}{item.label.includes("নং") ? "-" : ":"}
                   </p>
                   <p className="text-[11px] font-bold text-slate-900 leading-tight">
                     {item.value}
@@ -1560,13 +1562,13 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             <thead>
               <tr className="h-[42px]">
                 <th rowSpan={2} className={thBase}>
-                  ক্র: নং
+                  ক্র: নং-
                 </th>
                 <th rowSpan={2} className={thBase}>
                   বিস্তারিত বিবরণ (২০ ফিল্ড)
                 </th>
                 <th rowSpan={2} className={thBase}>
-                  অনু: নং
+                  অনু: নং-
                 </th>
                 <th rowSpan={2} className={thBase}>
                   জড়িত টাকা
