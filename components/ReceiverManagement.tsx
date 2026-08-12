@@ -43,8 +43,12 @@ const KNOWN_ALIASES: Record<string, string> = {
   'সাহেরা আক্তার': 'মোসা: সাহেরা খাতুন',
   'মো: জামাল উদ্দিন': 'জামাল উদ্দিন',
   'মোঃ জামাল উদ্দিন': 'জামাল উদ্দিন',
+  'মো: জামাল উদ্দিন': 'জামাল উদ্দিন',
+  'মোঃ জামাল উদ্দিন': 'জামাল উদ্দিন',
   'জামাল উদ্দীন': 'জামাল উদ্দিন',
   'জনাব জামাল উদ্দিন': 'জামাল উদ্দিন',
+  'জামাল উদ্দিন (অডিটর)': 'জামাল উদ্দিন',
+  'মো: জামাল উদ্দিন (অডিটর)': 'জামাল উদ্দিন',
 };
 
 const normalizeName = (name: string | null | undefined): string => {
@@ -310,6 +314,119 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
         localStorage.setItem('ledger_correspondence_receivers_sfi', JSON.stringify(bootstrapped));
         finalReceivers = bootstrapped;
       }
+
+      // 2b. STRICT DEDUPLICATION AND PURGE PASS
+      // Group by branch and eliminate duplicate receiver cards (e.g. "মো: জামাল উদ্দিন" vs "জামাল উদ্দিন")
+      const dbIdsToDelete: (string | number)[] = [];
+      const deduplicatedFinalReceivers: ReceiverProfile[] = [];
+
+      const branchGroups: Record<string, ReceiverProfile[]> = {
+        'প্রশাসন': [],
+        'এসএফআই': [],
+        'নন এসএফআই': []
+      };
+
+      finalReceivers.forEach(r => {
+        const b = getCleanBranch(r.para_type);
+        if (branchGroups[b]) {
+          branchGroups[b].push({ ...r, para_type: b as any });
+        } else {
+          branchGroups['নন এসএফআই'].push({ ...r, para_type: 'নন এসএফআই' });
+        }
+      });
+
+      Object.keys(branchGroups).forEach(branchName => {
+        const list = branchGroups[branchName];
+        const uniqueInBranch: ReceiverProfile[] = [];
+
+        list.forEach(item => {
+          if (!item.name || !item.name.trim()) return;
+          const itemTrim = item.name.trim();
+
+          // Target canonical clean name
+          let targetCleanName = itemTrim;
+          if (KNOWN_ALIASES[itemTrim]) {
+            targetCleanName = KNOWN_ALIASES[itemTrim];
+          } else {
+            const empMatch = EMPLOYEES.find(e => {
+              let cleanE = e.split('(')[0].replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '').trim();
+              return isNameMatching(itemTrim, cleanE, normalizeName(cleanE));
+            });
+            if (empMatch) {
+              targetCleanName = empMatch.split('(')[0].replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '').trim();
+            }
+          }
+
+          const itemNorm = normalizeName(targetCleanName);
+
+          const existingIndex = uniqueInBranch.findIndex(ex => {
+            if (ex.name === targetCleanName) return true;
+            if (KNOWN_ALIASES[ex.name] === targetCleanName || KNOWN_ALIASES[targetCleanName] === ex.name) return true;
+            const exNorm = normalizeName(ex.name);
+            return exNorm === itemNorm || isNameMatching(ex.name, targetCleanName, itemNorm) || isNameMatching(targetCleanName, ex.name, exNorm);
+          });
+
+          if (existingIndex === -1) {
+            uniqueInBranch.push({
+              ...item,
+              name: targetCleanName
+            });
+          } else {
+            const existing = uniqueInBranch[existingIndex];
+            existing.name = targetCleanName;
+            if (item.is_active && !existing.is_active) {
+              existing.is_active = true;
+            }
+
+            const isRealDbId = item.id && !String(item.id).startsWith('local-') && !String(item.id).startsWith('corr-rec-') && !String(item.id).startsWith('init-');
+            if (isRealDbId && item.id !== existing.id) {
+              dbIdsToDelete.push(item.id);
+            }
+          }
+        });
+
+        deduplicatedFinalReceivers.push(...uniqueInBranch);
+      });
+
+      finalReceivers = deduplicatedFinalReceivers;
+
+      // Purge duplicates from DB if configured
+      if (isSupabaseConfigured && dbIdsToDelete.length > 0) {
+        try {
+          for (const dupId of dbIdsToDelete) {
+            await supabase.from('receivers').delete().eq('id', dupId);
+          }
+        } catch (err) {
+          console.warn('Error purging duplicate receivers from DB:', err);
+        }
+      }
+
+      // Purge duplicates from local storage keys
+      const receiverLocalKeys = [
+        'ledger_correspondence_receivers_admin',
+        'ledger_correspondence_receivers_sfi',
+        'ledger_correspondence_receivers_nonsfi'
+      ];
+      receiverLocalKeys.forEach(key => {
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          try {
+            let items = JSON.parse(saved);
+            const origLen = items.length;
+            items = items.filter((it: any) => {
+              if (!it || !it.name) return false;
+              if (dbIdsToDelete.includes(it.id)) return false;
+              if (KNOWN_ALIASES[it.name.trim()]) return false;
+              return true;
+            });
+            if (items.length !== origLen) {
+              localStorage.setItem(key, JSON.stringify(items));
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      });
 
       // 3. Scan correspondence entries to find recipient names that are added on descriptions but not saved in database
       let correspondenceNamesByBranch: Record<string, string[]> = {
