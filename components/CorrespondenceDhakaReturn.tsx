@@ -8,6 +8,7 @@ import { OFFICE_HEADER } from '../constants';
 import { format as dateFnsFormat } from 'date-fns';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import LetterDetailsModal from './LetterDetailsModal';
+import { getReceivers } from './ReceiverManagement';
 
 interface CorrespondenceDhakaReturnProps {
   correspondenceEntries: any[];
@@ -303,6 +304,12 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     const norm = normalizeName(name);
     if (norm === 'অনির্ধারিত') return 'অনির্ধারিত';
     
+    try {
+      const recs = getReceivers();
+      const matchRec = recs.find(r => normalizeName(r.name) === norm);
+      if (matchRec && matchRec.name) return matchRec.name.trim();
+    } catch (e) {}
+
     const match = receiversList.find(r => normalizeName(r.name) === norm);
     let finalName = match ? match.name : name;
     if (finalName && finalName.includes('শাহ্রিন')) {
@@ -1014,26 +1021,26 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                           </div>
                         </td>
                         <td 
-                          className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all ${getHighlightClass(`${stat.name} - অডিটরের কাছে`)}`}
-                          onClick={() => handleCountClick(`${stat.name} - অডিটরের কাছে`, stat.auditorLetters)}
+                          className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-red-600 bg-red-50/30 cursor-pointer hover:bg-red-100/50 transition-all ${getHighlightClass(`${getDisplayName(stat.name)} - অডিটরের কাছে`)}`}
+                          onClick={() => handleCountClick(`${getDisplayName(stat.name)} - অডিটরের কাছে`, stat.auditorLetters)}
                         >
                           {toBengaliDigits(stat.auditor)} টি
                         </td>
                         <td 
-                          className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-blue-600 bg-blue-50/30 cursor-pointer hover:bg-blue-100/50 transition-all ${getHighlightClass(`${stat.name} - এএন্ডএও`)}`}
-                          onClick={() => handleCountClick(`${stat.name} - এএন্ডএও`, stat.aaoLetters)}
+                          className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-blue-600 bg-blue-50/30 cursor-pointer hover:bg-blue-100/50 transition-all ${getHighlightClass(`${getDisplayName(stat.name)} - এএন্ডএও`)}`}
+                          onClick={() => handleCountClick(`${getDisplayName(stat.name)} - এএন্ডএও`, stat.aaoLetters)}
                         >
                           {toBengaliDigits(stat.aao)} টি
                         </td>
                         <td 
-                          className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-green-600 bg-green-50/30 cursor-pointer hover:bg-green-100/50 transition-all ${getHighlightClass(`${stat.name} - উপপরিচালক`)}`}
-                          onClick={() => handleCountClick(`${stat.name} - উপপরিচালক`, stat.ddLetters)}
+                          className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-green-600 bg-green-50/30 cursor-pointer hover:bg-green-100/50 transition-all ${getHighlightClass(`${getDisplayName(stat.name)} - উপপরিচালক`)}`}
+                          onClick={() => handleCountClick(`${getDisplayName(stat.name)} - উপপরিচালক`, stat.ddLetters)}
                         >
                           {toBengaliDigits(stat.dd)} টি
                         </td>
                         <td 
-                          className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-slate-900 bg-slate-50 cursor-pointer hover:bg-slate-200/50 transition-all ${getHighlightClass(`${stat.name} - মোট`)}`}
-                          onClick={() => handleCountClick(`${stat.name} - মোট`, stat.totalLetters)}
+                          className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[10px]' : 'px-1 py-1.5 text-[10px] sm:text-[11.5px]'} text-center font-black text-slate-900 bg-slate-50 cursor-pointer hover:bg-slate-200/50 transition-all ${getHighlightClass(`${getDisplayName(stat.name)} - মোট`)}`}
+                          onClick={() => handleCountClick(`${getDisplayName(stat.name)} - মোট`, stat.totalLetters)}
                         >
                           {toBengaliDigits(stat.total)} টি
                         </td>

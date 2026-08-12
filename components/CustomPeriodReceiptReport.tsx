@@ -9,6 +9,7 @@ import { isSFI, isNonSFI, getCleanLetterTypeDisplay } from '../utils/branchUtils
 import { format } from 'date-fns';
 import { MINISTRY_ENTITY_MAP, EMPLOYEES } from '../constants';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { getReceivers } from './ReceiverManagement';
 
 const STATIC_MINISTRIES = [
   "আর্থিক প্রতিষ্ঠান বিভাগ",
@@ -79,6 +80,15 @@ const normalizeAuditor = (name: string | null | undefined): string => {
 
 const getCleanAuditorDisplayName = (raw: string): string => {
   if (!raw) return '';
+  const norm = normalizeAuditor(raw);
+  if (norm) {
+    try {
+      const recs = getReceivers();
+      const matchRec = recs.find(r => normalizeAuditor(r.name) === norm);
+      if (matchRec && matchRec.name) return matchRec.name.trim();
+    } catch (e) {}
+  }
+
   let clean = raw
     .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
     .trim()

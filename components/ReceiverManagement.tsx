@@ -1496,4 +1496,25 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
   );
 };
 
+export const getReceivers = (): any[] => {
+  const keys = [
+    'ledger_correspondence_receivers_admin',
+    'ledger_correspondence_receivers_sfi',
+    'ledger_correspondence_receivers_nonsfi'
+  ];
+  let all: any[] = [];
+  keys.forEach(k => {
+    try {
+      const saved = localStorage.getItem(k);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          all = [...all, ...parsed];
+        }
+      }
+    } catch (e) {}
+  });
+  return all;
+};
+
 export default ReceiverManagement;
