@@ -7,6 +7,7 @@ import { OFFICE_HEADER } from '../constants';
 import { format, startOfMonth, addDays, isBefore, subMonths, parseISO } from 'date-fns';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import LetterDetailsModal from './LetterDetailsModal';
+import { getReceivers } from './ReceiverManagement';
 
 interface DDSirCorrespondenceReturnProps {
   entries: any[];
@@ -149,6 +150,12 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     const norm = normalizeName(name || fallbackRawName);
     if (norm === 'অনির্ধারিত') return 'অনির্ধারিত';
     
+    try {
+      const recs = getReceivers();
+      const matchRec = recs.find(r => normalizeName(r.name) === norm);
+      if (matchRec && matchRec.name) return matchRec.name.trim();
+    } catch (e) {}
+
     const match = receiversList.find(r => normalizeName(r.name) === norm);
     let finalName = match && match.name ? match.name : (fallbackRawName || name || 'অনির্ধারিত');
     if (finalName && finalName.includes('শাহ্রিন')) {
@@ -351,17 +358,24 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
     // Map normalized names back to display names
     const displayNameMap = new Map<string, string>();
-    receiversList.forEach(r => {
-      if (r.name) {
-        displayNameMap.set(normalizeName(r.name), r.name.trim());
-      }
-    });
     (entries || []).forEach(e => {
       const name = e.receiverName || e.presentedToName;
       if (name) {
         displayNameMap.set(normalizeName(name), name.trim());
       }
     });
+    receiversList.forEach(r => {
+      if (r.name) {
+        displayNameMap.set(normalizeName(r.name), r.name.trim());
+      }
+    });
+    try {
+      getReceivers().forEach(r => {
+        if (r.name) {
+          displayNameMap.set(normalizeName(r.name), r.name.trim());
+        }
+      });
+    } catch (e) {}
 
     const displayUnique = finalUnique.map(name => displayNameMap.get(name) || name).sort((a, b) => a.localeCompare(b));
 
@@ -474,7 +488,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     });
 
     if (filterAuditor !== 'সকল') {
-      data = data.filter(e => normalizeName(e.receiverName || e.presentedToName) === filterAuditor);
+      data = data.filter(e => normalizeName(e.receiverName || e.presentedToName) === normalizeName(filterAuditor));
     }
 
     if (filterBranch !== 'সকল') {
