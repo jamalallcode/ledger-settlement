@@ -1991,7 +1991,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               <span className="font-bold text-emerald-800">৩. ডিজিটাল নথি নং- </span>
                               <span className="font-black text-slate-950">
                                 <HighlightText
-                                  text={entry.digitalFileNo || '-'}
+                                  text={entry.digitalFileNo && entry.digitalFileNo !== '-' ? entry.digitalFileNo : ''}
                                   searchTerm={searchTerm}
                                 />
                               </span>
