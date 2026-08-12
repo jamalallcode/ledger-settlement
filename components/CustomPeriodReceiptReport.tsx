@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { MINISTRY_ENTITY_MAP, EMPLOYEES } from '../constants';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { getReceivers } from './ReceiverManagement';
+import { resolveCanonicalName } from '../utils/nameUtils';
 
 const STATIC_MINISTRIES = [
   "আর্থিক প্রতিষ্ঠান বিভাগ",
@@ -79,10 +80,20 @@ const normalizeAuditor = (name: string | null | undefined): string => {
 
 const getCleanAuditorDisplayName = (raw: string): string => {
   if (!raw) return '';
+  const trimmed = raw.trim();
+  const canonical = resolveCanonicalName(trimmed);
+  if (canonical && canonical !== 'অনির্ধারিত' && canonical !== trimmed) {
+    return canonical;
+  }
+
   const norm = normalizeAuditor(raw);
   if (norm) {
     try {
       const recs = getReceivers();
+      const canonicalRec = resolveCanonicalName(raw, recs);
+      if (canonicalRec && canonicalRec !== 'অনির্ধারিত' && canonicalRec !== trimmed) {
+        return canonicalRec;
+      }
       let matchRec = recs.find(r => normalizeAuditor(r.name) === norm);
       if (!matchRec) {
         matchRec = recs.find(r => {
