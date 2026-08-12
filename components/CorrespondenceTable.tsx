@@ -411,6 +411,17 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
     }, 4000);
   };
 
+  const [dhakaNoticeMap, setDhakaNoticeMap] = useState<
+    Record<string, boolean>
+  >({});
+
+  const triggerDhakaNotice = (entryId: string) => {
+    setDhakaNoticeMap((prev) => ({ ...prev, [entryId]: true }));
+    setTimeout(() => {
+      setDhakaNoticeMap((prev) => ({ ...prev, [entryId]: false }));
+    }, 6000);
+  };
+
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
@@ -1793,6 +1804,15 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                       pending.presentedToName !== undefined
                         ? pending.presentedToName
                         : entry.presentedToName || "";
+                    const currentSentToDhakaDate =
+                      pending.sentToDhakaDate !== undefined
+                        ? pending.sentToDhakaDate
+                        : entry.sentToDhakaDate || "";
+                    const currentReturnedFromDhakaDate =
+                      pending.returnedFromDhakaDate !== undefined
+                        ? pending.returnedFromDhakaDate
+                        : entry.returnedFromDhakaDate || "";
+                    const isSfiEntry = isSFI(entry.paraType);
                     const currentIssueNo =
                       pending.issueLetterNo !== undefined
                         ? pending.issueLetterNo
@@ -1863,84 +1883,89 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                           </div>
                         </td>
                         <td className={tdCls}>
-                          <div className="space-y-1">
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">১. মন্ত্রণালয়: </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={entry.ministryName || 'প্রযোজ্য নয়'}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                            {entry.entityName && (
-                              <div className="text-[10px] leading-snug">
-                                <span className="font-bold text-emerald-800">১.ক. এনটিটি: </span>
-                                <span className="font-black text-slate-950">
-                                  <HighlightText
-                                    text={entry.entityName}
-                                    searchTerm={searchTerm}
-                                  />
-                                </span>
+                          {(() => {
+                            let itemIdx = 1;
+                            return (
+                              <div className="space-y-1">
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মন্ত্রণালয়: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={entry.ministryName || 'প্রযোজ্য নয়'}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                {entry.entityName && (
+                                  <div className="text-[10px] leading-snug">
+                                    <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. এনটিটি: </span>
+                                    <span className="font-black text-slate-950">
+                                      <HighlightText
+                                        text={entry.entityName}
+                                        searchTerm={searchTerm}
+                                      />
+                                    </span>
+                                  </div>
+                                )}
+                                {entry.auditYear && (
+                                  <div className="text-[10px] leading-snug">
+                                    <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. নিরীক্ষা সাল: </span>
+                                    <span className="font-black text-slate-950">
+                                      <HighlightText
+                                        text={entry.auditYear}
+                                        searchTerm={searchTerm}
+                                      />
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. শাখার ধরণ: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={entry.paraType}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. পত্রের ধরণ: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={getCleanLetterTypeDisplay(entry.letterType)}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. পত্র নং ও তারিখ: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={`${entry.letterNo}, ${formatDateBN(entry.letterDate)}`}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. প্রেরিত অনু: সংখ্যা: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={`${toBengaliDigits(entry.totalParas)} টি`}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট জড়িত টাকা: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={toBengaliDigits(entry.totalAmount)}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
                               </div>
-                            )}
-                            {entry.auditYear && (
-                              <div className="text-[10px] leading-snug">
-                                <span className="font-bold text-emerald-800">১.খ. নিরীক্ষা সাল: </span>
-                                <span className="font-black text-slate-950">
-                                  <HighlightText
-                                    text={entry.auditYear}
-                                    searchTerm={searchTerm}
-                                  />
-                                </span>
-                              </div>
-                            )}
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">২. শাখার ধরণ: </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={entry.paraType}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">৩. পত্রের ধরণ: </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={getCleanLetterTypeDisplay(entry.letterType)}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">৪. পত্র নং ও তারিখ: </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={`${entry.letterNo}, ${formatDateBN(entry.letterDate)}`}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">৫. প্রেরিত অনু: সংখ্যা: </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={`${toBengaliDigits(entry.totalParas)} টি`}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">৬. মোট জড়িত টাকা: </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={toBengaliDigits(entry.totalAmount)}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                          </div>
+                            );
+                          })()}
                         </td>
                         <td className={tdCls}>
                           <div className="space-y-1">
@@ -1963,10 +1988,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               </span>
                             </div>
                             <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">৩. ডিজিটাল নথি নং-: </span>
+                              <span className="font-bold text-emerald-800">৩. ডিজিটাল নথি নং- </span>
                               <span className="font-black text-slate-950">
                                 <HighlightText
-                                  text={entry.digitalFileNo || '-'}
+                                  text={entry.digitalFileNo && entry.digitalFileNo !== '-' ? entry.digitalFileNo : ''}
                                   searchTerm={searchTerm}
                                 />
                               </span>
@@ -1991,7 +2016,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                             </div>
                             {entry.archiveNo && (
                               <div className="text-[10px] leading-snug">
-                                <span className="font-bold text-emerald-800">৬. আর্কাইভ নং: </span>
+                                <span className="font-bold text-emerald-800">৬. আর্কাইভ নং- </span>
                                 <span className="font-black text-purple-700">
                                   <HighlightText
                                     text={entry.archiveNo}
@@ -2095,6 +2120,123 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                 disabled={!isAdmin}
                               />
                             </div>
+
+                            {/* 3. ঢাকায় প্রেরণ ও ঢাকা হতে ফেরত (শুধুমাত্র এসএফআই শাখার জন্য) */}
+                            {isSfiEntry && (
+                              <div
+                                className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${
+                                  currentSentToDhakaDate || currentReturnedFromDhakaDate
+                                    ? "bg-amber-600/10 border-amber-400 ring-2 ring-amber-50"
+                                    : "bg-amber-50/60 border-amber-200/90"
+                                }`}
+                              >
+                                {/* ঢাকায় প্রেরণ */}
+                                <div className="flex items-center justify-between">
+                                  <div className="text-[9px] font-black text-amber-900 uppercase tracking-tighter flex items-center gap-1">
+                                    <Send size={8} className="text-amber-700" /> ঢাকায় প্রেরণ
+                                  </div>
+                                  <div className="flex items-center gap-1.5 ml-auto">
+                                    {formatDateBN(currentSentToDhakaDate) ? (
+                                      <span className="text-[8.5px] font-black text-amber-800 bg-white/90 px-1 py-0.5 rounded border border-amber-300 shadow-2xs">
+                                        {formatDateBN(currentSentToDhakaDate)}
+                                      </span>
+                                    ) : (
+                                      <span
+                                        className={`text-[8px] font-black ${isAdmin ? "text-amber-700 hover:text-amber-900 cursor-pointer" : "text-amber-400"}`}
+                                        onClick={(e) => {
+                                          if (!isAdmin) return;
+                                          const input = e.currentTarget.parentElement?.querySelector("input") as HTMLInputElement;
+                                          if (input) input.showPicker();
+                                        }}
+                                      >
+                                        তারিখ দিন
+                                      </span>
+                                    )}
+                                    {isAdmin && currentSentToDhakaDate && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleInlineChange(entry.id, "sentToDhakaDate", "")}
+                                        className="p-0.5 hover:bg-red-100 text-red-400 hover:text-red-600 rounded transition-all ml-0.5"
+                                        title="মুছুন"
+                                      >
+                                        <XCircle size={10} />
+                                      </button>
+                                    )}
+                                    <div className="relative flex items-center h-3 w-3">
+                                      <Calendar
+                                        size={11}
+                                        className={`text-amber-600 transition-colors ${isAdmin ? "cursor-pointer hover:text-amber-800" : "opacity-50"}`}
+                                        onClick={(e) => {
+                                          if (!isAdmin) return;
+                                          const input = e.currentTarget.parentElement?.querySelector("input") as HTMLInputElement;
+                                          if (input) input.showPicker();
+                                        }}
+                                      />
+                                      <input
+                                        type="date"
+                                        className={`absolute inset-0 opacity-0 w-3 h-3 ${isAdmin ? "cursor-pointer" : "pointer-events-none"}`}
+                                        value={currentSentToDhakaDate}
+                                        disabled={!isAdmin}
+                                        onChange={(e) => handleInlineChange(entry.id, "sentToDhakaDate", e.target.value)}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* ঢাকা হতে ফেরত */}
+                                <div className="flex items-center justify-between pt-1 border-t border-amber-200/80">
+                                  <div className="text-[9px] font-black text-amber-900 uppercase tracking-tighter flex items-center gap-1">
+                                    <RotateCcw size={8} className="text-amber-700" /> ঢাকা হতে ফেরত
+                                  </div>
+                                  <div className="flex items-center gap-1.5 ml-auto">
+                                    {formatDateBN(currentReturnedFromDhakaDate) ? (
+                                      <span className="text-[8.5px] font-black text-amber-800 bg-white/90 px-1 py-0.5 rounded border border-amber-300 shadow-2xs">
+                                        {formatDateBN(currentReturnedFromDhakaDate)}
+                                      </span>
+                                    ) : (
+                                      <span
+                                        className={`text-[8px] font-black ${isAdmin ? "text-amber-700 hover:text-amber-900 cursor-pointer" : "text-amber-400"}`}
+                                        onClick={(e) => {
+                                          if (!isAdmin) return;
+                                          const input = e.currentTarget.parentElement?.querySelector("input") as HTMLInputElement;
+                                          if (input) input.showPicker();
+                                        }}
+                                      >
+                                        তারিখ দিন
+                                      </span>
+                                    )}
+                                    {isAdmin && currentReturnedFromDhakaDate && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleInlineChange(entry.id, "returnedFromDhakaDate", "")}
+                                        className="p-0.5 hover:bg-red-100 text-red-400 hover:text-red-600 rounded transition-all ml-0.5"
+                                        title="মুছুন"
+                                      >
+                                        <XCircle size={10} />
+                                      </button>
+                                    )}
+                                    <div className="relative flex items-center h-3 w-3">
+                                      <Calendar
+                                        size={11}
+                                        className={`text-amber-600 transition-colors ${isAdmin ? "cursor-pointer hover:text-amber-800" : "opacity-50"}`}
+                                        onClick={(e) => {
+                                          if (!isAdmin) return;
+                                          const input = e.currentTarget.parentElement?.querySelector("input") as HTMLInputElement;
+                                          if (input) input.showPicker();
+                                        }}
+                                      />
+                                      <input
+                                        type="date"
+                                        className={`absolute inset-0 opacity-0 w-3 h-3 ${isAdmin ? "cursor-pointer" : "pointer-events-none"}`}
+                                        value={currentReturnedFromDhakaDate}
+                                        disabled={!isAdmin}
+                                        onChange={(e) => handleInlineChange(entry.id, "returnedFromDhakaDate", e.target.value)}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className={tdCls}>
@@ -2239,6 +2381,19 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         );
                                       }
 
+                                      if (
+                                        isSfiEntry &&
+                                        (!currentSentToDhakaDate || !currentReturnedFromDhakaDate) &&
+                                        (dhakaNoticeMap[entry.id] || ((currentIssueNo || currentIssueDate) && canFillIssue))
+                                      ) {
+                                        return (
+                                          <div className="mt-1 text-[8px] font-black text-amber-950 bg-gradient-to-r from-amber-100 via-amber-50 to-orange-50 border border-amber-400 rounded-lg p-1.5 flex items-center gap-1.5 leading-tight animate-in zoom-in-95 duration-200 shadow-xs ring-1 ring-amber-300">
+                                            <AlertTriangle size={12} className="text-amber-600 shrink-0 animate-bounce" />
+                                            <span>চিঠিটি এখনো ঢাকায় প্রেরণ বা ঢাকা হতে ফেরত আসেনি।</span>
+                                          </div>
+                                        );
+                                      }
+
                                       return null;
                                     })()}
                                   </div>
@@ -2247,6 +2402,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   <div
                                     onClick={() => {
                                       if (!canFillIssue) triggerUnsettledNotice(entry.id);
+                                      if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
+                                        triggerDhakaNotice(entry.id);
+                                      }
                                     }}
                                     className={`p-1.5 border rounded-lg space-y-1 transition-colors relative ${issueColorCls} ${!canFillIssue ? 'cursor-pointer' : ''}`}
                                   >
@@ -2297,15 +2455,26 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                       disabled={!isAdmin || !canFillIssue}
                                       onClick={() => {
                                         if (!canFillIssue) triggerUnsettledNotice(entry.id);
+                                        if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
+                                          triggerDhakaNotice(entry.id);
+                                        }
+                                      }}
+                                      onFocus={() => {
+                                        if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
+                                          triggerDhakaNotice(entry.id);
+                                        }
                                       }}
                                       title={!canFillIssue ? "নিষ্পত্তি 'হ্যাঁ' বা 'না' সিলেক্ট না করা পর্যন্ত জারিপত্র নং ও তারিখ ফিলাপ হবে না।" : ""}
-                                      onChange={(e) =>
+                                      onChange={(e) => {
+                                        if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
+                                          triggerDhakaNotice(entry.id);
+                                        }
                                         handleInlineChange(
                                           entry.id,
                                           "issueLetterNo",
                                           toBengaliDigits(e.target.value),
-                                        )
-                                      }
+                                        );
+                                      }}
                                     />
                                     {isAdmin && editingCommentId === entry.id && (
                                       <div className="mt-1 pt-1 border-t border-dashed border-slate-200 space-y-1">
@@ -2331,7 +2500,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   {/* 3. জারিপত্র তারিখ */}
                                   <div
                                     onClick={() => {
-                                      if (!canFillIssue) triggerUnsettledNotice(entry.id);
+                                      if (!canFillIssue) {
+                                        triggerUnsettledNotice(entry.id);
+                                        return;
+                                      }
+                                      if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
+                                        triggerDhakaNotice(entry.id);
+                                      }
                                     }}
                                     className={`p-1.5 border rounded-lg space-y-1 transition-colors ${issueColorCls} ${!canFillIssue ? 'cursor-pointer' : ''}`}
                                   >
@@ -2358,6 +2533,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                                 triggerUnsettledNotice(entry.id);
                                                 return;
                                               }
+                                              if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
+                                                triggerDhakaNotice(entry.id);
+                                              }
                                               const input =
                                                 e.currentTarget.parentElement?.querySelector(
                                                   "input",
@@ -2370,13 +2548,16 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                             className={`absolute inset-0 opacity-0 w-3 h-3 ${isAdmin && canFillIssue ? "cursor-pointer" : "pointer-events-none"}`}
                                             value={canFillIssue ? currentIssueDate : ""}
                                             disabled={!isAdmin || !canFillIssue}
-                                            onChange={(e) =>
+                                            onChange={(e) => {
+                                              if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
+                                                triggerDhakaNotice(entry.id);
+                                              }
                                               handleInlineChange(
                                                 entry.id,
                                                 "issueLetterDate",
                                                 e.target.value,
-                                              )
-                                            }
+                                              );
+                                            }}
                                           />
                                         </div>
                                       </div>

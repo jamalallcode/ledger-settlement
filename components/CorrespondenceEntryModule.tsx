@@ -1115,7 +1115,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     receivedDate: '',
     isOnline: 'না',
     archiveNo: '',
-    remarks: ''
+    remarks: '',
+    meetingDate: initialEntry?.meetingDate || '',
+    meetingDiscussedParaCount: initialEntry?.meetingDiscussedParaCount || '',
+    meetingRecommendedParaCount: initialEntry?.meetingRecommendedParaCount || '',
+    sentToDhakaDate: initialEntry?.sentToDhakaDate || '',
+    returnedFromDhakaDate: initialEntry?.returnedFromDhakaDate || ''
   });
 
   // Date segments state for each date field
@@ -1123,12 +1128,14 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const [dd, setDd] = useState(''), [dm, setDm] = useState(''), [dy, setDy] = useState('');
   const [rd, setRd] = useState(''), [rm, setRm] = useState(''), [ry, setRy] = useState('');
   const [rcd, setRcd] = useState(''), [rcm, setRcm] = useState(''), [rcy, setRcy] = useState('');
+  const [md, setMd] = useState(''), [mm, setMm] = useState(''), [my, setMy] = useState('');
 
   // Refs for auto-focus jump logic
   const ldRef = useRef<HTMLInputElement>(null), lmRef = useRef<HTMLInputElement>(null), lyRef = useRef<HTMLInputElement>(null);
   const ddRef = useRef<HTMLInputElement>(null), dmRef = useRef<HTMLInputElement>(null), dyRef = useRef<HTMLInputElement>(null);
   const rdRef = useRef<HTMLInputElement>(null), rmRef = useRef<HTMLInputElement>(null), ryRef = useRef<HTMLInputElement>(null);
   const rcdRef = useRef<HTMLInputElement>(null), rcmRef = useRef<HTMLInputElement>(null), rcyRef = useRef<HTMLInputElement>(null);
+  const mdRef = useRef<HTMLInputElement>(null), mmRef = useRef<HTMLInputElement>(null), myRef = useRef<HTMLInputElement>(null);
 
   const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
   const [receiverSuggestions, setReceiverSuggestions] = useState<any[]>([]);
@@ -1638,18 +1645,26 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         receivedDate: initialEntry.receivedDate || '',
         isOnline: initialEntry.isOnline || 'না',
         archiveNo: initialEntry.archiveNo || '',
-        remarks: initialEntry.remarks || ''
+        remarks: initialEntry.remarks || '',
+        meetingDate: initialEntry.meetingDate || '',
+        meetingDiscussedParaCount: initialEntry.meetingDiscussedParaCount || '',
+        meetingRecommendedParaCount: initialEntry.meetingRecommendedParaCount || '',
+        sentToDhakaDate: initialEntry.sentToDhakaDate || '',
+        returnedFromDhakaDate: initialEntry.returnedFromDhakaDate || ''
       });
       
       setSegmentsFromDate(initialEntry.letterDate, setLd, setLm, setLy);
       setSegmentsFromDate(initialEntry.diaryDate, setDd, setDm, setDy);
       setSegmentsFromDate(initialEntry.receiptDate, setRd, setRm, setRy);
       setSegmentsFromDate(initialEntry.receivedDate, setRcd, setRcm, setRcy);
+      setSegmentsFromDate(initialEntry.meetingDate, setMd, setMm, setMy);
 
       setRawInputs({
         totalParas: toBengaliDigits(initialEntry.totalParas),
         totalAmount: toBengaliDigits(initialEntry.totalAmount),
-        sentParaCount: toBengaliDigits(initialEntry.sentParaCount)
+        sentParaCount: toBengaliDigits(initialEntry.sentParaCount),
+        meetingDiscussedParaCount: toBengaliDigits(initialEntry.meetingDiscussedParaCount),
+        meetingRecommendedParaCount: toBengaliDigits(initialEntry.meetingRecommendedParaCount)
       });
       setHasWarnedAuditYear(false);
     }
@@ -1669,6 +1684,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   }, [dd, dm, dy]);
   useEffect(() => { setFormData(prev => ({ ...prev, receiptDate: formatDateSegments(rd, rm, ry) })); }, [rd, rm, ry]);
   useEffect(() => { setFormData(prev => ({ ...prev, receivedDate: formatDateSegments(rcd, rcm, rcy) })); }, [rcd, rcm, rcy]);
+  useEffect(() => { setFormData(prev => ({ ...prev, meetingDate: formatDateSegments(md, mm, my) })); }, [md, mm, my]);
 
   useEffect(() => {
     if (formData.archiveNo) {
@@ -1697,6 +1713,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     else if (type === 'diary') setSegmentsFromDate(iso, setDd, setDm, setDy);
     else if (type === 'receipt') setSegmentsFromDate(iso, setRd, setRm, setRy);
     else if (type === 'received') setSegmentsFromDate(iso, setRcd, setRcm, setRcy);
+    else if (type === 'meeting') setSegmentsFromDate(iso, setMd, setMm, setMy);
   };
 
   useEffect(() => {
@@ -1772,12 +1789,16 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       receivedDate: '',
       isOnline: 'না',
       archiveNo: '',
-      remarks: ''
+      remarks: '',
+      meetingDate: '',
+      meetingDiscussedParaCount: '',
+      meetingRecommendedParaCount: ''
     });
     setLd(''); setLm(''); setLy('');
     setDd(''); setDm(''); setDy('');
     setRd(''); setRm(''); setRy('');
     setRcd(''); setRcm(''); setRcy('');
+    setMd(''); setMm(''); setMy('');
     setRawInputs({});
     setCalculatedCycle('');
     setHasWarnedAuditYear(false);
@@ -1914,6 +1935,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const receiptDateError = getDateError(formData.receiptDate, formData.diaryDate, 'শাখায় প্রাপ্তির তারিখ', 'ডায়েরি তারিখ');
   const receivedDateError = getDateError(formData.receivedDate, formData.receiptDate, 'গ্রহণের তারিখ', 'শাখায় প্রাপ্তির তারিখ');
 
+  const isMeeting = formData.letterType === 'দ্বিপক্ষীয় সভা' || 
+                    formData.letterType === 'ত্রিপক্ষীয় সভা' || 
+                    (Boolean(formData.letterType) && formData.letterType.includes('সভা') && !formData.letterType.includes('কার্যপত্র'));
+
   const IDBadge = ({ id }: { id: string }) => {
     const [copied, setCopied] = useState(false);
     if (!isLayoutEditable) return null;
@@ -1929,6 +1954,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       </span>
     );
   };
+
+  let serialCount = 1;
+  const getSerial = () => toBengaliDigits(serialCount++);
 
   return (
     <div id="form-container-correspondence" className="bg-white p-4 md:p-10 rounded-[2.5rem] border border-slate-200 shadow-2xl animate-landing-premium max-w-[1880px] mx-auto overflow-x-hidden relative">
@@ -1966,11 +1994,11 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               <h4 className="text-xl font-black text-amber-900 tracking-tight">সতর্কবার্তা: তথ্যটি ইতোমধ্যেই বিদ্যমান</h4>
               <p className="text-sm font-bold text-amber-700/80">
                 {duplicates.diaryNo && (
-                  <span>ডায়েরি নং: <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.diaryNo)}</span> </span>
+                  <span>ডায়েরি নং- <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.diaryNo)}</span> </span>
                 )}
                 {duplicates.diaryNo && duplicates.letterNo && <span>এবং </span>}
                 {duplicates.letterNo && (
-                  <span>পত্র নং: <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.letterNo)}</span> </span>
+                  <span>পত্র নং- <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.letterNo)}</span> </span>
                 )}
                 ইতোমধ্যেই ডাটাবেজে বিদ্যমান। অনুগ্রহ করে তথ্য যাচাই করুন।
                 {(duplicates.diaryEntryId || duplicates.letterEntryId) && navigateToEntry && (
@@ -2000,7 +2028,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             {/* Field Ministry */}
             <div className={`${colWrapper} border-sky-100`}>
               <label className={labelCls}>
-                <span className={numBadge}>ম</span> 
+                <span className={numBadge}>{getSerial()}</span> 
                 <Building size={14} className="text-sky-600" /> 
                 মন্ত্রণালয়:
               </label>
@@ -2030,7 +2058,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             {/* Field Entity */}
             <div className={`${colWrapper} border-purple-100`}>
               <label className={labelCls}>
-                <span className={numBadge}>এ</span> 
+                <span className={numBadge}>{getSerial()}</span> 
                 <Building2 size={14} className="text-purple-600" /> 
                 এনটিটি:
               </label>
@@ -2046,7 +2074,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             <div className={`${colWrapper} border-emerald-100 col-span-1 md:col-span-2 lg:col-span-2 xl:col-span-2`} ref={descriptionRef}>
               <IDBadge id="corr-field-1" />
               <label className={labelCls}>
-                <span className={numBadge}>১</span> 
+                <span className={numBadge}>{getSerial()}</span> 
                 <FileText size={14} className="text-emerald-600" /> 
                 পত্রের বিবরণ:
               </label>
@@ -2120,7 +2148,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             {/* Field Audit Year */}
             <div className={`${colWrapper} border-emerald-100`}>
               <label className={labelCls}>
-                <span className={numBadge}>স</span> 
+                <span className={numBadge}>{getSerial()}</span> 
                 <Calendar size={14} className="text-emerald-600" /> 
                 নিরীক্ষা সাল:
               </label>
@@ -2131,9 +2159,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               />
             </div>
 
-            {/* Field 2 */}
+            {/* Field Para Type */}
             <div className={`${colWrapper} border-blue-100`}>
-              <label className={labelCls}><span className={numBadge}>২</span> <ShieldCheck size={14} className="text-blue-600" /> শাখার ধরণ:</label>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <ShieldCheck size={14} className="text-blue-600" /> শাখার ধরণ:</label>
               <PremiumParaTypeSelect 
                 value={formData.paraType}
                 onChange={(val: string) => setFormData({...formData, paraType: val})}
@@ -2141,9 +2169,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               />
             </div>
 
-            {/* Field 3 */}
+            {/* Field Letter Type */}
             <div className={`${colWrapper} border-indigo-100`}>
-              <label className={labelCls}><span className={numBadge}>৩</span> <FileText size={14} className="text-indigo-600" /> পত্রের ধরণ:</label>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <FileText size={14} className="text-indigo-600" /> পত্রের ধরণ:</label>
               <PremiumLetterTypeSelect 
                 value={formData.letterType}
                 onChange={(val: string) => setFormData({...formData, letterType: val})}
@@ -2153,10 +2181,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               />
             </div>
 
-            {/* Field 4.ক */}
+            {/* Field Letter No */}
             <div className={`${colWrapper} ${duplicates.letterNo ? 'bg-amber-50 border-amber-200' : 'border-amber-100'}`}>
               <IDBadge id="corr-field-4a" />
-              <label className={labelCls}><span className={numBadge}>৪.ক</span> <Hash size={14} className="text-amber-600" /> পত্র নং:</label>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Hash size={14} className="text-amber-600" /> পত্র নং-</label>
               <input 
                 type="text" className={`${inputCls} ${duplicates.letterNo ? 'border-amber-500 ring-4 ring-amber-50' : (formData.letterNo ? 'border-emerald-500' : 'border-red-500')}`} 
                 value={formData.letterNo} onChange={e => setFormData({...formData, letterNo: toBengaliDigits(e.target.value)})} 
@@ -2180,9 +2208,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               )}
             </div>
 
-            {/* Field 4.খ - Smart Segmented Date */}
+            {/* Field Letter Date - Smart Segmented Date */}
             <SegmentedInput 
-              id="corr-field-4b" icon={Calendar} num="৪.খ" label="পত্রের তারিখ" color="amber" 
+              id="corr-field-4b" icon={Calendar} num={getSerial()} label="পত্রের তারিখ" color="amber" 
               dayValue={ld} monthValue={lm} yearValue={ly} 
               daySetter={setLd} monthSetter={setLm} yearSetter={setLy} 
               dayRef={ldRef} monthRef={lmRef} yearRef={lyRef} 
@@ -2190,10 +2218,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               onDateSelect={(iso: string) => handleManualDateSelect(iso, 'letter')} 
             />
 
-            {/* Field 5 */}
+            {/* Field Sent Para Count */}
             <div className={`${colWrapper} border-purple-100`}>
               <IDBadge id="corr-field-paras-count" />
-              <label className={labelCls}><span className={numBadge}>৫</span> <ListOrdered size={14} className="text-purple-600" /> প্রেরিত অনু: সংখ্যা:</label>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <ListOrdered size={14} className="text-purple-600" /> প্রেরিত অনু: সংখ্যা:</label>
               <input 
                 type="text" className={`${inputCls} ${rawInputs.totalParas ? 'border-emerald-500' : 'border-red-500'}`} 
                 value={rawInputs.totalParas || ''} onChange={e => handleNumericInput('totalParas', e.target.value)}
@@ -2201,10 +2229,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               />
             </div>
 
-            {/* Field 6 */}
+            {/* Field Total Amount */}
             <div className={`${colWrapper} border-rose-100`}>
               <IDBadge id="corr-field-amount" />
-              <label className={labelCls}><span className={numBadge}>৬</span> <Banknote size={14} className="text-rose-600" /> মোট জড়িত টাকা:</label>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Banknote size={14} className="text-rose-600" /> মোট জড়িত টাকা:</label>
               <input 
                 type="text" className={`${inputCls} ${rawInputs.totalAmount ? 'border-emerald-500' : 'border-red-500'}`} 
                 value={rawInputs.totalAmount || ''} onChange={e => handleNumericInput('totalAmount', e.target.value)}
@@ -2212,16 +2240,52 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               />
             </div>
 
+            {/* Meeting specific fields if দ্বিপক্ষীয় / ত্রিপক্ষীয় সভা */}
+            {isMeeting && (
+              <>
+                <SegmentedInput 
+                  id="corr-field-meeting-date" icon={Calendar} num={getSerial()} label="সভার তারিখ" color="amber" 
+                  dayValue={md} monthValue={mm} yearValue={my} 
+                  daySetter={setMd} monthSetter={setMm} yearSetter={setMy} 
+                  dayRef={mdRef} monthRef={mmRef} yearRef={myRef} 
+                  isLayoutEditable={isLayoutEditable} originalValue={formData.meetingDate} 
+                  onDateSelect={(iso: string) => handleManualDateSelect(iso, 'meeting')} 
+                />
+
+                <div className={`${colWrapper} border-sky-100`}>
+                  <IDBadge id="corr-field-discussed-paras" />
+                  <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <ListOrdered size={14} className="text-sky-600" /> আলোচিত অনুচ্ছেদ সংখ্যা:</label>
+                  <input 
+                    type="text" className={`${inputCls} ${rawInputs.meetingDiscussedParaCount ? 'border-emerald-500' : 'border-red-500'}`} 
+                    value={rawInputs.meetingDiscussedParaCount || (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount || ''))} 
+                    onChange={e => handleNumericInput('meetingDiscussedParaCount', e.target.value)}
+                    placeholder="০"
+                  />
+                </div>
+
+                <div className={`${colWrapper} border-emerald-100`}>
+                  <IDBadge id="corr-field-recommended-paras" />
+                  <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <CheckCircle2 size={14} className="text-emerald-600" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা:</label>
+                  <input 
+                    type="text" className={`${inputCls} ${rawInputs.meetingRecommendedParaCount ? 'border-emerald-500' : 'border-red-500'}`} 
+                    value={rawInputs.meetingRecommendedParaCount || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount || ''))} 
+                    onChange={e => handleNumericInput('meetingRecommendedParaCount', e.target.value)}
+                    placeholder="০"
+                  />
+                </div>
+              </>
+            )}
+
             {/* --- Section: অত্র অফিসের তথ্য --- */}
             <div className={sectionHeaderCls}>
                <div className="w-1.5 h-6 bg-emerald-600 rounded-full"></div>
                <h4 className={sectionTitleCls}>অত্র অফিসের তথ্য</h4>
             </div>
 
-            {/* Field 7.ক */}
+            {/* Field Diary No */}
             <div className={`${colWrapper} ${duplicates.diaryNo ? 'bg-amber-50 border-amber-200' : 'border-emerald-100'}`}>
               <IDBadge id="corr-field-7a" />
-              <label className={labelCls}><span className={numBadge}>৭.ক</span> <BookOpen size={14} className="text-emerald-600" /> ডায়েরি নং:</label>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <BookOpen size={14} className="text-emerald-600" /> ডায়েরি নং-</label>
               <input 
                 type="text" className={`${inputCls} ${duplicates.diaryNo ? 'border-amber-500 ring-4 ring-amber-50' : (formData.diaryNo ? 'border-emerald-500' : 'border-red-500')}`} 
                 value={formData.diaryNo} onChange={e => setFormData({...formData, diaryNo: toBengaliDigits(e.target.value)})} 
@@ -2245,10 +2309,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               )}
             </div>
 
-            {/* Field 7.খ - Smart Segmented Date */}
+            {/* Field Diary Date - Smart Segmented Date */}
             <div className="space-y-2">
               <SegmentedInput 
-                id="corr-field-7b" icon={Calendar} num="৭.খ" label="ডায়েরি তারিখ" color="emerald" 
+                id="corr-field-7b" icon={Calendar} num={getSerial()} label="ডায়েরি তারিখ" color="emerald" 
                 dayValue={dd} monthValue={dm} yearValue={dy} 
                 daySetter={setDd} monthSetter={setDm} yearSetter={setDy} 
                 dayRef={ddRef} monthRef={dmRef} yearRef={dyRef} 
@@ -2264,9 +2328,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               )}
             </div>
 
-            {/* Field 8 - Smart Segmented Date */}
+            {/* Field Receipt Date - Smart Segmented Date */}
             <SegmentedInput 
-              id="corr-field-8" icon={Inbox} num="৮" label="শাখায় প্রাপ্তির তারিখ" color="sky" 
+              id="corr-field-8" icon={Inbox} num={getSerial()} label="শাখায় প্রাপ্তির তারিখ" color="sky" 
               dayValue={rd} monthValue={rm} yearValue={ry} 
               daySetter={setRd} monthSetter={setRm} yearSetter={setRy} 
               dayRef={rdRef} monthRef={rmRef} yearRef={ryRef} 
@@ -2275,10 +2339,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               error={receiptDateError}
             />
 
-            {/* Field 9 */}
+            {/* Field Digital File No */}
             <div className={`${colWrapper} border-indigo-100`}>
               <IDBadge id="corr-field-9" />
-              <label className={labelCls}><span className={numBadge}>৯</span> <Computer size={14} className="text-indigo-600" /> ডিজিটাল নথি নং-:</label>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Computer size={14} className="text-indigo-600" /> ডিজিটাল নথি নং-</label>
               <input 
                 type="text" className={`${inputCls} ${formData.digitalFileNo ? 'border-emerald-500' : 'border-red-500'}`} 
                 value={formData.digitalFileNo} onChange={e => setFormData({...formData, digitalFileNo: toBengaliDigits(e.target.value)})}
@@ -2286,10 +2350,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               />
             </div>
 
-            {/* Field 10 */}
+            {/* Field Receiver Name */}
             <div className={`${colWrapper} border-slate-200`} ref={receiverRef}>
               <IDBadge id="corr-field-10" />
-              <label className={labelCls}><span className={numBadge}>১০</span> <User size={14} className="text-slate-600" /> গ্রহীতার নাম:</label>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <User size={14} className="text-slate-600" /> গ্রহীতার নাম:</label>
               <div className="relative group flex gap-2">
                 <div className="relative flex-1">
                   <input 
@@ -2360,9 +2424,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               {/* Recipient Dropdown is managed exclusively from Receiver Management */}
             </div>
 
-            {/* Field 11 - Smart Segmented Date */}
+            {/* Field Received Date - Smart Segmented Date */}
             <SegmentedInput 
-              id="corr-field-11" icon={Calendar} num="১১" label="গ্রহণের তারিখ" color="blue" 
+              id="corr-field-11" icon={Calendar} num={getSerial()} label="গ্রহণের তারিখ" color="blue" 
               dayValue={rcd} monthValue={rcm} yearValue={rcy} 
               daySetter={setRcd} monthSetter={setRcm} yearSetter={setRcy} 
               dayRef={rcdRef} monthRef={rcmRef} yearRef={rcyRef} 
@@ -2371,10 +2435,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               error={receivedDateError}
             />
 
-            {/* Field 12 */}
+            {/* Field Online Receipt */}
             <div className={`${colWrapper} border-emerald-100`}>
               <IDBadge id="corr-field-12" />
-              <label className={labelCls}><span className={numBadge}>১২</span> <Computer size={14} className="text-emerald-600" /> অনলাইনে প্রাপ্তি:</label>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Computer size={14} className="text-emerald-600" /> অনলাইনে প্রাপ্তি:</label>
               <div className="flex gap-4 h-[52px] items-center px-2">
                 <button 
                   type="button" onClick={() => setFormData({...formData, isOnline: 'হ্যাঁ'})}
@@ -2387,10 +2451,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               </div>
             </div>
 
-            {/* Field 13 - আর্কাইভ নং */}
+            {/* Field Archive No */}
             <div className={`${colWrapper} border-amber-100`}>
               <IDBadge id="corr-field-archive-no" />
-              <label className={labelCls}><span className={numBadge}>১৩</span> <Hash size={14} className="text-amber-600" /> আর্কাইভ নং:</label>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Hash size={14} className="text-amber-600" /> আর্কাইভ নং-</label>
               <input 
                 type="text" 
                 className={`${inputCls} ${formData.archiveNo ? 'border-emerald-500' : 'border-red-500'}`} 
@@ -2400,10 +2464,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               />
             </div>
 
-            {/* Field 14 - Remarks */}
+            {/* Field Remarks */}
             <div className={`${colWrapper} border-slate-200 col-span-full`}>
               <IDBadge id="corr-field-14" />
-              <label className={labelCls}><span className={numBadge}>১৪</span> <FileText size={14} className="text-slate-600" /> মন্তব্য:</label>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <FileText size={14} className="text-slate-600" /> মন্তব্য:</label>
               <textarea 
                 className={`${inputCls} ${formData.remarks ? 'border-emerald-500' : 'border-red-500'} h-24 py-3 resize-none`}
                 value={formData.remarks}

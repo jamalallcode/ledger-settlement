@@ -516,7 +516,7 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
                         )}
                         {row.archiveNo && (
                           <div className="text-purple-700 font-extrabold text-[10px] mt-1 pt-1 border-t border-dashed border-slate-200 whitespace-pre-line leading-normal">
-                            আর্কাইভ নং: {toBengaliDigits(row.archiveNo)}
+                            আর্কাইভ নং- {toBengaliDigits(row.archiveNo)}
                           </div>
                         )}
                       </td>

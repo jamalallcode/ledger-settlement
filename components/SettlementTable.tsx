@@ -720,6 +720,8 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
       "sticky top-0 border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 z-[110]";
     const thBase2 =
       "sticky top-[42px] border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 z-[110]";
+    const thBase3 =
+      "sticky top-[80px] border border-slate-300 px-1 py-0.5 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 z-[110]";
     // Body cells reverted to font-bold
     const tdBase =
       "border border-slate-300 px-0.5 py-1.5 text-center align-middle text-[9px] leading-tight font-bold text-slate-900 relative";
@@ -810,18 +812,23 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             )}
             
             {/* Render form fields sequentially */}
-            {fields.map((f, idx) => (
-              <p key={idx} className="text-[10px] leading-tight">
-                <span className="font-black text-emerald-700">{f.label}:</span>{" "}
-                <span className={f.isBold === false ? "font-medium text-slate-800 italic whitespace-pre-wrap" : "font-bold text-slate-900"}>
-                  {f.highlight ? (
-                    <HighlightText text={f.value} searchTerm={searchTerm} />
-                  ) : (
-                    f.value
-                  )}
-                </span>
-              </p>
-            ))}
+            {fields.map((f, idx) => {
+              const displayVal = (f.value === "-" || !f.value) ? "" : f.value;
+              return (
+                <p key={idx} className="text-[10px] leading-tight">
+                  <span className="font-black text-emerald-700">
+                    {f.label}{f.label.includes("নং") ? "-" : ":"}
+                  </span>{" "}
+                  <span className={f.isBold === false ? "font-medium text-slate-800 italic whitespace-pre-wrap" : "font-bold text-slate-900"}>
+                    {f.highlight && displayVal ? (
+                      <HighlightText text={displayVal} searchTerm={searchTerm} />
+                    ) : (
+                      displayVal
+                    )}
+                  </span>
+                </p>
+              );
+            })}
         </div>
       );
     };
@@ -979,10 +986,10 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                 </div>
                 <div>
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-                    {item.label}
+                    {item.label}{item.label.includes("নং") ? "-" : ":"}
                   </p>
                   <p className="text-[11px] font-bold text-slate-900 leading-tight">
-                    {item.value}
+                    {(item.value === "-" || !item.value) ? "" : item.value}
                   </p>
                 </div>
               </div>
@@ -1558,13 +1565,13 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             <thead>
               <tr className="h-[42px]">
                 <th rowSpan={2} className={thBase}>
-                  ক্র: নং
+                  ক্র: নং-
                 </th>
                 <th rowSpan={2} className={thBase}>
                   বিস্তারিত বিবরণ (২০ ফিল্ড)
                 </th>
                 <th rowSpan={2} className={thBase}>
-                  অনু: নং
+                  অনু: নং-
                 </th>
                 <th rowSpan={2} className={thBase}>
                   জড়িত টাকা
@@ -1597,6 +1604,22 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                 <th className={thBase2}>আদায়</th>
                 <th className={thBase2}>সমন্বয়</th>
               </tr>
+              <tr className="h-[24px]">
+                <th className={thBase3}>১</th>
+                <th className={thBase3}>২</th>
+                <th className={thBase3}>৩</th>
+                <th className={thBase3}>৪</th>
+                <th className={thBase3}>৫</th>
+                <th className={thBase3}>৬</th>
+                <th className={thBase3}>৭</th>
+                <th className={thBase3}>৮</th>
+                <th className={thBase3}>৯</th>
+                <th className={thBase3}>১০</th>
+                <th className={thBase3}>১১</th>
+                <th className={thBase3}>১২</th>
+                <th className={thBase3}>১৩</th>
+                <th className={thBase3}>১৪</th>
+              </tr>
             </thead>
             <tbody>
               {groupedEntries.length > 0 ? (
@@ -1606,7 +1629,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                     <React.Fragment key={group.label}>
                       {/* Sticky Cycle Header */}
                       {showCycleHeaders && (
-                        <tr className="sticky top-[80px] z-[90] no-print animate-in fade-in duration-300">
+                        <tr className="sticky top-[104px] z-[90] no-print animate-in fade-in duration-300">
                           <td
                             colSpan={14}
                             className="p-0 border border-slate-300"
@@ -1677,7 +1700,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                       )}
 
                       {showCycleHeaders && showCycleStats[group.label] && (
-                        <tr className="sticky top-[128px] z-[85] no-print">
+                        <tr className="sticky top-[152px] z-[85] no-print">
                           <td
                             colSpan={14}
                             className="p-0 border border-slate-300"

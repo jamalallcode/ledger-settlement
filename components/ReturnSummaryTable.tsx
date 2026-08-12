@@ -655,7 +655,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                       );
                     })}
                     <tr className="bg-sky-100 font-black text-blue-950 h-[42px] border-y-2 border-slate-200 no-hover-row">
-                      <td className={subTotalTdStyle + " text-right italic pr-3 border-l border-r border-slate-300 text-[10px] bg-sky-100 font-black"}>উপ-মোট: {m.ministry}</td>
+                      <td className={subTotalTdStyle + " text-right italic pr-3 border-l border-r border-slate-300 text-[10px] bg-sky-100 font-black"}>{m.ministry}</td>
                       <td className={subTotalTdStyle + " font-black bg-sky-100"}>{toBengaliDigits(mTotals.pUC)}</td><td className={subTotalTdStyle + " text-center border-r border-slate-300 font-black bg-sky-100"}>{toBengaliDigits(Math.round(mTotals.pUA))}</td>
                       <td className={subTotalTdStyle + " font-black bg-sky-100"}>{toBengaliDigits(mTotals.cRC)}</td><td className={subTotalTdStyle + " text-center border-r border-slate-300 font-black bg-sky-100"}>{toBengaliDigits(Math.round(mTotals.cRA))}</td>
                       <td className={subTotalTdStyle + " bg-sky-100 font-black"}>{toBengaliDigits(mTotals.pUC + mTotals.cRC)}</td><td className={subTotalTdStyle + " text-center bg-sky-100 border-r border-slate-300 font-black"}>{toBengaliDigits(Math.round(mTotals.pUA + mTotals.cRA))}</td>
