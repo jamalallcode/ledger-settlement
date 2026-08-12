@@ -82,8 +82,8 @@ const getCleanAuditorDisplayName = (raw: string): string => {
   if (!raw) return '';
   const trimmed = raw.trim();
   const canonical = resolveCanonicalName(trimmed);
-  if (canonical && canonical !== 'অনির্ধারিত' && canonical !== trimmed) {
-    return canonical;
+  if (canonical && canonical !== 'অনির্ধারিত') {
+    return canonical.replace(/শাহ্রিন/g, 'শাহরিন').replace(/শাম্মীমা/g, 'শামীমা');
   }
 
   const norm = normalizeAuditor(raw);
@@ -91,8 +91,8 @@ const getCleanAuditorDisplayName = (raw: string): string => {
     try {
       const recs = getReceivers();
       const canonicalRec = resolveCanonicalName(raw, recs);
-      if (canonicalRec && canonicalRec !== 'অনির্ধারিত' && canonicalRec !== trimmed) {
-        return canonicalRec;
+      if (canonicalRec && canonicalRec !== 'অনির্ধারিত') {
+        return canonicalRec.replace(/শাহ্রিন/g, 'শাহরিন').replace(/শাম্মীমা/g, 'শামীমা');
       }
       let matchRec = recs.find(r => normalizeAuditor(r.name) === norm);
       if (!matchRec) {
@@ -101,7 +101,7 @@ const getCleanAuditorDisplayName = (raw: string): string => {
           return rNorm && (rNorm.includes(norm) || norm.includes(rNorm));
         });
       }
-      if (matchRec && matchRec.name) return matchRec.name.trim();
+      if (matchRec && matchRec.name) return matchRec.name.trim().replace(/শাহ্রিন/g, 'শাহরিন').replace(/শাম্মীমা/g, 'শামীমা');
     } catch (e) {}
   }
 

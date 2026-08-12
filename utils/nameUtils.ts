@@ -18,9 +18,16 @@ export const KNOWN_ALIASES: Record<string, string> = {
   'উজ্জ্বল হোসেন': 'মো: উজ্জ্বল হোসেন',
   'নজরুল ইসলাম': 'মো: নজরুল ইসলাম',
   'নুরুল আলম': 'মো: নুরুল আলম',
-  'শামমিমা শাহরিন': 'শাম্মীমা শাহরিন',
-  'শামিমা শাহরিন': 'শাম্মীমা শাহরিন',
-  'শাম্মীমা শাহরিন (অডিটর)': 'শাম্মীমা শাহরিন',
+  'শামমিমা শাহরিন': 'শামীমা শাহরিন',
+  'শামিমা শাহরিন': 'শামীমা শাহরিন',
+  'শাম্মীমা শাহরিন': 'শামীমা শাহরিন',
+  'শাম্মীমা শাহ্রিন': 'শামীমা শাহরিন',
+  'শামীমা শাহ্রিন': 'শামীমা শাহরিন',
+  'শামীমা শাহরিন': 'শামীমা শাহরিন',
+  'শামীমা শাহ্রিন (অডিটর)': 'শামীমা শাহরিন',
+  'শামীমা শাহরিন (অডিটর)': 'শামীমা শাহরিন',
+  'শাম্মীমা শাহরিন (অডিটর)': 'শামীমা শাহরিন',
+  'শাম্মীমা শাহ্রিন (অডিটর)': 'শামীমা শাহরিন',
 };
 
 export const normalizeName = (name: string | null | undefined): string => {
@@ -97,11 +104,21 @@ export const resolveCanonicalName = (
   activeReceiversList?: any[]
 ): string => {
   if (!rawName) return 'অনির্ধারিত';
-  const trimmed = rawName.trim();
+  let trimmed = rawName.trim();
   if (!trimmed) return 'অনির্ধারিত';
+
+  // Sanitize Shah-rin hasanta
+  if (trimmed.includes('শাহ্রিন')) {
+    trimmed = trimmed.replace(/শাহ্রিন/g, 'শাহরিন');
+  }
 
   if (KNOWN_ALIASES[trimmed]) {
     return KNOWN_ALIASES[trimmed];
+  }
+
+  const variant = trimmed.replace(/শাম্মীমা/g, 'শামীমা').replace(/শামিমা/g, 'শামীমা').replace(/শামমিমা/g, 'শামীমা');
+  if (KNOWN_ALIASES[variant]) {
+    return KNOWN_ALIASES[variant];
   }
 
   const norm = normalizeName(trimmed);
@@ -116,10 +133,11 @@ export const resolveCanonicalName = (
       if (!r || !r.name) continue;
       const rName = r.name.trim();
       if (isNameMatching(trimmed, rName, normalizeName(rName))) {
-        return rName;
+        const canonicalFromMatch = KNOWN_ALIASES[rName] || rName;
+        return canonicalFromMatch.replace(/শাহ্রিন/g, 'শাহরিন').replace(/শাম্মীমা/g, 'শামীমা');
       }
     }
   }
 
-  return trimmed;
+  return trimmed.replace(/শাহ্রিন/g, 'শাহরিন').replace(/শাম্মীমা/g, 'শামীমা');
 };

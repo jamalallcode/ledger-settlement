@@ -128,21 +128,21 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     if (!raw) return 'অনির্ধারিত';
 
     const resolved = resolveCanonicalName(raw, receiversList);
-    if (resolved && resolved !== 'অনির্ধারিত' && resolved !== raw) {
-      return resolved;
+    if (resolved && resolved !== 'অনির্ধারিত') {
+      return resolved.replace(/শাহ্রিন/g, 'শাহরিন').replace(/শাম্মীমা/g, 'শামীমা');
     }
 
     try {
       const recs = getReceivers();
       const resolvedRec = resolveCanonicalName(raw, recs);
-      if (resolvedRec && resolvedRec !== 'অনির্ধারিত' && resolvedRec !== raw) {
-        return resolvedRec;
+      if (resolvedRec && resolvedRec !== 'অনির্ধারিত') {
+        return resolvedRec.replace(/শাহ্রিন/g, 'শাহরিন').replace(/শাম্মীমা/g, 'শামীমা');
       }
     } catch (e) {}
 
     const directResolved = resolveCanonicalName(raw);
     if (directResolved && directResolved !== 'অনির্ধারিত') {
-      return directResolved;
+      return directResolved.replace(/শাহ্রিন/g, 'শাহরিন').replace(/শাম্মীমা/g, 'শামীমা');
     }
 
     const norm = normalizeName(raw);
@@ -156,10 +156,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       });
     }
     let finalName = match && match.name ? match.name : (fallbackRawName || name || 'অনির্ধারিত');
-    if (finalName && finalName.includes('শাহ্রিন')) {
-      finalName = finalName.replace(/শাহ্রিন/g, 'শাহরিন');
-    }
-    return finalName;
+    return finalName.replace(/শাহ্রিন/g, 'শাহরিন').replace(/শাম্মীমা/g, 'শামীমা');
   };
 
   const getDisplayDesignation = (name: string | null | undefined, fallbackRawName?: string): string => {
