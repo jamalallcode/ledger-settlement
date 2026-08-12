@@ -609,7 +609,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                 if (typeof content === 'string') {
                   try { content = JSON.parse(content); } catch (e) { continue; }
                 }
-                if (content && content.receiverName && normalizeName(content.receiverName) === matchNorm) {
+                const eNorm = content && content.receiverName ? normalizeName(content.receiverName) : '';
+                if (eNorm && (eNorm === matchNorm || eNorm.includes(matchNorm) || matchNorm.includes(eNorm))) {
                   content.receiverName = newNameClean;
                   await supabase
                     .from('settlement_entries')
@@ -658,7 +659,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
             let dbEntries = JSON.parse(savedCorr);
             let updated = false;
             dbEntries = dbEntries.map((entry: any) => {
-              if (entry && entry.receiverName && normalizeName(entry.receiverName) === matchNorm) {
+              const eNorm = entry && entry.receiverName ? normalizeName(entry.receiverName) : '';
+              if (eNorm && (eNorm === matchNorm || eNorm.includes(matchNorm) || matchNorm.includes(eNorm))) {
                 updated = true;
                 return { ...entry, receiverName: newNameClean };
               }
@@ -921,7 +923,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
         const newNameClean = tempName.trim();
         
         updatedEntries = updatedEntries.map(entry => {
-          if (entry && entry.receiverName && normalizeName(entry.receiverName) === matchNorm) {
+          const eNorm = entry && entry.receiverName ? normalizeName(entry.receiverName) : '';
+          if (eNorm && (eNorm === matchNorm || eNorm.includes(matchNorm) || matchNorm.includes(eNorm))) {
             entriesChanged = true;
             return { ...entry, receiverName: newNameClean };
           }
@@ -929,7 +932,8 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
         });
 
         updatedCorrEntries = updatedCorrEntries.map(entry => {
-          if (entry && entry.receiverName && normalizeName(entry.receiverName) === matchNorm) {
+          const eNorm = entry && entry.receiverName ? normalizeName(entry.receiverName) : '';
+          if (eNorm && (eNorm === matchNorm || eNorm.includes(matchNorm) || matchNorm.includes(eNorm))) {
             entriesChanged = true;
             return { ...entry, receiverName: newNameClean };
           }

@@ -576,39 +576,44 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
 
   const auditorWiseStats = useMemo(() => {
     const stats: Record<string, { 
+      rawName: string;
       total: number; auditor: number; aao: number; dd: number; others: number;
       auditorLetters: any[]; aaoLetters: any[]; ddLetters: any[]; othersLetters: any[]; totalLetters: any[]
     }> = {};
     
     filteredData.forEach(entry => {
-      const auditor = normalizeName(entry.receiverName || entry.presentedToName);
-      if (!stats[auditor]) {
-        stats[auditor] = { 
+      const rawAud = (entry.receiverName || entry.presentedToName || '').trim();
+      const officialDisplay = getDisplayName(rawAud);
+      const auditorKey = normalizeName(officialDisplay) || 'অনির্ধারিত';
+
+      if (!stats[auditorKey]) {
+        stats[auditorKey] = { 
+          rawName: officialDisplay,
           total: 0, auditor: 0, aao: 0, dd: 0, others: 0,
           auditorLetters: [], aaoLetters: [], ddLetters: [], othersLetters: [], totalLetters: []
         };
       }
       
-      stats[auditor].total++;
-      stats[auditor].totalLetters.push(entry);
+      stats[auditorKey].total++;
+      stats[auditorKey].totalLetters.push(entry);
       const pos = (entry.presentedToName || 'অডিটর');
       
       if (pos.includes('অডিটর')) {
-        stats[auditor].auditor++;
-        stats[auditor].auditorLetters.push(entry);
+        stats[auditorKey].auditor++;
+        stats[auditorKey].auditorLetters.push(entry);
       } else if (pos.includes('এএন্ডএও')) {
-        stats[auditor].aao++;
-        stats[auditor].aaoLetters.push(entry);
+        stats[auditorKey].aao++;
+        stats[auditorKey].aaoLetters.push(entry);
       } else if (pos.includes('উপপরিচালক')) {
-        stats[auditor].dd++;
-        stats[auditor].ddLetters.push(entry);
+        stats[auditorKey].dd++;
+        stats[auditorKey].ddLetters.push(entry);
       } else {
-        stats[auditor].others++;
-        stats[auditor].othersLetters.push(entry);
+        stats[auditorKey].others++;
+        stats[auditorKey].othersLetters.push(entry);
       }
     });
     
-    return Object.entries(stats).map(([name, data]) => ({ name, ...data }));
+    return Object.entries(stats).map(([key, data]) => ({ name: data.rawName, ...data }));
   }, [filteredData]);
 
   const summaryStats = useMemo(() => {
