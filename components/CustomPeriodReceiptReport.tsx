@@ -2126,7 +2126,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                 <span className="font-black text-emerald-700">৮. বর্তমান অবস্থান: </span>
                                 {hasIssueLetter ? (
                                   <span className="font-bold text-emerald-900 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200 text-[10px] inline-block">
-                                    {issueLetterNo && `জারিপত্র নং: ${issueLetterNo}`}
+                                    {issueLetterNo && `জারিপত্র নং- ${issueLetterNo}`}
                                     {issueLetterDate && ` (${formatDateBN(issueLetterDate)})`}
                                   </span>
                                 ) : (
@@ -2137,7 +2137,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                               </div>
                               {archiveNo !== '-' && (
                                 <div>
-                                  <span className="font-black text-emerald-700">৯. আর্কাইভ নং: </span>
+                                  <span className="font-black text-emerald-700">৯. আর্কাইভ নং- </span>
                                   <span className="font-bold text-purple-700">{toBengaliDigits(archiveNo)}</span>
                                 </div>
                               )}
@@ -2172,7 +2172,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                               {settledParas.length > 0 && (
                                 <div className="pt-1.5 border-t border-slate-100 flex flex-wrap items-center gap-x-1.5 gap-y-1">
                                   <span className="font-black text-slate-700 text-[10px] shrink-0">
-                                    ৩. অনুচ্ছেদ নং:
+                                    ৩. অনুচ্ছেদ নং-
                                   </span>
                                   {(() => {
                                     const entryKey = entry.id || String(index);

@@ -91,6 +91,7 @@ export interface SettlementEntry {
   meetingUnsettledParas?: string;
   meetingUnsettledAmount?: number;
   archiveNo?: string;
+  digitalFileNo?: string;
   meetingWorkpaper?: string;
   meetingMinutes?: string;
   branchReceiptDate?: string;      
@@ -134,6 +135,9 @@ export interface CorrespondenceEntry {
   ministryName?: string;
   entityName?: string;
   auditYear?: string;
+  meetingDate?: string;
+  meetingDiscussedParaCount?: string;
+  meetingRecommendedParaCount?: string;
 }
 
 export interface GroupOption {

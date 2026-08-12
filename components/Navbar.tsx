@@ -261,7 +261,7 @@ const Navbar: React.FC<NavbarProps> = ({
                             ? (entry.description || entry.subject || "নতুন চিঠিপত্র এন্ট্রি")
                             : (entry.entityName || "নতুন মীমাংসা এন্ট্রি");
                           const subtitle = isCorrespondence
-                            ? `ডায়েরি নং: ${toBengaliDigits(entry.diaryNo || "")} ${entry.diaryDate ? `(${entry.diaryDate})` : ''}`
+                            ? `ডায়েরি নং- ${toBengaliDigits(entry.diaryNo || "")} ${entry.diaryDate ? `(${entry.diaryDate})` : ''}`
                             : `${entry.branchName || ''} ${entry.auditYear ? `(${toBengaliDigits(entry.auditYear)})` : ''}`;
 
                           return (
@@ -336,7 +336,7 @@ const Navbar: React.FC<NavbarProps> = ({
                               {entry.description || "কোনো বিবরণ নেই"}
                             </p>
                             <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold">
-                              <span>ডায়েরি নং: {toBengaliDigits(entry.diaryNo || "")}</span>
+                              <span>ডায়েরি নং- {toBengaliDigits(entry.diaryNo || "")}</span>
                               <span className="text-blue-400">{entry.diaryDate}</span>
                             </div>
                             <span className="text-[9px] text-rose-400 font-bold bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md w-fit mt-1">প্রাপক নির্ধারণ করুন</span>

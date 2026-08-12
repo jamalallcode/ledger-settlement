@@ -1963,7 +1963,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               </span>
                             </div>
                             <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">৩. ডিজিটাল নথি নং-: </span>
+                              <span className="font-bold text-emerald-800">৩. ডিজিটাল নথি নং- </span>
                               <span className="font-black text-slate-950">
                                 <HighlightText
                                   text={entry.digitalFileNo || '-'}
@@ -1991,7 +1991,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                             </div>
                             {entry.archiveNo && (
                               <div className="text-[10px] leading-snug">
-                                <span className="font-bold text-emerald-800">৬. আর্কাইভ নং: </span>
+                                <span className="font-bold text-emerald-800">৬. আর্কাইভ নং- </span>
                                 <span className="font-black text-purple-700">
                                   <HighlightText
                                     text={entry.archiveNo}

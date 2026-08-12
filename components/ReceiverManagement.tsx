@@ -999,7 +999,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
 
     if (hasCorrespondence) {
       const entryList = blockingEntries.map(e => 
-        `• ডায়েরি নং: ${e.diaryNo || 'N/A'}, তারিখ: ${e.diaryDate || 'N/A'}`
+        `• ডায়েরি নং- ${e.diaryNo || 'N/A'}, তারিখ: ${e.diaryDate || 'N/A'}`
       ).slice(0, 5).join('\n');
       
       const moreCount = blockingEntries.length > 5 ? `\n...এবং আরও ${blockingEntries.length - 5}টি` : '';
