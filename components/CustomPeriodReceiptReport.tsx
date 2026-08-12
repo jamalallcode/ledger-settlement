@@ -57,9 +57,8 @@ const normalizeAuditor = (name: string | null | undefined): string => {
   n = n.replace(/\s*\([^)]*\)\s*/g, ' ').trim();
 
   // Strip common honorific prefixes
-  n = n.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '');
-  n = n.replace(/^মো[ঃ:\.]\s*/, '');
-  n = n.replace(/^মোঃ\s*/, '');
+  n = n.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়|মোসা|মোছা|মোঃ|মো|বেগম|শ্রী|শ্রীমতী)\s*/g, '');
+  n = n.replace(/^মো[ঃ:\.]\s*/g, '');
 
   // Strip punctuation
   n = n.replace(/[:ঃ।\.\-]/g, '').trim();
@@ -84,7 +83,13 @@ const getCleanAuditorDisplayName = (raw: string): string => {
   if (norm) {
     try {
       const recs = getReceivers();
-      const matchRec = recs.find(r => normalizeAuditor(r.name) === norm);
+      let matchRec = recs.find(r => normalizeAuditor(r.name) === norm);
+      if (!matchRec) {
+        matchRec = recs.find(r => {
+          const rNorm = normalizeAuditor(r.name);
+          return rNorm && (rNorm.includes(norm) || norm.includes(rNorm));
+        });
+      }
       if (matchRec && matchRec.name) return matchRec.name.trim();
     } catch (e) {}
   }
