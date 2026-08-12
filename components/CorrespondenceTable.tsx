@@ -970,6 +970,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   // Header font-black
   const thCls =
     "sticky top-0 border border-slate-300 px-1.5 py-2.5 text-center align-middle font-black text-slate-900 text-[10.5px] sm:text-[11px] bg-slate-200 z-[110] shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
+  const thSubCls =
+    "sticky top-[40px] border border-slate-300 px-1 py-1 text-center align-middle font-black text-slate-900 text-[10.5px] sm:text-[11px] bg-slate-200 z-[110] shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
   // Data cells font-bold
   const tdCls =
     "border border-slate-300 px-2 py-2 text-[10px] sm:text-[10.5px] text-slate-800 font-bold leading-tight align-top transition-colors group-hover:bg-blue-50/50 break-words relative";
@@ -1541,6 +1543,15 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
               <th className={thCls}>জারিপত্র নং ও তারিখ</th>
               <th className={thCls}>মন্তব্য</th>
             </tr>
+            <tr className="h-[26px]">
+              <th className={thSubCls}>১</th>
+              <th className={thSubCls}>২</th>
+              <th className={thSubCls}>৩</th>
+              <th className={thSubCls}>৪</th>
+              <th className={thSubCls}>৫</th>
+              <th className={thSubCls}>৬</th>
+              <th className={thSubCls}>৭</th>
+            </tr>
           </thead>
           {groupedEntries.length > 0 ? (
             (() => {
@@ -1549,7 +1560,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                 <tbody key={group.label}>
                   {/* Sticky Cycle Header */}
                   {showCycleHeaders && (
-                    <tr className="sticky top-[40px] z-[105] no-print animate-in fade-in duration-300">
+                    <tr className="sticky top-[66px] z-[105] no-print animate-in fade-in duration-300">
                       <td
                         colSpan={7}
                         className="p-0 border border-slate-400 shadow-sm"
@@ -1622,7 +1633,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                   )}
 
                   {showCycleHeaders && expandedCycles[group.label] && (
-                    <tr className="sticky top-[88px] z-[85] no-print">
+                    <tr className="sticky top-[114px] z-[85] no-print">
                       <td colSpan={7} className="p-0 border border-slate-300">
                         <div className="bg-white p-4 border-b border-slate-200 animate-in fade-in slide-in-from-top-1 duration-200 shadow-md">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1828,10 +1839,19 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                         <td className={tdCls + " text-center font-black"}>
                           {toBengaliDigits(idx + 1)}
                         </td>
-                        <td className="border border-slate-300 p-2 sm:p-2.5 text-left align-top transition-colors group-hover:bg-blue-50/50 break-words relative">
-                          <div className="text-slate-950 font-bold">
+                        <td
+                          className="border border-slate-300 p-2 sm:p-2.5 align-top transition-colors group-hover:bg-blue-50/50 break-words relative text-justify"
+                          style={{ textAlign: "justify", textJustify: "inter-word" }}
+                        >
+                          <div
+                            className="text-slate-950 font-bold text-justify"
+                            style={{ textAlign: "justify", textJustify: "inter-word" }}
+                          >
                             {entry.description ? (
-                              <div className="font-bold text-slate-800 text-[10px] leading-relaxed tracking-normal break-words">
+                              <div
+                                className="font-bold text-slate-800 text-[10px] leading-relaxed tracking-normal break-words text-justify"
+                                style={{ textAlign: "justify", textJustify: "inter-word" }}
+                              >
                                 <HighlightText
                                   text={entry.description}
                                   searchTerm={searchTerm}
