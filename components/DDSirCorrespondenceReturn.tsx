@@ -8,6 +8,7 @@ import { format, startOfMonth, addDays, isBefore, subMonths, parseISO } from 'da
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import LetterDetailsModal from './LetterDetailsModal';
 import { getReceivers } from './ReceiverManagement';
+import { normalizeName as normNameUtils, resolveCanonicalName, KNOWN_ALIASES } from '../utils/nameUtils';
 
 interface DDSirCorrespondenceReturnProps {
   entries: any[];
@@ -118,50 +119,34 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const [receiversList, setReceiversList] = useState<any[]>([]);
 
   const normalizeName = (name: string | null | undefined): string => {
-    if (!name) return 'অনির্ধারিত';
-    let n = name
-      .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
-      .trim()
-      .replace(/\s+/g, ' ')
-      .replace(/[:ঃ।\.\-]/g, '')
-      .normalize('NFC');
-
-    // Strip common prefixes like "জনাব", "জনাবা", "ডাঃ", "ডা", "ড", "ডক্টর", "মোসা", "মোছা", "মোঃ", "মো"
-    n = n.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়|মোসা|মোছা|মোঃ|মো|বেগম|শ্রী|শ্রীমতী)\s*/g, '');
-    n = n.replace(/^মো[ঃ:\.]\s*/g, '');
-
-    // Normalize common spelling variations in Bengali vowels for matching
-    n = n.replace(/ী/g, 'ি')
-         .replace(/ূ/g, 'ু')
-         .replace(/ষ/g, 'স')
-         .replace(/শ/g, 'স')
-         .replace(/ণ/g, 'ন')
-         .replace(/য়/g, 'য')
-         .replace(/্/g, '')
-         .replace(/ঁ/g, '')
-         .replace(/়/g, '');
-
-    return n.trim();
+    return normNameUtils(name) || 'অনির্ধারিত';
   };
 
   const getDisplayName = (name: string | null | undefined, fallbackRawName?: string): string => {
     if (!name && !fallbackRawName) return 'অনির্ধারিত';
     const raw = (name || fallbackRawName || '').trim();
     if (!raw) return 'অনির্ধারিত';
-    const norm = normalizeName(raw);
-    if (norm === 'অনির্ধারিত' || !norm) return 'অনির্ধারিত';
-    
+
+    const resolved = resolveCanonicalName(raw, receiversList);
+    if (resolved && resolved !== 'অনির্ধারিত' && resolved !== raw) {
+      return resolved;
+    }
+
     try {
       const recs = getReceivers();
-      let matchRec = recs.find(r => normalizeName(r.name) === norm);
-      if (!matchRec) {
-        matchRec = recs.find(r => {
-          const rNorm = normalizeName(r.name);
-          return rNorm && (rNorm.includes(norm) || norm.includes(rNorm));
-        });
+      const resolvedRec = resolveCanonicalName(raw, recs);
+      if (resolvedRec && resolvedRec !== 'অনির্ধারিত' && resolvedRec !== raw) {
+        return resolvedRec;
       }
-      if (matchRec && matchRec.name) return matchRec.name.trim();
     } catch (e) {}
+
+    const directResolved = resolveCanonicalName(raw);
+    if (directResolved && directResolved !== 'অনির্ধারিত') {
+      return directResolved;
+    }
+
+    const norm = normalizeName(raw);
+    if (norm === 'অনির্ধারিত' || !norm) return 'অনির্ধারিত';
 
     let match = receiversList.find(r => normalizeName(r.name) === norm);
     if (!match) {

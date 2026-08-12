@@ -6,6 +6,7 @@ import { isSFI, isNonSFI, isAdminBranch, getBranchVariations } from '../utils/br
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { EMPLOYEES } from '../constants';
+import { KNOWN_ALIASES, normalizeName, isNameMatching, resolveCanonicalName } from '../utils/nameUtils';
 
 interface ReceiverManagementProps {
   isAdmin: boolean;
@@ -35,82 +36,11 @@ interface ReceiverProfile {
 
 const CORR_STORAGE_KEY = 'ledger_correspondence_v1';
 
-const KNOWN_ALIASES: Record<string, string> = {
-  'শাহের': 'মোসা: সাহেরা খাতুন',
-  'সাহেরা': 'মোসা: সাহেরা খাতুন',
-  'সাহেরা খাতুন': 'মোসা: সাহেরা খাতুন',
-  'মোসা সাহেরা খাতুন': 'মোসা: সাহেরা খাতুন',
-  'সাহেরা আক্তার': 'মোসা: সাহেরা খাতুন',
-  'মো: জামাল উদ্দিন': 'জামাল উদ্দিন',
-  'মোঃ জামাল উদ্দিন': 'জামাল উদ্দিন',
-  'মো: জামাল উদ্দিন': 'জামাল উদ্দিন',
-  'মোঃ জামাল উদ্দিন': 'জামাল উদ্দিন',
-  'জামাল উদ্দীন': 'জামাল উদ্দিন',
-  'জনাব জামাল উদ্দিন': 'জামাল উদ্দিন',
-  'জামাল উদ্দিন (অডিটর)': 'জামাল উদ্দিন',
-  'মো: জামাল উদ্দিন (অডিটর)': 'জামাল উদ্দিন',
-};
 
-const normalizeName = (name: string | null | undefined): string => {
-  if (!name) return '';
-  let n = name
-    .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD\u2028\u2029\u180E\u2060\u2000-\u200A]/g, '')
-    .trim()
-    .replace(/\s+/g, ' ')
-    .replace(/[:ঃ।\.\-]/g, '')
-    .normalize('NFC');
 
-  // Strip common prefixes like "জনাব", "জনাবা", "ডাঃ", "ডা", "ড", "ডক্টর"
-  n = n.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '');
-  n = n.replace(/^মো[ঃ:\.]\s*/, '');
-  n = n.replace(/^মোঃ\s*/, '');
-  n = n.replace(/^মোসা[ঃ:\.]\s*/, '');
-  n = n.replace(/^মোসাঃ\s*/, '');
 
-  // Normalize vowels, sibilants, virama (hasanta), nukta & nasal marks
-  n = n.replace(/ী/g, 'ি')
-       .replace(/ূ/g, 'ু')
-       .replace(/ষ/g, 'স')
-       .replace(/শ/g, 'স')
-       .replace(/ণ/g, 'ন')
-       .replace(/য়/g, 'য')
-       .replace(/্/g, '')
-       .replace(/ঁ/g, '')
-       .replace(/়/g, '');
 
-  return n;
-};
 
-const isNameMatching = (testName: string | null | undefined, targetOldName: string, targetMatchNorm: string): boolean => {
-  if (!testName) return false;
-  const rawTest = testName.trim();
-  if (!rawTest) return false;
-  
-  if (rawTest === targetOldName) return true;
-  if (KNOWN_ALIASES[rawTest] && KNOWN_ALIASES[rawTest] === targetOldName) return true;
-  
-  const testNorm = normalizeName(rawTest);
-  if (testNorm && targetMatchNorm && testNorm === targetMatchNorm) return true;
-  
-  const cleanRawTest = rawTest.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়|মোঃ|মো:|মোসা:|মোসা|অডিটর)\s*/g, '').trim();
-  const cleanTarget = targetOldName.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়|মোঃ|মো:|মোসা:|মোসা|অডিটর)\s*/g, '').trim();
-  
-  if (cleanRawTest && cleanTarget) {
-    if (cleanRawTest === cleanTarget) return true;
-    const cleanTestNorm = normalizeName(cleanRawTest);
-    const cleanTargetNorm = normalizeName(cleanTarget);
-    if (cleanTestNorm && cleanTargetNorm && cleanTestNorm === cleanTargetNorm) return true;
-
-    // Substring / root word match (min 4 chars)
-    if (cleanTestNorm.length >= 4 && cleanTargetNorm.length >= 4) {
-      if (cleanTargetNorm.includes(cleanTestNorm) || cleanTestNorm.includes(cleanTargetNorm)) {
-        return true;
-      }
-    }
-  }
-  
-  return false;
-};
 
 const getCleanBranch = (type: string | null | undefined): string => {
   if (!type) return 'এসএফআই';
