@@ -812,20 +812,23 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             )}
             
             {/* Render form fields sequentially */}
-            {fields.map((f, idx) => (
-              <p key={idx} className="text-[10px] leading-tight">
-                <span className="font-black text-emerald-700">
-                  {f.label}{f.label.includes("নং") ? "-" : ":"}
-                </span>{" "}
-                <span className={f.isBold === false ? "font-medium text-slate-800 italic whitespace-pre-wrap" : "font-bold text-slate-900"}>
-                  {f.highlight ? (
-                    <HighlightText text={f.value} searchTerm={searchTerm} />
-                  ) : (
-                    f.value
-                  )}
-                </span>
-              </p>
-            ))}
+            {fields.map((f, idx) => {
+              const displayVal = (f.value === "-" || !f.value) ? "" : f.value;
+              return (
+                <p key={idx} className="text-[10px] leading-tight">
+                  <span className="font-black text-emerald-700">
+                    {f.label}{f.label.includes("নং") ? "-" : ":"}
+                  </span>{" "}
+                  <span className={f.isBold === false ? "font-medium text-slate-800 italic whitespace-pre-wrap" : "font-bold text-slate-900"}>
+                    {f.highlight && displayVal ? (
+                      <HighlightText text={displayVal} searchTerm={searchTerm} />
+                    ) : (
+                      displayVal
+                    )}
+                  </span>
+                </p>
+              );
+            })}
         </div>
       );
     };
@@ -986,7 +989,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                     {item.label}{item.label.includes("নং") ? "-" : ":"}
                   </p>
                   <p className="text-[11px] font-bold text-slate-900 leading-tight">
-                    {item.value}
+                    {(item.value === "-" || !item.value) ? "" : item.value}
                   </p>
                 </div>
               </div>
