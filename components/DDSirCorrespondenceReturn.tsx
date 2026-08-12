@@ -532,35 +532,37 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     
     filteredEntries.forEach(entry => {
       const rawAud = (entry.receiverName || entry.presentedToName || '').trim();
-      const auditor = normalizeName(rawAud);
-      if (!stats[auditor]) {
-        stats[auditor] = { 
-          rawName: rawAud,
+      const officialDisplay = getDisplayName(rawAud);
+      const auditorKey = normalizeName(officialDisplay) || 'অনির্ধারিত';
+
+      if (!stats[auditorKey]) {
+        stats[auditorKey] = { 
+          rawName: officialDisplay,
           total: 0, auditor: 0, aao: 0, dd: 0, others: 0,
           auditorLetters: [], aaoLetters: [], ddLetters: [], othersLetters: [], totalLetters: []
         };
       }
       
-      stats[auditor].total++;
-      stats[auditor].totalLetters.push(entry);
+      stats[auditorKey].total++;
+      stats[auditorKey].totalLetters.push(entry);
       const pos = (entry.presentedToName || 'অডিটর');
       
       if (pos.includes('অডিটর')) {
-        stats[auditor].auditor++;
-        stats[auditor].auditorLetters.push(entry);
+        stats[auditorKey].auditor++;
+        stats[auditorKey].auditorLetters.push(entry);
       } else if (pos.includes('এএন্ডএও')) {
-        stats[auditor].aao++;
-        stats[auditor].aaoLetters.push(entry);
+        stats[auditorKey].aao++;
+        stats[auditorKey].aaoLetters.push(entry);
       } else if (pos.includes('উপপরিচালক')) {
-        stats[auditor].dd++;
-        stats[auditor].ddLetters.push(entry);
+        stats[auditorKey].dd++;
+        stats[auditorKey].ddLetters.push(entry);
       } else {
-        stats[auditor].others++;
-        stats[auditor].othersLetters.push(entry);
+        stats[auditorKey].others++;
+        stats[auditorKey].othersLetters.push(entry);
       }
     });
     
-    return Object.entries(stats).map(([name, data]) => ({ name, ...data }));
+    return Object.entries(stats).map(([key, data]) => ({ name: data.rawName, ...data }));
   }, [filteredEntries]);
 
   const reportingDate = new Date(selectedReportingDate);
@@ -581,11 +583,13 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
     filteredEntries.forEach(entry => {
       const rawAud = (entry.receiverName || entry.presentedToName || '').trim();
-      const auditor = normalizeName(rawAud);
-      if (!grouped[auditor]) {
-        grouped[auditor] = {
-          name: auditor,
-          rawName: rawAud,
+      const officialDisplay = getDisplayName(rawAud);
+      const auditorKey = normalizeName(officialDisplay) || 'অনির্ধারিত';
+
+      if (!grouped[auditorKey]) {
+        grouped[auditorKey] = {
+          name: officialDisplay,
+          rawName: officialDisplay,
           karyapatra: { less: 0, more: 0, lessLetters: [], moreLetters: [] },
           karyabibarani: { less: 0, more: 0, lessLetters: [], moreLetters: [] },
           broadsheet: { less: 0, more: 0, lessLetters: [], moreLetters: [] },
@@ -604,20 +608,20 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
       // UPDATED LOGIC: Categorize based on Workpaper (কার্যপত্র) or Minutes (কার্যবিবরণী)
       if (lType.includes('কার্যপত্র')) {
-        grouped[auditor].karyapatra[durationKey]++;
-        grouped[auditor].karyapatra[lettersKey].push(entry);
+        grouped[auditorKey].karyapatra[durationKey]++;
+        grouped[auditorKey].karyapatra[lettersKey].push(entry);
       } else if (lType.includes('কার্যবিবরণী') || lType === 'দ্বিপক্ষীয় সভা' || lType === 'ত্রিপক্ষীয় সভা') {
-        grouped[auditor].karyabibarani[durationKey]++;
-        grouped[auditor].karyabibarani[lettersKey].push(entry);
+        grouped[auditorKey].karyabibarani[durationKey]++;
+        grouped[auditorKey].karyabibarani[lettersKey].push(entry);
       } else if (lType === 'বিএসআর') {
-        grouped[auditor].broadsheet[durationKey]++;
-        grouped[auditor].broadsheet[lettersKey].push(entry);
+        grouped[auditorKey].broadsheet[durationKey]++;
+        grouped[auditorKey].broadsheet[lettersKey].push(entry);
       } else if (lType === 'মিলিকরণ' || desc.includes('মিলিকরণ') || desc.includes('সমন্বয়')) {
-        grouped[auditor].reconciliation[durationKey]++;
-        grouped[auditor].reconciliation[lettersKey].push(entry);
+        grouped[auditorKey].reconciliation[durationKey]++;
+        grouped[auditorKey].reconciliation[lettersKey].push(entry);
       } else {
-        grouped[auditor].others[durationKey]++;
-        grouped[auditor].others[lettersKey].push(entry);
+        grouped[auditorKey].others[durationKey]++;
+        grouped[auditorKey].others[lettersKey].push(entry);
       }
     });
 
@@ -627,20 +631,21 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   // --- Grouping & Logic for Table 2 (Detailed List) ---
   const detailedListData = useMemo(() => {
     const sorted = [...filteredEntries].sort((a, b) => {
-      const audA = normalizeName(a.receiverName || a.presentedToName);
-      const audB = normalizeName(b.receiverName || b.presentedToName);
+      const audA = getDisplayName(a.receiverName || a.presentedToName);
+      const audB = getDisplayName(b.receiverName || b.presentedToName);
       return audA.localeCompare(audB);
     });
 
     const groups: { auditor: string; rawAuditor: string; rows: any[] }[] = [];
     sorted.forEach(row => {
       const rawAud = (row.receiverName || row.presentedToName || '').trim();
-      const aud = normalizeName(rawAud);
+      const officialDisplay = getDisplayName(rawAud);
+      const audKey = normalizeName(officialDisplay) || 'অনির্ধারিত';
       const lastGroup = groups[groups.length - 1];
-      if (lastGroup && lastGroup.auditor === aud) {
+      if (lastGroup && lastGroup.auditor === audKey) {
         lastGroup.rows.push(row);
       } else {
-        groups.push({ auditor: aud, rawAuditor: rawAud, rows: [row] });
+        groups.push({ auditor: audKey, rawAuditor: officialDisplay, rows: [row] });
       }
     });
     return groups;
