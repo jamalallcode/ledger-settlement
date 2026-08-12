@@ -63,6 +63,26 @@ const normalizeName = (name: string | null | undefined): string => {
   return n;
 };
 
+const isNameMatching = (testName: string | null | undefined, targetOldName: string, targetMatchNorm: string): boolean => {
+  if (!testName) return false;
+  const rawTest = testName.trim();
+  if (!rawTest) return false;
+  
+  if (rawTest === targetOldName) return true;
+  
+  const testNorm = normalizeName(rawTest);
+  if (testNorm && targetMatchNorm && testNorm === targetMatchNorm) return true;
+  
+  const cleanRawTest = rawTest.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়|মোঃ|মো:)\s*/g, '').trim();
+  const cleanTarget = targetOldName.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়|মোঃ|মো:)\s*/g, '').trim();
+  if (cleanRawTest && cleanTarget) {
+    if (cleanRawTest === cleanTarget) return true;
+    if (normalizeName(cleanRawTest) === normalizeName(cleanTarget)) return true;
+  }
+  
+  return false;
+};
+
 const getCleanBranch = (type: string | null | undefined): string => {
   if (!type) return 'এসএফআই';
   if (type.includes('প্রশাসন') || type === 'ADMIN' || type === 'admin') return 'প্রশাসন';
@@ -590,7 +610,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
               .from('receivers')
               .select('id, name');
             if (!recErr && dbRecs) {
-              const matchedDbRecs = dbRecs.filter(r => normalizeName(r.name) === matchNorm);
+              const matchedDbRecs = dbRecs.filter(r => isNameMatching(r.name, oldName, matchNorm));
               for (const r of matchedDbRecs) {
                 await supabase
                   .from('receivers')
@@ -609,9 +629,18 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
                 if (typeof content === 'string') {
                   try { content = JSON.parse(content); } catch (e) { continue; }
                 }
-                const eNorm = content && content.receiverName ? normalizeName(content.receiverName) : '';
-                if (eNorm && (eNorm === matchNorm || eNorm.includes(matchNorm) || matchNorm.includes(eNorm))) {
+                if (!content) continue;
+
+                let contentChanged = false;
+                if (isNameMatching(content.receiverName, oldName, matchNorm)) {
                   content.receiverName = newNameClean;
+                  contentChanged = true;
+                }
+                if (isNameMatching(content.presentedToName, oldName, matchNorm)) {
+                  content.presentedToName = newNameClean;
+                  contentChanged = true;
+                }
+                if (contentChanged) {
                   await supabase
                     .from('settlement_entries')
                     .update({ content: content })
@@ -637,7 +666,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
               let items = JSON.parse(saved);
               let updated = false;
               items = items.map((it: any) => {
-                if (it && it.name && normalizeName(it.name) === matchNorm) {
+                if (it && it.name && isNameMatching(it.name, oldName, matchNorm)) {
                   updated = true;
                   return { ...it, name: newNameClean };
                 }
@@ -659,11 +688,16 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
             let dbEntries = JSON.parse(savedCorr);
             let updated = false;
             dbEntries = dbEntries.map((entry: any) => {
-              const eNorm = entry && entry.receiverName ? normalizeName(entry.receiverName) : '';
-              if (eNorm && (eNorm === matchNorm || eNorm.includes(matchNorm) || matchNorm.includes(eNorm))) {
-                updated = true;
-                return { ...entry, receiverName: newNameClean };
+              let entryUpdated = false;
+              if (entry && isNameMatching(entry.receiverName, oldName, matchNorm)) {
+                entry = { ...entry, receiverName: newNameClean };
+                entryUpdated = true;
               }
+              if (entry && isNameMatching(entry.presentedToName, oldName, matchNorm)) {
+                entry = { ...entry, presentedToName: newNameClean };
+                entryUpdated = true;
+              }
+              if (entryUpdated) updated = true;
               return entry;
             });
             if (updated) {
@@ -923,19 +957,37 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
         const newNameClean = tempName.trim();
         
         updatedEntries = updatedEntries.map(entry => {
-          const eNorm = entry && entry.receiverName ? normalizeName(entry.receiverName) : '';
-          if (eNorm && (eNorm === matchNorm || eNorm.includes(matchNorm) || matchNorm.includes(eNorm))) {
+          let itemChanged = false;
+          let newEntry = { ...entry };
+          if (isNameMatching(newEntry.receiverName, oldName, matchNorm)) {
+            newEntry.receiverName = newNameClean;
+            itemChanged = true;
+          }
+          if (isNameMatching(newEntry.presentedToName, oldName, matchNorm)) {
+            newEntry.presentedToName = newNameClean;
+            itemChanged = true;
+          }
+          if (itemChanged) {
             entriesChanged = true;
-            return { ...entry, receiverName: newNameClean };
+            return newEntry;
           }
           return entry;
         });
 
         updatedCorrEntries = updatedCorrEntries.map(entry => {
-          const eNorm = entry && entry.receiverName ? normalizeName(entry.receiverName) : '';
-          if (eNorm && (eNorm === matchNorm || eNorm.includes(matchNorm) || matchNorm.includes(eNorm))) {
+          let itemChanged = false;
+          let newEntry = { ...entry };
+          if (isNameMatching(newEntry.receiverName, oldName, matchNorm)) {
+            newEntry.receiverName = newNameClean;
+            itemChanged = true;
+          }
+          if (isNameMatching(newEntry.presentedToName, oldName, matchNorm)) {
+            newEntry.presentedToName = newNameClean;
+            itemChanged = true;
+          }
+          if (itemChanged) {
             entriesChanged = true;
-            return { ...entry, receiverName: newNameClean };
+            return newEntry;
           }
           return entry;
         });
