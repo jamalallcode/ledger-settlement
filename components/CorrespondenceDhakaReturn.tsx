@@ -280,10 +280,9 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       .replace(/[:ঃ।\.\-]/g, '')
       .normalize('NFC');
 
-    // Strip common prefixes like "জনাব", "জনাবা", "ডাঃ", "ডা", "ড", "ডক্টর"
-    n = n.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়)\s+/, '');
-    n = n.replace(/^মো[ঃ:\.]\s*/, '');
-    n = n.replace(/^মোঃ\s*/, '');
+    // Strip common prefixes like "জনাব", "জনাবা", "ডাঃ", "ডা", "ড", "ডক্টর", "মোসা", "মোছা", "মোঃ", "মো"
+    n = n.replace(/^(জনাব|জনাবা|ডাঃ|ডা|ড|ডক্টর|মহোদয়|মোসা|মোছা|মোঃ|মো|বেগম|শ্রী|শ্রীমতী)\s*/g, '');
+    n = n.replace(/^মো[ঃ:\.]\s*/g, '');
 
     // Normalize common spelling variations in Bengali vowels for matching
     n = n.replace(/ী/g, 'ি')
@@ -296,21 +295,33 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
          .replace(/ঁ/g, '')
          .replace(/়/g, '');
 
-    return n;
+    return n.trim();
   };
 
   const getDisplayName = (name: string | null | undefined): string => {
     if (!name) return 'অনির্ধারিত';
     const norm = normalizeName(name);
-    if (norm === 'অনির্ধারিত') return 'অনির্ধারিত';
+    if (norm === 'অনির্ধারিত' || !norm) return 'অনির্ধারিত';
     
     try {
       const recs = getReceivers();
-      const matchRec = recs.find(r => normalizeName(r.name) === norm);
+      let matchRec = recs.find(r => normalizeName(r.name) === norm);
+      if (!matchRec) {
+        matchRec = recs.find(r => {
+          const rNorm = normalizeName(r.name);
+          return rNorm && (rNorm.includes(norm) || norm.includes(rNorm));
+        });
+      }
       if (matchRec && matchRec.name) return matchRec.name.trim();
     } catch (e) {}
 
-    const match = receiversList.find(r => normalizeName(r.name) === norm);
+    let match = receiversList.find(r => normalizeName(r.name) === norm);
+    if (!match) {
+      match = receiversList.find(r => {
+        const rNorm = normalizeName(r.name);
+        return rNorm && (rNorm.includes(norm) || norm.includes(rNorm));
+      });
+    }
     let finalName = match ? match.name : name;
     if (finalName && finalName.includes('শাহ্রিন')) {
       finalName = finalName.replace(/শাহ্রিন/g, 'শাহরিন');
