@@ -1143,10 +1143,41 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const [receiverSuggestions, setReceiverSuggestions] = useState<any[]>([]);
   const [receiverSearchQuery, setReceiverSearchQuery] = useState('');
   const [descriptionSuggestions, setDescriptionSuggestions] = useState<string[]>([]);
+  const [customPatkolMills, setCustomPatkolMills] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('custom_patkol_mills');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [isAddingNewPatkol, setIsAddingNewPatkol] = useState(false);
+  const [newPatkolName, setNewPatkolName] = useState('');
   const [showReceiverDropdown, setShowReceiverDropdown] = useState(false);
   const [showDescriptionDropdown, setShowDescriptionDropdown] = useState(false);
   const [showAuditYearWarning, setShowAuditYearWarning] = useState(false);
   const [hasWarnedAuditYear, setHasWarnedAuditYear] = useState(false);
+
+  const DEFAULT_PATKOL_MILLS = [
+    "দৌলতপুর জুট মিলস লিমিটেড",
+    "ইস্টার্ন জুট মিলস লিমিটেড",
+    "আলীম জুট মিলস লিমিটেড",
+    "স্টার সুট মিলস লিমিটেড",
+    "যশোর জুট মিলস লিমিটেড",
+    "প্লাটিনাম জুট মিলস লিমিটেড"
+  ];
+
+  const handleAddPatkolMill = () => {
+    const name = newPatkolName.trim();
+    if (!name) return;
+    const updated = Array.from(new Set([...customPatkolMills, name]));
+    setCustomPatkolMills(updated);
+    localStorage.setItem('custom_patkol_mills', JSON.stringify(updated));
+    setFormData(prev => ({ ...prev, description: name }));
+    setIsAddingNewPatkol(false);
+    setNewPatkolName('');
+    setShowDescriptionDropdown(false);
+  };
   
   const bottomRef = useRef<HTMLDivElement>(null);
   const receiverRef = useRef<HTMLDivElement>(null);
@@ -1833,24 +1864,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     const desc = (formData.description || '').trim();
     if (desc) {
       const yearRegex = /[0-9]{4}|[০-৯]{4}/;
-      if (!yearRegex.test(desc)) {
-        if (hasWarnedAuditYear) {
-          // Hide the warning banner so it doesn't float on the screen forever
-          setShowAuditYearWarning(false);
-          return;
-        }
-
-        // Blur to close keyboard on mobile devices
-        (target as any).blur?.();
-        
+      if (!yearRegex.test(desc) && !formData.auditYear) {
         setShowAuditYearWarning(true);
-        alert("আপনি নিরীক্ষা সাল উল্লেখ করেন নি");
         setHasWarnedAuditYear(true);
-        
-        setTimeout(() => {
-          descriptionInputRef.current?.focus();
-          descriptionInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 50);
       } else {
         setShowAuditYearWarning(false);
         setHasWarnedAuditYear(false);
@@ -1908,14 +1924,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       // 2. Audit Year validation
       const yearRegex = /[0-9]{4}|[০-৯]{4}/;
       if (!yearRegex.test(desc) && !formData.auditYear) {
-        if (!hasWarnedAuditYear) {
-          setShowAuditYearWarning(true);
-          alert("আপনি নিরীক্ষা সাল উল্লেখ করেন নি");
-          descriptionInputRef.current?.focus();
-          descriptionInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          setHasWarnedAuditYear(true);
-          return;
-        }
+        setShowAuditYearWarning(true);
+        setHasWarnedAuditYear(true);
       }
     }
     
@@ -2109,47 +2119,121 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   autoComplete="off"
                 />
 
-                {showAuditYearWarning && (
-                  <div className="mt-2.5 flex items-center gap-1.5 text-[13px] font-black text-red-600 animate-pulse">
-                    <AlertCircle size={15} className="shrink-0 text-red-600" />
-                    <span>আপনি পত্রটির নিরীক্ষা সাল উল্লেখ করেননি</span>
+                {showAuditYearWarning && formData.description && !/[0-9]{4}|[০-৯]{4}/.test(formData.description) && !formData.auditYear && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-red-600">
+                    <AlertCircle size={14} className="shrink-0 text-red-600" />
+                    <span>নিরীক্ষা সাল উল্লেখ করা হয়নি (নিচের ঘরে নিরীক্ষা সাল দিন)</span>
                   </div>
                 )}
 
-                {showDescriptionDropdown && descriptionSuggestions.length > 0 && (
-                  <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
-                    <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                       <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2"><Sparkles size={12} /> পূর্ববর্তী বিবরণসমূহ</span>
-                    </div>
-                    <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
-                      {descriptionSuggestions
-                        .filter(desc => desc.toLowerCase().includes(formData.description.toLowerCase()))
-                        .map((desc, idx) => (
-                        <div 
-                          key={idx}
-                          onClick={() => {
-                            setFormData({...formData, description: desc});
-                            setShowDescriptionDropdown(false);
-                          }}
-                          className={`px-5 py-3.5 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.description === desc ? 'bg-emerald-600 text-white shadow-lg' : 'hover:bg-emerald-50 text-slate-700 font-bold'}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-[13px] leading-relaxed flex-1">{desc}</span>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {formData.description === desc && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
-                              <button 
-                                type="button"
-                                onClick={(e) => handleDeleteDescription(e, desc)}
-                                className={`p-1.5 rounded-lg transition-all ${formData.description === desc ? 'bg-white/20 hover:bg-white/40 text-white' : 'bg-red-50 hover:bg-red-100 text-red-500 opacity-0 group-hover:opacity-100'}`}
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
+                {showDescriptionDropdown && (
+                  formData.entityName === 'পাটকল সংস্থা' ? (
+                    <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
+                      <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                          <Sparkles size={12} /> পাটকল সমূহের তালিকা
+                        </span>
+                      </div>
+                      <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
+                        {Array.from(new Set([...DEFAULT_PATKOL_MILLS, ...customPatkolMills]))
+                          .filter(mill => mill.toLowerCase().includes(formData.description.toLowerCase()))
+                          .map((mill, idx) => (
+                          <div 
+                            key={idx}
+                            onClick={() => {
+                              setFormData({...formData, description: mill});
+                              setShowDescriptionDropdown(false);
+                            }}
+                            className={`px-5 py-3 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.description === mill ? 'bg-emerald-600 text-white shadow-lg' : 'hover:bg-emerald-50 text-slate-700 font-bold'}`}
+                          >
+                            <span className="text-[13px] leading-relaxed flex-1">{mill}</span>
+                            {formData.description === mill && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                      <div className="p-2 border-t border-slate-100 bg-slate-50">
+                        {!isAddingNewPatkol ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsAddingNewPatkol(true);
+                            }}
+                            className="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                          >
+                            <Plus size={14} /> নতুন যুক্ত করুন
+                          </button>
+                        ) : (
+                          <div className="flex items-center gap-2 p-1" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="text"
+                              placeholder="নতুন মিলের নাম..."
+                              className="flex-1 px-3 py-1.5 border border-emerald-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                              value={newPatkolName}
+                              onChange={(e) => setNewPatkolName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleAddPatkolMill();
+                                }
+                              }}
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={handleAddPatkolMill}
+                              className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700"
+                            >
+                              সংরক্ষণ
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setIsAddingNewPatkol(false); setNewPatkolName(''); }}
+                              className="px-2 py-1.5 bg-slate-200 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-300"
+                            >
+                              বাতিল
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    descriptionSuggestions.length > 0 && (
+                      <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
+                        <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2"><Sparkles size={12} /> পূর্ববর্তী বিবরণসমূহ</span>
+                        </div>
+                        <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
+                          {descriptionSuggestions
+                            .filter(desc => desc.toLowerCase().includes(formData.description.toLowerCase()))
+                            .map((desc, idx) => (
+                            <div 
+                              key={idx}
+                              onClick={() => {
+                                setFormData({...formData, description: desc});
+                                setShowDescriptionDropdown(false);
+                              }}
+                              className={`px-5 py-3.5 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.description === desc ? 'bg-emerald-600 text-white shadow-lg' : 'hover:bg-emerald-50 text-slate-700 font-bold'}`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="text-[13px] leading-relaxed flex-1">{desc}</span>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {formData.description === desc && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                                  <button 
+                                    type="button"
+                                    onClick={(e) => handleDeleteDescription(e, desc)}
+                                    className={`p-1.5 rounded-lg transition-all ${formData.description === desc ? 'bg-white/20 hover:bg-white/40 text-white' : 'bg-red-50 hover:bg-red-100 text-red-500 opacity-0 group-hover:opacity-100'}`}
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  )
                 )}
               </div>
             </div>
@@ -2166,6 +2250,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 onChange={(val: string) => setFormData({...formData, auditYear: val})}
                 IDBadge={IDBadge}
               />
+              {showAuditYearWarning && !formData.auditYear && (
+                <div className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-red-600">
+                  <AlertCircle size={14} className="shrink-0 text-red-600" />
+                  <span>নিরীক্ষা সাল প্রদান করুন</span>
+                </div>
+              )}
             </div>
 
             {/* Field Para Type */}
