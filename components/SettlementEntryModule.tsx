@@ -248,6 +248,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
   const [wizardStep, setWizardStep] = useState('details'); 
   const [isSuccess, setIsSuccess] = useState(false);
+  const [previewPrevEntry, setPreviewPrevEntry] = useState<SettlementEntry | null>(null);
   const [isDeletingPara, setIsDeletingPara] = useState(false);
   const [paraToDeleteId, setParaToDeleteId] = useState<string | null>(null);
   const [deletingLocalParaId, setDeletingLocalParaId] = useState<string | null>(null);
@@ -1985,18 +1986,9 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                             </div>
                             <div className="text-xs font-black text-slate-800 mt-0.5 flex items-center gap-1">
                               <span>পূর্বে নিষ্পন্ন:</span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (prevMatches[0]) {
-                                    if (navigateToEntry) navigateToEntry(prevMatches[0].entry.id, 'settlement');
-                                    else if (onViewRegister) onViewRegister(prevMatches[0].entry.id);
-                                  }
-                                }}
-                                className="text-emerald-700 font-extrabold text-sm underline hover:text-emerald-800 cursor-pointer"
-                              >
+                              <span className="text-emerald-700 font-extrabold text-sm">
                                 {toBengaliDigits(totalPrevSettled)} টাকা
-                              </button>
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -2006,15 +1998,9 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                             <button
                               key={m.entry.id || mIdx}
                               type="button"
-                              onClick={() => {
-                                if (navigateToEntry) {
-                                  navigateToEntry(m.entry.id, 'settlement');
-                                } else if (onViewRegister) {
-                                  onViewRegister(m.entry.id);
-                                }
-                              }}
+                              onClick={() => setPreviewPrevEntry(m.entry)}
                               className="px-3 py-1.5 bg-white hover:bg-indigo-600 hover:text-white text-indigo-700 border border-indigo-300 rounded-xl text-[11px] font-black transition-all shadow-sm hover:shadow flex items-center gap-1.5 cursor-pointer active:scale-95 group"
-                              title="পূর্ববর্তী মীমাংসিত এন্ট্রিটিতে নিয়ে যাবে"
+                              title="পূর্ববর্তী মীমাংসিত এন্ট্রিটির তথ্য দেখুন"
                             >
                               <span>রেকর্ড #{toBengaliDigits(m.entry.sl || mIdx + 1)}</span>
                               <span className="text-[10px] font-bold opacity-80">({toBengaliDigits((m.para.recoveredAmount || 0) + (m.para.adjustedAmount || 0))} ৳)</span>
@@ -2344,6 +2330,141 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
           animation: fade-in-complete 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}} />
+
+      {previewPrevEntry && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full border border-slate-200 overflow-hidden flex flex-col my-8 animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 flex items-center justify-between border-b border-indigo-800">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-500 text-white rounded-xl shadow-md">
+                  <BookOpen size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black flex items-center gap-2">
+                    <span>পূর্ববর্তী মীমাংসিত রেকর্ড #{toBengaliDigits(previewPrevEntry.sl || '')}</span>
+                  </h3>
+                  <p className="text-[11px] font-bold text-slate-300">
+                    এন্ট্রি আইডি: {previewPrevEntry.id} • চক্র: {previewPrevEntry.cycleLabel || 'N/A'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewPrevEntry(null)}
+                className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto no-scrollbar">
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs">
+                <div>
+                  <span className="text-slate-500 font-bold block text-[10px] uppercase">শাখা / ধরণ:</span>
+                  <span className="font-black text-slate-800">{previewPrevEntry.branchName || previewPrevEntry.paraType || 'N/A'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-bold block text-[10px] uppercase">নিরীক্ষা সাল:</span>
+                  <span className="font-black text-slate-800">{toBengaliDigits(previewPrevEntry.auditYear || 'N/A')}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-bold block text-[10px] uppercase">মন্ত্রণালয়:</span>
+                  <span className="font-black text-slate-800">{previewPrevEntry.ministryName || 'N/A'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-bold block text-[10px] uppercase">এনটিটি / সংস্থা:</span>
+                  <span className="font-black text-slate-800">{previewPrevEntry.entityName || 'N/A'}</span>
+                </div>
+                {previewPrevEntry.letterNoDate && (
+                  <div className="sm:col-span-2">
+                    <span className="text-slate-500 font-bold block text-[10px] uppercase">পত্র নং ও তারিখ:</span>
+                    <span className="font-black text-slate-800">{previewPrevEntry.letterNoDate}</span>
+                  </div>
+                )}
+                {previewPrevEntry.meetingWorkpaper && (
+                  <div className="sm:col-span-2">
+                    <span className="text-slate-500 font-bold block text-[10px] uppercase">ডায়েরি / কার্যপত্র নং ও তারিখ:</span>
+                    <span className="font-black text-slate-800">{previewPrevEntry.meetingWorkpaper}</span>
+                  </div>
+                )}
+                {previewPrevEntry.issueLetterNoDate && (
+                  <div className="sm:col-span-2">
+                    <span className="text-slate-500 font-bold block text-[10px] uppercase">জারিপত্র নং ও তারিখ:</span>
+                    <span className="font-black text-slate-800">{previewPrevEntry.issueLetterNoDate}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Paragraph Details */}
+              <div>
+                <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                  <ListOrdered size={14} className="text-emerald-600" />
+                  <span>অনুচ্ছেদসমূহের বিস্তারিত</span>
+                </h4>
+                <div className="space-y-2">
+                  {previewPrevEntry.paragraphs && previewPrevEntry.paragraphs.length > 0 ? (
+                    previewPrevEntry.paragraphs.map((para, pIdx) => (
+                      <div key={pIdx} className="p-3.5 bg-emerald-50/60 border border-emerald-200 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-7 h-7 rounded-xl bg-emerald-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm">
+                            {toBengaliDigits(para.paraNo || pIdx + 1)}
+                          </span>
+                          <div>
+                            <div className="font-black text-slate-800">
+                              অনুচ্ছেদ নং {toBengaliDigits(para.paraNo || '')} ({para.status || 'নিষ্পন্ন'})
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-bold">
+                              শ্রেণী: {para.category || 'ভ্যাট'}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-black text-emerald-800 text-sm">
+                            আদায়/সমন্বয়: {toBengaliDigits((para.recoveredAmount || 0) + (para.adjustedAmount || 0))} ৳
+                          </div>
+                          {(para.recoveredAmount > 0 || para.adjustedAmount > 0) && (
+                            <div className="text-[10px] text-slate-500 font-bold">
+                              আদায়: {toBengaliDigits(para.recoveredAmount || 0)} ৳ | সমন্বয়: {toBengaliDigits(para.adjustedAmount || 0)} ৳
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-3 bg-slate-50 text-slate-500 text-xs font-bold text-center rounded-xl">
+                      কোনো অনুচ্ছেদ তথ্য পাওয়া যায়নি।
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Totals */}
+              <div className="bg-emerald-600 text-white p-4 rounded-2xl flex items-center justify-between shadow-md">
+                <span className="font-black text-xs uppercase tracking-wider">মোট নিষ্পন্ন টাকা:</span>
+                <span className="font-black text-lg">
+                  {toBengaliDigits(
+                    previewPrevEntry.paragraphs?.reduce((s, p) => s + (p.recoveredAmount || 0) + (p.adjustedAmount || 0), 0) || (previewPrevEntry.totalRec || 0) + (previewPrevEntry.totalAdj || 0)
+                  )} ৳
+                </span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setPreviewPrevEntry(null)}
+                className="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-black rounded-xl text-xs transition-all shadow-sm cursor-pointer"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
