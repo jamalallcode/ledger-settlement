@@ -1142,11 +1142,77 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
   const [receiverSuggestions, setReceiverSuggestions] = useState<any[]>([]);
   const [receiverSearchQuery, setReceiverSearchQuery] = useState('');
-  const [descriptionSuggestions, setDescriptionSuggestions] = useState<string[]>([]);
+  const [allDescriptionItems, setAllDescriptionItems] = useState<{ description: string; ministryName?: string; entityName?: string }[]>([]);
+  const [customPatkolMills, setCustomPatkolMills] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('custom_patkol_mills');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [isAddingNewPatkol, setIsAddingNewPatkol] = useState(false);
+  const [newPatkolName, setNewPatkolName] = useState('');
+  const [isAddingNewDesc, setIsAddingNewDesc] = useState(false);
+  const [newDescName, setNewDescName] = useState('');
   const [showReceiverDropdown, setShowReceiverDropdown] = useState(false);
   const [showDescriptionDropdown, setShowDescriptionDropdown] = useState(false);
   const [showAuditYearWarning, setShowAuditYearWarning] = useState(false);
   const [hasWarnedAuditYear, setHasWarnedAuditYear] = useState(false);
+
+  const DEFAULT_PATKOL_MILLS = [
+    "দৌলতপুর জুট মিলস লিমিটেড",
+    "ইস্টার্ন জুট মিলস লিমিটেড",
+    "আলীম জুট মিলস লিমিটেড",
+    "স্টার সুট মিলস লিমিটেড",
+    "যশোর জুট মিলস লিমিটেড",
+    "প্লাটিনাম জুট মিলস লিমিটেড"
+  ];
+
+  const handleAddPatkolMill = () => {
+    const name = newPatkolName.trim();
+    if (!name) return;
+    const updated = Array.from(new Set([...customPatkolMills, name]));
+    setCustomPatkolMills(updated);
+    localStorage.setItem('custom_patkol_mills', JSON.stringify(updated));
+    setFormData(prev => ({ ...prev, description: name }));
+    setIsAddingNewPatkol(false);
+    setNewPatkolName('');
+    setShowDescriptionDropdown(false);
+  };
+
+  const handleAddCustomDescription = (customText?: string) => {
+    const textToAdd = (customText !== undefined ? customText : newDescName).trim();
+    if (!textToAdd) return;
+
+    const newObj = {
+      description: textToAdd,
+      ministryName: formData.ministryName ? formData.ministryName.trim() : undefined,
+      entityName: formData.entityName ? formData.entityName.trim() : undefined,
+    };
+
+    setAllDescriptionItems(prev => [newObj, ...prev.filter(i => i.description.trim() !== textToAdd)]);
+
+    try {
+      const saved = localStorage.getItem('ledger_correspondence_descriptions');
+      let existing: any[] = [];
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) existing = parsed;
+      }
+      const filteredExisting = existing.filter((i: any) => {
+        const d = typeof i === 'string' ? i : i?.description;
+        return d && d.trim() !== textToAdd;
+      });
+      const updated = [newObj, ...filteredExisting];
+      localStorage.setItem('ledger_correspondence_descriptions', JSON.stringify(updated));
+    } catch (e) {}
+
+    setFormData(prev => ({ ...prev, description: textToAdd }));
+    setIsAddingNewDesc(false);
+    setNewDescName('');
+    setShowDescriptionDropdown(false);
+  };
   
   const bottomRef = useRef<HTMLDivElement>(null);
   const receiverRef = useRef<HTMLDivElement>(null);
@@ -1560,14 +1626,153 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
     window.addEventListener('storage', handleStorageChange);
 
-    const savedDescriptions = localStorage.getItem('ledger_correspondence_descriptions');
-    if (savedDescriptions) setDescriptionSuggestions(JSON.parse(savedDescriptions));
+    let descItems: { description: string; ministryName?: string; entityName?: string }[] = [];
+    try {
+      const savedDescriptions = localStorage.getItem('ledger_correspondence_descriptions');
+      if (savedDescriptions) {
+        const parsed = JSON.parse(savedDescriptions);
+        if (Array.isArray(parsed)) {
+          parsed.forEach((item: any) => {
+            if (typeof item === 'string' && item.trim()) {
+              descItems.push({ description: item.trim() });
+            } else if (item && typeof item === 'object' && item.description && typeof item.description === 'string' && item.description.trim()) {
+              descItems.push({
+                description: item.description.trim(),
+                ministryName: item.ministryName ? item.ministryName.trim() : undefined,
+                entityName: item.entityName ? item.entityName.trim() : undefined,
+              });
+            }
+          });
+        }
+      }
+    } catch (e) {}
+
+    try {
+      const cachedCorr = localStorage.getItem('cached_correspondence_entries');
+      if (cachedCorr) {
+        const parsed = JSON.parse(cachedCorr);
+        if (Array.isArray(parsed)) {
+          parsed.forEach((e: any) => {
+            if (e.description && typeof e.description === 'string' && e.description.trim()) {
+              descItems.push({
+                description: e.description.trim(),
+                ministryName: e.ministryName ? e.ministryName.trim() : undefined,
+                entityName: e.entityName ? e.entityName.trim() : undefined,
+              });
+            }
+          });
+        }
+      }
+    } catch (e) {}
+
+    if (Array.isArray(existingEntries)) {
+      existingEntries.forEach((e: any) => {
+        if (e.description && typeof e.description === 'string' && e.description.trim()) {
+          descItems.push({
+            description: e.description.trim(),
+            ministryName: e.ministryName ? e.ministryName.trim() : undefined,
+            entityName: e.entityName ? e.entityName.trim() : undefined,
+          });
+        }
+      });
+    }
+
+    setAllDescriptionItems(descItems);
 
     return () => {
       active = false;
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [formData.paraType, formData.receiverName, initialEntry]);
+  }, [formData.paraType, formData.receiverName, initialEntry, existingEntries]);
+
+  const filteredDescriptionSuggestions = useMemo(() => {
+    if (!allDescriptionItems || allDescriptionItems.length === 0) return [];
+
+    const currMinistry = (formData.ministryName || '').trim();
+    const currEntity = (formData.entityName || '').trim();
+
+    const isBankContext = currMinistry === "আর্থিক প্রতিষ্ঠান বিভাগ" || 
+                          currEntity.includes("ব্যাংক") || 
+                          currEntity.includes("Bank");
+
+    const isJuteContext = currMinistry === "বস্ত্র ও পাট মন্ত্রণালয়" || 
+                          currEntity === "পাটকল সংস্থা" ||
+                          currEntity.includes("জুট") ||
+                          currEntity.includes("পাট");
+
+    let filtered = allDescriptionItems.filter(item => {
+      const desc = (item.description || '').trim();
+      if (!desc) return false;
+
+      // Filter by Ministry match if item has explicit ministryName
+      if (currMinistry && item.ministryName && item.ministryName.trim()) {
+        if (item.ministryName.trim() !== currMinistry) {
+          return false;
+        }
+      }
+
+      // Filter by Entity match if item has explicit entityName
+      if (currEntity && item.entityName && item.entityName.trim()) {
+        if (item.entityName.trim() !== currEntity) {
+          // If entity is different, drop if it belongs to a completely different domain or entity
+          if (isBankContext && (item.entityName.includes("জুট") || item.entityName.includes("ট্রেডিং") || item.entityName.includes("পাট"))) {
+            return false;
+          }
+        }
+      }
+
+      // Keyword protection for untagged legacy descriptions
+      const descLower = desc.toLowerCase();
+
+      if (isBankContext) {
+        const isNonBankKeyword = descLower.includes("জুট") || 
+                                 descLower.includes("পাটকল") || 
+                                 descLower.includes("ট্রেডিং কর্পোরেশন") || 
+                                 descLower.includes("বিসিআইসি") || 
+                                 descLower.includes("বিএসইসি");
+        if (isNonBankKeyword && !descLower.includes("ব্যাংক")) {
+          return false;
+        }
+        if (desc === "ননন") return false;
+      }
+
+      if (isJuteContext) {
+        if (descLower.includes("ব্যাংক") && !descLower.includes("পাট")) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Deduplicate
+    const uniqueMap = new Map<string, { description: string; ministryName?: string; entityName?: string }>();
+    filtered.forEach(item => {
+      const key = item.description.trim();
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, item);
+      } else {
+        const existing = uniqueMap.get(key)!;
+        if (!existing.entityName && item.entityName) {
+          uniqueMap.set(key, item);
+        }
+      }
+    });
+
+    let resultList = Array.from(uniqueMap.values());
+
+    // Sorting: exact entity match first
+    if (currEntity) {
+      resultList.sort((a, b) => {
+        const aEntity = a.entityName === currEntity ? 1 : 0;
+        const bEntity = b.entityName === currEntity ? 1 : 0;
+        if (aEntity !== bEntity) return bEntity - aEntity;
+        return 0;
+      });
+    }
+
+    return resultList.map(i => i.description);
+  }, [allDescriptionItems, formData.ministryName, formData.entityName]);
 
   const formatDateSegments = (d: string, m: string, y: string) => {
     if (!d || !m || !y || y.length < 4) return '';
@@ -1588,9 +1793,21 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     e.stopPropagation();
     if (!window.confirm(`আপনি কি নিশ্চিতভাবে "${descToDelete}" বিবরণটি তালিকা থেকে মুছে ফেলতে চান?`)) return;
     
-    const updated = descriptionSuggestions.filter(d => d !== descToDelete);
-    setDescriptionSuggestions(updated);
-    localStorage.setItem('ledger_correspondence_descriptions', JSON.stringify(updated));
+    setAllDescriptionItems(prev => prev.filter(item => item.description.trim() !== descToDelete.trim()));
+
+    try {
+      const saved = localStorage.getItem('ledger_correspondence_descriptions');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const updated = parsed.filter((i: any) => {
+            const d = typeof i === 'string' ? i : i?.description;
+            return d && d.trim() !== descToDelete.trim();
+          });
+          localStorage.setItem('ledger_correspondence_descriptions', JSON.stringify(updated));
+        }
+      }
+    } catch (err) {}
   };
 
   /**
@@ -1833,24 +2050,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     const desc = (formData.description || '').trim();
     if (desc) {
       const yearRegex = /[0-9]{4}|[০-৯]{4}/;
-      if (!yearRegex.test(desc)) {
-        if (hasWarnedAuditYear) {
-          // Hide the warning banner so it doesn't float on the screen forever
-          setShowAuditYearWarning(false);
-          return;
-        }
-
-        // Blur to close keyboard on mobile devices
-        (target as any).blur?.();
-        
+      if (!yearRegex.test(desc) && !formData.auditYear) {
         setShowAuditYearWarning(true);
-        alert("আপনি নিরীক্ষা সাল উল্লেখ করেন নি");
         setHasWarnedAuditYear(true);
-        
-        setTimeout(() => {
-          descriptionInputRef.current?.focus();
-          descriptionInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 50);
       } else {
         setShowAuditYearWarning(false);
         setHasWarnedAuditYear(false);
@@ -1908,23 +2110,36 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       // 2. Audit Year validation
       const yearRegex = /[0-9]{4}|[০-৯]{4}/;
       if (!yearRegex.test(desc) && !formData.auditYear) {
-        if (!hasWarnedAuditYear) {
-          setShowAuditYearWarning(true);
-          alert("আপনি নিরীক্ষা সাল উল্লেখ করেন নি");
-          descriptionInputRef.current?.focus();
-          descriptionInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          setHasWarnedAuditYear(true);
-          return;
-        }
+        setShowAuditYearWarning(true);
+        setHasWarnedAuditYear(true);
       }
     }
     
     // Defer heavy work to next tick to avoid blocking UI (INP fix)
     setTimeout(() => {
       if (formData.description.trim()) {
-        const updatedDesc = Array.from(new Set([formData.description.trim(), ...descriptionSuggestions]));
-        setDescriptionSuggestions(updatedDesc);
-        localStorage.setItem('ledger_correspondence_descriptions', JSON.stringify(updatedDesc));
+        const newDescObj = {
+          description: formData.description.trim(),
+          ministryName: formData.ministryName ? formData.ministryName.trim() : undefined,
+          entityName: formData.entityName ? formData.entityName.trim() : undefined,
+        };
+
+        setAllDescriptionItems(prev => [newDescObj, ...prev]);
+
+        try {
+          const saved = localStorage.getItem('ledger_correspondence_descriptions');
+          let existing: any[] = [];
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) existing = parsed;
+          }
+          const filteredExisting = existing.filter((i: any) => {
+            const d = typeof i === 'string' ? i : i?.description;
+            return d && d.trim() !== newDescObj.description;
+          });
+          const updated = [newDescObj, ...filteredExisting];
+          localStorage.setItem('ledger_correspondence_descriptions', JSON.stringify(updated));
+        } catch (e) {}
       }
 
       const res = onAdd(formData);
@@ -2109,47 +2324,206 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   autoComplete="off"
                 />
 
-                {showAuditYearWarning && (
-                  <div className="mt-2.5 flex items-center gap-1.5 text-[13px] font-black text-red-600 animate-pulse">
-                    <AlertCircle size={15} className="shrink-0 text-red-600" />
-                    <span>আপনি পত্রটির নিরীক্ষা সাল উল্লেখ করেননি</span>
+                {showAuditYearWarning && formData.description && !/[0-9]{4}|[০-৯]{4}/.test(formData.description) && !formData.auditYear && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-red-600">
+                    <AlertCircle size={14} className="shrink-0 text-red-600" />
+                    <span>নিরীক্ষা সাল উল্লেখ করা হয়নি (নিচের ঘরে নিরীক্ষা সাল দিন)</span>
                   </div>
                 )}
 
-                {showDescriptionDropdown && descriptionSuggestions.length > 0 && (
-                  <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
-                    <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                       <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2"><Sparkles size={12} /> পূর্ববর্তী বিবরণসমূহ</span>
-                    </div>
-                    <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
-                      {descriptionSuggestions
-                        .filter(desc => desc.toLowerCase().includes(formData.description.toLowerCase()))
-                        .map((desc, idx) => (
-                        <div 
-                          key={idx}
-                          onClick={() => {
-                            setFormData({...formData, description: desc});
-                            setShowDescriptionDropdown(false);
-                          }}
-                          className={`px-5 py-3.5 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.description === desc ? 'bg-emerald-600 text-white shadow-lg' : 'hover:bg-emerald-50 text-slate-700 font-bold'}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-[13px] leading-relaxed flex-1">{desc}</span>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {formData.description === desc && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
-                              <button 
-                                type="button"
-                                onClick={(e) => handleDeleteDescription(e, desc)}
-                                className={`p-1.5 rounded-lg transition-all ${formData.description === desc ? 'bg-white/20 hover:bg-white/40 text-white' : 'bg-red-50 hover:bg-red-100 text-red-500 opacity-0 group-hover:opacity-100'}`}
+                {showDescriptionDropdown && (
+                  formData.entityName === 'পাটকল সংস্থা' ? (
+                    (() => {
+                      const patkolList = Array.from(new Set([...DEFAULT_PATKOL_MILLS, ...customPatkolMills]));
+                      const isExactMatch = patkolList.some(m => m.trim().toLowerCase() === formData.description.trim().toLowerCase());
+                      const visiblePatkolMills = isExactMatch || !formData.description.trim()
+                        ? patkolList
+                        : patkolList.filter(mill => mill.toLowerCase().includes(formData.description.toLowerCase().trim()));
+
+                      return (
+                        <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
+                          <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                              <Sparkles size={12} /> পাটকল সমূহের তালিকা
+                            </span>
+                          </div>
+                          <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
+                            {(visiblePatkolMills.length > 0 ? visiblePatkolMills : patkolList).map((mill, idx) => (
+                              <div 
+                                key={idx}
+                                onClick={() => {
+                                  setFormData({...formData, description: mill});
+                                  setShowDescriptionDropdown(false);
+                                }}
+                                className={`px-5 py-3 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.description.trim() === mill.trim() ? 'bg-emerald-600 text-white shadow-lg' : 'hover:bg-emerald-50 text-slate-700 font-bold'}`}
                               >
-                                <Trash2 size={12} />
+                                <span className="text-[13px] leading-relaxed flex-1">{mill}</span>
+                                {formData.description.trim() === mill.trim() && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="p-2 border-t border-slate-100 bg-slate-50">
+                            {!isAddingNewPatkol ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setIsAddingNewPatkol(true);
+                                }}
+                                className="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                              >
+                                <Plus size={14} /> নতুন যুক্ত করুন
                               </button>
-                            </div>
+                            ) : (
+                              <div className="flex items-center gap-2 p-1" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="text"
+                                  placeholder="নতুন মিলের নাম..."
+                                  className="flex-1 px-3 py-1.5 border border-emerald-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                  value={newPatkolName}
+                                  onChange={(e) => setNewPatkolName(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleAddPatkolMill();
+                                    }
+                                  }}
+                                  autoFocus
+                                />
+                                <button
+                                  type="button"
+                                  onClick={handleAddPatkolMill}
+                                  className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700"
+                                >
+                                  সংরক্ষণ
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => { setIsAddingNewPatkol(false); setNewPatkolName(''); }}
+                                  className="px-2 py-1.5 bg-slate-200 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-300"
+                                >
+                                  বাতিল
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      );
+                    })()
+                  ) : (
+                    (() => {
+                      const typedText = formData.description.trim();
+                      const isExactMatch = filteredDescriptionSuggestions.some(d => d.trim().toLowerCase() === typedText.toLowerCase());
+                      const visibleSuggestions = isExactMatch || !typedText
+                        ? filteredDescriptionSuggestions
+                        : filteredDescriptionSuggestions.filter(desc => desc.toLowerCase().includes(typedText.toLowerCase()));
+
+                      return (
+                        <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
+                          <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                              <Sparkles size={12} /> পূর্ববর্তী বিবরণসমূহ / কস্ট সেন্টারসমূহ
+                            </span>
+                          </div>
+
+                          <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
+                            {typedText && !isExactMatch && (
+                              <div 
+                                onClick={() => handleAddCustomDescription(typedText)}
+                                className="px-5 py-3 mx-2 my-1 rounded-xl cursor-pointer flex items-center justify-between transition-all bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-black border border-emerald-200 shadow-sm"
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-6 h-6 rounded-md bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                                    <Plus size={14} />
+                                  </div>
+                                  <span className="text-xs">
+                                    "{typedText}" - নতুন বিবরণ হিসেবে যুক্ত করুন
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+
+                            {visibleSuggestions.map((desc, idx) => (
+                              <div 
+                                key={idx}
+                                onClick={() => {
+                                  setFormData({...formData, description: desc});
+                                  setShowDescriptionDropdown(false);
+                                }}
+                                className={`px-5 py-3.5 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.description.trim() === desc.trim() ? 'bg-emerald-600 text-white shadow-lg' : 'hover:bg-emerald-50 text-slate-700 font-bold'}`}
+                              >
+                                <div className="flex items-center gap-3 w-full">
+                                  <span className="text-[13px] leading-relaxed flex-1">{desc}</span>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    {formData.description.trim() === desc.trim() && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                                    <button 
+                                      type="button"
+                                      onClick={(e) => handleDeleteDescription(e, desc)}
+                                      className={`p-1.5 rounded-lg transition-all ${formData.description.trim() === desc.trim() ? 'bg-white/20 hover:bg-white/40 text-white' : 'bg-red-50 hover:bg-red-100 text-red-500 opacity-0 group-hover:opacity-100'}`}
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+
+                            {visibleSuggestions.length === 0 && !typedText && (
+                              <div className="px-5 py-4 text-center text-xs font-semibold text-slate-400">
+                                পূর্বে কোনো বিবরণ পাওয়া যায়নি। নতুন বিবরণ যুক্ত করতে নিচের বাটন ব্যবহার করুন।
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="p-2 border-t border-slate-100 bg-slate-50">
+                            {!isAddingNewDesc ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setIsAddingNewDesc(true);
+                                }}
+                                className="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                              >
+                                <Plus size={14} /> নতুন যুক্ত করুন
+                              </button>
+                            ) : (
+                              <div className="flex items-center gap-2 p-1" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="text"
+                                  placeholder="নতুন বিবরণ / কস্ট সেন্টার লিখুন..."
+                                  className="flex-1 px-3 py-1.5 border border-emerald-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                  value={newDescName}
+                                  onChange={(e) => setNewDescName(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleAddCustomDescription();
+                                    }
+                                  }}
+                                  autoFocus
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddCustomDescription()}
+                                  className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700"
+                                >
+                                  সংরক্ষণ
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => { setIsAddingNewDesc(false); setNewDescName(''); }}
+                                  className="px-2 py-1.5 bg-slate-200 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-300"
+                                >
+                                  বাতিল
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()
+                  )
                 )}
               </div>
             </div>
@@ -2166,6 +2540,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 onChange={(val: string) => setFormData({...formData, auditYear: val})}
                 IDBadge={IDBadge}
               />
+              {showAuditYearWarning && !formData.auditYear && (
+                <div className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-red-600">
+                  <AlertCircle size={14} className="shrink-0 text-red-600" />
+                  <span>নিরীক্ষা সাল প্রদান করুন</span>
+                </div>
+              )}
             </div>
 
             {/* Field Para Type */}
