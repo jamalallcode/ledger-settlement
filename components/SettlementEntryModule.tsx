@@ -248,6 +248,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
   const [wizardStep, setWizardStep] = useState('details'); 
   const [isSuccess, setIsSuccess] = useState(false);
+  const [previewPrevEntry, setPreviewPrevEntry] = useState<SettlementEntry | null>(null);
   const [isDeletingPara, setIsDeletingPara] = useState(false);
   const [paraToDeleteId, setParaToDeleteId] = useState<string | null>(null);
   const [deletingLocalParaId, setDeletingLocalParaId] = useState<string | null>(null);
@@ -1713,6 +1714,39 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             <div id="section-para-list" className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10 relative">
               {paragraphs.map((p, idx) => {
                 const isMatched = p.involvedAmount > 0 && p.involvedAmount === (p.recoveredAmount + p.adjustedAmount);
+
+                // Find matching previous settlement records for same branch/paraType, ministry, entity, auditYear, and paraNo
+                const normPNo = toEnglishDigits(p.paraNo || '').trim().toLowerCase();
+                const currMinistry = (formData.ministryName || '').trim().toLowerCase();
+                const currEntity = (formData.entityName || '').trim().toLowerCase();
+                const currBranch = (formData.branchName || formData.paraType || '').trim().toLowerCase();
+                const currAuditYear = (formData.auditYear || '').trim().toLowerCase();
+
+                const prevMatches = (normPNo && existingEntries && existingEntries.length > 0)
+                  ? existingEntries.filter(e => {
+                      if (initialEntry && e.id === initialEntry.id) return false;
+                      const eMinistry = (e.ministryName || '').trim().toLowerCase();
+                      const eEntity = (e.entityName || '').trim().toLowerCase();
+                      const eBranch = (e.branchName || e.paraType || '').trim().toLowerCase();
+                      const eAuditYear = (e.auditYear || '').trim().toLowerCase();
+
+                      if (currMinistry && eMinistry && currMinistry !== eMinistry) return false;
+                      if (currEntity && eEntity && currEntity !== eEntity) return false;
+                      if (currAuditYear && eAuditYear && currAuditYear !== eAuditYear) return false;
+                      if (currBranch && eBranch) {
+                        if (currBranch !== eBranch && !eBranch.includes(currBranch) && !currBranch.includes(eBranch)) {
+                          return false;
+                        }
+                      }
+                      return e.paragraphs?.some(ep => toEnglishDigits(ep.paraNo || '').trim().toLowerCase() === normPNo);
+                    }).map(e => {
+                      const matchedPara = e.paragraphs.find(ep => toEnglishDigits(ep.paraNo || '').trim().toLowerCase() === normPNo)!;
+                      return { entry: e, para: matchedPara };
+                    })
+                  : [];
+
+                const totalPrevSettled = prevMatches.reduce((s, m) => s + (m.para.recoveredAmount || 0) + (m.para.adjustedAmount || 0), 0);
+
                 return (
                   <div key={p.id} id={`card-para-${idx}`} className={`p-6 rounded-none relative border-2 ${isMatched ? "border-emerald-500 bg-emerald-50/10 shadow-emerald-100" : "border-red-500 bg-red-50/20 shadow-red-100"} hover:shadow-xl transition-all group overflow-visible`}>
                     
@@ -1937,6 +1971,46 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                       )}
                     </div>
 
+                    {prevMatches.length > 0 && (
+                      <div className="mt-4 mb-2 p-3.5 bg-indigo-50/90 border-2 border-indigo-200 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-indigo-950 animate-in fade-in duration-300 shadow-sm relative z-10">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-md shrink-0">
+                            <BookOpen size={16} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600">পূর্ববর্তী নিষ্পত্তির তথ্য</span>
+                              <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-md text-[10px] font-black">
+                                {toBengaliDigits(prevMatches.length)} টি এন্ট্রি
+                              </span>
+                            </div>
+                            <div className="text-xs font-black text-slate-800 mt-0.5 flex items-center gap-1">
+                              <span>পূর্বে নিষ্পন্ন:</span>
+                              <span className="text-emerald-700 font-extrabold text-sm">
+                                {toBengaliDigits(totalPrevSettled)} টাকা
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {prevMatches.map((m, mIdx) => (
+                            <button
+                              key={m.entry.id || mIdx}
+                              type="button"
+                              onClick={() => setPreviewPrevEntry(m.entry)}
+                              className="px-3 py-1.5 bg-white hover:bg-indigo-600 hover:text-white text-indigo-700 border border-indigo-300 rounded-xl text-[11px] font-black transition-all shadow-sm hover:shadow flex items-center gap-1.5 cursor-pointer active:scale-95 group"
+                              title="পূর্ববর্তী মীমাংসিত এন্ট্রিটির তথ্য দেখুন"
+                            >
+                              <span>রেকর্ড #{toBengaliDigits(m.entry.sl || mIdx + 1)}</span>
+                              <span className="text-[10px] font-bold opacity-80">({toBengaliDigits((m.para.recoveredAmount || 0) + (m.para.adjustedAmount || 0))} ৳)</span>
+                              <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {!p.isAdvanced ? (
                       <div className="grid grid-cols-3 gap-4 relative z-10">
                         <div className="space-y-1">
@@ -2083,11 +2157,27 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                     )}
 
                     {p.involvedAmount > 0 && p.involvedAmount !== (p.recoveredAmount + p.adjustedAmount) && (
-                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600 animate-in slide-in-from-top-2 duration-300 relative z-10">
-                        <AlertCircle size={14} className="shrink-0" />
-                        <span className="text-[10px] font-black uppercase tracking-tight leading-tight">
-                          সতর্কতা: জড়িত টাকা ({toBengaliDigits(p.involvedAmount)}) এবং আদায় ও সমন্বয়ের যোগফল ({toBengaliDigits(p.recoveredAmount + p.adjustedAmount)}) সমান নয়।
-                        </span>
+                      <div className="mt-4 p-3.5 bg-red-50 border-2 border-red-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-red-600 animate-in slide-in-from-top-2 duration-300 relative z-10 shadow-sm">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle size={16} className="shrink-0 text-red-500" />
+                          <span className="text-[11px] font-black uppercase tracking-tight leading-relaxed">
+                            সতর্কতা: জড়িত টাকা ({toBengaliDigits(p.involvedAmount)}) এবং আদায় ও সমন্বয়ের যোগফল ({toBengaliDigits(p.recoveredAmount + p.adjustedAmount)}) সমান নয়।
+                          </span>
+                        </div>
+
+                        {p.involvedAmount > (p.recoveredAmount + p.adjustedAmount) ? (
+                          <div className="px-3.5 py-1.5 bg-red-600 text-white rounded-xl text-[12px] font-black tracking-tight shrink-0 shadow-md flex items-center gap-1.5 border border-red-700">
+                            <span className="opacity-95">অমীমাংসিত/বকেয়া টাকা:</span>
+                            <span className="text-base font-black text-amber-200">{toBengaliDigits(p.involvedAmount - (p.recoveredAmount + p.adjustedAmount))}</span>
+                            <span>৳</span>
+                          </div>
+                        ) : (
+                          <div className="px-3.5 py-1.5 bg-amber-600 text-white rounded-xl text-[12px] font-black tracking-tight shrink-0 shadow-md flex items-center gap-1.5 border border-amber-700">
+                            <span className="opacity-95">অতিরিক্ত নিষ্পন্ন:</span>
+                            <span className="text-base font-black">{toBengaliDigits((p.recoveredAmount + p.adjustedAmount) - p.involvedAmount)}</span>
+                            <span>৳</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -2240,6 +2330,141 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
           animation: fade-in-complete 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}} />
+
+      {previewPrevEntry && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full border border-slate-200 overflow-hidden flex flex-col my-8 animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 flex items-center justify-between border-b border-indigo-800">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-500 text-white rounded-xl shadow-md">
+                  <BookOpen size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black flex items-center gap-2">
+                    <span>পূর্ববর্তী মীমাংসিত রেকর্ড #{toBengaliDigits(previewPrevEntry.sl || '')}</span>
+                  </h3>
+                  <p className="text-[11px] font-bold text-slate-300">
+                    এন্ট্রি আইডি: {previewPrevEntry.id} • চক্র: {previewPrevEntry.cycleLabel || 'N/A'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewPrevEntry(null)}
+                className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto no-scrollbar">
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs">
+                <div>
+                  <span className="text-slate-500 font-bold block text-[10px] uppercase">শাখা / ধরণ:</span>
+                  <span className="font-black text-slate-800">{previewPrevEntry.branchName || previewPrevEntry.paraType || 'N/A'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-bold block text-[10px] uppercase">নিরীক্ষা সাল:</span>
+                  <span className="font-black text-slate-800">{toBengaliDigits(previewPrevEntry.auditYear || 'N/A')}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-bold block text-[10px] uppercase">মন্ত্রণালয়:</span>
+                  <span className="font-black text-slate-800">{previewPrevEntry.ministryName || 'N/A'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-bold block text-[10px] uppercase">এনটিটি / সংস্থা:</span>
+                  <span className="font-black text-slate-800">{previewPrevEntry.entityName || 'N/A'}</span>
+                </div>
+                {previewPrevEntry.letterNoDate && (
+                  <div className="sm:col-span-2">
+                    <span className="text-slate-500 font-bold block text-[10px] uppercase">পত্র নং ও তারিখ:</span>
+                    <span className="font-black text-slate-800">{previewPrevEntry.letterNoDate}</span>
+                  </div>
+                )}
+                {previewPrevEntry.meetingWorkpaper && (
+                  <div className="sm:col-span-2">
+                    <span className="text-slate-500 font-bold block text-[10px] uppercase">ডায়েরি / কার্যপত্র নং ও তারিখ:</span>
+                    <span className="font-black text-slate-800">{previewPrevEntry.meetingWorkpaper}</span>
+                  </div>
+                )}
+                {previewPrevEntry.issueLetterNoDate && (
+                  <div className="sm:col-span-2">
+                    <span className="text-slate-500 font-bold block text-[10px] uppercase">জারিপত্র নং ও তারিখ:</span>
+                    <span className="font-black text-slate-800">{previewPrevEntry.issueLetterNoDate}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Paragraph Details */}
+              <div>
+                <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                  <ListOrdered size={14} className="text-emerald-600" />
+                  <span>অনুচ্ছেদসমূহের বিস্তারিত</span>
+                </h4>
+                <div className="space-y-2">
+                  {previewPrevEntry.paragraphs && previewPrevEntry.paragraphs.length > 0 ? (
+                    previewPrevEntry.paragraphs.map((para, pIdx) => (
+                      <div key={pIdx} className="p-3.5 bg-emerald-50/60 border border-emerald-200 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-7 h-7 rounded-xl bg-emerald-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm">
+                            {toBengaliDigits(para.paraNo || pIdx + 1)}
+                          </span>
+                          <div>
+                            <div className="font-black text-slate-800">
+                              অনুচ্ছেদ নং {toBengaliDigits(para.paraNo || '')} ({para.status || 'নিষ্পন্ন'})
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-bold">
+                              শ্রেণী: {para.category || 'ভ্যাট'}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-black text-emerald-800 text-sm">
+                            আদায়/সমন্বয়: {toBengaliDigits((para.recoveredAmount || 0) + (para.adjustedAmount || 0))} ৳
+                          </div>
+                          {(para.recoveredAmount > 0 || para.adjustedAmount > 0) && (
+                            <div className="text-[10px] text-slate-500 font-bold">
+                              আদায়: {toBengaliDigits(para.recoveredAmount || 0)} ৳ | সমন্বয়: {toBengaliDigits(para.adjustedAmount || 0)} ৳
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-3 bg-slate-50 text-slate-500 text-xs font-bold text-center rounded-xl">
+                      কোনো অনুচ্ছেদ তথ্য পাওয়া যায়নি।
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Totals */}
+              <div className="bg-emerald-600 text-white p-4 rounded-2xl flex items-center justify-between shadow-md">
+                <span className="font-black text-xs uppercase tracking-wider">মোট নিষ্পন্ন টাকা:</span>
+                <span className="font-black text-lg">
+                  {toBengaliDigits(
+                    previewPrevEntry.paragraphs?.reduce((s, p) => s + (p.recoveredAmount || 0) + (p.adjustedAmount || 0), 0) || (previewPrevEntry.totalRec || 0) + (previewPrevEntry.totalAdj || 0)
+                  )} ৳
+                </span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setPreviewPrevEntry(null)}
+                className="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-black rounded-xl text-xs transition-all shadow-sm cursor-pointer"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
