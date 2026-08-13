@@ -1713,6 +1713,39 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             <div id="section-para-list" className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10 relative">
               {paragraphs.map((p, idx) => {
                 const isMatched = p.involvedAmount > 0 && p.involvedAmount === (p.recoveredAmount + p.adjustedAmount);
+
+                // Find matching previous settlement records for same branch/paraType, ministry, entity, auditYear, and paraNo
+                const normPNo = toEnglishDigits(p.paraNo || '').trim().toLowerCase();
+                const currMinistry = (formData.ministryName || '').trim().toLowerCase();
+                const currEntity = (formData.entityName || '').trim().toLowerCase();
+                const currBranch = (formData.branchName || formData.paraType || '').trim().toLowerCase();
+                const currAuditYear = (formData.auditYear || '').trim().toLowerCase();
+
+                const prevMatches = (normPNo && existingEntries && existingEntries.length > 0)
+                  ? existingEntries.filter(e => {
+                      if (initialEntry && e.id === initialEntry.id) return false;
+                      const eMinistry = (e.ministryName || '').trim().toLowerCase();
+                      const eEntity = (e.entityName || '').trim().toLowerCase();
+                      const eBranch = (e.branchName || e.paraType || '').trim().toLowerCase();
+                      const eAuditYear = (e.auditYear || '').trim().toLowerCase();
+
+                      if (currMinistry && eMinistry && currMinistry !== eMinistry) return false;
+                      if (currEntity && eEntity && currEntity !== eEntity) return false;
+                      if (currAuditYear && eAuditYear && currAuditYear !== eAuditYear) return false;
+                      if (currBranch && eBranch) {
+                        if (currBranch !== eBranch && !eBranch.includes(currBranch) && !currBranch.includes(eBranch)) {
+                          return false;
+                        }
+                      }
+                      return e.paragraphs?.some(ep => toEnglishDigits(ep.paraNo || '').trim().toLowerCase() === normPNo);
+                    }).map(e => {
+                      const matchedPara = e.paragraphs.find(ep => toEnglishDigits(ep.paraNo || '').trim().toLowerCase() === normPNo)!;
+                      return { entry: e, para: matchedPara };
+                    })
+                  : [];
+
+                const totalPrevSettled = prevMatches.reduce((s, m) => s + (m.para.recoveredAmount || 0) + (m.para.adjustedAmount || 0), 0);
+
                 return (
                   <div key={p.id} id={`card-para-${idx}`} className={`p-6 rounded-none relative border-2 ${isMatched ? "border-emerald-500 bg-emerald-50/10 shadow-emerald-100" : "border-red-500 bg-red-50/20 shadow-red-100"} hover:shadow-xl transition-all group overflow-visible`}>
                     
@@ -1937,6 +1970,61 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                       )}
                     </div>
 
+                    {prevMatches.length > 0 && (
+                      <div className="mt-4 mb-2 p-3.5 bg-indigo-50/90 border-2 border-indigo-200 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-indigo-950 animate-in fade-in duration-300 shadow-sm relative z-10">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-md shrink-0">
+                            <BookOpen size={16} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600">পূর্ববর্তী নিষ্পত্তির তথ্য</span>
+                              <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-md text-[10px] font-black">
+                                {toBengaliDigits(prevMatches.length)} টি এন্ট্রি
+                              </span>
+                            </div>
+                            <div className="text-xs font-black text-slate-800 mt-0.5 flex items-center gap-1">
+                              <span>পূর্বে নিষ্পন্ন:</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (prevMatches[0]) {
+                                    if (navigateToEntry) navigateToEntry(prevMatches[0].entry.id, 'settlement');
+                                    else if (onViewRegister) onViewRegister(prevMatches[0].entry.id);
+                                  }
+                                }}
+                                className="text-emerald-700 font-extrabold text-sm underline hover:text-emerald-800 cursor-pointer"
+                              >
+                                {toBengaliDigits(totalPrevSettled)} টাকা
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {prevMatches.map((m, mIdx) => (
+                            <button
+                              key={m.entry.id || mIdx}
+                              type="button"
+                              onClick={() => {
+                                if (navigateToEntry) {
+                                  navigateToEntry(m.entry.id, 'settlement');
+                                } else if (onViewRegister) {
+                                  onViewRegister(m.entry.id);
+                                }
+                              }}
+                              className="px-3 py-1.5 bg-white hover:bg-indigo-600 hover:text-white text-indigo-700 border border-indigo-300 rounded-xl text-[11px] font-black transition-all shadow-sm hover:shadow flex items-center gap-1.5 cursor-pointer active:scale-95 group"
+                              title="পূর্ববর্তী মীমাংসিত এন্ট্রিটিতে নিয়ে যাবে"
+                            >
+                              <span>রেকর্ড #{toBengaliDigits(m.entry.sl || mIdx + 1)}</span>
+                              <span className="text-[10px] font-bold opacity-80">({toBengaliDigits((m.para.recoveredAmount || 0) + (m.para.adjustedAmount || 0))} ৳)</span>
+                              <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {!p.isAdvanced ? (
                       <div className="grid grid-cols-3 gap-4 relative z-10">
                         <div className="space-y-1">
@@ -2083,11 +2171,27 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                     )}
 
                     {p.involvedAmount > 0 && p.involvedAmount !== (p.recoveredAmount + p.adjustedAmount) && (
-                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600 animate-in slide-in-from-top-2 duration-300 relative z-10">
-                        <AlertCircle size={14} className="shrink-0" />
-                        <span className="text-[10px] font-black uppercase tracking-tight leading-tight">
-                          সতর্কতা: জড়িত টাকা ({toBengaliDigits(p.involvedAmount)}) এবং আদায় ও সমন্বয়ের যোগফল ({toBengaliDigits(p.recoveredAmount + p.adjustedAmount)}) সমান নয়।
-                        </span>
+                      <div className="mt-4 p-3.5 bg-red-50 border-2 border-red-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-red-600 animate-in slide-in-from-top-2 duration-300 relative z-10 shadow-sm">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle size={16} className="shrink-0 text-red-500" />
+                          <span className="text-[11px] font-black uppercase tracking-tight leading-relaxed">
+                            সতর্কতা: জড়িত টাকা ({toBengaliDigits(p.involvedAmount)}) এবং আদায় ও সমন্বয়ের যোগফল ({toBengaliDigits(p.recoveredAmount + p.adjustedAmount)}) সমান নয়।
+                          </span>
+                        </div>
+
+                        {p.involvedAmount > (p.recoveredAmount + p.adjustedAmount) ? (
+                          <div className="px-3.5 py-1.5 bg-red-600 text-white rounded-xl text-[12px] font-black tracking-tight shrink-0 shadow-md flex items-center gap-1.5 border border-red-700">
+                            <span className="opacity-95">অমীমাংসিত/বকেয়া টাকা:</span>
+                            <span className="text-base font-black text-amber-200">{toBengaliDigits(p.involvedAmount - (p.recoveredAmount + p.adjustedAmount))}</span>
+                            <span>৳</span>
+                          </div>
+                        ) : (
+                          <div className="px-3.5 py-1.5 bg-amber-600 text-white rounded-xl text-[12px] font-black tracking-tight shrink-0 shadow-md flex items-center gap-1.5 border border-amber-700">
+                            <span className="opacity-95">অতিরিক্ত নিষ্পন্ন:</span>
+                            <span className="text-base font-black">{toBengaliDigits((p.recoveredAmount + p.adjustedAmount) - p.involvedAmount)}</span>
+                            <span>৳</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
