@@ -811,6 +811,45 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     setFormData(prev => ({ ...prev, issueLetterNoDate: combined, issueDateISO: currentIssueISO }));
   }, [issueNoPart, dayPart, monthPart, yearPart, currentIssueISO]);
 
+  useEffect(() => {
+    if (!correspondenceEntries || correspondenceEntries.length === 0) return;
+
+    const norm = (s?: string) => toEnglishDigits(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const lNo = norm(letterNoPart);
+    const iNo = norm(issueNoPart);
+    const dNo = norm(formData.digitalFileNo);
+    const bName = norm(formData.branchName);
+    const mType = norm(formData.meetingType);
+
+    if (!lNo && !iNo && !dNo && !bName) return;
+
+    const matched = correspondenceEntries.find((c: any) => {
+      const cLNo = norm(c.letterNo);
+      const cINo = norm(c.issueLetterNo);
+      const cDNo = norm(c.digitalFileNo);
+      const cBName = norm(c.description || c.branchName);
+      const cMType = norm(c.letterType);
+
+      if (lNo && cLNo && lNo === cLNo) return true;
+      if (iNo && cINo && iNo === cINo) return true;
+      if (dNo && cDNo && dNo === cDNo) return true;
+      if (bName && cBName && bName === cBName && mType && cMType && mType === cMType) return true;
+      return false;
+    });
+
+    if (matched) {
+      const sentCount = matched.sentParaCount || matched.totalParas || matched.meetingSentParaCount || '';
+      const rawAmt = matched.totalAmount || matched.sentParaInvolvedAmount || matched.involvedAmount || 0;
+      const invAmt = typeof rawAmt === 'number' ? rawAmt : (parseFloat(toEnglishDigits(String(rawAmt))) || 0);
+
+      setFormData(prev => ({
+        ...prev,
+        meetingSentParaCount: sentCount ? String(sentCount) : prev.meetingSentParaCount,
+        sentParaInvolvedAmount: invAmt || prev.sentParaInvolvedAmount
+      }));
+    }
+  }, [letterNoPart, issueNoPart, formData.digitalFileNo, formData.branchName, formData.meetingType, correspondenceEntries]);
+
   const [paragraphs, setParagraphs] = useState<ParagraphDetail[]>([]);
   const [bulkParaInput, setBulkParaInput] = useState('');
   const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
@@ -991,8 +1030,47 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       const combinedIssue = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
       const combinedWp = formData.meetingType !== 'বিএসআর' ? buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-') : '';
 
+      // Auto-mapping fallback from correspondenceEntries
+      let mappedSentParaCount = formData.meetingSentParaCount || '';
+      let mappedInvolvedAmount = formData.sentParaInvolvedAmount || 0;
+
+      if ((!mappedSentParaCount || !mappedInvolvedAmount) && correspondenceEntries && correspondenceEntries.length > 0) {
+        const norm = (s?: string) => toEnglishDigits(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const lNo = norm(letterNoPart);
+        const iNo = norm(issueNoPart);
+        const dNo = norm(formData.digitalFileNo);
+        const bName = norm(formData.branchName);
+        const mType = norm(formData.meetingType);
+
+        const matchedCorr = correspondenceEntries.find((c: any) => {
+          const cLNo = norm(c.letterNo);
+          const cINo = norm(c.issueLetterNo);
+          const cDNo = norm(c.digitalFileNo);
+          const cBName = norm(c.description || c.branchName);
+          const cMType = norm(c.letterType);
+
+          if (lNo && cLNo && lNo === cLNo) return true;
+          if (iNo && cINo && iNo === cINo) return true;
+          if (dNo && cDNo && dNo === cDNo) return true;
+          if (bName && cBName && bName === cBName && mType && cMType && mType === cMType) return true;
+          return false;
+        });
+
+        if (matchedCorr) {
+          if (!mappedSentParaCount) {
+            mappedSentParaCount = String(matchedCorr.sentParaCount || matchedCorr.totalParas || matchedCorr.meetingSentParaCount || '');
+          }
+          if (!mappedInvolvedAmount) {
+            const raw = matchedCorr.totalAmount || matchedCorr.sentParaInvolvedAmount || matchedCorr.involvedAmount || 0;
+            mappedInvolvedAmount = typeof raw === 'number' ? raw : (parseFloat(toEnglishDigits(String(raw))) || 0);
+          }
+        }
+      }
+
       const finalData = {
         ...formData, 
+        meetingSentParaCount: mappedSentParaCount,
+        sentParaInvolvedAmount: mappedInvolvedAmount,
         letterNoDate: combinedLetter,
         issueLetterNoDate: combinedIssue,
         workpaperNoDate: combinedDiary,
@@ -1550,16 +1628,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               )}
             />
 
-            {/* 10 & 11. প্রেরিত অনু: সংখ্যা & মোট জড়িত টাকা (Audit Details) */}
-            {showAuditDetails && (
-              <>
-                <div id="field-11" className={col1Style}><label className={labelCls}><span className={numBadge}>{getSerial()}</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> প্রেরিত অনু: সংখ্যা:</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingSentParaCount'] || formData.meetingSentParaCount)} value={rawInputs['direct-meetingSentParaCount'] || (formData.meetingSentParaCount === '0' || formData.meetingSentParaCount === '' ? '' : toBengaliDigits(formData.meetingSentParaCount))} onChange={e => handleNumericInput('direct', 'meetingSentParaCount', e.target.value)} placeholder="০" /></div>
-                <div id="field-sent-para-involved-amount" className={col1Style}><label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Banknote size={14} className="text-emerald-600 shrink-0" /> মোট জড়িত টাকা:</label><input type="text" className={getDynamicInputCls(rawInputs['direct-sentParaInvolvedAmount'] || formData.sentParaInvolvedAmount)} value={rawInputs['direct-sentParaInvolvedAmount'] || (formData.sentParaInvolvedAmount === 0 || formData.sentParaInvolvedAmount === undefined || formData.sentParaInvolvedAmount === null ? '' : toBengaliDigits(formData.sentParaInvolvedAmount.toString()))} onChange={e => handleNumericInput('direct', 'sentParaInvolvedAmount', e.target.value)} placeholder="টাকা লিখুন" /></div>
-              </>
-            )}
-
-            {/* ডিজিটাল নথি নং- */}
-            <div id="field-digital-file-no" className={col4Style}>
+            {/* ডিজিটাল নথি নং- (বাম পাশে) */}
+            <div id="field-digital-file-no" className={`${col1Style} col-span-1 md:col-span-1 lg:col-span-2 w-full`}>
               <IDBadge id="settlement-field-digital-file-no" />
               <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Computer size={14} className="text-indigo-600 shrink-0" /> ডিজিটাল নথি নং-</label>
               <input 
@@ -1571,13 +1641,11 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               />
             </div>
 
-            {/* 14. মন্তব্য: */}
-            {formData.meetingType === 'বিএসআর' && (
-              <div id="field-18" className={`${col3Style} col-span-1 md:col-span-2 lg:col-span-4 w-full`}>
-                <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <MessageSquare size={14} className="text-purple-600 shrink-0" /> মন্তব্য:</label>
-                <input type="text" className={getDynamicInputCls(formData.remarks)} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
-              </div>
-            )}
+            {/* মন্তব্য: (ডিজিটাল নথি নং এর ডান পাশে) */}
+            <div id="field-18" className={`${col3Style} col-span-1 md:col-span-1 lg:col-span-2 w-full`}>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <MessageSquare size={14} className="text-purple-600 shrink-0" /> মন্তব্য:</label>
+              <input type="text" className={getDynamicInputCls(formData.remarks)} value={formData.remarks || ''} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
+            </div>
 
             {/* Meeting options if meetingType !== 'বিএসআর' */}
             {formData.meetingType !== 'বিএসআর' && (
@@ -1588,11 +1656,6 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                 </div>
                 <div id="field-20" className={col3Style}><label className={labelCls}><span className={numBadge}>{getSerial()}</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> আলোচিত অনুচ্ছেদ সংখ্যা:</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingDiscussedParaCount'] || formData.meetingDiscussedParaCount)} value={rawInputs['direct-meetingDiscussedParaCount'] || (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount))} onChange={e => handleNumericInput('direct', 'meetingDiscussedParaCount', e.target.value)} placeholder="০" /></div>
                 <div id="field-21" className={col1Style}><label className={labelCls}><span className={numBadge}>{getSerial()}</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা:</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingRecommendedParaCount'] || formData.meetingRecommendedParaCount)} value={rawInputs['direct-meetingRecommendedParaCount'] || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount))} onChange={e => handleNumericInput('direct', 'meetingRecommendedParaCount', e.target.value)} placeholder="০" /></div>
-                
-                <div id="field-18" className={`${col3Style} col-span-1 md:col-span-2 lg:col-span-4 w-full`}>
-                  <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <MessageSquare size={14} className="text-purple-600 shrink-0" /> মন্তব্য:</label>
-                  <input type="text" className={getDynamicInputCls(formData.remarks)} value={formData.remarks} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
-                </div>
               </>
             )}
           </div>
