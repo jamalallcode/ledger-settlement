@@ -871,6 +871,22 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const [bulkParaInput, setBulkParaInput] = useState('');
   const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
   const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({});
+  const [touchedCategory, setTouchedCategory] = useState<Record<string, boolean>>({});
+  const [bouncingSwitches, setBouncingSwitches] = useState<Record<string, boolean>>({});
+
+  const handleAmountBlur = (paraId: string) => {
+    const p = paragraphs.find(x => x.id === paraId);
+    if (!p) return;
+    const hasMoneyEntered = (p.involvedAmount > 0 || p.recoveredAmount > 0 || p.adjustedAmount > 0) ||
+      Boolean(rawInputs[`${paraId}-involvedAmount`] || rawInputs[`${paraId}-recoveredAmount`] || rawInputs[`${paraId}-adjustedAmount`]);
+
+    if (hasMoneyEntered && !touchedCategory[paraId]) {
+      setBouncingSwitches(prev => ({ ...prev, [paraId]: true }));
+      setTimeout(() => {
+        setBouncingSwitches(prev => ({ ...prev, [paraId]: false }));
+      }, 3000);
+    }
+  };
 
   const isCatExpanded = (paraId: string, catName: string) => {
     if (expandedCats[`${paraId}-${catName}`] !== undefined) {
@@ -964,7 +980,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     const newItems: ParagraphDetail[] = nums.map(n => {
       const id = generateSafeId();
       setRawInputs(prev => ({ ...prev, [`${id}-paraNo`]: toBengaliDigits(n) }));
-      return { id, paraNo: n, status: 'পূর্ণাঙ্গ', involvedAmount: 0, recoveredAmount: 0, adjustedAmount: 0, category: 'ভ্যাট', isAdvanced: false, vatRec: 0, vatAdj: 0, itRec: 0, itAdj: 0, othersRec: 0, othersAdj: 0 };
+      return { id, paraNo: n, status: 'পূর্ণাঙ্গ', involvedAmount: 0, recoveredAmount: 0, adjustedAmount: 0, category: 'অন্যান্য', isAdvanced: false, vatRec: 0, vatAdj: 0, itRec: 0, itAdj: 0, othersRec: 0, othersAdj: 0 };
     });
     setParagraphs(prev => [...prev, ...newItems]);
     setBulkParaInput('');
@@ -1900,38 +1916,46 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                       </button>
 
                       {!p.isAdvanced && (
-                        <div className="flex bg-slate-100 rounded-lg p-0.5 h-8 border border-slate-200 shrink-0 ml-1 sm:ml-1.5">
+                        <div className={`relative flex items-center p-1 rounded-xl shrink-0 ml-1 sm:ml-1.5 transition-all duration-300 ${
+                          bouncingSwitches[p.id]
+                            ? 'animate-bounce bg-amber-100 border-2 border-amber-500 ring-4 ring-amber-300/80 shadow-xl shadow-amber-400/50 z-20 scale-105'
+                            : 'bg-slate-200/80 border border-slate-300/80 shadow-inner'
+                        }`}>
                           {['ভ্যাট', 'আয়কর', 'অন্যান্য'].map(cat => (
                             <button
                               key={cat}
                               type="button"
-                              onClick={() => setParagraphs(prev => prev.map(x => {
-                                if (x.id === p.id) {
-                                  const updated = { ...x, category: cat as FinancialCategory };
-                                  if (cat === 'ভ্যাট') {
-                                    updated.vatRec = x.recoveredAmount;
-                                    updated.vatAdj = x.adjustedAmount;
-                                    updated.itRec = 0; updated.itAdj = 0;
-                                    updated.othersRec = 0; updated.othersAdj = 0;
-                                  } else if (cat === 'আয়কর') {
-                                    updated.itRec = x.recoveredAmount;
-                                    updated.itAdj = x.adjustedAmount;
-                                    updated.vatRec = 0; updated.vatAdj = 0;
-                                    updated.othersRec = 0; updated.othersAdj = 0;
-                                  } else {
-                                    updated.othersRec = x.recoveredAmount;
-                                    updated.othersAdj = x.adjustedAmount;
-                                    updated.vatRec = 0; updated.vatAdj = 0;
-                                    updated.itRec = 0; updated.itAdj = 0;
+                              onClick={() => {
+                                setTouchedCategory(prev => ({ ...prev, [p.id]: true }));
+                                setBouncingSwitches(prev => ({ ...prev, [p.id]: false }));
+                                setParagraphs(prev => prev.map(x => {
+                                  if (x.id === p.id) {
+                                    const updated = { ...x, category: cat as FinancialCategory };
+                                    if (cat === 'ভ্যাট') {
+                                      updated.vatRec = x.recoveredAmount;
+                                      updated.vatAdj = x.adjustedAmount;
+                                      updated.itRec = 0; updated.itAdj = 0;
+                                      updated.othersRec = 0; updated.othersAdj = 0;
+                                    } else if (cat === 'আয়কর') {
+                                      updated.itRec = x.recoveredAmount;
+                                      updated.itAdj = x.adjustedAmount;
+                                      updated.vatRec = 0; updated.vatAdj = 0;
+                                      updated.othersRec = 0; updated.othersAdj = 0;
+                                    } else {
+                                      updated.othersRec = x.recoveredAmount;
+                                      updated.othersAdj = x.adjustedAmount;
+                                      updated.vatRec = 0; updated.vatAdj = 0;
+                                      updated.itRec = 0; updated.itAdj = 0;
+                                    }
+                                    return updated;
                                   }
-                                  return updated;
-                                }
-                                return x;
-                              }))}
-                              className={`whitespace-nowrap px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-black rounded-md transition-all cursor-pointer ${
+                                  return x;
+                                }));
+                              }}
+                              className={`whitespace-nowrap px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-black rounded-lg transition-all duration-200 cursor-pointer ${
                                 p.category === cat 
-                                  ? 'bg-white text-emerald-700 shadow-sm hover:bg-emerald-50' 
-                                  : 'text-slate-600 hover:bg-emerald-100/80 hover:text-emerald-900'
+                                  ? 'bg-white text-emerald-800 shadow-md border border-slate-200/90 ring-1 ring-slate-900/5 scale-[1.03]' 
+                                  : 'text-slate-600 font-bold hover:text-slate-900 hover:bg-slate-300/40'
                               }`}
                             >
                               {cat}
@@ -1945,15 +1969,15 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                       <div className="grid grid-cols-3 gap-4 relative z-10">
                         <div className="space-y-1">
                           <label className="text-[10px] font-black text-slate-500 pl-1 uppercase tracking-wider text-center block">জড়িত টাকা</label>
-                          <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black transition-all duration-200 ${(p.involvedAmount > 0 || isMatched) ? 'border-emerald-500 hover:border-emerald-600 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100' : 'border-slate-300 hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100'}`} value={rawInputs[`${p.id}-involvedAmount`] || (p.involvedAmount === 0 ? '' : toBengaliDigits(p.involvedAmount))} onChange={e => handleNumericInput(p.id, 'involvedAmount', e.target.value)} placeholder="০" />
+                          <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black transition-all duration-200 ${(p.involvedAmount > 0 || isMatched) ? 'border-emerald-500 hover:border-emerald-600 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100' : 'border-slate-300 hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100'}`} value={rawInputs[`${p.id}-involvedAmount`] || (p.involvedAmount === 0 ? '' : toBengaliDigits(p.involvedAmount))} onChange={e => handleNumericInput(p.id, 'involvedAmount', e.target.value)} onBlur={() => handleAmountBlur(p.id)} placeholder="০" />
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] font-black text-emerald-600 pl-1 uppercase tracking-wider text-center block">আদায়কৃত</label>
-                          <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black transition-all duration-200 ${(p.recoveredAmount > 0 || isMatched) ? 'border-emerald-500 hover:border-emerald-600 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100' : 'border-slate-300 hover:border-emerald-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100'}`} value={rawInputs[`${p.id}-recoveredAmount`] || (p.recoveredAmount === 0 ? '' : toBengaliDigits(p.recoveredAmount))} onChange={e => handleNumericInput(p.id, 'recoveredAmount', e.target.value)} placeholder="০" />
+                          <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black transition-all duration-200 ${(p.recoveredAmount > 0 || isMatched) ? 'border-emerald-500 hover:border-emerald-600 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100' : 'border-slate-300 hover:border-emerald-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100'}`} value={rawInputs[`${p.id}-recoveredAmount`] || (p.recoveredAmount === 0 ? '' : toBengaliDigits(p.recoveredAmount))} onChange={e => handleNumericInput(p.id, 'recoveredAmount', e.target.value)} onBlur={() => handleAmountBlur(p.id)} placeholder="০" />
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] font-black text-indigo-600 pl-1 uppercase tracking-wider text-center block">সমন্বয়কৃত</label>
-                          <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black transition-all duration-200 ${(p.adjustedAmount > 0 || isMatched) ? 'border-emerald-500 hover:border-emerald-600 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100' : 'border-slate-300 hover:border-indigo-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100'}`} value={rawInputs[`${p.id}-adjustedAmount`] || (p.adjustedAmount === 0 ? '' : toBengaliDigits(p.adjustedAmount))} onChange={e => handleNumericInput(p.id, 'adjustedAmount', e.target.value)} placeholder="০" />
+                          <input type="text" className={`w-full h-12 px-3 border-2 rounded-xl text-center font-black bg-white text-slate-950 outline-none shadow-inner placeholder:text-slate-300 placeholder:font-black transition-all duration-200 ${(p.adjustedAmount > 0 || isMatched) ? 'border-emerald-500 hover:border-emerald-600 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100' : 'border-slate-300 hover:border-indigo-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100'}`} value={rawInputs[`${p.id}-adjustedAmount`] || (p.adjustedAmount === 0 ? '' : toBengaliDigits(p.adjustedAmount))} onChange={e => handleNumericInput(p.id, 'adjustedAmount', e.target.value)} onBlur={() => handleAmountBlur(p.id)} placeholder="০" />
                         </div>
                       </div>
                     ) : (
