@@ -844,7 +844,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
 
       return (
         <div className="bg-slate-50/80 p-6 border-x border-b border-slate-200 rounded-b-xl animate-in slide-in-from-top-4 duration-500 shadow-inner">
-          {isAdminView && (
+          {isAdminView && isAdmin && (
             <div className="mb-6 p-4 bg-white border border-amber-200 rounded-2xl flex items-center justify-between shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
@@ -2082,7 +2082,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                         </div>
                                       </div>
                                     )}
-                                    {isAdminView && (
+                                    {isAdminView && isAdmin && (
                                       <div className="absolute right-1 top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto flex-col gap-1.5 no-print z-[100] animate-in fade-in slide-in-from-right-2">
                                         <button
                                           onClick={(e) => {
@@ -2220,7 +2220,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                       </div>
                                     </div>
                                   )}
-                                  {isAdminView && (
+                                  {isAdminView && isAdmin && (
                                     <div className="absolute right-1 top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto flex-col gap-1.5 no-print z-[100] animate-in fade-in slide-in-from-right-2">
                                       <button
                                         onClick={(e) => {
