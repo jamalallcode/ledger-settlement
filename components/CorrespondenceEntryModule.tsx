@@ -1591,14 +1591,45 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
     window.addEventListener('storage', handleStorageChange);
 
-    const savedDescriptions = localStorage.getItem('ledger_correspondence_descriptions');
-    if (savedDescriptions) setDescriptionSuggestions(JSON.parse(savedDescriptions));
+    let allDescs: string[] = [];
+    try {
+      const savedDescriptions = localStorage.getItem('ledger_correspondence_descriptions');
+      if (savedDescriptions) {
+        const parsed = JSON.parse(savedDescriptions);
+        if (Array.isArray(parsed)) allDescs.push(...parsed);
+      }
+    } catch (e) {}
+
+    try {
+      const cachedCorr = localStorage.getItem('cached_correspondence_entries');
+      if (cachedCorr) {
+        const parsed = JSON.parse(cachedCorr);
+        if (Array.isArray(parsed)) {
+          parsed.forEach((e: any) => {
+            if (e.description && typeof e.description === 'string' && e.description.trim()) {
+              allDescs.push(e.description.trim());
+            }
+          });
+        }
+      }
+    } catch (e) {}
+
+    if (Array.isArray(existingEntries)) {
+      existingEntries.forEach((e: any) => {
+        if (e.description && typeof e.description === 'string' && e.description.trim()) {
+          allDescs.push(e.description.trim());
+        }
+      });
+    }
+
+    const uniqueDescs = Array.from(new Set(allDescs)).filter(Boolean);
+    setDescriptionSuggestions(uniqueDescs);
 
     return () => {
       active = false;
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [formData.paraType, formData.receiverName, initialEntry]);
+  }, [formData.paraType, formData.receiverName, initialEntry, existingEntries]);
 
   const formatDateSegments = (d: string, m: string, y: string) => {
     if (!d || !m || !y || y.length < 4) return '';
@@ -2128,110 +2159,125 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
                 {showDescriptionDropdown && (
                   formData.entityName === 'পাটকল সংস্থা' ? (
-                    <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
-                      <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
-                          <Sparkles size={12} /> পাটকল সমূহের তালিকা
-                        </span>
-                      </div>
-                      <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
-                        {Array.from(new Set([...DEFAULT_PATKOL_MILLS, ...customPatkolMills]))
-                          .filter(mill => mill.toLowerCase().includes(formData.description.toLowerCase()))
-                          .map((mill, idx) => (
-                          <div 
-                            key={idx}
-                            onClick={() => {
-                              setFormData({...formData, description: mill});
-                              setShowDescriptionDropdown(false);
-                            }}
-                            className={`px-5 py-3 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.description === mill ? 'bg-emerald-600 text-white shadow-lg' : 'hover:bg-emerald-50 text-slate-700 font-bold'}`}
-                          >
-                            <span className="text-[13px] leading-relaxed flex-1">{mill}</span>
-                            {formData.description === mill && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                    (() => {
+                      const patkolList = Array.from(new Set([...DEFAULT_PATKOL_MILLS, ...customPatkolMills]));
+                      const isExactMatch = patkolList.some(m => m.trim().toLowerCase() === formData.description.trim().toLowerCase());
+                      const visiblePatkolMills = isExactMatch || !formData.description.trim()
+                        ? patkolList
+                        : patkolList.filter(mill => mill.toLowerCase().includes(formData.description.toLowerCase().trim()));
+
+                      return (
+                        <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
+                          <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                              <Sparkles size={12} /> পাটকল সমূহের তালিকা
+                            </span>
                           </div>
-                        ))}
-                      </div>
-                      <div className="p-2 border-t border-slate-100 bg-slate-50">
-                        {!isAddingNewPatkol ? (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setIsAddingNewPatkol(true);
-                            }}
-                            className="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all"
-                          >
-                            <Plus size={14} /> নতুন যুক্ত করুন
-                          </button>
-                        ) : (
-                          <div className="flex items-center gap-2 p-1" onClick={(e) => e.stopPropagation()}>
-                            <input
-                              type="text"
-                              placeholder="নতুন মিলের নাম..."
-                              className="flex-1 px-3 py-1.5 border border-emerald-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                              value={newPatkolName}
-                              onChange={(e) => setNewPatkolName(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  handleAddPatkolMill();
-                                }
-                              }}
-                              autoFocus
-                            />
-                            <button
-                              type="button"
-                              onClick={handleAddPatkolMill}
-                              className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700"
-                            >
-                              সংরক্ষণ
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => { setIsAddingNewPatkol(false); setNewPatkolName(''); }}
-                              className="px-2 py-1.5 bg-slate-200 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-300"
-                            >
-                              বাতিল
-                            </button>
+                          <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
+                            {(visiblePatkolMills.length > 0 ? visiblePatkolMills : patkolList).map((mill, idx) => (
+                              <div 
+                                key={idx}
+                                onClick={() => {
+                                  setFormData({...formData, description: mill});
+                                  setShowDescriptionDropdown(false);
+                                }}
+                                className={`px-5 py-3 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.description.trim() === mill.trim() ? 'bg-emerald-600 text-white shadow-lg' : 'hover:bg-emerald-50 text-slate-700 font-bold'}`}
+                              >
+                                <span className="text-[13px] leading-relaxed flex-1">{mill}</span>
+                                {formData.description.trim() === mill.trim() && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                              </div>
+                            ))}
                           </div>
-                        )}
-                      </div>
-                    </div>
+                          <div className="p-2 border-t border-slate-100 bg-slate-50">
+                            {!isAddingNewPatkol ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setIsAddingNewPatkol(true);
+                                }}
+                                className="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                              >
+                                <Plus size={14} /> নতুন যুক্ত করুন
+                              </button>
+                            ) : (
+                              <div className="flex items-center gap-2 p-1" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="text"
+                                  placeholder="নতুন মিলের নাম..."
+                                  className="flex-1 px-3 py-1.5 border border-emerald-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                  value={newPatkolName}
+                                  onChange={(e) => setNewPatkolName(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleAddPatkolMill();
+                                    }
+                                  }}
+                                  autoFocus
+                                />
+                                <button
+                                  type="button"
+                                  onClick={handleAddPatkolMill}
+                                  className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700"
+                                >
+                                  সংরক্ষণ
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => { setIsAddingNewPatkol(false); setNewPatkolName(''); }}
+                                  className="px-2 py-1.5 bg-slate-200 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-300"
+                                >
+                                  বাতিল
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()
                   ) : (
                     descriptionSuggestions.length > 0 && (
-                      <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
-                        <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2"><Sparkles size={12} /> পূর্ববর্তী বিবরণসমূহ</span>
-                        </div>
-                        <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
-                          {descriptionSuggestions
-                            .filter(desc => desc.toLowerCase().includes(formData.description.toLowerCase()))
-                            .map((desc, idx) => (
-                            <div 
-                              key={idx}
-                              onClick={() => {
-                                setFormData({...formData, description: desc});
-                                setShowDescriptionDropdown(false);
-                              }}
-                              className={`px-5 py-3.5 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.description === desc ? 'bg-emerald-600 text-white shadow-lg' : 'hover:bg-emerald-50 text-slate-700 font-bold'}`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <span className="text-[13px] leading-relaxed flex-1">{desc}</span>
-                                <div className="flex items-center gap-2 shrink-0">
-                                  {formData.description === desc && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
-                                  <button 
-                                    type="button"
-                                    onClick={(e) => handleDeleteDescription(e, desc)}
-                                    className={`p-1.5 rounded-lg transition-all ${formData.description === desc ? 'bg-white/20 hover:bg-white/40 text-white' : 'bg-red-50 hover:bg-red-100 text-red-500 opacity-0 group-hover:opacity-100'}`}
-                                  >
-                                    <Trash2 size={12} />
-                                  </button>
-                                </div>
-                              </div>
+                      (() => {
+                        const isExactMatch = descriptionSuggestions.some(d => d.trim().toLowerCase() === formData.description.trim().toLowerCase());
+                        const visibleSuggestions = isExactMatch || !formData.description.trim()
+                          ? descriptionSuggestions
+                          : descriptionSuggestions.filter(desc => desc.toLowerCase().includes(formData.description.toLowerCase().trim()));
+
+                        return (
+                          <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
+                            <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2"><Sparkles size={12} /> পূর্ববর্তী বিবরণসমূহ / কস্ট সেন্টারসমূহ</span>
                             </div>
-                          ))}
-                        </div>
-                      </div>
+                            <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
+                              {(visibleSuggestions.length > 0 ? visibleSuggestions : descriptionSuggestions).map((desc, idx) => (
+                                <div 
+                                  key={idx}
+                                  onClick={() => {
+                                    setFormData({...formData, description: desc});
+                                    setShowDescriptionDropdown(false);
+                                  }}
+                                  className={`px-5 py-3.5 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.description.trim() === desc.trim() ? 'bg-emerald-600 text-white shadow-lg' : 'hover:bg-emerald-50 text-slate-700 font-bold'}`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-[13px] leading-relaxed flex-1">{desc}</span>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      {formData.description.trim() === desc.trim() && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                                      <button 
+                                        type="button"
+                                        onClick={(e) => handleDeleteDescription(e, desc)}
+                                        className={`p-1.5 rounded-lg transition-all ${formData.description.trim() === desc.trim() ? 'bg-white/20 hover:bg-white/40 text-white' : 'bg-red-50 hover:bg-red-100 text-red-500 opacity-0 group-hover:opacity-100'}`}
+                                      >
+                                        <Trash2 size={12} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()
                     )
                   )
                 )}
