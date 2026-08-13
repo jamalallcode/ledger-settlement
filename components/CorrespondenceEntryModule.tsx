@@ -1142,7 +1142,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
   const [receiverSuggestions, setReceiverSuggestions] = useState<any[]>([]);
   const [receiverSearchQuery, setReceiverSearchQuery] = useState('');
-  const [descriptionSuggestions, setDescriptionSuggestions] = useState<string[]>([]);
+  const [allDescriptionItems, setAllDescriptionItems] = useState<{ description: string; ministryName?: string; entityName?: string }[]>([]);
   const [customPatkolMills, setCustomPatkolMills] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('custom_patkol_mills');
@@ -1591,12 +1591,24 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
     window.addEventListener('storage', handleStorageChange);
 
-    let allDescs: string[] = [];
+    let descItems: { description: string; ministryName?: string; entityName?: string }[] = [];
     try {
       const savedDescriptions = localStorage.getItem('ledger_correspondence_descriptions');
       if (savedDescriptions) {
         const parsed = JSON.parse(savedDescriptions);
-        if (Array.isArray(parsed)) allDescs.push(...parsed);
+        if (Array.isArray(parsed)) {
+          parsed.forEach((item: any) => {
+            if (typeof item === 'string' && item.trim()) {
+              descItems.push({ description: item.trim() });
+            } else if (item && typeof item === 'object' && item.description && typeof item.description === 'string' && item.description.trim()) {
+              descItems.push({
+                description: item.description.trim(),
+                ministryName: item.ministryName ? item.ministryName.trim() : undefined,
+                entityName: item.entityName ? item.entityName.trim() : undefined,
+              });
+            }
+          });
+        }
       }
     } catch (e) {}
 
@@ -1607,7 +1619,11 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         if (Array.isArray(parsed)) {
           parsed.forEach((e: any) => {
             if (e.description && typeof e.description === 'string' && e.description.trim()) {
-              allDescs.push(e.description.trim());
+              descItems.push({
+                description: e.description.trim(),
+                ministryName: e.ministryName ? e.ministryName.trim() : undefined,
+                entityName: e.entityName ? e.entityName.trim() : undefined,
+              });
             }
           });
         }
@@ -1617,19 +1633,111 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     if (Array.isArray(existingEntries)) {
       existingEntries.forEach((e: any) => {
         if (e.description && typeof e.description === 'string' && e.description.trim()) {
-          allDescs.push(e.description.trim());
+          descItems.push({
+            description: e.description.trim(),
+            ministryName: e.ministryName ? e.ministryName.trim() : undefined,
+            entityName: e.entityName ? e.entityName.trim() : undefined,
+          });
         }
       });
     }
 
-    const uniqueDescs = Array.from(new Set(allDescs)).filter(Boolean);
-    setDescriptionSuggestions(uniqueDescs);
+    setAllDescriptionItems(descItems);
 
     return () => {
       active = false;
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [formData.paraType, formData.receiverName, initialEntry, existingEntries]);
+
+  const filteredDescriptionSuggestions = useMemo(() => {
+    if (!allDescriptionItems || allDescriptionItems.length === 0) return [];
+
+    const currMinistry = (formData.ministryName || '').trim();
+    const currEntity = (formData.entityName || '').trim();
+
+    const isBankContext = currMinistry === "আর্থিক প্রতিষ্ঠান বিভাগ" || 
+                          currEntity.includes("ব্যাংক") || 
+                          currEntity.includes("Bank");
+
+    const isJuteContext = currMinistry === "বস্ত্র ও পাট মন্ত্রণালয়" || 
+                          currEntity === "পাটকল সংস্থা" ||
+                          currEntity.includes("জুট") ||
+                          currEntity.includes("পাট");
+
+    let filtered = allDescriptionItems.filter(item => {
+      const desc = (item.description || '').trim();
+      if (!desc) return false;
+
+      // Filter by Ministry match if item has explicit ministryName
+      if (currMinistry && item.ministryName && item.ministryName.trim()) {
+        if (item.ministryName.trim() !== currMinistry) {
+          return false;
+        }
+      }
+
+      // Filter by Entity match if item has explicit entityName
+      if (currEntity && item.entityName && item.entityName.trim()) {
+        if (item.entityName.trim() !== currEntity) {
+          // If entity is different, drop if it belongs to a completely different domain or entity
+          if (isBankContext && (item.entityName.includes("জুট") || item.entityName.includes("ট্রেডিং") || item.entityName.includes("পাট"))) {
+            return false;
+          }
+        }
+      }
+
+      // Keyword protection for untagged legacy descriptions
+      const descLower = desc.toLowerCase();
+
+      if (isBankContext) {
+        const isNonBankKeyword = descLower.includes("জুট") || 
+                                 descLower.includes("পাটকল") || 
+                                 descLower.includes("ট্রেডিং কর্পোরেশন") || 
+                                 descLower.includes("বিসিআইসি") || 
+                                 descLower.includes("বিএসইসি");
+        if (isNonBankKeyword && !descLower.includes("ব্যাংক")) {
+          return false;
+        }
+        if (desc === "ননন") return false;
+      }
+
+      if (isJuteContext) {
+        if (descLower.includes("ব্যাংক") && !descLower.includes("পাট")) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Deduplicate
+    const uniqueMap = new Map<string, { description: string; ministryName?: string; entityName?: string }>();
+    filtered.forEach(item => {
+      const key = item.description.trim();
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, item);
+      } else {
+        const existing = uniqueMap.get(key)!;
+        if (!existing.entityName && item.entityName) {
+          uniqueMap.set(key, item);
+        }
+      }
+    });
+
+    let resultList = Array.from(uniqueMap.values());
+
+    // Sorting: exact entity match first
+    if (currEntity) {
+      resultList.sort((a, b) => {
+        const aEntity = a.entityName === currEntity ? 1 : 0;
+        const bEntity = b.entityName === currEntity ? 1 : 0;
+        if (aEntity !== bEntity) return bEntity - aEntity;
+        return 0;
+      });
+    }
+
+    return resultList.map(i => i.description);
+  }, [allDescriptionItems, formData.ministryName, formData.entityName]);
 
   const formatDateSegments = (d: string, m: string, y: string) => {
     if (!d || !m || !y || y.length < 4) return '';
@@ -1650,9 +1758,21 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     e.stopPropagation();
     if (!window.confirm(`আপনি কি নিশ্চিতভাবে "${descToDelete}" বিবরণটি তালিকা থেকে মুছে ফেলতে চান?`)) return;
     
-    const updated = descriptionSuggestions.filter(d => d !== descToDelete);
-    setDescriptionSuggestions(updated);
-    localStorage.setItem('ledger_correspondence_descriptions', JSON.stringify(updated));
+    setAllDescriptionItems(prev => prev.filter(item => item.description.trim() !== descToDelete.trim()));
+
+    try {
+      const saved = localStorage.getItem('ledger_correspondence_descriptions');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const updated = parsed.filter((i: any) => {
+            const d = typeof i === 'string' ? i : i?.description;
+            return d && d.trim() !== descToDelete.trim();
+          });
+          localStorage.setItem('ledger_correspondence_descriptions', JSON.stringify(updated));
+        }
+      }
+    } catch (err) {}
   };
 
   /**
@@ -1963,9 +2083,28 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     // Defer heavy work to next tick to avoid blocking UI (INP fix)
     setTimeout(() => {
       if (formData.description.trim()) {
-        const updatedDesc = Array.from(new Set([formData.description.trim(), ...descriptionSuggestions]));
-        setDescriptionSuggestions(updatedDesc);
-        localStorage.setItem('ledger_correspondence_descriptions', JSON.stringify(updatedDesc));
+        const newDescObj = {
+          description: formData.description.trim(),
+          ministryName: formData.ministryName ? formData.ministryName.trim() : undefined,
+          entityName: formData.entityName ? formData.entityName.trim() : undefined,
+        };
+
+        setAllDescriptionItems(prev => [newDescObj, ...prev]);
+
+        try {
+          const saved = localStorage.getItem('ledger_correspondence_descriptions');
+          let existing: any[] = [];
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) existing = parsed;
+          }
+          const filteredExisting = existing.filter((i: any) => {
+            const d = typeof i === 'string' ? i : i?.description;
+            return d && d.trim() !== newDescObj.description;
+          });
+          const updated = [newDescObj, ...filteredExisting];
+          localStorage.setItem('ledger_correspondence_descriptions', JSON.stringify(updated));
+        } catch (e) {}
       }
 
       const res = onAdd(formData);
@@ -2237,12 +2376,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                       );
                     })()
                   ) : (
-                    descriptionSuggestions.length > 0 && (
+                    filteredDescriptionSuggestions.length > 0 && (
                       (() => {
-                        const isExactMatch = descriptionSuggestions.some(d => d.trim().toLowerCase() === formData.description.trim().toLowerCase());
+                        const isExactMatch = filteredDescriptionSuggestions.some(d => d.trim().toLowerCase() === formData.description.trim().toLowerCase());
                         const visibleSuggestions = isExactMatch || !formData.description.trim()
-                          ? descriptionSuggestions
-                          : descriptionSuggestions.filter(desc => desc.toLowerCase().includes(formData.description.toLowerCase().trim()));
+                          ? filteredDescriptionSuggestions
+                          : filteredDescriptionSuggestions.filter(desc => desc.toLowerCase().includes(formData.description.toLowerCase().trim()));
 
                         return (
                           <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
@@ -2250,7 +2389,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                               <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2"><Sparkles size={12} /> পূর্ববর্তী বিবরণসমূহ / কস্ট সেন্টারসমূহ</span>
                             </div>
                             <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
-                              {(visibleSuggestions.length > 0 ? visibleSuggestions : descriptionSuggestions).map((desc, idx) => (
+                              {(visibleSuggestions.length > 0 ? visibleSuggestions : filteredDescriptionSuggestions).map((desc, idx) => (
                                 <div 
                                   key={idx}
                                   onClick={() => {
