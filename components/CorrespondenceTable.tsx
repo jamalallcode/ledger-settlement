@@ -1,3 +1,4 @@
+// CorrespondenceTable - চিঠিপত্র রেজিস্টার টেবিল (২২টি ইনপুট ফিল্ড প্রদর্শন সমর্থিত)
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";

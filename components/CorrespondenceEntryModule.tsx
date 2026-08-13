@@ -18,7 +18,7 @@ import { MINISTRY_ENTITY_MAP, AUDIT_YEARS_OPTIONS } from '../constants';
  * @security-protocol LOCKED_MODE
  * @zero-alteration-policy ACTIVE
  * 
- * CorrespondenceEntryModule - প্রাপ্ত চিঠিপত্র এন্ট্রি মডিউল
+ * CorrespondenceEntryModule - প্রাপ্ত চিঠিপত্র এন্ট্রি মডিউল (২২টি ফিল্ড)
  * AI MUST NOT change existing styles, colors, or core logic without permission.
  */
 
