@@ -428,7 +428,10 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       isOnline: letter.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : (letter.isOnline === 'না' ? 'না' : prev.isOnline),
       archiveNo: letter.archiveNo || prev.archiveNo,
       digitalFileNo: letter.digitalFileNo || prev.digitalFileNo,
-      remarks: letter.remarks || prev.remarks
+      remarks: letter.remarks || prev.remarks,
+      meetingDate: letter.meetingDate || prev.meetingDate,
+      meetingDiscussedParaCount: letter.meetingDiscussedParaCount || letter.discussedParaCount || prev.meetingDiscussedParaCount,
+      meetingRecommendedParaCount: letter.meetingRecommendedParaCount || letter.recommendedParaCount || prev.meetingRecommendedParaCount
     }));
 
     // Auto-fill Letter No & Date
@@ -483,6 +486,20 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       setRawInputs(prev => ({
         ...prev,
         'direct-sentParaInvolvedAmount': toBengaliDigits(totAmt.toString())
+      }));
+    }
+    const discussed = letter.meetingDiscussedParaCount || letter.discussedParaCount;
+    if (discussed !== undefined && discussed !== null && discussed !== '') {
+      setRawInputs(prev => ({
+        ...prev,
+        'direct-meetingDiscussedParaCount': toBengaliDigits(discussed.toString())
+      }));
+    }
+    const recommended = letter.meetingRecommendedParaCount || letter.recommendedParaCount;
+    if (recommended !== undefined && recommended !== null && recommended !== '') {
+      setRawInputs(prev => ({
+        ...prev,
+        'direct-meetingRecommendedParaCount': toBengaliDigits(recommended.toString())
       }));
     }
   };
