@@ -1153,6 +1153,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   });
   const [isAddingNewPatkol, setIsAddingNewPatkol] = useState(false);
   const [newPatkolName, setNewPatkolName] = useState('');
+  const [isAddingNewDesc, setIsAddingNewDesc] = useState(false);
+  const [newDescName, setNewDescName] = useState('');
   const [showReceiverDropdown, setShowReceiverDropdown] = useState(false);
   const [showDescriptionDropdown, setShowDescriptionDropdown] = useState(false);
   const [showAuditYearWarning, setShowAuditYearWarning] = useState(false);
@@ -1176,6 +1178,39 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     setFormData(prev => ({ ...prev, description: name }));
     setIsAddingNewPatkol(false);
     setNewPatkolName('');
+    setShowDescriptionDropdown(false);
+  };
+
+  const handleAddCustomDescription = (customText?: string) => {
+    const textToAdd = (customText !== undefined ? customText : newDescName).trim();
+    if (!textToAdd) return;
+
+    const newObj = {
+      description: textToAdd,
+      ministryName: formData.ministryName ? formData.ministryName.trim() : undefined,
+      entityName: formData.entityName ? formData.entityName.trim() : undefined,
+    };
+
+    setAllDescriptionItems(prev => [newObj, ...prev.filter(i => i.description.trim() !== textToAdd)]);
+
+    try {
+      const saved = localStorage.getItem('ledger_correspondence_descriptions');
+      let existing: any[] = [];
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) existing = parsed;
+      }
+      const filteredExisting = existing.filter((i: any) => {
+        const d = typeof i === 'string' ? i : i?.description;
+        return d && d.trim() !== textToAdd;
+      });
+      const updated = [newObj, ...filteredExisting];
+      localStorage.setItem('ledger_correspondence_descriptions', JSON.stringify(updated));
+    } catch (e) {}
+
+    setFormData(prev => ({ ...prev, description: textToAdd }));
+    setIsAddingNewDesc(false);
+    setNewDescName('');
     setShowDescriptionDropdown(false);
   };
   
@@ -2376,48 +2411,118 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                       );
                     })()
                   ) : (
-                    filteredDescriptionSuggestions.length > 0 && (
-                      (() => {
-                        const isExactMatch = filteredDescriptionSuggestions.some(d => d.trim().toLowerCase() === formData.description.trim().toLowerCase());
-                        const visibleSuggestions = isExactMatch || !formData.description.trim()
-                          ? filteredDescriptionSuggestions
-                          : filteredDescriptionSuggestions.filter(desc => desc.toLowerCase().includes(formData.description.toLowerCase().trim()));
+                    (() => {
+                      const typedText = formData.description.trim();
+                      const isExactMatch = filteredDescriptionSuggestions.some(d => d.trim().toLowerCase() === typedText.toLowerCase());
+                      const visibleSuggestions = isExactMatch || !typedText
+                        ? filteredDescriptionSuggestions
+                        : filteredDescriptionSuggestions.filter(desc => desc.toLowerCase().includes(typedText.toLowerCase()));
 
-                        return (
-                          <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
-                            <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2"><Sparkles size={12} /> পূর্ববর্তী বিবরণসমূহ / কস্ট সেন্টারসমূহ</span>
-                            </div>
-                            <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
-                              {(visibleSuggestions.length > 0 ? visibleSuggestions : filteredDescriptionSuggestions).map((desc, idx) => (
-                                <div 
-                                  key={idx}
-                                  onClick={() => {
-                                    setFormData({...formData, description: desc});
-                                    setShowDescriptionDropdown(false);
-                                  }}
-                                  className={`px-5 py-3.5 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.description.trim() === desc.trim() ? 'bg-emerald-600 text-white shadow-lg' : 'hover:bg-emerald-50 text-slate-700 font-bold'}`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <span className="text-[13px] leading-relaxed flex-1">{desc}</span>
-                                    <div className="flex items-center gap-2 shrink-0">
-                                      {formData.description.trim() === desc.trim() && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
-                                      <button 
-                                        type="button"
-                                        onClick={(e) => handleDeleteDescription(e, desc)}
-                                        className={`p-1.5 rounded-lg transition-all ${formData.description.trim() === desc.trim() ? 'bg-white/20 hover:bg-white/40 text-white' : 'bg-red-50 hover:bg-red-100 text-red-500 opacity-0 group-hover:opacity-100'}`}
-                                      >
-                                        <Trash2 size={12} />
-                                      </button>
-                                    </div>
+                      return (
+                        <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-[500] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border-t-4 border-t-emerald-600">
+                          <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                              <Sparkles size={12} /> পূর্ববর্তী বিবরণসমূহ / কস্ট সেন্টারসমূহ
+                            </span>
+                          </div>
+
+                          <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
+                            {typedText && !isExactMatch && (
+                              <div 
+                                onClick={() => handleAddCustomDescription(typedText)}
+                                className="px-5 py-3 mx-2 my-1 rounded-xl cursor-pointer flex items-center justify-between transition-all bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-black border border-emerald-200 shadow-sm"
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-6 h-6 rounded-md bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                                    <Plus size={14} />
+                                  </div>
+                                  <span className="text-xs">
+                                    "{typedText}" - নতুন বিবরণ হিসেবে যুক্ত করুন
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+
+                            {visibleSuggestions.map((desc, idx) => (
+                              <div 
+                                key={idx}
+                                onClick={() => {
+                                  setFormData({...formData, description: desc});
+                                  setShowDescriptionDropdown(false);
+                                }}
+                                className={`px-5 py-3.5 mx-2 my-0.5 rounded-xl cursor-pointer flex items-center justify-between transition-all group ${formData.description.trim() === desc.trim() ? 'bg-emerald-600 text-white shadow-lg' : 'hover:bg-emerald-50 text-slate-700 font-bold'}`}
+                              >
+                                <div className="flex items-center gap-3 w-full">
+                                  <span className="text-[13px] leading-relaxed flex-1">{desc}</span>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    {formData.description.trim() === desc.trim() && <Check size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                                    <button 
+                                      type="button"
+                                      onClick={(e) => handleDeleteDescription(e, desc)}
+                                      className={`p-1.5 rounded-lg transition-all ${formData.description.trim() === desc.trim() ? 'bg-white/20 hover:bg-white/40 text-white' : 'bg-red-50 hover:bg-red-100 text-red-500 opacity-0 group-hover:opacity-100'}`}
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
                                   </div>
                                 </div>
-                              ))}
-                            </div>
+                              </div>
+                            ))}
+
+                            {visibleSuggestions.length === 0 && !typedText && (
+                              <div className="px-5 py-4 text-center text-xs font-semibold text-slate-400">
+                                পূর্বে কোনো বিবরণ পাওয়া যায়নি। নতুন বিবরণ যুক্ত করতে নিচের বাটন ব্যবহার করুন।
+                              </div>
+                            )}
                           </div>
-                        );
-                      })()
-                    )
+
+                          <div className="p-2 border-t border-slate-100 bg-slate-50">
+                            {!isAddingNewDesc ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setIsAddingNewDesc(true);
+                                }}
+                                className="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                              >
+                                <Plus size={14} /> নতুন যুক্ত করুন
+                              </button>
+                            ) : (
+                              <div className="flex items-center gap-2 p-1" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="text"
+                                  placeholder="নতুন বিবরণ / কস্ট সেন্টার লিখুন..."
+                                  className="flex-1 px-3 py-1.5 border border-emerald-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                  value={newDescName}
+                                  onChange={(e) => setNewDescName(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleAddCustomDescription();
+                                    }
+                                  }}
+                                  autoFocus
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddCustomDescription()}
+                                  className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700"
+                                >
+                                  সংরক্ষণ
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => { setIsAddingNewDesc(false); setNewDescName(''); }}
+                                  className="px-2 py-1.5 bg-slate-200 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-300"
+                                >
+                                  বাতিল
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()
                   )
                 )}
               </div>
