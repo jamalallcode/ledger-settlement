@@ -1959,11 +1959,44 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট জড়িত টাকা: </span>
                                   <span className="font-black text-slate-950">
                                     <HighlightText
-                                      text={toBengaliDigits(entry.totalAmount)}
+                                      text={entry.totalAmount ? `${toBengaliDigits(entry.totalAmount)} ৳` : '০ ৳'}
                                       searchTerm={searchTerm}
                                     />
                                   </span>
                                 </div>
+                                {entry.meetingDate && (
+                                  <div className="text-[10px] leading-snug">
+                                    <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. সভার তারিখ: </span>
+                                    <span className="font-black text-slate-950">
+                                      <HighlightText
+                                        text={formatDateBN(entry.meetingDate)}
+                                        searchTerm={searchTerm}
+                                      />
+                                    </span>
+                                  </div>
+                                )}
+                                {entry.discussedParaCount && (
+                                  <div className="text-[10px] leading-snug">
+                                    <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. আলোচিত অনুচ্ছেদ সংখ্যা: </span>
+                                    <span className="font-black text-slate-950">
+                                      <HighlightText
+                                        text={`${toBengaliDigits(entry.discussedParaCount)} টি`}
+                                        searchTerm={searchTerm}
+                                      />
+                                    </span>
+                                  </div>
+                                )}
+                                {entry.recommendedParaCount && (
+                                  <div className="text-[10px] leading-snug">
+                                    <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. সুপারিশকৃত অনুচ্ছেদ সংখ্যা: </span>
+                                    <span className="font-black text-slate-950">
+                                      <HighlightText
+                                        text={`${toBengaliDigits(entry.recommendedParaCount)} টি`}
+                                        searchTerm={searchTerm}
+                                      />
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             );
                           })()}
