@@ -1928,7 +1928,11 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                                 }
                                 return x;
                               }))}
-                              className={`whitespace-nowrap px-1 sm:px-1.5 py-0.5 text-[8px] sm:text-[8.5px] font-black rounded-md transition-all ${p.category === cat ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
+                              className={`whitespace-nowrap px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-black rounded-md transition-all cursor-pointer ${
+                                p.category === cat 
+                                  ? 'bg-white text-emerald-700 shadow-sm hover:bg-emerald-50' 
+                                  : 'text-slate-600 hover:bg-emerald-100/80 hover:text-emerald-900'
+                              }`}
                             >
                               {cat}
                             </button>
