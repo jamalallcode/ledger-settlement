@@ -1117,8 +1117,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     archiveNo: '',
     remarks: '',
     meetingDate: initialEntry?.meetingDate || '',
-    meetingDiscussedParaCount: initialEntry?.meetingDiscussedParaCount || '',
-    meetingRecommendedParaCount: initialEntry?.meetingRecommendedParaCount || '',
+    meetingDiscussedParaCount: initialEntry?.meetingDiscussedParaCount || initialEntry?.discussedParaCount || '',
+    meetingRecommendedParaCount: initialEntry?.meetingRecommendedParaCount || initialEntry?.recommendedParaCount || '',
+    discussedParaCount: initialEntry?.discussedParaCount || initialEntry?.meetingDiscussedParaCount || '',
+    recommendedParaCount: initialEntry?.recommendedParaCount || initialEntry?.meetingRecommendedParaCount || '',
     sentToDhakaDate: initialEntry?.sentToDhakaDate || '',
     returnedFromDhakaDate: initialEntry?.returnedFromDhakaDate || ''
   });
@@ -1647,8 +1649,10 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
         archiveNo: initialEntry.archiveNo || '',
         remarks: initialEntry.remarks || '',
         meetingDate: initialEntry.meetingDate || '',
-        meetingDiscussedParaCount: initialEntry.meetingDiscussedParaCount || '',
-        meetingRecommendedParaCount: initialEntry.meetingRecommendedParaCount || '',
+        meetingDiscussedParaCount: initialEntry.meetingDiscussedParaCount || initialEntry.discussedParaCount || '',
+        meetingRecommendedParaCount: initialEntry.meetingRecommendedParaCount || initialEntry.recommendedParaCount || '',
+        discussedParaCount: initialEntry.discussedParaCount || initialEntry.meetingDiscussedParaCount || '',
+        recommendedParaCount: initialEntry.recommendedParaCount || initialEntry.meetingRecommendedParaCount || '',
         sentToDhakaDate: initialEntry.sentToDhakaDate || '',
         returnedFromDhakaDate: initialEntry.returnedFromDhakaDate || ''
       });
@@ -1732,7 +1736,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const handleNumericInput = (field: string, val: string) => {
     const bDigits = toBengaliDigits(val);
     setRawInputs(prev => ({ ...prev, [field]: bDigits }));
-    setFormData(prev => ({ ...prev, [field]: val }));
+    setFormData(prev => ({
+      ...prev,
+      [field]: val,
+      ...(field === 'meetingDiscussedParaCount' ? { discussedParaCount: val } : {}),
+      ...(field === 'meetingRecommendedParaCount' ? { recommendedParaCount: val } : {})
+    }));
   };
 
   const handleArchiveNoChange = (val: string) => {

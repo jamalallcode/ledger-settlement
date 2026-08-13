@@ -1975,28 +1975,36 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     </span>
                                   </div>
                                 )}
-                                {entry.discussedParaCount && (
-                                  <div className="text-[10px] leading-snug">
-                                    <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. আলোচিত অনুচ্ছেদ সংখ্যা: </span>
-                                    <span className="font-black text-slate-950">
-                                      <HighlightText
-                                        text={`${toBengaliDigits(entry.discussedParaCount)} টি`}
-                                        searchTerm={searchTerm}
-                                      />
-                                    </span>
-                                  </div>
-                                )}
-                                {entry.recommendedParaCount && (
-                                  <div className="text-[10px] leading-snug">
-                                    <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. সুপারিশকৃত অনুচ্ছেদ সংখ্যা: </span>
-                                    <span className="font-black text-slate-950">
-                                      <HighlightText
-                                        text={`${toBengaliDigits(entry.recommendedParaCount)} টি`}
-                                        searchTerm={searchTerm}
-                                      />
-                                    </span>
-                                  </div>
-                                )}
+                                 {(() => {
+                                   const discussed = entry.discussedParaCount || entry.meetingDiscussedParaCount;
+                                   if (!discussed) return null;
+                                   return (
+                                     <div className="text-[10px] leading-snug">
+                                       <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. আলোচিত অনুচ্ছেদ সংখ্যা: </span>
+                                       <span className="font-black text-slate-950">
+                                         <HighlightText
+                                           text={`${toBengaliDigits(discussed)} টি`}
+                                           searchTerm={searchTerm}
+                                         />
+                                       </span>
+                                     </div>
+                                   );
+                                 })()}
+                                 {(() => {
+                                   const recommended = entry.recommendedParaCount || entry.meetingRecommendedParaCount;
+                                   if (!recommended) return null;
+                                   return (
+                                     <div className="text-[10px] leading-snug">
+                                       <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. সুপারিশকৃত অনুচ্ছেদ সংখ্যা: </span>
+                                       <span className="font-black text-slate-950">
+                                         <HighlightText
+                                           text={`${toBengaliDigits(recommended)} টি`}
+                                           searchTerm={searchTerm}
+                                         />
+                                       </span>
+                                     </div>
+                                   );
+                                 })()}
                               </div>
                             );
                           })()}
