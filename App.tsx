@@ -951,6 +951,10 @@ const App: React.FC = () => {
   };
 
   const handleApproveEntry = async (id: string) => {
+    if (!isAdmin) {
+      alert("দুঃখিত, শুধুমাত্র এডমিন অনুমোদন দিতে পারেন।");
+      return;
+    }
     const entry = [...entries, ...correspondenceEntries].find(e => e.id === id);
     if (!entry) return;
     
@@ -1049,32 +1053,68 @@ const App: React.FC = () => {
   const approvedCorrespondence = useMemo(() => correspondenceEntries.filter(e => e.approvalStatus === 'approved' || !e.approvalStatus), [correspondenceEntries]);
 
   const displayedPendingEntries = useMemo(() => {
-    if (!isAdmin && viewSingleEntryId) {
-      return pendingEntries.filter(e => e.id === viewSingleEntryId);
+    if (!isAdmin) {
+      if (viewSingleEntryId) {
+        return pendingEntries.filter(e => e.id === viewSingleEntryId);
+      }
+      if (userEmail) {
+        return pendingEntries.filter(e => e.userEmail === userEmail || e.id === justSubmittedEntryId);
+      }
+      if (justSubmittedEntryId) {
+        return pendingEntries.filter(e => e.id === justSubmittedEntryId);
+      }
+      return pendingEntries.filter(e => e.userEmail === userEmail);
     }
     return pendingEntries;
-  }, [pendingEntries, isAdmin, viewSingleEntryId]);
+  }, [pendingEntries, isAdmin, viewSingleEntryId, userEmail, justSubmittedEntryId]);
 
   const displayedPendingCorrespondence = useMemo(() => {
-    if (!isAdmin && viewSingleEntryId) {
-      return pendingCorrespondence.filter(e => e.id === viewSingleEntryId);
+    if (!isAdmin) {
+      if (viewSingleEntryId) {
+        return pendingCorrespondence.filter(e => e.id === viewSingleEntryId);
+      }
+      if (userEmail) {
+        return pendingCorrespondence.filter(e => e.userEmail === userEmail || e.id === justSubmittedEntryId);
+      }
+      if (justSubmittedEntryId) {
+        return pendingCorrespondence.filter(e => e.id === justSubmittedEntryId);
+      }
+      return pendingCorrespondence.filter(e => e.userEmail === userEmail);
     }
     return pendingCorrespondence;
-  }, [pendingCorrespondence, isAdmin, viewSingleEntryId]);
+  }, [pendingCorrespondence, isAdmin, viewSingleEntryId, userEmail, justSubmittedEntryId]);
 
   const displayedApprovedEntries = useMemo(() => {
-    if (!isAdmin && viewSingleEntryId) {
-      return approvedEntries.filter(e => e.id === viewSingleEntryId);
+    if (!isAdmin) {
+      if (viewSingleEntryId) {
+        return approvedEntries.filter(e => e.id === viewSingleEntryId);
+      }
+      if (userEmail) {
+        return approvedEntries.filter(e => e.userEmail === userEmail || e.id === justSubmittedEntryId);
+      }
+      if (justSubmittedEntryId) {
+        return approvedEntries.filter(e => e.id === justSubmittedEntryId);
+      }
+      return approvedEntries.filter(e => e.userEmail === userEmail);
     }
     return approvedEntries;
-  }, [approvedEntries, isAdmin, viewSingleEntryId]);
+  }, [approvedEntries, isAdmin, viewSingleEntryId, userEmail, justSubmittedEntryId]);
 
   const displayedApprovedCorrespondence = useMemo(() => {
-    if (!isAdmin && viewSingleEntryId) {
-      return approvedCorrespondence.filter(e => e.id === viewSingleEntryId);
+    if (!isAdmin) {
+      if (viewSingleEntryId) {
+        return approvedCorrespondence.filter(e => e.id === viewSingleEntryId);
+      }
+      if (userEmail) {
+        return approvedCorrespondence.filter(e => e.userEmail === userEmail || e.id === justSubmittedEntryId);
+      }
+      if (justSubmittedEntryId) {
+        return approvedCorrespondence.filter(e => e.id === justSubmittedEntryId);
+      }
+      return approvedCorrespondence.filter(e => e.userEmail === userEmail);
     }
     return approvedCorrespondence;
-  }, [approvedCorrespondence, isAdmin, viewSingleEntryId]);
+  }, [approvedCorrespondence, isAdmin, viewSingleEntryId, userEmail, justSubmittedEntryId]);
   
   const unassignedCorrespondence = useMemo(() => {
     return approvedCorrespondence.filter(e => 
@@ -1632,13 +1672,13 @@ const App: React.FC = () => {
                           <SettlementTable 
                             key={`pending-list`} 
                             entries={displayedPendingEntries} 
-                            onDelete={handleDelete} 
-                            onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }} 
+                            onDelete={isAdmin ? handleDelete : undefined} 
+                            onEdit={isAdmin ? e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); } : undefined} 
                             showFilters={false} 
                             setShowFilters={setShowRegisterFilters}
-                            isAdminView={true}
-                            onApprove={handleApproveEntry}
-                            onReject={handleRejectEntry}
+                            isAdminView={isAdmin}
+                            onApprove={isAdmin ? handleApproveEntry : undefined}
+                            onReject={isAdmin ? handleRejectEntry : undefined}
                             isAdmin={isAdmin}
                           />
                         </div>
