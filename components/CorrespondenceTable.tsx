@@ -44,6 +44,7 @@ import {
   X,
   Eye,
   EyeOff,
+  HelpCircle,
 } from "lucide-react";
 import { isSFI, isNonSFI, getCleanLetterTypeDisplay } from "../utils/branchUtils";
 import {
@@ -377,6 +378,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const [selectedCommentText, setSelectedCommentText] = useState<string | null>(null);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [viewingSettlementLetter, setViewingSettlementLetter] = useState<CorrespondenceEntry | null>(null);
+  const [dummyDeclinedMap, setDummyDeclinedMap] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const handleScrollOrResize = () => {
@@ -608,7 +610,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             const isExactNumberMatch =
               engLetter === normalizedSearch ||
               engDiary === normalizedSearch ||
-              engIssue === normalizedSearch;
+              engIssue === normalizedSearch ||
+              engIssue.replace(/[^\d]/g, '') === normalizedSearch;
 
             const isDescriptionMatch = toEnglishDigits(
               entry.description.toLowerCase(),
@@ -2472,102 +2475,162 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   </div>
 
                                   {/* 2. জারিপত্র নং */}
-                                  <div
-                                    onClick={() => {
-                                      if (!canFillIssue) triggerUnsettledNotice(entry.id);
-                                      if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
-                                        triggerDhakaNotice(entry.id);
-                                      }
-                                    }}
-                                    className={`p-1.5 border rounded-lg space-y-1 transition-colors relative ${issueColorCls} ${!canFillIssue ? 'cursor-pointer' : ''}`}
-                                  >
-                                    <div className="flex items-center justify-between">
+                                  {(() => {
+                                    const rawIssueDigits = toEnglishDigits(currentIssueNo || '').replace(/[^\d]/g, '');
+                                    const is100Entered = rawIssueDigits === '100';
+                                    const hasDummyTag = (currentIssueNo || '').includes('ডামি') || (currentIssueNo || '').includes('dummy');
+                                    const showDummyPrompt = isAdmin && canFillIssue && is100Entered && !hasDummyTag && !dummyDeclinedMap[entry.id];
+
+                                    return (
                                       <div
-                                        className={`text-[9px] font-bold uppercase tracking-tighter flex items-center gap-1 ${labelColorCls}`}
+                                        onClick={() => {
+                                          if (!canFillIssue) triggerUnsettledNotice(entry.id);
+                                          if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
+                                            triggerDhakaNotice(entry.id);
+                                          }
+                                        }}
+                                        className={`p-1.5 border rounded-lg space-y-1 transition-colors relative ${issueColorCls} ${!canFillIssue ? 'cursor-pointer' : ''}`}
                                       >
-                                        <Hash size={8} /> জারিপত্র নং
-                                      </div>
-                                      <div className="flex items-center gap-1">
-                                        {currentIssueComment && (
-                                          <button
-                                            type="button"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setSelectedCommentText(currentIssueComment);
-                                            }}
-                                            className="text-amber-500 hover:text-amber-600 active:scale-95 p-0.5 rounded transition-all animate-pulse"
-                                            title="মন্তব্য দেখুন"
+                                        <div className="flex items-center justify-between">
+                                          <div
+                                            className={`text-[9px] font-bold uppercase tracking-tighter flex items-center gap-1 ${labelColorCls}`}
                                           >
-                                            <MessageSquare size={10} fill="currentColor" className="text-amber-500" />
-                                          </button>
-                                        )}
-                                        {isAdmin && (
-                                          <button
-                                            type="button"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setEditingCommentId(editingCommentId === entry.id ? null : entry.id);
-                                            }}
-                                            className={`${editingCommentId === entry.id ? 'text-blue-600' : 'text-slate-400 hover:text-blue-500'} p-0.5 rounded transition-colors`}
-                                            title="মন্তব্য লিখুন/সম্পাদনা করুন"
-                                          >
-                                            <Edit3 size={10} />
-                                          </button>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <input
-                                      type="text"
-                                      placeholder={canFillIssue ? "নং" : "নিষ্পত্তি নির্বাচন করুন"}
-                                      className={`w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none ${
-                                        !canFillIssue || !isAdmin
-                                          ? "bg-slate-100 text-slate-400 cursor-pointer opacity-75"
-                                          : "bg-white focus:border-emerald-400"
-                                      }`}
-                                      value={canFillIssue ? currentIssueNo : ""}
-                                      disabled={!isAdmin || !canFillIssue}
-                                      onClick={() => {
-                                        if (!canFillIssue) triggerUnsettledNotice(entry.id);
-                                        if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
-                                          triggerDhakaNotice(entry.id);
-                                        }
-                                      }}
-                                      onFocus={() => {
-                                        if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
-                                          triggerDhakaNotice(entry.id);
-                                        }
-                                      }}
-                                      title={!canFillIssue ? "নিষ্পত্তি 'হ্যাঁ' বা 'না' সিলেক্ট না করা পর্যন্ত জারিপত্র নং ও তারিখ ফিলাপ হবে না।" : ""}
-                                      onChange={(e) => {
-                                        if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
-                                          triggerDhakaNotice(entry.id);
-                                        }
-                                        handleInlineChange(
-                                          entry.id,
-                                          "issueLetterNo",
-                                          toBengaliDigits(e.target.value),
-                                        );
-                                      }}
-                                    />
-                                    {isAdmin && editingCommentId === entry.id && (
-                                      <div className="mt-1 pt-1 border-t border-dashed border-slate-200 space-y-1">
-                                        <div className="text-[7.5px] font-bold text-slate-400">মন্তব্য লিখুন:</div>
+                                            <Hash size={8} /> জারিপত্র নং
+                                          </div>
+                                          <div className="flex items-center gap-1">
+                                            {hasDummyTag && (
+                                              <span
+                                                className="px-1.5 py-0.2 bg-amber-100 text-amber-900 border border-amber-300 rounded text-[7.5px] font-black tracking-tight flex items-center gap-0.5 shadow-2xs animate-in zoom-in-95 duration-150"
+                                                title="ডামি জারিপত্র নম্বর"
+                                              >
+                                                (ডামি)
+                                              </span>
+                                            )}
+                                            {currentIssueComment && (
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setSelectedCommentText(currentIssueComment);
+                                                }}
+                                                className="text-amber-500 hover:text-amber-600 active:scale-95 p-0.5 rounded transition-all animate-pulse"
+                                                title="মন্তব্য দেখুন"
+                                              >
+                                                <MessageSquare size={10} fill="currentColor" className="text-amber-500" />
+                                              </button>
+                                            )}
+                                            {isAdmin && (
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setEditingCommentId(editingCommentId === entry.id ? null : entry.id);
+                                                }}
+                                                className={`${editingCommentId === entry.id ? 'text-blue-600' : 'text-slate-400 hover:text-blue-500'} p-0.5 rounded transition-colors`}
+                                                title="মন্তব্য লিখুন/সম্পাদনা করুন"
+                                              >
+                                                <Edit3 size={10} />
+                                              </button>
+                                            )}
+                                          </div>
+                                        </div>
                                         <input
                                           type="text"
-                                          placeholder="ডামি জারিপত্র নং-এর কারণ"
-                                          className="w-full h-5 px-1 border border-slate-200 rounded text-[9px] font-bold outline-none bg-slate-50 focus:bg-white focus:border-blue-400"
-                                          value={currentIssueComment}
-                                          onChange={(e) =>
+                                          placeholder={canFillIssue ? "নং" : "নিষ্পত্তি নির্বাচন করুন"}
+                                          className={`w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none ${
+                                            !canFillIssue || !isAdmin
+                                              ? "bg-slate-100 text-slate-400 cursor-pointer opacity-75"
+                                              : "bg-white focus:border-emerald-400"
+                                          }`}
+                                          value={canFillIssue ? currentIssueNo : ""}
+                                          disabled={!isAdmin || !canFillIssue}
+                                          onClick={() => {
+                                            if (!canFillIssue) triggerUnsettledNotice(entry.id);
+                                            if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
+                                              triggerDhakaNotice(entry.id);
+                                            }
+                                          }}
+                                          onFocus={() => {
+                                            if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
+                                              triggerDhakaNotice(entry.id);
+                                            }
+                                          }}
+                                          title={!canFillIssue ? "নিষ্পত্তি 'হ্যাঁ' বা 'না' সিলেক্ট না করা পর্যন্ত জারিপত্র নং ও তারিখ ফিলাপ হবে না।" : ""}
+                                          onChange={(e) => {
+                                            if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
+                                              triggerDhakaNotice(entry.id);
+                                            }
+                                            // If user modifies input, reset the decline state so prompt can appear if they type 100 again
+                                            if (dummyDeclinedMap[entry.id]) {
+                                              setDummyDeclinedMap((prev) => {
+                                                const next = { ...prev };
+                                                delete next[entry.id];
+                                                return next;
+                                              });
+                                            }
                                             handleInlineChange(
                                               entry.id,
-                                              "issueLetterComment",
-                                              e.target.value,
-                                            )
-                                          }
+                                              "issueLetterNo",
+                                              toBengaliDigits(e.target.value),
+                                            );
+                                          }}
                                         />
+
+                                        {/* ডামি জারিপত্র নং প্রম্পট মেসেজ (১০০ এন্ট্রি দিলে) */}
+                                        {showDummyPrompt && (
+                                          <div className="mt-1 p-1.5 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-100/90 border border-amber-300 rounded-lg flex items-center justify-between gap-1 shadow-xs animate-in zoom-in-95 duration-150 ring-1 ring-amber-200">
+                                            <div className="flex items-center gap-1 text-[8px] font-black text-amber-950 leading-tight">
+                                              <HelpCircle size={10} className="text-amber-600 shrink-0 animate-bounce" />
+                                              <span>এটি কি ডামি জারিপত্র নং?</span>
+                                            </div>
+                                            <div className="flex items-center gap-1 shrink-0">
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleInlineChange(entry.id, "issueLetterNo", "১০০ (ডামি)");
+                                                }}
+                                                className="px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded text-[7.5px] font-black flex items-center gap-0.5 shadow-2xs transition-all cursor-pointer"
+                                                title="হ্যাঁ, এটি ডামি জারিপত্র নং"
+                                              >
+                                                <Check size={8} strokeWidth={3} /> হ্যাঁ
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setDummyDeclinedMap((prev) => ({ ...prev, [entry.id]: true }));
+                                                }}
+                                                className="px-1.5 py-0.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white rounded text-[7.5px] font-black flex items-center gap-0.5 shadow-2xs transition-all cursor-pointer"
+                                                title="না, এটি সাধারণ জারিপত্র নং"
+                                              >
+                                                <X size={8} strokeWidth={3} /> না
+                                              </button>
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {isAdmin && editingCommentId === entry.id && (
+                                          <div className="mt-1 pt-1 border-t border-dashed border-slate-200 space-y-1">
+                                            <div className="text-[7.5px] font-bold text-slate-400">মন্তব্য লিখুন:</div>
+                                            <input
+                                              type="text"
+                                              placeholder="ডামি জারিপত্র নং-এর কারণ"
+                                              className="w-full h-5 px-1 border border-slate-200 rounded text-[9px] font-bold outline-none bg-slate-50 focus:bg-white focus:border-blue-400"
+                                              value={currentIssueComment}
+                                              onChange={(e) =>
+                                                handleInlineChange(
+                                                  entry.id,
+                                                  "issueLetterComment",
+                                                  e.target.value,
+                                                )
+                                              }
+                                            />
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
-                                  </div>
+                                    );
+                                  })()}
 
 
                                   {/* 3. জারিপত্র তারিখ */}
