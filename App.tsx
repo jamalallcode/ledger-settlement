@@ -1651,6 +1651,7 @@ const App: React.FC = () => {
                           </div>
                           <CorrespondenceTable 
                             entries={displayedPendingCorrespondence} 
+                            settlementEntries={entries}
                             onBack={() => {}}
                             isAdmin={isAdmin}
                             onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }}
@@ -1710,6 +1711,7 @@ const App: React.FC = () => {
 
                           <CorrespondenceTable 
                             entries={displayedApprovedCorrespondence} 
+                            settlementEntries={entries}
                             onBack={() => { pushHistory(); setActiveTab('landing'); }} 
                             isAdmin={isAdmin}
                             onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }}
