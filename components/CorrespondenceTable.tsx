@@ -713,19 +713,49 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
     const getLetterTypeCount = (list: CorrespondenceEntry[], type: string) =>
       list.filter((e) => {
         if (type === "ত্রিপক্ষীয় সভা (কার্যপত্র)") {
-          return e.letterType === "ত্রিপক্ষীয় সভা (কার্যপত্র)" || e.letterType === "কার্যপত্র (ত্রি-সভা)";
+          return (
+            e.letterType === "ত্রিপক্ষীয় সভা (কার্যপত্র)" ||
+            e.letterType === "কার্যপত্র (ত্রি-সভা)"
+          );
         }
         if (type === "ত্রিপক্ষীয় সভা (কার্যবিবরণী)") {
-          return e.letterType === "ত্রিপক্ষীয় সভা (কার্যবিবরণী)" || e.letterType === "ত্রিপক্ষীয় সভা";
+          return (
+            e.letterType === "ত্রিপক্ষীয় সভা (কার্যবিবরণী)" ||
+            e.letterType === "ত্রিপক্ষীয় সভা"
+          );
         }
         if (type === "দ্বিপক্ষীয় সভা (কার্যপত্র)") {
-          return e.letterType === "দ্বিপক্ষীয় সভা (কার্যপত্র)" || e.letterType === "কার্যপত্র (দ্বি-সভা)";
+          return (
+            e.letterType === "দ্বিপক্ষীয় সভা (কার্যপত্র)" ||
+            e.letterType === "কার্যপত্র (দ্বি-সভা)"
+          );
         }
         if (type === "দ্বিপক্ষীয় সভা (কার্যবিবরণী)") {
-          return e.letterType === "দ্বিপক্ষীয় সভা (কার্যবিবরণী)" || e.letterType === "দ্বিপক্ষীয় সভা";
+          return (
+            e.letterType === "দ্বিপক্ষীয় সভা (কার্যবিবরণী)" ||
+            e.letterType === "দ্বিপক্ষীয় সভা"
+          );
         }
         if (type === "মিলিকরণ" || type === "মিলকরণ") {
-          return e.letterType === "মিলিকরণ" || e.letterType === "মিলকরণ" || (e.letterType || '').includes("মিলকরণ") || (e.letterType || '').includes("মিলিকরণ");
+          return (
+            e.letterType === "মিলিকরণ" ||
+            e.letterType === "মিলকরণ" ||
+            (e.letterType || "").includes("মিলকরণ") ||
+            (e.letterType || "").includes("মিলিকরণ")
+          );
+        }
+        if (type === "অন্যান্য") {
+          return (
+            e.letterType === "অন্যান্য" ||
+            (!e.letterType ||
+              (!e.letterType.includes("বিএসআর") &&
+                !e.letterType.includes("দ্বিপক্ষীয়") &&
+                !e.letterType.includes("দ্বি-সভা") &&
+                !e.letterType.includes("ত্রিপক্ষীয়") &&
+                !e.letterType.includes("ত্রি-সভা") &&
+                !e.letterType.includes("মিলকরণ") &&
+                !e.letterType.includes("মিলিকরণ")))
+          );
         }
         return e.letterType === type;
       }).length;
@@ -737,14 +767,20 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         bsr: getLetterTypeCount(sfi, "বিএসআর"),
         triWork: getLetterTypeCount(sfi, "ত্রিপক্ষীয় সভা (কার্যপত্র)"),
         triMin: getLetterTypeCount(sfi, "ত্রিপক্ষীয় সভা (কার্যবিবরণী)"),
+        biWork: getLetterTypeCount(sfi, "দ্বিপক্ষীয় সভা (কার্যপত্র)"),
+        biMin: getLetterTypeCount(sfi, "দ্বিপক্ষীয় সভা (কার্যবিবরণী)"),
         reconciliation: getLetterTypeCount(sfi, "মিলিকরণ"),
+        others: getLetterTypeCount(sfi, "অন্যান্য"),
       },
       nonSfi: {
         total: nonSfi.length,
         bsr: getLetterTypeCount(nonSfi, "বিএসআর"),
         biWork: getLetterTypeCount(nonSfi, "দ্বিপক্ষীয় সভা (কার্যপত্র)"),
         biMin: getLetterTypeCount(nonSfi, "দ্বিপক্ষীয় সভা (কার্যবিবরণী)"),
+        triWork: getLetterTypeCount(nonSfi, "ত্রিপক্ষীয় সভা (কার্যপত্র)"),
+        triMin: getLetterTypeCount(nonSfi, "ত্রিপক্ষীয় সভা (কার্যবিবরণী)"),
         reconciliation: getLetterTypeCount(nonSfi, "মিলিকরণ"),
+        others: getLetterTypeCount(nonSfi, "অন্যান্য"),
       },
     };
   }, [filteredEntries]);
@@ -1144,39 +1180,69 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                           <div className="h-[2px] flex-1 bg-emerald-100"></div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3 hover:bg-emerald-50 transition-colors">
-                            <p className="text-[10px] font-bold text-emerald-600/70 uppercase mb-1">
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-2.5 hover:bg-emerald-50 transition-colors">
+                            <p className="text-[9.5px] font-bold text-emerald-600/70 uppercase mb-0.5">
                               বিএসআর
                             </p>
-                            <p className="text-base font-black text-slate-800">
+                            <p className="text-sm font-black text-slate-800">
                               {toBengaliDigits(stats.sfi.bsr)} টি
                             </p>
                           </div>
-                          <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3 hover:bg-emerald-50 transition-colors">
-                            <p className="text-[10px] font-bold text-emerald-600/70 uppercase mb-1">
+                          <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-2.5 hover:bg-emerald-50 transition-colors">
+                            <p className="text-[9.5px] font-bold text-emerald-600/70 uppercase mb-0.5">
                               মিলিকরণ
                             </p>
-                            <p className="text-base font-black text-slate-800">
+                            <p className="text-sm font-black text-slate-800">
                               {toBengaliDigits(stats.sfi.reconciliation)} টি
                             </p>
                           </div>
-                          <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3 hover:bg-emerald-50 transition-colors">
-                            <p className="text-[10px] font-bold text-emerald-600/70 uppercase mb-1">
+                          <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-2.5 hover:bg-emerald-50 transition-colors">
+                            <p className="text-[9.5px] font-bold text-emerald-600/70 uppercase mb-0.5">
                               ত্রিপক্ষীয় (কার্যপত্র)
                             </p>
-                            <p className="text-base font-black text-slate-800">
+                            <p className="text-sm font-black text-slate-800">
                               {toBengaliDigits(stats.sfi.triWork)} টি
                             </p>
                           </div>
-                          <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3 hover:bg-emerald-50 transition-colors">
-                            <p className="text-[10px] font-bold text-emerald-600/70 uppercase mb-1">
+                          <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-2.5 hover:bg-emerald-50 transition-colors">
+                            <p className="text-[9.5px] font-bold text-emerald-600/70 uppercase mb-0.5">
                               ত্রিপক্ষীয় (বিবরণী)
                             </p>
-                            <p className="text-base font-black text-slate-800">
+                            <p className="text-sm font-black text-slate-800">
                               {toBengaliDigits(stats.sfi.triMin)} টি
                             </p>
                           </div>
+                          {stats.sfi.biWork > 0 && (
+                            <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-2.5 hover:bg-emerald-50 transition-colors">
+                              <p className="text-[9.5px] font-bold text-emerald-600/70 uppercase mb-0.5">
+                                দ্বিপক্ষীয় (কার্যপত্র)
+                              </p>
+                              <p className="text-sm font-black text-slate-800">
+                                {toBengaliDigits(stats.sfi.biWork)} টি
+                              </p>
+                            </div>
+                          )}
+                          {stats.sfi.biMin > 0 && (
+                            <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-2.5 hover:bg-emerald-50 transition-colors">
+                              <p className="text-[9.5px] font-bold text-emerald-600/70 uppercase mb-0.5">
+                                দ্বিপক্ষীয় (বিবরণী)
+                              </p>
+                              <p className="text-sm font-black text-slate-800">
+                                {toBengaliDigits(stats.sfi.biMin)} টি
+                              </p>
+                            </div>
+                          )}
+                          {stats.sfi.others > 0 && (
+                            <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-2.5 hover:bg-emerald-50 transition-colors">
+                              <p className="text-[9.5px] font-bold text-emerald-600/70 uppercase mb-0.5">
+                                অন্যান্য
+                              </p>
+                              <p className="text-sm font-black text-slate-800">
+                                {toBengaliDigits(stats.sfi.others)} টি
+                              </p>
+                            </div>
+                          )}
                         </div>
                         <div className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-center">
                           <span className="text-xs font-black">
@@ -1195,37 +1261,65 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                           <div className="h-[2px] flex-1 bg-amber-100"></div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-3 hover:bg-amber-50 transition-colors">
-                            <p className="text-[10px] font-bold text-amber-600/70 uppercase mb-1">
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-2.5 hover:bg-amber-50 transition-colors">
+                            <p className="text-[9.5px] font-bold text-amber-600/70 uppercase mb-0.5">
                               বিএসআর
                             </p>
-                            <p className="text-base font-black text-slate-800">
+                            <p className="text-sm font-black text-slate-800">
                               {toBengaliDigits(stats.nonSfi.bsr)} টি
                             </p>
                           </div>
-                          <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-3 hover:bg-amber-50 transition-colors">
-                            <p className="text-[10px] font-bold text-amber-600/70 uppercase mb-1">
+                          <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-2.5 hover:bg-amber-50 transition-colors">
+                            <p className="text-[9.5px] font-bold text-amber-600/70 uppercase mb-0.5">
                               মিলিকরণ
                             </p>
-                            <p className="text-base font-black text-slate-800">
+                            <p className="text-sm font-black text-slate-800">
                               {toBengaliDigits(stats.nonSfi.reconciliation)} টি
                             </p>
                           </div>
-                          <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-3 hover:bg-amber-50 transition-colors">
-                            <p className="text-[10px] font-bold text-amber-600/70 uppercase mb-1">
+                          <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-2.5 hover:bg-amber-50 transition-colors">
+                            <p className="text-[9.5px] font-bold text-amber-600/70 uppercase mb-0.5">
                               দ্বিপক্ষীয় (কার্যপত্র)
                             </p>
-                            <p className="text-base font-black text-slate-800">
+                            <p className="text-sm font-black text-slate-800">
                               {toBengaliDigits(stats.nonSfi.biWork)} টি
                             </p>
                           </div>
-                          <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-3 hover:bg-amber-50 transition-colors">
-                            <p className="text-[10px] font-bold text-amber-600/70 uppercase mb-1">
+                          <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-2.5 hover:bg-amber-50 transition-colors">
+                            <p className="text-[9.5px] font-bold text-amber-600/70 uppercase mb-0.5">
                               দ্বিপক্ষীয় (বিবরণী)
                             </p>
-                            <p className="text-base font-black text-slate-800">
+                            <p className="text-sm font-black text-slate-800">
                               {toBengaliDigits(stats.nonSfi.biMin)} টি
+                            </p>
+                          </div>
+                          {stats.nonSfi.triWork > 0 && (
+                            <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-2.5 hover:bg-amber-50 transition-colors">
+                              <p className="text-[9.5px] font-bold text-amber-600/70 uppercase mb-0.5">
+                                ত্রিপক্ষীয় (কার্যপত্র)
+                              </p>
+                              <p className="text-sm font-black text-slate-800">
+                                {toBengaliDigits(stats.nonSfi.triWork)} টি
+                              </p>
+                            </div>
+                          )}
+                          {stats.nonSfi.triMin > 0 && (
+                            <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-2.5 hover:bg-amber-50 transition-colors">
+                              <p className="text-[9.5px] font-bold text-amber-600/70 uppercase mb-0.5">
+                                ত্রিপক্ষীয় (বিবরণী)
+                              </p>
+                              <p className="text-sm font-black text-slate-800">
+                                {toBengaliDigits(stats.nonSfi.triMin)} টি
+                              </p>
+                            </div>
+                          )}
+                          <div className="bg-amber-50/40 border border-amber-100/50 rounded-xl p-2.5 hover:bg-amber-50 transition-colors">
+                            <p className="text-[9.5px] font-bold text-amber-600/70 uppercase mb-0.5">
+                              অন্যান্য
+                            </p>
+                            <p className="text-sm font-black text-slate-800">
+                              {toBengaliDigits(stats.nonSfi.others)} টি
                             </p>
                           </div>
                         </div>
