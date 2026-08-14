@@ -3,20 +3,17 @@ import { createPortal } from "react-dom";
 import {
   X,
   Printer,
-  CheckCircle2,
+  FileSpreadsheet,
   AlertCircle,
-  Banknote,
   FileText,
   Building2,
   Calendar,
-  Hash,
-  Sparkles,
   Layers,
-  ArrowRight,
+  Sparkles,
   ShieldCheck,
-  Percent,
+  CheckCircle2,
 } from "lucide-react";
-import { CorrespondenceEntry, SettlementEntry, ParagraphDetail } from "../types";
+import { CorrespondenceEntry, SettlementEntry } from "../types";
 import {
   toBengaliDigits,
   parseBengaliNumber,
@@ -31,6 +28,61 @@ interface SettledDataModalProps {
   onClose: () => void;
 }
 
+const splitCombinedInfo = (info: string, noPrefix: string, datePrefix: string) => {
+  if (!info) return { no: "-", date: "-" };
+  const parts = info.split(",");
+  if (parts.length < 2) {
+    const cleaned = info
+      .replace(
+        /(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g,
+        ""
+      )
+      .trim();
+    return { no: cleaned || "-", date: "-" };
+  }
+  let no =
+    parts[0].replace(new RegExp(`.*${noPrefix}[\\s:\\-–—]*`), "").trim() || "-";
+  let date = parts[1]
+    .replace(new RegExp(`.*${datePrefix}[\\s:\\-–—]*`), "")
+    .trim();
+  if (date) {
+    date = date + " খ্রি:";
+  } else {
+    date = "-";
+  }
+  return { no, date };
+};
+
+const formatArchiveNoForTable = (val: string | undefined | null) => {
+  if (!val || val.trim() === "") return "-";
+
+  const trimmed = val.trim();
+  let prefix = "";
+  let rest = trimmed;
+
+  if (trimmed.toLowerCase().startsWith("kg-")) {
+    const dashIdx = trimmed.indexOf("-");
+    prefix = trimmed.substring(0, dashIdx + 1).trim() + " ";
+    rest = trimmed.substring(dashIdx + 1).trim();
+  }
+
+  if (!rest) return prefix ? prefix.trim() : "-";
+
+  const parts = rest
+    .split(",")
+    .map((p) => p.trim())
+    .filter((p) => p !== "");
+  if (parts.length === 0) return prefix ? prefix.trim() : "-";
+
+  const lines: string[] = [];
+  for (let i = 0; i < parts.length; i += 3) {
+    const chunk = parts.slice(i, i + 3);
+    lines.push(chunk.join(", "));
+  }
+
+  return prefix + lines.join("\n");
+};
+
 /**
  * Strict Matching Algorithm to guarantee the displayed settlement data
  * strictly belongs to the specific letter (Issue No, Diary No, Letter No, Ministry, Entity/Branch).
@@ -41,7 +93,8 @@ export const findMatchedSettlements = (
 ): SettlementEntry[] => {
   if (!entry || !allSettlements || allSettlements.length === 0) return [];
 
-  const norm = (s?: any) => (s ? toEnglishDigits(String(s)).trim().toLowerCase() : "");
+  const norm = (s?: any) =>
+    s ? toEnglishDigits(String(s)).trim().toLowerCase() : "";
   const extractNum = (str?: any) => {
     if (!str) return "";
     const eng = toEnglishDigits(String(str));
@@ -89,13 +142,18 @@ export const findMatchedSettlements = (
     let matchScore = 0;
     let mismatchCount = 0;
 
-    // Check Issue No match
+    // Check Issue No match (avoiding dummy "100" without other corroboration)
     if (entryIssueNum && seIssue) {
       if (
         entryIssueNum === seIssue ||
-        (se.issueLetterNoDate && norm(se.issueLetterNoDate).includes(entryIssueNum))
+        (se.issueLetterNoDate &&
+          norm(se.issueLetterNoDate).includes(entryIssueNum))
       ) {
-        matchScore += 3;
+        if (entryIssueNum !== "100" && entryIssueNum !== "১০০") {
+          matchScore += 3;
+        } else {
+          matchScore += 1;
+        }
       } else {
         mismatchCount++;
       }
@@ -105,7 +163,8 @@ export const findMatchedSettlements = (
     if (entryDiaryNum && seDiary) {
       if (
         entryDiaryNum === seDiary ||
-        (se.workpaperNoDate && norm(se.workpaperNoDate).includes(entryDiaryNum))
+        (se.workpaperNoDate &&
+          norm(se.workpaperNoDate).includes(entryDiaryNum))
       ) {
         matchScore += 3;
       } else {
@@ -154,7 +213,7 @@ export const findMatchedSettlements = (
       matchScore += 1;
     }
 
-    // Strict Criteria: Primary identifiers (Issue, Diary, Letter) must agree
+    // Strict Criteria: Primary identifiers must agree
     if (mismatchCount === 0 && matchScore >= 4) return true;
     if (mismatchCount <= 1 && matchScore >= 6) return true;
 
@@ -188,115 +247,215 @@ export const SettledDataModal: React.FC<SettledDataModalProps> = ({
     return findMatchedSettlements(entry, allSettlements);
   }, [entry, allSettlements]);
 
-  // Aggregate all paragraphs across matched settlements
-  const allParagraphs = React.useMemo(() => {
-    const list: Array<{
-      settlementId: string;
-      paraNo: string;
-      status: string;
-      category?: string;
-      involvedAmount: number;
-      recoveredAmount: number;
-      adjustedAmount: number;
-      vatRec?: number;
-      vatAdj?: number;
-      itRec?: number;
-      itAdj?: number;
-      othersRec?: number;
-      othersAdj?: number;
-    }> = [];
-
-    matchedSettlements.forEach((s) => {
-      if (s.paragraphs && Array.isArray(s.paragraphs) && s.paragraphs.length > 0) {
-        s.paragraphs.forEach((p) => {
-          const inv = Number(p.involvedAmount) || 0;
-          const rec = Number(p.recoveredAmount) || 0;
-          const adj = Number(p.adjustedAmount) || 0;
-          list.push({
-            settlementId: s.id,
-            paraNo: p.paraNo || "—",
-            status: p.status || "পূর্ণাঙ্গ",
-            category: p.category || "অন্যান্য",
-            involvedAmount: inv,
-            recoveredAmount: rec,
-            adjustedAmount: adj,
-            vatRec: Number(p.vatRec) || 0,
-            vatAdj: Number(p.vatAdj) || 0,
-            itRec: Number(p.itRec) || 0,
-            itAdj: Number(p.itAdj) || 0,
-            othersRec: Number(p.othersRec) || 0,
-            othersAdj: Number(p.othersAdj) || 0,
-          });
-        });
-      } else {
-        // Single settlement record without paragraphs array
-        const inv = Number(s.involvedAmount) || 0;
-        const rec = Number(s.totalRec) || 0;
-        const adj = Number(s.totalAdj) || 0;
-        list.push({
-          settlementId: s.id,
-          paraNo: s.paraNo || "১",
-          status: s.status || "পূর্ণাঙ্গ",
-          category: s.category || "অন্যান্য",
-          involvedAmount: inv,
-          recoveredAmount: rec,
-          adjustedAmount: adj,
-          vatRec: Number(s.vatRec) || 0,
-          vatAdj: Number(s.vatAdj) || 0,
-          itRec: Number(s.itRec) || 0,
-          itAdj: Number(s.itAdj) || 0,
-          othersRec: Number(s.othersRec) || 0,
-          othersAdj: Number(s.othersAdj) || 0,
-        });
-      }
-    });
-
-    return list;
-  }, [matchedSettlements]);
-
-  // Totals calculations
-  const totalInvolved = allParagraphs.reduce((acc, p) => acc + p.involvedAmount, 0);
-  const totalRec = allParagraphs.reduce((acc, p) => acc + p.recoveredAmount, 0);
-  const totalAdj = allParagraphs.reduce((acc, p) => acc + p.adjustedAmount, 0);
-  const totalSettled = totalRec + totalAdj;
-
-  const fullSettledCount = allParagraphs.filter((p) => p.status === "পূর্ণাঙ্গ").length;
-  const partialSettledCount = allParagraphs.filter((p) => p.status === "আংশিক").length;
-
   const handlePrint = () => {
     window.print();
   };
 
+  // 20-field bullet list renderer matching SettlementTable
+  const renderCellDescription = (se: SettlementEntry) => {
+    const hasNoParas = !se.paragraphs || se.paragraphs.length === 0;
+    const isBsr = !se.isMeeting && se.meetingType === "বিএসআর";
+
+    const letterParts = splitCombinedInfo(
+      se.letterNoDate || "",
+      "পত্র নং",
+      "পত্রের তারিখ"
+    );
+    const diaryParts = splitCombinedInfo(
+      se.workpaperNoDate || "",
+      "ডায়েরি নং",
+      "ডায়েরির তারিখ"
+    );
+    const issueParts = splitCombinedInfo(
+      se.issueLetterNoDate || "",
+      "জারিপত্র নং",
+      "জারিপত্রের তারিখ"
+    );
+    const wpParts = splitCombinedInfo(
+      se.meetingWorkpaper || "",
+      "কার্যপত্র নং",
+      "কার্যপত্রের তারিখ"
+    );
+
+    let currentSl = 1;
+    const getNextLabel = (title: string) => {
+      const num = toBengaliDigits(currentSl++);
+      return `${num}. ${title}`;
+    };
+
+    const fields: Array<{
+      label: string;
+      value: string;
+      isBold?: boolean;
+    }> = [
+      { label: getNextLabel("শাখা ধরণ"), value: se.paraType || "-" },
+      {
+        label: getNextLabel("চিঠির ধরণ"),
+        value: se.isMeeting ? se.meetingType : "বিএসআর",
+      },
+      { label: getNextLabel("মন্ত্রণালয়"), value: se.ministryName || "-" },
+      { label: getNextLabel("এনটিটি/সংস্থা"), value: se.entityName || "-" },
+      {
+        label: getNextLabel("শাখা (বিস্তারিত বিবরণ)"),
+        value: se.branchName || "-",
+      },
+      {
+        label: getNextLabel("নিরীক্ষা সাল"),
+        value: toBengaliDigits(se.auditYear) || "-",
+      },
+      { label: getNextLabel("পত্র নং"), value: letterParts.no || "-" },
+      { label: getNextLabel("পত্রের তারিখ"), value: letterParts.date || "-" },
+    ];
+
+    if (isBsr) {
+      fields.push(
+        { label: getNextLabel("ডায়েরি নং"), value: diaryParts.no || "-" },
+        {
+          label: getNextLabel("ডায়েরি তারিখ"),
+          value: diaryParts.date || "-",
+        },
+        { label: getNextLabel("জারিপত্র নং"), value: issueParts.no || "-" },
+        {
+          label: getNextLabel("জারিপত্র তারিখ"),
+          value: issueParts.date || "-",
+        }
+      );
+    } else {
+      fields.push(
+        { label: getNextLabel("জারিপত্র নং"), value: issueParts.no || "-" },
+        {
+          label: getNextLabel("জারিপত্র তারিখ"),
+          value: issueParts.date || "-",
+        }
+      );
+    }
+
+    fields.push({
+      label: getNextLabel("প্রেরিত অনুচ্ছেদ সংখ্যা"),
+      value: toBengaliDigits(se.meetingSentParaCount || "০") + " টি",
+    });
+
+    fields.push({
+      label: getNextLabel("অনলাইন/অফলাইন স্ট্যাটাস"),
+      value: se.isSentOnline || "না",
+    });
+
+    fields.push({
+      label: getNextLabel("আর্কাইভ নং"),
+      value: formatArchiveNoForTable(se.archiveNo) || "-",
+    });
+
+    if (isBsr) {
+      fields.push({
+        label: getNextLabel("মন্তব্য"),
+        value: se.remarks || "-",
+        isBold: false,
+      });
+    } else {
+      fields.push(
+        {
+          label: getNextLabel("সভার তারিখ"),
+          value: formatDateBN(se.meetingDate) || "-",
+        },
+        {
+          label: getNextLabel("আলোচিত অনুচ্ছেদ সংখ্যা"),
+          value:
+            toBengaliDigits(se.meetingDiscussedParaCount || "০") + " টি",
+        },
+        {
+          label: getNextLabel("সুপারিশকৃত অনুচ্ছেদ সংখ্যা"),
+          value:
+            toBengaliDigits(se.meetingRecommendedParaCount || "০") + " টি",
+        },
+        { label: getNextLabel("কার্যপত্র নং"), value: wpParts.no || "-" },
+        {
+          label: getNextLabel("কার্যপত্র তারিখ"),
+          value: wpParts.date || "-",
+        },
+        {
+          label: getNextLabel("কার্যবিবরণী প্রাপ্তির তারিখ"),
+          value: se.meetingResponseDate || "-",
+        },
+        {
+          label: getNextLabel("মন্তব্য"),
+          value: se.remarks || "-",
+          isBold: false,
+        }
+      );
+    }
+
+    return (
+      <div className="w-full space-y-1 text-left">
+        {hasNoParas && (
+          <p className="text-[10px] leading-tight font-black text-red-600 underline underline-offset-2 tracking-tighter mb-1.5">
+            উত্থাপিত এন্ট্রি (কোন অনুচ্ছেদ নেই)
+          </p>
+        )}
+        {fields.map((f, idx) => {
+          const displayVal = f.value === "-" || !f.value ? "" : f.value;
+          return (
+            <p key={idx} className="text-[10px] leading-tight">
+              <span className="font-black text-emerald-700">
+                {f.label}
+                {f.label.includes("নং") ? "-" : ":"}
+              </span>{" "}
+              <span
+                className={
+                  f.isBold === false
+                    ? "font-medium text-slate-800 italic whitespace-pre-wrap"
+                    : "font-bold text-slate-900"
+                }
+              >
+                {displayVal}
+              </span>
+            </p>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const thBase =
+    "border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8.5px] leading-tight align-middle bg-slate-200";
+  const thBase2 =
+    "border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8.5px] leading-tight align-middle bg-slate-200";
+  const thBase3 =
+    "border border-slate-300 px-1 py-0.5 font-black text-center text-slate-900 text-[8.5px] leading-tight align-middle bg-slate-200";
+  const tdBase =
+    "border border-slate-300 px-1 py-1.5 text-center align-middle text-[9.5px] leading-tight font-bold text-slate-900";
+  const tdMoney =
+    "border border-slate-300 px-1 py-1 text-center align-middle text-[9.5px] font-black text-slate-950";
+
   return createPortal(
-    <div className="fixed inset-0 z-[50000] flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-[50000] flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-950/70 backdrop-blur-md transition-opacity duration-300"
+        className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm transition-opacity duration-300"
         onClick={onClose}
       />
 
       {/* Main Dialog Modal */}
       <div
-        className="relative z-10 w-full max-w-4xl bg-white border border-slate-200/90 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200"
+        className="relative z-10 w-full max-w-[96vw] xl:max-w-7xl bg-white border border-slate-300 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh] animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Top Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white flex items-center justify-between border-b border-slate-700/60 shrink-0">
+        <div className="px-5 py-3.5 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white flex items-center justify-between border-b border-slate-700 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 border border-emerald-300/30">
-              <Sparkles size={20} className="text-white" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md shadow-emerald-500/20 border border-emerald-300/30">
+              <Sparkles size={18} className="text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base sm:text-lg font-black tracking-tight text-white leading-tight">
-                  মীমাংসিত তথ্যের সারসংক্ষেপ ও অনুচ্ছেদ বিবরণ
+                <h3 className="text-sm sm:text-base font-black tracking-tight text-white leading-tight">
+                  মীমাংসা রেজিস্টারের ডাটা ভিউ (হুবহু লেজার ফরম্যাট)
                 </h3>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                  সত্যায়িত সংযোগ
+                <span className="text-[9.5px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                  মীমাংসা রেজিস্টার হতে সংগৃহীত
                 </span>
               </div>
               <p className="text-[11px] font-semibold text-slate-300 mt-0.5">
-                চিঠিপত্র ও মীমাংসা রেজিস্টারের সুনির্দিষ্ট তথ্যাবলি
+                চিঠিপত্র ও মীমাংসা রেজিস্টারের সুনির্দিষ্ট মিলকৃত তথ্যাবলি
               </p>
             </div>
           </div>
@@ -305,16 +464,16 @@ export const SettledDataModal: React.FC<SettledDataModalProps> = ({
             <button
               type="button"
               onClick={handlePrint}
-              className="p-2 text-slate-300 hover:text-white hover:bg-slate-700/60 rounded-xl transition-all flex items-center gap-1.5 text-xs font-bold border border-slate-700 cursor-pointer"
+              className="p-1.5 px-2.5 text-slate-300 hover:text-white hover:bg-slate-700/60 rounded-lg transition-all flex items-center gap-1.5 text-xs font-bold border border-slate-700 cursor-pointer"
               title="প্রিন্ট করুন"
             >
-              <Printer size={15} />
+              <Printer size={14} />
               <span className="hidden sm:inline">প্রিন্ট</span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white hover:bg-rose-600/80 rounded-xl transition-all cursor-pointer"
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-rose-600/80 rounded-lg transition-all cursor-pointer"
               title="বন্ধ করুন"
             >
               <X size={18} />
@@ -322,281 +481,468 @@ export const SettledDataModal: React.FC<SettledDataModalProps> = ({
           </div>
         </div>
 
-        {/* Modal Body Content (Scrollable) */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-5 bg-slate-50/50">
-          {/* Verification Guarantee Banner */}
-          <div className="p-3.5 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-100/70 border border-emerald-300/90 rounded-2xl flex items-start gap-3 shadow-xs">
-            <ShieldCheck size={20} className="text-emerald-700 shrink-0 mt-0.5" />
-            <div className="text-xs text-emerald-950 font-bold leading-relaxed">
-              <span className="font-black text-emerald-900">নির্ভুল সংযোগ নিশ্চিতকরণ: </span>
-              এই মীমাংসিত তথ্যগুলো নিশ্চিতভাবে জারিপত্র নং{" "}
-              <span className="px-1.5 py-0.5 bg-emerald-200/90 text-emerald-900 rounded font-black">
-                {toBengaliDigits(entry.issueLetterNo || "—")}
-              </span>
-              , ডায়েরি নং{" "}
-              <span className="px-1.5 py-0.5 bg-emerald-200/90 text-emerald-900 rounded font-black">
-                {toBengaliDigits(entry.diaryNo || "—")}
-              </span>
-              , পত্র নং{" "}
-              <span className="px-1.5 py-0.5 bg-emerald-200/90 text-emerald-900 rounded font-black">
+        {/* Modal Info Banner */}
+        <div className="px-5 py-2.5 bg-emerald-50 border-b border-emerald-200 flex items-center justify-between flex-wrap gap-2 text-xs font-bold text-emerald-950 shrink-0">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={16} className="text-emerald-700" />
+            <span>চিঠিপত্রের বিবরণ:</span>
+            <span className="font-extrabold text-slate-800">
+              {entry.description || entry.entityName || "—"}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-[11px]">
+            <span>
+              পত্র নং:{" "}
+              <strong className="text-emerald-800">
                 {toBengaliDigits(entry.letterNo || "—")}
-              </span>
-              , মন্ত্রণালয় ও শাখার চিঠির তথ্যের সাথে যাচাইকৃত।
-            </div>
-          </div>
-
-          {/* Letter Meta Identity Card */}
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/70">
-              <div className="text-[10px] font-extrabold uppercase text-slate-500 flex items-center gap-1.5">
-                <Building2 size={12} className="text-blue-600" /> প্রতিষ্ঠান / অডিট বিবরণ
-              </div>
-              <div className="text-xs font-black text-slate-800 mt-1 leading-snug">
-                {entry.description || entry.entityName || "—"}
-              </div>
-            </div>
-
-            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/70">
-              <div className="text-[10px] font-extrabold uppercase text-slate-500 flex items-center gap-1.5">
-                <Layers size={12} className="text-indigo-600" /> মন্ত্রণালয় ও শাখা
-              </div>
-              <div className="text-xs font-black text-slate-800 mt-1">
-                {entry.ministryName || "—"}{" "}
-                <span className="text-slate-400 font-normal">|</span>{" "}
-                <span className="text-indigo-700 font-extrabold">{entry.paraType || "—"}</span>
-              </div>
-            </div>
-
-            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/70">
-              <div className="text-[10px] font-extrabold uppercase text-slate-500 flex items-center gap-1.5">
-                <Hash size={12} className="text-amber-600" /> ডায়েরি নং ও তারিখ
-              </div>
-              <div className="text-xs font-black text-slate-800 mt-1">
-                ডায়েরি: {toBengaliDigits(entry.diaryNo || "—")}
-                <span className="block text-[11px] font-bold text-slate-600">
-                  তারিখ: {entry.diaryDate ? formatDateBN(entry.diaryDate) : "—"}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/70">
-              <div className="text-[10px] font-extrabold uppercase text-slate-500 flex items-center gap-1.5">
-                <FileText size={12} className="text-cyan-600" /> পত্র নং ও তারিখ
-              </div>
-              <div className="text-xs font-black text-slate-800 mt-1">
-                পত্র নং: {toBengaliDigits(entry.letterNo || "—")}
-                <span className="block text-[11px] font-bold text-slate-600">
-                  তারিখ: {entry.letterDate ? formatDateBN(entry.letterDate) : "—"}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-2.5 bg-emerald-50/70 rounded-xl border border-emerald-200/80">
-              <div className="text-[10px] font-extrabold uppercase text-emerald-700 flex items-center gap-1.5">
-                <CheckCircle2 size={12} className="text-emerald-600" /> জারিপত্র নং ও তারিখ
-              </div>
-              <div className="text-xs font-black text-emerald-950 mt-1">
-                জারিপত্র: {toBengaliDigits(entry.issueLetterNo || "—")}
-                <span className="block text-[11px] font-bold text-emerald-800">
-                  তারিখ: {entry.issueLetterDate ? formatDateBN(entry.issueLetterDate) : "—"}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-2.5 bg-emerald-50/70 rounded-xl border border-emerald-200/80">
-              <div className="text-[10px] font-extrabold uppercase text-emerald-700 flex items-center gap-1.5">
-                <CheckCircle2 size={12} className="text-emerald-600" /> নিষ্পত্তির অবস্থা
-              </div>
-              <div className="text-xs font-black text-emerald-900 mt-1 flex items-center gap-1.5">
-                <span className="px-2 py-0.5 bg-emerald-600 text-white rounded-md text-[10px] font-extrabold shadow-2xs">
-                  {entry.isSettled || "হ্যাঁ"}
-                </span>
-                <span className="text-[11px] font-bold text-slate-600">
-                  ({toBengaliDigits(allParagraphs.length)}টি অনুচ্ছেদ প্রাপ্ত)
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Financial KPIs Banner */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3.5 bg-gradient-to-br from-blue-50 to-indigo-50/60 border border-blue-200/80 rounded-2xl shadow-xs">
-              <div className="text-[10px] font-extrabold text-blue-700 uppercase">
-                মোট জড়িত টাকা
-              </div>
-              <div className="text-base sm:text-lg font-black text-blue-950 mt-1">
-                ৳ {toBengaliDigits(totalInvolved.toLocaleString("bn-BD"))}
-              </div>
-              <div className="text-[9px] font-bold text-blue-600 mt-0.5">
-                সর্বমোট আর্থিক দাবি
-              </div>
-            </div>
-
-            <div className="p-3.5 bg-gradient-to-br from-emerald-50 to-teal-50/60 border border-emerald-200/80 rounded-2xl shadow-xs">
-              <div className="text-[10px] font-extrabold text-emerald-700 uppercase">
-                মোট আদায়কৃত টাকা
-              </div>
-              <div className="text-base sm:text-lg font-black text-emerald-950 mt-1">
-                ৳ {toBengaliDigits(totalRec.toLocaleString("bn-BD"))}
-              </div>
-              <div className="text-[9px] font-bold text-emerald-600 mt-0.5">
-                ক্যাশ / চালানে আদায়
-              </div>
-            </div>
-
-            <div className="p-3.5 bg-gradient-to-br from-purple-50 to-pink-50/60 border border-purple-200/80 rounded-2xl shadow-xs">
-              <div className="text-[10px] font-extrabold text-purple-700 uppercase">
-                মোট সমন্বয়কৃত টাকা
-              </div>
-              <div className="text-base sm:text-lg font-black text-purple-950 mt-1">
-                ৳ {toBengaliDigits(totalAdj.toLocaleString("bn-BD"))}
-              </div>
-              <div className="text-[9px] font-bold text-purple-600 mt-0.5">
-                হিসাব সমন্বয়
-              </div>
-            </div>
-
-            <div className="p-3.5 bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 text-white rounded-2xl shadow-md border border-emerald-400/40">
-              <div className="text-[10px] font-extrabold text-emerald-100 uppercase">
-                সর্বমোট নিষ্পন্ন টাকা
-              </div>
-              <div className="text-base sm:text-lg font-black text-white mt-1">
-                ৳ {toBengaliDigits(totalSettled.toLocaleString("bn-BD"))}
-              </div>
-              <div className="text-[9.5px] font-bold text-emerald-100 mt-0.5 flex items-center gap-1">
-                পূর্ণাঙ্গ: {toBengaliDigits(fullSettledCount)} | আংশিক: {toBengaliDigits(partialSettledCount)}
-              </div>
-            </div>
-          </div>
-
-          {/* Paragraphs Breakdown Table */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-            <div className="px-4 py-3 bg-slate-100/90 border-b border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText size={15} className="text-slate-700" />
-                <h4 className="text-xs font-black text-slate-800">
-                  অনুচ্ছেদভিত্তিক নিষ্পত্তির বিস্তারিত তালিকা
-                </h4>
-              </div>
-              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
-                মোট {toBengaliDigits(allParagraphs.length)} টি অনুচ্ছেদ
-              </span>
-            </div>
-
-            {allParagraphs.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/90 text-slate-600 text-[10px] font-black uppercase tracking-tight border-b border-slate-200">
-                      <th className="py-2.5 px-3 text-center w-12">ক্র: নং</th>
-                      <th className="py-2.5 px-3 text-center w-24">অনুচ্ছেদ নং</th>
-                      <th className="py-2.5 px-3 text-center w-24">নিষ্পত্তির ধরণ</th>
-                      <th className="py-2.5 px-3 text-center w-24">ক্যাটাগরি</th>
-                      <th className="py-2.5 px-3 text-right">জড়িত টাকা (৳)</th>
-                      <th className="py-2.5 px-3 text-right">আদায়কৃত টাকা (৳)</th>
-                      <th className="py-2.5 px-3 text-right">সমন্বয়কৃত টাকা (৳)</th>
-                      <th className="py-2.5 px-3 text-right bg-emerald-50/60 text-emerald-950 font-black">
-                        মোট নিষ্পত্তি (৳)
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-700 font-bold">
-                    {allParagraphs.map((para, idx) => {
-                      const pSettled = (para.recoveredAmount || 0) + (para.adjustedAmount || 0);
-                      const isFull = para.status === "পূর্ণাঙ্গ";
-
-                      return (
-                        <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-2.5 px-3 text-center text-slate-400 font-medium">
-                            {toBengaliDigits(idx + 1)}
-                          </td>
-                          <td className="py-2.5 px-3 text-center font-black text-slate-900">
-                            <span className="px-2 py-0.5 bg-slate-100 border border-slate-300/80 rounded-md">
-                              {toBengaliDigits(para.paraNo)}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3 text-center">
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-black inline-flex items-center gap-1 ${
-                                isFull
-                                  ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                                  : "bg-amber-100 text-amber-900 border border-amber-300"
-                              }`}
-                            >
-                              <CheckCircle2 size={10} />
-                              {para.status}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3 text-center">
-                            <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[10px] font-extrabold border border-blue-200">
-                              {para.category || "অন্যান্য"}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3 text-right text-slate-800 font-extrabold">
-                            {toBengaliDigits(para.involvedAmount.toLocaleString("bn-BD"))}
-                          </td>
-                          <td className="py-2.5 px-3 text-right text-emerald-700 font-extrabold">
-                            {toBengaliDigits(para.recoveredAmount.toLocaleString("bn-BD"))}
-                          </td>
-                          <td className="py-2.5 px-3 text-right text-purple-700 font-extrabold">
-                            {toBengaliDigits(para.adjustedAmount.toLocaleString("bn-BD"))}
-                          </td>
-                          <td className="py-2.5 px-3 text-right bg-emerald-50/60 font-black text-emerald-950">
-                            {toBengaliDigits(pSettled.toLocaleString("bn-BD"))}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                  <tfoot>
-                    <tr className="bg-slate-100 font-black text-slate-900 border-t-2 border-slate-300">
-                      <td colSpan={4} className="py-3 px-3 text-right text-xs">
-                        সর্বমোট যোগফল:
-                      </td>
-                      <td className="py-3 px-3 text-right text-blue-900 text-xs font-black">
-                        ৳ {toBengaliDigits(totalInvolved.toLocaleString("bn-BD"))}
-                      </td>
-                      <td className="py-3 px-3 text-right text-emerald-900 text-xs font-black">
-                        ৳ {toBengaliDigits(totalRec.toLocaleString("bn-BD"))}
-                      </td>
-                      <td className="py-3 px-3 text-right text-purple-900 text-xs font-black">
-                        ৳ {toBengaliDigits(totalAdj.toLocaleString("bn-BD"))}
-                      </td>
-                      <td className="py-3 px-3 text-right bg-emerald-100 text-emerald-950 text-xs font-black">
-                        ৳ {toBengaliDigits(totalSettled.toLocaleString("bn-BD"))}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            ) : (
-              <div className="p-8 text-center bg-white space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
-                  <AlertCircle size={24} />
-                </div>
-                <div>
-                  <h5 className="text-sm font-black text-slate-800">
-                    মীমাংসা রেজিস্টারে এখনো কোনো এন্ট্রি পাওয়া যায়নি
-                  </h5>
-                  <p className="text-xs text-slate-500 font-semibold max-w-md mx-auto mt-1 leading-relaxed">
-                    চিঠিপত্র রেজিস্টারে এই চিঠির জন্য 'নিষ্পত্তি: হ্যাঁ' এবং জারিপত্র নং{" "}
-                    <span className="font-bold text-slate-800">
-                      {toBengaliDigits(entry.issueLetterNo || "—")}
-                    </span>{" "}
-                    সিলেক্ট করা রয়েছে। আপনি মীমাংসা এন্ট্রি ফর্ম থেকে এই চিঠির বিপরীতে বিস্তারিত অনুচ্ছেদ ও
-                    টাকা যোগ করলে স্বয়ংক্রিয়ভাবে এখানে তা প্রদর্শিত হবে।
-                  </p>
-                </div>
-              </div>
-            )}
+              </strong>
+            </span>
+            <span>|</span>
+            <span>
+              ডায়েরি নং:{" "}
+              <strong className="text-emerald-800">
+                {toBengaliDigits(entry.diaryNo || "—")}
+              </strong>
+            </span>
+            <span>|</span>
+            <span>
+              জারিপত্র নং:{" "}
+              <strong className="text-emerald-800">
+                {toBengaliDigits(entry.issueLetterNo || "—")}
+              </strong>
+            </span>
           </div>
         </div>
 
+        {/* Modal Body Content (Scrollable) - Exact 14 Column Table */}
+        <div className="p-4 overflow-y-auto bg-slate-50 flex-1">
+          {matchedSettlements.length > 0 ? (
+            <div className="w-full bg-white border border-slate-300 rounded-xl shadow-xs overflow-x-auto">
+              <table className="w-full border-collapse text-center">
+                <colgroup>
+                  <col className="w-[35px]" />
+                  <col className="w-[180px]" />
+                  <col className="w-[50px]" />
+                  <col className="w-[70px]" />
+                  <col className="w-[45px]" />
+                  <col className="w-[70px]" />
+                  <col className="w-[55px]" />
+                  <col className="w-[55px]" />
+                  <col className="w-[55px]" />
+                  <col className="w-[55px]" />
+                  <col className="w-[55px]" />
+                  <col className="w-[55px]" />
+                  <col className="w-[55px]" />
+                  <col className="w-[55px]" />
+                </colgroup>
+                <thead>
+                  <tr className="h-[38px]">
+                    <th rowSpan={2} className={thBase}>
+                      ক্র: নং-
+                    </th>
+                    <th rowSpan={2} className={thBase}>
+                      বিস্তারিত বিবরণ (২০ ফিল্ড)
+                    </th>
+                    <th rowSpan={2} className={thBase}>
+                      অনু: নং-
+                    </th>
+                    <th rowSpan={2} className={thBase}>
+                      জড়িত টাকা
+                    </th>
+                    <th colSpan={2} className={thBase}>
+                      উত্থাপিত আপত্তি
+                    </th>
+                    <th colSpan={2} className={thBase}>
+                      ভ্যাট
+                    </th>
+                    <th colSpan={2} className={thBase}>
+                      আয়কর
+                    </th>
+                    <th colSpan={2} className={thBase}>
+                      অন্যান্য
+                    </th>
+                    <th colSpan={2} className={thBase}>
+                      মোট মীমাংসিত
+                    </th>
+                  </tr>
+                  <tr className="h-[34px]">
+                    <th className={thBase2}>সংখ্যা</th>
+                    <th className={thBase2}>টাকা</th>
+                    <th className={thBase2}>আদায়</th>
+                    <th className={thBase2}>সমন্বয়</th>
+                    <th className={thBase2}>আদায়</th>
+                    <th className={thBase2}>সমন্বয়</th>
+                    <th className={thBase2}>আদায়</th>
+                    <th className={thBase2}>সমন্বয়</th>
+                    <th className={thBase2}>আদায়</th>
+                    <th className={thBase2}>সমন্বয়</th>
+                  </tr>
+                  <tr className="h-[22px]">
+                    <th className={thBase3}>১</th>
+                    <th className={thBase3}>২</th>
+                    <th className={thBase3}>৩</th>
+                    <th className={thBase3}>৪</th>
+                    <th className={thBase3}>৫</th>
+                    <th className={thBase3}>৬</th>
+                    <th className={thBase3}>৭</th>
+                    <th className={thBase3}>৮</th>
+                    <th className={thBase3}>৯</th>
+                    <th className={thBase3}>১০</th>
+                    <th className={thBase3}>১১</th>
+                    <th className={thBase3}>১২</th>
+                    <th className={thBase3}>১৩</th>
+                    <th className={thBase3}>১৪</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {matchedSettlements.map((se, seIdx) => {
+                    const paras = se.paragraphs || [];
+                    const entrySettledCount = paras.filter(
+                      (p) => p.status === "পূর্ণাঙ্গ"
+                    ).length;
+                    const entryInvolvedAmount = paras.reduce(
+                      (sum, p) => sum + (p.involvedAmount || 0),
+                      0
+                    );
+                    const mRaisedCountRaw =
+                      se.manualRaisedCount?.toString().trim() || "";
+                    const mRaisedCount =
+                      mRaisedCountRaw === "" ||
+                      mRaisedCountRaw === "0" ||
+                      mRaisedCountRaw === "০"
+                        ? "০"
+                        : toBengaliDigits(mRaisedCountRaw);
+                    const mRaisedAmount =
+                      se.manualRaisedAmount !== null &&
+                      se.manualRaisedAmount !== undefined &&
+                      se.manualRaisedAmount !== 0
+                        ? se.manualRaisedAmount
+                        : 0;
+
+                    return (
+                      <React.Fragment key={se.id || seIdx}>
+                        {paras.length > 0 ? (
+                          paras.map((p, pIdx) => {
+                            return (
+                              <tr
+                                key={p.id || pIdx}
+                                className="bg-white hover:bg-emerald-50/30 transition-colors"
+                              >
+                                {pIdx === 0 && (
+                                  <>
+                                    <td
+                                      rowSpan={paras.length}
+                                      className={tdBase + " font-black"}
+                                    >
+                                      {toBengaliDigits(seIdx + 1)}
+                                    </td>
+                                    <td
+                                      rowSpan={paras.length}
+                                      className={tdBase + " text-left p-3"}
+                                    >
+                                      {renderCellDescription(se)}
+                                    </td>
+                                  </>
+                                )}
+                                <td className={tdBase}>
+                                  <span className="font-black text-slate-900">
+                                    {toBengaliDigits(p.paraNo)}
+                                  </span>
+                                  <br />
+                                  <span
+                                    className={`px-1 text-[8px] text-white font-black rounded ${
+                                      p.status === "পূর্ণাঙ্গ"
+                                        ? "bg-emerald-600"
+                                        : "bg-red-600"
+                                    }`}
+                                  >
+                                    {p.status}
+                                  </span>
+                                </td>
+                                <td className={tdMoney}>
+                                  {toBengaliDigits(
+                                    Math.round(p.involvedAmount || 0)
+                                  )}
+                                </td>
+                                {pIdx === 0 && (
+                                  <>
+                                    <td
+                                      rowSpan={paras.length}
+                                      className={tdBase + " text-blue-700"}
+                                    >
+                                      {mRaisedCount}
+                                    </td>
+                                    <td
+                                      rowSpan={paras.length}
+                                      className={tdMoney + " text-blue-800"}
+                                    >
+                                      {toBengaliDigits(
+                                        Math.round(mRaisedAmount)
+                                      )}
+                                    </td>
+                                  </>
+                                )}
+                                <td className={tdMoney}>
+                                  {toBengaliDigits(
+                                    Math.round(
+                                      p.category === "ভ্যাট"
+                                        ? p.recoveredAmount
+                                        : 0
+                                    )
+                                  )}
+                                </td>
+                                <td className={tdMoney}>
+                                  {toBengaliDigits(
+                                    Math.round(
+                                      p.category === "ভ্যাট"
+                                        ? p.adjustedAmount
+                                        : 0
+                                    )
+                                  )}
+                                </td>
+                                <td className={tdMoney}>
+                                  {toBengaliDigits(
+                                    Math.round(
+                                      p.category === "আয়কর"
+                                        ? p.recoveredAmount
+                                        : 0
+                                    )
+                                  )}
+                                </td>
+                                <td className={tdMoney}>
+                                  {toBengaliDigits(
+                                    Math.round(
+                                      p.category === "আয়কর"
+                                        ? p.adjustedAmount
+                                        : 0
+                                    )
+                                  )}
+                                </td>
+                                <td className={tdMoney}>
+                                  {toBengaliDigits(
+                                    Math.round(
+                                      p.category === "অন্যান্য"
+                                        ? p.recoveredAmount
+                                        : 0
+                                    )
+                                  )}
+                                </td>
+                                <td className={tdMoney}>
+                                  {toBengaliDigits(
+                                    Math.round(
+                                      p.category === "অন্যান্য"
+                                        ? p.adjustedAmount
+                                        : 0
+                                    )
+                                  )}
+                                </td>
+                                <td className={tdMoney}>
+                                  {toBengaliDigits(
+                                    Math.round(p.recoveredAmount || 0)
+                                  )}
+                                </td>
+                                <td className={tdMoney}>
+                                  {toBengaliDigits(
+                                    Math.round(p.adjustedAmount || 0)
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          <tr className="bg-white hover:bg-emerald-50/30 transition-colors">
+                            <td className={tdBase + " font-black"}>
+                              {toBengaliDigits(seIdx + 1)}
+                            </td>
+                            <td className={tdBase + " text-left p-3"}>
+                              {renderCellDescription(se)}
+                            </td>
+                            <td className={tdBase}>
+                              <span className="font-bold text-slate-900">
+                                {toBengaliDigits(se.paraNo || "১")}
+                              </span>
+                              <br />
+                              <span
+                                className={`px-1 text-[8px] text-white font-black rounded ${
+                                  se.status === "পূর্ণাঙ্গ"
+                                    ? "bg-emerald-600"
+                                    : "bg-red-600"
+                                }`}
+                              >
+                                {se.status || "পূর্ণাঙ্গ"}
+                              </span>
+                            </td>
+                            <td className={tdMoney}>
+                              {toBengaliDigits(
+                                Math.round(se.involvedAmount || 0)
+                              )}
+                            </td>
+                            <td className={tdBase + " text-blue-700"}>
+                              {mRaisedCount}
+                            </td>
+                            <td className={tdMoney + " text-blue-800"}>
+                              {toBengaliDigits(Math.round(mRaisedAmount))}
+                            </td>
+                            <td className={tdMoney}>
+                              {toBengaliDigits(
+                                Math.round(
+                                  se.category === "ভ্যাট"
+                                    ? se.totalRec
+                                    : se.vatRec || 0
+                                )
+                              )}
+                            </td>
+                            <td className={tdMoney}>
+                              {toBengaliDigits(
+                                Math.round(
+                                  se.category === "ভ্যাট"
+                                    ? se.totalAdj
+                                    : se.vatAdj || 0
+                                )
+                              )}
+                            </td>
+                            <td className={tdMoney}>
+                              {toBengaliDigits(
+                                Math.round(
+                                  se.category === "আয়কর"
+                                    ? se.totalRec
+                                    : se.itRec || 0
+                                )
+                              )}
+                            </td>
+                            <td className={tdMoney}>
+                              {toBengaliDigits(
+                                Math.round(
+                                  se.category === "আয়কর"
+                                    ? se.totalAdj
+                                    : se.itAdj || 0
+                                )
+                              )}
+                            </td>
+                            <td className={tdMoney}>
+                              {toBengaliDigits(
+                                Math.round(
+                                  se.category === "অন্যান্য"
+                                    ? se.totalRec
+                                    : se.othersRec || 0
+                                )
+                              )}
+                            </td>
+                            <td className={tdMoney}>
+                              {toBengaliDigits(
+                                Math.round(
+                                  se.category === "অন্যান্য"
+                                    ? se.totalAdj
+                                    : se.othersAdj || 0
+                                )
+                              )}
+                            </td>
+                            <td className={tdMoney}>
+                              {toBengaliDigits(
+                                Math.round(se.totalRec || 0)
+                              )}
+                            </td>
+                            <td className={tdMoney}>
+                              {toBengaliDigits(
+                                Math.round(se.totalAdj || 0)
+                              )}
+                            </td>
+                          </tr>
+                        )}
+
+                        {/* Summary Bottom Row for the settlement entry */}
+                        <tr className="bg-blue-50/70 font-black border-t border-slate-300 h-[36px]">
+                          <td
+                            colSpan={2}
+                            className="px-4 text-left italic text-[10px] text-blue-900 border border-slate-300"
+                          >
+                            মোট মীমাংসিত অনুচ্ছেদ:{" "}
+                            <span className="text-emerald-700">
+                              {toBengaliDigits(entrySettledCount)} টি
+                            </span>{" "}
+                            | মোট জড়িত টাকা:{" "}
+                            <span className="text-blue-700">
+                              {toBengaliDigits(
+                                Math.round(entryInvolvedAmount)
+                              )}
+                            </span>
+                          </td>
+                          <td className="text-center text-[10px] text-emerald-800 border border-slate-300 bg-emerald-50/30">
+                            {toBengaliDigits(entrySettledCount)}
+                          </td>
+                          <td className="text-center text-[10px] text-blue-800 border border-slate-300 bg-blue-50/30">
+                            {toBengaliDigits(
+                              Math.round(entryInvolvedAmount)
+                            )}
+                          </td>
+                          <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">
+                            {mRaisedCount}
+                          </td>
+                          <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">
+                            {toBengaliDigits(Math.round(mRaisedAmount))}
+                          </td>
+                          <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">
+                            {toBengaliDigits(Math.round(se.vatRec || 0))}
+                          </td>
+                          <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">
+                            {toBengaliDigits(Math.round(se.vatAdj || 0))}
+                          </td>
+                          <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">
+                            {toBengaliDigits(Math.round(se.itRec || 0))}
+                          </td>
+                          <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">
+                            {toBengaliDigits(Math.round(se.itAdj || 0))}
+                          </td>
+                          <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">
+                            {toBengaliDigits(
+                              Math.round(se.othersRec || 0)
+                            )}
+                          </td>
+                          <td className="text-center text-[10px] text-slate-700 border border-slate-300 bg-white/50">
+                            {toBengaliDigits(
+                              Math.round(se.othersAdj || 0)
+                            )}
+                          </td>
+                          <td className="text-center text-[10px] text-blue-900 border border-slate-300 bg-emerald-100/40 font-black">
+                            {toBengaliDigits(Math.round(se.totalRec || 0))}
+                          </td>
+                          <td className="text-center text-[10px] text-blue-900 border border-slate-300 bg-emerald-100/40 font-black">
+                            {toBengaliDigits(Math.round(se.totalAdj || 0))}
+                          </td>
+                        </tr>
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-10 text-center bg-white border border-slate-200 rounded-2xl space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
+                <AlertCircle size={24} />
+              </div>
+              <div>
+                <h5 className="text-sm font-black text-slate-800">
+                  মীমাংসা রেজিস্টারে এখনো কোনো এন্ট্রি পাওয়া যায়নি
+                </h5>
+                <p className="text-xs text-slate-500 font-semibold max-w-md mx-auto mt-1 leading-relaxed">
+                  চিঠিপত্র রেজিস্টারে এই চিঠির জন্য 'নিষ্পত্তি: হ্যাঁ' এবং জারিপত্র নং{" "}
+                  <span className="font-bold text-slate-800">
+                    {toBengaliDigits(entry.issueLetterNo || "—")}
+                  </span>{" "}
+                  সিলেক্ট করা রয়েছে। মীমাংসা এন্ট্রি ফর্ম থেকে এই চিঠির বিপরীতে বিস্তারিত অনুচ্ছেদ ও
+                  টাকা এন্ট্রি করা হলে স্বয়ংক্রিয়ভাবে এখানে তা প্রদর্শিত হবে।
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Modal Bottom Footer Actions */}
-        <div className="px-6 py-3.5 bg-slate-100/90 border-t border-slate-200 flex items-center justify-between shrink-0">
+        <div className="px-5 py-3 bg-slate-100 border-t border-slate-200 flex items-center justify-between shrink-0">
           <div className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5">
             <Sparkles size={13} className="text-emerald-600" />
-            <span>চিঠিপত্র রেজিস্টার লাইভ ভিউ</span>
+            <span>চিঠিপত্র রেজিস্টার থেকে সরাসরি মীমাংসা লেজার ভিউ</span>
           </div>
 
           <button
