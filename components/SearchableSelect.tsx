@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { GroupOption } from '../types.ts';
-import { ChevronDown, X, PlusCircle, Check } from 'lucide-react';
+import { ChevronDown, X, PlusCircle, Check, AlertCircle } from 'lucide-react';
 
 interface SearchableSelectProps {
   label: React.ReactNode;
@@ -17,11 +17,12 @@ interface SearchableSelectProps {
   allowCustom?: boolean;
   hideAddNew?: boolean;
   align?: 'left' | 'right';
+  emptyWarning?: string;
 }
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({ 
   label, value, onChange, groups, placeholder = "নির্বাচন করুন", required, isLayoutEditable = false, badgeId, isAdmin = false, showSearch = true,
-  allowCustom = false, hideAddNew = false, align = 'left'
+  allowCustom = false, hideAddNew = false, align = 'left', emptyWarning
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -265,6 +266,12 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
               )}
             </div>
           )}
+        </div>
+      )}
+      {!isFilled && emptyWarning && (
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 bg-rose-50/90 border border-rose-200/80 px-2.5 py-1 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
+          <AlertCircle size={12} className="shrink-0 text-rose-500" />
+          <span className="leading-none">{emptyWarning}</span>
         </div>
       )}
     </div>

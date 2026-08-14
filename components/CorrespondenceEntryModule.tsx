@@ -34,10 +34,17 @@ const numBadge = "inline-flex items-center justify-center w-5 h-5 bg-slate-900 t
 const sectionHeaderCls = "col-span-full mt-6 mb-2 py-2 border-b border-slate-100 flex items-center gap-3";
 const sectionTitleCls = "text-[12px] font-black text-slate-400 uppercase tracking-[0.2em]";
 
+const UnfilledMessage: React.FC<{ message: string }> = ({ message }) => (
+  <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 bg-rose-50/90 border border-rose-200/80 px-2.5 py-1 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
+    <AlertCircle size={12} className="shrink-0 text-rose-500" />
+    <span className="leading-none">{message}</span>
+  </div>
+);
+
 /**
  * Premium Dropdown for Letter Type (Flat Structure, Conditional based on paraType)
  */
-const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, paraType }: any) => {
+const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, paraType, emptyWarning }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -238,6 +245,12 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, p
           )}
         </div>
       )}
+      {emptyWarning && !value && (
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 bg-rose-50/90 border border-rose-200/80 px-2.5 py-1 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
+          <AlertCircle size={12} className="shrink-0 text-rose-500" />
+          <span className="leading-none">{emptyWarning}</span>
+        </div>
+      )}
     </div>
   );
 };
@@ -245,7 +258,7 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, p
 /**
  * Premium Dropdown for Branch Type (Para Type)
  */
-const PremiumParaTypeSelect = ({ value, onChange, IDBadge }: any) => {
+const PremiumParaTypeSelect = ({ value, onChange, IDBadge, emptyWarning }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -402,6 +415,12 @@ const PremiumParaTypeSelect = ({ value, onChange, IDBadge }: any) => {
           )}
         </div>
       )}
+      {emptyWarning && !value && (
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 bg-rose-50/90 border border-rose-200/80 px-2.5 py-1 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
+          <AlertCircle size={12} className="shrink-0 text-rose-500" />
+          <span className="leading-none">{emptyWarning}</span>
+        </div>
+      )}
     </div>
   );
 };
@@ -409,7 +428,7 @@ const PremiumParaTypeSelect = ({ value, onChange, IDBadge }: any) => {
 /**
  * Premium Dropdown for Ministry Selection
  */
-const PremiumMinistrySelect = ({ value, onChange, IDBadge }: any) => {
+const PremiumMinistrySelect = ({ value, onChange, IDBadge, emptyWarning }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -580,6 +599,12 @@ const PremiumMinistrySelect = ({ value, onChange, IDBadge }: any) => {
           )}
         </div>
       )}
+      {emptyWarning && !value && (
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 bg-rose-50/90 border border-rose-200/80 px-2.5 py-1 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
+          <AlertCircle size={12} className="shrink-0 text-rose-500" />
+          <span className="leading-none">{emptyWarning}</span>
+        </div>
+      )}
     </div>
   );
 };
@@ -587,7 +612,7 @@ const PremiumMinistrySelect = ({ value, onChange, IDBadge }: any) => {
 /**
  * Premium Dropdown for Entity Selection
  */
-const PremiumEntitySelect = ({ value, onChange, ministryName, IDBadge }: any) => {
+const PremiumEntitySelect = ({ value, onChange, ministryName, IDBadge, emptyWarning }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -759,6 +784,12 @@ const PremiumEntitySelect = ({ value, onChange, ministryName, IDBadge }: any) =>
           )}
         </div>
       )}
+      {emptyWarning && !value && (
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 bg-rose-50/90 border border-rose-200/80 px-2.5 py-1 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
+          <AlertCircle size={12} className="shrink-0 text-rose-500" />
+          <span className="leading-none">{emptyWarning}</span>
+        </div>
+      )}
     </div>
   );
 };
@@ -766,7 +797,7 @@ const PremiumEntitySelect = ({ value, onChange, ministryName, IDBadge }: any) =>
 /**
  * Premium Dropdown for Audit Year Selection with Direct Custom Input
  */
-const PremiumAuditYearSelect = ({ value, onChange, IDBadge }: any) => {
+const PremiumAuditYearSelect = ({ value, onChange, IDBadge, emptyWarning }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -945,6 +976,12 @@ const PremiumAuditYearSelect = ({ value, onChange, IDBadge }: any) => {
           </div>
         </div>
       )}
+      {emptyWarning && !value && (
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 bg-rose-50/90 border border-rose-200/80 px-2.5 py-1 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
+          <AlertCircle size={12} className="shrink-0 text-rose-500" />
+          <span className="leading-none">{emptyWarning}</span>
+        </div>
+      )}
     </div>
   );
 };
@@ -956,7 +993,7 @@ const PremiumAuditYearSelect = ({ value, onChange, IDBadge }: any) => {
 const SegmentedInput = ({ 
   id, icon: Icon, num, label, color, dayValue, monthValue, yearValue, 
   daySetter, monthSetter, yearSetter, dayRef, monthRef, yearRef, 
-  isLayoutEditable, originalValue, onDateSelect, error 
+  isLayoutEditable, originalValue, onDateSelect, error, emptyWarning 
 }: any) => {
   
   const handleSegmentChange = (val: string, type: 'day'|'month'|'year', setter: (v: string) => void, nextRef?: React.RefObject<HTMLInputElement>) => {
@@ -1054,6 +1091,12 @@ const SegmentedInput = ({
       {error && (
         <div className="mt-2 text-[10px] font-black text-red-600 animate-in slide-in-from-top-1 flex items-center gap-1">
           <AlertCircle size={10} /> {error}
+        </div>
+      )}
+      {!isFilled && !error && emptyWarning && (
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 bg-rose-50/90 border border-rose-200/80 px-2.5 py-1 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
+          <AlertCircle size={12} className="shrink-0 text-rose-500" />
+          <span className="leading-none">{emptyWarning}</span>
         </div>
       )}
     </div>
