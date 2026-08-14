@@ -93,129 +93,160 @@ export const findMatchedSettlements = (
 ): SettlementEntry[] => {
   if (!entry || !allSettlements || allSettlements.length === 0) return [];
 
-  const norm = (s?: any) =>
-    s ? toEnglishDigits(String(s)).trim().toLowerCase() : "";
-  const extractNum = (str?: any) => {
-    if (!str) return "";
-    const eng = toEnglishDigits(String(str));
-    const m = eng.match(/\d+/);
-    return m ? m[0] : "";
+  const cleanStr = (val?: any) => {
+    if (val === undefined || val === null) return "";
+    return toEnglishDigits(String(val))
+      .toLowerCase()
+      .replace(/[^\w\u0980-\u09FF]/g, "")
+      .trim();
+  };
+
+  const extractCleanNumber = (val?: any) => {
+    if (val === undefined || val === null) return "";
+    const eng = toEnglishDigits(String(val));
+    const digitsOnly = eng.replace(/[^\d]/g, "");
+    return digitsOnly;
   };
 
   const entryId = entry.id;
-  const entryIssue = norm(entry.issueLetterNo);
-  const entryDiary = norm(entry.diaryNo);
-  const entryLetter = norm(entry.letterNo);
-  const entryMinistry = norm(entry.ministryName);
-  const entryEntity = norm(entry.entityName || entry.description);
-  const entryType = norm(entry.paraType);
-
-  const entryIssueNum = extractNum(entry.issueLetterNo);
-  const entryDiaryNum = extractNum(entry.diaryNo);
-  const entryLetterNum = extractNum(entry.letterNo);
+  const cLetterNo = extractCleanNumber(entry.letterNo);
+  const cDiaryNo = extractCleanNumber(entry.diaryNo);
+  const cIssueNo = extractCleanNumber(entry.issueLetterNo);
+  const cMinistry = cleanStr(entry.ministryName || (entry as any).ministry);
+  const cEntity = cleanStr(
+    entry.entityName || entry.description || (entry as any).organization
+  );
 
   return allSettlements.filter((se: any) => {
-    // 1. Exact ID relation
+    // 1. Direct ID relationship
     if (se.correspondenceId && se.correspondenceId === entryId) return true;
     if (se.letterId && se.letterId === entryId) return true;
-    if (se.id === entryId) return true;
+    if (se.id && se.id === entryId) return true;
 
-    // 2. Extract identifiers from Settlement Entry
-    const seIssue = norm(se.issueNo) || extractNum(se.issueLetterNoDate);
-    const seDiary = norm(se.diaryNo) || extractNum(se.workpaperNoDate);
-    const seLetter = norm(se.letterNo) || extractNum(se.letterNoDate);
-    const seMinistry = norm(se.ministryName);
-    const seEntity = norm(se.entityName);
-    const seType = norm(se.paraType);
+    // 2. Extract values accurately from SettlementEntry
+    const seLetterParts = splitCombinedInfo(
+      se.letterNoDate || "",
+      "পত্র নং",
+      "পত্রের তারিখ"
+    );
+    const seDiaryParts = splitCombinedInfo(
+      se.workpaperNoDate || "",
+      "ডায়েরি নং",
+      "ডায়েরির তারিখ"
+    );
+    const seIssueParts = splitCombinedInfo(
+      se.issueLetterNoDate || "",
+      "জারিপত্র নং",
+      "জারিপত্রের তারিখ"
+    );
 
-    // If both have ministries specified and they completely clash, it's NOT the same letter
-    if (entryMinistry && seMinistry) {
-      if (
-        !entryMinistry.includes(seMinistry) &&
-        !seMinistry.includes(entryMinistry) &&
-        entryMinistry !== seMinistry
-      ) {
+    const seLetterNo = extractCleanNumber(se.letterNo || seLetterParts.no);
+    const seDiaryNo = extractCleanNumber(se.diaryNo || seDiaryParts.no);
+    const seIssueNo = extractCleanNumber(
+      se.issueNo || se.issueLetterNo || seIssueParts.no
+    );
+
+    const seMinistry = cleanStr(se.ministryName || se.ministry);
+    const seEntity = cleanStr(
+      se.entityName ||
+        se.branchName ||
+        (se.details && (se.details.entityName || se.details.entity))
+    );
+
+    // Ministry check: if both have ministry specified and they conflict, reject
+    if (cMinistry && seMinistry) {
+      if (!cMinistry.includes(seMinistry) && !seMinistry.includes(cMinistry)) {
         return false;
       }
     }
 
-    let matchScore = 0;
-    let mismatchCount = 0;
+    // Entity conflict check: if both have explicit entity names and they completely differ, reject
+    if (cEntity && seEntity) {
+      const isKnownDifferentOrg =
+        (cEntity.includes("সাধারণবীমা") && !seEntity.includes("সাধারণবীমা")) ||
+        (cEntity.includes("কর্মসংস্থান") && !seEntity.includes("কর্মসংস্থান")) ||
+        (cEntity.includes("কৃষি") && !seEntity.includes("কৃষি")) ||
+        (cEntity.includes("সোনালী") && !seEntity.includes("সোনালী")) ||
+        (cEntity.includes("জনতা") && !seEntity.includes("জনতা")) ||
+        (cEntity.includes("অগ্রণী") && !seEntity.includes("অগ্রণী")) ||
+        (cEntity.includes("রূপালী") && !seEntity.includes("রূপালী")) ||
+        (cEntity.includes("বিডিবিএল") && !seEntity.includes("বিডিবিএল")) ||
+        (cEntity.includes("ইনভেস্টমেন্ট") && !seEntity.includes("ইনভেস্টমেন্ট"));
 
-    // Check Issue No match (avoiding dummy "100" without other corroboration)
-    if (entryIssueNum && seIssue) {
-      if (
-        entryIssueNum === seIssue ||
-        (se.issueLetterNoDate &&
-          norm(se.issueLetterNoDate).includes(entryIssueNum))
-      ) {
-        if (entryIssueNum !== "100" && entryIssueNum !== "১০০") {
-          matchScore += 3;
-        } else {
-          matchScore += 1;
-        }
-      } else {
-        mismatchCount++;
+      if (isKnownDifferentOrg) {
+        return false;
       }
     }
 
-    // Check Diary No match
-    if (entryDiaryNum && seDiary) {
-      if (
-        entryDiaryNum === seDiary ||
-        (se.workpaperNoDate &&
-          norm(se.workpaperNoDate).includes(entryDiaryNum))
-      ) {
-        matchScore += 3;
-      } else {
-        mismatchCount++;
+    // Matching Rule A: Both Letter No and Diary No are available and MATCH EXACTLY
+    if (cLetterNo && seLetterNo && cDiaryNo && seDiaryNo) {
+      if (cLetterNo === seLetterNo && cDiaryNo === seDiaryNo) {
+        return true;
       }
     }
 
-    // Check Letter No match
-    if (entryLetterNum && seLetter) {
+    // Matching Rule B: Letter No AND Issue Letter No match (and Issue No is not dummy 100)
+    if (cLetterNo && seLetterNo && cIssueNo && seIssueNo) {
       if (
-        entryLetterNum === seLetter ||
-        (se.letterNoDate && norm(se.letterNoDate).includes(entryLetterNum))
+        cLetterNo === seLetterNo &&
+        cIssueNo === seIssueNo &&
+        cIssueNo !== "100" &&
+        seIssueNo !== "100"
       ) {
-        matchScore += 3;
-      } else {
-        mismatchCount++;
+        return true;
       }
     }
 
-    // Check Ministry match
-    if (
-      entryMinistry &&
-      seMinistry &&
-      (entryMinistry.includes(seMinistry) || seMinistry.includes(entryMinistry))
-    ) {
-      matchScore += 1;
+    // Matching Rule C: Diary No AND Issue Letter No match (and Issue No is not dummy 100)
+    if (cDiaryNo && seDiaryNo && cIssueNo && seIssueNo) {
+      if (
+        cDiaryNo === seDiaryNo &&
+        cIssueNo === seIssueNo &&
+        cIssueNo !== "100" &&
+        seIssueNo !== "100"
+      ) {
+        return true;
+      }
     }
 
-    // Check Entity / Description match
-    if (
-      entryEntity &&
-      seEntity &&
-      (entryEntity.includes(seEntity) || seEntity.includes(entryEntity))
-    ) {
-      matchScore += 2;
+    // Matching Rule D: Letter No matches AND Entity name matches
+    if (cLetterNo && seLetterNo && cLetterNo === seLetterNo) {
+      if (
+        cEntity &&
+        seEntity &&
+        (cEntity.includes(seEntity) || seEntity.includes(cEntity))
+      ) {
+        return true;
+      }
     }
 
-    // Check Branch / ParaType match
-    if (
-      entryType &&
-      seType &&
-      (entryType === seType ||
-        (isSFI(entryType) && isSFI(seType)) ||
-        (isNonSFI(entryType) && isNonSFI(seType)))
-    ) {
-      matchScore += 1;
+    // Matching Rule E: Diary No matches AND Entity name matches
+    if (cDiaryNo && seDiaryNo && cDiaryNo === seDiaryNo) {
+      if (
+        cEntity &&
+        seEntity &&
+        (cEntity.includes(seEntity) || seEntity.includes(cEntity))
+      ) {
+        return true;
+      }
     }
 
-    // Strict Criteria: Primary identifiers must agree
-    if (mismatchCount === 0 && matchScore >= 4) return true;
-    if (mismatchCount <= 1 && matchScore >= 6) return true;
+    // Matching Rule F: Issue No matches (non-dummy) AND Entity name matches
+    if (
+      cIssueNo &&
+      seIssueNo &&
+      cIssueNo === seIssueNo &&
+      cIssueNo !== "100" &&
+      seIssueNo !== "100"
+    ) {
+      if (
+        cEntity &&
+        seEntity &&
+        (cEntity.includes(seEntity) || seEntity.includes(cEntity))
+      ) {
+        return true;
+      }
+    }
 
     return false;
   });
