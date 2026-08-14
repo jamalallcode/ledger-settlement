@@ -56,10 +56,12 @@ import HighlightText from "./HighlightText";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import { getCurrentCycle, getCycleForDate } from "../utils/cycleHelper";
 import { format, addMonths } from "date-fns";
-import { CorrespondenceEntry } from "../types";
+import { CorrespondenceEntry, SettlementEntry } from "../types";
+import { SettledDataModal, findMatchedSettlements } from "./SettledDataModal";
 
 interface CorrespondenceTableProps {
   entries: CorrespondenceEntry[];
+  settlementEntries?: SettlementEntry[];
   onBack: () => void;
   isLayoutEditable?: boolean;
   isAdmin?: boolean;
@@ -334,6 +336,7 @@ const PremiumInlineSelect: React.FC<{
 
 const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   entries,
+  settlementEntries = [],
   onBack,
   isLayoutEditable,
   isAdmin,
@@ -373,6 +376,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedCommentText, setSelectedCommentText] = useState<string | null>(null);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [viewingSettlementLetter, setViewingSettlementLetter] = useState<CorrespondenceEntry | null>(null);
 
   useEffect(() => {
     const handleScrollOrResize = () => {
@@ -2367,6 +2371,33 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         <X size={12} strokeWidth={3} /> না
                                       </button>
                                     </div>
+
+                                    {/* View Settled Data Premium Button */}
+                                    {currentIsSettled === 'হ্যাঁ' && (
+                                      <div className="pt-1">
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setViewingSettlementLetter(entry);
+                                          }}
+                                          className="w-full py-1.5 px-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-lg text-[9.5px] font-black shadow-sm shadow-emerald-600/20 hover:shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95 border border-emerald-400/40 group cursor-pointer"
+                                          title="সংশ্লিষ্ট চিঠির বিস্তারিত নিষ্পন্ন ও অনুচ্ছেদ তথ্য দেখুন"
+                                        >
+                                          <Sparkles size={11} className="text-amber-300 animate-pulse shrink-0" />
+                                          <span className="truncate">মীমাংসিত ডাটা দেখুন</span>
+                                          {(() => {
+                                            const matched = findMatchedSettlements(entry, settlementEntries || []);
+                                            const count = matched.reduce((acc, s) => acc + (s.paragraphs?.length || 1), 0);
+                                            return count > 0 ? (
+                                              <span className="bg-white/25 text-white text-[8px] px-1 py-0.2 rounded font-extrabold border border-white/30 shrink-0">
+                                                {toBengaliDigits(count)}টি
+                                              </span>
+                                            ) : null;
+                                          })()}
+                                        </button>
+                                      </div>
+                                    )}
                                     {(() => {
                                       const missingIssueInfoMsg = (() => {
                                         if (!currentIssueNo && !currentIssueDate) {
@@ -2872,6 +2903,15 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           </div>
         </div>,
         document.body
+      )}
+
+      {/* Settled Data Viewer Modal */}
+      {viewingSettlementLetter !== null && (
+        <SettledDataModal
+          entry={viewingSettlementLetter}
+          settlementEntries={settlementEntries}
+          onClose={() => setViewingSettlementLetter(null)}
+        />
       )}
     </div>
   );

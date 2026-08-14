@@ -1801,166 +1801,185 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                       </div>
                     )}
 
-                    <div className="flex flex-row flex-nowrap items-center gap-1.5 sm:gap-2 mb-6 relative z-10 pr-8 sm:pr-10">
-                      <div className="flex items-center gap-1 bg-slate-900 px-2.5 py-1.5 rounded-xl shadow-md shrink-0">
-                        <span className="text-[13px] font-black text-white">{toBengaliDigits(idx + 1)}</span>
+                    <div className="flex flex-row flex-nowrap items-center gap-1.5 sm:gap-2 mb-6 relative z-10 pr-10 sm:pr-12">
+                      <div className="flex items-center gap-0.5 bg-slate-900 px-2 py-1 rounded-xl shadow-md shrink-0">
+                        <span className="text-[12.5px] font-black text-white">{toBengaliDigits(idx + 1)}</span>
                         {isMatched && (
-                          <Check size={12} strokeWidth={4} className="text-emerald-400 ml-1 animate-bounce" />
+                          <Check size={11} strokeWidth={4} className="text-emerald-400 ml-0.5 animate-bounce" />
                         )}
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] font-black text-slate-500 uppercase">অনু: নং</span>
-                        <input type="text" className={`w-14 sm:w-16 h-9 border-2 rounded-lg text-center font-black bg-white text-slate-950 outline-none ${p.paraNo ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-paraNo`] || toBengaliDigits(p.paraNo)} onChange={e => handleNumericInput(p.id, 'paraNo', e.target.value)} />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setParagraphs(prev => prev.map(x => x.id === p.id ? {...x, status: x.status === 'পূর্ণাঙ্গ' ? 'আংশিক' : 'পূর্ণাঙ্গ'} : x))}
-                        className={`relative inline-flex h-8 w-[64px] sm:w-[70px] shrink-0 cursor-pointer rounded-full border-2 border-slate-900 transition-all duration-300 outline-none select-none items-center overflow-hidden shadow-[inset_0_3px_6px_rgba(0,0,0,0.25)] active:scale-95 ${
-                          p.status === 'পূর্ণাঙ্গ' 
-                            ? 'bg-gradient-to-b from-emerald-500 to-emerald-600' 
-                            : 'bg-gradient-to-b from-amber-500 to-amber-600'
-                        }`}
-                      >
-                        {/* The sliding dark thumb/button */}
-                        <div
-                          className={`absolute top-[2px] h-[24px] w-[24px] rounded-full transition-all duration-300 ease-out border border-slate-950 flex items-center justify-center bg-gradient-to-b from-slate-700 to-slate-800 shadow-[0_3px_6px_rgba(0,0,0,0.4),_inset_0_1px_1px_rgba(255,255,255,0.2)] ${
+
+                      {/* Unified background container for the options */}
+                      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-200/90 shadow-inner border border-slate-300/50 shrink-0 h-10">
+                        <span className="text-[10px] font-black text-slate-600 uppercase pl-1.5 pr-0.5">অনু: নং</span>
+                        <input type="text" className={`w-[40px] sm:w-[46px] h-8 border-2 rounded-lg text-center font-black bg-white text-slate-950 outline-none text-xs ${p.paraNo ? 'border-emerald-500 focus:border-emerald-600' : 'border-red-500 focus:border-red-600'}`} value={rawInputs[`${p.id}-paraNo`] || toBengaliDigits(p.paraNo)} onChange={e => handleNumericInput(p.id, 'paraNo', e.target.value)} />
+                        
+                        <button
+                          type="button"
+                          onClick={() => setParagraphs(prev => prev.map(x => x.id === p.id ? {...x, status: x.status === 'পূর্ণাঙ্গ' ? 'আংশিক' : 'পূর্ণাঙ্গ'} : x))}
+                          className={`relative inline-flex h-8 w-[58px] sm:w-[64px] shrink-0 cursor-pointer rounded-full border-2 border-slate-900 transition-all duration-300 outline-none select-none items-center overflow-hidden shadow-[inset_0_3px_6px_rgba(0,0,0,0.25)] active:scale-95 ${
                             p.status === 'পূর্ণাঙ্গ' 
-                              ? 'left-[36px] sm:left-[42px]' 
-                              : 'left-[2px]'
+                              ? 'bg-gradient-to-b from-emerald-500 to-emerald-600' 
+                              : 'bg-gradient-to-b from-amber-500 to-amber-600'
                           }`}
                         >
-                          {/* Subtle notch/dot on the knob for ultra realism */}
-                          <div className="w-1.5 h-1.5 rounded-full bg-slate-950 opacity-60 shadow-inner"></div>
-                        </div>
-
-                        {/* Text labels */}
-                        <div className="absolute inset-0 pointer-events-none select-none flex items-center">
-                          <span 
-                            className={`absolute right-1.5 text-[7.5px] sm:text-[8px] font-black text-white tracking-tighter transition-all duration-300 ${
-                              p.status === 'পূর্ণাঙ্গ' ? 'opacity-0 scale-75' : 'opacity-100 scale-100'
+                          {/* The sliding dark thumb/button */}
+                          <div
+                            className={`absolute top-[2px] h-[22px] w-[22px] rounded-full transition-all duration-300 ease-out border border-slate-950 flex items-center justify-center bg-gradient-to-b from-slate-700 to-slate-800 shadow-[0_3px_6px_rgba(0,0,0,0.4),_inset_0_1px_1px_rgba(255,255,255,0.2)] ${
+                              p.status === 'পূর্ণাঙ্গ' 
+                                ? 'left-[30px] sm:left-[36px]' 
+                                : 'left-[2px]'
                             }`}
                           >
-                            আংশিক
-                          </span>
-                          <span 
-                            className={`absolute left-[6px] sm:left-[8px] text-[7.5px] sm:text-[8px] font-black text-white tracking-tighter transition-all duration-300 ${
-                              p.status === 'পূর্ণাঙ্গ' ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-                            }`}
-                          >
-                            পূর্ণাঙ্গ
-                          </span>
-                        </div>
-                      </button>
+                            {/* Subtle notch/dot on the knob for ultra realism */}
+                            <div className="w-1.5 h-1.5 rounded-full bg-slate-950 opacity-60 shadow-inner"></div>
+                          </div>
 
-                      {/* Sparkles Special Option Toggle */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setParagraphs(prev => prev.map(x => {
-                            if (x.id === p.id) {
-                              const nextVal = !x.isAdvanced;
-                              const updated = { ...x, isAdvanced: nextVal };
-                              if (nextVal) {
-                                // Sync initial values for advanced mode
-                                if (x.category === 'ভ্যাট') {
-                                  updated.vatRec = x.recoveredAmount;
-                                  updated.vatAdj = x.adjustedAmount;
-                                  updated.itRec = 0; updated.itAdj = 0;
-                                  updated.othersRec = 0; updated.othersAdj = 0;
-                                } else if (x.category === 'আয়কর') {
-                                  updated.itRec = x.recoveredAmount;
-                                  updated.itAdj = x.adjustedAmount;
-                                  updated.vatRec = 0; updated.vatAdj = 0;
-                                  updated.othersRec = 0; updated.othersAdj = 0;
-                                } else {
-                                  updated.othersRec = x.recoveredAmount;
-                                  updated.othersAdj = x.adjustedAmount;
-                                  updated.vatRec = 0; updated.vatAdj = 0;
-                                  updated.itRec = 0; updated.itAdj = 0;
-                                }
-                              } else {
-                                // Sync back to standard mode based on current category and reset others to 0
-                                if (x.category === 'ভ্যাট') {
-                                  updated.recoveredAmount = x.vatRec || 0;
-                                  updated.adjustedAmount = x.vatAdj || 0;
-                                  updated.itRec = 0; updated.itAdj = 0;
-                                  updated.othersRec = 0; updated.othersAdj = 0;
-                                } else if (x.category === 'আয়কর') {
-                                  updated.recoveredAmount = x.itRec || 0;
-                                  updated.adjustedAmount = x.itAdj || 0;
-                                  updated.vatRec = 0; updated.vatAdj = 0;
-                                  updated.othersRec = 0; updated.othersAdj = 0;
-                                } else {
-                                  updated.recoveredAmount = x.othersRec || 0;
-                                  updated.adjustedAmount = x.othersAdj || 0;
-                                  updated.vatRec = 0; updated.vatAdj = 0;
-                                  updated.itRec = 0; updated.itAdj = 0;
-                                }
-                              }
-                              // Always keep them calculated from category-specific fields!
-                              updated.recoveredAmount = (updated.vatRec || 0) + (updated.itRec || 0) + (updated.othersRec || 0);
-                              updated.adjustedAmount = (updated.vatAdj || 0) + (updated.itAdj || 0) + (updated.othersAdj || 0);
-                              return updated;
-                            }
-                            return x;
-                          }));
-                        }}
-                        className={`h-8 w-8 rounded-lg transition-all active:scale-95 flex items-center justify-center shrink-0 border-2 shadow-sm ${
-                          p.isAdvanced 
-                            ? 'bg-amber-500 hover:bg-amber-600 border-amber-600 text-white animate-pulse' 
-                            : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
-                        }`}
-                        title={p.isAdvanced ? "সাধারণ ক্যাটাগরিতে ফিরে যান" : "একাধিক আর্থিক ক্যাটাগরি একসাথে যোগ করুন"}
-                      >
-                        <Sparkles size={13} className={p.isAdvanced ? "text-white" : "text-amber-500"} />
-                      </button>
-
-                      {!p.isAdvanced && (
-                        <div className={`relative flex items-center p-1 rounded-xl shrink-0 ml-1 sm:ml-1.5 transition-all duration-300 ${
-                          bouncingSwitches[p.id]
-                            ? 'animate-bounce bg-amber-100 border-2 border-amber-500 ring-4 ring-amber-300/80 shadow-xl shadow-amber-400/50 z-20 scale-105'
-                            : 'bg-slate-200/80 border border-slate-300/80 shadow-inner'
-                        }`}>
-                          {['ভ্যাট', 'আয়কর', 'অন্যান্য'].map(cat => (
-                            <button
-                              key={cat}
-                              type="button"
-                              onClick={() => {
-                                setTouchedCategory(prev => ({ ...prev, [p.id]: true }));
-                                setBouncingSwitches(prev => ({ ...prev, [p.id]: false }));
-                                setParagraphs(prev => prev.map(x => {
-                                  if (x.id === p.id) {
-                                    const updated = { ...x, category: cat as FinancialCategory };
-                                    if (cat === 'ভ্যাট') {
-                                      updated.vatRec = x.recoveredAmount;
-                                      updated.vatAdj = x.adjustedAmount;
-                                      updated.itRec = 0; updated.itAdj = 0;
-                                      updated.othersRec = 0; updated.othersAdj = 0;
-                                    } else if (cat === 'আয়কর') {
-                                      updated.itRec = x.recoveredAmount;
-                                      updated.itAdj = x.adjustedAmount;
-                                      updated.vatRec = 0; updated.vatAdj = 0;
-                                      updated.othersRec = 0; updated.othersAdj = 0;
-                                    } else {
-                                      updated.othersRec = x.recoveredAmount;
-                                      updated.othersAdj = x.adjustedAmount;
-                                      updated.vatRec = 0; updated.vatAdj = 0;
-                                      updated.itRec = 0; updated.itAdj = 0;
-                                    }
-                                    return updated;
-                                  }
-                                  return x;
-                                }));
-                              }}
-                              className={`whitespace-nowrap px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-black rounded-lg transition-all duration-200 cursor-pointer ${
-                                p.category === cat 
-                                  ? 'bg-white text-emerald-800 shadow-md border border-slate-200/90 ring-1 ring-slate-900/5 scale-[1.03]' 
-                                  : 'text-slate-600 font-bold hover:text-slate-900 hover:bg-slate-300/40'
+                          {/* Text labels */}
+                          <div className="absolute inset-0 pointer-events-none select-none flex items-center">
+                            <span 
+                              className={`absolute right-1 text-[7px] sm:text-[7.5px] font-black text-white tracking-tighter transition-all duration-300 ${
+                                p.status === 'পূর্ণাঙ্গ' ? 'opacity-0 scale-75' : 'opacity-100 scale-100'
                               }`}
                             >
-                              {cat}
-                            </button>
-                          ))}
+                              আংশিক
+                            </span>
+                            <span 
+                              className={`absolute left-[4px] sm:left-[6px] text-[7px] sm:text-[7.5px] font-black text-white tracking-tighter transition-all duration-300 ${
+                                p.status === 'পূর্ণাঙ্গ' ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                              }`}
+                            >
+                              পূর্ণাঙ্গ
+                            </span>
+                          </div>
+                        </button>
+
+                        {/* Sparkles Special Option Toggle */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setParagraphs(prev => prev.map(x => {
+                              if (x.id === p.id) {
+                                const nextVal = !x.isAdvanced;
+                                const updated = { ...x, isAdvanced: nextVal };
+                                if (nextVal) {
+                                  // Sync initial values for advanced mode
+                                  if (x.category === 'ভ্যাট') {
+                                    updated.vatRec = x.recoveredAmount;
+                                    updated.vatAdj = x.adjustedAmount;
+                                    updated.itRec = 0; updated.itAdj = 0;
+                                    updated.othersRec = 0; updated.othersAdj = 0;
+                                  } else if (x.category === 'আয়কর') {
+                                    updated.itRec = x.recoveredAmount;
+                                    updated.itAdj = x.adjustedAmount;
+                                    updated.vatRec = 0; updated.vatAdj = 0;
+                                    updated.othersRec = 0; updated.othersAdj = 0;
+                                  } else {
+                                    updated.othersRec = x.recoveredAmount;
+                                    updated.othersAdj = x.adjustedAmount;
+                                    updated.vatRec = 0; updated.vatAdj = 0;
+                                    updated.itRec = 0; updated.itAdj = 0;
+                                  }
+                                } else {
+                                  // Sync back to standard mode based on current category and reset others to 0
+                                  if (x.category === 'ভ্যাট') {
+                                    updated.recoveredAmount = x.vatRec || 0;
+                                    updated.adjustedAmount = x.vatAdj || 0;
+                                    updated.itRec = 0; updated.itAdj = 0;
+                                    updated.othersRec = 0; updated.othersAdj = 0;
+                                  } else if (x.category === 'আয়কর') {
+                                    updated.recoveredAmount = x.itRec || 0;
+                                    updated.adjustedAmount = x.itAdj || 0;
+                                    updated.vatRec = 0; updated.vatAdj = 0;
+                                    updated.othersRec = 0; updated.othersAdj = 0;
+                                  } else {
+                                    updated.recoveredAmount = x.othersRec || 0;
+                                    updated.adjustedAmount = x.othersAdj || 0;
+                                    updated.vatRec = 0; updated.vatAdj = 0;
+                                    updated.itRec = 0; updated.itAdj = 0;
+                                  }
+                                }
+                                // Always keep them calculated from category-specific fields!
+                                updated.recoveredAmount = (updated.vatRec || 0) + (updated.itRec || 0) + (updated.othersRec || 0);
+                                updated.adjustedAmount = (updated.vatAdj || 0) + (updated.itAdj || 0) + (updated.othersAdj || 0);
+                                return updated;
+                              }
+                              return x;
+                            }));
+                          }}
+                          className={`h-8 w-8 rounded-lg transition-all active:scale-95 flex items-center justify-center shrink-0 border shadow-sm ${
+                            p.isAdvanced 
+                              ? 'bg-amber-500 hover:bg-amber-600 border-amber-600 text-white animate-pulse' 
+                              : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+                          }`}
+                          title={p.isAdvanced ? "সাধারণ ক্যাটাগরিতে ফিরে যান" : "একাধিক আর্থিক ক্যাটাগরি একসাথে যোগ করুন"}
+                        >
+                          <Sparkles size={13} className={p.isAdvanced ? "text-white" : "text-amber-500"} />
+                        </button>
+                      </div>
+
+                      {!p.isAdvanced && (
+                        <div className={`relative grid grid-cols-3 items-center p-1 rounded-xl shrink-0 h-10 ml-1 sm:ml-1.5 transition-all duration-300 ${
+                          bouncingSwitches[p.id]
+                            ? 'animate-bounce bg-amber-100 border-2 border-amber-500 ring-4 ring-amber-300/80 shadow-xl shadow-amber-400/50 z-20 scale-105'
+                            : 'bg-slate-200/90 shadow-inner border border-slate-300/50'
+                        }`}>
+                          {/* Smooth active sliding pill */}
+                          <div 
+                            className="absolute top-1 bottom-1 rounded-lg bg-white shadow-md transition-transform duration-300 ease-out pointer-events-none"
+                            style={{
+                              width: 'calc((100% - 8px) / 3)',
+                              left: '4px',
+                              transform: `translateX(${['ভ্যাট', 'আয়কর', 'অন্যান্য'].indexOf(p.category) * 100}%)`
+                            }}
+                          />
+
+                          {['ভ্যাট', 'আয়কর', 'অন্যান্য'].map(cat => {
+                            const handleSelect = (e: React.SyntheticEvent) => {
+                              e.preventDefault();
+                              setTouchedCategory(prev => ({ ...prev, [p.id]: true }));
+                              setBouncingSwitches(prev => ({ ...prev, [p.id]: false }));
+                              setParagraphs(prev => prev.map(x => {
+                                if (x.id === p.id) {
+                                  const updated = { ...x, category: cat as FinancialCategory };
+                                  if (cat === 'ভ্যাট') {
+                                    updated.vatRec = x.recoveredAmount;
+                                    updated.vatAdj = x.adjustedAmount;
+                                    updated.itRec = 0; updated.itAdj = 0;
+                                    updated.othersRec = 0; updated.othersAdj = 0;
+                                  } else if (cat === 'আয়কর') {
+                                    updated.itRec = x.recoveredAmount;
+                                    updated.itAdj = x.adjustedAmount;
+                                    updated.vatRec = 0; updated.vatAdj = 0;
+                                    updated.othersRec = 0; updated.othersAdj = 0;
+                                  } else {
+                                    updated.othersRec = x.recoveredAmount;
+                                    updated.othersAdj = x.adjustedAmount;
+                                    updated.vatRec = 0; updated.vatAdj = 0;
+                                    updated.itRec = 0; updated.itAdj = 0;
+                                  }
+                                  return updated;
+                                }
+                                return x;
+                              }));
+                            };
+
+                            return (
+                              <button
+                                key={cat}
+                                type="button"
+                                onPointerDown={handleSelect}
+                                onClick={handleSelect}
+                                className={`relative z-10 flex items-center justify-center min-w-[50px] px-2 py-1 text-[10px] sm:text-[11px] text-center font-black leading-none transition-colors duration-150 cursor-pointer select-none outline-none border-none border-0 ${
+                                  p.category === cat 
+                                    ? 'text-emerald-800 font-extrabold' 
+                                    : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                              >
+                                <span className="inline-block transform translate-y-[0.5px] whitespace-nowrap">{cat}</span>
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

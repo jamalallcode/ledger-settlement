@@ -632,7 +632,7 @@ const ReceiverManagement: React.FC<ReceiverManagementProps> = ({
     passedCorrEntries?: any[]
   ) => {
     const sourceList = customReceivers || receiversList;
-    const officialActiveReceivers = Array.from(
+    const officialActiveReceivers: string[] = Array.from(
       new Set(
         sourceList
           .filter(r => r.name && r.name.trim() && r.source !== 'correspondence')
