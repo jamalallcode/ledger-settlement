@@ -2015,7 +2015,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                             e.stopPropagation();
                                             onEdit(entry);
                                           }}
-                                          className="p-1 text-blue-600 bg-white border rounded shadow-sm hover:bg-blue-50"
+                                          className="p-1 text-blue-600 bg-white border rounded shadow-sm hover:bg-blue-50 cursor-pointer"
                                         >
                                           <Pencil size={11} />
                                         </button>
@@ -2025,7 +2025,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                               e.stopPropagation();
                                               setDeleteConfirm(deleteConfirm && deleteConfirm.id === entry.id && deleteConfirm.paraId === p.id ? null : { id: entry.id, paraId: p.id });
                                             }}
-                                            className={`p-1 rounded shadow-sm transition-all duration-300 ${deleteConfirm && deleteConfirm.id === entry.id && deleteConfirm.paraId === p.id ? "bg-red-100 text-red-700 ring-1 ring-red-500/20" : "bg-white text-red-600 border hover:bg-red-50"}`}
+                                            className={`p-1 rounded shadow-sm transition-all duration-300 cursor-pointer ${deleteConfirm && deleteConfirm.id === entry.id && deleteConfirm.paraId === p.id ? "bg-red-100 text-red-700 ring-1 ring-red-500/20" : "bg-white text-red-600 border hover:bg-red-50"}`}
                                           >
                                             <Trash2 size={11} />
                                           </button>
@@ -2153,7 +2153,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                           e.stopPropagation();
                                           onEdit(entry);
                                         }}
-                                        className="p-1 text-blue-600 bg-white border rounded shadow-sm hover:bg-blue-50"
+                                        className="p-1 text-blue-600 bg-white border rounded shadow-sm hover:bg-blue-50 cursor-pointer"
                                       >
                                         <Pencil size={11} />
                                       </button>
@@ -2163,7 +2163,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                             e.stopPropagation();
                                             setDeleteConfirm(deleteConfirm && deleteConfirm.id === entry.id && !deleteConfirm.paraId ? null : { id: entry.id });
                                           }}
-                                          className={`p-1 rounded shadow-sm transition-all duration-300 ${deleteConfirm && deleteConfirm.id === entry.id && !deleteConfirm.paraId ? "bg-red-100 text-red-700 ring-1 ring-red-500/20" : "bg-white text-red-600 border hover:bg-red-50"}`}
+                                          className={`p-1 rounded shadow-sm transition-all duration-300 cursor-pointer ${deleteConfirm && deleteConfirm.id === entry.id && !deleteConfirm.paraId ? "bg-red-100 text-red-700 ring-1 ring-red-500/20" : "bg-white text-red-600 border hover:bg-red-50"}`}
                                         >
                                           <Trash2 size={11} />
                                         </button>
