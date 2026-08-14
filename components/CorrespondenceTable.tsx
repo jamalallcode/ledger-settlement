@@ -881,13 +881,28 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
       delete next[entryId];
       return next;
     });
-    setPendingChanges((prev) => ({
-      ...prev,
-      [entryId]: {
-        ...prev[entryId],
-        [field]: value,
-      },
-    }));
+    setPendingChanges((prev) => {
+      const entry = entries.find((e) => e.id === entryId);
+      const currentPending = { ...(prev[entryId] || {}) };
+
+      const normalizeVal = (v: any) =>
+        v === undefined || v === null ? "" : String(v).trim();
+      const originalValue = entry ? (entry as any)[field] : undefined;
+
+      if (normalizeVal(value) === normalizeVal(originalValue)) {
+        delete currentPending[field];
+      } else {
+        currentPending[field] = value;
+      }
+
+      const next = { ...prev };
+      if (Object.keys(currentPending).length === 0) {
+        delete next[entryId];
+      } else {
+        next[entryId] = currentPending;
+      }
+      return next;
+    });
   };
 
   const saveAllChanges = async () => {
@@ -2720,7 +2735,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     e.stopPropagation();
                                     saveRowChanges(entry.id);
                                   }}
-                                  className="p-1.5 bg-emerald-600 text-white rounded-md shadow-md hover:bg-emerald-700 transition-all animate-bounce"
+                                  className="p-1.5 bg-emerald-600 text-white rounded-md shadow-md hover:bg-emerald-700 transition-all animate-bounce cursor-pointer"
                                   title="আপডেট করুন"
                                 >
                                   <Save size={12} />
@@ -2732,7 +2747,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     e.stopPropagation();
                                     onApprove?.(entry.id);
                                   }}
-                                  className="p-1.5 bg-emerald-500 text-white rounded-md shadow-md hover:bg-emerald-600 transition-colors"
+                                  className="p-1.5 bg-emerald-500 text-white rounded-md shadow-md hover:bg-emerald-600 transition-colors cursor-pointer"
                                   title="অনুমোদন দিন"
                                 >
                                   <Check size={12} strokeWidth={3} />
@@ -2744,7 +2759,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     e.stopPropagation();
                                     onReject?.(entry.id);
                                   }}
-                                  className="p-1.5 bg-red-500 text-white rounded-md shadow-md hover:bg-red-600 transition-colors"
+                                  className="p-1.5 bg-red-500 text-white rounded-md shadow-md hover:bg-red-600 transition-colors cursor-pointer"
                                   title="বাতিল করুন"
                                 >
                                   <XCircle size={12} />
@@ -2755,7 +2770,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   e.stopPropagation();
                                   onEdit?.(entry);
                                 }}
-                                className="p-1.5 bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-700 transition-colors"
+                                className="p-1.5 bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-700 transition-colors cursor-pointer"
                                 title="এডিট করুন"
                               >
                                 <Pencil size={12} />
@@ -2770,7 +2785,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     y: rect.top
                                   });
                                 }}
-                                className="p-1.5 rounded-md shadow-md bg-rose-600 text-white hover:bg-rose-700 transition-all duration-300"
+                                className="p-1.5 rounded-md shadow-md bg-rose-600 text-white hover:bg-rose-700 transition-all duration-300 cursor-pointer"
                                 title="মুছে ফেলুন"
                               >
                                 <Trash2 size={12} />
