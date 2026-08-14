@@ -881,13 +881,28 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
       delete next[entryId];
       return next;
     });
-    setPendingChanges((prev) => ({
-      ...prev,
-      [entryId]: {
-        ...prev[entryId],
-        [field]: value,
-      },
-    }));
+    setPendingChanges((prev) => {
+      const entry = entries.find((e) => e.id === entryId);
+      const currentPending = { ...(prev[entryId] || {}) };
+
+      const normalizeVal = (v: any) =>
+        v === undefined || v === null ? "" : String(v).trim();
+      const originalValue = entry ? (entry as any)[field] : undefined;
+
+      if (normalizeVal(value) === normalizeVal(originalValue)) {
+        delete currentPending[field];
+      } else {
+        currentPending[field] = value;
+      }
+
+      const next = { ...prev };
+      if (Object.keys(currentPending).length === 0) {
+        delete next[entryId];
+      } else {
+        next[entryId] = currentPending;
+      }
+      return next;
+    });
   };
 
   const saveAllChanges = async () => {
