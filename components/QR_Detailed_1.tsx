@@ -328,8 +328,13 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       let res = map[matchKey] || map[entityName];
       if (!res) {
         const keys = Object.keys(map);
-        const foundKey = keys.find(k => isEntityMatch(k, entityName));
-        if (foundKey) res = map[foundKey];
+        const exactNormKey = keys.find(k => robustNormalize(k) === robustNormalize(entityName));
+        if (exactNormKey) {
+          res = map[exactNormKey];
+        } else {
+          const foundKey = keys.find(k => isEntityMatch(k, entityName));
+          if (foundKey) res = map[foundKey];
+        }
       }
       return res || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
     };
@@ -355,27 +360,31 @@ const QR_Detailed_1: React.FC<QRProps> = ({
     }
 
     if (sfiObj || nonSfiObj) {
-      const sC = sfiObj?.unsettledCount || 0;
-      const nsC = nonSfiObj?.unsettledCount || 0;
-      const sA = sfiObj?.unsettledAmount || 0;
-      const nsA = nonSfiObj?.unsettledAmount || 0;
-      const sQA = (sfiObj && sfiObj.unsettledQuarterlyAmount !== undefined && sfiObj.unsettledQuarterlyAmount !== null)
+      const sC = sfiObj?.unsettledCount ?? 0;
+      const nsC = nonSfiObj?.unsettledCount ?? 0;
+      const sA = sfiObj?.unsettledAmount ?? 0;
+      const nsA = nonSfiObj?.unsettledAmount ?? 0;
+      const sQA = (sfiObj && sfiObj.unsettledQuarterlyAmount !== undefined && sfiObj.unsettledQuarterlyAmount !== null && sfiObj.unsettledQuarterlyAmount !== 0)
         ? sfiObj.unsettledQuarterlyAmount 
         : sA;
-      const nsQA = (nonSfiObj && nonSfiObj.unsettledQuarterlyAmount !== undefined && nonSfiObj.unsettledQuarterlyAmount !== null)
+      const nsQA = (nonSfiObj && nonSfiObj.unsettledQuarterlyAmount !== undefined && nonSfiObj.unsettledQuarterlyAmount !== null && nonSfiObj.unsettledQuarterlyAmount !== 0)
         ? nonSfiObj.unsettledQuarterlyAmount 
         : nsA;
-      const sS = sfiObj?.settledCount || 0;
-      const nsS = nonSfiObj?.settledCount || 0;
+      const sS = sfiObj?.settledCount ?? 0;
+      const nsS = nonSfiObj?.settledCount ?? 0;
 
       // Opening Balance Setup uses a unified master row per entity.
       // Column 4 (unsettledQuarterlyAmount) represents the total initial quarterly unsettled amount.
-      if (sQA === nsQA || nsQA === 0 || sfiObj === nonSfiObj) {
+      if (sfiObj?.unsettledQuarterlyAmount !== undefined && sfiObj?.unsettledQuarterlyAmount !== null && sfiObj.unsettledQuarterlyAmount > 0) {
+        baseUnsettledAmount = sfiObj.unsettledQuarterlyAmount;
+      } else if (nonSfiObj?.unsettledQuarterlyAmount !== undefined && nonSfiObj?.unsettledQuarterlyAmount !== null && nonSfiObj.unsettledQuarterlyAmount > 0) {
+        baseUnsettledAmount = nonSfiObj.unsettledQuarterlyAmount;
+      } else if (sQA === nsQA || nsQA === 0 || sfiObj === nonSfiObj) {
         baseUnsettledAmount = sQA;
       } else if (sQA === 0) {
         baseUnsettledAmount = nsQA;
       } else {
-        baseUnsettledAmount = sQA + nsQA;
+        baseUnsettledAmount = sQA;
       }
 
       if (sC === nsC || nsC === 0 || sfiObj === nonSfiObj) {
@@ -383,7 +392,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       } else if (sC === 0) {
         baseUnsettledCount = nsC;
       } else {
-        baseUnsettledCount = sC + nsC;
+        baseUnsettledCount = sC;
       }
 
       if (sS === nsS || nsS === 0 || sfiObj === nonSfiObj) {
@@ -391,7 +400,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       } else if (sS === 0) {
         baseSettledCount = nsS;
       } else {
-        baseSettledCount = sS + nsS;
+        baseSettledCount = sS;
       }
     }
 
