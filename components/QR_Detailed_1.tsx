@@ -405,7 +405,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
 
     const col10 = col6 - col9;
 
-    const col11 = baseUnsettledAmount + priorRaisedAmount - priorSettledAmount;
+    const col11 = baseUnsettledAmount > 0 ? baseUnsettledAmount : Math.max(0, priorRaisedAmount - priorSettledAmount);
     const col12 = currentSettledAmount;
     const col13 = col11 - col12;
 
