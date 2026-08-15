@@ -58,6 +58,30 @@
   vertical-align: middle !important;
 }
 
+/* Correspondence Register Cycle Header Sticky */
+.correspondence-cycle-header td,
+tr.correspondence-cycle-header td,
+.table-container tbody tr.correspondence-cycle-header td {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 66px !important;
+  z-index: 115 !important;
+  background-color: #f1f5f9 !important;
+  background-clip: padding-box !important;
+}
+
+/* Settlement Register Cycle Header Sticky */
+.settlement-cycle-header td,
+tr.settlement-cycle-header td,
+.table-container tbody tr.settlement-cycle-header td {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 102px !important;
+  z-index: 115 !important;
+  background-color: #f1f5f9 !important;
+  background-clip: padding-box !important;
+}
+
 /* QR Table specific overrides to prevent double borders and eliminate border radius */
 .qr-table-container {
   border: none !important;

@@ -1629,10 +1629,11 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                     <React.Fragment key={group.label}>
                       {/* Sticky Cycle Header */}
                       {showCycleHeaders && (
-                        <tr className="z-[90] no-print animate-in fade-in duration-300">
+                        <tr className="settlement-cycle-header no-print">
                           <td
                             colSpan={14}
-                            className="p-0 border border-slate-300"
+                            className="sticky top-[102px] z-[115] p-0 border border-slate-300 bg-slate-100"
+                            style={{ position: "sticky", top: "102px", zIndex: 115 }}
                           >
                             <div
                               ref={(el) => {
