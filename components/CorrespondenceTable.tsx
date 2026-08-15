@@ -1698,11 +1698,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                     <React.Fragment key={group.label}>
                       {/* Sticky Cycle Header */}
                       {showCycleHeaders && (
-                        <tr className="sticky top-[66px] z-[105] no-print animate-in fade-in duration-300">
-                      <td
-                        colSpan={7}
-                        className="sticky top-[66px] p-0 border border-slate-400 shadow-sm bg-slate-100"
-                      >
+                        <tr className="correspondence-cycle-header no-print">
+                          <td
+                            colSpan={7}
+                            className="sticky top-[66px] z-[115] p-0 border border-slate-400 shadow-sm bg-slate-100"
+                            style={{ position: "sticky", top: "66px", zIndex: 115 }}
+                          >
                         <div
                           ref={(el) => {
                             cycleRefs.current[group.label] = el;
