@@ -1859,6 +1859,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const duplicates = useMemo(() => {
     const normalizedDiary = toEnglishDigits(formData.diaryNo.replace(/\s+/g, ''));
     const normalizedLetter = toEnglishDigits(formData.letterNo.replace(/\s+/g, ''));
+    const normalizedDigitalFile = toEnglishDigits((formData.digitalFileNo || '').replace(/\s+/g, ''));
     
     const diaryDuplicate = normalizedDiary ? existingEntries.find(entry => {
       if (initialEntry && entry.id === initialEntry.id) return false;
@@ -1872,14 +1873,22 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       return entryLetter === normalizedLetter;
     }) : null;
 
+    const digitalFileDuplicate = normalizedDigitalFile ? existingEntries.find(entry => {
+      if (initialEntry && entry.id === initialEntry.id) return false;
+      const entryFile = toEnglishDigits((entry.digitalFileNo || '').replace(/\s+/g, ''));
+      return entryFile && entryFile === normalizedDigitalFile;
+    }) : null;
+
     return {
       diaryNo: !!diaryDuplicate,
       letterNo: !!letterDuplicate,
+      digitalFileNo: !!digitalFileDuplicate,
       diaryEntryId: diaryDuplicate?.id,
       letterEntryId: letterDuplicate?.id,
-      any: !!diaryDuplicate || !!letterDuplicate
+      digitalFileEntryId: digitalFileDuplicate?.id,
+      any: !!diaryDuplicate || !!letterDuplicate || !!digitalFileDuplicate
     };
-  }, [formData.diaryNo, formData.letterNo, existingEntries, initialEntry]);
+  }, [formData.diaryNo, formData.letterNo, formData.digitalFileNo, existingEntries, initialEntry]);
 
   const isDuplicate = duplicates.any;
 
@@ -2284,15 +2293,19 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 {duplicates.diaryNo && (
                   <span>ডায়েরি নং- <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.diaryNo)}</span> </span>
                 )}
-                {duplicates.diaryNo && duplicates.letterNo && <span>এবং </span>}
+                {duplicates.diaryNo && (duplicates.letterNo || duplicates.digitalFileNo) && <span>এবং </span>}
                 {duplicates.letterNo && (
                   <span>পত্র নং- <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.letterNo)}</span> </span>
                 )}
+                {duplicates.letterNo && duplicates.digitalFileNo && <span>এবং </span>}
+                {duplicates.digitalFileNo && (
+                  <span>ডিজিটাল নথি নং- <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.digitalFileNo)}</span> </span>
+                )}
                 ইতোমধ্যেই ডাটাবেজে বিদ্যমান। অনুগ্রহ করে তথ্য যাচাই করুন।
-                {(duplicates.diaryEntryId || duplicates.letterEntryId) && navigateToEntry && (
+                {(duplicates.diaryEntryId || duplicates.letterEntryId || duplicates.digitalFileEntryId) && navigateToEntry && (
                   <button
                     type="button"
-                    onClick={() => navigateToEntry(duplicates.diaryEntryId || duplicates.letterEntryId || '', 'correspondence', formData.diaryNo || formData.letterNo)}
+                    onClick={() => navigateToEntry(duplicates.diaryEntryId || duplicates.letterEntryId || duplicates.digitalFileEntryId || '', 'correspondence', formData.diaryNo || formData.letterNo || formData.digitalFileNo)}
                     className="ml-3 px-3 py-1 bg-amber-200 text-amber-900 rounded-lg hover:bg-amber-300 transition-colors font-black text-xs flex inline-flex items-center gap-1.5 shadow-sm border border-amber-300"
                   >
                     <Search size={12} /> দেখুন
@@ -2823,15 +2836,31 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             />
 
             {/* Field Digital File No */}
-            <div className={`${colWrapper} border-indigo-100`}>
+            <div className={`${colWrapper} ${duplicates.digitalFileNo ? 'bg-amber-50 border-amber-200' : 'border-indigo-100'}`}>
               <IDBadge id="corr-field-9" />
               <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Computer size={14} className="text-indigo-600" /> ডিজিটাল নথি নং-</label>
               <input 
-                type="text" className={`${inputCls} ${formData.digitalFileNo ? 'border-emerald-500' : 'border-red-500'}`} 
+                type="text" className={`${inputCls} ${duplicates.digitalFileNo ? 'border-amber-500 ring-4 ring-amber-50' : (formData.digitalFileNo ? 'border-emerald-500' : 'border-red-500')}`} 
                 value={formData.digitalFileNo} onChange={e => setFormData({...formData, digitalFileNo: toBengaliDigits(e.target.value)})}
                 placeholder="নথি নং লিখুন"
               />
-              {hasStartedFilling && (!formData.digitalFileNo || !formData.digitalFileNo.trim()) && (
+              {duplicates.digitalFileNo && (
+                <div className="mt-2 flex items-center gap-2 animate-in slide-in-from-top-1">
+                  <div className="text-[10px] font-black text-amber-600 flex items-center gap-1">
+                    <AlertCircle size={10} /> এই ডিজিটাল নথি নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                  </div>
+                  {duplicates.digitalFileEntryId && navigateToEntry && (
+                    <button
+                      type="button"
+                      onClick={() => navigateToEntry(duplicates.digitalFileEntryId || '', 'correspondence', formData.digitalFileNo)}
+                      className="px-2 py-0.5 bg-amber-600 text-white text-[9px] font-black rounded shadow-sm hover:bg-amber-700 transition-all flex items-center gap-1"
+                    >
+                      <Search size={10} /> দেখুন
+                    </button>
+                  )}
+                </div>
+              )}
+              {hasStartedFilling && (!formData.digitalFileNo || !formData.digitalFileNo.trim()) && !duplicates.digitalFileNo && (
                 <UnfilledMessage message="আপনি ডিজিটাল নথি নম্বর লেখেননি।" />
               )}
             </div>
