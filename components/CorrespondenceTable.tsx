@@ -362,11 +362,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   >({});
   const [isUpdating, setIsUpdating] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
-  const [expandedCycles, setExpandedCycles] = useState<Record<string, boolean>>(
-    {},
-  );
+  const [isCycleStatsExpanded, setIsCycleStatsExpanded] = useState<boolean>(false);
   const [showCycleHeaders, setShowCycleHeaders] = useState<boolean>(true);
-  const lastActiveLabel = useRef<string>("");
   const cycleRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -852,40 +849,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
     return { cycleStats: statsMap, groupedEntries: groupsList };
   }, [filteredEntries]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      // Only sync if at least one cycle is currently expanded
-      const isAnyExpanded = Object.values(expandedCycles).some((v) => v);
-      if (!isAnyExpanded) return;
-
-      let activeLabel = "";
-      const stickyTop = 66; // The CSS top position of sticky headers (Row 1: 40px + Row 2: 26px)
-
-      // Find the cycle header that is currently "active" (sticky at the top)
-      // Standard scroll-spy: iterate and find the last element that has passed the trigger point
-      for (const group of groupedEntries) {
-        const el = cycleRefs.current[group.label];
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          // If the header's top is at or above the sticky threshold (with a small buffer)
-          // Using a slightly larger buffer for better detection during fast scroll
-          if (rect.top <= stickyTop + 10) {
-            activeLabel = group.label;
-          }
-        }
-      }
-
-      // Update expansion to the new active cycle if it changed
-      if (activeLabel && activeLabel !== lastActiveLabel.current) {
-        lastActiveLabel.current = activeLabel;
-        setExpandedCycles({ [activeLabel]: true });
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [expandedCycles, groupedEntries]);
 
   const checkIssueValidation = (entryData: Partial<CorrespondenceEntry>): string | null => {
     const isSettled = entryData.isSettled;
@@ -1707,10 +1670,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                             cycleRefs.current[group.label] = el;
                           }}
                           onClick={() => {
-                            const nextState = !expandedCycles[group.label];
-                            setExpandedCycles({ [group.label]: nextState });
-                            if (nextState) lastActiveLabel.current = group.label;
-                            else lastActiveLabel.current = "";
+                            setIsCycleStatsExpanded((prev) => !prev);
                           }}
                           className="bg-slate-100 border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
                         >
@@ -1753,20 +1713,20 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               <EyeOff size={15} />
                             </button>
                             <div
-                              className={`px-3 py-1 rounded-full text-[10px] font-black transition-all flex items-center gap-1.5 ${expandedCycles[group.label] ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "bg-white text-blue-600 border border-blue-200 hover:border-blue-400"}`}
+                              className={`px-3 py-1 rounded-full text-[10px] font-black transition-all flex items-center gap-1.5 ${isCycleStatsExpanded ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "bg-white text-blue-600 border border-blue-200 hover:border-blue-400"}`}
                             >
-                              {expandedCycles[group.label]
+                              {isCycleStatsExpanded
                                 ? "সংক্ষিপ্ত করুন"
                                 : "বিস্তারিত দেখুন"}
                               <ChevronDown
                                 size={12}
-                                className={`transition-transform duration-300 ${expandedCycles[group.label] ? "rotate-180" : ""}`}
+                                className={`transition-transform duration-300 ${isCycleStatsExpanded ? "rotate-180" : ""}`}
                               />
                             </div>
                           </div>
                         </div>
 
-                        {expandedCycles[group.label] && (
+                        {isCycleStatsExpanded && (
                           <div className="bg-white p-4 border-b border-slate-300 shadow-md">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {/* SFI Stats */}
