@@ -2433,94 +2433,63 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               const matched = findMatchedSettlements(entry, settlementEntries || []);
                               const settledMatched = matched.filter(hasSettledParagraphs);
                               const hasMatchedSettlement = settledMatched.length > 0;
-                              const currentIsSettled: 'হ্যাঁ' | 'না' =
-                                pending.isSettled !== undefined
-                                  ? pending.isSettled
-                                  : hasMatchedSettlement
-                                    ? 'হ্যাঁ'
-                                    : (entry.isSettled === 'হ্যাঁ' ? 'হ্যাঁ' : 'না');
+                              const currentIsSettled: 'হ্যাঁ' | 'না' = hasMatchedSettlement ? 'হ্যাঁ' : 'না';
 
-                              // Unlocked when either 'হ্যাঁ' or 'না' is selected
-                              const canFillIssue =
-                                currentIsSettled === "হ্যাঁ" || currentIsSettled === "না";
+                              // Always allow entering issue letter info
+                              const canFillIssue = true;
 
                               const isIssueComplete =
-                                canFillIssue && !!currentIssueNo && !!currentIssueDate;
-                              const issueColorCls = !canFillIssue
-                                ? "bg-slate-50 border-slate-200 opacity-80"
-                                : isIssueComplete
-                                  ? "bg-emerald-600/10 border-emerald-400 ring-2 ring-emerald-50"
-                                  : pending.issueLetterNo ||
-                                      pending.issueLetterDate
-                                    ? "bg-amber-600/10 border-amber-400 ring-2 ring-amber-50"
-                                    : "bg-amber-50/50 border-amber-100";
+                                !!currentIssueNo && !!currentIssueDate;
+                              const issueColorCls = isIssueComplete
+                                ? "bg-emerald-600/10 border-emerald-400 ring-2 ring-emerald-50"
+                                : pending.issueLetterNo || pending.issueLetterDate
+                                  ? "bg-amber-600/10 border-amber-400 ring-2 ring-amber-50"
+                                  : "bg-amber-50/50 border-amber-100";
 
-                              const labelColorCls = !canFillIssue
-                                ? "text-slate-500"
-                                : isIssueComplete
-                                  ? "text-emerald-700"
-                                  : "text-amber-700";
-                              const iconColorCls = !canFillIssue
-                                ? "text-slate-400"
-                                : isIssueComplete
-                                  ? "text-emerald-500"
-                                  : "text-amber-500";
+                              const labelColorCls = isIssueComplete
+                                ? "text-emerald-700"
+                                : "text-amber-700";
+                              const iconColorCls = isIssueComplete
+                                ? "text-emerald-500"
+                                : "text-amber-500";
 
                               return (
                                 <>
-                                  {/* 1. অপশন: নিষ্পত্তি আছে কিনা: হ্যাঁ অথবা না (উপরে) */}
+                                  {/* 1. অটোমেটিক স্ট্যাটাস: নিষ্পত্তি আছে কিনা: হ্যাঁ অথবা না */}
                                   <div className="p-2 border rounded-xl bg-gradient-to-br from-white via-slate-50 to-slate-100/80 border-slate-300/90 space-y-1.5 shadow-xs mb-1.5 transition-all">
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex items-center justify-between gap-1.5">
                                       <span className="text-[9.5px] font-black text-slate-800 tracking-tight flex items-center gap-1">
-                                        <CheckCircle2 size={12} className={currentIsSettled === 'হ্যাঁ' ? "text-emerald-600 animate-pulse" : currentIsSettled === 'না' ? "text-rose-500" : "text-amber-500"} />
+                                        <CheckCircle2
+                                          size={12}
+                                          className={
+                                            currentIsSettled === "হ্যাঁ"
+                                              ? "text-emerald-600 animate-pulse"
+                                              : "text-rose-500"
+                                          }
+                                        />
                                         নিষ্পত্তি আছে কিনা:
                                       </span>
-                                      {Boolean(currentIsSettled) && isAdmin && (
-                                        <button
-                                          type="button"
-                                          onClick={() => handleInlineChange(entry.id, 'isSettled', '')}
-                                          className="text-[8px] font-black text-slate-500 hover:text-rose-600 bg-white border border-slate-300 hover:border-rose-300 px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-2xs transition-all cursor-pointer"
-                                          title="বাছাই ক্লিয়ার করুন"
-                                        >
-                                          <RotateCcw size={8} /> ক্লিয়ার
-                                        </button>
-                                      )}
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60">
-                                      <button
-                                        type="button"
-                                        disabled={!isAdmin}
-                                        onClick={() => {
-                                          const nextVal = currentIsSettled === 'হ্যাঁ' ? '' : 'হ্যাঁ';
-                                          handleInlineChange(entry.id, 'isSettled', nextVal);
-                                        }}
-                                        className={`py-1.5 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1.5 ${
-                                          currentIsSettled === 'হ্যাঁ'
-                                            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md ring-2 ring-emerald-400/60 scale-[1.02]'
-                                            : 'bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 border border-transparent'
-                                        } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
+                                      <span
+                                        className={`text-[9.5px] font-black px-2.5 py-0.5 rounded-lg flex items-center gap-1 border shadow-2xs ${
+                                          currentIsSettled === "হ্যাঁ"
+                                            ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-500 shadow-emerald-500/20 ring-1 ring-emerald-400/40"
+                                            : "bg-rose-50 text-rose-700 border-rose-200"
+                                        }`}
                                       >
-                                        <Check size={12} strokeWidth={3} /> হ্যাঁ
-                                      </button>
-                                      <button
-                                        type="button"
-                                        disabled={!isAdmin}
-                                        onClick={() => {
-                                          const nextVal = currentIsSettled === 'না' ? '' : 'না';
-                                          handleInlineChange(entry.id, 'isSettled', nextVal);
-                                        }}
-                                        className={`py-1.5 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1.5 ${
-                                          currentIsSettled === 'না'
-                                            ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-md ring-2 ring-rose-400/60 scale-[1.02]'
-                                            : 'bg-white text-slate-700 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 border border-transparent'
-                                        } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
-                                      >
-                                        <X size={12} strokeWidth={3} /> না
-                                      </button>
+                                        {currentIsSettled === "হ্যাঁ" ? (
+                                          <>
+                                            <Check size={11} strokeWidth={3} /> হ্যাঁ
+                                          </>
+                                        ) : (
+                                          <>
+                                            <X size={11} strokeWidth={3} /> না
+                                          </>
+                                        )}
+                                      </span>
                                     </div>
 
                                     {/* View Settled Data Premium Button */}
-                                    {currentIsSettled === 'হ্যাঁ' && (
+                                    {currentIsSettled === "হ্যাঁ" && (
                                       <div className="pt-1">
                                         <button
                                           type="button"
