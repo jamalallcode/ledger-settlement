@@ -1696,10 +1696,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                 <tbody key={group.label}>
                   {/* Sticky Cycle Header */}
                   {showCycleHeaders && (
-                    <tr className="z-[105] no-print animate-in fade-in duration-300">
+                    <tr className="sticky top-[66px] z-[105] no-print animate-in fade-in duration-300">
                       <td
                         colSpan={7}
-                        className="p-0 border border-slate-400 shadow-sm"
+                        className="sticky top-[66px] p-0 border border-slate-400 shadow-sm bg-slate-100"
                       >
                         <div
                           ref={(el) => {
