@@ -1860,6 +1860,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     const normalizedDiary = toEnglishDigits(formData.diaryNo.replace(/\s+/g, ''));
     const normalizedLetter = toEnglishDigits(formData.letterNo.replace(/\s+/g, ''));
     const normalizedDigitalFile = toEnglishDigits((formData.digitalFileNo || '').replace(/\s+/g, ''));
+    const rawArchiveBody = (formData.archiveNo || '').replace(/^ka-\s*/i, '').replace(/^kg-\s*/i, '').trim();
+    const normalizedArchive = rawArchiveBody ? toEnglishDigits((formData.archiveNo || '').replace(/\s+/g, '').toLowerCase()) : '';
     
     const diaryDuplicate = normalizedDiary ? existingEntries.find(entry => {
       if (initialEntry && entry.id === initialEntry.id) return false;
@@ -1879,16 +1881,24 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       return entryFile && entryFile === normalizedDigitalFile;
     }) : null;
 
+    const archiveDuplicate = normalizedArchive ? existingEntries.find(entry => {
+      if (initialEntry && entry.id === initialEntry.id) return false;
+      const entryArchive = toEnglishDigits((entry.archiveNo || '').replace(/\s+/g, '').toLowerCase());
+      return entryArchive && entryArchive === normalizedArchive;
+    }) : null;
+
     return {
       diaryNo: !!diaryDuplicate,
       letterNo: !!letterDuplicate,
       digitalFileNo: !!digitalFileDuplicate,
+      archiveNo: !!archiveDuplicate,
       diaryEntryId: diaryDuplicate?.id,
       letterEntryId: letterDuplicate?.id,
       digitalFileEntryId: digitalFileDuplicate?.id,
-      any: !!diaryDuplicate || !!letterDuplicate || !!digitalFileDuplicate
+      archiveEntryId: archiveDuplicate?.id,
+      any: !!diaryDuplicate || !!letterDuplicate || !!digitalFileDuplicate || !!archiveDuplicate
     };
-  }, [formData.diaryNo, formData.letterNo, formData.digitalFileNo, existingEntries, initialEntry]);
+  }, [formData.diaryNo, formData.letterNo, formData.digitalFileNo, formData.archiveNo, existingEntries, initialEntry]);
 
   const isDuplicate = duplicates.any;
 
@@ -2293,19 +2303,23 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 {duplicates.diaryNo && (
                   <span>ডায়েরি নং- <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.diaryNo)}</span> </span>
                 )}
-                {duplicates.diaryNo && (duplicates.letterNo || duplicates.digitalFileNo) && <span>এবং </span>}
+                {duplicates.diaryNo && (duplicates.letterNo || duplicates.digitalFileNo || duplicates.archiveNo) && <span>এবং </span>}
                 {duplicates.letterNo && (
                   <span>পত্র নং- <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.letterNo)}</span> </span>
                 )}
-                {duplicates.letterNo && duplicates.digitalFileNo && <span>এবং </span>}
+                {duplicates.letterNo && (duplicates.digitalFileNo || duplicates.archiveNo) && <span>এবং </span>}
                 {duplicates.digitalFileNo && (
                   <span>ডিজিটাল নথি নং- <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.digitalFileNo)}</span> </span>
                 )}
+                {duplicates.digitalFileNo && duplicates.archiveNo && <span>এবং </span>}
+                {duplicates.archiveNo && (
+                  <span>আর্কাইভ নং- <span className="underline underline-offset-4 font-black">{toBengaliDigits(formData.archiveNo)}</span> </span>
+                )}
                 ইতোমধ্যেই ডাটাবেজে বিদ্যমান। অনুগ্রহ করে তথ্য যাচাই করুন।
-                {(duplicates.diaryEntryId || duplicates.letterEntryId || duplicates.digitalFileEntryId) && navigateToEntry && (
+                {(duplicates.diaryEntryId || duplicates.letterEntryId || duplicates.digitalFileEntryId || duplicates.archiveEntryId) && navigateToEntry && (
                   <button
                     type="button"
-                    onClick={() => navigateToEntry(duplicates.diaryEntryId || duplicates.letterEntryId || duplicates.digitalFileEntryId || '', 'correspondence', formData.diaryNo || formData.letterNo || formData.digitalFileNo)}
+                    onClick={() => navigateToEntry(duplicates.diaryEntryId || duplicates.letterEntryId || duplicates.digitalFileEntryId || duplicates.archiveEntryId || '', 'correspondence', formData.diaryNo || formData.letterNo || formData.digitalFileNo || formData.archiveNo)}
                     className="ml-3 px-3 py-1 bg-amber-200 text-amber-900 rounded-lg hover:bg-amber-300 transition-colors font-black text-xs flex inline-flex items-center gap-1.5 shadow-sm border border-amber-300"
                   >
                     <Search size={12} /> দেখুন
@@ -2969,17 +2983,33 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             </div>
 
             {/* Field Archive No */}
-            <div className={`${colWrapper} border-amber-100`}>
+            <div className={`${colWrapper} ${duplicates.archiveNo ? 'bg-amber-50 border-amber-200' : 'border-amber-100'}`}>
               <IDBadge id="corr-field-archive-no" />
               <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Hash size={14} className="text-amber-600" /> আর্কাইভ নং-</label>
               <input 
                 type="text" 
-                className={`${inputCls} ${formData.archiveNo ? 'border-emerald-500' : 'border-red-500'}`} 
+                className={`${inputCls} ${duplicates.archiveNo ? 'border-amber-500 ring-4 ring-amber-50' : (formData.archiveNo ? 'border-emerald-500' : 'border-red-500')}`} 
                 value={formData.archiveNo} 
                 onChange={e => handleArchiveNoChange(e.target.value)}
                 placeholder="নং লিখুন"
               />
-              {hasStartedFilling && (!formData.archiveNo || !formData.archiveNo.trim()) && (
+              {duplicates.archiveNo && (
+                <div className="mt-2 flex items-center gap-2 animate-in slide-in-from-top-1">
+                  <div className="text-[10px] font-black text-amber-600 flex items-center gap-1">
+                    <AlertCircle size={10} /> এই আর্কাইভ নম্বরটি ইতিপূর্বে এন্ট্রি করা হয়েছে
+                  </div>
+                  {duplicates.archiveEntryId && navigateToEntry && (
+                    <button
+                      type="button"
+                      onClick={() => navigateToEntry(duplicates.archiveEntryId || '', 'correspondence', formData.archiveNo)}
+                      className="px-2 py-0.5 bg-amber-600 text-white text-[9px] font-black rounded shadow-sm hover:bg-amber-700 transition-all flex items-center gap-1"
+                    >
+                      <Search size={10} /> দেখুন
+                    </button>
+                  )}
+                </div>
+              )}
+              {hasStartedFilling && (!formData.archiveNo || !formData.archiveNo.trim()) && !duplicates.archiveNo && (
                 <UnfilledMessage message="আপনি আর্কাইভ নম্বর লেখেননি।" />
               )}
             </div>
