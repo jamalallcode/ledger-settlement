@@ -903,6 +903,14 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         return "আপনি জারিপত্র তারিখ লেখেন নি।";
       }
     }
+
+    // Dhaka Return date cannot be earlier than Sent to Dhaka date
+    if (entryData.sentToDhakaDate && entryData.returnedFromDhakaDate) {
+      if (entryData.returnedFromDhakaDate < entryData.sentToDhakaDate) {
+        return "ঢাকা হতে ফেরত তারিখ ঢাকায় প্রেরণের তারিখের পূর্বের হতে পারবে না।";
+      }
+    }
+
     return null;
   };
 
@@ -1039,9 +1047,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
   // Header font-black
   const thCls =
-    "sticky top-0 border border-slate-300 px-1.5 py-2.5 text-center align-middle font-black text-slate-900 text-[10.5px] sm:text-[11px] bg-slate-200 z-[110] shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
+    "border border-slate-300 px-1.5 py-2.5 text-center align-middle font-black text-slate-900 text-[10.5px] sm:text-[11px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
   const thSubCls =
-    "sticky top-[40px] border border-slate-300 px-1 py-1 text-center align-middle font-black text-slate-900 text-[10.5px] sm:text-[11px] bg-slate-200 z-[110] shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
+    "border border-slate-300 px-1 py-1 text-center align-middle font-black text-slate-900 text-[10.5px] sm:text-[11px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
   // Data cells font-bold
   const tdCls =
     "border border-slate-300 px-2 py-2 text-[10px] sm:text-[10.5px] text-slate-800 font-bold leading-tight align-top transition-colors group-hover:bg-blue-50/50 break-words relative";
@@ -1661,7 +1669,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             <col className="w-[125px]" />
             <col className="w-[55px]" />
           </colgroup>
-          <thead>
+          <thead className="sticky top-0 z-[120] bg-slate-200 shadow-sm">
             <tr className="h-[40px]">
               <th className={thCls}>ক্র: নং</th>
               <th className={thCls}>পত্রের বিবরণ</th>
@@ -1688,7 +1696,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                 <tbody key={group.label}>
                   {/* Sticky Cycle Header */}
                   {showCycleHeaders && (
-                    <tr className="sticky top-[66px] z-[105] no-print animate-in fade-in duration-300">
+                    <tr className="z-[105] no-print animate-in fade-in duration-300">
                       <td
                         colSpan={7}
                         className="p-0 border border-slate-400 shadow-sm"
@@ -1761,7 +1769,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                   )}
 
                   {showCycleHeaders && expandedCycles[group.label] && (
-                    <tr className="sticky top-[114px] z-[85] no-print">
+                    <tr className="z-[85] no-print">
                       <td colSpan={7} className="p-0 border border-slate-300">
                         <div className="bg-white p-4 border-b border-slate-200 animate-in fade-in slide-in-from-top-1 duration-200 shadow-md">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2334,8 +2342,19 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         type="date"
                                         className={`absolute inset-0 opacity-0 w-3 h-3 ${isAdmin ? "cursor-pointer" : "pointer-events-none"}`}
                                         value={currentSentToDhakaDate}
+                                        max={currentReturnedFromDhakaDate || undefined}
                                         disabled={!isAdmin}
-                                        onChange={(e) => handleInlineChange(entry.id, "sentToDhakaDate", e.target.value)}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          if (val && currentReturnedFromDhakaDate && val > currentReturnedFromDhakaDate) {
+                                            setValidationErrorMap((prev) => ({
+                                              ...prev,
+                                              [entry.id]: "ঢাকায় প্রেরণের তারিখ ঢাকা হতে ফেরত তারিখের পরের হতে পারবে না।",
+                                            }));
+                                            return;
+                                          }
+                                          handleInlineChange(entry.id, "sentToDhakaDate", val);
+                                        }}
                                       />
                                     </div>
                                   </div>
@@ -2387,8 +2406,19 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         type="date"
                                         className={`absolute inset-0 opacity-0 w-3 h-3 ${isAdmin ? "cursor-pointer" : "pointer-events-none"}`}
                                         value={currentReturnedFromDhakaDate}
+                                        min={currentSentToDhakaDate || undefined}
                                         disabled={!isAdmin}
-                                        onChange={(e) => handleInlineChange(entry.id, "returnedFromDhakaDate", e.target.value)}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          if (val && currentSentToDhakaDate && val < currentSentToDhakaDate) {
+                                            setValidationErrorMap((prev) => ({
+                                              ...prev,
+                                              [entry.id]: "ঢাকা হতে ফেরত তারিখ ঢাকায় প্রেরণের তারিখের পূর্বের হতে পারবে না।",
+                                            }));
+                                            return;
+                                          }
+                                          handleInlineChange(entry.id, "returnedFromDhakaDate", val);
+                                        }}
                                       />
                                     </div>
                                   </div>

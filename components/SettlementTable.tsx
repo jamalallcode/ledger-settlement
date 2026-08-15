@@ -717,11 +717,11 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
 
     // Headers reverted to font-black
     const thBase =
-      "sticky top-0 border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 z-[110]";
+      "border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200";
     const thBase2 =
-      "sticky top-[42px] border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 z-[110]";
+      "border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200";
     const thBase3 =
-      "sticky top-[80px] border border-slate-300 px-1 py-0.5 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200 z-[110]";
+      "border border-slate-300 px-1 py-0.5 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200";
     // Body cells reverted to font-bold
     const tdBase =
       "border border-slate-300 px-0.5 py-1.5 text-center align-middle text-[9px] leading-tight font-bold text-slate-900 relative";
@@ -1562,7 +1562,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
               <col className="w-[50px]" />
               <col className="w-[50px]" />
             </colgroup>
-            <thead>
+            <thead className="sticky top-0 z-[120] bg-slate-200 shadow-sm">
               <tr className="h-[42px]">
                 <th rowSpan={2} className={thBase}>
                   ক্র: নং-
@@ -1629,7 +1629,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                     <React.Fragment key={group.label}>
                       {/* Sticky Cycle Header */}
                       {showCycleHeaders && (
-                        <tr className="sticky top-[104px] z-[90] no-print animate-in fade-in duration-300">
+                        <tr className="z-[90] no-print animate-in fade-in duration-300">
                           <td
                             colSpan={14}
                             className="p-0 border border-slate-300"
@@ -1700,7 +1700,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                       )}
 
                       {showCycleHeaders && showCycleStats[group.label] && (
-                        <tr className="sticky top-[152px] z-[85] no-print">
+                        <tr className="z-[85] no-print">
                           <td
                             colSpan={14}
                             className="p-0 border border-slate-300"
