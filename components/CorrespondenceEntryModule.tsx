@@ -1857,11 +1857,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
    * Duplicate Check Logic
    */
   const duplicates = useMemo(() => {
-    const normalizedDiary = toEnglishDigits(formData.diaryNo.replace(/\s+/g, ''));
-    const normalizedLetter = toEnglishDigits(formData.letterNo.replace(/\s+/g, ''));
+    const normalizedDiary = toEnglishDigits((formData.diaryNo || '').replace(/\s+/g, ''));
+    const normalizedLetter = toEnglishDigits((formData.letterNo || '').replace(/\s+/g, ''));
     const normalizedDigitalFile = toEnglishDigits((formData.digitalFileNo || '').replace(/\s+/g, ''));
-    const rawArchiveBody = (formData.archiveNo || '').replace(/^ka-\s*/i, '').replace(/^kg-\s*/i, '').trim();
-    const normalizedArchive = rawArchiveBody ? toEnglishDigits((formData.archiveNo || '').replace(/\s+/g, '').toLowerCase()) : '';
+
+    const rawArchive = (formData.archiveNo || '').replace(/^ka-\s*/i, '').replace(/^kg-\s*/i, '').trim();
+    const normalizedArchive = rawArchive ? toEnglishDigits((formData.archiveNo || '').toLowerCase().replace(/\s+/g, '')) : '';
     
     const diaryDuplicate = normalizedDiary ? existingEntries.find(entry => {
       if (initialEntry && entry.id === initialEntry.id) return false;
@@ -1877,13 +1878,15 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
     const digitalFileDuplicate = normalizedDigitalFile ? existingEntries.find(entry => {
       if (initialEntry && entry.id === initialEntry.id) return false;
-      const entryFile = toEnglishDigits((entry.digitalFileNo || '').replace(/\s+/g, ''));
-      return entryFile && entryFile === normalizedDigitalFile;
+      const entryDigitalFile = toEnglishDigits((entry.digitalFileNo || '').replace(/\s+/g, ''));
+      return entryDigitalFile && entryDigitalFile === normalizedDigitalFile;
     }) : null;
 
     const archiveDuplicate = normalizedArchive ? existingEntries.find(entry => {
       if (initialEntry && entry.id === initialEntry.id) return false;
-      const entryArchive = toEnglishDigits((entry.archiveNo || '').replace(/\s+/g, '').toLowerCase());
+      const entryRawArchive = (entry.archiveNo || '').replace(/^ka-\s*/i, '').replace(/^kg-\s*/i, '').trim();
+      if (!entryRawArchive) return false;
+      const entryArchive = toEnglishDigits((entry.archiveNo || '').toLowerCase().replace(/\s+/g, ''));
       return entryArchive && entryArchive === normalizedArchive;
     }) : null;
 
