@@ -58,7 +58,7 @@ import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import { getCurrentCycle, getCycleForDate } from "../utils/cycleHelper";
 import { format, addMonths } from "date-fns";
 import { CorrespondenceEntry, SettlementEntry } from "../types";
-import { SettledDataModal, findMatchedSettlements } from "./SettledDataModal";
+import { SettledDataModal, findMatchedSettlements, hasSettledParagraphs } from "./SettledDataModal";
 
 interface CorrespondenceTableProps {
   entries: CorrespondenceEntry[];
@@ -2431,7 +2431,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                           <div className="space-y-2">
                             {(() => {
                               const matched = findMatchedSettlements(entry, settlementEntries || []);
-                              const hasMatchedSettlement = matched.length > 0;
+                              const settledMatched = matched.filter(hasSettledParagraphs);
+                              const hasMatchedSettlement = settledMatched.length > 0;
                               const currentIsSettled: 'হ্যাঁ' | 'না' =
                                 pending.isSettled !== undefined
                                   ? pending.isSettled
@@ -2533,8 +2534,17 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                           <Sparkles size={11} className="text-amber-300 animate-pulse shrink-0" />
                                           <span className="truncate">মীমাংসিত ডাটা দেখুন</span>
                                           {(() => {
-                                            const matched = findMatchedSettlements(entry, settlementEntries || []);
-                                            const count = matched.reduce((acc, s) => acc + (s.paragraphs?.length || 1), 0);
+                                            const matched = findMatchedSettlements(entry, settlementEntries || []).filter(hasSettledParagraphs);
+                                            const count = matched.reduce((acc, s) => {
+                                              if (s.paragraphs && s.paragraphs.length > 0) {
+                                                const settledParas = s.paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ' || p.status === 'আংশিক' || (p.recoveredAmount && p.recoveredAmount > 0) || (p.adjustedAmount && p.adjustedAmount > 0));
+                                                return acc + (settledParas.length > 0 ? settledParas.length : s.paragraphs.length);
+                                              }
+                                              const full = parseInt(String(s.meetingFullSettledParaCount || '0'), 10) || 0;
+                                              const partial = parseInt(String(s.meetingPartialSettledParaCount || '0'), 10) || 0;
+                                              const total = full + partial;
+                                              return acc + (total > 0 ? total : 1);
+                                            }, 0);
                                             return count > 0 ? (
                                               <span className="bg-white/25 text-white text-[8px] px-1 py-0.2 rounded font-extrabold border border-white/30 shrink-0">
                                                 {toBengaliDigits(count)}টি
