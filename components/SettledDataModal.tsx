@@ -84,8 +84,49 @@ const formatArchiveNoForTable = (val: string | undefined | null) => {
 };
 
 /**
+ * Helper to check if a settlement entry actually has settled paragraphs or settlement recovery/adjustment data.
+ */
+export const hasSettledParagraphs = (se: SettlementEntry): boolean => {
+  if (!se) return false;
+  if (se.paragraphs && se.paragraphs.length > 0) {
+    return se.paragraphs.some(
+      (p) =>
+        p.status === "পূর্ণাঙ্গ" ||
+        p.status === "আংশিক" ||
+        (p.recoveredAmount !== undefined && Number(p.recoveredAmount) > 0) ||
+        (p.adjustedAmount !== undefined && Number(p.adjustedAmount) > 0) ||
+        (p.vatRec !== undefined && Number(p.vatRec) > 0) ||
+        (p.vatAdj !== undefined && Number(p.vatAdj) > 0) ||
+        (p.itRec !== undefined && Number(p.itRec) > 0) ||
+        (p.itAdj !== undefined && Number(p.itAdj) > 0) ||
+        (p.othersRec !== undefined && Number(p.othersRec) > 0) ||
+        (p.othersAdj !== undefined && Number(p.othersAdj) > 0)
+    );
+  }
+  const totalSettledMoney =
+    (Number(se.totalRec) || 0) +
+    (Number(se.totalAdj) || 0) +
+    (Number(se.vatRec) || 0) +
+    (Number(se.vatAdj) || 0) +
+    (Number(se.itRec) || 0) +
+    (Number(se.itAdj) || 0) +
+    (Number(se.othersRec) || 0) +
+    (Number(se.othersAdj) || 0);
+  const fullCount = parseInt(String(se.meetingFullSettledParaCount || "0"), 10) || 0;
+  const partialCount = parseInt(String(se.meetingPartialSettledParaCount || "0"), 10) || 0;
+  const settledCount = parseInt(String(se.meetingSettledParaCount || "0"), 10) || 0;
+
+  return (
+    totalSettledMoney > 0 ||
+    fullCount > 0 ||
+    partialCount > 0 ||
+    settledCount > 0
+  );
+};
+
+/**
  * Strict Matching Algorithm to guarantee the displayed settlement data
- * strictly belongs to the specific letter (Issue No, Diary No, Letter No, Ministry, Entity/Branch).
+ * strictly belongs to the specific letter (Diary No, Letter No, Digital File No, Issue No, Ministry, Entity).
  */
 export const findMatchedSettlements = (
   entry: CorrespondenceEntry,
@@ -108,9 +149,18 @@ export const findMatchedSettlements = (
     return digitsOnly;
   };
 
+  const cleanFileNo = (val?: any) => {
+    if (val === undefined || val === null) return "";
+    return toEnglishDigits(String(val))
+      .toLowerCase()
+      .replace(/[^a-z0-9\u0980-\u09FF]/g, "")
+      .trim();
+  };
+
   const entryId = entry.id;
   const cLetterNo = extractCleanNumber(entry.letterNo);
   const cDiaryNo = extractCleanNumber(entry.diaryNo);
+  const cDigitalFileNo = cleanFileNo(entry.digitalFileNo);
   const cIssueNo = extractCleanNumber(entry.issueLetterNo);
   const cMinistry = cleanStr(entry.ministryName || (entry as any).ministry);
   const cEntity = cleanStr(
@@ -118,7 +168,7 @@ export const findMatchedSettlements = (
   );
 
   return allSettlements.filter((se: any) => {
-    // 1. Direct ID relationship
+    // 1. Direct ID relationship (100% definitive)
     if (se.correspondenceId && se.correspondenceId === entryId) return true;
     if (se.letterId && se.letterId === entryId) return true;
     if (se.id && se.id === entryId) return true;
@@ -142,6 +192,7 @@ export const findMatchedSettlements = (
 
     const seLetterNo = extractCleanNumber(se.letterNo || seLetterParts.no);
     const seDiaryNo = extractCleanNumber(se.diaryNo || seDiaryParts.no);
+    const seDigitalFileNo = cleanFileNo(se.digitalFileNo);
     const seIssueNo = extractCleanNumber(
       se.issueNo || se.issueLetterNo || seIssueParts.no
     );
@@ -153,14 +204,44 @@ export const findMatchedSettlements = (
         (se.details && (se.details.entityName || se.details.entity))
     );
 
-    // Ministry check: if both have ministry specified and they conflict, reject
+    // =========================================================================
+    // STRICT CONFLICT PREVENTION (Strict Disqualification)
+    // =========================================================================
+
+    // If both records specify a Diary Number, they MUST NOT contradict each other
+    if (cDiaryNo && seDiaryNo && cDiaryNo !== seDiaryNo) {
+      return false;
+    }
+
+    // If both records specify a Letter Number, they MUST NOT contradict each other
+    if (cLetterNo && seLetterNo && cLetterNo !== seLetterNo) {
+      return false;
+    }
+
+    // If both records specify a Digital File Number, they MUST NOT contradict each other
+    if (cDigitalFileNo && seDigitalFileNo && cDigitalFileNo !== seDigitalFileNo) {
+      return false;
+    }
+
+    // If both records specify an Issue Letter Number (and not dummy 100), they MUST NOT contradict
+    if (
+      cIssueNo &&
+      seIssueNo &&
+      cIssueNo !== "100" &&
+      seIssueNo !== "100" &&
+      cIssueNo !== seIssueNo
+    ) {
+      return false;
+    }
+
+    // Ministry conflict check: if both specified and conflict, reject
     if (cMinistry && seMinistry) {
       if (!cMinistry.includes(seMinistry) && !seMinistry.includes(cMinistry)) {
         return false;
       }
     }
 
-    // Entity conflict check: if both have explicit entity names and they completely differ, reject
+    // Organization conflict check: if both specified and known to differ, reject
     if (cEntity && seEntity) {
       const isKnownDifferentOrg =
         (cEntity.includes("সাধারণবীমা") && !seEntity.includes("সাধারণবীমা")) ||
@@ -178,71 +259,59 @@ export const findMatchedSettlements = (
       }
     }
 
-    // Matching Rule A: Both Letter No and Diary No are available and MATCH EXACTLY
+    // =========================================================================
+    // STRICT POSITIVE MULTI-FIELD MATCHING
+    // =========================================================================
+
+    // Multi-Match 1: Both Letter No and Diary No match exactly
     if (cLetterNo && seLetterNo && cDiaryNo && seDiaryNo) {
       if (cLetterNo === seLetterNo && cDiaryNo === seDiaryNo) {
         return true;
       }
     }
 
-    // Matching Rule B: Letter No AND Issue Letter No match (and Issue No is not dummy 100)
-    if (cLetterNo && seLetterNo && cIssueNo && seIssueNo) {
-      if (
-        cLetterNo === seLetterNo &&
-        cIssueNo === seIssueNo &&
-        cIssueNo !== "100" &&
-        seIssueNo !== "100"
-      ) {
+    // Multi-Match 2: Digital File No matches AND (Letter No OR Diary No matches)
+    if (cDigitalFileNo && seDigitalFileNo && cDigitalFileNo === seDigitalFileNo) {
+      if ((cLetterNo && seLetterNo && cLetterNo === seLetterNo) || (cDiaryNo && seDiaryNo && cDiaryNo === seDiaryNo)) {
+        return true;
+      }
+      if (cEntity && seEntity && (cEntity.includes(seEntity) || seEntity.includes(cEntity))) {
         return true;
       }
     }
 
-    // Matching Rule C: Diary No AND Issue Letter No match (and Issue No is not dummy 100)
-    if (cDiaryNo && seDiaryNo && cIssueNo && seIssueNo) {
-      if (
-        cDiaryNo === seDiaryNo &&
-        cIssueNo === seIssueNo &&
-        cIssueNo !== "100" &&
-        seIssueNo !== "100"
-      ) {
-        return true;
-      }
-    }
-
-    // Matching Rule D: Letter No matches AND Entity name matches
-    if (cLetterNo && seLetterNo && cLetterNo === seLetterNo) {
-      if (
-        cEntity &&
-        seEntity &&
-        (cEntity.includes(seEntity) || seEntity.includes(cEntity))
-      ) {
-        return true;
-      }
-    }
-
-    // Matching Rule E: Diary No matches AND Entity name matches
-    if (cDiaryNo && seDiaryNo && cDiaryNo === seDiaryNo) {
-      if (
-        cEntity &&
-        seEntity &&
-        (cEntity.includes(seEntity) || seEntity.includes(cEntity))
-      ) {
-        return true;
-      }
-    }
-
-    // Matching Rule F: Issue No matches (non-dummy) AND Entity name matches
+    // Multi-Match 3: Issue Letter No (real) matches AND (Letter No OR Diary No matches)
     if (
       cIssueNo &&
       seIssueNo &&
-      cIssueNo === seIssueNo &&
       cIssueNo !== "100" &&
-      seIssueNo !== "100"
+      seIssueNo !== "100" &&
+      cIssueNo === seIssueNo
     ) {
+      if ((cLetterNo && seLetterNo && cLetterNo === seLetterNo) || (cDiaryNo && seDiaryNo && cDiaryNo === seDiaryNo)) {
+        return true;
+      }
+    }
+
+    // Multi-Match 4: If Diary No is missing on one side, Letter No matches + Entity matches + Ministry matches
+    if ((!cDiaryNo || !seDiaryNo) && cLetterNo && seLetterNo && cLetterNo === seLetterNo) {
       if (
         cEntity &&
         seEntity &&
-        (cEntity.includes(seEntity) || seEntity.includes(cEntity))
+        (cEntity.includes(seEntity) || seEntity.includes(cEntity)) &&
+        (!cMinistry || !seMinistry || cMinistry.includes(seMinistry) || seMinistry.includes(cMinistry))
+      ) {
+        return true;
+      }
+    }
+
+    // Multi-Match 5: If Letter No is missing on one side, Diary No matches + Entity matches + Ministry matches
+    if ((!cLetterNo || !seLetterNo) && cDiaryNo && seDiaryNo && cDiaryNo === seDiaryNo) {
+      if (
+        cEntity &&
+        seEntity &&
+        (cEntity.includes(seEntity) || seEntity.includes(cEntity)) &&
+        (!cMinistry || !seMinistry || cMinistry.includes(seMinistry) || seMinistry.includes(cMinistry))
       ) {
         return true;
       }
