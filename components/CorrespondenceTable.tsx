@@ -860,7 +860,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
       if (!isAnyExpanded) return;
 
       let activeLabel = "";
-      const stickyTop = 42; // The CSS top position of sticky headers (Row 1 height)
+      const stickyTop = 66; // The CSS top position of sticky headers (Row 1: 40px + Row 2: 26px)
 
       // Find the cycle header that is currently "active" (sticky at the top)
       // Standard scroll-spy: iterate and find the last element that has passed the trigger point
@@ -1692,11 +1692,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           {groupedEntries.length > 0 ? (
             (() => {
               let globalIdx = 0;
-              return groupedEntries.map((group) => (
-                <tbody key={group.label}>
-                  {/* Sticky Cycle Header */}
-                  {showCycleHeaders && (
-                    <tr className="sticky top-[66px] z-[105] no-print animate-in fade-in duration-300">
+              return (
+                <tbody>
+                  {groupedEntries.map((group) => (
+                    <React.Fragment key={group.label}>
+                      {/* Sticky Cycle Header */}
+                      {showCycleHeaders && (
+                        <tr className="sticky top-[66px] z-[105] no-print animate-in fade-in duration-300">
                       <td
                         colSpan={7}
                         className="sticky top-[66px] p-0 border border-slate-400 shadow-sm bg-slate-100"
@@ -2939,10 +2941,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                       className="border border-slate-300 bg-slate-50/30"
                     ></td>
                   </tr>
-                </tbody>
-              ));
-            })()
-          ) : (
+                </React.Fragment>
+              ))}
+            </tbody>
+          );
+        })()
+      ) : (
             <tbody>
               {/* Invisible baseline row to secure table-layout fixed column widths when empty */}
               <tr className="h-0 p-0 border-0 pointer-events-none select-none invisible">
