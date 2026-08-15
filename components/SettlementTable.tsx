@@ -1667,54 +1667,56 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                             <div className="bg-white p-4 border-b border-slate-300 shadow-md">
                               <div className="flex flex-col gap-3">
                                 {/* Row 1: Letters Summary */}
-                                <div className="flex flex-wrap items-center gap-3">
-                                  <span className="px-3.5 py-1.5 bg-slate-50 border border-slate-300 rounded-xl shadow-sm flex items-center gap-2 text-slate-800 text-[12px] font-bold">
-                                    মোট চিঠি:{" "}
-                                    <span className="text-blue-700 font-black text-[13px] bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100">
+                                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+                                  <div className="w-full md:w-[230px] shrink-0 px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl shadow-sm flex items-center justify-between gap-2 text-slate-800 text-[12px] font-bold">
+                                    <span>মোট চিঠি:</span>
+                                    <span className="text-blue-700 font-black text-[13px] bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-100">
                                       {toBengaliDigits(stats.totalLetters)} টি
                                     </span>
-                                  </span>
+                                  </div>
 
                                   {/* SFI Letters Card */}
-                                  <div className="group/sfi-letters flex items-center gap-2 px-3.5 py-1.5 bg-emerald-50/70 hover:bg-emerald-50/95 border-2 border-emerald-300/80 hover:border-emerald-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(16,185,129,0.22)] hover:-translate-y-0.5 cursor-default">
-                                    <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-400"></div>
-                                    <span className="text-emerald-900 font-black text-[12px]">এসএফআই:</span>
-                                    <span className="text-white bg-emerald-600 px-2 py-0.5 rounded-lg text-[11px] font-black shadow-sm">
+                                  <div className="group/sfi-letters flex-1 min-w-0 flex items-center gap-2 px-3.5 py-2 bg-emerald-50/70 hover:bg-emerald-50/95 border-2 border-emerald-300/80 hover:border-emerald-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(16,185,129,0.22)] hover:-translate-y-0.5 cursor-default">
+                                    <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-400 shrink-0"></div>
+                                    <span className="text-emerald-900 font-black text-[12px] shrink-0">এসএফআই:</span>
+                                    <span className="text-white bg-emerald-600 px-2 py-0.5 rounded-lg text-[11px] font-black shadow-sm shrink-0">
                                       {toBengaliDigits(stats.sfiEntries.length)} টি
                                     </span>
-                                    <span className="text-emerald-800/80 text-[11px] font-bold">
+                                    <span className="text-emerald-800/80 text-[11px] font-bold truncate">
                                       (বিএসআর {toBengaliDigits(stats.sfiBSR)}, সভা {toBengaliDigits(stats.sfiTri)})
                                     </span>
                                   </div>
 
                                   {/* Non-SFI Letters Card */}
-                                  <div className="group/nonsfi-letters flex items-center gap-2 px-3.5 py-1.5 bg-amber-50/70 hover:bg-amber-50/95 border-2 border-amber-300/80 hover:border-amber-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(245,158,11,0.22)] hover:-translate-y-0.5 cursor-default">
-                                    <div className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse shadow-sm shadow-amber-400"></div>
-                                    <span className="text-amber-900 font-black text-[12px]">নন এসএফআই:</span>
-                                    <span className="text-white bg-amber-600 px-2 py-0.5 rounded-lg text-[11px] font-black shadow-sm">
+                                  <div className="group/nonsfi-letters flex-1 min-w-0 flex items-center gap-2 px-3.5 py-2 bg-amber-50/70 hover:bg-amber-50/95 border-2 border-amber-300/80 hover:border-amber-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(245,158,11,0.22)] hover:-translate-y-0.5 cursor-default">
+                                    <div className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse shadow-sm shadow-amber-400 shrink-0"></div>
+                                    <span className="text-amber-900 font-black text-[12px] shrink-0">নন এসএফআই:</span>
+                                    <span className="text-white bg-amber-600 px-2 py-0.5 rounded-lg text-[11px] font-black shadow-sm shrink-0">
                                       {toBengaliDigits(stats.nonSfiEntries.length)} টি
                                     </span>
-                                    <span className="text-amber-800/80 text-[11px] font-bold">
+                                    <span className="text-amber-800/80 text-[11px] font-bold truncate">
                                       (বিএসআর {toBengaliDigits(stats.nonSfiBSR)}, সভা {toBengaliDigits(stats.nonSfiBi)})
                                     </span>
                                   </div>
                                 </div>
 
                                 {/* Row 2: Settled Paragraphs Summary */}
-                                <div className="flex flex-wrap items-center gap-3">
-                                  <div className="flex items-center gap-2 px-3.5 py-1.5 bg-slate-50 border border-slate-300 rounded-xl shadow-sm text-[12px] font-bold text-slate-800">
-                                    <CheckCircle2 size={15} className="text-emerald-600" />
-                                    <span>মোট মীমাংসিত অনুচ্ছেদ:</span>
+                                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+                                  <div className="w-full md:w-[230px] shrink-0 px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl shadow-sm flex items-center justify-between gap-2 text-[12px] font-bold text-slate-800">
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                                      <span>মোট মীমাংসিত অনুচ্ছেদ:</span>
+                                    </div>
                                     <span className="text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-lg font-black text-[12px] border border-emerald-200">
                                       {toBengaliDigits(stats.cycleSettledParasCount)} টি
                                     </span>
                                   </div>
 
                                   {/* SFI Settled Card */}
-                                  <div className="group/sfi-settled flex-1 min-w-[280px] flex items-center gap-2 px-3.5 py-1.5 bg-emerald-50/70 hover:bg-emerald-50/95 border-2 border-emerald-300/80 hover:border-emerald-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(16,185,129,0.22)] hover:-translate-y-0.5 cursor-default text-[11px] font-black">
-                                    <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-400"></div>
-                                    <span className="text-emerald-900">এসএফআই:</span>
-                                    <span className="text-white bg-emerald-600 px-2 py-0.5 rounded-lg text-[11px] font-black shadow-sm">
+                                  <div className="group/sfi-settled flex-1 min-w-0 flex items-center gap-2 px-3.5 py-2 bg-emerald-50/70 hover:bg-emerald-50/95 border-2 border-emerald-300/80 hover:border-emerald-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(16,185,129,0.22)] hover:-translate-y-0.5 cursor-default text-[11px] font-black">
+                                    <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-400 shrink-0"></div>
+                                    <span className="text-emerald-900 shrink-0">এসএফআই:</span>
+                                    <span className="text-white bg-emerald-600 px-2 py-0.5 rounded-lg text-[11px] font-black shadow-sm shrink-0">
                                       {toBengaliDigits(stats.sfiSettled.total)} টি
                                     </span>
                                     {stats.sfiSettled.details && (
@@ -1725,10 +1727,10 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                   </div>
 
                                   {/* Non-SFI Settled Card */}
-                                  <div className="group/nonsfi-settled flex-1 min-w-[280px] flex items-center gap-2 px-3.5 py-1.5 bg-amber-50/70 hover:bg-amber-50/95 border-2 border-amber-300/80 hover:border-amber-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(245,158,11,0.22)] hover:-translate-y-0.5 cursor-default text-[11px] font-black">
-                                    <div className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse shadow-sm shadow-amber-400"></div>
-                                    <span className="text-amber-900">নন এসএফআই:</span>
-                                    <span className="text-white bg-amber-600 px-2 py-0.5 rounded-lg text-[11px] font-black shadow-sm">
+                                  <div className="group/nonsfi-settled flex-1 min-w-0 flex items-center gap-2 px-3.5 py-2 bg-amber-50/70 hover:bg-amber-50/95 border-2 border-amber-300/80 hover:border-amber-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(245,158,11,0.22)] hover:-translate-y-0.5 cursor-default text-[11px] font-black">
+                                    <div className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse shadow-sm shadow-amber-400 shrink-0"></div>
+                                    <span className="text-amber-900 shrink-0">নন এসএফআই:</span>
+                                    <span className="text-white bg-amber-600 px-2 py-0.5 rounded-lg text-[11px] font-black shadow-sm shrink-0">
                                       {toBengaliDigits(stats.nonSfiSettled.total)} টি
                                     </span>
                                     {stats.nonSfiSettled.details && (
