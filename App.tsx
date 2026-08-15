@@ -155,6 +155,25 @@ const App: React.FC = () => {
     return localStorage.getItem('admin_contact_link') || 'https://wa.me/8801700000000';
   });
 
+  const [allowPriorPeriodSettlement, setAllowPriorPeriodSettlement] = useState<boolean>(() => {
+    return localStorage.getItem('allow_prior_period_settlement') === 'true';
+  });
+
+  const handleToggleAllowPriorPeriodSettlement = async () => {
+    const nextVal = !allowPriorPeriodSettlement;
+    setAllowPriorPeriodSettlement(nextVal);
+    localStorage.setItem('allow_prior_period_settlement', String(nextVal));
+    if (isSupabaseConfigured && supabase && typeof supabase.from === 'function') {
+      try {
+        await supabase
+          .from('app_settings')
+          .upsert({ key: 'allow_prior_period_settlement', value: nextVal }, { onConflict: 'key' });
+      } catch (err) {
+        console.error("Error updating allow_prior_period_settlement in supabase:", err);
+      }
+    }
+  };
+
   const handleUpdateContactLink = async (newLink: string) => {
     setContactLink(newLink);
     localStorage.setItem('admin_contact_link', newLink);
@@ -609,6 +628,10 @@ const App: React.FC = () => {
                 setContactLink(setting.value);
                 localStorage.setItem('admin_contact_link', setting.value);
               }
+            } else if (setting.key === 'allow_prior_period_settlement') {
+              const boolVal = setting.value === true || setting.value === 'true';
+              setAllowPriorPeriodSettlement(boolVal);
+              localStorage.setItem('allow_prior_period_settlement', String(boolVal));
             } else {
               const key = setting.key.replace('show_', '');
               if (key in newVisibility) {
@@ -643,6 +666,10 @@ const App: React.FC = () => {
                 setContactLink(payload.new.value);
                 localStorage.setItem('admin_contact_link', payload.new.value);
               }
+            } else if (payload.new.key === 'allow_prior_period_settlement') {
+              const boolVal = payload.new.value === true || payload.new.value === 'true';
+              setAllowPriorPeriodSettlement(boolVal);
+              localStorage.setItem('allow_prior_period_settlement', String(boolVal));
             } else {
               const key = payload.new.key.replace('show_', '');
               setModuleVisibility(prev => {
@@ -1595,7 +1622,7 @@ const App: React.FC = () => {
                 />
               )}
               
-              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { pushHistory(); setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} moduleVisibility={moduleVisibility} />}
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { pushHistory(); setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} moduleVisibility={moduleVisibility} allowPriorPeriodSettlement={allowPriorPeriodSettlement} />}
               
               {activeTab === 'register' && (
                 <div className="w-full relative">
@@ -1768,6 +1795,8 @@ const App: React.FC = () => {
                   activeThemeId={themeId}
                   onThemeChange={setThemeId}
                   themes={THEMES}
+                  allowPriorPeriodSettlement={allowPriorPeriodSettlement}
+                  onToggleAllowPriorPeriodSettlement={handleToggleAllowPriorPeriodSettlement}
                 />
               )}
             </div>

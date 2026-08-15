@@ -4,7 +4,8 @@ import {
   PieChart, FileText, Mail, PlusCircle, ArrowRight,
   Settings, KeyRound, Fingerprint, Library, BellRing,
   Sparkles, CheckCircle2, AlertCircle, Clock, Eye, EyeOff,
-  CalendarRange, MessageCircle, Menu, Link as LinkIcon, ChevronLeft
+  CalendarRange, MessageCircle, Menu, Link as LinkIcon, ChevronLeft,
+  Lock, Unlock
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -26,6 +27,8 @@ interface AdminDashboardProps {
   activeThemeId?: string;
   onThemeChange?: (themeId: string) => void;
   themes?: any[];
+  allowPriorPeriodSettlement?: boolean;
+  onToggleAllowPriorPeriodSettlement?: () => void;
 }
 
 const colorClasses: Record<string, any> = {
@@ -50,7 +53,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onUpdateContactLink,
   activeThemeId = 'royal-blue',
   onThemeChange,
-  themes = []
+  themes = [],
+  allowPriorPeriodSettlement = false,
+  onToggleAllowPriorPeriodSettlement
 }) => {
   if (!isAdmin) return null;
 
@@ -382,6 +387,54 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </button>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Prior Period Settlement Entry Permission Switch */}
+              <div className="pt-3 pb-1 border-t border-slate-100">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">মীমাংসা এন্ট্রি সময়কাল কন্ট্রোল</h3>
+                <div className="p-3.5 bg-gradient-to-r from-blue-50/80 to-indigo-50/80 rounded-2xl border border-blue-200/70 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-sm text-white shrink-0 ${allowPriorPeriodSettlement ? 'bg-emerald-600' : 'bg-rose-600'}`}>
+                        {allowPriorPeriodSettlement ? <Unlock size={16} /> : <Lock size={16} />}
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black text-slate-800">১৬/০৬/২০২৫ এর পূর্বের ডাটা এন্ট্রি</h4>
+                        <p className={`text-[10px] font-bold ${allowPriorPeriodSettlement ? 'text-emerald-700' : 'text-slate-500'}`}>
+                          {allowPriorPeriodSettlement ? 'বর্তমানে পূর্বের ডাটা এন্ট্রি সক্রিয় আছে' : 'স্বাভাবিক অবস্থায় পূর্বের ডাটা এন্ট্রি লক আছে'}
+                        </p>
+                      </div>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={onToggleAllowPriorPeriodSettlement}
+                      title="১৬/০৬/২০২৫ এর পূর্ববর্তী ডাটা এন্ট্রি অনুমতি অন/অফ করুন"
+                      className={`relative inline-flex h-9 w-[76px] shrink-0 cursor-pointer items-center rounded-full border-[3px] border-[#1c1c1c] overflow-hidden transition-all duration-300 select-none focus:outline-none ${
+                        allowPriorPeriodSettlement 
+                          ? 'bg-gradient-to-r from-[#2ebd59] to-[#39db39] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]' 
+                          : 'bg-gradient-to-r from-[#e63c3c] to-[#ef4444] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]'
+                      }`}
+                    >
+                      {/* Inner Track Text */}
+                      {allowPriorPeriodSettlement ? (
+                        <span className="ml-auto mr-3 text-white text-[10px] font-black tracking-wider select-none">ON</span>
+                      ) : (
+                        <span className="ml-3 mr-auto text-white text-[10px] font-black tracking-wider select-none">OFF</span>
+                      )}
+                      
+                      {/* Knob */}
+                      <span 
+                        className="absolute h-7 w-7 rounded-full bg-gradient-to-b from-[#404040] to-[#1e1e1e] border border-[#0d0d0d] shadow-[0_3px_5px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.35)] transition-all duration-300 ease-out"
+                        style={{ 
+                          left: allowPriorPeriodSettlement ? '2px' : '40px' 
+                        }}
+                      />
+                    </button>
+                  </div>
+                  <p className="text-[9.5px] font-bold text-slate-500 leading-relaxed border-t border-blue-100/60 pt-2">
+                    * ১৬/০৬/২০২৫ হতে ১৫/০৭/২০২৫ সময়কালের পূর্বের কোনো তথ্যের মীমাংসা এন্ট্রি করতে হলে এই সুইচটি অন (ON) করুন। স্বাভাবিক অবস্থায় এটি বন্ধ (OFF) থাকবে।
+                  </p>
                 </div>
               </div>
 

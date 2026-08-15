@@ -19,9 +19,10 @@ interface SettlementFormProps {
   entries?: SettlementEntry[];
   navigateToEntry?: (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => void;
   moduleVisibility?: ModuleVisibility;
+  allowPriorPeriodSettlement?: boolean;
 }
 
-const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, nextSl, branchSuggestions, initialEntry, onCancel, isLayoutEditable, isAdmin = false, userEmail, preSelectedModule = null, correspondenceEntries, entries, navigateToEntry, moduleVisibility }) => {
+const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, nextSl, branchSuggestions, initialEntry, onCancel, isLayoutEditable, isAdmin = false, userEmail, preSelectedModule = null, correspondenceEntries, entries, navigateToEntry, moduleVisibility, allowPriorPeriodSettlement = false }) => {
   const [mainModule, setMainModule] = useState<'settlement' | 'correspondence' | null>(() => {
     if (initialEntry) {
       return (initialEntry.type === 'correspondence' || !!initialEntry.description) ? 'correspondence' : 'settlement';
@@ -75,6 +76,7 @@ const SettlementForm: React.FC<SettlementFormProps> = ({ onAdd, onViewRegister, 
         navigateToEntry={navigateToEntry}
         showAuditDetails={isAdmin || (moduleVisibility?.audit_details ?? true)}
         correspondenceEntries={correspondenceEntries}
+        allowPriorPeriodSettlement={allowPriorPeriodSettlement}
       />
     );
   }

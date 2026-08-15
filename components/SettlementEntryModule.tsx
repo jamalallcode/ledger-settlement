@@ -3,7 +3,7 @@ import { SettlementEntry, ParaType, ParagraphDetail, FinancialCategory, GroupOpt
 import SearchableSelect from './SearchableSelect.tsx';
 import DeleteConfirmationModal from './DeleteConfirmationModal.tsx';
 import { MINISTRIES_LIST, MINISTRY_ENTITY_MAP, ENTITY_BRANCH_MAP, AUDIT_YEARS_OPTIONS } from '../constants.ts';
-import { Trash2, Globe, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus, Hash, ChevronDown, CheckCircle, Search, Mail, Computer } from 'lucide-react';
+import { Trash2, Globe, Sparkles, X, Building2, Building, AlertCircle, CheckCircle2, Calendar, FileText, Banknote, Archive, BookOpen, Send, FileEdit, Layout, Fingerprint, Info, BarChart3, ListOrdered, ArrowRightCircle, Check, ShieldCheck, Trash, MessageSquare, ArrowRight, Plus, Hash, ChevronDown, CheckCircle, Search, Mail, Computer, Lock, Unlock } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils.ts';
 import { getCycleForDate, isEntryLate } from '../utils/cycleHelper.ts';
 import { getDateError } from '../utils/dateValidation';
@@ -180,6 +180,7 @@ interface SettlementEntryModuleProps {
   navigateToEntry?: (id: string, type: 'settlement' | 'correspondence', searchNo?: string) => void;
   showAuditDetails?: boolean;
   correspondenceEntries?: CorrespondenceEntry[];
+  allowPriorPeriodSettlement?: boolean;
 }
 
 const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({ 
@@ -194,7 +195,8 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   existingEntries = [],
   navigateToEntry,
   showAuditDetails = true,
-  correspondenceEntries = []
+  correspondenceEntries = [],
+  allowPriorPeriodSettlement = false
 }) => {
   const [lastCreatedId, setLastCreatedId] = useState<string | null>(null);
 
@@ -311,13 +313,9 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       return firstPart.replace(cleanRegex, '').replace(/\s+/g, '');
     };
 
-    // 1. Filter letters that have isSettled === 'হ্যাঁ'
-    // 2. Filter letters that have BOTH issueLetterNo and issueLetterDate
-    // 3. Filter letters that are NOT already in existingEntries (মীমাংসা রেজিস্টার)
+    // 1. Filter letters that have BOTH issueLetterNo and issueLetterDate
+    // 2. Filter letters that are NOT already in existingEntries (মীমাংসা রেজিস্টার)
     const validUnsettledEntries = correspondenceEntries.filter((entry: any) => {
-      const isSettledYes = entry.isSettled === 'হ্যাঁ';
-      if (!isSettledYes) return false;
-
       const hasIssueNo = Boolean(entry.issueLetterNo && entry.issueLetterNo.trim());
       const hasIssueDate = Boolean(entry.issueLetterDate && entry.issueLetterDate.trim());
       if (!hasIssueNo || !hasIssueDate) return false;
@@ -819,6 +817,12 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   const currentLetterISO = useMemo(() => getIsoFromSegments(letterDay, letterMonth, letterYear), [letterDay, letterMonth, letterYear]);
   const currentIssueISO = useMemo(() => getIsoFromSegments(dayPart, monthPart, yearPart), [dayPart, monthPart, yearPart]);
 
+  // Prior Period Cutoff Check (Cutoff cycle starts 16/06/2025: 2025-06-16)
+  const isPriorCutoffIssue = Boolean(currentIssueISO && currentIssueISO < '2025-06-16');
+  const isPriorCutoffLetter = Boolean(currentLetterISO && currentLetterISO < '2025-06-16');
+  const isPriorCutoffDiary = Boolean(currentDiaryISO && currentDiaryISO < '2025-06-16');
+  const isPriorPeriodBlocked = !allowPriorPeriodSettlement && (isPriorCutoffIssue || isPriorCutoffLetter || isPriorCutoffDiary);
+
   useEffect(() => {
     setFormData(prev => ({ ...prev, workpaperNoDate: buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear, 'ডায়েরি নং-', 'ডায়েরির তারিখ-') }));
   }, [diaryNoPart, diaryDay, diaryMonth, diaryYear]);
@@ -1010,6 +1014,18 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                     paragraphs.length === 0;
 
     if (isEmpty) {
+      const container = document.getElementById('form-container-settlement');
+      if (container) {
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      return;
+    }
+
+    // Prior period restriction check (16/06/2025 cutoff)
+    if (isPriorPeriodBlocked) {
+      alert("১৬/০৬/২০২৫ হতে ১৫/০৭/২০২৫ সময়কালের পূর্বের কোনো ডাটা স্বাভাবিক অবস্থায় মীমাংসা এন্ট্রি করা যাবে না।\n\nযদি বিশেষ প্রয়োজনে পূর্বের ডাটা এন্ট্রি করতে চান, তবে ড্যাশবোর্ড থেকে '১৬/০৬/২০২৫ এর পূর্ববর্তী মীমাংসা এন্ট্রি অনুমোদন' সুইচটি অন (ON) করুন।");
       const container = document.getElementById('form-container-settlement');
       if (container) {
         container.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1403,6 +1419,36 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                </button>
              )}
            </div>
+        </div>
+      )}
+
+      {/* Prior Period Blocked Warning */}
+      {isPriorPeriodBlocked && !isSuccess && (
+        <div className="mb-8 p-5 bg-rose-50 border-2 border-rose-200 rounded-[2rem] flex items-start gap-4 shadow-sm animate-in slide-in-from-top-2 duration-300">
+          <div className="w-12 h-12 bg-rose-600 text-white rounded-2xl flex items-center justify-center shrink-0 shadow-md shadow-rose-200">
+            <Lock size={24} />
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-base font-black text-rose-950 flex items-center gap-2">
+              ১৬/০৬/২০২৫ এর পূর্ববর্তী ডাটা এন্ট্রি লক করা রয়েছে
+            </h4>
+            <p className="text-xs md:text-sm font-bold text-rose-800 leading-relaxed">
+              ১৬/০৬/২০২৫ হতে ১৫/০৭/২০২৫ সময়কালের পূর্বের কোনো তথ্য বা তারিখ স্বাভাবিক অবস্থায় মীমাংসা এন্ট্রি ফরমে এন্ট্রি দেওয়া যাবে না। বিশেষ প্রয়োজনে পূর্বের ডাটা এন্ট্রি করতে চাইলে অনুগ্রহ করে ড্যাশবোর্ড (Dashboard) থেকে সুইচটি অন (ON) করুন।
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Prior Period Allowed Indicator */}
+      {allowPriorPeriodSettlement && !isSuccess && (
+        <div className="mb-8 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3.5 shadow-xs animate-in slide-in-from-top-2 duration-300">
+          <div className="w-9 h-9 bg-emerald-600 text-white rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+            <Unlock size={18} />
+          </div>
+          <div>
+            <h4 className="text-xs font-black text-emerald-950">পূর্ববর্তী সময়কালের ডাটা এন্ট্রি মোড সক্রিয় (ড্যাশবোর্ড সুইচ অন)</h4>
+            <p className="text-[11px] font-bold text-emerald-700">১৬/০৬/২০২৫ এর পূর্ববর্তী তথ্যের মীমাংসা এন্ট্রি করার অনুমতি রয়েছে।</p>
+          </div>
         </div>
       )}
 
@@ -2261,11 +2307,21 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
             <button 
               id="btn-submit-entry"
               type="submit"
-              disabled={!!diaryDateError || !!issueDateError}
-              className={`w-full py-5 text-white text-xl font-black rounded-[2.5rem] bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] shadow-[0_20px_40px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-4 group relative overflow-hidden ${diaryDateError || issueDateError ? 'bg-slate-300 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600'}`}
+              disabled={!!diaryDateError || !!issueDateError || isPriorPeriodBlocked}
+              className={`w-full py-5 text-white text-xl font-black rounded-[2.5rem] transition-all flex items-center justify-center gap-4 group relative overflow-hidden ${diaryDateError || issueDateError || isPriorPeriodBlocked ? 'bg-slate-400 cursor-not-allowed opacity-90' : 'bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] shadow-[0_20px_40px_rgba(16,185,129,0.3)]'}`}
             >
-              {!diaryDateError && !issueDateError && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>}
-              <CheckCircle2 size={24} strokeWidth={2.5} /> {isUpdateMode ? 'তথ্য আপডেট করুন' : 'রেজিস্টার তথ্য সংরক্ষণ করুন'}
+              {!diaryDateError && !issueDateError && !isPriorPeriodBlocked && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>}
+              {isPriorPeriodBlocked ? (
+                <>
+                  <Lock size={24} strokeWidth={2.5} className="text-amber-200" />
+                  <span>১৬/০৬/২০২৫ এর পূর্বের ডাটা লক আছে (ড্যাশবোর্ড সুইচ অন করুন)</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 size={24} strokeWidth={2.5} />
+                  <span>{isUpdateMode ? 'তথ্য আপডেট করুন' : 'রেজিস্টার তথ্য সংরক্ষণ করুন'}</span>
+                </>
+              )}
             </button>
           )}
         </div>
