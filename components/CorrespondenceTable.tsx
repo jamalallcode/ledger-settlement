@@ -58,7 +58,7 @@ import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import { getCurrentCycle, getCycleForDate } from "../utils/cycleHelper";
 import { format, addMonths } from "date-fns";
 import { CorrespondenceEntry, SettlementEntry } from "../types";
-import { SettledDataModal, findMatchedSettlements, hasSettledParagraphs } from "./SettledDataModal";
+import { SettledDataModal, findMatchedSettlements } from "./SettledDataModal";
 
 interface CorrespondenceTableProps {
   entries: CorrespondenceEntry[];
@@ -2430,109 +2430,92 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                         <td className={tdCls}>
                           <div className="space-y-2">
                             {(() => {
-                              const matched = findMatchedSettlements(entry, settlementEntries || []);
-                              const settledMatched = matched.filter(hasSettledParagraphs);
                               const currentIsSettled =
                                 pending.isSettled !== undefined
                                   ? pending.isSettled
-                                  : (entry.isSettled || "");
+                                  : entry.isSettled;
 
+                              // Unlocked when either 'হ্যাঁ' or 'না' is selected
                               const canFillIssue =
-                                currentIsSettled === "হ্যাঁ" ||
-                                currentIsSettled === "না";
+                                currentIsSettled === "হ্যাঁ" || currentIsSettled === "না";
 
                               const isIssueComplete =
-                                !!currentIssueNo && !!currentIssueDate;
-                              const issueColorCls = isIssueComplete
-                                ? "bg-emerald-600/10 border-emerald-400 ring-2 ring-emerald-50"
-                                : pending.issueLetterNo || pending.issueLetterDate
-                                  ? "bg-amber-600/10 border-amber-400 ring-2 ring-amber-50"
-                                  : "bg-amber-50/50 border-amber-100";
+                                canFillIssue && !!currentIssueNo && !!currentIssueDate;
+                              const issueColorCls = !canFillIssue
+                                ? "bg-slate-50 border-slate-200 opacity-80"
+                                : isIssueComplete
+                                  ? "bg-emerald-600/10 border-emerald-400 ring-2 ring-emerald-50"
+                                  : pending.issueLetterNo ||
+                                      pending.issueLetterDate
+                                    ? "bg-amber-600/10 border-amber-400 ring-2 ring-amber-50"
+                                    : "bg-amber-50/50 border-amber-100";
 
-                              const labelColorCls = isIssueComplete
-                                ? "text-emerald-700"
-                                : "text-amber-700";
-                              const iconColorCls = isIssueComplete
-                                ? "text-emerald-500"
-                                : "text-amber-500";
+                              const labelColorCls = !canFillIssue
+                                ? "text-slate-500"
+                                : isIssueComplete
+                                  ? "text-emerald-700"
+                                  : "text-amber-700";
+                              const iconColorCls = !canFillIssue
+                                ? "text-slate-400"
+                                : isIssueComplete
+                                  ? "text-emerald-500"
+                                  : "text-amber-500";
 
                               return (
                                 <>
-                                  {/* 1. নিষ্পত্তি আছে কিনা: হ্যাঁ অথবা না বাটন */}
+                                  {/* 1. অপশন: নিষ্পত্তি আছে কিনা: হ্যাঁ অথবা না (উপরে) */}
                                   <div className="p-2 border rounded-xl bg-gradient-to-br from-white via-slate-50 to-slate-100/80 border-slate-300/90 space-y-1.5 shadow-xs mb-1.5 transition-all">
-                                    <div className="flex items-center justify-between gap-1.5">
+                                    <div className="flex items-center justify-between">
                                       <span className="text-[9.5px] font-black text-slate-800 tracking-tight flex items-center gap-1">
-                                        <CheckCircle2
-                                          size={12}
-                                          className={
-                                            currentIsSettled === "হ্যাঁ"
-                                              ? "text-emerald-600 animate-pulse"
-                                              : currentIsSettled === "না"
-                                                ? "text-rose-500"
-                                                : "text-slate-400"
-                                          }
-                                        />
+                                        <CheckCircle2 size={12} className={currentIsSettled === 'হ্যাঁ' ? "text-emerald-600 animate-pulse" : currentIsSettled === 'না' ? "text-rose-500" : "text-amber-500"} />
                                         নিষ্পত্তি আছে কিনা:
                                       </span>
-                                      <div className="flex items-center gap-1">
-                                        {currentIsSettled && isAdmin && (
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              if (!isAdmin) return;
-                                              handleInlineChange(entry.id, "isSettled", "");
-                                            }}
-                                            className="text-[8px] font-black text-slate-500 hover:text-rose-600 px-1 py-0.5 rounded transition-colors hover:bg-slate-100 cursor-pointer"
-                                            title="সিলেকশন ক্লিয়ার করুন"
-                                          >
-                                            ক্লিয়ার
-                                          </button>
-                                        )}
-                                        <div className="flex items-center gap-0.5 bg-slate-200/80 p-0.5 rounded-lg border border-slate-300">
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              if (!isAdmin) return;
-                                              handleInlineChange(
-                                                entry.id,
-                                                "isSettled",
-                                                currentIsSettled === "হ্যাঁ" ? "" : "হ্যাঁ"
-                                              );
-                                            }}
-                                            disabled={!isAdmin}
-                                            className={`px-1.5 py-0.5 rounded-md text-[8.5px] font-black transition-all flex items-center gap-0.5 cursor-pointer ${
-                                              currentIsSettled === "হ্যাঁ"
-                                                ? "bg-emerald-600 text-white shadow-xs"
-                                                : "text-slate-700 hover:bg-white/80"
-                                            } ${!isAdmin ? "opacity-60 cursor-not-allowed" : ""}`}
-                                          >
-                                            <Check size={9} strokeWidth={3} /> হ্যাঁ
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              if (!isAdmin) return;
-                                              handleInlineChange(
-                                                entry.id,
-                                                "isSettled",
-                                                currentIsSettled === "না" ? "" : "না"
-                                              );
-                                            }}
-                                            disabled={!isAdmin}
-                                            className={`px-1.5 py-0.5 rounded-md text-[8.5px] font-black transition-all flex items-center gap-0.5 cursor-pointer ${
-                                              currentIsSettled === "না"
-                                                ? "bg-rose-600 text-white shadow-xs"
-                                                : "text-slate-700 hover:bg-white/80"
-                                            } ${!isAdmin ? "opacity-60 cursor-not-allowed" : ""}`}
-                                          >
-                                            <X size={9} strokeWidth={3} /> না
-                                          </button>
-                                        </div>
-                                      </div>
+                                      {Boolean(currentIsSettled) && isAdmin && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleInlineChange(entry.id, 'isSettled', '')}
+                                          className="text-[8px] font-black text-slate-500 hover:text-rose-600 bg-white border border-slate-300 hover:border-rose-300 px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-2xs transition-all cursor-pointer"
+                                          title="বাছাই ক্লিয়ার করুন"
+                                        >
+                                          <RotateCcw size={8} /> ক্লিয়ার
+                                        </button>
+                                      )}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60">
+                                      <button
+                                        type="button"
+                                        disabled={!isAdmin}
+                                        onClick={() => {
+                                          const nextVal = currentIsSettled === 'হ্যাঁ' ? '' : 'হ্যাঁ';
+                                          handleInlineChange(entry.id, 'isSettled', nextVal);
+                                        }}
+                                        className={`py-1.5 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1.5 ${
+                                          currentIsSettled === 'হ্যাঁ'
+                                            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md ring-2 ring-emerald-400/60 scale-[1.02]'
+                                            : 'bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 border border-transparent'
+                                        } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
+                                      >
+                                        <Check size={12} strokeWidth={3} /> হ্যাঁ
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={!isAdmin}
+                                        onClick={() => {
+                                          const nextVal = currentIsSettled === 'না' ? '' : 'না';
+                                          handleInlineChange(entry.id, 'isSettled', nextVal);
+                                        }}
+                                        className={`py-1.5 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1.5 ${
+                                          currentIsSettled === 'না'
+                                            ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-md ring-2 ring-rose-400/60 scale-[1.02]'
+                                            : 'bg-white text-slate-700 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 border border-transparent'
+                                        } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
+                                      >
+                                        <X size={12} strokeWidth={3} /> না
+                                      </button>
                                     </div>
 
                                     {/* View Settled Data Premium Button */}
-                                    {currentIsSettled === "হ্যাঁ" && (
+                                    {currentIsSettled === 'হ্যাঁ' && (
                                       <div className="pt-1">
                                         <button
                                           type="button"
@@ -2546,17 +2529,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                           <Sparkles size={11} className="text-amber-300 animate-pulse shrink-0" />
                                           <span className="truncate">মীমাংসিত ডাটা দেখুন</span>
                                           {(() => {
-                                            const matched = findMatchedSettlements(entry, settlementEntries || []).filter(hasSettledParagraphs);
-                                            const count = matched.reduce((acc, s) => {
-                                              if (s.paragraphs && s.paragraphs.length > 0) {
-                                                const settledParas = s.paragraphs.filter(p => p.status === 'পূর্ণাঙ্গ' || p.status === 'আংশিক' || (p.recoveredAmount && p.recoveredAmount > 0) || (p.adjustedAmount && p.adjustedAmount > 0));
-                                                return acc + (settledParas.length > 0 ? settledParas.length : s.paragraphs.length);
-                                              }
-                                              const full = parseInt(String(s.meetingFullSettledParaCount || '0'), 10) || 0;
-                                              const partial = parseInt(String(s.meetingPartialSettledParaCount || '0'), 10) || 0;
-                                              const total = full + partial;
-                                              return acc + (total > 0 ? total : 1);
-                                            }, 0);
+                                            const matched = findMatchedSettlements(entry, settlementEntries || []);
+                                            const count = matched.reduce((acc, s) => acc + (s.paragraphs?.length || 1), 0);
                                             return count > 0 ? (
                                               <span className="bg-white/25 text-white text-[8px] px-1 py-0.2 rounded font-extrabold border border-white/30 shrink-0">
                                                 {toBengaliDigits(count)}টি
