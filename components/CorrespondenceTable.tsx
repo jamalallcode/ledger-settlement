@@ -1728,15 +1728,18 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
                         {isCycleStatsExpanded && (
                           <div className="bg-white p-4 border-b border-slate-300 shadow-md">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                              {/* Desktop Middle Separator */}
+                              <div className="hidden md:block absolute left-1/2 top-1 bottom-1 w-[2px] bg-gradient-to-b from-slate-200 via-slate-300 to-slate-200 -translate-x-1/2 rounded-full pointer-events-none"></div>
+
                               {/* SFI Stats */}
-                              <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-3 space-y-2">
-                                <div className="flex items-center justify-between border-b border-emerald-100 pb-1.5">
+                              <div className="group/sfi relative bg-emerald-50/60 hover:bg-emerald-50/90 border-2 border-emerald-300/80 hover:border-emerald-500 rounded-2xl p-3.5 space-y-2 transition-all duration-300 hover:shadow-[0_0_20px_rgba(16,185,129,0.22)] hover:-translate-y-0.5">
+                                <div className="flex items-center justify-between border-b border-emerald-200 pb-1.5">
                                   <span className="text-[11px] font-black text-emerald-900 flex items-center gap-2">
-                                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                                    <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-400"></div>
                                     এসএফআই (SFI)
                                   </span>
-                                  <span className="bg-emerald-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-black">
+                                  <span className="bg-emerald-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm">
                                     {toBengaliDigits(
                                       cycleStats[group.label]?.sfi.total || 0,
                                     )}{" "}
@@ -1792,13 +1795,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               </div>
 
                               {/* Non-SFI Stats */}
-                              <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3 space-y-2">
-                                <div className="flex items-center justify-between border-b border-amber-100 pb-1.5">
+                              <div className="group/nonsfi relative bg-amber-50/60 hover:bg-amber-50/90 border-2 border-amber-300/80 hover:border-amber-500 rounded-2xl p-3.5 space-y-2 transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.22)] hover:-translate-y-0.5">
+                                <div className="flex items-center justify-between border-b border-amber-200 pb-1.5">
                                   <span className="text-[11px] font-black text-amber-900 flex items-center gap-2">
-                                    <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                                    <div className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse shadow-sm shadow-amber-400"></div>
                                     নন এসএফআই (Non-SFI)
                                   </span>
-                                  <span className="bg-amber-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-black">
+                                  <span className="bg-amber-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm">
                                     {toBengaliDigits(
                                       cycleStats[group.label]?.nonSfi.total || 0,
                                     )}{" "}
