@@ -2430,10 +2430,14 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                         <td className={tdCls}>
                           <div className="space-y-2">
                             {(() => {
-                              const currentIsSettled =
+                              const matched = findMatchedSettlements(entry, settlementEntries || []);
+                              const hasMatchedSettlement = matched.length > 0;
+                              const currentIsSettled: 'হ্যাঁ' | 'না' =
                                 pending.isSettled !== undefined
                                   ? pending.isSettled
-                                  : entry.isSettled;
+                                  : hasMatchedSettlement
+                                    ? 'হ্যাঁ'
+                                    : (entry.isSettled === 'হ্যাঁ' ? 'হ্যাঁ' : 'না');
 
                               // Unlocked when either 'হ্যাঁ' or 'না' is selected
                               const canFillIssue =

@@ -313,13 +313,9 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       return firstPart.replace(cleanRegex, '').replace(/\s+/g, '');
     };
 
-    // 1. Filter letters that have isSettled === 'হ্যাঁ'
-    // 2. Filter letters that have BOTH issueLetterNo and issueLetterDate
-    // 3. Filter letters that are NOT already in existingEntries (মীমাংসা রেজিস্টার)
+    // 1. Filter letters that have BOTH issueLetterNo and issueLetterDate
+    // 2. Filter letters that are NOT already in existingEntries (মীমাংসা রেজিস্টার)
     const validUnsettledEntries = correspondenceEntries.filter((entry: any) => {
-      const isSettledYes = entry.isSettled === 'হ্যাঁ';
-      if (!isSettledYes) return false;
-
       const hasIssueNo = Boolean(entry.issueLetterNo && entry.issueLetterNo.trim());
       const hasIssueDate = Boolean(entry.issueLetterDate && entry.issueLetterDate.trim());
       if (!hasIssueNo || !hasIssueDate) return false;
