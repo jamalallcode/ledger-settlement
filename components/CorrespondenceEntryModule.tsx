@@ -1860,11 +1860,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
     const normalizedDiary = toEnglishDigits(formData.diaryNo.replace(/\s+/g, ''));
     const normalizedLetter = toEnglishDigits(formData.letterNo.replace(/\s+/g, ''));
     const normalizedDigitalFile = toEnglishDigits((formData.digitalFileNo || '').replace(/\s+/g, ''));
-    const normalizedArchive = (() => {
-      const val = (formData.archiveNo || '').toLowerCase().replace(/\s+/g, '');
-      if (!val || val === 'ka-' || val === 'kg-' || val === 'ka' || val === 'kg') return '';
-      return toEnglishDigits(val);
-    })();
+    const rawArchiveBody = (formData.archiveNo || '').replace(/^ka-\s*/i, '').replace(/^kg-\s*/i, '').trim();
+    const normalizedArchive = rawArchiveBody ? toEnglishDigits((formData.archiveNo || '').replace(/\s+/g, '').toLowerCase()) : '';
     
     const diaryDuplicate = normalizedDiary ? existingEntries.find(entry => {
       if (initialEntry && entry.id === initialEntry.id) return false;
@@ -1886,9 +1883,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
     const archiveDuplicate = normalizedArchive ? existingEntries.find(entry => {
       if (initialEntry && entry.id === initialEntry.id) return false;
-      const val = (entry.archiveNo || '').toLowerCase().replace(/\s+/g, '');
-      if (!val || val === 'ka-' || val === 'kg-' || val === 'ka' || val === 'kg') return '';
-      const entryArchive = toEnglishDigits(val);
+      const entryArchive = toEnglishDigits((entry.archiveNo || '').replace(/\s+/g, '').toLowerCase());
       return entryArchive && entryArchive === normalizedArchive;
     }) : null;
 
