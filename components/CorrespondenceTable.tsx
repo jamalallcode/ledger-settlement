@@ -1692,18 +1692,16 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           {groupedEntries.length > 0 ? (
             (() => {
               let globalIdx = 0;
-              return (
-                <tbody>
-                  {groupedEntries.map((group) => (
-                    <React.Fragment key={group.label}>
-                      {/* Sticky Cycle Header */}
-                      {showCycleHeaders && (
-                        <tr className="correspondence-cycle-header no-print">
-                          <td
-                            colSpan={7}
-                            className="sticky top-[66px] z-[115] p-0 border border-slate-400 shadow-sm bg-slate-100"
-                            style={{ position: "sticky", top: "66px", zIndex: 115 }}
-                          >
+              return groupedEntries.map((group) => (
+                <tbody key={group.label}>
+                  {/* Sticky Cycle Header */}
+                  {showCycleHeaders && (
+                    <tr className="correspondence-cycle-header no-print">
+                      <td
+                        colSpan={7}
+                        className="sticky top-[66px] z-[115] p-0 border border-slate-400 shadow-sm bg-slate-100"
+                        style={{ position: "sticky", top: "66px", zIndex: 115 }}
+                      >
                         <div
                           ref={(el) => {
                             cycleRefs.current[group.label] = el;
@@ -1767,143 +1765,139 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                             </div>
                           </div>
                         </div>
-                      </td>
-                    </tr>
-                  )}
 
-                  {showCycleHeaders && expandedCycles[group.label] && (
-                    <tr className="z-[85] no-print">
-                      <td colSpan={7} className="p-0 border border-slate-300">
-                        <div className="bg-white p-4 border-b border-slate-200 animate-in fade-in slide-in-from-top-1 duration-200 shadow-md">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* SFI Stats */}
-                            <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-3 space-y-2">
-                              <div className="flex items-center justify-between border-b border-emerald-100 pb-1.5">
-                                <span className="text-[11px] font-black text-emerald-900 flex items-center gap-2">
-                                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                                  এসএফআই (SFI)
-                                </span>
-                                <span className="bg-emerald-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-black">
-                                  {toBengaliDigits(
-                                    cycleStats[group.label]?.sfi.total || 0,
-                                  )}{" "}
-                                  টি
-                                </span>
+                        {expandedCycles[group.label] && (
+                          <div className="bg-white p-4 border-b border-slate-300 shadow-md">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {/* SFI Stats */}
+                              <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-3 space-y-2">
+                                <div className="flex items-center justify-between border-b border-emerald-100 pb-1.5">
+                                  <span className="text-[11px] font-black text-emerald-900 flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                                    এসএফআই (SFI)
+                                  </span>
+                                  <span className="bg-emerald-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-black">
+                                    {toBengaliDigits(
+                                      cycleStats[group.label]?.sfi.total || 0,
+                                    )}{" "}
+                                    টি
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                  <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-emerald-600 uppercase">
+                                      বিএসআর
+                                    </span>
+                                    <span className="text-[12px] font-black text-slate-800">
+                                      {toBengaliDigits(
+                                        cycleStats[group.label]?.sfi.bsr || 0,
+                                      )}{" "}
+                                      টি
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-emerald-600 uppercase">
+                                      ত্রিপক্ষীয় (কার্যপত্র)
+                                    </span>
+                                    <span className="text-[12px] font-black text-slate-800">
+                                      {toBengaliDigits(
+                                        cycleStats[group.label]?.sfi.triWork || 0,
+                                      )}{" "}
+                                      টি
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-emerald-600 uppercase">
+                                      ত্রিপক্ষীয় (বিবরণী)
+                                    </span>
+                                    <span className="text-[12px] font-black text-slate-800">
+                                      {toBengaliDigits(
+                                        cycleStats[group.label]?.sfi.triMin || 0,
+                                      )}{" "}
+                                      টি
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-emerald-600 uppercase">
+                                      মিলকরণ
+                                    </span>
+                                    <span className="text-[12px] font-black text-slate-800">
+                                      {toBengaliDigits(
+                                        cycleStats[group.label]?.sfi.reconciliation || 0,
+                                      )}{" "}
+                                      টি
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                                <div className="flex flex-col">
-                                  <span className="text-[9px] font-bold text-emerald-600 uppercase">
-                                    বিএসআর
-                                  </span>
-                                  <span className="text-[12px] font-black text-slate-800">
-                                    {toBengaliDigits(
-                                      cycleStats[group.label]?.sfi.bsr || 0,
-                                    )}{" "}
-                                    টি
-                                  </span>
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-[9px] font-bold text-emerald-600 uppercase">
-                                    ত্রিপক্ষীয় (কার্যপত্র)
-                                  </span>
-                                  <span className="text-[12px] font-black text-slate-800">
-                                    {toBengaliDigits(
-                                      cycleStats[group.label]?.sfi.triWork || 0,
-                                    )}{" "}
-                                    টি
-                                  </span>
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-[9px] font-bold text-emerald-600 uppercase">
-                                    ত্রিপক্ষীয় (বিবরণী)
-                                  </span>
-                                  <span className="text-[12px] font-black text-slate-800">
-                                    {toBengaliDigits(
-                                      cycleStats[group.label]?.sfi.triMin || 0,
-                                    )}{" "}
-                                    টি
-                                  </span>
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-[9px] font-bold text-emerald-600 uppercase">
-                                    মিলকরণ
-                                  </span>
-                                  <span className="text-[12px] font-black text-slate-800">
-                                    {toBengaliDigits(
-                                      cycleStats[group.label]?.sfi.reconciliation || 0,
-                                    )}{" "}
-                                    টি
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
 
-                            {/* Non-SFI Stats */}
-                            <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3 space-y-2">
-                              <div className="flex items-center justify-between border-b border-amber-100 pb-1.5">
-                                <span className="text-[11px] font-black text-amber-900 flex items-center gap-2">
-                                  <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-                                  নন এসএফআই (Non-SFI)
-                                </span>
-                                <span className="bg-amber-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-black">
-                                  {toBengaliDigits(
-                                    cycleStats[group.label]?.nonSfi.total || 0,
-                                  )}{" "}
-                                  টি
-                                </span>
-                              </div>
-                              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                                <div className="flex flex-col">
-                                  <span className="text-[9px] font-bold text-amber-600 uppercase">
-                                    বিএসআর
+                              {/* Non-SFI Stats */}
+                              <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3 space-y-2">
+                                <div className="flex items-center justify-between border-b border-amber-100 pb-1.5">
+                                  <span className="text-[11px] font-black text-amber-900 flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                                    নন এসএফআই (Non-SFI)
                                   </span>
-                                  <span className="text-[12px] font-black text-slate-800">
+                                  <span className="bg-amber-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-black">
                                     {toBengaliDigits(
-                                      cycleStats[group.label]?.nonSfi.bsr || 0,
+                                      cycleStats[group.label]?.nonSfi.total || 0,
                                     )}{" "}
                                     টি
                                   </span>
                                 </div>
-                                <div className="flex flex-col">
-                                  <span className="text-[9px] font-bold text-amber-600 uppercase">
-                                    দ্বিপক্ষীয় (কার্যপত্র)
-                                  </span>
-                                  <span className="text-[12px] font-black text-slate-800">
-                                    {toBengaliDigits(
-                                      cycleStats[group.label]?.nonSfi.biWork ||
-                                        0,
-                                    )}{" "}
-                                    টি
-                                  </span>
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-[9px] font-bold text-amber-600 uppercase">
-                                    দ্বিপক্ষীয় (বিবরণী)
-                                  </span>
-                                  <span className="text-[12px] font-black text-slate-800">
-                                    {toBengaliDigits(
-                                      cycleStats[group.label]?.nonSfi.biMin ||
-                                        0,
-                                    )}{" "}
-                                    টি
-                                  </span>
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-[9px] font-bold text-amber-600 uppercase">
-                                    মিলকরণ
-                                  </span>
-                                  <span className="text-[12px] font-black text-slate-800">
-                                    {toBengaliDigits(
-                                      cycleStats[group.label]?.nonSfi.reconciliation ||
-                                        0,
-                                    )}{" "}
-                                    টি
-                                  </span>
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                  <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-amber-600 uppercase">
+                                      বিএসআর
+                                    </span>
+                                    <span className="text-[12px] font-black text-slate-800">
+                                      {toBengaliDigits(
+                                        cycleStats[group.label]?.nonSfi.bsr || 0,
+                                      )}{" "}
+                                      টি
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-amber-600 uppercase">
+                                      দ্বিপক্ষীয় (কার্যপত্র)
+                                    </span>
+                                    <span className="text-[12px] font-black text-slate-800">
+                                      {toBengaliDigits(
+                                        cycleStats[group.label]?.nonSfi.biWork ||
+                                          0,
+                                      )}{" "}
+                                      টি
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-amber-600 uppercase">
+                                      দ্বিপক্ষীয় (বিবরণী)
+                                    </span>
+                                    <span className="text-[12px] font-black text-slate-800">
+                                      {toBengaliDigits(
+                                        cycleStats[group.label]?.nonSfi.biMin ||
+                                          0,
+                                      )}{" "}
+                                      টি
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-amber-600 uppercase">
+                                      মিলকরণ
+                                    </span>
+                                    <span className="text-[12px] font-black text-slate-800">
+                                      {toBengaliDigits(
+                                        cycleStats[group.label]?.nonSfi.reconciliation ||
+                                          0,
+                                      )}{" "}
+                                      টি
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
-                        </div>
+                        )}
                       </td>
                     </tr>
                   )}
@@ -2942,12 +2936,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                       className="border border-slate-300 bg-slate-50/30"
                     ></td>
                   </tr>
-                </React.Fragment>
-              ))}
-            </tbody>
-          );
-        })()
-      ) : (
+                </tbody>
+              ));
+            })()
+          ) : (
             <tbody>
               {/* Invisible baseline row to secure table-layout fixed column widths when empty */}
               <tr className="h-0 p-0 border-0 pointer-events-none select-none invisible">

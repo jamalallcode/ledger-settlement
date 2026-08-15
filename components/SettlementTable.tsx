@@ -1621,92 +1621,83 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                 <th className={thBase3}>১৪</th>
               </tr>
             </thead>
-            <tbody>
-              {groupedEntries.length > 0 ? (
-                groupedEntries.map((group) => {
-                  const stats = cycleStats[group.label];
-                  return (
-                    <React.Fragment key={group.label}>
-                      {/* Sticky Cycle Header */}
-                      {showCycleHeaders && (
-                        <tr className="settlement-cycle-header no-print">
-                          <td
-                            colSpan={14}
-                            className="sticky top-[102px] z-[115] p-0 border border-slate-300 bg-slate-100"
-                            style={{ position: "sticky", top: "102px", zIndex: 115 }}
+            {groupedEntries.length > 0 ? (
+              groupedEntries.map((group) => {
+                const stats = cycleStats[group.label];
+                return (
+                  <tbody key={group.label}>
+                    {/* Sticky Cycle Header */}
+                    {showCycleHeaders && (
+                      <tr className="settlement-cycle-header no-print">
+                        <td
+                          colSpan={14}
+                          className="sticky top-[102px] z-[115] p-0 border border-slate-300 bg-slate-100"
+                          style={{ position: "sticky", top: "102px", zIndex: 115 }}
+                        >
+                          <div
+                            ref={(el) => {
+                              cycleRefs.current[group.label] = el;
+                            }}
+                            onClick={() => {
+                              const nextState = !showCycleStats[group.label];
+                              setShowCycleStats({
+                                ...showCycleStats,
+                                [group.label]: nextState,
+                              });
+                            }}
+                            className="bg-slate-100 border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
                           >
-                            <div
-                              ref={(el) => {
-                                cycleRefs.current[group.label] = el;
-                              }}
-                              onClick={() => {
-                                const nextState = !showCycleStats[group.label];
-                                setShowCycleStats({
-                                  ...showCycleStats,
-                                  [group.label]: nextState,
-                                });
-                              }}
-                              className="bg-slate-100 border-b border-slate-300 px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-all group/cycle-header shadow-sm"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-md group-hover/cycle-header:scale-110 transition-transform">
-                                  <CalendarDays size={18} />
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="font-black text-[13px] text-slate-800 tracking-tight uppercase">
-                                    সময়কাল:{" "}
-                                    <span className="text-blue-700 font-black">
-                                      {toBengaliDigits(group.label)}
-                                    </span>
-                                  </span>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-                                      Cycle Statistics
-                                    </span>
-                                    <div className="h-1 w-1 bg-slate-300 rounded-full"></div>
-                                    <span className="text-[9px] font-black text-blue-600">
-                                      মোট {toBengaliDigits(stats.totalLetters)} টি
-                                      চিঠি
-                                    </span>
-                                  </div>
-                                </div>
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-md group-hover/cycle-header:scale-110 transition-transform">
+                                <CalendarDays size={18} />
                               </div>
-                              <div className="flex items-center gap-3">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowCycleHeaders(false);
-                                  }}
-                                  className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-95 border border-transparent hover:border-red-200 flex items-center justify-center"
-                                  title="সময়কাল অপশনটি লুকান"
-                                >
-                                  <EyeOff size={15} />
-                                </button>
-                                <div
-                                  className={`px-3 py-1 rounded-full text-[10px] font-black transition-all flex items-center gap-1.5 ${showCycleStats[group.label] ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "bg-white text-blue-600 border border-blue-200 hover:border-blue-400"}`}
-                                >
-                                  {showCycleStats[group.label]
-                                    ? "সংক্ষিপ্ত করুন"
-                                    : "বিস্তারিত দেখুন"}
-                                  <ChevronDown
-                                    size={12}
-                                    className={`transition-transform duration-300 ${showCycleStats[group.label] ? "rotate-180" : ""}`}
-                                  />
+                              <div className="flex flex-col">
+                                <span className="font-black text-[13px] text-slate-800 tracking-tight uppercase">
+                                  সময়কাল:{" "}
+                                  <span className="text-blue-700 font-black">
+                                    {toBengaliDigits(group.label)}
+                                  </span>
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                                    Cycle Statistics
+                                  </span>
+                                  <div className="h-1 w-1 bg-slate-300 rounded-full"></div>
+                                  <span className="text-[9px] font-black text-blue-600">
+                                    মোট {toBengaliDigits(stats.totalLetters)} টি
+                                    চিঠি
+                                  </span>
                                 </div>
                               </div>
                             </div>
-                          </td>
-                        </tr>
-                      )}
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowCycleHeaders(false);
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-95 border border-transparent hover:border-red-200 flex items-center justify-center"
+                                title="সময়কাল অপশনটি লুকান"
+                              >
+                                <EyeOff size={15} />
+                              </button>
+                              <div
+                                className={`px-3 py-1 rounded-full text-[10px] font-black transition-all flex items-center gap-1.5 ${showCycleStats[group.label] ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "bg-white text-blue-600 border border-blue-200 hover:border-blue-400"}`}
+                              >
+                                {showCycleStats[group.label]
+                                  ? "সংক্ষিপ্ত করুন"
+                                  : "বিস্তারিত দেখুন"}
+                                <ChevronDown
+                                  size={12}
+                                  className={`transition-transform duration-300 ${showCycleStats[group.label] ? "rotate-180" : ""}`}
+                                />
+                              </div>
+                            </div>
+                          </div>
 
-                      {showCycleHeaders && showCycleStats[group.label] && (
-                        <tr className="z-[85] no-print">
-                          <td
-                            colSpan={14}
-                            className="p-0 border border-slate-300"
-                          >
-                            <div className="bg-white p-4 border-b border-slate-200 animate-in fade-in slide-in-from-top-1 duration-200 shadow-md">
+                          {showCycleStats[group.label] && (
+                            <div className="bg-white p-4 border-b border-slate-200 shadow-md">
                               <div className="flex flex-col gap-3">
                                 <div className="flex items-center justify-start gap-12">
                                   <div className="hidden md:flex items-center gap-4 text-[12px] font-bold text-slate-700">
@@ -1797,24 +1788,25 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                 </div>
                               </div>
                             </div>
-                          </td>
-                        </tr>
-                      )}
-
-                      {/* Print-only cycle header */}
-                      <tr className="hidden print:table-row bg-slate-100 border-y border-slate-300">
-                        <td
-                          colSpan={14}
-                          className="px-4 py-2 border border-slate-300"
-                        >
-                          <span className="font-black text-[13px] text-slate-800 tracking-tight uppercase">
-                            সময়কাল:{" "}
-                            <span className="text-blue-700 font-black">
-                              {toBengaliDigits(group.label)}
-                            </span>
-                          </span>
+                          )}
                         </td>
                       </tr>
+                    )}
+
+                    {/* Print-only cycle header */}
+                    <tr className="hidden print:table-row bg-slate-100 border-y border-slate-300">
+                      <td
+                        colSpan={14}
+                        className="px-4 py-2 border border-slate-300"
+                      >
+                        <span className="font-black text-[13px] text-slate-800 tracking-tight uppercase">
+                          সময়কাল:{" "}
+                          <span className="text-blue-700 font-black">
+                            {toBengaliDigits(group.label)}
+                          </span>
+                        </span>
+                      </td>
+                    </tr>
 
                       {group.entries.map((entry, idx) => {
                         const isExpanded = expandedEntries.has(entry.id);
@@ -2312,11 +2304,11 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                           </React.Fragment>
                         );
                       })}
-                    </React.Fragment>
+                    </tbody>
                   );
                 })
               ) : (
-                <>
+                <tbody>
                   {/* Invisible baseline row to secure table-layout fixed column widths when empty */}
                   <tr className="h-0 p-0 border-0 pointer-events-none select-none invisible">
                     <td className="p-0 border-0 h-0"></td>
@@ -2344,9 +2336,8 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                       </div>
                     </td>
                   </tr>
-                </>
+                </tbody>
               )}
-            </tbody>
             {!isAdminView && (
               <tfoot className="z-[100]">
                 <tr className="h-[45px] bg-slate-200 text-slate-900 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] border-t border-slate-300">
