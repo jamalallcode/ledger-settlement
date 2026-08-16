@@ -822,14 +822,17 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
         {/* 3. Entity Reply Statement (হুবহু জবাব, বানান শুদ্ধ ও মূল কথা বজায় রেখে) */}
         <div className="space-y-2 pt-1">
-          <div className="flex items-start gap-1 text-xs sm:text-[13px] font-bold text-slate-900">
-            <span className="shrink-0 font-black">স্থানীয় প্রতিষ্ঠানের জবাব:</span>
-            <textarea
-              rows={2}
-              className="w-full p-1.5 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] font-bold text-slate-900 outline-none leading-relaxed resize-y"
-              value={entityReplyText}
-              onChange={(e) => setEntityReplyText(e.target.value)}
-            />
+          <div
+            className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-colors"
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={(e) => {
+              const text = e.currentTarget.innerText;
+              setEntityReplyText(text.replace(/^স্থানীয় প্রতিষ্ঠানের জবাব:\s*/, ''));
+            }}
+          >
+            <span className="font-black text-slate-900">স্থানীয় প্রতিষ্ঠানের জবাব: </span>
+            <span className="font-bold text-slate-900">{entityReplyText}</span>
           </div>
         </div>
 
@@ -925,47 +928,53 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         )}
 
         {/* 5. Conclusions Flow in Exact Sequence as Images */}
-        <div className="space-y-4 pt-3 text-xs sm:text-[13px] leading-relaxed">
+        <div className="space-y-3.5 pt-3 text-xs sm:text-[13px] leading-relaxed">
           {/* Branch Request */}
-          <div>
-            <textarea
-              rows={1}
-              className="w-full p-1.5 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] font-medium text-slate-900 outline-none leading-relaxed resize-y"
-              value={branchRequestText}
-              onChange={(e) => setBranchRequestText(e.target.value)}
-            />
+          <div
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={(e) => setBranchRequestText(e.currentTarget.innerText)}
+            className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] font-medium text-slate-900 outline-none leading-relaxed text-justify"
+          >
+            {branchRequestText}
           </div>
 
-          {/* Head Office Comment */}
-          <div className="flex items-start gap-1">
-            <span className="shrink-0 font-black text-slate-900">প্রধান কার্যালয়ের মন্তব্য:</span>
-            <textarea
-              rows={1}
-              className="w-full p-1.5 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] font-bold text-slate-900 outline-none leading-relaxed resize-y"
-              value={headOfficeCommentText}
-              onChange={(e) => setHeadOfficeCommentText(e.target.value)}
-            />
+          {/* Head Office Comment: Exact baseline alignment */}
+          <div
+            className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] leading-relaxed text-justify outline-none"
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={(e) => {
+              const text = e.currentTarget.innerText;
+              setHeadOfficeCommentText(text.replace(/^প্রধান কার্যালয়ের মন্তব্য:\s*/, ''));
+            }}
+          >
+            <span className="font-black text-slate-900">প্রধান কার্যালয়ের মন্তব্য: </span>
+            <span className="font-bold text-slate-900">{headOfficeCommentText}</span>
           </div>
 
-          {/* Presenter Comment */}
-          <div className="flex items-start gap-1">
-            <span className="shrink-0 font-black text-slate-900">উপস্থাপনকারীর মন্তব্য:</span>
-            <textarea
-              rows={2}
-              className="w-full p-1.5 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] font-bold text-slate-900 outline-none leading-relaxed resize-y"
-              value={presenterCommentText}
-              onChange={(e) => setPresenterCommentText(e.target.value)}
-            />
+          {/* Presenter Comment: Highlighted Core AI Task & Exact baseline alignment */}
+          <div
+            className="p-2 -ml-1 bg-indigo-50/50 border border-dashed border-indigo-300 hover:border-indigo-500 focus:border-indigo-600 rounded-xl text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-all shadow-2xs relative group/presenter"
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={(e) => {
+              const text = e.currentTarget.innerText;
+              setPresenterCommentText(text.replace(/^উপস্থাপনকারীর মন্তব্য:\s*/, ''));
+            }}
+          >
+            <span className="font-black text-slate-900">উপস্থাপনকারীর মন্তব্য: </span>
+            <span className="font-bold text-slate-900">{presenterCommentText}</span>
           </div>
 
-          {/* Final Submission */}
-          <div className="pt-2 text-center">
-            <input
-              type="text"
-              className="text-center w-full max-w-md mx-auto p-1 bg-transparent border-b border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded text-xs sm:text-[13px] font-black text-slate-900 outline-none"
-              value={finalSubmissionText}
-              onChange={(e) => setFinalSubmissionText(e.target.value)}
-            />
+          {/* Final Submission: Left-aligned with standard note margin */}
+          <div
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={(e) => setFinalSubmissionText(e.currentTarget.innerText)}
+            className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] font-black text-slate-900 outline-none text-left"
+          >
+            {finalSubmissionText}
           </div>
         </div>
 
