@@ -1185,8 +1185,8 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         <tr style="page-break-inside: avoid;">
           <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: center; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt; font-weight: bold;">${r.sl}</td>
           <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: center; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt; font-weight: bold;">${r.paraAndYear.replace(/\n/g, '<br/>')}</td>
-          <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: left; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt;">${r.entityName.replace(/\n/g, '<br/>')}</td>
-          <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: left; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt;">${r.paraTitle.replace(/\n/g, '<br/>')}</td>
+          <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: justify; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt;">${r.entityName.replace(/\n/g, '<br/>')}</td>
+          <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: justify; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt;">${r.paraTitle.replace(/\n/g, '<br/>')}</td>
           <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: center; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt; font-weight: bold;">${r.involvedAmount.replace(/\n/g, '<br/>')}</td>
           <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: justify; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt; line-height: 1.5;">${r.officeComment.replace(/\n/g, '<br/>')}</td>
         </tr>
@@ -1671,11 +1671,11 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                           />
                         </td>
                         {/* 3. Entity Name */}
-                        <td className="border border-black p-1.5 text-left">
+                        <td className="border border-black p-1.5 text-justify">
                           <textarea
                             rows={Math.max(3, (row.entityName || '').split('\n').length)}
                             readOnly={!isJaripatraEditable}
-                            className={`w-full text-left bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+                            className={`w-full text-justify bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-relaxed ${
                               isJaripatraEditable ? "hover:bg-slate-100/60 focus:bg-blue-50/50" : "cursor-default select-text"
                             }`}
                             value={row.entityName}
@@ -1688,11 +1688,11 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                           />
                         </td>
                         {/* 4. Title & Subject */}
-                        <td className="border border-black p-1.5 text-left">
+                        <td className="border border-black p-1.5 text-justify">
                           <textarea
                             rows={Math.max(4, Math.ceil((row.paraTitle || '').length / 28))}
                             readOnly={!isJaripatraEditable}
-                            className={`w-full text-left bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+                            className={`w-full text-justify bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-relaxed ${
                               isJaripatraEditable ? "hover:bg-slate-100/60 focus:bg-blue-50/50" : "cursor-default select-text"
                             }`}
                             value={row.paraTitle}
