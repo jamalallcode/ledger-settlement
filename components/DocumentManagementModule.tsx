@@ -197,6 +197,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   });
   const [signatoryName] = useState<string>("উপপরিচালক");
   const [signatoryOffice] = useState<string>("বাণিজ্যিক অডিট অধিদপ্তর, আঞ্চলিক কার্যালয়, খুলনা");
+  const [newlyAddedParaId, setNewlyAddedParaId] = useState<string | null>(null);
 
   // Rich Text Editor Ref for Tika
   const tikaEditorRef = useRef<HTMLDivElement>(null);
@@ -274,7 +275,22 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       presenterCommentText: "দাখিলকৃত প্রমাণক সঠিক থাকায় অনুচ্ছেদটি নিষ্পত্তি করা যেতে পারে।",
       status: "পূর্ণাঙ্গ নিষ্পত্তি",
     };
-    setParagraphs([...paragraphs, newPara]);
+
+    setParagraphs((prev) => [...prev, newPara]);
+    setNewlyAddedParaId(nextParaId);
+
+    // Smoothly scroll the newly created paragraph into view so the user is immediately taken to it
+    setTimeout(() => {
+      const el = document.getElementById(nextParaId);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 120);
+
+    // Keep highlight active for 4 seconds so the user clearly notices it
+    setTimeout(() => {
+      setNewlyAddedParaId((prev) => (prev === nextParaId ? null : prev));
+    }, 4000);
   };
 
   const handleDeleteParagraph = (paraId: string) => {
@@ -1211,14 +1227,6 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={handleAddParagraph}
-            className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
-            title="নোট শিটে আরও একটি নতুন অনুচ্ছেদ যোগ করুন"
-          >
-            <Plus size={13} /> + নতুন অনুচ্ছেদ যোগ করুন
-          </button>
-          <button
-            type="button"
             onClick={handleCopyTableOnly}
             className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors ${
               copiedTableSuccess
@@ -1281,14 +1289,26 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         <div className="space-y-10">
           {paragraphs.map((para, pIndex) => (
             <div
+              id={para.id}
               key={para.id}
-              className="space-y-4 pt-4 border-t-2 border-slate-200/80 first:border-t-0 first:pt-0 relative group/para"
+              className={`space-y-4 pt-4 border-t-2 border-slate-200/80 first:border-t-0 first:pt-0 relative group/para rounded-2xl transition-all duration-700 scroll-mt-24 ${
+                newlyAddedParaId === para.id
+                  ? "ring-4 ring-blue-500/50 bg-blue-50/25 p-3 shadow-lg"
+                  : ""
+              }`}
             >
               {/* Paragraph Index Badge & Controls (No print) */}
               <div className="flex items-center justify-between no-print mb-1">
-                <span className="px-3 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-black border border-slate-300">
-                  অনুচ্ছেদ #{toBengaliDigits(pIndex + 1)} (অনুচ্ছেদ নং: {para.paraNo || "-"})
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-black border border-slate-300">
+                    অনুচ্ছেদ #{toBengaliDigits(pIndex + 1)} (অনুচ্ছেদ নং: {para.paraNo || "-"})
+                  </span>
+                  {newlyAddedParaId === para.id && (
+                    <span className="px-2.5 py-0.5 bg-blue-600 text-white rounded-full text-[10.5px] font-black animate-pulse flex items-center gap-1 shadow-xs">
+                      <Sparkles size={11} /> নতুন তৈরি হয়েছে
+                    </span>
+                  )}
+                </div>
                 {paragraphs.length > 1 && (
                   <button
                     type="button"
@@ -1566,6 +1586,18 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               </div>
             </div>
           ))}
+        </div>
+
+        {/* নতুন অনুচ্ছেদ বাটনটি নিচে যুক্ত করা হলো (No-Print) */}
+        <div className="no-print pt-2 pb-2 flex items-center justify-center border-t border-dashed border-slate-200">
+          <button
+            type="button"
+            onClick={handleAddParagraph}
+            className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer border border-blue-400/40 hover:shadow-lg"
+            title="নোট শিটে আরও একটি নতুন অনুচ্ছেদ যোগ করুন"
+          >
+            <Plus size={16} /> + নতুন অনুচ্ছেদ যোগ করুন (অনুচ্ছেদ #{toBengaliDigits(paragraphs.length + 1)})
+          </button>
         </div>
 
         {/* 4. সমাপনী অনুচ্ছেদ (সকল অনুচ্ছেদের শেষে একবারে) */}
