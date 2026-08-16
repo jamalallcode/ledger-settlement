@@ -27,6 +27,8 @@ import {
   Check,
   Copy,
   Table,
+  RotateCcw,
+  FileCheck,
 } from "lucide-react";
 import { CorrespondenceEntry } from "../types";
 import { toBengaliDigits, formatDateBN, toEnglishDigits } from "../utils/numberUtils";
@@ -37,6 +39,16 @@ interface DocumentManagementModuleProps {
   onBack: () => void;
   isAdmin?: boolean;
   onSaveJaripatra?: (entry: CorrespondenceEntry, jaripatraData: any) => void;
+}
+
+export interface JaripatraTableRowItem {
+  id: string;
+  sl: string;
+  paraAndYear: string;
+  entityName: string;
+  paraTitle: string;
+  involvedAmount: string;
+  officeComment: string;
 }
 
 export interface TableColumn {
@@ -195,24 +207,73 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
   const [aiSuccessToast, setAiSuccessToast] = useState<string | null>(null);
 
-  // Jaripatra State
+  // Jaripatra State (Strict Government Layout Matching Commercial Audit Format)
   const [showJaripatraView, setShowJaripatraView] = useState<boolean>(false);
-  const [jaripatraMemoNo, setJaripatraMemoNo] = useState<string>(() => {
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    return `০৭.০২.০০০০.৮০১.০২.${toBengaliDigits(randomSuffix)}.${new Date().getFullYear().toString().slice(-2)}`;
-  });
-  const [jaripatraDate, setJaripatraDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [jaripatraCopiedSuccess, setJaripatraCopiedSuccess] = useState<boolean>(false);
+  
+  // Header 5 Lines
+  const [jaripatraHeaderLine1, setJaripatraHeaderLine1] = useState<string>("মহাপরিচালকের কার্যালয়");
+  const [jaripatraHeaderLine2, setJaripatraHeaderLine2] = useState<string>("বাণিজ্যিক অডিট অধিদপ্তর");
+  const [jaripatraHeaderLine3, setJaripatraHeaderLine3] = useState<string>("আঞ্চলিক কার্যালয় (সেক্টর-৬)");
+  const [jaripatraHeaderLine4, setJaripatraHeaderLine4] = useState<string>("বিডিবিএল ভবন (৯ম ও ১০ম তলা)");
+  const [jaripatraHeaderLine5, setJaripatraHeaderLine5] = useState<string>("খুলনা – ৯০০০");
+
+  // Top Memo & Date
+  const [jaripatraMemoNo, setJaripatraMemoNo] = useState<string>("৮২.১০.০০০০.৬০৩.৩৩.০০৫.১৬");
+  const [jaripatraDate, setJaripatraDate] = useState<string>("       /      /২০২৬ খ্রি:");
+
+  // Recipient
+  const [jaripatraRecipientDesignation, setJaripatraRecipientDesignation] = useState<string>("ব্যবস্থাপনা পরিচালক");
+  const [jaripatraRecipientEntity, setJaripatraRecipientEntity] = useState<string>(() => entry.entityName || "সোনালী ব্যাংক পিএলসি");
+  const [jaripatraRecipientAddress, setJaripatraRecipientAddress] = useState<string>("প্রধান কার্যালয়, ৩৫-৪২, ৪৪ মতিঝিল বা/এ");
+  const [jaripatraRecipientCity, setJaripatraRecipientCity] = useState<string>("ঢাকা – ১০০০");
+
+  // Subject & Reference & Intro Text
   const [jaripatraSubject, setJaripatraSubject] = useState<string>(() => {
-    return `${entry.entityName || defaultEntity} এর ${entry.auditYear || defaultAuditYear} নিরীক্ষা বর্ষের অডিট আপত্তি নিষ্পত্তি সংক্রান্ত জারিপত্র।`;
+    const branchPart = entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা';
+    const auditYr = entry.auditYear || "২০১১-১৪";
+    return `বিষয়: ${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${branchPart} এর ${auditYr} সালের বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${entry.paraType || "নন-এসএফআই"} অনুচ্ছেদ নং ১০ এর জবাবের উপর মন্তব্য প্রেরণ।`;
   });
   const [jaripatraReference, setJaripatraReference] = useState<string>(() => {
-    return `আপনাদের পত্র নং: ${entry.letterNo || defaultLetterNo}, তারিখ: ${formatDateBN(entry.letterDate || defaultLetterDate)}`;
+    const letterN = entry.letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩২";
+    const letterD = entry.letterDate ? formatDateBN(entry.letterDate) : "২৭/০৭/২০২৬";
+    return `সূত্র: ${entry.entityName || "সোনালী ব্যাংক পিএলসি"} এর পত্র নং ${letterN}, তারিখ: ${letterD}`;
   });
-  const [jaripatraBody, setJaripatraBody] = useState<string>(() => {
-    return `উপযুক্ত বিষয় ও সূত্রের পরিপ্রেক্ষিতে জানানো যাচ্ছে যে, আপনার কার্যালয়ের ${entry.auditYear || defaultAuditYear} নিরীক্ষা বর্ষের অডিট আপত্তির বিপরীতে প্রেরিত জবাব এবং সংযুক্ত প্রমাণকসমূহ অত্র কার্যালয়ে পরীক্ষা ও নিরীক্ষা করা হয়েছে। দাখিলকৃত রেকর্ডপত্র ও ব্যাখ্যা সন্তোষজনক প্রতীয়মান হওয়ায় নিম্নবর্ণিত বিবরণ অনুযায়ী আপত্তিটি নিষ্পত্তি করা হলো:`;
+  const [jaripatraIntroText, setJaripatraIntroText] = useState<string>(() => {
+    const branchPart = entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা';
+    const auditYr = entry.auditYear || "২০১১-২০১৪";
+    return `উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${branchPart} এর ${auditYr} সালের নিরীক্ষা প্রতিবেদনের ${entry.paraType || "নন-এসএফআই"} অনুচ্ছেদ নং ১০ এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:`;
   });
-  const [signatoryName] = useState<string>("উপপরিচালক");
-  const [signatoryOffice] = useState<string>("বাণিজ্যিক অডিট অধিদপ্তর, আঞ্চলিক কার্যালয়, খুলনা");
+
+  // Table Rows (6-Column Government Settlement Format)
+  const [jaripatraTableRows, setJaripatraTableRows] = useState<JaripatraTableRowItem[]>([
+    {
+      id: "j-row-1",
+      sl: "১",
+      paraAndYear: `১০, ${entry.auditYear || "২০১১-১৪"}`,
+      entityName: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `,\n${entry.branchName}` : ',\nদর্শনা শাখা, চুয়াডাঙ্গা।'}`,
+      paraTitle: `মাইক্রো ক্রেডিট (উন্মেষ)\nঋণের মেয়াদোত্তীর্ণ\nঅনাদায়ী ${entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫"}\nটাকা।`,
+      involvedAmount: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫",
+      officeComment: "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।"
+    }
+  ]);
+
+  // Signatory
+  const [jaripatraSignatoryName, setJaripatraSignatoryName] = useState<string>("নাসিফ কবির");
+  const [jaripatraSignatoryTitle, setJaripatraSignatoryTitle] = useState<string>("উপ-পরিচালক");
+  const [jaripatraSignatoryPhone, setJaripatraSignatoryPhone] = useState<string>("ফোন: ০২৪৭৭৭২২৬৫৬");
+
+  // Bottom Memo & Date
+  const [jaripatraBottomMemoNo, setJaripatraBottomMemoNo] = useState<string>("৮২.১০.০০০০.৬০৩.৩৩.০০৫.১৬");
+  const [jaripatraBottomDate, setJaripatraBottomDate] = useState<string>("       /      /২০২৬ খ্রি:");
+
+  // Onulipi
+  const [jaripatraOnulipiHeader, setJaripatraOnulipiHeader] = useState<string>("সদয় অবগতি ও প্রয়োজনীয় ব্যবস্থা গ্রহণের জন্য অনুলিপি প্রেরণ করা হলো: (জ্যেষ্ঠতার ভিত্তিতে নয়)");
+  const [jaripatraOnulipiItems, setJaripatraOnulipiItems] = useState<string[]>([
+    `১. উপমহাব্যবস্থাপক, ${entry.entityName || "সোনালী ব্যাংক পিএলসি"}, জিএম অফিস, খুলনা। (কপি সংশ্লিষ্ট শাখায় প্রেরণের জন্য অনুরোধ করা হলো)`,
+    "২. পিএ টু মহাপরিচালক/পরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, প্রধান কাযায়, অডিট কমপ্লেক্স (৮ম ও ৯ ম তলা), সেগুনবাগিচা, ঢাকা।",
+    "৩. অফিস কপি।"
+  ]);
   const [newlyAddedParaId, setNewlyAddedParaId] = useState<string | null>(null);
 
   // Rich Text Editor Ref for Tika
@@ -518,12 +579,58 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           };
         });
         setParagraphs(parsedParas);
+
+        // Auto-generate Jaripatra rows from parsed paragraphs
+        const jRows: JaripatraTableRowItem[] = parsedParas.map((para, idx) => {
+          let title = para.titleAndDetails.split("\n")[0] || "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী টাকা।";
+          title = title.replace(/^শিরোনাম:\s*/, '');
+          return {
+            id: `j-row-ai-${idx + 1}`,
+            sl: para.sl || toBengaliDigits(idx + 1),
+            paraAndYear: `${para.paraNo}, ${entry.auditYear || "২০১১-১৪"}`,
+            entityName: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `,\n${entry.branchName}` : ',\nদর্শনা শাখা, চুয়াডাঙ্গা।'}`,
+            paraTitle: title,
+            involvedAmount: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫",
+            officeComment: para.presenterCommentText || "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।"
+          };
+        });
+        if (jRows.length > 0) {
+          setJaripatraTableRows(jRows);
+        }
       }
 
       if (data.suggestedIssueLetter) {
-        if (data.suggestedIssueLetter.subject) setJaripatraSubject(data.suggestedIssueLetter.subject);
-        if (data.suggestedIssueLetter.reference) setJaripatraReference(data.suggestedIssueLetter.reference);
-        if (data.suggestedIssueLetter.bodyHtml) setJaripatraBody(data.suggestedIssueLetter.bodyHtml);
+        const sil = data.suggestedIssueLetter;
+        if (sil.memoNo) setJaripatraMemoNo(sil.memoNo);
+        if (sil.date) setJaripatraDate(sil.date);
+        if (sil.recipient) {
+          if (typeof sil.recipient === "object") {
+            if (sil.recipient.designation) setJaripatraRecipientDesignation(sil.recipient.designation);
+            if (sil.recipient.entityName) setJaripatraRecipientEntity(sil.recipient.entityName);
+            if (sil.recipient.address) setJaripatraRecipientAddress(sil.recipient.address);
+            if (sil.recipient.city) setJaripatraRecipientCity(sil.recipient.city);
+          }
+        }
+        if (sil.subject) setJaripatraSubject(sil.subject);
+        if (sil.reference) setJaripatraReference(sil.reference);
+        if (sil.introText) setJaripatraIntroText(sil.introText);
+        if (sil.tableRows && Array.isArray(sil.tableRows) && sil.tableRows.length > 0) {
+          setJaripatraTableRows(sil.tableRows.map((r: any, idx: number) => ({
+            id: `j-row-${idx + 1}`,
+            sl: r.sl || toBengaliDigits(idx + 1),
+            paraAndYear: r.paraAndYear || "১০, ২০১১-১৪",
+            entityName: r.entityName || `${entry.entityName || "সোনালী ব্যাংক পিএলসি"},\nদর্শনা শাখা, চুয়াডাঙ্গা।`,
+            paraTitle: r.paraTitle || "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী টাকা।",
+            involvedAmount: r.involvedAmount || "৫৭,৮২৫",
+            officeComment: r.officeComment || "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় আপত্তিটি নিষ্পত্তি করা হলো।"
+          })));
+        }
+        if (sil.signatoryName) setJaripatraSignatoryName(sil.signatoryName);
+        if (sil.signatoryTitle) setJaripatraSignatoryTitle(sil.signatoryTitle);
+        if (sil.signatoryPhone) setJaripatraSignatoryPhone(sil.signatoryPhone);
+        if (sil.onulipiList && Array.isArray(sil.onulipiList) && sil.onulipiList.length > 0) {
+          setJaripatraOnulipiItems(sil.onulipiList);
+        }
       }
 
       // Show success toast & smooth scroll to note sheet
@@ -970,6 +1077,219 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     window.print();
   };
 
+  const handleUpdateJaripatraCell = (rowId: string, field: keyof JaripatraTableRowItem, val: string) => {
+    setJaripatraTableRows(prev => prev.map(r => r.id === rowId ? { ...r, [field]: val } : r));
+  };
+
+  const handleAddJaripatraRow = () => {
+    const newIdx = jaripatraTableRows.length + 1;
+    const newRow: JaripatraTableRowItem = {
+      id: `j-row-${Date.now()}-${newIdx}`,
+      sl: toBengaliDigits(newIdx),
+      paraAndYear: `${toBengaliDigits(10 + newIdx - 1)}, ${entry.auditYear || "২০১১-১৪"}`,
+      entityName: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `,\n${entry.branchName}` : ',\nদর্শনা শাখা, চুয়াডাঙ্গা।'}`,
+      paraTitle: "মাইক্রো ক্রেডিট (উন্মেষ)\nঋণের মেয়াদোত্তীর্ণ\nঅনাদায়ী টাকা।",
+      involvedAmount: "০",
+      officeComment: "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।"
+    };
+    setJaripatraTableRows(prev => [...prev, newRow]);
+  };
+
+  const handleDeleteJaripatraRow = (rowId: string) => {
+    if (jaripatraTableRows.length <= 1) return;
+    setJaripatraTableRows(prev => {
+      const filtered = prev.filter(r => r.id !== rowId);
+      return filtered.map((r, idx) => ({ ...r, sl: toBengaliDigits(idx + 1) }));
+    });
+  };
+
+  const handleAddOnulipiItem = () => {
+    const newIdx = jaripatraOnulipiItems.length + 1;
+    setJaripatraOnulipiItems(prev => [...prev, `${toBengaliDigits(newIdx)}. নতুন অনুলিপি প্রাপকের নাম ও ঠিকানা।`]);
+  };
+
+  const handleUpdateOnulipiItem = (idx: number, val: string) => {
+    setJaripatraOnulipiItems(prev => {
+      const copy = [...prev];
+      copy[idx] = val;
+      return copy;
+    });
+  };
+
+  const handleDeleteOnulipiItem = (idx: number) => {
+    if (jaripatraOnulipiItems.length <= 1) return;
+    setJaripatraOnulipiItems(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleResetJaripatraToDemo = () => {
+    setJaripatraHeaderLine1("মহাপরিচালকের কার্যালয়");
+    setJaripatraHeaderLine2("বাণিজ্যিক অডিট অধিদপ্তর");
+    setJaripatraHeaderLine3("আঞ্চলিক কার্যালয় (সেক্টর-৬)");
+    setJaripatraHeaderLine4("বিডিবিএল ভবন (৯ম ও ১০ম তলা)");
+    setJaripatraHeaderLine5("খুলনা – ৯০০০");
+
+    setJaripatraMemoNo("৮২.১০.০০০০.৬০৩.৩৩.০০৫.১৬");
+    setJaripatraDate("       /      /২০২৬ খ্রি:");
+
+    setJaripatraRecipientDesignation("ব্যবস্থাপনা পরিচালক");
+    setJaripatraRecipientEntity(entry.entityName || "সোনালী ব্যাংক পিএলসি");
+    setJaripatraRecipientAddress("প্রধান কার্যালয়, ৩৫-৪২, ৪৪ মতিঝিল বা/এ");
+    setJaripatraRecipientCity("ঢাকা – ১০০০");
+
+    setJaripatraSubject(`বিষয়: ${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা'} এর ${entry.auditYear || "২০১১-১৪"} সালের বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${entry.paraType || "নন-এসএফআই"} অনুচ্ছেদ নং ১০ এর জবাবের উপর মন্তব্য প্রেরণ।`);
+    setJaripatraReference(`সূত্র: ${entry.entityName || "সোনালী ব্যাংক পিএলসি"} এর পত্র নং ${entry.letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩২"}, তারিখ: ${entry.letterDate ? formatDateBN(entry.letterDate) : "২৭/০৭/২০২৬"}`);
+    setJaripatraIntroText(`উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা'} এর ${entry.auditYear || "২০১১-২০১৪"} সালের নিরীক্ষা প্রতিবেদনের ${entry.paraType || "নন-এসএফআই"} অনুচ্ছেদ নং ১০ এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:`);
+
+    setJaripatraTableRows([
+      {
+        id: "j-row-demo-1",
+        sl: "১",
+        paraAndYear: "১০, ২০১১-১৪",
+        entityName: "সোনালী ব্যাংক পিএলসি,\nদর্শনা শাখা, চুয়াডাঙ্গা।",
+        paraTitle: "মাইক্রো ক্রেডিট (উন্মেষ)\nঋণের মেয়াদোত্তীর্ণ\nঅনাদায়ী ৫৭,৮২৫\nটাকা।",
+        involvedAmount: "৫৭,৮২৫",
+        officeComment: "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।"
+      }
+    ]);
+
+    setJaripatraSignatoryName("নাসিফ কবির");
+    setJaripatraSignatoryTitle("উপ-পরিচালক");
+    setJaripatraSignatoryPhone("ফোন: ০২৪৭৭৭২২৬৫৬");
+
+    setJaripatraBottomMemoNo("৮২.১০.০০০০.৬০৩.৩৩.০০৫.১৬");
+    setJaripatraBottomDate("       /      /২০২৬ খ্রি:");
+
+    setJaripatraOnulipiHeader("সদয় অবগতি ও প্রয়োজনীয় ব্যবস্থা গ্রহণের জন্য অনুলিপি প্রেরণ করা হলো: (জ্যেষ্ঠতার ভিত্তিতে নয়)");
+    setJaripatraOnulipiItems([
+      `১. উপমহাব্যবস্থাপক, ${entry.entityName || "সোনালী ব্যাংক পিএলসি"}, জিএম অফিস, খুলনা। (কপি সংশ্লিষ্ট শাখায় প্রেরণের জন্য অনুরোধ করা হলো)`,
+      "২. পিএ টু মহাপরিচালক/পরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, প্রধান কাযায়, অডিট কমপ্লেক্স (৮ম ও ৯ ম তলা), সেগুনবাগিচা, ঢাকা।",
+      "৩. অফিস কপি।"
+    ]);
+  };
+
+  const handleCopyJaripatraWord = async () => {
+    try {
+      const tableRowsHtml = jaripatraTableRows.map((r) => `
+        <tr style="page-break-inside: avoid;">
+          <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: center; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt; font-weight: bold;">${r.sl}</td>
+          <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: center; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt; font-weight: bold;">${r.paraAndYear.replace(/\n/g, '<br/>')}</td>
+          <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: left; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt;">${r.entityName.replace(/\n/g, '<br/>')}</td>
+          <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: left; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt;">${r.paraTitle.replace(/\n/g, '<br/>')}</td>
+          <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: center; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt; font-weight: bold;">${r.involvedAmount.replace(/\n/g, '<br/>')}</td>
+          <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: justify; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt; line-height: 1.5;">${r.officeComment.replace(/\n/g, '<br/>')}</td>
+        </tr>
+      `).join("");
+
+      const onulipiHtml = jaripatraOnulipiItems.map(item => `<p style="margin: 3pt 0; line-height: 1.4;">${item}</p>`).join("");
+
+      const richJaripatraHtml = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+          <style>
+            body { font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', Arial, sans-serif; font-size: 11pt; color: #000000; line-height: 1.5; }
+            table { border-collapse: collapse; width: 100%; border: 1.0pt solid #000000; }
+            th, td { border: 1.0pt solid #000000; padding: 5pt; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', Arial, sans-serif; font-size: 10pt; }
+          </style>
+        </head>
+        <body>
+          <div style="text-align: center; line-height: 1.3; margin-bottom: 12pt;">
+            <p style="margin: 0; font-size: 12pt; font-weight: bold;">${jaripatraHeaderLine1}</p>
+            <p style="margin: 0; font-size: 11pt; font-weight: bold;">${jaripatraHeaderLine2}</p>
+            <p style="margin: 0; font-size: 10.5pt;">${jaripatraHeaderLine3}</p>
+            <p style="margin: 0; font-size: 10.5pt;">${jaripatraHeaderLine4}</p>
+            <p style="margin: 0; font-size: 10.5pt;">${jaripatraHeaderLine5}</p>
+          </div>
+
+          <table style="width: 100%; border: none; margin-bottom: 10pt;">
+            <tr>
+              <td style="border: none; text-align: left; font-weight: bold;">নং- ${jaripatraMemoNo}</td>
+              <td style="border: none; text-align: right; font-weight: bold;">তারিখ: ${jaripatraDate}</td>
+            </tr>
+          </table>
+
+          <div style="margin-bottom: 10pt; line-height: 1.4;">
+            <p style="margin: 0; font-weight: bold;">${jaripatraRecipientDesignation}</p>
+            <p style="margin: 0; font-weight: bold;">${jaripatraRecipientEntity}</p>
+            <p style="margin: 0;">${jaripatraRecipientAddress}</p>
+            <p style="margin: 0;">${jaripatraRecipientCity}</p>
+          </div>
+
+          <p style="margin: 8pt 0; font-weight: bold; line-height: 1.5;">${jaripatraSubject}</p>
+          <p style="margin: 8pt 0; font-weight: bold; line-height: 1.5;">${jaripatraReference}</p>
+          <p style="margin: 10pt 0; text-align: justify; line-height: 1.6;">${jaripatraIntroText}</p>
+
+          <table border="1" cellspacing="0" cellpadding="0" style="width: 100%; border-collapse: collapse; border: 1.0pt solid #000000; margin: 10pt 0;">
+            <thead>
+              <tr style="background-color: #f1f5f9; font-weight: bold; text-align: center;">
+                <th style="border: 1.0pt solid #000000; padding: 6pt; width: 7%;">ক্রমিক নং</th>
+                <th style="border: 1.0pt solid #000000; padding: 6pt; width: 14%;">অনু: নং ও নিরীক্ষা বছর</th>
+                <th style="border: 1.0pt solid #000000; padding: 6pt; width: 22%;">প্রতিষ্ঠানের নাম</th>
+                <th style="border: 1.0pt solid #000000; padding: 6pt; width: 22%;">অনুচ্ছেদের শিরোনাম</th>
+                <th style="border: 1.0pt solid #000000; padding: 6pt; width: 11%;">জড়িত টাকা</th>
+                <th style="border: 1.0pt solid #000000; padding: 6pt; width: 24%;">এ কার্যালয়ের মন্তব্য</th>
+              </tr>
+              <tr style="background-color: #e2e8f0; font-weight: bold; text-align: center; font-size: 9.5pt;">
+                <th style="border: 1.0pt solid #000000; padding: 3pt;">(১)</th>
+                <th style="border: 1.0pt solid #000000; padding: 3pt;">(২)</th>
+                <th style="border: 1.0pt solid #000000; padding: 3pt;">(৩)</th>
+                <th style="border: 1.0pt solid #000000; padding: 3pt;">(৪)</th>
+                <th style="border: 1.0pt solid #000000; padding: 3pt;">(৫)</th>
+                <th style="border: 1.0pt solid #000000; padding: 3pt;">(৬)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRowsHtml}
+            </tbody>
+          </table>
+
+          <table style="width: 100%; border: none; margin-top: 25pt;">
+            <tr>
+              <td style="border: none; width: 60%;"></td>
+              <td style="border: none; width: 40%; text-align: center; line-height: 1.3;">
+                <p style="margin: 0; font-weight: bold;">${jaripatraSignatoryName}</p>
+                <p style="margin: 0;">${jaripatraSignatoryTitle}</p>
+                <p style="margin: 0;">${jaripatraSignatoryPhone}</p>
+              </td>
+            </tr>
+          </table>
+
+          <table style="width: 100%; border: none; margin-top: 15pt;">
+            <tr>
+              <td style="border: none; text-align: left; font-weight: bold;">নং- ${jaripatraBottomMemoNo}</td>
+              <td style="border: none; text-align: right; font-weight: bold;">তারিখ: ${jaripatraBottomDate}</td>
+            </tr>
+          </table>
+
+          <div style="margin-top: 10pt; line-height: 1.4;">
+            <p style="margin: 0 0 4pt 0; font-weight: bold; text-decoration: underline;">${jaripatraOnulipiHeader}</p>
+            ${onulipiHtml}
+          </div>
+        </body>
+        </html>
+      `;
+
+      if (navigator.clipboard && window.ClipboardItem) {
+        const blobHtml = new Blob([richJaripatraHtml], { type: "text/html" });
+        const plainText = `${jaripatraHeaderLine1}\n${jaripatraHeaderLine2}\n${jaripatraHeaderLine3}\n${jaripatraHeaderLine4}\n${jaripatraHeaderLine5}\n\nনং- ${jaripatraMemoNo}    তারিখ: ${jaripatraDate}\n\n${jaripatraRecipientDesignation}\n${jaripatraRecipientEntity}\n${jaripatraRecipientAddress}\n${jaripatraRecipientCity}\n\n${jaripatraSubject}\n${jaripatraReference}\n\n${jaripatraIntroText}\n\n[৬ কলাম ছক]\n\n${jaripatraSignatoryName}\n${jaripatraSignatoryTitle}\n${jaripatraSignatoryPhone}\n\nনং- ${jaripatraBottomMemoNo}    তারিখ: ${jaripatraBottomDate}\n\n${jaripatraOnulipiHeader}\n${jaripatraOnulipiItems.join('\n')}`;
+        const blobText = new Blob([plainText], { type: "text/plain" });
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": blobHtml,
+            "text/plain": blobText,
+          })
+        ]);
+      } else {
+        await navigator.clipboard.writeText(richJaripatraHtml);
+      }
+
+      setJaripatraCopiedSuccess(true);
+      setTimeout(() => setJaripatraCopiedSuccess(false), 3500);
+    } catch (err) {
+      console.error("Jaripatra copy error:", err);
+    }
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6 pb-20 animate-in fade-in duration-300">
       {/* Top Action Header */}
@@ -992,7 +1312,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               </span>
             </h1>
             <p className="text-xs text-slate-500 font-bold">
-              {entry.entityName || 'প্রতিষ্ঠান'} | {entry.branchName || 'শাখা'} | {entry.auditYear || 'নিরীক্ষা বছর'}
+              {entry.entityName || 'প্রতিষ্ঠান'} | {entry.branchName || ' শাখা'} | {entry.auditYear || 'নিরীক্ষা বছর'}
             </p>
           </div>
         </div>
@@ -1027,15 +1347,14 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             <Printer size={14} /> নোট শিট প্রিন্ট
           </button>
 
-          {isNoteApproved && (
-            <button
-              type="button"
-              onClick={() => setShowJaripatraView(true)}
-              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
-            >
-              <Flame size={14} /> জারিপত্র দেখুন
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setShowJaripatraView(true)}
+            className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+            title="সরকারি জারিপত্রের নির্ধারিত ছক ও ফরম্যাট দেখুন ও প্রিন্ট করুন"
+          >
+            <Flame size={14} /> সরকারি জারিপত্র
+          </button>
         </div>
       </div>
 
@@ -1759,65 +2078,127 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         </div>
       </div>
 
-      {/* SECTION 5: Official Jaripatra Modal / View (Strictly Square / rounded-none) */}
+      {/* SECTION 5: Official Jaripatra Modal / View (Exact Bangladesh Commercial Audit Directorate Government Format) */}
       {showJaripatraView && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-none max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-slate-400 animate-in zoom-in-95 duration-200">
-            <div className="sticky top-0 bg-white/95 backdrop-blur-md px-6 py-4 border-b border-slate-200 flex items-center justify-between gap-4 no-print z-10">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-none bg-amber-500 text-white flex items-center justify-center font-black">
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-none max-w-5xl w-full max-h-[95vh] overflow-y-auto shadow-2xl border-2 border-slate-700 animate-in zoom-in-95 duration-200">
+            {/* Modal Sticky Header with Actions */}
+            <div className="sticky top-0 bg-slate-900 text-white px-4 sm:px-6 py-3.5 border-b border-slate-700 flex flex-wrap items-center justify-between gap-3 no-print z-20">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-none bg-amber-500 text-slate-900 flex items-center justify-center font-black">
                   <Flame size={18} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-900">সরকারি জারিপত্র প্রিভিউ ও প্রিন্ট</h3>
-                  <p className="text-[11px] font-bold text-slate-500">অনুমোদিত নোটের সিদ্ধান্তের ভিত্তিতে স্বয়ংক্রিয়ভাবে প্রস্তুতকৃত</p>
+                  <h3 className="text-sm font-black text-white">সরকারি জারিপত্র (অফিসিয়াল ফরম্যাট)</h3>
+                  <p className="text-[11px] font-bold text-slate-300">বাণিজ্যিক অডিট অধিদপ্তরের নির্ধারিত ৬ কলাম ছক ও কাঠামো অনুযায়ী</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleResetJaripatraToDemo}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 rounded-none text-xs font-black flex items-center gap-1.5 cursor-pointer"
+                  title="নমুনা জারিপত্র ফরম্যাটে রিসেট করুন"
+                >
+                  <RotateCcw size={13} /> নমুনা ফরম্যাট লোড
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyJaripatraWord}
+                  className={`px-3.5 py-1.5 rounded-none text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
+                    jaripatraCopiedSuccess
+                      ? "bg-emerald-600 text-white"
+                      : "bg-blue-600 hover:bg-blue-700 text-white"
+                  }`}
+                  title="MS Word বা নথিতে সরাসরি পেস্ট করার জন্য ফরম্যাটসহ কপি করুন"
+                >
+                  {jaripatraCopiedSuccess ? <Check size={14} /> : <Copy size={14} />}
+                  {jaripatraCopiedSuccess ? "ওয়ার্ডে কপি হয়েছে!" : "ওয়ার্ডে কপি করুন"}
+                </button>
                 <button
                   type="button"
                   onClick={handlePrintJaripatra}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-none text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-none text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
-                  <Printer size={14} /> প্রিন্ট করুন
+                  <Printer size={14} /> প্রিন্ট
                 </button>
                 <button
                   type="button"
                   onClick={() => {
                     if (onSaveJaripatra) {
-                      onSaveJaripatra(entry, { memoNo: jaripatraMemoNo, date: jaripatraDate });
+                      onSaveJaripatra(entry, { 
+                        memoNo: jaripatraMemoNo, 
+                        date: jaripatraDate,
+                        tableRows: jaripatraTableRows,
+                        subject: jaripatraSubject,
+                        reference: jaripatraReference,
+                        onulipi: jaripatraOnulipiItems,
+                      });
                     }
                     setShowJaripatraView(false);
                   }}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-none text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-none text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <CheckCircle2 size={14} /> সংরক্ষণ ও বন্ধ
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowJaripatraView(false)}
-                  className="p-2 hover:bg-slate-100 text-slate-500 rounded-none transition-colors cursor-pointer"
+                  className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-none transition-colors cursor-pointer"
                 >
                   <X size={18} />
                 </button>
               </div>
             </div>
 
-            {/* Printable Letter Paper */}
-            <div className="p-8 sm:p-12 space-y-6 text-slate-900 font-bengali text-xs leading-relaxed print:p-0 print:m-0">
-              <div className="text-center space-y-1 border-b pb-4 border-slate-300">
-                <h2 className="text-base font-black tracking-tight">{OFFICE_HEADER.main}</h2>
-                <p className="text-xs font-bold text-slate-700">{OFFICE_HEADER.sub}</p>
-                <p className="text-[11px] text-slate-600">{OFFICE_HEADER.address}</p>
+            {/* Printable Official Government Letter Sheet */}
+            <div 
+              id="official-jaripatra-container" 
+              className="p-6 sm:p-12 md:p-14 bg-white text-black font-bengali text-xs sm:text-[13px] leading-relaxed space-y-4 print:p-0 print:m-0 print:text-black"
+              style={{ fontFamily: "'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif" }}
+            >
+              {/* 1. Header (5 Centered Lines) */}
+              <div className="text-center space-y-0.5 pb-2">
+                <input
+                  type="text"
+                  className="w-full text-center font-bold text-sm sm:text-base text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraHeaderLine1}
+                  onChange={(e) => setJaripatraHeaderLine1(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="w-full text-center font-bold text-xs sm:text-sm text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraHeaderLine2}
+                  onChange={(e) => setJaripatraHeaderLine2(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="w-full text-center text-xs sm:text-[13px] text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraHeaderLine3}
+                  onChange={(e) => setJaripatraHeaderLine3(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="w-full text-center text-xs sm:text-[13px] text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraHeaderLine4}
+                  onChange={(e) => setJaripatraHeaderLine4(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="w-full text-center text-xs sm:text-[13px] text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraHeaderLine5}
+                  onChange={(e) => setJaripatraHeaderLine5(e.target.value)}
+                />
               </div>
 
-              <div className="flex justify-between items-center text-xs font-bold pt-2">
+              {/* 2. Memo No & Date Row */}
+              <div className="flex justify-between items-baseline pt-2 text-xs sm:text-[13px] font-bold">
                 <div className="flex items-center gap-1">
-                  <span>স্মারক নং:</span>
+                  <span>নং-</span>
                   <input
                     type="text"
-                    className="bg-transparent border-b border-dashed border-slate-400 font-black text-slate-900 outline-none w-56"
+                    className="font-bold text-black bg-transparent border-b border-dashed border-slate-400 focus:border-blue-600 outline-none w-64 sm:w-80"
                     value={jaripatraMemoNo}
                     onChange={(e) => setJaripatraMemoNo(e.target.value)}
                   />
@@ -1826,80 +2207,265 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                   <span>তারিখ:</span>
                   <input
                     type="text"
-                    className="bg-transparent border-b border-dashed border-slate-400 font-black text-slate-900 outline-none w-28 text-right"
-                    value={formatDateBN(jaripatraDate)}
+                    className="font-bold text-black bg-transparent border-b border-dashed border-slate-400 focus:border-blue-600 outline-none w-36 sm:w-44 text-right"
+                    value={jaripatraDate}
                     onChange={(e) => setJaripatraDate(e.target.value)}
                   />
                 </div>
               </div>
 
-              <div className="space-y-0.5 font-medium">
-                <p className="font-bold">প্রাপক:</p>
-                <p className="font-black text-slate-900">ব্যবস্থাপনা পরিচালক / প্রধান নির্বাহী কর্মকর্তা</p>
-                <p className="font-bold">{entry.entityName || defaultEntity}</p>
-                <p>{entry.ministryName || defaultMinistry}</p>
+              {/* 3. Recipient (Prápak) */}
+              <div className="space-y-0.5 pt-2 text-xs sm:text-[13px]">
+                <input
+                  type="text"
+                  className="w-full font-bold text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraRecipientDesignation}
+                  onChange={(e) => setJaripatraRecipientDesignation(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="w-full font-bold text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraRecipientEntity}
+                  onChange={(e) => setJaripatraRecipientEntity(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="w-full text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraRecipientAddress}
+                  onChange={(e) => setJaripatraRecipientAddress(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="w-full text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraRecipientCity}
+                  onChange={(e) => setJaripatraRecipientCity(e.target.value)}
+                />
               </div>
 
-              <div className="space-y-1 pt-1">
-                <div className="flex items-start gap-1">
-                  <span className="font-black shrink-0">বিষয়:</span>
-                  <span className="font-bold underline">{jaripatraSubject}</span>
-                </div>
-                <div className="flex items-start gap-1 text-slate-700">
-                  <span className="font-bold shrink-0">সূত্র:</span>
-                  <span>{jaripatraReference}</span>
+              {/* 4. Subject & Reference */}
+              <div className="space-y-1.5 pt-2 text-xs sm:text-[13px]">
+                <textarea
+                  rows={2}
+                  className="w-full font-bold text-black underline bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 p-1 outline-none resize-none leading-normal"
+                  value={jaripatraSubject}
+                  onChange={(e) => setJaripatraSubject(e.target.value)}
+                />
+                <textarea
+                  rows={2}
+                  className="w-full font-bold text-black bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 p-1 outline-none resize-none leading-normal"
+                  value={jaripatraReference}
+                  onChange={(e) => setJaripatraReference(e.target.value)}
+                />
+              </div>
+
+              {/* 5. Intro Narrative */}
+              <div className="pt-1 text-xs sm:text-[13px] text-justify">
+                <textarea
+                  rows={3}
+                  className="w-full text-black bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 p-1 outline-none resize-none leading-relaxed text-justify"
+                  value={jaripatraIntroText}
+                  onChange={(e) => setJaripatraIntroText(e.target.value)}
+                />
+              </div>
+
+              {/* 6. Main 6-Column Government Settlement Table */}
+              <div className="pt-2">
+                <table className="w-full border-collapse border-2 border-black text-xs sm:text-[12px]">
+                  <thead>
+                    <tr className="bg-slate-50 font-bold border-b border-black text-center">
+                      <th className="border border-black p-2 w-[6%] text-center">ক্রমিক নং</th>
+                      <th className="border border-black p-2 w-[14%] text-center">অনু: নং ও নিরীক্ষা বছর</th>
+                      <th className="border border-black p-2 w-[22%] text-center">প্রতিষ্ঠানের নাম</th>
+                      <th className="border border-black p-2 w-[22%] text-center">অনুচ্ছেদের শিরোনাম</th>
+                      <th className="border border-black p-2 w-[12%] text-center">জড়িত টাকা</th>
+                      <th className="border border-black p-2 w-[24%] text-center">এ কার্যালয়ের মন্তব্য</th>
+                      <th className="border border-black p-1 w-[4%] text-center no-print bg-slate-200">অ্যাকশন</th>
+                    </tr>
+                    <tr className="bg-slate-100 font-bold border-b border-black text-center text-[11px]">
+                      <th className="border border-black p-1">(১)</th>
+                      <th className="border border-black p-1">(২)</th>
+                      <th className="border border-black p-1">(৩)</th>
+                      <th className="border border-black p-1">(৪)</th>
+                      <th className="border border-black p-1">(৫)</th>
+                      <th className="border border-black p-1">(৬)</th>
+                      <th className="border border-black p-1 no-print bg-slate-200">-</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {jaripatraTableRows.map((row) => (
+                      <tr key={row.id} className="align-top hover:bg-slate-50/50">
+                        {/* 1. Sl */}
+                        <td className="border border-black p-1.5 text-center font-bold">
+                          <input
+                            type="text"
+                            className="w-full text-center bg-transparent outline-none font-bold text-black"
+                            value={row.sl}
+                            onChange={(e) => handleUpdateJaripatraCell(row.id, "sl", e.target.value)}
+                          />
+                        </td>
+                        {/* 2. Para No & Audit Year */}
+                        <td className="border border-black p-1.5 text-center font-bold">
+                          <textarea
+                            rows={2}
+                            className="w-full text-center bg-transparent outline-none font-bold text-black resize-none"
+                            value={row.paraAndYear}
+                            onChange={(e) => handleUpdateJaripatraCell(row.id, "paraAndYear", e.target.value)}
+                          />
+                        </td>
+                        {/* 3. Entity Name */}
+                        <td className="border border-black p-1.5 text-left">
+                          <textarea
+                            rows={3}
+                            className="w-full text-left bg-transparent outline-none text-black resize-none"
+                            value={row.entityName}
+                            onChange={(e) => handleUpdateJaripatraCell(row.id, "entityName", e.target.value)}
+                          />
+                        </td>
+                        {/* 4. Title & Subject */}
+                        <td className="border border-black p-1.5 text-left">
+                          <textarea
+                            rows={4}
+                            className="w-full text-left bg-transparent outline-none text-black resize-none"
+                            value={row.paraTitle}
+                            onChange={(e) => handleUpdateJaripatraCell(row.id, "paraTitle", e.target.value)}
+                          />
+                        </td>
+                        {/* 5. Involved Amount */}
+                        <td className="border border-black p-1.5 text-center font-bold">
+                          <textarea
+                            rows={2}
+                            className="w-full text-center bg-transparent outline-none font-bold text-black resize-none"
+                            value={row.involvedAmount}
+                            onChange={(e) => handleUpdateJaripatraCell(row.id, "involvedAmount", e.target.value)}
+                          />
+                        </td>
+                        {/* 6. Office Comment */}
+                        <td className="border border-black p-1.5 text-justify leading-relaxed">
+                          <textarea
+                            rows={5}
+                            className="w-full text-justify bg-transparent outline-none text-black resize-none leading-relaxed"
+                            value={row.officeComment}
+                            onChange={(e) => handleUpdateJaripatraCell(row.id, "officeComment", e.target.value)}
+                          />
+                        </td>
+                        {/* Row delete action */}
+                        <td className="border border-black p-1 text-center no-print bg-slate-50 align-middle">
+                          {jaripatraTableRows.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteJaripatraRow(row.id)}
+                              className="text-red-500 hover:text-red-700 p-1 cursor-pointer"
+                              title="সারিটি মুছুন"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Table Row Add Button */}
+                <div className="pt-2 no-print flex justify-start">
+                  <button
+                    type="button"
+                    onClick={handleAddJaripatraRow}
+                    className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-none text-xs font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={13} /> ছকে নতুন অনুচ্ছেদ সারি যোগ করুন
+                  </button>
                 </div>
               </div>
 
-              <div className="pt-2 text-justify">
-                <p className="leading-relaxed">{jaripatraBody}</p>
-              </div>
-
-              {/* Multi-Paragraph Tables in Jaripatra */}
-              {paragraphs.map((para) => (
-                <div key={para.id} className="space-y-2 pt-2">
-                  <p className="font-black text-slate-900">
-                    অনুচ্ছেদ নং- {para.paraNo}: {para.entityReplyText}
-                  </p>
-                  {para.hasTable && para.tableRows.length > 0 && (
-                    <table className="w-full border-collapse border border-slate-800 text-[11px]">
-                      <thead>
-                        <tr className="bg-slate-100 font-black border-b border-slate-800 text-center">
-                          {para.tableColumns.map((col) => (
-                            <th key={col.id} className="border border-slate-800 p-1.5">{col.label}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {para.tableRows.map((r) => (
-                          <tr key={r.id} className="text-center">
-                            {para.tableColumns.map((col) => (
-                              <td key={col.id} className="border border-slate-800 p-1.5">{r.cells[col.id] || "-"}</td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                  <p className="text-[11px] text-slate-800 italic">
-                    {para.presenterCommentText}
-                  </p>
-                </div>
-              ))}
-
-              <div className="pt-12 flex justify-end">
-                <div className="text-center space-y-1">
-                  <div className="w-44 border-b border-slate-800 mx-auto" />
-                  <p className="font-black text-slate-900">{signatoryName}</p>
-                  <p className="text-[11px] text-slate-600">{signatoryOffice}</p>
+              {/* 7. Signatory Block (Right Aligned) */}
+              <div className="pt-10 flex justify-end">
+                <div className="text-center space-y-0.5 w-60 sm:w-64">
+                  <div className="w-40 border-b border-black mx-auto mb-2" />
+                  <input
+                    type="text"
+                    className="w-full text-center font-bold text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                    value={jaripatraSignatoryName}
+                    onChange={(e) => setJaripatraSignatoryName(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    className="w-full text-center text-xs text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                    value={jaripatraSignatoryTitle}
+                    onChange={(e) => setJaripatraSignatoryTitle(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    className="w-full text-center text-xs text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                    value={jaripatraSignatoryPhone}
+                    onChange={(e) => setJaripatraSignatoryPhone(e.target.value)}
+                  />
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-slate-300 text-[11px] space-y-1">
-                <p className="font-black">অনুলিপি সদয় অবগতি ও প্রয়োজনীয় ব্যবস্থা গ্রহণের জন্য প্রেরিত হলো:</p>
-                <p>১. সচিব, {entry.ministryName || defaultMinistry}।</p>
-                <p>২. মহাপরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, ঢাকা।</p>
-                <p>৩. সংশ্লিষ্ট নথি / মাস্টার কপি।</p>
+              {/* 8. Bottom Memo No & Date Row */}
+              <div className="flex justify-between items-baseline pt-4 text-xs sm:text-[13px] font-bold">
+                <div className="flex items-center gap-1">
+                  <span>নং-</span>
+                  <input
+                    type="text"
+                    className="font-bold text-black bg-transparent border-b border-dashed border-slate-400 focus:border-blue-600 outline-none w-64 sm:w-80"
+                    value={jaripatraBottomMemoNo}
+                    onChange={(e) => setJaripatraBottomMemoNo(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-1">
+                  <span>তারিখ:</span>
+                  <input
+                    type="text"
+                    className="font-bold text-black bg-transparent border-b border-dashed border-slate-400 focus:border-blue-600 outline-none w-36 sm:w-44 text-right"
+                    value={jaripatraBottomDate}
+                    onChange={(e) => setJaripatraBottomDate(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* 9. Onulipi Section */}
+              <div className="pt-2 text-xs sm:text-[13px] space-y-1">
+                <input
+                  type="text"
+                  className="w-full font-bold underline text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraOnulipiHeader}
+                  onChange={(e) => setJaripatraOnulipiHeader(e.target.value)}
+                />
+
+                <div className="space-y-1 pt-1">
+                  {jaripatraOnulipiItems.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2 group">
+                      <input
+                        type="text"
+                        className="w-full text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                        value={item}
+                        onChange={(e) => handleUpdateOnulipiItem(idx, e.target.value)}
+                      />
+                      {jaripatraOnulipiItems.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteOnulipiItem(idx)}
+                          className="no-print opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 p-1 cursor-pointer transition-opacity"
+                          title="মুছুন"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-1 no-print">
+                  <button
+                    type="button"
+                    onClick={handleAddOnulipiItem}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={12} /> + নতুন অনুলিপি প্রাপক যোগ করুন
+                  </button>
+                </div>
               </div>
             </div>
           </div>
