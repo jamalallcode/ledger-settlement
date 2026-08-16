@@ -30,6 +30,7 @@ import {
   Table,
   RotateCcw,
   FileCheck,
+  Edit3,
 } from "lucide-react";
 import { CorrespondenceEntry } from "../types";
 import { toBengaliDigits, formatDateBN, toEnglishDigits } from "../utils/numberUtils";
@@ -209,7 +210,16 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   const [aiSuccessToast, setAiSuccessToast] = useState<string | null>(null);
 
   // Jaripatra State (Strict Government Layout Matching Commercial Audit Format)
+  const getTodayBengaliDateFormatted = (): string => {
+    const today = new Date();
+    const d = today.getDate().toString().padStart(2, '0');
+    const m = (today.getMonth() + 1).toString().padStart(2, '0');
+    const y = today.getFullYear().toString();
+    return `${toBengaliDigits(`${d}/${m}/${y}`)} খ্রি:`;
+  };
+
   const [showJaripatraView, setShowJaripatraView] = useState<boolean>(false);
+  const [isJaripatraEditable, setIsJaripatraEditable] = useState<boolean>(true);
   const [jaripatraCopiedSuccess, setJaripatraCopiedSuccess] = useState<boolean>(false);
   const [jaripatraSavedSuccess, setJaripatraSavedSuccess] = useState<boolean>(false);
   
@@ -222,7 +232,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
   // Top Memo & Date
   const [jaripatraMemoNo, setJaripatraMemoNo] = useState<string>("৮২.১০.০০০০.৬০৩.৩৩.০০৫.১৬");
-  const [jaripatraDate, setJaripatraDate] = useState<string>("       /      /২০২৬ খ্রি:");
+  const [jaripatraDate, setJaripatraDate] = useState<string>(() => getTodayBengaliDateFormatted());
 
   // Recipient
   const [jaripatraRecipientDesignation, setJaripatraRecipientDesignation] = useState<string>("ব্যবস্থাপনা পরিচালক");
@@ -267,7 +277,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
   // Bottom Memo & Date
   const [jaripatraBottomMemoNo, setJaripatraBottomMemoNo] = useState<string>("৮২.১০.০০০০.৬০৩.৩৩.০০৫.১৬");
-  const [jaripatraBottomDate, setJaripatraBottomDate] = useState<string>("       /      /২০২৬ খ্রি:");
+  const [jaripatraBottomDate, setJaripatraBottomDate] = useState<string>(() => getTodayBengaliDateFormatted());
 
   // Onulipi
   const [jaripatraOnulipiHeader, setJaripatraOnulipiHeader] = useState<string>("সদয় অবগতি ও প্রয়োজনীয় ব্যবস্থা গ্রহণের জন্য অনুলিপি প্রেরণ করা হলো: (জ্যেষ্ঠতার ভিত্তিতে নয়)");
@@ -1131,7 +1141,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     setJaripatraHeaderLine5("খুলনা – ৯০০০");
 
     setJaripatraMemoNo("৮২.১০.০০০০.৬০৩.৩৩.০০৫.১৬");
-    setJaripatraDate("       /      /২০২৬ খ্রি:");
+    setJaripatraDate(getTodayBengaliDateFormatted());
 
     setJaripatraRecipientDesignation("ব্যবস্থাপনা পরিচালক");
     setJaripatraRecipientEntity(entry.entityName || "সোনালী ব্যাংক পিএলসি");
@@ -1159,7 +1169,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     setJaripatraSignatoryPhone("ফোন: ০২৪৭৭৭২২৬৫৬");
 
     setJaripatraBottomMemoNo("৮২.১০.০০০০.৬০৩.৩৩.০০৫.১৬");
-    setJaripatraBottomDate("       /      /২০২৬ খ্রি:");
+    setJaripatraBottomDate(getTodayBengaliDateFormatted());
 
     setJaripatraOnulipiHeader("সদয় অবগতি ও প্রয়োজনীয় ব্যবস্থা গ্রহণের জন্য অনুলিপি প্রেরণ করা হলো: (জ্যেষ্ঠতার ভিত্তিতে নয়)");
     setJaripatraOnulipiItems([
@@ -1303,6 +1313,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         onulipi: jaripatraOnulipiItems,
       });
     }
+    setIsJaripatraEditable(false);
     setJaripatraSavedSuccess(true);
     setTimeout(() => setJaripatraSavedSuccess(false), 3000);
   };
@@ -1364,58 +1375,95 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               >
                 <Printer size={12} /> প্রিন্ট
               </button>
-              <button
-                type="button"
-                onClick={handleSaveJaripatra}
-                className={`px-3 py-1 rounded-none text-[11px] font-bold flex items-center gap-1 shadow-xs cursor-pointer transition-all ${
-                  jaripatraSavedSuccess
-                    ? "bg-emerald-700 ring-2 ring-emerald-400 font-black text-white"
-                    : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                }`}
-                title="জারিপত্র তথ্য সংরক্ষণ করুন"
-              >
-                <CheckCircle2 size={13} />
-                <span>{jaripatraSavedSuccess ? "সংরক্ষিত হয়েছে!" : "সংরক্ষণ"}</span>
-              </button>
+              {isJaripatraEditable ? (
+                <button
+                  type="button"
+                  onClick={handleSaveJaripatra}
+                  className={`px-3 py-1 rounded-none text-[11px] font-bold flex items-center gap-1 shadow-xs cursor-pointer transition-all ${
+                    jaripatraSavedSuccess
+                      ? "bg-emerald-700 ring-2 ring-emerald-400 font-black text-white"
+                      : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  }`}
+                  title="জারিপত্র তথ্য সংরক্ষণ করুন ও ভিউ মোডে রাখুন"
+                >
+                  <CheckCircle2 size={13} />
+                  <span>{jaripatraSavedSuccess ? "সংরক্ষিত হয়েছে!" : "সংরক্ষণ"}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsJaripatraEditable(true)}
+                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-none text-[11px] font-bold flex items-center gap-1 shadow-xs cursor-pointer transition-all"
+                  title="জারিপত্র তথ্য এডিট করুন"
+                >
+                  <Edit3 size={13} />
+                  <span>এডিট করুন</span>
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Printable Official Government Letter Sheet */}
-          <div className="bg-white rounded-none border border-slate-300 shadow-md p-6 sm:p-12 md:p-14 text-black font-bengali text-xs sm:text-[13px] leading-relaxed space-y-4 print:p-0 print:m-0 print:border-none print:shadow-none">
+          {/* Printable Official Government Letter Sheet - Reduced side padding by more than half */}
+          <div className="bg-white rounded-none border border-slate-300 shadow-md px-4 py-6 sm:px-8 sm:py-8 md:px-10 md:py-10 text-black font-bengali text-xs sm:text-[13px] leading-relaxed space-y-4 print:p-0 print:m-0 print:border-none print:shadow-none">
             <div 
               id="official-jaripatra-container" 
-              className="space-y-4 max-w-4xl mx-auto"
+              className="space-y-4 w-full"
               style={{ fontFamily: "'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif" }}
             >
               {/* 1. Header (5 Centered Lines) */}
               <div className="text-center space-y-0.5 pb-2">
                 <input
                   type="text"
-                  className="w-full text-center font-bold text-sm sm:text-base text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  readOnly={!isJaripatraEditable}
+                  className={`w-full text-center font-bold text-sm sm:text-base text-black bg-transparent outline-none ${
+                    isJaripatraEditable
+                      ? "border-b border-transparent hover:border-slate-300 focus:border-blue-500"
+                      : "border-none cursor-default select-text"
+                  }`}
                   value={jaripatraHeaderLine1}
                   onChange={(e) => setJaripatraHeaderLine1(e.target.value)}
                 />
                 <input
                   type="text"
-                  className="w-full text-center font-bold text-xs sm:text-sm text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  readOnly={!isJaripatraEditable}
+                  className={`w-full text-center font-bold text-xs sm:text-sm text-black bg-transparent outline-none ${
+                    isJaripatraEditable
+                      ? "border-b border-transparent hover:border-slate-300 focus:border-blue-500"
+                      : "border-none cursor-default select-text"
+                  }`}
                   value={jaripatraHeaderLine2}
                   onChange={(e) => setJaripatraHeaderLine2(e.target.value)}
                 />
                 <input
                   type="text"
-                  className="w-full text-center text-xs sm:text-[13px] text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  readOnly={!isJaripatraEditable}
+                  className={`w-full text-center text-xs sm:text-[13px] text-black bg-transparent outline-none ${
+                    isJaripatraEditable
+                      ? "border-b border-transparent hover:border-slate-300 focus:border-blue-500"
+                      : "border-none cursor-default select-text"
+                  }`}
                   value={jaripatraHeaderLine3}
                   onChange={(e) => setJaripatraHeaderLine3(e.target.value)}
                 />
                 <input
                   type="text"
-                  className="w-full text-center text-xs sm:text-[13px] text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  readOnly={!isJaripatraEditable}
+                  className={`w-full text-center text-xs sm:text-[13px] text-black bg-transparent outline-none ${
+                    isJaripatraEditable
+                      ? "border-b border-transparent hover:border-slate-300 focus:border-blue-500"
+                      : "border-none cursor-default select-text"
+                  }`}
                   value={jaripatraHeaderLine4}
                   onChange={(e) => setJaripatraHeaderLine4(e.target.value)}
                 />
                 <input
                   type="text"
-                  className="w-full text-center text-xs sm:text-[13px] text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  readOnly={!isJaripatraEditable}
+                  className={`w-full text-center text-xs sm:text-[13px] text-black bg-transparent outline-none ${
+                    isJaripatraEditable
+                      ? "border-b border-transparent hover:border-slate-300 focus:border-blue-500"
+                      : "border-none cursor-default select-text"
+                  }`}
                   value={jaripatraHeaderLine5}
                   onChange={(e) => setJaripatraHeaderLine5(e.target.value)}
                 />
@@ -1427,7 +1475,12 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                   <span>নং-</span>
                   <input
                     type="text"
-                    className="font-bold text-black bg-transparent border-b border-dashed border-slate-400 focus:border-blue-600 outline-none w-64 sm:w-80"
+                    readOnly={!isJaripatraEditable}
+                    className={`font-bold text-black bg-transparent outline-none w-64 sm:w-80 ${
+                      isJaripatraEditable
+                        ? "border-b border-dashed border-slate-400 focus:border-blue-600"
+                        : "border-none cursor-default select-text"
+                    }`}
                     value={jaripatraMemoNo}
                     onChange={(e) => setJaripatraMemoNo(e.target.value)}
                   />
@@ -1436,7 +1489,12 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                   <span>তারিখ:</span>
                   <input
                     type="text"
-                    className="font-bold text-black bg-transparent border-b border-dashed border-slate-400 focus:border-blue-600 outline-none w-36 sm:w-44 text-right"
+                    readOnly={!isJaripatraEditable}
+                    className={`font-bold text-black bg-transparent outline-none w-36 sm:w-44 text-right ${
+                      isJaripatraEditable
+                        ? "border-b border-dashed border-slate-400 focus:border-blue-600"
+                        : "border-none cursor-default select-text"
+                    }`}
                     value={jaripatraDate}
                     onChange={(e) => setJaripatraDate(e.target.value)}
                   />
@@ -1447,25 +1505,45 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               <div className="space-y-0.5 pt-2 text-xs sm:text-[13px]">
                 <input
                   type="text"
-                  className="w-full font-bold text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  readOnly={!isJaripatraEditable}
+                  className={`w-full font-bold text-black bg-transparent outline-none ${
+                    isJaripatraEditable
+                      ? "border-b border-transparent hover:border-slate-300 focus:border-blue-500"
+                      : "border-none cursor-default select-text"
+                  }`}
                   value={jaripatraRecipientDesignation}
                   onChange={(e) => setJaripatraRecipientDesignation(e.target.value)}
                 />
                 <input
                   type="text"
-                  className="w-full font-bold text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  readOnly={!isJaripatraEditable}
+                  className={`w-full font-bold text-black bg-transparent outline-none ${
+                    isJaripatraEditable
+                      ? "border-b border-transparent hover:border-slate-300 focus:border-blue-500"
+                      : "border-none cursor-default select-text"
+                  }`}
                   value={jaripatraRecipientEntity}
                   onChange={(e) => setJaripatraRecipientEntity(e.target.value)}
                 />
                 <input
                   type="text"
-                  className="w-full text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  readOnly={!isJaripatraEditable}
+                  className={`w-full text-black bg-transparent outline-none ${
+                    isJaripatraEditable
+                      ? "border-b border-transparent hover:border-slate-300 focus:border-blue-500"
+                      : "border-none cursor-default select-text"
+                  }`}
                   value={jaripatraRecipientAddress}
                   onChange={(e) => setJaripatraRecipientAddress(e.target.value)}
                 />
                 <input
                   type="text"
-                  className="w-full text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  readOnly={!isJaripatraEditable}
+                  className={`w-full text-black bg-transparent outline-none ${
+                    isJaripatraEditable
+                      ? "border-b border-transparent hover:border-slate-300 focus:border-blue-500"
+                      : "border-none cursor-default select-text"
+                  }`}
                   value={jaripatraRecipientCity}
                   onChange={(e) => setJaripatraRecipientCity(e.target.value)}
                 />
@@ -1475,7 +1553,12 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               <div className="space-y-1.5 pt-2 text-xs sm:text-[13px]">
                 <textarea
                   rows={2}
-                  className="w-full font-bold text-black underline bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 p-1 outline-none resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-normal"
+                  readOnly={!isJaripatraEditable}
+                  className={`w-full font-bold text-black underline bg-transparent p-1 outline-none resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-normal ${
+                    isJaripatraEditable
+                      ? "border border-transparent hover:border-slate-300 focus:border-blue-500"
+                      : "border-none cursor-default select-text"
+                  }`}
                   value={jaripatraSubject}
                   onInput={(e) => {
                     const t = e.currentTarget;
@@ -1486,7 +1569,12 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                 />
                 <textarea
                   rows={2}
-                  className="w-full font-bold text-black bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 p-1 outline-none resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-normal"
+                  readOnly={!isJaripatraEditable}
+                  className={`w-full font-bold text-black bg-transparent p-1 outline-none resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-normal ${
+                    isJaripatraEditable
+                      ? "border border-transparent hover:border-slate-300 focus:border-blue-500"
+                      : "border-none cursor-default select-text"
+                  }`}
                   value={jaripatraReference}
                   onInput={(e) => {
                     const t = e.currentTarget;
@@ -1501,7 +1589,12 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               <div className="pt-1 text-xs sm:text-[13px] text-justify">
                 <textarea
                   rows={3}
-                  className="w-full text-black bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 p-1 outline-none resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-relaxed text-justify"
+                  readOnly={!isJaripatraEditable}
+                  className={`w-full text-black bg-transparent p-1 outline-none resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-relaxed text-justify ${
+                    isJaripatraEditable
+                      ? "border border-transparent hover:border-slate-300 focus:border-blue-500"
+                      : "border-none cursor-default select-text"
+                  }`}
                   value={jaripatraIntroText}
                   onInput={(e) => {
                     const t = e.currentTarget;
@@ -1541,11 +1634,14 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                           <div className="flex items-center justify-center gap-0.5">
                             <input
                               type="text"
-                              className="w-full text-center bg-transparent outline-none font-bold text-black overflow-hidden"
+                              readOnly={!isJaripatraEditable}
+                              className={`w-full text-center bg-transparent outline-none font-bold text-black overflow-hidden ${
+                                isJaripatraEditable ? "hover:bg-slate-100/60 focus:bg-blue-50/50" : "cursor-default select-text"
+                              }`}
                               value={row.sl}
                               onChange={(e) => handleUpdateJaripatraCell(row.id, "sl", e.target.value)}
                             />
-                            {jaripatraTableRows.length > 1 && (
+                            {isJaripatraEditable && jaripatraTableRows.length > 1 && (
                               <button
                                 type="button"
                                 onClick={() => handleDeleteJaripatraRow(row.id)}
@@ -1561,7 +1657,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                         <td className="border border-black p-1.5 text-center font-bold">
                           <textarea
                             rows={Math.max(2, (row.paraAndYear || '').split('\n').length)}
-                            className="w-full text-center bg-transparent outline-none font-bold text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                            readOnly={!isJaripatraEditable}
+                            className={`w-full text-center bg-transparent outline-none font-bold text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+                              isJaripatraEditable ? "hover:bg-slate-100/60 focus:bg-blue-50/50" : "cursor-default select-text"
+                            }`}
                             value={row.paraAndYear}
                             onInput={(e) => {
                               const t = e.currentTarget;
@@ -1575,7 +1674,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                         <td className="border border-black p-1.5 text-left">
                           <textarea
                             rows={Math.max(3, (row.entityName || '').split('\n').length)}
-                            className="w-full text-left bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                            readOnly={!isJaripatraEditable}
+                            className={`w-full text-left bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+                              isJaripatraEditable ? "hover:bg-slate-100/60 focus:bg-blue-50/50" : "cursor-default select-text"
+                            }`}
                             value={row.entityName}
                             onInput={(e) => {
                               const t = e.currentTarget;
@@ -1589,7 +1691,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                         <td className="border border-black p-1.5 text-left">
                           <textarea
                             rows={Math.max(4, Math.ceil((row.paraTitle || '').length / 28))}
-                            className="w-full text-left bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                            readOnly={!isJaripatraEditable}
+                            className={`w-full text-left bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+                              isJaripatraEditable ? "hover:bg-slate-100/60 focus:bg-blue-50/50" : "cursor-default select-text"
+                            }`}
                             value={row.paraTitle}
                             onInput={(e) => {
                               const t = e.currentTarget;
@@ -1603,7 +1708,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                         <td className="border border-black p-1.5 text-center font-bold">
                           <textarea
                             rows={Math.max(2, (row.involvedAmount || '').split('\n').length)}
-                            className="w-full text-center bg-transparent outline-none font-bold text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                            readOnly={!isJaripatraEditable}
+                            className={`w-full text-center bg-transparent outline-none font-bold text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+                              isJaripatraEditable ? "hover:bg-slate-100/60 focus:bg-blue-50/50" : "cursor-default select-text"
+                            }`}
                             value={row.involvedAmount}
                             onInput={(e) => {
                               const t = e.currentTarget;
@@ -1617,7 +1725,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                         <td className="border border-black p-1.5 text-justify leading-relaxed">
                           <textarea
                             rows={Math.max(5, Math.ceil((row.officeComment || '').length / 32))}
-                            className="w-full text-justify bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-relaxed"
+                            readOnly={!isJaripatraEditable}
+                            className={`w-full text-justify bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-relaxed ${
+                              isJaripatraEditable ? "hover:bg-slate-100/60 focus:bg-blue-50/50" : "cursor-default select-text"
+                            }`}
                             value={row.officeComment}
                             onInput={(e) => {
                               const t = e.currentTarget;
@@ -1633,15 +1744,17 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                 </table>
 
                 {/* Table Row Add Button */}
-                <div className="pt-2 no-print flex justify-start">
-                  <button
-                    type="button"
-                    onClick={handleAddJaripatraRow}
-                    className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-none text-xs font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <Plus size={13} /> ছকে নতুন অনুচ্ছেদ সারি যোগ করুন
-                  </button>
-                </div>
+                {isJaripatraEditable && (
+                  <div className="pt-2 no-print flex justify-start">
+                    <button
+                      type="button"
+                      onClick={handleAddJaripatraRow}
+                      className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-none text-xs font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus size={13} /> ছকে নতুন অনুচ্ছেদ সারি যোগ করুন
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* 7. Signatory Block (Right Aligned) */}
@@ -1650,19 +1763,34 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                   <div className="w-40 border-b border-black mx-auto mb-2" />
                   <input
                     type="text"
-                    className="w-full text-center font-bold text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                    readOnly={!isJaripatraEditable}
+                    className={`w-full text-center font-bold text-black bg-transparent outline-none ${
+                      isJaripatraEditable
+                        ? "border-b border-transparent hover:border-slate-300 focus:border-blue-500"
+                        : "border-none cursor-default select-text"
+                    }`}
                     value={jaripatraSignatoryName}
                     onChange={(e) => setJaripatraSignatoryName(e.target.value)}
                   />
                   <input
                     type="text"
-                    className="w-full text-center text-xs text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                    readOnly={!isJaripatraEditable}
+                    className={`w-full text-center text-xs text-black bg-transparent outline-none ${
+                      isJaripatraEditable
+                        ? "border-b border-transparent hover:border-slate-300 focus:border-blue-500"
+                        : "border-none cursor-default select-text"
+                    }`}
                     value={jaripatraSignatoryTitle}
                     onChange={(e) => setJaripatraSignatoryTitle(e.target.value)}
                   />
                   <input
                     type="text"
-                    className="w-full text-center text-xs text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                    readOnly={!isJaripatraEditable}
+                    className={`w-full text-center text-xs text-black bg-transparent outline-none ${
+                      isJaripatraEditable
+                        ? "border-b border-transparent hover:border-slate-300 focus:border-blue-500"
+                        : "border-none cursor-default select-text"
+                    }`}
                     value={jaripatraSignatoryPhone}
                     onChange={(e) => setJaripatraSignatoryPhone(e.target.value)}
                   />
@@ -1675,7 +1803,12 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                   <span>নং-</span>
                   <input
                     type="text"
-                    className="font-bold text-black bg-transparent border-b border-dashed border-slate-400 focus:border-blue-600 outline-none w-64 sm:w-80"
+                    readOnly={!isJaripatraEditable}
+                    className={`font-bold text-black bg-transparent outline-none w-64 sm:w-80 ${
+                      isJaripatraEditable
+                        ? "border-b border-dashed border-slate-400 focus:border-blue-600"
+                        : "border-none cursor-default select-text"
+                    }`}
                     value={jaripatraBottomMemoNo}
                     onChange={(e) => setJaripatraBottomMemoNo(e.target.value)}
                   />
@@ -1684,7 +1817,12 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                   <span>তারিখ:</span>
                   <input
                     type="text"
-                    className="font-bold text-black bg-transparent border-b border-dashed border-slate-400 focus:border-blue-600 outline-none w-36 sm:w-44 text-right"
+                    readOnly={!isJaripatraEditable}
+                    className={`font-bold text-black bg-transparent outline-none w-36 sm:w-44 text-right ${
+                      isJaripatraEditable
+                        ? "border-b border-dashed border-slate-400 focus:border-blue-600"
+                        : "border-none cursor-default select-text"
+                    }`}
                     value={jaripatraBottomDate}
                     onChange={(e) => setJaripatraBottomDate(e.target.value)}
                   />
@@ -1695,7 +1833,12 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               <div className="pt-2 text-xs sm:text-[13px] space-y-1">
                 <input
                   type="text"
-                  className="w-full font-bold underline text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  readOnly={!isJaripatraEditable}
+                  className={`w-full font-bold underline text-black bg-transparent outline-none ${
+                    isJaripatraEditable
+                      ? "border-b border-transparent hover:border-slate-300 focus:border-blue-500"
+                      : "border-none cursor-default select-text"
+                  }`}
                   value={jaripatraOnulipiHeader}
                   onChange={(e) => setJaripatraOnulipiHeader(e.target.value)}
                 />
@@ -1705,11 +1848,16 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                     <div key={idx} className="flex items-center gap-2 group">
                       <input
                         type="text"
-                        className="w-full text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                        readOnly={!isJaripatraEditable}
+                        className={`w-full text-black bg-transparent outline-none ${
+                          isJaripatraEditable
+                            ? "border-b border-transparent hover:border-slate-300 focus:border-blue-500"
+                            : "border-none cursor-default select-text"
+                        }`}
                         value={item}
                         onChange={(e) => handleUpdateOnulipiItem(idx, e.target.value)}
                       />
-                      {jaripatraOnulipiItems.length > 1 && (
+                      {isJaripatraEditable && jaripatraOnulipiItems.length > 1 && (
                         <button
                           type="button"
                           onClick={() => handleDeleteOnulipiItem(idx)}
@@ -1723,15 +1871,17 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                   ))}
                 </div>
 
-                <div className="pt-1 no-print">
-                  <button
-                    type="button"
-                    onClick={handleAddOnulipiItem}
-                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
-                  >
-                    <Plus size={12} /> + নতুন অনুলিপি প্রাপক যোগ করুন
-                  </button>
-                </div>
+                {isJaripatraEditable && (
+                  <div className="pt-1 no-print">
+                    <button
+                      type="button"
+                      onClick={handleAddOnulipiItem}
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus size={12} /> + নতুন অনুলিপি প্রাপক যোগ করুন
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
