@@ -52,6 +52,14 @@ interface TableRow {
   cellColors?: Record<string, string>;
 }
 
+export interface ObjectionSummaryRow {
+  id: string;
+  sl: string;
+  entityAndAuditYear: string;
+  paraNo: string;
+  titleAndDetails: string;
+}
+
 export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> = ({
   entry,
   onBack,
@@ -89,12 +97,57 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     return `<p><strong>টীকা নং- ১১:</strong> উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা <strong>${defaultEntity}</strong>, প্রধান কার্যালয়ের স্মারক নং- <strong>${defaultLetterNo}</strong>, তারিখ: <strong>${defaultLetterDate} খ্রি:</strong> পত্রটি (পৃষ্ঠা নং- ২৯২) দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে <strong>${defaultMinistry}</strong> এর নিয়ন্ত্রণাধীন <strong>${defaultEntity}</strong>, ${defaultBranch} এর <strong>${defaultAuditYear}</strong> নিরীক্ষা বছরের ব্রডশীট জবাবের (পৃষ্ঠা নং- ২৬৮-২৯২) ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।</p>`;
   });
 
-  // 3. Entity Reply Statement
+  // 3. Objection Summary Table (ক্রমিক নং, প্রতিষ্ঠানের নাম ও নিরীক্ষা বছর, অনুচ্ছেদ নং, শিরোনাম ও অন্যান্য)
+  const defaultParaNo = entry.paraNo ? toBengaliDigits(entry.paraNo) : "১০";
+  const defaultTitleAndDetails = `শিরোনাম: ${
+    entry.subject || "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ি ৫৭,৮২৫ টাকা।"
+  }\nঅনুচ্ছেদের পৃষ্ঠা নং- ২৯১\nপরিশিষ্ট পৃষ্ঠা নং- ২৯০`;
+  const defaultEntityAndAuditYear = `প্রতিষ্ঠান: ${defaultEntity}${
+    entry.branchName ? `,\n${entry.branchName}` : defaultBranch ? `,\n${defaultBranch}` : ""
+  }\nনিরীক্ষা বছর: ${entry.auditYear || defaultAuditYear}`;
+
+  const [hasObjectionSummaryTable, setHasObjectionSummaryTable] = useState<boolean>(true);
+  const [objectionSummaryRows, setObjectionSummaryRows] = useState<ObjectionSummaryRow[]>([
+    {
+      id: "obj-1",
+      sl: "১",
+      entityAndAuditYear: defaultEntityAndAuditYear,
+      paraNo: defaultParaNo,
+      titleAndDetails: defaultTitleAndDetails,
+    },
+  ]);
+
+  const handleAddObjectionRow = () => {
+    const nextSl = toBengaliDigits(objectionSummaryRows.length + 1);
+    setObjectionSummaryRows([
+      ...objectionSummaryRows,
+      {
+        id: `obj-${Date.now()}`,
+        sl: nextSl,
+        entityAndAuditYear: `প্রতিষ্ঠান: ${defaultEntity}\nনিরীক্ষা বছর: ${entry.auditYear || defaultAuditYear}`,
+        paraNo: "",
+        titleAndDetails: "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশিষ্ট পৃষ্ঠা নং- ",
+      },
+    ]);
+  };
+
+  const handleDeleteObjectionRow = (id: string) => {
+    if (objectionSummaryRows.length <= 1) return;
+    setObjectionSummaryRows(objectionSummaryRows.filter((r) => r.id !== id));
+  };
+
+  const handleUpdateObjectionRow = (id: string, field: keyof ObjectionSummaryRow, value: string) => {
+    setObjectionSummaryRows(
+      objectionSummaryRows.map((r) => (r.id === id ? { ...r, [field]: value } : r))
+    );
+  };
+
+  // 4. Entity Reply Statement
   const [entityReplyText, setEntityReplyText] = useState<string>(
     `আপত্তিতে উল্লেখিত ৪ টি মাইক্রো ক্রেডিট “জাগো নারী” ঋণ আসল ও সুদসহ আদায় করা হয়েছে (প্রমাণক সংযুক্ত) যা নিচে উপস্থাপন করা হলো:`
   );
 
-  // 4. Dynamic Embedded Table
+  // 5. Dynamic Embedded Table (Loan Recovery / Breakdown)
   const [hasTable, setHasTable] = useState<boolean>(true);
   const [tableColumns, setTableColumns] = useState<TableColumn[]>([
     { id: "sl", label: "ক্রমিক" },
@@ -307,6 +360,19 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               tikaEditorRef.current.innerHTML = html;
             }
           }
+          if (data.objectionSummary && Array.isArray(data.objectionSummary) && data.objectionSummary.length > 0) {
+            setHasObjectionSummaryTable(true);
+            setObjectionSummaryRows(
+              data.objectionSummary.map((item: any, i: number) => ({
+                id: `obj-ai-${i + 1}`,
+                sl: item.sl || toBengaliDigits(i + 1),
+                entityAndAuditYear: item.entityAndAuditYear || defaultEntityAndAuditYear,
+                paraNo: item.paraNo ? toBengaliDigits(item.paraNo) : defaultParaNo,
+                titleAndDetails: item.titleAndDetails || defaultTitleAndDetails,
+              }))
+            );
+          }
+
           if (data.entityReplyHeader) {
             setEntityReplyText(data.entityReplyHeader.replace(/^স্থানীয় প্রতিষ্ঠানের জবাব:\s*/, ''));
           }
@@ -446,6 +512,59 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   const totalPrincipal = calculateTotal("আসল");
   const totalInterest = calculateTotal("সুদ");
   const totalRecovered = calculateTotal("আদায়");
+
+  // Generate 100% MS Word & Excel Compatible Objection Information Table
+  const generateWordCompatibleObjectionTableHtml = () => {
+    if (!hasObjectionSummaryTable || objectionSummaryRows.length === 0) return "";
+
+    const headerCells = `
+      <th style="border: 1.0pt solid #000000; background-color: #E2E8F0; font-weight: bold; text-align: center; vertical-align: middle; padding: 6pt 5pt; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; width: 10%; mso-border-alt: solid black .75pt;">
+        ক্রমিক নং
+      </th>
+      <th style="border: 1.0pt solid #000000; background-color: #E2E8F0; font-weight: bold; text-align: left; vertical-align: middle; padding: 6pt 8pt; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; width: 35%; mso-border-alt: solid black .75pt;">
+        প্রতিষ্ঠানের নাম ও নিরীক্ষা বছর
+      </th>
+      <th style="border: 1.0pt solid #000000; background-color: #E2E8F0; font-weight: bold; text-align: center; vertical-align: middle; padding: 6pt 5pt; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; width: 14%; mso-border-alt: solid black .75pt;">
+        অনুচ্ছেদ নং
+      </th>
+      <th style="border: 1.0pt solid #000000; background-color: #E2E8F0; font-weight: bold; text-align: left; vertical-align: middle; padding: 6pt 8pt; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; width: 41%; mso-border-alt: solid black .75pt;">
+        শিরোনাম ও অন্যান্য
+      </th>
+    `;
+
+    const bodyRows = objectionSummaryRows
+      .map(
+        (r) => `
+        <tr style="page-break-inside: avoid; mso-yfti-irow: 1;">
+          <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; font-weight: bold; mso-border-alt: solid black .5pt;">
+            ${r.sl}
+          </td>
+          <td style="border: 1.0pt solid #000000; padding: 6pt 8pt; text-align: left; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .5pt; line-height: 1.5; white-space: pre-line;">
+            ${r.entityAndAuditYear.replace(/\n/g, "<br/>")}
+          </td>
+          <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; font-weight: bold; mso-border-alt: solid black .5pt;">
+            ${r.paraNo}
+          </td>
+          <td style="border: 1.0pt solid #000000; padding: 6pt 8pt; text-align: left; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .5pt; line-height: 1.5; white-space: pre-line;">
+            ${r.titleAndDetails.replace(/\n/g, "<br/>")}
+          </td>
+        </tr>`
+      )
+      .join("");
+
+    return `
+      <table border="1" cellspacing="0" cellpadding="0" width="100%" style="width: 100%; border-collapse: collapse; border: 1.0pt solid #000000; mso-border-alt: solid black .75pt; mso-table-lspace: 0pt; mso-table-rspace: 0pt; margin: 10pt 0;">
+        <thead>
+          <tr style="mso-yfti-irow: 0; mso-yfti-firstrow: yes; page-break-inside: avoid;">
+            ${headerCells}
+          </tr>
+        </thead>
+        <tbody>
+          ${bodyRows}
+        </tbody>
+      </table>
+    `;
+  };
 
   // Generate 100% MS Word & Excel Compatible HTML Table
   const generateWordCompatibleTableHtml = () => {
@@ -588,6 +707,20 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   // Copy Complete Note Sheet (One-click Rich Text & Table copy for MS Word / Docs)
   const handleCopyNoteSheet = async () => {
     try {
+      let objectionPlainText = "";
+      if (hasObjectionSummaryTable && objectionSummaryRows.length > 0) {
+        objectionPlainText =
+          "\n[আপত্তি পরিচিতি ছক]\n" +
+          "ক্রমিক নং\tপ্রতিষ্ঠানের নাম ও নিরীক্ষা বছর\tঅনুচ্ছেদ নং\tশিরোনাম ও অন্যান্য\n" +
+          objectionSummaryRows
+            .map(
+              (r) =>
+                `${r.sl}\t${r.entityAndAuditYear.replace(/\n/g, " ")}\t${r.paraNo}\t${r.titleAndDetails.replace(/\n/g, " ")}`
+            )
+            .join("\n") +
+          "\n";
+      }
+
       let tablePlainText = "";
       if (hasTable && tableRows.length > 0) {
         tablePlainText =
@@ -607,7 +740,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       const plainText = `${diaryHeader}
 
 ${tikaIntroHtml.replace(/<[^>]+>/g, "").trim()}
-
+${objectionPlainText}
 স্থানীয় প্রতিষ্ঠানের জবাব: ${entityReplyText}
 ${tablePlainText}
 
@@ -619,6 +752,7 @@ ${branchRequestText}
 
 ${finalSubmissionText}`;
 
+      const htmlObjectionTable = generateWordCompatibleObjectionTableHtml();
       const htmlTable = generateWordCompatibleTableHtml();
 
       const richHtml = `
@@ -649,6 +783,7 @@ ${finalSubmissionText}`;
             <div style="text-align: justify; margin-bottom: 10pt; line-height: 1.6;">
               ${tikaIntroHtml}
             </div>
+            ${htmlObjectionTable}
             <div style="text-align: justify; margin-bottom: 10pt; line-height: 1.6;">
               <strong>স্থানীয় প্রতিষ্ঠানের জবাব: </strong><span>${entityReplyText}</span>
             </div>
@@ -1065,10 +1200,19 @@ ${finalSubmissionText}`;
           )}
           <button
             type="button"
+            onClick={handleAddObjectionRow}
+            className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
+            title="আপত্তি পরিচিতি ছকে নতুন রো যোগ করুন"
+          >
+            <Plus size={12} /> আপত্তি রো যোগ
+          </button>
+          <button
+            type="button"
             onClick={handleAddTableRow}
             className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
+            title="আদায়ের বিবরণী ছকে নতুন রো যোগ করুন"
           >
-            <Plus size={12} /> টেবিলে রো যোগ
+            <Plus size={12} /> আদায় রো যোগ
           </button>
           <button
             type="button"
@@ -1125,7 +1269,97 @@ ${finalSubmissionText}`;
           />
         </div>
 
-        {/* 3. Entity Reply Statement (হুবহু জবাব, বানান শুদ্ধ ও মূল কথা বজায় রেখে) */}
+        {/* 3. Objection Summary Table (আপত্তি পরিচিতি ছক) */}
+        {hasObjectionSummaryTable && objectionSummaryRows.length > 0 && (
+          <div className="space-y-2 pt-1">
+            <div className="overflow-x-auto rounded-lg border border-slate-900 shadow-2xs">
+              <table className="w-full text-xs sm:text-[12.5px] border-collapse border border-slate-900 bg-white">
+                <thead>
+                  <tr className="bg-slate-100 text-slate-900 font-bold text-center border-b border-slate-900">
+                    <th className="border border-slate-900 p-2 text-center w-[10%]">
+                      ক্রমিক নং
+                    </th>
+                    <th className="border border-slate-900 p-2 text-left w-[35%]">
+                      প্রতিষ্ঠানের নাম ও নিরীক্ষা বছর
+                    </th>
+                    <th className="border border-slate-900 p-2 text-center w-[14%]">
+                      অনুচ্ছেদ নং
+                    </th>
+                    <th className="border border-slate-900 p-2 text-left w-[41%]">
+                      শিরোনাম ও অন্যান্য
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {objectionSummaryRows.map((row) => (
+                    <tr key={row.id} className="border-b border-slate-900 hover:bg-slate-50/60 transition-colors group">
+                      {/* 1. SL */}
+                      <td className="border border-slate-900 p-2 text-center align-middle font-bold text-slate-900">
+                        <div className="flex items-center justify-center gap-1">
+                          <input
+                            type="text"
+                            value={row.sl}
+                            onChange={(e) => handleUpdateObjectionRow(row.id, "sl", e.target.value)}
+                            className="w-full text-center bg-transparent outline-none font-bold text-slate-900"
+                          />
+                          {objectionSummaryRows.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteObjectionRow(row.id)}
+                              className="opacity-0 group-hover:opacity-100 text-rose-500 hover:text-rose-700 no-print transition-opacity p-0.5"
+                              title="রো মুছুন"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* 2. Entity & Audit Year */}
+                      <td className="border border-slate-900 p-2 text-left align-top leading-relaxed text-slate-900">
+                        <textarea
+                          rows={3}
+                          value={row.entityAndAuditYear}
+                          onChange={(e) =>
+                            handleUpdateObjectionRow(row.id, "entityAndAuditYear", e.target.value)
+                          }
+                          className="w-full bg-transparent outline-none resize-none font-bengali text-xs sm:text-[12.5px] leading-relaxed"
+                          placeholder="প্রতিষ্ঠান: ...&#10;নিরীক্ষা বছর: ..."
+                        />
+                      </td>
+
+                      {/* 3. Para No */}
+                      <td className="border border-slate-900 p-2 text-center align-middle font-bold text-slate-900">
+                        <input
+                          type="text"
+                          value={row.paraNo}
+                          onChange={(e) => handleUpdateObjectionRow(row.id, "paraNo", e.target.value)}
+                          className="w-full text-center bg-transparent outline-none font-bold text-slate-900"
+                          placeholder="১০"
+                        />
+                      </td>
+
+                      {/* 4. Title & Details */}
+                      <td className="border border-slate-900 p-2 text-left align-top leading-relaxed text-slate-900">
+                        <textarea
+                          rows={3}
+                          value={row.titleAndDetails}
+                          onChange={(e) =>
+                            handleUpdateObjectionRow(row.id, "titleAndDetails", e.target.value)
+                          }
+                          className="w-full bg-transparent outline-none resize-none font-bengali text-xs sm:text-[12.5px] leading-relaxed"
+                          placeholder="শিরোনাম: ...&#10;অনুচ্ছেদের পৃষ্ঠা নং- ...&#10;পরিশিষ্ট পৃষ্ঠা নং- ..."
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* 4. Entity Reply Statement (হুবহু জবাব, বানান শুদ্ধ ও মূল কথা বজায় রেখে) */}
         <div className="space-y-2 pt-1">
           <div
             className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-colors"
