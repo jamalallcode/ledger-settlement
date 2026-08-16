@@ -1966,14 +1966,14 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                   contentEditable
                   suppressContentEditableWarning
                   onBlur={(e) => handleUpdateParagraphField(para.id, "branchRequestText", e.currentTarget.innerText)}
-                  className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-none text-xs sm:text-[13px] font-medium text-slate-900 outline-none leading-relaxed text-justify"
+                  className="p-2 sm:p-2.5 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-none text-xs sm:text-[13px] font-medium text-slate-900 outline-none leading-relaxed text-justify"
                 >
                   {para.branchRequestText}
                 </div>
 
                 {/* ২. প্রধান কার্যালয়ের মন্তব্য */}
                 <div
-                  className="p-2 -ml-1 bg-slate-50/70 border border-dashed border-slate-300 hover:border-slate-400 focus:border-blue-400 rounded-none text-xs sm:text-[13px] leading-relaxed text-justify outline-none"
+                  className="p-2.5 sm:p-3 bg-slate-50 border border-dashed border-slate-300 hover:border-slate-400 focus:border-blue-400 rounded-none text-xs sm:text-[13px] leading-relaxed text-justify outline-none"
                   contentEditable
                   suppressContentEditableWarning
                   onBlur={(e) => {
@@ -1987,7 +1987,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
                 {/* ৩. উপস্থাপনকারীর মন্তব্য */}
                 <div
-                  className="p-2 -ml-1 bg-blue-50/50 border border-dashed border-blue-300 hover:border-blue-500 focus:border-blue-600 rounded-none text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-all shadow-2xs"
+                  className="p-2.5 sm:p-3 bg-blue-50/70 border border-dashed border-blue-300 hover:border-blue-500 focus:border-blue-600 rounded-none text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-all shadow-2xs"
                   contentEditable
                   suppressContentEditableWarning
                   onBlur={(e) => {
@@ -2021,7 +2021,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             contentEditable
             suppressContentEditableWarning
             onBlur={(e) => setFinalSubmissionText(e.currentTarget.innerText)}
-            className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-none text-xs sm:text-[13px] font-black text-slate-900 outline-none text-left"
+            className="p-2.5 sm:p-3 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-none text-xs sm:text-[13px] font-black text-slate-900 outline-none text-left"
           >
             {finalSubmissionText}
           </div>
@@ -2080,10 +2080,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
       {/* SECTION 5: Official Jaripatra Modal / View (Exact Bangladesh Commercial Audit Directorate Government Format) */}
       {showJaripatraView && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-          <div className="bg-white rounded-none max-w-5xl w-full max-h-[95vh] overflow-y-auto shadow-2xl border-2 border-slate-700 animate-in zoom-in-95 duration-200">
-            {/* Modal Sticky Header with Actions */}
-            <div className="sticky top-0 bg-slate-900 text-white px-4 sm:px-6 py-3.5 border-b border-slate-700 flex flex-wrap items-center justify-between gap-3 no-print z-20">
+        <div className="fixed inset-0 z-[60000] bg-slate-950/80 backdrop-blur-sm flex items-start justify-center p-2 sm:p-6 md:p-8 overflow-y-auto">
+          <div className="bg-white rounded-none max-w-5xl w-full my-auto max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border-2 border-slate-700 animate-in zoom-in-95 duration-200">
+            {/* Modal Top Header with Actions (Fixed within modal, no clipping) */}
+            <div className="bg-slate-900 text-white px-4 sm:px-6 py-3.5 border-b border-slate-700 flex flex-wrap items-center justify-between gap-3 no-print z-20 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-none bg-amber-500 text-slate-900 flex items-center justify-center font-black">
                   <Flame size={18} />
@@ -2152,12 +2152,13 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               </div>
             </div>
 
-            {/* Printable Official Government Letter Sheet */}
-            <div 
-              id="official-jaripatra-container" 
-              className="p-6 sm:p-12 md:p-14 bg-white text-black font-bengali text-xs sm:text-[13px] leading-relaxed space-y-4 print:p-0 print:m-0 print:text-black"
-              style={{ fontFamily: "'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif" }}
-            >
+            {/* Scrollable Printable Official Government Letter Sheet */}
+            <div className="flex-1 overflow-y-auto p-6 sm:p-12 md:p-14 bg-white text-black font-bengali text-xs sm:text-[13px] leading-relaxed space-y-4 print:p-0 print:m-0 print:text-black">
+              <div 
+                id="official-jaripatra-container" 
+                className="space-y-4"
+                style={{ fontFamily: "'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif" }}
+              >
               {/* 1. Header (5 Centered Lines) */}
               <div className="text-center space-y-0.5 pb-2">
                 <input
@@ -2470,6 +2471,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* AI Document Validation Error Alert Modal - Strictly Rectangular */}
