@@ -1293,6 +1293,441 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6 pb-20 animate-in fade-in duration-300">
+      {showJaripatraView ? (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          {/* Jaripatra Top Action Header Bar */}
+          <div className="bg-slate-900 text-white rounded-2xl border border-slate-700 shadow-md p-4 flex flex-wrap items-center justify-between gap-3 no-print">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowJaripatraView(false)}
+                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl transition-all flex items-center gap-1.5 text-xs font-bold border border-slate-700 cursor-pointer"
+                title="নোট শিটে ফিরে যান"
+              >
+                <ArrowLeft size={16} />
+                <span>নোট শিটে ফিরুন</span>
+              </button>
+              <div className="h-6 w-[1px] bg-slate-700 hidden sm:block" />
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shrink-0">
+                  <Flame size={20} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white">সরকারি জারিপত্র (অফিসিয়াল ফরম্যাট)</h3>
+                  <p className="text-[11px] font-bold text-slate-300">বাণিজ্যিক অডিট অধিদপ্তরের নির্ধারিত ৬ কলাম ছক ও কাঠামো অনুযায়ী</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleResetJaripatraToDemo}
+                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all"
+                title="নমুনা জারিপত্র ফরম্যাটে রিসেট করুন"
+              >
+                <RotateCcw size={14} /> নমুনা ফরম্যাট লোড
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyJaripatraWord}
+                className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
+                  jaripatraCopiedSuccess
+                    ? "bg-emerald-600 text-white"
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
+                title="MS Word বা নথিতে সরাসরি পেস্ট করার জন্য ফরম্যাটসহ কপি করুন"
+              >
+                {jaripatraCopiedSuccess ? <Check size={14} /> : <Copy size={14} />}
+                {jaripatraCopiedSuccess ? "ওয়ার্ডে কপি হয়েছে!" : "ওয়ার্ডে কপি করুন"}
+              </button>
+              <button
+                type="button"
+                onClick={handlePrintJaripatra}
+                className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer transition-all"
+              >
+                <Printer size={14} /> প্রিন্ট
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onSaveJaripatra) {
+                    onSaveJaripatra(entry, { 
+                      memoNo: jaripatraMemoNo, 
+                      date: jaripatraDate,
+                      tableRows: jaripatraTableRows,
+                      subject: jaripatraSubject,
+                      reference: jaripatraReference,
+                      onulipi: jaripatraOnulipiItems,
+                    });
+                  }
+                  setShowJaripatraView(false);
+                }}
+                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer transition-all"
+              >
+                <CheckCircle2 size={14} /> সংরক্ষণ ও বন্ধ
+              </button>
+            </div>
+          </div>
+
+          {/* Printable Official Government Letter Sheet */}
+          <div className="bg-white rounded-2xl border border-slate-300 shadow-xl p-6 sm:p-12 md:p-14 text-black font-bengali text-xs sm:text-[13px] leading-relaxed space-y-4 print:p-0 print:m-0 print:border-none print:shadow-none">
+            <div 
+              id="official-jaripatra-container" 
+              className="space-y-4 max-w-4xl mx-auto"
+              style={{ fontFamily: "'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif" }}
+            >
+              {/* 1. Header (5 Centered Lines) */}
+              <div className="text-center space-y-0.5 pb-2">
+                <input
+                  type="text"
+                  className="w-full text-center font-bold text-sm sm:text-base text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraHeaderLine1}
+                  onChange={(e) => setJaripatraHeaderLine1(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="w-full text-center font-bold text-xs sm:text-sm text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraHeaderLine2}
+                  onChange={(e) => setJaripatraHeaderLine2(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="w-full text-center text-xs sm:text-[13px] text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraHeaderLine3}
+                  onChange={(e) => setJaripatraHeaderLine3(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="w-full text-center text-xs sm:text-[13px] text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraHeaderLine4}
+                  onChange={(e) => setJaripatraHeaderLine4(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="w-full text-center text-xs sm:text-[13px] text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraHeaderLine5}
+                  onChange={(e) => setJaripatraHeaderLine5(e.target.value)}
+                />
+              </div>
+
+              {/* 2. Memo No & Date Row */}
+              <div className="flex justify-between items-baseline pt-2 text-xs sm:text-[13px] font-bold">
+                <div className="flex items-center gap-1">
+                  <span>নং-</span>
+                  <input
+                    type="text"
+                    className="font-bold text-black bg-transparent border-b border-dashed border-slate-400 focus:border-blue-600 outline-none w-64 sm:w-80"
+                    value={jaripatraMemoNo}
+                    onChange={(e) => setJaripatraMemoNo(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-1">
+                  <span>তারিখ:</span>
+                  <input
+                    type="text"
+                    className="font-bold text-black bg-transparent border-b border-dashed border-slate-400 focus:border-blue-600 outline-none w-36 sm:w-44 text-right"
+                    value={jaripatraDate}
+                    onChange={(e) => setJaripatraDate(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* 3. Recipient (Prápak) */}
+              <div className="space-y-0.5 pt-2 text-xs sm:text-[13px]">
+                <input
+                  type="text"
+                  className="w-full font-bold text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraRecipientDesignation}
+                  onChange={(e) => setJaripatraRecipientDesignation(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="w-full font-bold text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraRecipientEntity}
+                  onChange={(e) => setJaripatraRecipientEntity(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="w-full text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraRecipientAddress}
+                  onChange={(e) => setJaripatraRecipientAddress(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="w-full text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraRecipientCity}
+                  onChange={(e) => setJaripatraRecipientCity(e.target.value)}
+                />
+              </div>
+
+              {/* 4. Subject & Reference */}
+              <div className="space-y-1.5 pt-2 text-xs sm:text-[13px]">
+                <textarea
+                  rows={2}
+                  className="w-full font-bold text-black underline bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 p-1 outline-none resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-normal"
+                  value={jaripatraSubject}
+                  onInput={(e) => {
+                    const t = e.currentTarget;
+                    t.style.height = "auto";
+                    t.style.height = `${t.scrollHeight}px`;
+                  }}
+                  onChange={(e) => setJaripatraSubject(e.target.value)}
+                />
+                <textarea
+                  rows={2}
+                  className="w-full font-bold text-black bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 p-1 outline-none resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-normal"
+                  value={jaripatraReference}
+                  onInput={(e) => {
+                    const t = e.currentTarget;
+                    t.style.height = "auto";
+                    t.style.height = `${t.scrollHeight}px`;
+                  }}
+                  onChange={(e) => setJaripatraReference(e.target.value)}
+                />
+              </div>
+
+              {/* 5. Intro Narrative */}
+              <div className="pt-1 text-xs sm:text-[13px] text-justify">
+                <textarea
+                  rows={3}
+                  className="w-full text-black bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 p-1 outline-none resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-relaxed text-justify"
+                  value={jaripatraIntroText}
+                  onInput={(e) => {
+                    const t = e.currentTarget;
+                    t.style.height = "auto";
+                    t.style.height = `${t.scrollHeight}px`;
+                  }}
+                  onChange={(e) => setJaripatraIntroText(e.target.value)}
+                />
+              </div>
+
+              {/* 6. Main 6-Column Government Settlement Table */}
+              <div className="pt-2">
+                <table className="w-full border-collapse border-2 border-black text-xs sm:text-[12px]">
+                  <thead>
+                    <tr className="bg-slate-50 font-bold border-b border-black text-center">
+                      <th className="border border-black p-2 w-[6%] text-center">ক্রমিক নং</th>
+                      <th className="border border-black p-2 w-[14%] text-center">অনু: নং ও নিরীক্ষা বছর</th>
+                      <th className="border border-black p-2 w-[22%] text-center">প্রতিষ্ঠানের নাম</th>
+                      <th className="border border-black p-2 w-[22%] text-center">অনুচ্ছেদের শিরোনাম</th>
+                      <th className="border border-black p-2 w-[12%] text-center">জড়িত টাকা</th>
+                      <th className="border border-black p-2 w-[24%] text-center">এ কার্যালয়ের মন্তব্য</th>
+                    </tr>
+                    <tr className="bg-slate-100 font-bold border-b border-black text-center text-[11px]">
+                      <th className="border border-black p-1">(১)</th>
+                      <th className="border border-black p-1">(২)</th>
+                      <th className="border border-black p-1">(৩)</th>
+                      <th className="border border-black p-1">(৪)</th>
+                      <th className="border border-black p-1">(৫)</th>
+                      <th className="border border-black p-1">(৬)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {jaripatraTableRows.map((row) => (
+                      <tr key={row.id} className="align-top hover:bg-slate-50/50 group">
+                        {/* 1. Sl */}
+                        <td className="border border-black p-1.5 text-center font-bold relative">
+                          <div className="flex items-center justify-center gap-0.5">
+                            <input
+                              type="text"
+                              className="w-full text-center bg-transparent outline-none font-bold text-black overflow-hidden"
+                              value={row.sl}
+                              onChange={(e) => handleUpdateJaripatraCell(row.id, "sl", e.target.value)}
+                            />
+                            {jaripatraTableRows.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteJaripatraRow(row.id)}
+                                className="no-print opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 p-0.5 cursor-pointer transition-opacity shrink-0"
+                                title="সারিটি মুছুন"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        {/* 2. Para No & Audit Year */}
+                        <td className="border border-black p-1.5 text-center font-bold">
+                          <textarea
+                            rows={Math.max(2, (row.paraAndYear || '').split('\n').length)}
+                            className="w-full text-center bg-transparent outline-none font-bold text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                            value={row.paraAndYear}
+                            onInput={(e) => {
+                              const t = e.currentTarget;
+                              t.style.height = "auto";
+                              t.style.height = `${t.scrollHeight}px`;
+                            }}
+                            onChange={(e) => handleUpdateJaripatraCell(row.id, "paraAndYear", e.target.value)}
+                          />
+                        </td>
+                        {/* 3. Entity Name */}
+                        <td className="border border-black p-1.5 text-left">
+                          <textarea
+                            rows={Math.max(3, (row.entityName || '').split('\n').length)}
+                            className="w-full text-left bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                            value={row.entityName}
+                            onInput={(e) => {
+                              const t = e.currentTarget;
+                              t.style.height = "auto";
+                              t.style.height = `${t.scrollHeight}px`;
+                            }}
+                            onChange={(e) => handleUpdateJaripatraCell(row.id, "entityName", e.target.value)}
+                          />
+                        </td>
+                        {/* 4. Title & Subject */}
+                        <td className="border border-black p-1.5 text-left">
+                          <textarea
+                            rows={Math.max(4, Math.ceil((row.paraTitle || '').length / 28))}
+                            className="w-full text-left bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                            value={row.paraTitle}
+                            onInput={(e) => {
+                              const t = e.currentTarget;
+                              t.style.height = "auto";
+                              t.style.height = `${t.scrollHeight}px`;
+                            }}
+                            onChange={(e) => handleUpdateJaripatraCell(row.id, "paraTitle", e.target.value)}
+                          />
+                        </td>
+                        {/* 5. Involved Amount */}
+                        <td className="border border-black p-1.5 text-center font-bold">
+                          <textarea
+                            rows={Math.max(2, (row.involvedAmount || '').split('\n').length)}
+                            className="w-full text-center bg-transparent outline-none font-bold text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                            value={row.involvedAmount}
+                            onInput={(e) => {
+                              const t = e.currentTarget;
+                              t.style.height = "auto";
+                              t.style.height = `${t.scrollHeight}px`;
+                            }}
+                            onChange={(e) => handleUpdateJaripatraCell(row.id, "involvedAmount", e.target.value)}
+                          />
+                        </td>
+                        {/* 6. Office Comment */}
+                        <td className="border border-black p-1.5 text-justify leading-relaxed">
+                          <textarea
+                            rows={Math.max(5, Math.ceil((row.officeComment || '').length / 32))}
+                            className="w-full text-justify bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-relaxed"
+                            value={row.officeComment}
+                            onInput={(e) => {
+                              const t = e.currentTarget;
+                              t.style.height = "auto";
+                              t.style.height = `${t.scrollHeight}px`;
+                            }}
+                            onChange={(e) => handleUpdateJaripatraCell(row.id, "officeComment", e.target.value)}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Table Row Add Button */}
+                <div className="pt-2 no-print flex justify-start">
+                  <button
+                    type="button"
+                    onClick={handleAddJaripatraRow}
+                    className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-none text-xs font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={13} /> ছকে নতুন অনুচ্ছেদ সারি যোগ করুন
+                  </button>
+                </div>
+              </div>
+
+              {/* 7. Signatory Block (Right Aligned) */}
+              <div className="pt-10 flex justify-end">
+                <div className="text-center space-y-0.5 w-60 sm:w-64">
+                  <div className="w-40 border-b border-black mx-auto mb-2" />
+                  <input
+                    type="text"
+                    className="w-full text-center font-bold text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                    value={jaripatraSignatoryName}
+                    onChange={(e) => setJaripatraSignatoryName(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    className="w-full text-center text-xs text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                    value={jaripatraSignatoryTitle}
+                    onChange={(e) => setJaripatraSignatoryTitle(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    className="w-full text-center text-xs text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                    value={jaripatraSignatoryPhone}
+                    onChange={(e) => setJaripatraSignatoryPhone(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* 8. Bottom Memo No & Date Row */}
+              <div className="flex justify-between items-baseline pt-4 text-xs sm:text-[13px] font-bold">
+                <div className="flex items-center gap-1">
+                  <span>নং-</span>
+                  <input
+                    type="text"
+                    className="font-bold text-black bg-transparent border-b border-dashed border-slate-400 focus:border-blue-600 outline-none w-64 sm:w-80"
+                    value={jaripatraBottomMemoNo}
+                    onChange={(e) => setJaripatraBottomMemoNo(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-1">
+                  <span>তারিখ:</span>
+                  <input
+                    type="text"
+                    className="font-bold text-black bg-transparent border-b border-dashed border-slate-400 focus:border-blue-600 outline-none w-36 sm:w-44 text-right"
+                    value={jaripatraBottomDate}
+                    onChange={(e) => setJaripatraBottomDate(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* 9. Onulipi Section */}
+              <div className="pt-2 text-xs sm:text-[13px] space-y-1">
+                <input
+                  type="text"
+                  className="w-full font-bold underline text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                  value={jaripatraOnulipiHeader}
+                  onChange={(e) => setJaripatraOnulipiHeader(e.target.value)}
+                />
+
+                <div className="space-y-1 pt-1">
+                  {jaripatraOnulipiItems.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2 group">
+                      <input
+                        type="text"
+                        className="w-full text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
+                        value={item}
+                        onChange={(e) => handleUpdateOnulipiItem(idx, e.target.value)}
+                      />
+                      {jaripatraOnulipiItems.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteOnulipiItem(idx)}
+                          className="no-print opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 p-1 cursor-pointer transition-opacity"
+                          title="মুছুন"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-1 no-print">
+                  <button
+                    type="button"
+                    onClick={handleAddOnulipiItem}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={12} /> + নতুন অনুলিপি প্রাপক যোগ করুন
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
       {/* Top Action Header */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-wrap items-center justify-between gap-4 no-print">
         <div className="flex items-center gap-3">
@@ -2078,402 +2513,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           )}
         </div>
       </div>
-
-      {/* SECTION 5: Official Jaripatra Modal / View (Exact Bangladesh Commercial Audit Directorate Government Format) */}
-      {showJaripatraView && createPortal(
-        <div className="fixed inset-0 z-[100000] bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden animate-in fade-in duration-200">
-          <div className="bg-white rounded-none max-w-5xl w-full h-full max-h-[94vh] flex flex-col overflow-hidden shadow-2xl border-2 border-slate-700 animate-in zoom-in-95 duration-200">
-            {/* Modal Top Header with Actions (Fixed within modal, top-level visible) */}
-            <div className="bg-slate-900 text-white px-4 sm:px-6 py-3 border-b border-slate-700 flex flex-wrap items-center justify-between gap-3 no-print z-20 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-none bg-amber-500 text-slate-900 flex items-center justify-center font-black shrink-0">
-                  <Flame size={18} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-white">সরকারি জারিপত্র (অফিসিয়াল ফরম্যাট)</h3>
-                  <p className="text-[11px] font-bold text-slate-300">বাণিজ্যিক অডিট অধিদপ্তরের নির্ধারিত ৬ কলাম ছক ও কাঠামো অনুযায়ী</p>
-                </div>
-              </div>
-
-              <div className="flex items-center flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={handleResetJaripatraToDemo}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 rounded-none text-xs font-black flex items-center gap-1.5 cursor-pointer"
-                  title="নমুনা জারিপত্র ফরম্যাটে রিসেট করুন"
-                >
-                  <RotateCcw size={13} /> নমুনা ফরম্যাট লোড
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCopyJaripatraWord}
-                  className={`px-3.5 py-1.5 rounded-none text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
-                    jaripatraCopiedSuccess
-                      ? "bg-emerald-600 text-white"
-                      : "bg-blue-600 hover:bg-blue-700 text-white"
-                  }`}
-                  title="MS Word বা নথিতে সরাসরি পেস্ট করার জন্য ফরম্যাটসহ কপি করুন"
-                >
-                  {jaripatraCopiedSuccess ? <Check size={14} /> : <Copy size={14} />}
-                  {jaripatraCopiedSuccess ? "ওয়ার্ডে কপি হয়েছে!" : "ওয়ার্ডে কপি করুন"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePrintJaripatra}
-                  className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-none text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer"
-                >
-                  <Printer size={14} /> প্রিন্ট
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (onSaveJaripatra) {
-                      onSaveJaripatra(entry, { 
-                        memoNo: jaripatraMemoNo, 
-                        date: jaripatraDate,
-                        tableRows: jaripatraTableRows,
-                        subject: jaripatraSubject,
-                        reference: jaripatraReference,
-                        onulipi: jaripatraOnulipiItems,
-                      });
-                    }
-                    setShowJaripatraView(false);
-                  }}
-                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-none text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer"
-                >
-                  <CheckCircle2 size={14} /> সংরক্ষণ ও বন্ধ
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowJaripatraView(false)}
-                  className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-none transition-colors cursor-pointer"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
-
-            {/* Scrollable Printable Official Government Letter Sheet */}
-            <div className="flex-1 overflow-y-auto p-6 sm:p-12 md:p-14 bg-white text-black font-bengali text-xs sm:text-[13px] leading-relaxed space-y-4 print:p-0 print:m-0 print:text-black">
-              <div 
-                id="official-jaripatra-container" 
-                className="space-y-4"
-                style={{ fontFamily: "'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif" }}
-              >
-              {/* 1. Header (5 Centered Lines) */}
-              <div className="text-center space-y-0.5 pb-2">
-                <input
-                  type="text"
-                  className="w-full text-center font-bold text-sm sm:text-base text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
-                  value={jaripatraHeaderLine1}
-                  onChange={(e) => setJaripatraHeaderLine1(e.target.value)}
-                />
-                <input
-                  type="text"
-                  className="w-full text-center font-bold text-xs sm:text-sm text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
-                  value={jaripatraHeaderLine2}
-                  onChange={(e) => setJaripatraHeaderLine2(e.target.value)}
-                />
-                <input
-                  type="text"
-                  className="w-full text-center text-xs sm:text-[13px] text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
-                  value={jaripatraHeaderLine3}
-                  onChange={(e) => setJaripatraHeaderLine3(e.target.value)}
-                />
-                <input
-                  type="text"
-                  className="w-full text-center text-xs sm:text-[13px] text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
-                  value={jaripatraHeaderLine4}
-                  onChange={(e) => setJaripatraHeaderLine4(e.target.value)}
-                />
-                <input
-                  type="text"
-                  className="w-full text-center text-xs sm:text-[13px] text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
-                  value={jaripatraHeaderLine5}
-                  onChange={(e) => setJaripatraHeaderLine5(e.target.value)}
-                />
-              </div>
-
-              {/* 2. Memo No & Date Row */}
-              <div className="flex justify-between items-baseline pt-2 text-xs sm:text-[13px] font-bold">
-                <div className="flex items-center gap-1">
-                  <span>নং-</span>
-                  <input
-                    type="text"
-                    className="font-bold text-black bg-transparent border-b border-dashed border-slate-400 focus:border-blue-600 outline-none w-64 sm:w-80"
-                    value={jaripatraMemoNo}
-                    onChange={(e) => setJaripatraMemoNo(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-center gap-1">
-                  <span>তারিখ:</span>
-                  <input
-                    type="text"
-                    className="font-bold text-black bg-transparent border-b border-dashed border-slate-400 focus:border-blue-600 outline-none w-36 sm:w-44 text-right"
-                    value={jaripatraDate}
-                    onChange={(e) => setJaripatraDate(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* 3. Recipient (Prápak) */}
-              <div className="space-y-0.5 pt-2 text-xs sm:text-[13px]">
-                <input
-                  type="text"
-                  className="w-full font-bold text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
-                  value={jaripatraRecipientDesignation}
-                  onChange={(e) => setJaripatraRecipientDesignation(e.target.value)}
-                />
-                <input
-                  type="text"
-                  className="w-full font-bold text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
-                  value={jaripatraRecipientEntity}
-                  onChange={(e) => setJaripatraRecipientEntity(e.target.value)}
-                />
-                <input
-                  type="text"
-                  className="w-full text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
-                  value={jaripatraRecipientAddress}
-                  onChange={(e) => setJaripatraRecipientAddress(e.target.value)}
-                />
-                <input
-                  type="text"
-                  className="w-full text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
-                  value={jaripatraRecipientCity}
-                  onChange={(e) => setJaripatraRecipientCity(e.target.value)}
-                />
-              </div>
-
-              {/* 4. Subject & Reference */}
-              <div className="space-y-1.5 pt-2 text-xs sm:text-[13px]">
-                <textarea
-                  rows={2}
-                  className="w-full font-bold text-black underline bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 p-1 outline-none resize-none leading-normal"
-                  value={jaripatraSubject}
-                  onChange={(e) => setJaripatraSubject(e.target.value)}
-                />
-                <textarea
-                  rows={2}
-                  className="w-full font-bold text-black bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 p-1 outline-none resize-none leading-normal"
-                  value={jaripatraReference}
-                  onChange={(e) => setJaripatraReference(e.target.value)}
-                />
-              </div>
-
-              {/* 5. Intro Narrative */}
-              <div className="pt-1 text-xs sm:text-[13px] text-justify">
-                <textarea
-                  rows={3}
-                  className="w-full text-black bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 p-1 outline-none resize-none leading-relaxed text-justify"
-                  value={jaripatraIntroText}
-                  onChange={(e) => setJaripatraIntroText(e.target.value)}
-                />
-              </div>
-
-              {/* 6. Main 6-Column Government Settlement Table */}
-              <div className="pt-2">
-                <table className="w-full border-collapse border-2 border-black text-xs sm:text-[12px]">
-                  <thead>
-                    <tr className="bg-slate-50 font-bold border-b border-black text-center">
-                      <th className="border border-black p-2 w-[6%] text-center">ক্রমিক নং</th>
-                      <th className="border border-black p-2 w-[14%] text-center">অনু: নং ও নিরীক্ষা বছর</th>
-                      <th className="border border-black p-2 w-[22%] text-center">প্রতিষ্ঠানের নাম</th>
-                      <th className="border border-black p-2 w-[22%] text-center">অনুচ্ছেদের শিরোনাম</th>
-                      <th className="border border-black p-2 w-[12%] text-center">জড়িত টাকা</th>
-                      <th className="border border-black p-2 w-[24%] text-center">এ কার্যালয়ের মন্তব্য</th>
-                      <th className="border border-black p-1 w-[4%] text-center no-print bg-slate-200">অ্যাকশন</th>
-                    </tr>
-                    <tr className="bg-slate-100 font-bold border-b border-black text-center text-[11px]">
-                      <th className="border border-black p-1">(১)</th>
-                      <th className="border border-black p-1">(২)</th>
-                      <th className="border border-black p-1">(৩)</th>
-                      <th className="border border-black p-1">(৪)</th>
-                      <th className="border border-black p-1">(৫)</th>
-                      <th className="border border-black p-1">(৬)</th>
-                      <th className="border border-black p-1 no-print bg-slate-200">-</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {jaripatraTableRows.map((row) => (
-                      <tr key={row.id} className="align-top hover:bg-slate-50/50">
-                        {/* 1. Sl */}
-                        <td className="border border-black p-1.5 text-center font-bold">
-                          <input
-                            type="text"
-                            className="w-full text-center bg-transparent outline-none font-bold text-black"
-                            value={row.sl}
-                            onChange={(e) => handleUpdateJaripatraCell(row.id, "sl", e.target.value)}
-                          />
-                        </td>
-                        {/* 2. Para No & Audit Year */}
-                        <td className="border border-black p-1.5 text-center font-bold">
-                          <textarea
-                            rows={2}
-                            className="w-full text-center bg-transparent outline-none font-bold text-black resize-none"
-                            value={row.paraAndYear}
-                            onChange={(e) => handleUpdateJaripatraCell(row.id, "paraAndYear", e.target.value)}
-                          />
-                        </td>
-                        {/* 3. Entity Name */}
-                        <td className="border border-black p-1.5 text-left">
-                          <textarea
-                            rows={3}
-                            className="w-full text-left bg-transparent outline-none text-black resize-none"
-                            value={row.entityName}
-                            onChange={(e) => handleUpdateJaripatraCell(row.id, "entityName", e.target.value)}
-                          />
-                        </td>
-                        {/* 4. Title & Subject */}
-                        <td className="border border-black p-1.5 text-left">
-                          <textarea
-                            rows={4}
-                            className="w-full text-left bg-transparent outline-none text-black resize-none"
-                            value={row.paraTitle}
-                            onChange={(e) => handleUpdateJaripatraCell(row.id, "paraTitle", e.target.value)}
-                          />
-                        </td>
-                        {/* 5. Involved Amount */}
-                        <td className="border border-black p-1.5 text-center font-bold">
-                          <textarea
-                            rows={2}
-                            className="w-full text-center bg-transparent outline-none font-bold text-black resize-none"
-                            value={row.involvedAmount}
-                            onChange={(e) => handleUpdateJaripatraCell(row.id, "involvedAmount", e.target.value)}
-                          />
-                        </td>
-                        {/* 6. Office Comment */}
-                        <td className="border border-black p-1.5 text-justify leading-relaxed">
-                          <textarea
-                            rows={5}
-                            className="w-full text-justify bg-transparent outline-none text-black resize-none leading-relaxed"
-                            value={row.officeComment}
-                            onChange={(e) => handleUpdateJaripatraCell(row.id, "officeComment", e.target.value)}
-                          />
-                        </td>
-                        {/* Row delete action */}
-                        <td className="border border-black p-1 text-center no-print bg-slate-50 align-middle">
-                          {jaripatraTableRows.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteJaripatraRow(row.id)}
-                              className="text-red-500 hover:text-red-700 p-1 cursor-pointer"
-                              title="সারিটি মুছুন"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                {/* Table Row Add Button */}
-                <div className="pt-2 no-print flex justify-start">
-                  <button
-                    type="button"
-                    onClick={handleAddJaripatraRow}
-                    className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-none text-xs font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <Plus size={13} /> ছকে নতুন অনুচ্ছেদ সারি যোগ করুন
-                  </button>
-                </div>
-              </div>
-
-              {/* 7. Signatory Block (Right Aligned) */}
-              <div className="pt-10 flex justify-end">
-                <div className="text-center space-y-0.5 w-60 sm:w-64">
-                  <div className="w-40 border-b border-black mx-auto mb-2" />
-                  <input
-                    type="text"
-                    className="w-full text-center font-bold text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
-                    value={jaripatraSignatoryName}
-                    onChange={(e) => setJaripatraSignatoryName(e.target.value)}
-                  />
-                  <input
-                    type="text"
-                    className="w-full text-center text-xs text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
-                    value={jaripatraSignatoryTitle}
-                    onChange={(e) => setJaripatraSignatoryTitle(e.target.value)}
-                  />
-                  <input
-                    type="text"
-                    className="w-full text-center text-xs text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
-                    value={jaripatraSignatoryPhone}
-                    onChange={(e) => setJaripatraSignatoryPhone(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* 8. Bottom Memo No & Date Row */}
-              <div className="flex justify-between items-baseline pt-4 text-xs sm:text-[13px] font-bold">
-                <div className="flex items-center gap-1">
-                  <span>নং-</span>
-                  <input
-                    type="text"
-                    className="font-bold text-black bg-transparent border-b border-dashed border-slate-400 focus:border-blue-600 outline-none w-64 sm:w-80"
-                    value={jaripatraBottomMemoNo}
-                    onChange={(e) => setJaripatraBottomMemoNo(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-center gap-1">
-                  <span>তারিখ:</span>
-                  <input
-                    type="text"
-                    className="font-bold text-black bg-transparent border-b border-dashed border-slate-400 focus:border-blue-600 outline-none w-36 sm:w-44 text-right"
-                    value={jaripatraBottomDate}
-                    onChange={(e) => setJaripatraBottomDate(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* 9. Onulipi Section */}
-              <div className="pt-2 text-xs sm:text-[13px] space-y-1">
-                <input
-                  type="text"
-                  className="w-full font-bold underline text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
-                  value={jaripatraOnulipiHeader}
-                  onChange={(e) => setJaripatraOnulipiHeader(e.target.value)}
-                />
-
-                <div className="space-y-1 pt-1">
-                  {jaripatraOnulipiItems.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 group">
-                      <input
-                        type="text"
-                        className="w-full text-black bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none"
-                        value={item}
-                        onChange={(e) => handleUpdateOnulipiItem(idx, e.target.value)}
-                      />
-                      {jaripatraOnulipiItems.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteOnulipiItem(idx)}
-                          className="no-print opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 p-1 cursor-pointer transition-opacity"
-                          title="মুছুন"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="pt-1 no-print">
-                  <button
-                    type="button"
-                    onClick={handleAddOnulipiItem}
-                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
-                  >
-                    <Plus size={12} /> + নতুন অনুলিপি প্রাপক যোগ করুন
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>,
-      document.body
+      </>
     )}
 
       {/* AI Document Validation Error Alert Modal - Strictly Rectangular */}
