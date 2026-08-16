@@ -1470,13 +1470,13 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               </div>
 
               {/* 2. Memo No & Date Row */}
-              <div className="flex justify-between items-baseline pt-2 text-xs sm:text-[13px] font-bold">
-                <div className="flex items-center gap-1">
+              <div className="flex items-baseline justify-between pt-2 text-xs sm:text-[13px] font-bold">
+                <div className="flex items-center gap-1 flex-1 max-w-[55%] sm:max-w-[60%]">
                   <span>নং-</span>
                   <input
                     type="text"
                     readOnly={!isJaripatraEditable}
-                    className={`font-bold text-black bg-transparent outline-none w-64 sm:w-80 ${
+                    className={`font-bold text-black bg-transparent outline-none w-full ${
                       isJaripatraEditable
                         ? "border-b border-dashed border-slate-400 focus:border-blue-600"
                         : "border-none cursor-default select-text"
@@ -1485,12 +1485,12 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                     onChange={(e) => setJaripatraMemoNo(e.target.value)}
                   />
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 w-60 sm:w-72 pl-2">
                   <span>তারিখ:</span>
                   <input
                     type="text"
                     readOnly={!isJaripatraEditable}
-                    className={`font-bold text-black bg-transparent outline-none w-36 sm:w-44 text-right ${
+                    className={`font-bold text-black bg-transparent outline-none flex-1 text-left ${
                       isJaripatraEditable
                         ? "border-b border-dashed border-slate-400 focus:border-blue-600"
                         : "border-none cursor-default select-text"
@@ -1798,13 +1798,13 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               </div>
 
               {/* 8. Bottom Memo No & Date Row */}
-              <div className="flex justify-between items-baseline pt-4 text-xs sm:text-[13px] font-bold">
-                <div className="flex items-center gap-1">
+              <div className="flex items-baseline justify-between pt-4 text-xs sm:text-[13px] font-bold">
+                <div className="flex items-center gap-1 flex-1 max-w-[55%] sm:max-w-[60%]">
                   <span>নং-</span>
                   <input
                     type="text"
                     readOnly={!isJaripatraEditable}
-                    className={`font-bold text-black bg-transparent outline-none w-64 sm:w-80 ${
+                    className={`font-bold text-black bg-transparent outline-none w-full ${
                       isJaripatraEditable
                         ? "border-b border-dashed border-slate-400 focus:border-blue-600"
                         : "border-none cursor-default select-text"
@@ -1813,12 +1813,12 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                     onChange={(e) => setJaripatraBottomMemoNo(e.target.value)}
                   />
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 w-60 sm:w-72 pl-2">
                   <span>তারিখ:</span>
                   <input
                     type="text"
                     readOnly={!isJaripatraEditable}
-                    className={`font-bold text-black bg-transparent outline-none w-36 sm:w-44 text-right ${
+                    className={`font-bold text-black bg-transparent outline-none flex-1 text-left ${
                       isJaripatraEditable
                         ? "border-b border-dashed border-slate-400 focus:border-blue-600"
                         : "border-none cursor-default select-text"
