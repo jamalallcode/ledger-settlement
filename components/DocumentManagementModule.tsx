@@ -1148,14 +1148,14 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         )}
       </div>
 
-      {/* Formatting and Action Toolbar */}
-      <div className="sticky top-2 z-20 px-4 py-2 bg-slate-900/90 backdrop-blur-md text-white rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-2 no-print border border-slate-700">
+      {/* Formatting and Action Toolbar - Strictly Rectangular & Opaque Fixed at top-0 */}
+      <div className="sticky top-0 z-30 px-4 py-2.5 bg-slate-900 text-white rounded-none shadow-md flex flex-wrap items-center justify-between gap-2 no-print border-b-2 border-slate-700 w-full">
         <div className="flex items-center gap-1.5">
-          <div className="flex items-center bg-slate-800 rounded-lg p-0.5 border border-slate-700">
+          <div className="flex items-center bg-slate-800 rounded-none p-0.5 border border-slate-700">
             <button
               type="button"
               onClick={() => executeCommand("bold")}
-              className="p-1.5 hover:bg-slate-700 text-slate-200 rounded transition-colors"
+              className="p-1.5 hover:bg-slate-700 text-slate-200 rounded-none transition-colors"
               title="Bold (Ctrl+B)"
             >
               <Bold size={13} />
@@ -1163,7 +1163,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             <button
               type="button"
               onClick={() => executeCommand("italic")}
-              className="p-1.5 hover:bg-slate-700 text-slate-200 rounded transition-colors"
+              className="p-1.5 hover:bg-slate-700 text-slate-200 rounded-none transition-colors"
               title="Italic (Ctrl+I)"
             >
               <Italic size={13} />
@@ -1171,7 +1171,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             <button
               type="button"
               onClick={() => executeCommand("underline")}
-              className="p-1.5 hover:bg-slate-700 text-slate-200 rounded transition-colors"
+              className="p-1.5 hover:bg-slate-700 text-slate-200 rounded-none transition-colors"
               title="Underline (Ctrl+U)"
             >
               <Underline size={13} />
@@ -1179,7 +1179,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             <button
               type="button"
               onClick={() => executeCommand("strikeThrough")}
-              className="p-1.5 hover:bg-slate-700 text-slate-200 rounded transition-colors"
+              className="p-1.5 hover:bg-slate-700 text-slate-200 rounded-none transition-colors"
               title="Strikethrough"
             >
               <Strikethrough size={13} />
@@ -1188,11 +1188,11 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
           <div className="h-4 w-px bg-slate-700 mx-0.5" />
 
-          <div className="flex items-center bg-slate-800 rounded-lg p-0.5 border border-slate-700">
+          <div className="flex items-center bg-slate-800 rounded-none p-0.5 border border-slate-700">
             <button
               type="button"
               onClick={() => executeCommand("justifyLeft")}
-              className="p-1.5 hover:bg-slate-700 text-slate-200 rounded transition-colors"
+              className="p-1.5 hover:bg-slate-700 text-slate-200 rounded-none transition-colors"
               title="Align Left"
             >
               <AlignLeft size={13} />
@@ -1200,7 +1200,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             <button
               type="button"
               onClick={() => executeCommand("justifyCenter")}
-              className="p-1.5 hover:bg-slate-700 text-slate-200 rounded transition-colors"
+              className="p-1.5 hover:bg-slate-700 text-slate-200 rounded-none transition-colors"
               title="Align Center"
             >
               <AlignCenter size={13} />
@@ -1208,7 +1208,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             <button
               type="button"
               onClick={() => executeCommand("justifyRight")}
-              className="p-1.5 hover:bg-slate-700 text-slate-200 rounded transition-colors"
+              className="p-1.5 hover:bg-slate-700 text-slate-200 rounded-none transition-colors"
               title="Align Right"
             >
               <AlignRight size={13} />
@@ -1216,7 +1216,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             <button
               type="button"
               onClick={() => executeCommand("justifyFull")}
-              className="p-1.5 hover:bg-slate-700 text-slate-200 rounded transition-colors"
+              className="p-1.5 hover:bg-slate-700 text-slate-200 rounded-none transition-colors"
               title="Justify"
             >
               <AlignJustify size={13} />
@@ -1228,10 +1228,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           <button
             type="button"
             onClick={handleCopyTableOnly}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors ${
+            className={`px-3 py-1.5 rounded-none text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors ${
               copiedTableSuccess
                 ? "bg-teal-600 text-white"
-                : "bg-teal-800/80 hover:bg-teal-700 text-teal-100"
+                : "bg-teal-800/90 hover:bg-teal-700 text-teal-100 border border-teal-600"
             }`}
             title="সবগুলো আদায় ছক ওয়ার্ড/এক্সেলে পেস্ট করার উপযোগী করে কপি করুন"
           >
@@ -1245,7 +1245,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                 key={color}
                 type="button"
                 onClick={() => setSelectedCellColor(color)}
-                className={`w-4 h-4 rounded-full border ${selectedCellColor === color ? "ring-2 ring-white scale-110" : "border-slate-600"}`}
+                className={`w-4 h-4 rounded-none border ${selectedCellColor === color ? "ring-2 ring-white scale-110" : "border-slate-600"}`}
                 style={{ backgroundColor: color }}
               />
             ))}
@@ -1254,15 +1254,15 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       </div>
 
       {/* ========================================================================= */}
-      {/* THE OFFICIAL GOVERNMENT NOTE SHEET DOCUMENT (হুবহু সরবরাহকৃত ছবির মত)   */}
+      {/* THE OFFICIAL GOVERNMENT NOTE SHEET DOCUMENT (চারকোনা ও নিখুঁত সরকারি বিন্যাস) */}
       {/* ========================================================================= */}
       <div
         ref={noteDocumentRef}
-        className="bg-white rounded-3xl border-2 border-slate-300 shadow-xl p-8 sm:p-14 text-slate-900 font-bengali space-y-7 print:p-0 print:m-0 print:border-none print:shadow-none"
+        className="bg-white rounded-none border-2 border-slate-400 shadow-md p-8 sm:p-14 text-slate-900 font-bengali space-y-7 print:p-0 print:m-0 print:border-none print:shadow-none"
       >
         {/* 1. Official Diary Header Exactly at the Top Center */}
         <div className="text-center pb-4 border-b border-slate-300">
-          <div className="inline-block px-4 py-1.5 bg-slate-50 border border-slate-300 rounded-xl shadow-2xs print:border-none print:bg-transparent">
+          <div className="inline-block px-4 py-1.5 bg-slate-50 border border-slate-400 rounded-none shadow-2xs print:border-none print:bg-transparent">
             <input
               type="text"
               className="text-center text-sm sm:text-base font-black text-slate-900 bg-transparent outline-none w-full max-w-lg tracking-wide border-b border-transparent focus:border-blue-500"
@@ -1281,7 +1281,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             suppressContentEditableWarning
             onBlur={(e) => setTikaIntroHtml(e.currentTarget.innerHTML)}
             dangerouslySetInnerHTML={{ __html: tikaIntroHtml }}
-            className="p-3 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-xl text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-all font-bengali"
+            className="p-3 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-none text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-all font-bengali"
           />
         </div>
 
@@ -1291,20 +1291,20 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             <div
               id={para.id}
               key={para.id}
-              className={`space-y-4 pt-4 border-t-2 border-slate-200/80 first:border-t-0 first:pt-0 relative group/para rounded-2xl transition-all duration-700 scroll-mt-24 ${
+              className={`space-y-4 pt-4 border-t-2 border-slate-300 first:border-t-0 first:pt-0 relative group/para rounded-none transition-all duration-700 scroll-mt-24 ${
                 newlyAddedParaId === para.id
-                  ? "ring-4 ring-blue-500/50 bg-blue-50/25 p-3 shadow-lg"
+                  ? "ring-2 ring-blue-500 bg-blue-50/30 p-3 shadow-sm"
                   : ""
               }`}
             >
               {/* Paragraph Index Badge & Controls (No print) */}
               <div className="flex items-center justify-between no-print mb-1">
                 <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-black border border-slate-300">
+                  <span className="px-3 py-1 bg-slate-100 text-slate-900 rounded-none text-xs font-black border border-slate-400">
                     অনুচ্ছেদ #{toBengaliDigits(pIndex + 1)} (অনুচ্ছেদ নং: {para.paraNo || "-"})
                   </span>
                   {newlyAddedParaId === para.id && (
-                    <span className="px-2.5 py-0.5 bg-blue-600 text-white rounded-full text-[10.5px] font-black animate-pulse flex items-center gap-1 shadow-xs">
+                    <span className="px-2.5 py-0.5 bg-blue-600 text-white rounded-none text-[10.5px] font-black animate-pulse flex items-center gap-1">
                       <Sparkles size={11} /> নতুন তৈরি হয়েছে
                     </span>
                   )}
@@ -1313,16 +1313,16 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                   <button
                     type="button"
                     onClick={() => handleDeleteParagraph(para.id)}
-                    className="px-2.5 py-1 text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                    className="px-2.5 py-1 text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-300 rounded-none text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
                   >
                     <Trash2 size={12} /> অনুচ্ছেদ মুছুন
                   </button>
                 )}
               </div>
 
-              {/* ক. আপত্তি পরিচিতি ছক (Table exactly matching screenshot) */}
-              <div className="overflow-x-auto rounded-lg border border-slate-900 shadow-2xs">
-                <table className="w-full text-xs sm:text-[12.5px] border-collapse border border-slate-900 bg-white">
+              {/* ক. আপত্তি পরিচিতি ছক (Table exactly matching screenshot - Strictly Rectangular) */}
+              <div className="overflow-x-auto rounded-none border border-slate-900 shadow-2xs">
+                <table className="w-full text-xs sm:text-[12.5px] border-collapse border border-slate-900 bg-white rounded-none">
                   <thead>
                     <tr className="bg-slate-100 text-slate-900 font-bold text-center border-b border-slate-900">
                       <th className="border border-slate-900 p-2 text-center w-[10%]">
@@ -1347,7 +1347,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                           type="text"
                           value={para.sl}
                           onChange={(e) => handleUpdateParagraphField(para.id, "sl", e.target.value)}
-                          className="w-full text-center bg-transparent outline-none font-bold text-slate-900"
+                          className="w-full text-center bg-transparent outline-none font-bold text-slate-900 rounded-none"
                         />
                       </td>
 
@@ -1359,7 +1359,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                           onChange={(e) =>
                             handleUpdateParagraphField(para.id, "entityAndAuditYear", e.target.value)
                           }
-                          className="w-full bg-transparent outline-none resize-none font-bengali text-xs sm:text-[12.5px] leading-relaxed"
+                          className="w-full bg-transparent outline-none resize-none font-bengali text-xs sm:text-[12.5px] leading-relaxed rounded-none"
                           placeholder="প্রতিষ্ঠান: ...&#10;নিরীক্ষা বছর: ..."
                         />
                       </td>
@@ -1370,7 +1370,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                           type="text"
                           value={para.paraNo}
                           onChange={(e) => handleUpdateParagraphField(para.id, "paraNo", e.target.value)}
-                          className="w-full text-center bg-transparent outline-none font-bold text-slate-900"
+                          className="w-full text-center bg-transparent outline-none font-bold text-slate-900 rounded-none"
                           placeholder="১০"
                         />
                       </td>
@@ -1383,8 +1383,8 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                           onChange={(e) =>
                             handleUpdateParagraphField(para.id, "titleAndDetails", e.target.value)
                           }
-                          className="w-full bg-transparent outline-none resize-none font-bengali text-xs sm:text-[12.5px] leading-relaxed"
-                          placeholder="শিরোনাম: ...&#10;অনুচ্ছেদের পৃষ্ঠা নং- ...&#10;পরিশিষ্ট পৃষ্ঠা নং- ..."
+                          className="w-full bg-transparent outline-none resize-none font-bengali text-xs sm:text-[12.5px] leading-relaxed rounded-none"
+                          placeholder="শিরোনাম: ...&#10;অনুচ্ছেদের পৃষ্ঠা নং- ...&#10;পরিশिष्ट পৃষ্ঠা নং- ..."
                         />
                       </td>
                     </tr>
@@ -1395,7 +1395,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               {/* খ. স্থানীয় প্রতিষ্ঠানের জবাব (Editable Bengali Text) */}
               <div className="space-y-2 pt-1">
                 <div
-                  className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-colors"
+                  className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-none text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-colors"
                   contentEditable
                   suppressContentEditableWarning
                   onBlur={(e) => {
@@ -1407,13 +1407,13 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                   <span className="font-bold text-slate-900">{para.entityReplyText}</span>
                 </div>
 
-                {/* গ. টেবিল অন/অফ বাটন (সরবরাহকৃত ছবির মত বাটন) */}
+                {/* গ. টেবিল অন/অফ বাটন (চারকোনা বাটন) */}
                 {!para.hasTable && (
                   <div className="no-print pt-1">
                     <button
                       type="button"
                       onClick={() => handleToggleParagraphTable(para.id, true)}
-                      className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-dashed border-emerald-300 rounded-lg px-3 py-1.5 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                      className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-dashed border-emerald-400 rounded-none px-3 py-1.5 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
                     >
                       <Plus size={13} /> আদায়ের বিবরণী ছক যুক্ত করুন (যদি হিসাবে ছক প্রয়োজন হয়)
                     </button>
@@ -1421,11 +1421,11 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                 )}
               </div>
 
-              {/* ঘ. Embedded Table: Loan Recovery / Breakdown Grid for this Paragraph */}
+              {/* ঘ. Embedded Table: Loan Recovery / Breakdown Grid for this Paragraph (Strictly Rectangular) */}
               {para.hasTable && (
                 <div className="space-y-2 pt-1">
-                  <div className="overflow-x-auto rounded-lg border border-slate-800 shadow-2xs">
-                    <table className="w-full text-xs sm:text-[12px] border-collapse border border-slate-800 bg-white">
+                  <div className="overflow-x-auto rounded-none border border-slate-800 shadow-2xs">
+                    <table className="w-full text-xs sm:text-[12px] border-collapse border border-slate-800 bg-white rounded-none">
                       <thead>
                         <tr className="bg-slate-100 text-slate-900 font-black text-center border-b border-slate-800">
                           {para.tableColumns.map((col) => (
@@ -1436,7 +1436,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                                   <button
                                     type="button"
                                     onClick={() => handleDeleteParagraphTableCol(para.id, col.id)}
-                                    className="opacity-0 group-hover:opacity-100 text-rose-500 hover:text-rose-700 no-print transition-opacity"
+                                    className="opacity-0 group-hover:opacity-100 text-rose-500 hover:text-rose-700 no-print transition-opacity rounded-none"
                                     title="কলাম মুছুন"
                                   >
                                     <X size={10} />
@@ -1465,12 +1465,12 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                                     onChange={(e) =>
                                       handleUpdateParagraphTableCell(para.id, row.id, col.id, e.target.value)
                                     }
-                                    className="w-full text-center bg-transparent outline-none font-medium text-slate-900 p-1 rounded"
+                                    className="w-full text-center bg-transparent outline-none font-medium text-slate-900 p-1 rounded-none"
                                   />
                                   <button
                                     type="button"
                                     onClick={() => handleApplyParagraphTableCellColor(para.id, row.id, col.id)}
-                                    className="absolute right-0.5 top-0.5 opacity-0 group-hover/cell:opacity-100 p-0.5 bg-white/90 text-slate-400 hover:text-blue-600 rounded text-[8px] no-print shadow-2xs"
+                                    className="absolute right-0.5 top-0.5 opacity-0 group-hover/cell:opacity-100 p-0.5 bg-white/90 text-slate-400 hover:text-blue-600 rounded-none text-[8px] no-print shadow-2xs border border-slate-300"
                                     title="রঙ দিন"
                                   >
                                     <Palette size={9} />
@@ -1483,7 +1483,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteParagraphTableRow(para.id, row.id)}
-                                  className="text-rose-400 hover:text-rose-600 p-0.5"
+                                  className="text-rose-400 hover:text-rose-600 p-0.5 rounded-none"
                                   title="রো মুছুন"
                                 >
                                   <Trash2 size={12} />
@@ -1517,26 +1517,26 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                     </table>
                   </div>
 
-                  {/* Table Row/Column Operations (No-Print) */}
+                  {/* Table Row/Column Operations (No-Print) - Strictly Rectangular Buttons */}
                   <div className="flex flex-wrap items-center gap-2 pt-1 no-print">
                     <button
                       type="button"
                       onClick={() => handleAddParagraphTableRow(para.id)}
-                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
+                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-none text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
                     >
                       <Plus size={11} /> রো যোগ
                     </button>
                     <button
                       type="button"
                       onClick={() => handleAddParagraphTableCol(para.id)}
-                      className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
+                      className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 rounded-none text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
                     >
                       <Plus size={11} /> কলাম যোগ
                     </button>
                     <button
                       type="button"
                       onClick={() => handleToggleParagraphTable(para.id, false)}
-                      className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
+                      className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 rounded-none text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
                     >
                       <Trash2 size={11} /> ছক বন্ধ/মুছুন
                     </button>
@@ -1544,21 +1544,21 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                 </div>
               )}
 
-              {/* ঙ. সমাপ্তিসূচক অনুচ্ছেদসমূহ ও মন্তব্য (হুবহু সরবরাহকৃত ছবির বিন্যাস) */}
+              {/* ঙ. সমাপ্তিসূচক অনুচ্ছেদসমূহ ও মন্তব্য (হুবহু সরবরাহকৃত ছবির বিন্যাস - চারকোনা) */}
               <div className="space-y-3.5 pt-2 text-xs sm:text-[13px] leading-relaxed">
                 {/* ১. শাখার সমাপ্তিসূচক অনুরোধ */}
                 <div
                   contentEditable
                   suppressContentEditableWarning
                   onBlur={(e) => handleUpdateParagraphField(para.id, "branchRequestText", e.currentTarget.innerText)}
-                  className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] font-medium text-slate-900 outline-none leading-relaxed text-justify"
+                  className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-none text-xs sm:text-[13px] font-medium text-slate-900 outline-none leading-relaxed text-justify"
                 >
                   {para.branchRequestText}
                 </div>
 
                 {/* ২. প্রধান কার্যালয়ের মন্তব্য */}
                 <div
-                  className="p-2 -ml-1 bg-slate-50/70 border border-dashed border-slate-300 hover:border-slate-400 focus:border-blue-400 rounded-xl text-xs sm:text-[13px] leading-relaxed text-justify outline-none"
+                  className="p-2 -ml-1 bg-slate-50/70 border border-dashed border-slate-300 hover:border-slate-400 focus:border-blue-400 rounded-none text-xs sm:text-[13px] leading-relaxed text-justify outline-none"
                   contentEditable
                   suppressContentEditableWarning
                   onBlur={(e) => {
@@ -1572,7 +1572,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
                 {/* ৩. উপস্থাপনকারীর মন্তব্য */}
                 <div
-                  className="p-2 -ml-1 bg-blue-50/50 border border-dashed border-blue-300 hover:border-blue-500 focus:border-blue-600 rounded-xl text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-all shadow-2xs"
+                  className="p-2 -ml-1 bg-blue-50/50 border border-dashed border-blue-300 hover:border-blue-500 focus:border-blue-600 rounded-none text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-all shadow-2xs"
                   contentEditable
                   suppressContentEditableWarning
                   onBlur={(e) => {
@@ -1588,12 +1588,12 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           ))}
         </div>
 
-        {/* নতুন অনুচ্ছেদ বাটনটি নিচে যুক্ত করা হলো (No-Print) */}
-        <div className="no-print pt-2 pb-2 flex items-center justify-center border-t border-dashed border-slate-200">
+        {/* নতুন অনুচ্ছেদ বাটনটি নিচে যুক্ত করা হলো (Strictly Rectangular, No-Print) */}
+        <div className="no-print pt-2 pb-2 flex items-center justify-center border-t border-dashed border-slate-300">
           <button
             type="button"
             onClick={handleAddParagraph}
-            className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer border border-blue-400/40 hover:shadow-lg"
+            className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 hover:from-blue-800 hover:to-indigo-900 text-white rounded-none text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer border border-blue-500"
             title="নোট শিটে আরও একটি নতুন অনুচ্ছেদ যোগ করুন"
           >
             <Plus size={16} /> + নতুন অনুচ্ছেদ যোগ করুন (অনুচ্ছেদ #{toBengaliDigits(paragraphs.length + 1)})
@@ -1606,7 +1606,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             contentEditable
             suppressContentEditableWarning
             onBlur={(e) => setFinalSubmissionText(e.currentTarget.innerText)}
-            className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] font-black text-slate-900 outline-none text-left"
+            className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-none text-xs sm:text-[13px] font-black text-slate-900 outline-none text-left"
           >
             {finalSubmissionText}
           </div>
@@ -1626,8 +1626,8 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         </div>
       </div>
 
-      {/* SECTION 4: Final Approval & Memory Purge Bar */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
+      {/* SECTION 4: Final Approval & Memory Purge Bar (Strictly Square / rounded-none) */}
+      <div className="bg-white rounded-none border-2 border-slate-300 shadow-sm p-5 flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
         <div className="space-y-1 text-center sm:text-left">
           <h3 className="text-sm font-black text-slate-900 flex items-center justify-center sm:justify-start gap-2">
             <CheckCircle2 size={16} className="text-emerald-600" /> নোটশিট অনুমোদন ও ডাটাবেজ স্পেস সুরক্ষা
@@ -1642,19 +1642,19 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             <button
               type="button"
               onClick={handleApproveNoteAndPurge}
-              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-lg shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer"
+              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-none text-xs font-black flex items-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer border border-emerald-500"
             >
               <Check size={16} /> নোট অনুমোদন ও চূড়ান্ত করুন
             </button>
           ) : (
             <div className="flex items-center gap-3">
-              <span className="px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-black border border-emerald-300 flex items-center gap-1.5">
+              <span className="px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-none text-xs font-black border border-emerald-300 flex items-center gap-1.5">
                 <CheckCircle2 size={14} className="text-emerald-600" /> নোট অনুমোদিত হয়েছে
               </span>
               <button
                 type="button"
                 onClick={() => setShowJaripatraView(true)}
-                className="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-lg shadow-orange-500/20 hover:opacity-95 cursor-pointer"
+                className="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-none text-xs font-black flex items-center gap-2 shadow-sm hover:opacity-95 cursor-pointer border border-amber-600"
               >
                 <Flame size={15} /> জারিপত্র দেখুন ও প্রিন্ট করুন
               </button>
@@ -1663,13 +1663,13 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         </div>
       </div>
 
-      {/* SECTION 5: Official Jaripatra Modal / View */}
+      {/* SECTION 5: Official Jaripatra Modal / View (Strictly Square / rounded-none) */}
       {showJaripatraView && (
         <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-none max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-slate-400 animate-in zoom-in-95 duration-200">
             <div className="sticky top-0 bg-white/95 backdrop-blur-md px-6 py-4 border-b border-slate-200 flex items-center justify-between gap-4 no-print z-10">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black">
+                <div className="w-8 h-8 rounded-none bg-amber-500 text-white flex items-center justify-center font-black">
                   <Flame size={18} />
                 </div>
                 <div>
@@ -1682,7 +1682,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                 <button
                   type="button"
                   onClick={handlePrintJaripatra}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-none text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <Printer size={14} /> প্রিন্ট করুন
                 </button>
@@ -1694,14 +1694,14 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                     }
                     setShowJaripatraView(false);
                   }}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-none text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <CheckCircle2 size={14} /> সংরক্ষণ ও বন্ধ
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowJaripatraView(false)}
-                  className="p-2 hover:bg-slate-100 text-slate-500 rounded-xl transition-colors cursor-pointer"
+                  className="p-2 hover:bg-slate-100 text-slate-500 rounded-none transition-colors cursor-pointer"
                 >
                   <X size={18} />
                 </button>
