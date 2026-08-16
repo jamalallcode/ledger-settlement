@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { GoogleGenAI } from "@google/genai";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -136,7 +137,7 @@ async function startServer() {
     }
   }));
 
-  // API routes go here
+  // Health check endpoint
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
   });
@@ -302,54 +303,40 @@ async function startServer() {
                 * এই নিরাপত্তা কোড এবং রিসেট লিংকটি আগামী ১৫ মিনিটের জন্য বৈধ থাকবে।<br/>
                 * আপনি যদি পাসওয়ার্ড পরিবর্তনের কোনো অনুরোধ না করে থাকেন, তবে এই ইমেইলটি উপেক্ষা করুন।
               </p>
-              <p style="text-align: center; font-size: 11.5px; color: #94a3b8; margin: 25px 0 0 0; font-weight: 500;">© অডিট লেজার সেটেলমেন্ট সিস্টেম</p>
             </div>
           `,
         });
-
-        return res.json({ success: true, message: "পাসওয়ার্ড রিসেট কোডটি আপনার জিমেইলে পাঠানো হয়েছে।" });
-      } else {
-        // Fallback simulated model
-        console.log(`[SMTP SIMULATION] password reset requested for recipient: ${email}. Code: ${code}`);
-        return res.json({
-          success: true,
-          simulated: true,
-          code,
-          message: "আপনার ইমেইল সার্ভার (SMTP) এখনও কনফিগার করা হয়নি। আপনার সুবিধার জন্য ডেমো মোডে রিকভারি কোডটি নিচে দেখানো হলো।"
-        });
       }
-    } catch (error: any) {
-      console.error("Password reset error:", error);
-      res.status(500).json({ error: error.message || "পাসওয়ার্ড রিসেট রিকোয়েস্টে সমস্যা হয়েছে।" });
+
+      return res.json({ success: true, message: "যাচাইকরণ কোড সফলভাবে পাঠানো হয়েছে।" });
+    } catch (err: any) {
+      console.error("Error in request-password-reset:", err);
+      res.status(500).json({ error: err.message || "রিসেট কোড পাঠাতে সমস্যা হয়েছে।" });
     }
   });
 
-  // Endpoint to verify OTP
   app.post("/api/admin/verify-reset-code", (req, res) => {
     const { email, code } = req.body;
     if (!email || !code) {
-      return res.status(400).json({ error: "ইমেইল এবং কোড প্রদান করা আবশ্যক।" });
+      return res.status(400).json({ error: "ইমেইল এবং কোড উভয়ই প্রদান করতে হবে।" });
     }
-
-    const record = resetCodesStore.get(email.toLowerCase().trim());
-    if (!record) {
-      return res.status(400).json({ error: "কোনো রিসেট অনুরোধ পাওয়া যায়নি বা মেয়াদ শেষ হয়েছে।" });
+    const cleanEmail = email.toLowerCase().trim();
+    const stored = resetCodesStore.get(cleanEmail);
+    if (!stored) {
+      return res.status(400).json({ error: "কোনো বৈধ কোড পাওয়া যায়নি। অনুগ্রহ করে পুনরায় কোড পাঠান।" });
     }
-
-    if (Date.now() > record.expires) {
-      resetCodesStore.delete(email.toLowerCase().trim());
-      return res.status(400).json({ error: "কোডটির মেয়াদ শেষ হয়ে গেছে। দয়া করে আবার চেষ্টা করুন।" });
+    if (Date.now() > stored.expires) {
+      resetCodesStore.delete(cleanEmail);
+      return res.status(400).json({ error: "কোডের মেয়াদ উত্তীর্ণ হয়ে গেছে।" });
     }
-
-    if (record.code === code.trim()) {
-      resetCodesStore.delete(email.toLowerCase().trim());
-      return res.json({ success: true, message: "কোডটি সঠিকভাবে যাচাই করা হয়েছে।" });
-    } else {
-      return res.status(400).json({ error: "ভুল সিকিউরিটি কোড! আবার চেষ্টা করুন।" });
+    if (stored.code !== code.trim()) {
+      return res.status(400).json({ error: "প্রদত্ত কোডটি সঠিক নয়।" });
     }
+    resetCodesStore.delete(cleanEmail);
+    return res.json({ success: true, message: "কোড সফলভাবে যাচাই করা হয়েছে।" });
   });
 
-  // AI Document Management Analysis Endpoint
+  // AI Document Management Analysis Endpoint (Multi-Paragraph & Per-Paragraph Table Support)
   app.post("/api/document-management/analyze-note", async (req, res) => {
     try {
       const {
@@ -370,17 +357,13 @@ async function startServer() {
       const diaryDate = letterMetadata.diaryDate || "";
       const letterNo = letterMetadata.letterNo || "-";
       const letterDate = letterMetadata.letterDate || "";
-      const auditYear = letterMetadata.auditYear || "২০২৩-২৪";
-      const totalParas = letterMetadata.totalParas || "১";
-      const totalAmount = letterMetadata.totalAmount || "০";
-      const paraType = letterMetadata.paraType || "নন এসএফআই";
+      const branchName = letterMetadata.branchName || "";
+      const auditYear = letterMetadata.auditYear || "";
+      const totalAmount = letterMetadata.totalAmount || letterMetadata.involvedAmount || "";
 
-      // If Gemini API is configured, use GoogleGenAI
       if (apiKey) {
         try {
-          const { GoogleGenAI } = await import("@google/genai");
           const ai = new GoogleGenAI({ apiKey });
-
           const promptParts: any[] = [];
 
           const promptText = `
@@ -392,12 +375,11 @@ async function startServer() {
 
 চিঠির মেটাডাটা:
 - মন্ত্রণালয়: ${ministry}
-- এনটিটি/প্রতিষ্ঠান: ${entity}
-- ডায়েরি নং ও তারিখ: ${diaryNo}, ${diaryDate}
-- মূল পত্র নং ও তারিখ: ${letterNo}, ${letterDate}
+- প্রতিষ্ঠান: ${entity}
+- শাখা: ${branchName}
 - নিরীক্ষা বছর: ${auditYear}
-- শাখার ধরণ: ${paraType}
-- অনুচ্ছেদ সংখ্যা: ${totalParas}
+- ডায়েরি নং: ${diaryNo}, তারিখ: ${diaryDate}
+- স্মারক নং: ${letterNo}, তারিখ: ${letterDate}
 - জড়িত টাকার পরিমাণ: ${totalAmount} টাকা
 
 ${originalObjectionText ? `মূল আপত্তি/অনুচ্ছেদের সারসংক্ষেপ বা টেক্সট:\n${originalObjectionText}\n` : ''}
@@ -405,38 +387,38 @@ ${entityReplyText ? `প্রতিষ্ঠানের প্রেরিত 
 
 ${userClarifications && userClarifications.length > 0 ? `ব্যবহারকারীর প্রদানকৃত পূর্ববর্তী স্পষ্টীকরণ (Clarifications from user):\n${JSON.stringify(userClarifications, null, 2)}\n` : ''}
 
-কঠোর অডিট কার্যপ্রণালী ও ফরম্যাটিং নির্দেশনা:
+কঠোর অডিট কার্যপ্রণালী ও বহু-অনুচ্ছেদ (Multi-Paragraph) নির্দেশনা:
 ১. ডায়েরি হেডার: "ডায়েরি নং- ${diaryNo}, তারিখ: ${diaryDate} খ্রি:" (নোটের শীর্ষে মাঝখানে)।
 ২. টীকা নং- ১১: উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা ${entity}, প্রধান কার্যালয়ের স্মারক নং- ${letterNo}, তারিখ: ${letterDate} খ্রি: পত্রটি (পৃষ্ঠা নং- ...) দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে ${ministry}-এর নিয়ন্ত্রণাধীন ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} নিরীক্ষা বছরের ব্রডশীট জবাবের (পৃষ্ঠা নং- ...) ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।
-৩. আপত্তি পরিচিতি ছক (Objection Information Table): টীকা নং- ১১ এর পরপরই মূল আপত্তি পরিচিতি ছক তৈরি করুন:
-   - কলামসমূহ: [ক্রমিক নং, প্রতিষ্ঠানের নাম ও নিরীক্ষা বছর, অনুচ্ছেদ নং, শিরোনাম ও অন্যান্য]
-   - উদাহরণ:
-     * ক্রমিক নং: ১
-     * প্রতিষ্ঠানের নাম ও নিরীক্ষা বছর: প্রতিষ্ঠান: ${entity}${branchName ? `, ${branchName}` : ''}\nনিরীক্ষা বছর: ${auditYear}
-     * অনুচ্ছেদ নং: ${entry?.paraNo || '১০'}
-     * শিরোনাম ও অন্যান্য: শিরোনাম: ${entry?.subject || 'মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ি ' + totalAmount + ' টাকা।'}\nঅনুচ্ছেদের পৃষ্ঠা নং- ২৯১\nপরিশিষ্ট পৃষ্ঠা নং- ২৯০
 
-৪. স্থানীয় প্রতিষ্ঠানের জবাব বিশ্লেষণ ও টেবিল বুদ্ধিদীপ্ত সনাক্তকরণ (Smart Entity Reply & Table Detection):
-   - প্রতিষ্ঠানের প্রেরিত জবাব ও আপলোডকৃত প্রমাণক সূক্ষ্মভাবে বিশ্লেষণ করুন। বানান শুদ্ধ ও প্রমিত সরকারি বাংলা ভাষায় মূল বক্তব্যটি লিখুন।
-   - **যদি জবাবে টেবিল বা আইটেমভিত্তিক পরিসংখ্যান/ব্রেকডাউন থাকে** (যেমন: ঋণগ্রহীতাদের নামভিত্তিক তালিকা, ভ্যাট/ট্যাক্স চালানের বিবরণী, জমা ভাউচার, ব্যয়ভিত্তিক বিভাজন):
-     * "hasTable": true নির্ধারণ করুন।
-     * উপযুক্ত কলামের শিরোনাম নির্ধারণ করুন ("tableHeaders", যেমন: ["ক্রমিক", "ঋণগ্রহীতার নাম/বিবরণ", "আপত্তিতে জড়িত টাকা", "আসল", "সুদ", "অন্যান্য", "মোট আদায়", "সমন্বয়ের তারিখ"])।
-     * সমস্ত ডেটা দিয়ে "tableRows" তৈরি করুন।
-     * "entityReplyHeader"-এ সূচনা বাক্য লিখুন (যেমন: "আপত্তিতে উল্লেখিত ... ঋণ আসল ও সুদসহ আদায় করা হয়েছে (প্রমাণক সংযুক্ত) যা নিচে উপস্থাপন করা হলো:")।
-   - **যদি জবাবে কোনো টেবিল না থাকে** (যেমন: নিছক ব্যাখ্যামূলক জবাব, প্রশাসনিক অনুমোদন, ক্রয় নীতিমালা অনুসরণ সংক্রান্ত ব্যাখ্যা, আর্থিক আদায় ছাড়া নীতিগত জবাব):
-     * "hasTable": false নির্ধারণ করুন।
-     * "tableHeaders": [] এবং "tableRows": [] রাখুন।
-     * "entityReplyHeader"-এ প্রতিষ্ঠানের সম্পূর্ণ জবাবটি সুবিন্যস্ত, যৌক্তিক ও প্রাতিষ্ঠানিক প্রমিত বাংলায় পরিষ্কারভাবে লিখুন যাতে কোনো টেবিল ছাড়াই জবাবটি অর্থবহ হয়।
+৩. **বহু-অনুচ্ছেদ (Multi-Paragraphs) কাঠামো**:
+নথিতে ১টি অথবা একাধিক (২ বা ততোধিক) অডিট অনুচ্ছেদ থাকতে পারে।
+প্রতিটি অনুচ্ছেদের জন্য পৃথক "paragraph" অবজেক্ট তৈরি করতে হবে।
+প্রতিটি অনুচ্ছেদে নিচের তথ্যগুলো ক্রমানুসারে থাকবে:
+  ক. আপত্তি পরিচিতি ছকের তথ্য:
+     - sl: "১", "২", ...
+     - entityAndAuditYear: "প্রতিষ্ঠান: ${entity}${branchName ? `, ${branchName}` : ''}\nনিরীক্ষা বছর: ${auditYear}"
+     - paraNo: অনুচ্ছেদের নম্বর (যেমন: "১০", "১১" ইত্যাদি)
+     - titleAndDetails: "শিরোনাম: ...\nঅনুচ্ছেদের পৃষ্ঠা নং- ...\nপরিশিষ্ট পৃষ্ঠা নং- ..."
+  খ. স্থানীয় প্রতিষ্ঠানের জবাব ("entityReplyHeader"):
+     - প্রতিষ্ঠান কর্তৃক প্রেরিত জবাবটি পরিমার্জিত ও প্রমিত বাংলায় লিখুন।
+  গ. আদায়ের বিবরণী ছক / নিজস্ব টেবিল ("hasTable", "tableHeaders", "tableRows"):
+     - **যদি ওই অনুচ্ছেদের জবাবে হিসাব/আদায়/ব্রেকডাউন সংক্রান্ত টেবিল থাকে** (যেমন: ঋণগ্রহীতাদের নাম, ভ্যাট চালান, ভাউচার তালিকা):
+       "hasTable": true
+       "tableHeaders": ["ক্রমিক", "ঋণগ্রহীতার নাম/বিবরণ", "আপত্তিতে জড়িত টাকা", "আসল", "সুদ", "অন্যান্য", "মোট আদায়", "সমন্বয়ের তারিখ"]
+       "tableRows": [ ["১", "নাম", "টাকা", ...], ... ]
+     - **যদি ওই অনুচ্ছেদে টেবিল না থাকে**:
+       "hasTable": false, "tableHeaders": [], "tableRows": []
+  ঘ. শাখার সমাপ্তিসূচক অনুরোধ ("conclusionBranch"):
+     - "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।"
+  ঙ. প্রধান কার্যালয়ের মন্তব্য ("conclusionHeadOffice"):
+     - "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।"
+  চ. উপস্থাপনকারীর মন্তব্য ("conclusionPresenter"):
+     - ঝানু অডিট বিশেষজ্ঞের মতামতঃ দাখিলকৃত চালান/প্রমাণক যাচাইপূর্বক ওই অনুচ্ছেদটি নিষ্পত্তি অথবা বহাল রাখার সিদ্ধান্ত।
+  ছ. অনুচ্ছেদের স্ট্যাটাস ("status"): "পূর্ণাঙ্গ নিষ্পত্তি" অথবা "আংশিক নিষ্পত্তি" অথবা "অনিষ্পন্ন / আপত্তি বহাল"
 
-৫. সমাপনী বক্তব্য ও অডিট মন্তব্য:
-   - "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।"
-   - "প্রধান কার্যালয়ের মন্তব্য: শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।"
-   - "উপস্থাপনকারীর মন্তব্য: [সবচেয়ে গুরুত্বপূর্ণ - অডিট বিশেষজ্ঞের চোখ দিয়ে বিশ্লেষণ]
-     * আপত্তিকৃত টাকার সাথে আদায়কৃত টাকার মিল, চালানের গ্রহণযোগ্যতা, ব্যাংকের ক্রেডিট প্রমাণক, ও বিধিবিধান মিলিয়ে দেখুন।
-     * যদি সমুদয় টাকা যথাযথ প্রমাণকসহ আদায় হয় -> "আপত্তিকৃত সমুদয় ${totalAmount} টাকা আদায় হওয়ায় এবং আদায়ের স্বপক্ষে চালান/ব্যাংক জমা ভাউচার (পৃষ্ঠা নং- ...) সংযুক্ত থাকায় আপত্তিটি চূড়ান্তভাবে নিষ্পত্তি করা যেতে পারে।" (proposedStatus: "পূর্ণাঙ্গ নিষ্পত্তি")
-     * যদি আংশিক আদায় হয় -> "আপত্তিকৃত ${totalAmount} টাকার মধ্যে ... টাকা আদায় হয়েছে মর্মে প্রমাণক দাখিল করায় আদায়কৃত অংশ নিষ্পত্তি এবং অবশিষ্ট ... টাকা দ্রুত আদায়পূর্বক প্রমাণক দাখিলের তাগিদ প্রদানপূর্বক আপত্তিটি আংশিক নিষ্পত্তির সুপারিশ করা হলো।" (proposedStatus: "আংশিক নিষ্পত্তি")
-     * যদি প্রমাণক অপর্যাপ্ত হয় বা জবাব সন্তোষজনক না হয় -> "দাখিলকৃত জবাবে আপত্তির মূল কারণ নিরসন হয়নি এবং প্রয়োজনীয় ট্রেজারি চালান/অনুমোদনপত্র দাখিল না করায় সরকারি অর্থ স্বার্থে আপত্তিটি বহাল রাখার সুপারিশ করা হলো।" (proposedStatus: "অনিষ্পন্ন / আপত্তি বহাল")
-   - "সদয় অনুমোদনের জন্য নথি উপস্থাপন করা হলো।"
+৪. নোটের সমাপনী বাক্য (সব অনুচ্ছেদের শেষে একবারে আসবে):
+"সদয় অনুমোদনের জন্য নথি উপস্থাপন করা হলো।"
 
 অনুগ্রহ করে শুধুমাত্র নিচের JSON ফরম্যাটে উত্তর দিন:
 {
@@ -444,32 +426,32 @@ ${userClarifications && userClarifications.length > 0 ? `ব্যবহার�
   "clarificationQuestions": [],
   "diaryHeader": "ডায়েরি নং- ${diaryNo}, তারিখ: ${diaryDate} খ্রি:",
   "noteTikaText": "টীকা নং- ১১: উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা...",
-  "objectionSummary": [
+  "conclusionFinal": "সদয় অনুমোদনের জন্য নথি উপস্থাপন করা হলো।",
+  "proposedStatus": "পূর্ণাঙ্গ নিষ্পত্তি",
+  "paragraphs": [
     {
       "sl": "১",
       "entityAndAuditYear": "প্রতিষ্ঠান: ${entity}${branchName ? `, ${branchName}` : ''}\\nনিরীক্ষা বছর: ${auditYear}",
-      "paraNo": "${entry?.paraNo || '১০'}",
-      "titleAndDetails": "শিরোনাম: ${entry?.subject || 'মাইক্রো ক্রেডিট ঋণের অনাদায়ি টাকা।'}\\nঅনুচ্ছেদের পৃষ্ঠা নং- ২৯১\\nপরিশিষ্ট পৃষ্ঠা নং- ২৯০"
+      "paraNo": "১০",
+      "titleAndDetails": "শিরোনাম: মাইক্রো ক্রেডিট ঋণের অনাদায়ি টাকা।\\nঅনুচ্ছেদের পৃষ্ঠা নং- ২৯১\\nপরিশিষ্ট পৃষ্ঠা নং- ২৯০",
+      "entityReplyHeader": "আপত্তিতে উল্লেখিত ৪ টি মাইক্রো ক্রেডিট “জাগো নারী” ঋণ আসল ও সুদসহ আদায় করা হয়েছে (প্রমাণক সংযুক্ত) যা নিচে উপস্থাপন করা হলো:",
+      "hasTable": true,
+      "tableHeaders": ["ক্রমিক", "ঋণগ্রহীতার নাম", "আপত্তিতে জড়িত টাকা", "আসল", "সুদ", "অন্যান্য", "মোট আদায়", "সমন্বয়ের তারিখ"],
+      "tableRows": [
+        ["১", "মোছা: নাসিমা বেগম", "১,১০,৮৯১", "৩৫,০০০", "৭৫,৮৯১", "-", "১,১০,৮৯১", "২৩-০৭-১৫"],
+        ["২", "মোছা: নুরজাহান বেগম", "১,৩১,১৩৪", "৫৫,০০০", "৭৬,১৩৪", "-", "১,৩১,১৩৪", "০২-০৯-১৫"]
+      ],
+      "conclusionBranch": "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
+      "conclusionHeadOffice": "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।",
+      "conclusionPresenter": "আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক (২৬৮-২৮৮) সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।",
+      "status": "পূর্ণাঙ্গ নিষ্পত্তি"
     }
   ],
-  "entityReplyHeader": "প্রতিষ্ঠানের মূল জবাবের প্রমিত রূপ...",
-  "hasTable": true,
-  "tableHeaders": ["ক্রমিক", "ঋণগ্রহীতার নাম", "আপত্তিতে জড়িত টাকা", "আসল", "সুদ", "অন্যান্য", "মোট আদায়", "সমন্বয়ের তারিখ"],
-  "tableRows": [
-    ["১", "ফেরদৌসী বেগম", "${totalAmount}", "${totalAmount}", "০", "-", "${totalAmount}", "${diaryDate}"]
-  ],
-  "conclusionBranch": "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
-  "conclusionHeadOffice": "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।",
-  "conclusionPresenter": "আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক (...) সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।",
-  "conclusionFinal": "সদয় অনুমোদনের জন্য নথি উপস্থাপন করা হলো।",
-  "noteContentHtml": "পূর্ণাঙ্গ নোটশিটের রূপ",
-  "proposedStatus": "পূর্ণাঙ্গ নিষ্পত্তি",
-  "recommendationSummary": "চূড়ান্ত সুপারিশের সারসংক্ষেপ",
   "suggestedIssueLetter": {
-    "subject": "বিষয়",
-    "reference": "সূত্র",
+    "subject": "${entity} এর ${auditYear} নিরীক্ষা বর্ষের অডিট আপত্তি নিষ্পত্তি সংক্রান্ত জারিপত্র।",
+    "reference": "আপনাদের পত্র নং: ${letterNo}, তারিখ: ${letterDate}",
     "recipient": "ব্যবস্থাপনা পরিচালক / প্রধান নির্বাহী কর্মকর্তা, ${entity}",
-    "bodyHtml": "জারিপত্রের মূল বিবরণী",
+    "bodyHtml": "উপযুক্ত বিষয় ও সূত্রের পরিপ্রেক্ষিতে জানানো যাচ্ছে যে...",
     "signatoryTitle": "উপপরিচালক / অডিট অফিসার"
   }
 }
@@ -505,7 +487,7 @@ ${userClarifications && userClarifications.length > 0 ? `ব্যবহার�
           });
 
           const rawText = response.text || "{}";
-          let parsedData = {};
+          let parsedData: any = {};
           try {
             parsedData = JSON.parse(rawText);
           } catch (e) {
@@ -522,15 +504,10 @@ ${userClarifications && userClarifications.length > 0 ? `ব্যবহার�
           });
         } catch (geminiError: any) {
           console.error("Gemini API call failed, falling back to intelligent drafting:", geminiError);
-          // Fall through to deterministic smart generator
         }
       }
 
       // Intelligent Fallback Rule-based Note Drafter
-      const hasObjection = (originalObjectionText || "").trim().length > 0;
-      const hasReply = (entityReplyText || "").trim().length > 0;
-
-      // Smart check if documents are too brief or unclear
       const isTooBrief = (originalObjectionText.length < 15 && !originalObjectionFile) || 
                          (entityReplyText.length < 15 && !entityReplyFile);
 
@@ -551,38 +528,34 @@ ${userClarifications && userClarifications.length > 0 ? `ব্যবহার�
         });
       }
 
-      // Generate structured official note
+      // Fallback Multi-Paragraph structure
       const fallbackNote = {
         needsClarification: false,
         clarificationQuestions: [],
         diaryHeader: `ডায়েরি নং- ${diaryNo || "২৩৯"}, তারিখ: ${diaryDate || "৩০/০৭/২০২৬"} খ্রি:`,
         noteTikaText: `টীকা নং- ১১: উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা ${entity}, প্রধান কার্যালয়ের স্মারক নং- ${letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩২"}, তারিখ: ${letterDate || "২৭/০৭/২০২৬"} খ্রি: পত্রটি (পৃষ্ঠা নং- ২৯২) দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে ${ministry}-এর নিয়ন্ত্রণাধীন ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} নিরীক্ষা বছরের ব্রডশীট জবাবের (পৃষ্ঠা নং- ২৬৮-২৯২) ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।`,
-        objectionSummary: [
+        conclusionFinal: `সদয় অনুমোদনের জন্য নথি উপস্থাপন করা হলো।`,
+        proposedStatus: "পূর্ণাঙ্গ নিষ্পত্তি",
+        paragraphs: [
           {
             sl: "১",
-            entityAndAuditYear: `প্রতিষ্ঠান: ${entity}${branchName ? `, ${branchName}` : ''}\nনিরীক্ষা বছর: ${auditYear}`,
-            paraNo: entry?.paraNo ? String(entry.paraNo) : "১০",
-            titleAndDetails: `শিরোনাম: ${entry?.subject || 'মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ি ' + (totalAmount || '৫৭,৮২৫') + ' টাকা।'}\nঅনুচ্ছেদের পৃষ্ঠা নং- ২৯১\nপরিশিষ্ট পৃষ্ঠা নং- ২৯০`
+            entityAndAuditYear: `প্রতিষ্ঠান: ${entity}${branchName ? `,\n${branchName}` : ''}\nনিরীক্ষা বছর: ${auditYear || '২০১০-১১, ২০১৪-১৫, ২০১৫-১৬, ২০১৮-১৯'}`,
+            paraNo: letterMetadata?.paraNo ? String(letterMetadata.paraNo) : "১০",
+            titleAndDetails: `শিরোনাম: ${letterMetadata?.subject || 'মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ি ' + (totalAmount || '৫৭,৮২৫') + ' টাকা।'}\nঅনুচ্ছেদের পৃষ্ঠা নং- ২৯১\nপরিশिष्ट পৃষ্ঠা নং- ২৯০`,
+            entityReplyHeader: `আপত্তিতে উল্লেখিত ৪ টি মাইক্রো ক্রেডিট “জাগো নারী” ঋণ আসল ও সুদসহ আদায় করা হয়েছে (প্রমাণক সংযুক্ত) যা নিচে উপস্থাপন করা হলো:`,
+            hasTable: true,
+            tableHeaders: ["ক্রমিক", "ঋণগ্রহীতার নাম", "আপত্তিতে জড়িত টাকা", "আসল", "সুদ", "অন্যান্য", "মোট আদায়", "সমন্বয়ের তারিখ"],
+            tableRows: [
+              ["১", "ফেরদৌসী বেগম", "১৪,৫০৬", "৬,৮০০", "৭,৭০৬", "-", "১৪,৫০৬", "২০-০২-১৭"],
+              ["২", "শারমিন আক্তার", "১৪,৫০৬", "৬,৮০০", "৭,৭০৬", "-", "১৪,৫০৬", "২২-১০-১৭"],
+              ["৩", "মুরশিদা বেগম", "১৪,৫০৬", "৬,৮০০", "৭,৭০৬", "-", "১৪,৫০৬", "০৯-০৮-১৬"],
+              ["৪", "মো: সাঈদ হোসেন", "১৪,৩০৭", "৩,০০০", "১১,৩০৭", "-", "১৪,৩০৭", "২২-০৯-১৫"]
+            ],
+            conclusionBranch: `এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।`,
+            conclusionHeadOffice: `শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।`,
+            conclusionPresenter: `আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক (২৬৮-২৮৮) সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।`,
+            status: "পূর্ণাঙ্গ নিষ্পত্তি"
           }
-        ],
-        entityReplyHeader: `আপত্তিতে উল্লেখিত ৪ টি মাইক্রো ক্রেডিট “জাগো নারী” ঋণ আসল ও সুদসহ আদায় করা হয়েছে (প্রমাণক সংযুক্ত) যা নিচে উপস্থাপন করা হলো:`,
-        conclusionBranch: `এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।`,
-        conclusionHeadOffice: `শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।`,
-        conclusionPresenter: `আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক (২৬৮-২৮৮) সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।`,
-        conclusionFinal: `সদয় অনুমোদনের জন্য নথি উপস্থাপন করা হলো।`,
-        noteSubject: `${entity} এর ${auditYear} নিরীক্ষা বর্ষের অডিট আপত্তির জবাব ও প্রমাণক পর্যালোচনাপূর্বক নিষ্পত্তি প্রসঙ্গে।`,
-        noteContentHtml: `
-          <p><strong>টীকা নং- ১১:</strong> উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা ${entity}, প্রধান কার্যালয়ের স্মারক নং- ${letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩২"}, তারিখ: ${letterDate || "২৭/০৭/২০২৬"} খ্রি: পত্রটি (পৃষ্ঠা নং- ২৯২) দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে ${ministry}-এর নিয়ন্ত্রণাধীন ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} নিরীক্ষা বছরের ব্রডশীট জবাবের (পৃষ্ঠা নং- ২৬৮-২৯২) ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।</p>
-        `,
-        proposedStatus: "পূর্ণাঙ্গ নিষ্পত্তি",
-        recommendationSummary: `দাখিলকৃত প্রমাণক সঠিক থাকায় অনুচ্ছেদটি শর্তহীনভাবে নিষ্পত্তির জন্য সুপারিশ পেশ করা হলো।`,
-        hasTable: true,
-        tableHeaders: ["ক্রমিক", "ঋণগ্রহীতার নাম", "আপত্তিতে জড়িত টাকা", "আসল", "সুদ", "অন্যান্য", "মোট আদায়", "সমন্বয়ের তারিখ"],
-        tableRows: [
-          ["১", "মোছা: নাসিমা বেগম", "১,১০,৮৯১", "৩৫,০০০", "৭৫,৮৯১", "-", "১,১০,৮৯১", "২৩-০৭-১৫"],
-          ["২", "মোছা: নুরজাহান বেগম", "১,৩১,১৩৪", "৫৫,০০০", "৭৬,১৩৪", "-", "১,৩১,১৩৪", "০২-০৯-১৫"],
-          ["৩", "মোছা: রহিমা খাতুন", "১,০৬,৮৮৭", "৪৬,০০০", "৬০,৮৮৭", "-", "১,০৬,৮৮৭", "১৯-০৭-১৫"],
-          ["৪", "মো: সাঈদ হোসেন", "৫৪,৩০৭", "৩০,০০০", "২৪,৩০৭", "-", "৫৪,৩০৭", "২২-০৯-১৫"]
         ],
         suggestedIssueLetter: {
           subject: `${entity} এর ${auditYear} নিরীক্ষা বর্ষের অডিট আপত্তি নিষ্পত্তি প্রসঙ্গে।`,

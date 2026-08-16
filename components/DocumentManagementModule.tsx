@@ -18,14 +18,11 @@ import {
   AlignRight,
   AlignJustify,
   Palette,
-  RotateCcw,
   Building,
   Calendar,
   Hash,
   Coins,
-  ShieldCheck,
   Flame,
-  Info,
   X,
   Check,
   Copy,
@@ -42,32 +39,50 @@ interface DocumentManagementModuleProps {
   onSaveJaripatra?: (entry: CorrespondenceEntry, jaripatraData: any) => void;
 }
 
-interface TableColumn {
+export interface TableColumn {
   id: string;
   label: string;
 }
 
-interface TableRow {
+export interface TableRow {
   id: string;
   cells: Record<string, string>;
   cellColors?: Record<string, string>;
 }
 
-export interface ObjectionSummaryRow {
+export interface AuditParagraphBlock {
   id: string;
   sl: string;
   entityAndAuditYear: string;
   paraNo: string;
   titleAndDetails: string;
+  entityReplyText: string;
+  hasTable: boolean;
+  tableColumns: TableColumn[];
+  tableRows: TableRow[];
+  branchRequestText: string;
+  headOfficeCommentText: string;
+  presenterCommentText: string;
+  status: string;
 }
+
+const DEFAULT_TABLE_COLUMNS: TableColumn[] = [
+  { id: "sl", label: "ক্রমিক" },
+  { id: "borrowerName", label: "ঋণগ্রহীতার নাম" },
+  { id: "involvedAmount", label: "আপত্তিতে জড়িত টাকা" },
+  { id: "principal", label: "আসল" },
+  { id: "interest", label: "সুদ" },
+  { id: "others", label: "অন্যান্য" },
+  { id: "totalRecovered", label: "মোট আদায়" },
+  { id: "adjustmentDate", label: "সমন্বয়ের তারিখ" },
+];
 
 export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> = ({
   entry,
   onBack,
-  isAdmin = false,
   onSaveJaripatra,
 }) => {
-  // In-Memory Uploaded Files (Will be permanently purged upon note approval)
+  // In-Memory Uploaded Files (Permanently purged on note approval)
   const [objectionFile, setObjectionFile] = useState<{ name: string; size: string; base64: string; mimeType: string } | null>(null);
   const [objectionText, setObjectionText] = useState<string>("");
   const [replyFile, setReplyFile] = useState<{ name: string; size: string; base64: string; mimeType: string } | null>(null);
@@ -89,16 +104,16 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   // 2. Tika / Introductory Note Body
   const defaultLetterNo = entry.letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩২";
   const defaultLetterDate = entry.letterDate ? formatDateBN(entry.letterDate) : "২৭/০৭/২০২৬";
-  const defaultEntity = entry.entityName || "সোনালী ব্যাংক পিএলসি";
-  const defaultMinistry = entry.ministryName || "আর্থিক প্রতিষ্ঠান বিভাগ, অর্থ মন্ত্রণালয়";
+  const defaultEntity = entry.entityName || "পাটকল সংস্থা";
+  const defaultMinistry = entry.ministryName || "বস্ত্র ও পাট মন্ত্রণালয়";
   const defaultBranch = entry.branchName || "দর্শনা শাখা, চুয়াডাঙ্গা";
-  const defaultAuditYear = entry.auditYear || "২০১১-১৪";
+  const defaultAuditYear = entry.auditYear || "২০১০-১১, ২০১৪-১৫, ২০১৫-১৬, ২০১৮-১৯";
 
   const [tikaIntroHtml, setTikaIntroHtml] = useState<string>(() => {
     return `<p><strong>টীকা নং- ১১:</strong> উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা <strong>${defaultEntity}</strong>, প্রধান কার্যালয়ের স্মারক নং- <strong>${defaultLetterNo}</strong>, তারিখ: <strong>${defaultLetterDate} খ্রি:</strong> পত্রটি (পৃষ্ঠা নং- ২৯২) দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে <strong>${defaultMinistry}</strong> এর নিয়ন্ত্রণাধীন <strong>${defaultEntity}</strong>, ${defaultBranch} এর <strong>${defaultAuditYear}</strong> নিরীক্ষা বছরের ব্রডশীট জবাবের (পৃষ্ঠা নং- ২৬৮-২৯২) ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।</p>`;
   });
 
-  // 3. Objection Summary Table (ক্রমিক নং, প্রতিষ্ঠানের নাম ও নিরীক্ষা বছর, অনুচ্ছেদ নং, শিরোনাম ও অন্যান্য)
+  // 3. Multi-Paragraphs State (প্রতিটি অনুচ্ছেদের জন্য পৃথক ছক, জবাব, টেবিল ও মন্তব্য)
   const defaultParaNo = entry.paraNo ? toBengaliDigits(entry.paraNo) : "১০";
   const defaultTitleAndDetails = `শিরোনাম: ${
     entry.subject || "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ি ৫৭,৮২৫ টাকা।"
@@ -107,129 +122,54 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     entry.branchName ? `,\n${entry.branchName}` : defaultBranch ? `,\n${defaultBranch}` : ""
   }\nনিরীক্ষা বছর: ${entry.auditYear || defaultAuditYear}`;
 
-  const [hasObjectionSummaryTable, setHasObjectionSummaryTable] = useState<boolean>(true);
-  const [objectionSummaryRows, setObjectionSummaryRows] = useState<ObjectionSummaryRow[]>([
+  const [paragraphs, setParagraphs] = useState<AuditParagraphBlock[]>([
     {
-      id: "obj-1",
+      id: "para-1",
       sl: "১",
       entityAndAuditYear: defaultEntityAndAuditYear,
       paraNo: defaultParaNo,
       titleAndDetails: defaultTitleAndDetails,
+      entityReplyText: "আপত্তিতে উল্লেখিত ৪ টি মাইক্রো ক্রেডিট “জাগো নারী” ঋণ আসল ও সুদসহ আদায় করা হয়েছে (প্রমাণক সংযুক্ত) যা নিচে উপস্থাপন করা হলো:",
+      hasTable: false, // Initially user can click button or AI detects table
+      tableColumns: [...DEFAULT_TABLE_COLUMNS],
+      tableRows: [
+        {
+          id: "row-1",
+          cells: {
+            sl: "১",
+            borrowerName: "ফেরদৌসী বেগম",
+            involvedAmount: "১৪৫০৬",
+            principal: "৬৮০০",
+            interest: "৭৭০৬",
+            others: "-",
+            totalRecovered: "১৪৫০৬",
+            adjustmentDate: "২০-০২-১৭",
+          },
+          cellColors: {},
+        },
+        {
+          id: "row-2",
+          cells: {
+            sl: "২",
+            borrowerName: "শারমিন আক্তার",
+            involvedAmount: "১৪৫০৬",
+            principal: "৬৮০০",
+            interest: "৭৭০৬",
+            others: "-",
+            totalRecovered: "১৪৫০৬",
+            adjustmentDate: "২২-১০-১৭",
+          },
+          cellColors: {},
+        },
+      ],
+      branchRequestText: "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
+      headOfficeCommentText: "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।",
+      presenterCommentText: "আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক (২৬৮-২৮৮) সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।",
+      status: "পূর্ণাঙ্গ নিষ্পত্তি",
     },
   ]);
 
-  const handleAddObjectionRow = () => {
-    const nextSl = toBengaliDigits(objectionSummaryRows.length + 1);
-    setObjectionSummaryRows([
-      ...objectionSummaryRows,
-      {
-        id: `obj-${Date.now()}`,
-        sl: nextSl,
-        entityAndAuditYear: `প্রতিষ্ঠান: ${defaultEntity}\nনিরীক্ষা বছর: ${entry.auditYear || defaultAuditYear}`,
-        paraNo: "",
-        titleAndDetails: "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশিষ্ট পৃষ্ঠা নং- ",
-      },
-    ]);
-  };
-
-  const handleDeleteObjectionRow = (id: string) => {
-    if (objectionSummaryRows.length <= 1) return;
-    setObjectionSummaryRows(objectionSummaryRows.filter((r) => r.id !== id));
-  };
-
-  const handleUpdateObjectionRow = (id: string, field: keyof ObjectionSummaryRow, value: string) => {
-    setObjectionSummaryRows(
-      objectionSummaryRows.map((r) => (r.id === id ? { ...r, [field]: value } : r))
-    );
-  };
-
-  // 4. Entity Reply Statement
-  const [entityReplyText, setEntityReplyText] = useState<string>(
-    `আপত্তিতে উল্লেখিত ৪ টি মাইক্রো ক্রেডিট “জাগো নারী” ঋণ আসল ও সুদসহ আদায় করা হয়েছে (প্রমাণক সংযুক্ত) যা নিচে উপস্থাপন করা হলো:`
-  );
-
-  // 5. Dynamic Embedded Table (Loan Recovery / Breakdown)
-  const [hasTable, setHasTable] = useState<boolean>(true);
-  const [tableColumns, setTableColumns] = useState<TableColumn[]>([
-    { id: "sl", label: "ক্রমিক" },
-    { id: "borrowerName", label: "ঋণগ্রহীতার নাম" },
-    { id: "involvedAmount", label: "আপত্তিতে জড়িত টাকা" },
-    { id: "principal", label: "আসল" },
-    { id: "interest", label: "সুদ" },
-    { id: "others", label: "অন্যান্য" },
-    { id: "totalRecovered", label: "মোট আদায়" },
-    { id: "adjustmentDate", label: "সমন্বয়ের তারিখ" },
-  ]);
-
-  const [tableRows, setTableRows] = useState<TableRow[]>([
-    {
-      id: "row-1",
-      cells: {
-        sl: "১",
-        borrowerName: "ফেরদৌসী বেগম",
-        involvedAmount: "১৪৫০৬",
-        principal: "৬৮০০",
-        interest: "৭৭০৬",
-        others: "-",
-        totalRecovered: "১৪৫০৬",
-        adjustmentDate: "২০-০২-১৭",
-      },
-      cellColors: {},
-    },
-    {
-      id: "row-2",
-      cells: {
-        sl: "২",
-        borrowerName: "শারমিন আক্তার",
-        involvedAmount: "১৪৫০৬",
-        principal: "৬৮০০",
-        interest: "৭৭০৬",
-        others: "-",
-        totalRecovered: "১৪৫০৬",
-        adjustmentDate: "২২-১০-১৭",
-      },
-      cellColors: {},
-    },
-    {
-      id: "row-3",
-      cells: {
-        sl: "৩",
-        borrowerName: "মুরশিদা বেগম",
-        involvedAmount: "১৪৫০৬",
-        principal: "৬৮০০",
-        interest: "৭৭০৬",
-        others: "-",
-        totalRecovered: "১৪৫০৬",
-        adjustmentDate: "০৯-০৮-১৬",
-      },
-      cellColors: {},
-    },
-    {
-      id: "row-4",
-      cells: {
-        sl: "৪",
-        borrowerName: "মো: সাইদ হোসেন",
-        involvedAmount: "১৪৩০৭",
-        principal: "৩০০০",
-        interest: "১১৩০৭",
-        others: "-",
-        totalRecovered: "১৪৩০৭",
-        adjustmentDate: "২২-০৯-১৫",
-      },
-      cellColors: {},
-    },
-  ]);
-
-  // 5. Official Conclusion Paragraphs
-  const [branchRequestText, setBranchRequestText] = useState<string>(
-    "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।"
-  );
-  const [headOfficeCommentText, setHeadOfficeCommentText] = useState<string>(
-    "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।"
-  );
-  const [presenterCommentText, setPresenterCommentText] = useState<string>(
-    "আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক (২৬৮-২৮৮) সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।"
-  );
+  // 4. Overall Closing Submission
   const [finalSubmissionText, setFinalSubmissionText] = useState<string>(
     "সদয় অনুমোদনের জন্য নথি উপস্থাপন করা হলো।"
   );
@@ -261,7 +201,6 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   // Rich Text Editor Ref for Tika
   const tikaEditorRef = useRef<HTMLDivElement>(null);
 
-  // Helper to execute formatting commands
   const executeCommand = (command: string, value: string = "") => {
     if (tikaEditorRef.current) {
       tikaEditorRef.current.focus();
@@ -301,6 +240,195 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     reader.readAsDataURL(file);
   };
 
+  // Paragraph Operations
+  const handleAddParagraph = () => {
+    const nextSl = toBengaliDigits(paragraphs.length + 1);
+    const nextParaId = `para-${Date.now()}`;
+    const newPara: AuditParagraphBlock = {
+      id: nextParaId,
+      sl: nextSl,
+      entityAndAuditYear: `প্রতিষ্ঠান: ${defaultEntity}${entry.branchName ? `,\n${entry.branchName}` : ''}\nনিরীক্ষা বছর: ${entry.auditYear || defaultAuditYear}`,
+      paraNo: toBengaliDigits(Number(toEnglishDigits(defaultParaNo) || "10") + paragraphs.length),
+      titleAndDetails: "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশিষ্ট পৃষ্ঠা নং- ",
+      entityReplyText: "আপত্তিতে উল্লেখিত দাবিকৃত অর্থ ও চালানের প্রেক্ষিতে জবাব নিম্নরূপ:",
+      hasTable: false,
+      tableColumns: [...DEFAULT_TABLE_COLUMNS],
+      tableRows: [
+        {
+          id: `row-${Date.now()}-1`,
+          cells: {
+            sl: "১",
+            borrowerName: "",
+            involvedAmount: "০",
+            principal: "০",
+            interest: "০",
+            others: "-",
+            totalRecovered: "০",
+            adjustmentDate: "-",
+          },
+          cellColors: {},
+        },
+      ],
+      branchRequestText: "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
+      headOfficeCommentText: "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।",
+      presenterCommentText: "দাখিলকৃত প্রমাণক সঠিক থাকায় অনুচ্ছেদটি নিষ্পত্তি করা যেতে পারে।",
+      status: "পূর্ণাঙ্গ নিষ্পত্তি",
+    };
+    setParagraphs([...paragraphs, newPara]);
+  };
+
+  const handleDeleteParagraph = (paraId: string) => {
+    if (paragraphs.length <= 1) {
+      alert("কমপক্ষে একটি অনুচ্ছেদ থাকা আবশ্যক।");
+      return;
+    }
+    setParagraphs(paragraphs.filter((p) => p.id !== paraId));
+  };
+
+  const handleUpdateParagraphField = (
+    paraId: string,
+    field: keyof AuditParagraphBlock,
+    val: any
+  ) => {
+    setParagraphs(
+      paragraphs.map((p) => (p.id === paraId ? { ...p, [field]: val } : p))
+    );
+  };
+
+  const handleToggleParagraphTable = (paraId: string, forcedState?: boolean) => {
+    setParagraphs(
+      paragraphs.map((p) => {
+        if (p.id === paraId) {
+          const nextState = forcedState !== undefined ? forcedState : !p.hasTable;
+          return { ...p, hasTable: nextState };
+        }
+        return p;
+      })
+    );
+  };
+
+  const handleAddParagraphTableRow = (paraId: string) => {
+    setParagraphs(
+      paragraphs.map((p) => {
+        if (p.id === paraId) {
+          const nextIdx = p.tableRows.length + 1;
+          const newCells: Record<string, string> = {};
+          p.tableColumns.forEach((col) => {
+            if (col.id === "sl" || col.label.includes("ক্রমিক")) newCells[col.id] = toBengaliDigits(nextIdx);
+            else if (col.id === "borrowerName" || col.label.includes("নাম")) newCells[col.id] = "";
+            else if (col.label.includes("টাকা") || col.id.includes("Amount") || col.id === "principal" || col.id === "interest") newCells[col.id] = "০";
+            else newCells[col.id] = "-";
+          });
+          return {
+            ...p,
+            tableRows: [...p.tableRows, { id: `row-${Date.now()}`, cells: newCells, cellColors: {} }],
+          };
+        }
+        return p;
+      })
+    );
+  };
+
+  const handleDeleteParagraphTableRow = (paraId: string, rowId: string) => {
+    setParagraphs(
+      paragraphs.map((p) => {
+        if (p.id === paraId) {
+          if (p.tableRows.length <= 1) return p;
+          return {
+            ...p,
+            tableRows: p.tableRows.filter((r) => r.id !== rowId),
+          };
+        }
+        return p;
+      })
+    );
+  };
+
+  const handleAddParagraphTableCol = (paraId: string) => {
+    const colName = prompt("নতুন কলামের শিরোনাম লিখুন:", "নতুন কলাম");
+    if (!colName) return;
+    const newColId = `col-${Date.now()}`;
+    setParagraphs(
+      paragraphs.map((p) => {
+        if (p.id === paraId) {
+          const updatedCols = [...p.tableColumns, { id: newColId, label: colName }];
+          const updatedRows = p.tableRows.map((r) => ({
+            ...r,
+            cells: { ...r.cells, [newColId]: "" },
+          }));
+          return { ...p, tableColumns: updatedCols, tableRows: updatedRows };
+        }
+        return p;
+      })
+    );
+  };
+
+  const handleDeleteParagraphTableCol = (paraId: string, colId: string) => {
+    setParagraphs(
+      paragraphs.map((p) => {
+        if (p.id === paraId) {
+          if (p.tableColumns.length <= 2) {
+            alert("কমপক্ষে দুটি কলাম থাকা আবশ্যক।");
+            return p;
+          }
+          return {
+            ...p,
+            tableColumns: p.tableColumns.filter((c) => c.id !== colId),
+          };
+        }
+        return p;
+      })
+    );
+  };
+
+  const handleUpdateParagraphTableCell = (
+    paraId: string,
+    rowId: string,
+    colId: string,
+    val: string
+  ) => {
+    setParagraphs(
+      paragraphs.map((p) => {
+        if (p.id === paraId) {
+          return {
+            ...p,
+            tableRows: p.tableRows.map((r) =>
+              r.id === rowId ? { ...r, cells: { ...r.cells, [colId]: val } } : r
+            ),
+          };
+        }
+        return p;
+      })
+    );
+  };
+
+  const handleApplyParagraphTableCellColor = (
+    paraId: string,
+    rowId: string,
+    colId: string
+  ) => {
+    setParagraphs(
+      paragraphs.map((p) => {
+        if (p.id === paraId) {
+          return {
+            ...p,
+            tableRows: p.tableRows.map((r) => {
+              if (r.id !== rowId) return r;
+              const currentColors = { ...(r.cellColors || {}) };
+              if (currentColors[colId] === selectedCellColor) {
+                delete currentColors[colId];
+              } else {
+                currentColors[colId] = selectedCellColor;
+              }
+              return { ...r, cellColors: currentColors };
+            }),
+          };
+        }
+        return p;
+      })
+    );
+  };
+
   // AI Run Analysis
   const handleRunAiAnalysis = async () => {
     setIsAnalyzing(true);
@@ -312,7 +440,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       }, 700);
 
       setTimeout(() => {
-        setAiAnalysisStep("সরকারি প্রমিত কাঠামো অনুযায়ী ড্রাফট নোট ও টেবিল প্রস্তুত হচ্ছে...");
+        setAiAnalysisStep("সরকারি প্রমিত কাঠামো অনুযায়ী ড্রাফট নোট ও পৃথক অনুচ্ছেদ প্রস্তুত হচ্ছে...");
       }, 1400);
 
       const response = await fetch("/api/document-management/analyze-note", {
@@ -361,51 +489,49 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               tikaEditorRef.current.innerHTML = html;
             }
           }
-          if (data.objectionSummary && Array.isArray(data.objectionSummary) && data.objectionSummary.length > 0) {
-            setHasObjectionSummaryTable(true);
-            setObjectionSummaryRows(
-              data.objectionSummary.map((item: any, i: number) => ({
-                id: `obj-ai-${i + 1}`,
-                sl: item.sl || toBengaliDigits(i + 1),
-                entityAndAuditYear: item.entityAndAuditYear || defaultEntityAndAuditYear,
-                paraNo: item.paraNo ? toBengaliDigits(item.paraNo) : defaultParaNo,
-                titleAndDetails: item.titleAndDetails || defaultTitleAndDetails,
-              }))
-            );
-          }
-
-          if (data.entityReplyHeader) {
-            setEntityReplyText(data.entityReplyHeader.replace(/^স্থানীয় প্রতিষ্ঠানের জবাব:\s*/, ''));
-          }
-          if (data.conclusionBranch) setBranchRequestText(data.conclusionBranch);
-          if (data.conclusionHeadOffice) {
-            setHeadOfficeCommentText(data.conclusionHeadOffice.replace(/^প্রধান কার্যালয়ের মন্তব্য:\s*/, ''));
-          }
-          if (data.conclusionPresenter) {
-            setPresenterCommentText(data.conclusionPresenter.replace(/^উপস্থাপনকারীর মন্তব্য:\s*/, ''));
-          }
           if (data.conclusionFinal) setFinalSubmissionText(data.conclusionFinal);
-
           if (data.proposedStatus) setSettlementStatus(data.proposedStatus);
 
-          if (data.hasTable === false) {
-            setHasTable(false);
-          } else if (data.hasTable && data.tableHeaders && data.tableRows && data.tableRows.length > 0) {
-            setHasTable(true);
-            const cols: TableColumn[] = data.tableHeaders.map((h: string, i: number) => ({
-              id: `col-${i}`,
-              label: h,
-            }));
-            setTableColumns(cols);
+          // Handle Multi-Paragraphs payload
+          if (Array.isArray(data.paragraphs) && data.paragraphs.length > 0) {
+            const parsedParas: AuditParagraphBlock[] = data.paragraphs.map((pItem: any, pIdx: number) => {
+              const cols: TableColumn[] = Array.isArray(pItem.tableHeaders) && pItem.tableHeaders.length > 0
+                ? pItem.tableHeaders.map((h: string, i: number) => ({ id: `col-${i}`, label: h }))
+                : [...DEFAULT_TABLE_COLUMNS];
 
-            const rows: TableRow[] = data.tableRows.map((r: string[], rIdx: number) => {
-              const cells: Record<string, string> = {};
-              cols.forEach((col, cIdx) => {
-                cells[col.id] = r[cIdx] || "";
-              });
-              return { id: `row-${rIdx + 1}`, cells, cellColors: {} };
+              const rows: TableRow[] = Array.isArray(pItem.tableRows) && pItem.tableRows.length > 0
+                ? pItem.tableRows.map((r: string[], rIdx: number) => {
+                    const cells: Record<string, string> = {};
+                    cols.forEach((col, cIdx) => {
+                      cells[col.id] = r[cIdx] || "";
+                    });
+                    return { id: `row-${pIdx}-${rIdx + 1}`, cells, cellColors: {} };
+                  })
+                : [];
+
+              return {
+                id: `para-ai-${pIdx + 1}`,
+                sl: pItem.sl || toBengaliDigits(pIdx + 1),
+                entityAndAuditYear: pItem.entityAndAuditYear || defaultEntityAndAuditYear,
+                paraNo: pItem.paraNo ? toBengaliDigits(pItem.paraNo) : toBengaliDigits(10 + pIdx),
+                titleAndDetails: pItem.titleAndDetails || defaultTitleAndDetails,
+                entityReplyText: (pItem.entityReplyHeader || pItem.entityReplyText || "").replace(/^স্থানীয় প্রতিষ্ঠানের জবাব:\s*/, ''),
+                hasTable: !!pItem.hasTable && rows.length > 0,
+                tableColumns: cols,
+                tableRows: rows.length > 0 ? rows : [
+                  {
+                    id: `row-${pIdx}-1`,
+                    cells: { sl: "১", borrowerName: "", involvedAmount: "০", principal: "০", interest: "০", others: "-", totalRecovered: "০", adjustmentDate: "-" },
+                    cellColors: {}
+                  }
+                ],
+                branchRequestText: pItem.conclusionBranch || "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
+                headOfficeCommentText: (pItem.conclusionHeadOffice || "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।").replace(/^প্রধান কার্যালয়ের মন্তব্য:\s*/, ''),
+                presenterCommentText: (pItem.conclusionPresenter || "আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।").replace(/^উপস্থাপনকারীর মন্তব্য:\s*/, ''),
+                status: pItem.status || "পূর্ণাঙ্গ নিষ্পত্তি",
+              };
             });
-            setTableRows(rows);
+            setParagraphs(parsedParas);
           }
 
           if (data.suggestedIssueLetter) {
@@ -431,77 +557,16 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     setIsFilesPurged(true);
   };
 
-  // Table Handlers
-  const handleAddTableRow = () => {
-    const nextIdx = tableRows.length + 1;
-    const newCells: Record<string, string> = {};
-    tableColumns.forEach((col) => {
-      if (col.id === "sl" || col.label.includes("ক্রমিক")) newCells[col.id] = toBengaliDigits(nextIdx);
-      else if (col.id === "borrowerName" || col.label.includes("নাম")) newCells[col.id] = "";
-      else if (col.label.includes("টাকা") || col.id.includes("Amount") || col.id === "principal" || col.id === "interest") newCells[col.id] = "০";
-      else newCells[col.id] = "-";
-    });
-    setTableRows([...tableRows, { id: `row-${Date.now()}`, cells: newCells, cellColors: {} }]);
-  };
-
-  const handleDeleteTableRow = (rowId: string) => {
-    if (tableRows.length <= 1) return;
-    setTableRows(tableRows.filter((r) => r.id !== rowId));
-  };
-
-  const handleAddTableColumn = () => {
-    const colName = prompt("নতুন কলামের শিরোনাম লিখুন:", "নতুন কলাম");
-    if (!colName) return;
-    const newColId = `col-${Date.now()}`;
-    const updatedCols = [...tableColumns, { id: newColId, label: colName }];
-    setTableColumns(updatedCols);
-    setTableRows(
-      tableRows.map((r) => ({
-        ...r,
-        cells: { ...r.cells, [newColId]: "" },
-      }))
-    );
-  };
-
-  const handleDeleteTableColumn = (colId: string) => {
-    if (tableColumns.length <= 2) {
-      alert("কমপক্ষে দুটি কলাম থাকা আবশ্যক।");
-      return;
-    }
-    setTableColumns(tableColumns.filter((c) => c.id !== colId));
-  };
-
-  const handleUpdateCell = (rowId: string, colId: string, val: string) => {
-    setTableRows(
-      tableRows.map((r) => (r.id === rowId ? { ...r, cells: { ...r.cells, [colId]: val } } : r))
-    );
-  };
-
-  const handleApplyCellColor = (rowId: string, colId: string) => {
-    setTableRows(
-      tableRows.map((r) => {
-        if (r.id !== rowId) return r;
-        const currentColors = { ...(r.cellColors || {}) };
-        if (currentColors[colId] === selectedCellColor) {
-          delete currentColors[colId];
-        } else {
-          currentColors[colId] = selectedCellColor;
-        }
-        return { ...r, cellColors: currentColors };
-      })
-    );
-  };
-
   const [copiedSuccess, setCopiedSuccess] = useState<boolean>(false);
   const [copiedTableSuccess, setCopiedTableSuccess] = useState<boolean>(false);
   const noteDocumentRef = useRef<HTMLDivElement>(null);
 
-  // Numeric totals calculation
-  const calculateTotal = (identifier: string): number => {
-    return tableRows.reduce((acc, row) => {
+  // Numeric totals calculation for a specific paragraph table
+  const calculateParagraphTotal = (para: AuditParagraphBlock, identifier: string): number => {
+    return para.tableRows.reduce((acc, row) => {
       let cellVal = "";
       Object.entries(row.cells).forEach(([colId, v]) => {
-        const col = tableColumns.find((c) => c.id === colId);
+        const col = para.tableColumns.find((c) => c.id === colId);
         if (col && (col.id === identifier || col.label.includes(identifier))) {
           cellVal = String(v || "");
         }
@@ -511,67 +576,9 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     }, 0);
   };
 
-  const totalInvolved = calculateTotal("জড়িত");
-  const totalPrincipal = calculateTotal("আসল");
-  const totalInterest = calculateTotal("সুদ");
-  const totalRecovered = calculateTotal("আদায়");
-
-  // Generate 100% MS Word & Excel Compatible Objection Information Table
-  const generateWordCompatibleObjectionTableHtml = () => {
-    if (!hasObjectionSummaryTable || objectionSummaryRows.length === 0) return "";
-
-    const headerCells = `
-      <th style="border: 1.0pt solid #000000; background-color: #E2E8F0; font-weight: bold; text-align: center; vertical-align: middle; padding: 6pt 5pt; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; width: 10%; mso-border-alt: solid black .75pt;">
-        ক্রমিক নং
-      </th>
-      <th style="border: 1.0pt solid #000000; background-color: #E2E8F0; font-weight: bold; text-align: left; vertical-align: middle; padding: 6pt 8pt; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; width: 35%; mso-border-alt: solid black .75pt;">
-        প্রতিষ্ঠানের নাম ও নিরীক্ষা বছর
-      </th>
-      <th style="border: 1.0pt solid #000000; background-color: #E2E8F0; font-weight: bold; text-align: center; vertical-align: middle; padding: 6pt 5pt; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; width: 14%; mso-border-alt: solid black .75pt;">
-        অনুচ্ছেদ নং
-      </th>
-      <th style="border: 1.0pt solid #000000; background-color: #E2E8F0; font-weight: bold; text-align: left; vertical-align: middle; padding: 6pt 8pt; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; width: 41%; mso-border-alt: solid black .75pt;">
-        শিরোনাম ও অন্যান্য
-      </th>
-    `;
-
-    const bodyRows = objectionSummaryRows
-      .map(
-        (r) => `
-        <tr style="page-break-inside: avoid; mso-yfti-irow: 1;">
-          <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; font-weight: bold; mso-border-alt: solid black .5pt;">
-            ${r.sl}
-          </td>
-          <td style="border: 1.0pt solid #000000; padding: 6pt 8pt; text-align: left; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .5pt; line-height: 1.5; white-space: pre-line;">
-            ${r.entityAndAuditYear.replace(/\n/g, "<br/>")}
-          </td>
-          <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; font-weight: bold; mso-border-alt: solid black .5pt;">
-            ${r.paraNo}
-          </td>
-          <td style="border: 1.0pt solid #000000; padding: 6pt 8pt; text-align: left; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .5pt; line-height: 1.5; white-space: pre-line;">
-            ${r.titleAndDetails.replace(/\n/g, "<br/>")}
-          </td>
-        </tr>`
-      )
-      .join("");
-
-    return `
-      <table border="1" cellspacing="0" cellpadding="0" width="100%" style="width: 100%; border-collapse: collapse; border: 1.0pt solid #000000; mso-border-alt: solid black .75pt; mso-table-lspace: 0pt; mso-table-rspace: 0pt; margin: 10pt 0;">
-        <thead>
-          <tr style="mso-yfti-irow: 0; mso-yfti-firstrow: yes; page-break-inside: avoid;">
-            ${headerCells}
-          </tr>
-        </thead>
-        <tbody>
-          ${bodyRows}
-        </tbody>
-      </table>
-    `;
-  };
-
-  // Generate 100% MS Word & Excel Compatible HTML Table
-  const generateWordCompatibleTableHtml = () => {
-    if (!hasTable || tableRows.length === 0) return "";
+  // Generate MS Word / Excel Compatible HTML for a specific Paragraph's Table
+  const generateWordCompatibleParagraphTableHtml = (para: AuditParagraphBlock) => {
+    if (!para.hasTable || para.tableRows.length === 0) return "";
 
     const getColWidth = (label: string) => {
       if (label.includes("ক্রমিক")) return "6%";
@@ -582,10 +589,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       if (label.includes("অন্যান্য")) return "8%";
       if (label.includes("মোট") || label.includes("আদায়")) return "13%";
       if (label.includes("তারিখ")) return "15%";
-      return `${Math.round(100 / (tableColumns.length || 1))}%`;
+      return `${Math.round(100 / (para.tableColumns.length || 1))}%`;
     };
 
-    const headerCells = tableColumns
+    const headerCells = para.tableColumns
       .map(
         (c) => `
         <th style="border: 1.0pt solid #000000; background-color: #E2E8F0; font-weight: bold; text-align: center; vertical-align: middle; padding: 6pt 5pt; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; width: ${getColWidth(
@@ -596,11 +603,11 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       )
       .join("");
 
-    const bodyRows = tableRows
+    const bodyRows = para.tableRows
       .map(
         (r) => `
         <tr style="page-break-inside: avoid; mso-yfti-irow: 1;">
-          ${tableColumns
+          ${para.tableColumns
             .map((c, idx) => {
               const isCenter = idx === 0 || c.label.includes("ক্রমিক") || c.label.includes("তারিখ");
               const isRight =
@@ -620,6 +627,11 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         </tr>`
       )
       .join("");
+
+    const totalInvolved = calculateParagraphTotal(para, "জড়িত");
+    const totalPrincipal = calculateParagraphTotal(para, "আসল");
+    const totalInterest = calculateParagraphTotal(para, "সুদ");
+    const totalRecovered = calculateParagraphTotal(para, "আদায়");
 
     const totalRow = `
       <tr style="font-weight: bold; background-color: #F1F5F9; page-break-inside: avoid; mso-yfti-irow: 2; mso-yfti-lastrow: yes;">
@@ -656,22 +668,65 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     `;
   };
 
-  // Copy Only Table (Directly for MS Word & Excel)
+  // Generate Word Compatible Single Paragraph Objection Info Row Table
+  const generateWordCompatibleObjectionRowHtml = (para: AuditParagraphBlock) => {
+    return `
+      <table border="1" cellspacing="0" cellpadding="0" width="100%" style="width: 100%; border-collapse: collapse; border: 1.0pt solid #000000; mso-border-alt: solid black .75pt; mso-table-lspace: 0pt; mso-table-rspace: 0pt; margin: 10pt 0;">
+        <thead>
+          <tr style="mso-yfti-irow: 0; mso-yfti-firstrow: yes; page-break-inside: avoid;">
+            <th style="border: 1.0pt solid #000000; background-color: #E2E8F0; font-weight: bold; text-align: center; vertical-align: middle; padding: 6pt 5pt; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; width: 10%; mso-border-alt: solid black .75pt;">
+              ক্রমিক নং
+            </th>
+            <th style="border: 1.0pt solid #000000; background-color: #E2E8F0; font-weight: bold; text-align: left; vertical-align: middle; padding: 6pt 8pt; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; width: 35%; mso-border-alt: solid black .75pt;">
+              প্রতিষ্ঠানের নাম ও নিরীক্ষা বছর
+            </th>
+            <th style="border: 1.0pt solid #000000; background-color: #E2E8F0; font-weight: bold; text-align: center; vertical-align: middle; padding: 6pt 5pt; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; width: 14%; mso-border-alt: solid black .75pt;">
+              অনুচ্ছেদ নং
+            </th>
+            <th style="border: 1.0pt solid #000000; background-color: #E2E8F0; font-weight: bold; text-align: left; vertical-align: middle; padding: 6pt 8pt; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; width: 41%; mso-border-alt: solid black .75pt;">
+              শিরোনাম ও অন্যান্য
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="page-break-inside: avoid; mso-yfti-irow: 1;">
+            <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; font-weight: bold; mso-border-alt: solid black .5pt;">
+              ${para.sl}
+            </td>
+            <td style="border: 1.0pt solid #000000; padding: 6pt 8pt; text-align: left; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .5pt; line-height: 1.5; white-space: pre-line;">
+              ${para.entityAndAuditYear.replace(/\n/g, "<br/>")}
+            </td>
+            <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 11pt; font-weight: bold; mso-border-alt: solid black .5pt;">
+              ${para.paraNo}
+            </td>
+            <td style="border: 1.0pt solid #000000; padding: 6pt 8pt; text-align: left; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .5pt; line-height: 1.5; white-space: pre-line;">
+              ${para.titleAndDetails.replace(/\n/g, "<br/>")}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+  };
+
+  // Copy Only Tables (MS Word / Excel)
   const handleCopyTableOnly = async () => {
     try {
-      const tablePlainText =
-        tableColumns.map((c) => c.label).join("\t") +
-        "\n" +
-        tableRows
-          .map((r) => tableColumns.map((c) => r.cells[c.id] || "-").join("\t"))
-          .join("\n") +
-        `\nসর্বমোট\t-\t${totalInvolved ? toBengaliDigits(totalInvolved) : "-"}\t${
-          totalPrincipal ? toBengaliDigits(totalPrincipal) : "০"
-        }\t${totalInterest ? toBengaliDigits(totalInterest) : "০"}\t-\t${
-          totalRecovered ? toBengaliDigits(totalRecovered) : "-"
-        }\t-`;
+      const activeTables = paragraphs.filter((p) => p.hasTable && p.tableRows.length > 0);
+      if (activeTables.length === 0) {
+        alert("কোনো আদায় ছক চালু নেই।");
+        return;
+      }
 
-      const htmlTable = generateWordCompatibleTableHtml();
+      let allTablesHtml = "";
+      let allTablesText = "";
+
+      activeTables.forEach((para, idx) => {
+        allTablesHtml += `<p><b>অনুচ্ছেদ ${para.paraNo} - আদায়ের বিবরণী ছক:</b></p>${generateWordCompatibleParagraphTableHtml(para)}<br/>`;
+        allTablesText += `[অনুচ্ছেদ ${para.paraNo} - আদায়ের বিবরণী ছক]\n` +
+          para.tableColumns.map((c) => c.label).join("\t") + "\n" +
+          para.tableRows.map((r) => para.tableColumns.map((c) => r.cells[c.id] || "-").join("\t")).join("\n") + "\n\n";
+      });
+
       const richHtml = `
         <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
         <head>
@@ -682,14 +737,14 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           </style>
         </head>
         <body>
-          ${htmlTable}
+          ${allTablesHtml}
         </body>
         </html>
       `;
 
       if (navigator.clipboard && window.ClipboardItem) {
         const blobHtml = new Blob([richHtml], { type: "text/html" });
-        const blobText = new Blob([tablePlainText], { type: "text/plain" });
+        const blobText = new Blob([allTablesText], { type: "text/plain" });
         await navigator.clipboard.write([
           new ClipboardItem({
             "text/html": blobHtml,
@@ -697,7 +752,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           }),
         ]);
       } else {
-        await navigator.clipboard.writeText(tablePlainText);
+        await navigator.clipboard.writeText(allTablesText);
       }
 
       setCopiedTableSuccess(true);
@@ -707,102 +762,85 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     }
   };
 
-  // Copy Complete Note Sheet (One-click Rich Text & Table copy for MS Word / Docs)
+  // Copy Complete Multi-Paragraph Note Sheet (MS Word / Docs)
   const handleCopyNoteSheet = async () => {
     try {
-      let objectionPlainText = "";
-      if (hasObjectionSummaryTable && objectionSummaryRows.length > 0) {
-        objectionPlainText =
-          "\n[আপত্তি পরিচিতি ছক]\n" +
-          "ক্রমিক নং\tপ্রতিষ্ঠানের নাম ও নিরীক্ষা বছর\tঅনুচ্ছেদ নং\tশিরোনাম ও অন্যান্য\n" +
-          objectionSummaryRows
-            .map(
-              (r) =>
-                `${r.sl}\t${r.entityAndAuditYear.replace(/\n/g, " ")}\t${r.paraNo}\t${r.titleAndDetails.replace(/\n/g, " ")}`
-            )
-            .join("\n") +
-          "\n";
-      }
+      let fullNoteHtml = "";
+      let fullNotePlain = "";
 
-      let tablePlainText = "";
-      if (hasTable && tableRows.length > 0) {
-        tablePlainText =
-          "\n[আদায়ের বিবরণী ছক]\n" +
-          tableColumns.map((c) => c.label).join("\t") +
-          "\n" +
-          tableRows
-            .map((r) => tableColumns.map((c) => r.cells[c.id] || "-").join("\t"))
-            .join("\n") +
-          `\nসর্বমোট\t-\t${totalInvolved ? toBengaliDigits(totalInvolved) : "-"}\t${
-            totalPrincipal ? toBengaliDigits(totalPrincipal) : "০"
-          }\t${totalInterest ? toBengaliDigits(totalInterest) : "০"}\t-\t${
-            totalRecovered ? toBengaliDigits(totalRecovered) : "-"
-          }\t-`;
-      }
+      fullNotePlain += `${diaryHeader}\n\n${tikaIntroHtml.replace(/<[^>]+>/g, "").trim()}\n\n`;
 
-      const plainText = `${diaryHeader}
+      fullNoteHtml += `
+        <div style="text-align: center; font-weight: bold; font-size: 12pt; margin-bottom: 15pt;">
+          ${diaryHeader}
+        </div>
+        <div style="text-align: justify; font-size: 11pt; line-height: 1.6; margin-bottom: 14pt;">
+          ${tikaIntroHtml}
+        </div>
+      `;
 
-${tikaIntroHtml.replace(/<[^>]+>/g, "").trim()}
-${objectionPlainText}
-স্থানীয় প্রতিষ্ঠানের জবাব: ${entityReplyText}
-${tablePlainText}
+      paragraphs.forEach((para, idx) => {
+        // Plain text version
+        fullNotePlain += `[আপত্তি পরিচিতি ছক - অনুচ্ছেদ ${para.paraNo}]\n`;
+        fullNotePlain += `ক্রমিক নং\tপ্রতিষ্ঠানের নাম ও নিরীক্ষা বছর\tঅনুচ্ছেদ নং\tশিরোনাম ও অন্যান্য\n`;
+        fullNotePlain += `${para.sl}\t${para.entityAndAuditYear.replace(/\n/g, " ")}\t${para.paraNo}\t${para.titleAndDetails.replace(/\n/g, " ")}\n\n`;
+        fullNotePlain += `স্থানীয় প্রতিষ্ঠানের জবাব: ${para.entityReplyText}\n\n`;
 
-${branchRequestText}
+        if (para.hasTable && para.tableRows.length > 0) {
+          fullNotePlain += `[আদায়ের বিবরণী ছক]\n`;
+          fullNotePlain += para.tableColumns.map((c) => c.label).join("\t") + "\n";
+          fullNotePlain += para.tableRows.map((r) => para.tableColumns.map((c) => r.cells[c.id] || "-").join("\t")).join("\n") + "\n";
+        }
 
-প্রধান কার্যালয়ের মন্তব্য: ${headOfficeCommentText}
+        fullNotePlain += `${para.branchRequestText}\n\n`;
+        fullNotePlain += `প্রধান কার্যালয়ের মন্তব্য: ${para.headOfficeCommentText}\n\n`;
+        fullNotePlain += `উপস্থাপনকারীর মন্তব্য: ${para.presenterCommentText}\n\n`;
 
-উপস্থাপনকারীর মন্তব্য: ${presenterCommentText}
+        // HTML version
+        fullNoteHtml += `
+          <div style="margin-top: 15pt; margin-bottom: 15pt;">
+            ${generateWordCompatibleObjectionRowHtml(para)}
+            
+            <div style="margin: 10pt 0; text-align: justify; line-height: 1.6;">
+              <strong>স্থানীয় প্রতিষ্ঠানের জবাব: </strong><span>${para.entityReplyText}</span>
+            </div>
 
-${finalSubmissionText}`;
+            ${para.hasTable ? generateWordCompatibleParagraphTableHtml(para) : ""}
 
-      const htmlObjectionTable = generateWordCompatibleObjectionTableHtml();
-      const htmlTable = generateWordCompatibleTableHtml();
+            <div style="margin: 10pt 0; text-align: justify; line-height: 1.6;">
+              ${para.branchRequestText}
+            </div>
+
+            <div style="margin: 10pt 0; text-align: justify; line-height: 1.6;">
+              <strong>প্রধান কার্যালয়ের মন্তব্য: </strong><span>${para.headOfficeCommentText}</span>
+            </div>
+
+            <div style="margin: 10pt 0; text-align: justify; line-height: 1.6; background-color: #f8fafc; padding: 6pt; border: 1pt dashed #cbd5e1;">
+              <strong>উপস্থাপনকারীর মন্তব্য: </strong><span>${para.presenterCommentText}</span>
+            </div>
+          </div>
+        `;
+      });
+
+      fullNotePlain += `${finalSubmissionText}\n`;
+      fullNoteHtml += `
+        <div style="text-align: left; font-weight: bold; margin-top: 16pt;">
+          ${finalSubmissionText}
+        </div>
+      `;
 
       const richHtml = `
         <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
         <head>
-          <!--[if gte mso 9]>
-          <xml>
-           <w:WordDocument>
-            <w:View>Print</w:View>
-            <w:Zoom>100</w:Zoom>
-            <w:DoNotOptimizeForBrowser/>
-           </w:WordDocument>
-          </xml>
-          <![endif]-->
           <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
           <style>
-            body, p, div, table { font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 12pt; line-height: 1.6; color: #000000; }
-            table { border-collapse: collapse; width: 100%; border: 1.0pt solid #000000; }
-            th, td { border: 1.0pt solid #000000; padding: 5pt 6pt; font-size: 10.5pt; }
-            th { background-color: #E2E8F0; font-weight: bold; }
+            body { font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', Arial, sans-serif; font-size: 11pt; color: #000000; line-height: 1.6; }
+            table { border-collapse: collapse; width: 100%; }
           </style>
         </head>
         <body>
-          <div style="max-width: 800px; margin: 0 auto; padding: 10pt;">
-            <div style="text-align: center; font-weight: bold; font-size: 13pt; margin-bottom: 14pt; border-bottom: 1.0pt solid #000000; padding-bottom: 6pt;">
-              ${diaryHeader}
-            </div>
-            <div style="text-align: justify; margin-bottom: 10pt; line-height: 1.6;">
-              ${tikaIntroHtml}
-            </div>
-            ${htmlObjectionTable}
-            <div style="text-align: justify; margin-bottom: 10pt; line-height: 1.6;">
-              <strong>স্থানীয় প্রতিষ্ঠানের জবাব: </strong><span>${entityReplyText}</span>
-            </div>
-            ${htmlTable}
-            <div style="text-align: justify; margin-bottom: 10pt; line-height: 1.6;">
-              ${branchRequestText}
-            </div>
-            <div style="text-align: justify; margin-bottom: 10pt; line-height: 1.6;">
-              <strong>প্রধান কার্যালয়ের মন্তব্য: </strong><span>${headOfficeCommentText}</span>
-            </div>
-            <div style="text-align: justify; margin-bottom: 12pt; line-height: 1.6;">
-              <strong>উপস্থাপনকারীর মন্তব্য: </strong><span>${presenterCommentText}</span>
-            </div>
-            <div style="text-align: left; font-weight: bold; margin-top: 14pt;">
-              ${finalSubmissionText}
-            </div>
+          <div style="max-width: 750pt; margin: 0 auto; padding: 20pt;">
+            ${fullNoteHtml}
           </div>
         </body>
         </html>
@@ -810,7 +848,7 @@ ${finalSubmissionText}`;
 
       if (navigator.clipboard && window.ClipboardItem) {
         const blobHtml = new Blob([richHtml], { type: "text/html" });
-        const blobText = new Blob([plainText], { type: "text/plain" });
+        const blobText = new Blob([fullNotePlain], { type: "text/plain" });
         await navigator.clipboard.write([
           new ClipboardItem({
             "text/html": blobHtml,
@@ -818,7 +856,7 @@ ${finalSubmissionText}`;
           }),
         ]);
       } else {
-        await navigator.clipboard.writeText(plainText);
+        await navigator.clipboard.writeText(fullNotePlain);
       }
 
       setCopiedSuccess(true);
@@ -833,12 +871,10 @@ ${finalSubmissionText}`;
     }
   };
 
-  // Print Note Sheet
   const handlePrintNoteSheet = () => {
     window.print();
   };
 
-  // Print Jaripatra
   const handlePrintJaripatra = () => {
     window.print();
   };
@@ -859,7 +895,7 @@ ${finalSubmissionText}`;
           <div>
             <h1 className="text-base font-black text-slate-900 flex items-center gap-2">
               <FileText size={18} className="text-blue-600" />
-              <span>নথি ও নোট শিট ব্যবস্থাপনা</span>
+              <span>নথি ও নোট শিট ব্যবস্থাপনা (বহু-অনুচ্ছেদ বিশিষ্ট)</span>
               <span className="px-2.5 py-0.5 bg-blue-50 text-blue-800 border border-blue-200 rounded-full text-[10.5px] font-black">
                 {entry.diaryNo ? `ডায়েরি নং: ${toBengaliDigits(entry.diaryNo)}` : 'চিঠিপত্র মডিউল'}
               </span>
@@ -949,8 +985,8 @@ ${finalSubmissionText}`;
             <Coins size={15} />
           </div>
           <div className="truncate">
-            <p className="text-[10px] font-bold text-slate-400">জড়িত টাকা</p>
-            <p className="text-xs font-black text-slate-800 truncate">{toBengaliDigits(entry.totalAmount || "০")} টাকা</p>
+            <p className="text-[10px] font-bold text-slate-400">মোট অনুচ্ছেদ</p>
+            <p className="text-xs font-black text-slate-800 truncate">{toBengaliDigits(paragraphs.length)} টি অনুচ্ছেদ</p>
           </div>
         </div>
       </div>
@@ -964,10 +1000,10 @@ ${finalSubmissionText}`;
             </div>
             <div>
               <h2 className="text-sm font-black text-slate-900 tracking-tight">
-                ১. অডিট নথি ও জবাব সংযুক্তি (AI Analysis)
+                ১. অডিট নথি ও জবাব সংযুক্তি (AI Multi-Paragraph Analysis)
               </h2>
               <p className="text-[10.5px] text-slate-500 font-bold">
-                আপত্তি ও জবাবের সফট কপি দিলে এআই স্বয়ংক্রিয়ভাবে প্রমিত নোট ও টেবিল প্রস্তুত করবে
+                আপত্তি ও জবাবের সফট কপি দিলে এআই স্বয়ংক্রিয়ভাবে প্রতিটি অনুচ্ছেদ ও সংশ্লিষ্ট ছক পৃথকভাবে সাজাবে
               </p>
             </div>
           </div>
@@ -997,7 +1033,7 @@ ${finalSubmissionText}`;
           <div className="p-3.5 bg-blue-50/40 rounded-2xl border border-blue-200/80 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-blue-950 flex items-center gap-1.5">
-                <FileText size={13} className="text-blue-600" /> ক. মূল অডিট আপত্তি / অনুচ্ছেদ
+                <FileText size={13} className="text-blue-600" /> ক. মূল অডিট আপত্তি / অনুচ্ছেদসমূহ
               </span>
               <label className="cursor-pointer px-2.5 py-1 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-[10.5px] font-black border border-blue-200 shadow-2xs flex items-center gap-1">
                 <Upload size={11} /> {objectionFile ? "ফাইল পরিবর্তন" : "সফটকপি আপলোড"}
@@ -1014,7 +1050,7 @@ ${finalSubmissionText}`;
             )}
             <textarea
               rows={2}
-              placeholder="অথবা মূল আপত্তির বিবরণ এখানে লিখুন বা পেস্ট করুন..."
+              placeholder="অথবা মূল আপত্তির অনুচ্ছেদসমূহ এখানে লিখুন বা পেস্ট করুন..."
               className="w-full p-2 bg-white border border-blue-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-blue-500"
               value={objectionText}
               onChange={(e) => setObjectionText(e.target.value)}
@@ -1096,7 +1132,7 @@ ${finalSubmissionText}`;
         )}
       </div>
 
-      {/* MS Word Format Floating Toolbar */}
+      {/* Formatting and Action Toolbar */}
       <div className="sticky top-2 z-20 px-4 py-2 bg-slate-900/90 backdrop-blur-md text-white rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-2 no-print border border-slate-700">
         <div className="flex items-center gap-1.5">
           <div className="flex items-center bg-slate-800 rounded-lg p-0.5 border border-slate-700">
@@ -1175,72 +1211,25 @@ ${finalSubmissionText}`;
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={handleCopyNoteSheet}
+            onClick={handleAddParagraph}
+            className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
+            title="নোট শিটে আরও একটি নতুন অনুচ্ছেদ যোগ করুন"
+          >
+            <Plus size={13} /> + নতুন অনুচ্ছেদ যোগ করুন
+          </button>
+          <button
+            type="button"
+            onClick={handleCopyTableOnly}
             className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors ${
-              copiedSuccess
-                ? "bg-emerald-600 text-white"
-                : "bg-slate-700 hover:bg-slate-600 text-slate-100"
+              copiedTableSuccess
+                ? "bg-teal-600 text-white"
+                : "bg-teal-800/80 hover:bg-teal-700 text-teal-100"
             }`}
-            title="সম্পূর্ণ নোট শিট কপি করুন"
+            title="সবগুলো আদায় ছক ওয়ার্ড/এক্সেলে পেস্ট করার উপযোগী করে কপি করুন"
           >
-            {copiedSuccess ? <Check size={12} className="text-white" /> : <Copy size={12} />}
-            <span>{copiedSuccess ? "নোট কপি হয়েছে!" : "নোট কপি"}</span>
+            {copiedTableSuccess ? <Check size={12} className="text-white" /> : <Table size={12} />}
+            <span>{copiedTableSuccess ? "ছক কপি হয়েছে!" : "ছক কপি (Word)"}</span>
           </button>
-          {hasTable && (
-            <button
-              type="button"
-              onClick={handleCopyTableOnly}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors ${
-                copiedTableSuccess
-                  ? "bg-teal-600 text-white"
-                  : "bg-teal-800/80 hover:bg-teal-700 text-teal-100"
-              }`}
-              title="শুধু আদায়ের ছকটি এমএস ওয়ার্ড/এক্সেলে পেস্ট করার উপযোগী করে কপি করুন"
-            >
-              {copiedTableSuccess ? <Check size={12} className="text-white" /> : <Copy size={12} />}
-              <span>{copiedTableSuccess ? "ছক কপি হয়েছে!" : "ছক কপি (Word)"}</span>
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setHasTable(!hasTable)}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer transition-colors ${
-              hasTable
-                ? "bg-slate-700 hover:bg-slate-600 text-slate-200"
-                : "bg-emerald-600 hover:bg-emerald-700 text-white"
-            }`}
-            title={hasTable ? "আদায়ের ছক বন্ধ/হাইড করুন" : "আদায়ের ছক সক্রিয় করুন"}
-          >
-            <Table size={12} />
-            <span>{hasTable ? "আদায় ছক চালু" : "+ আদায় ছক"}</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleAddObjectionRow}
-            className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
-            title="আপত্তি পরিচিতি ছকে নতুন রো যোগ করুন"
-          >
-            <Plus size={12} /> আপত্তি রো যোগ
-          </button>
-          {hasTable && (
-            <>
-              <button
-                type="button"
-                onClick={handleAddTableRow}
-                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
-                title="আদায়ের বিবরণী ছকে নতুন রো যোগ করুন"
-              >
-                <Plus size={12} /> আদায় রো যোগ
-              </button>
-              <button
-                type="button"
-                onClick={handleAddTableColumn}
-                className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
-              >
-                <Plus size={12} /> কলাম যোগ
-              </button>
-            </>
-          )}
           <div className="flex items-center gap-1 pl-2 border-l border-slate-700">
             <span className="text-[10px] text-slate-400 font-bold">মার্কার:</span>
             {["#ecfdf5", "#fef3c7", "#fee2e2", "#e0e7ff"].map((color) => (
@@ -1257,13 +1246,12 @@ ${finalSubmissionText}`;
       </div>
 
       {/* ========================================================================= */}
-      {/* THE OFFICIAL GOVERNMENT NOTE SHEET DOCUMENT (সরাসরি ফাইলে লিখন ও প্রিন্ট) */}
+      {/* THE OFFICIAL GOVERNMENT NOTE SHEET DOCUMENT (হুবহু সরবরাহকৃত ছবির মত)   */}
       {/* ========================================================================= */}
       <div
         ref={noteDocumentRef}
-        className="bg-white rounded-3xl border-2 border-slate-300 shadow-xl p-8 sm:p-14 text-slate-900 font-bengali space-y-6 print:p-0 print:m-0 print:border-none print:shadow-none"
+        className="bg-white rounded-3xl border-2 border-slate-300 shadow-xl p-8 sm:p-14 text-slate-900 font-bengali space-y-7 print:p-0 print:m-0 print:border-none print:shadow-none"
       >
-        
         {/* 1. Official Diary Header Exactly at the Top Center */}
         <div className="text-center pb-4 border-b border-slate-300">
           <div className="inline-block px-4 py-1.5 bg-slate-50 border border-slate-300 rounded-xl shadow-2xs print:border-none print:bg-transparent">
@@ -1289,59 +1277,67 @@ ${finalSubmissionText}`;
           />
         </div>
 
-        {/* 3. Objection Summary Table (আপত্তি পরিচিতি ছক) */}
-        {hasObjectionSummaryTable && objectionSummaryRows.length > 0 && (
-          <div className="space-y-2 pt-1">
-            <div className="overflow-x-auto rounded-lg border border-slate-900 shadow-2xs">
-              <table className="w-full text-xs sm:text-[12.5px] border-collapse border border-slate-900 bg-white">
-                <thead>
-                  <tr className="bg-slate-100 text-slate-900 font-bold text-center border-b border-slate-900">
-                    <th className="border border-slate-900 p-2 text-center w-[10%]">
-                      ক্রমিক নং
-                    </th>
-                    <th className="border border-slate-900 p-2 text-left w-[35%]">
-                      প্রতিষ্ঠানের নাম ও নিরীক্ষা বছর
-                    </th>
-                    <th className="border border-slate-900 p-2 text-center w-[14%]">
-                      অনুচ্ছেদ নং
-                    </th>
-                    <th className="border border-slate-900 p-2 text-left w-[41%]">
-                      শিরোনাম ও অন্যান্য
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {objectionSummaryRows.map((row) => (
-                    <tr key={row.id} className="border-b border-slate-900 hover:bg-slate-50/60 transition-colors group">
+        {/* 3. MULTI-PARAGRAPH RENDER LOOP: প্রতিটি অনুচ্ছেদের জন্য পৃথক ছক, জবাব, টেবিল ও মন্তব্য */}
+        <div className="space-y-10">
+          {paragraphs.map((para, pIndex) => (
+            <div
+              key={para.id}
+              className="space-y-4 pt-4 border-t-2 border-slate-200/80 first:border-t-0 first:pt-0 relative group/para"
+            >
+              {/* Paragraph Index Badge & Controls (No print) */}
+              <div className="flex items-center justify-between no-print mb-1">
+                <span className="px-3 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-black border border-slate-300">
+                  অনুচ্ছেদ #{toBengaliDigits(pIndex + 1)} (অনুচ্ছেদ নং: {para.paraNo || "-"})
+                </span>
+                {paragraphs.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteParagraph(para.id)}
+                    className="px-2.5 py-1 text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <Trash2 size={12} /> অনুচ্ছেদ মুছুন
+                  </button>
+                )}
+              </div>
+
+              {/* ক. আপত্তি পরিচিতি ছক (Table exactly matching screenshot) */}
+              <div className="overflow-x-auto rounded-lg border border-slate-900 shadow-2xs">
+                <table className="w-full text-xs sm:text-[12.5px] border-collapse border border-slate-900 bg-white">
+                  <thead>
+                    <tr className="bg-slate-100 text-slate-900 font-bold text-center border-b border-slate-900">
+                      <th className="border border-slate-900 p-2 text-center w-[10%]">
+                        ক্রমিক নং
+                      </th>
+                      <th className="border border-slate-900 p-2 text-left w-[35%]">
+                        প্রতিষ্ঠানের নাম ও নিরীক্ষা বছর
+                      </th>
+                      <th className="border border-slate-900 p-2 text-center w-[14%]">
+                        অনুচ্ছেদ নং
+                      </th>
+                      <th className="border border-slate-900 p-2 text-left w-[41%]">
+                        শিরোনাম ও অন্যান্য
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-slate-900 hover:bg-slate-50/60 transition-colors">
                       {/* 1. SL */}
                       <td className="border border-slate-900 p-2 text-center align-middle font-bold text-slate-900">
-                        <div className="flex items-center justify-center gap-1">
-                          <input
-                            type="text"
-                            value={row.sl}
-                            onChange={(e) => handleUpdateObjectionRow(row.id, "sl", e.target.value)}
-                            className="w-full text-center bg-transparent outline-none font-bold text-slate-900"
-                          />
-                          {objectionSummaryRows.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteObjectionRow(row.id)}
-                              className="opacity-0 group-hover:opacity-100 text-rose-500 hover:text-rose-700 no-print transition-opacity p-0.5"
-                              title="রো মুছুন"
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          )}
-                        </div>
+                        <input
+                          type="text"
+                          value={para.sl}
+                          onChange={(e) => handleUpdateParagraphField(para.id, "sl", e.target.value)}
+                          className="w-full text-center bg-transparent outline-none font-bold text-slate-900"
+                        />
                       </td>
 
                       {/* 2. Entity & Audit Year */}
                       <td className="border border-slate-900 p-2 text-left align-top leading-relaxed text-slate-900">
                         <textarea
                           rows={3}
-                          value={row.entityAndAuditYear}
+                          value={para.entityAndAuditYear}
                           onChange={(e) =>
-                            handleUpdateObjectionRow(row.id, "entityAndAuditYear", e.target.value)
+                            handleUpdateParagraphField(para.id, "entityAndAuditYear", e.target.value)
                           }
                           className="w-full bg-transparent outline-none resize-none font-bengali text-xs sm:text-[12.5px] leading-relaxed"
                           placeholder="প্রতিষ্ঠান: ...&#10;নিরীক্ষা বছর: ..."
@@ -1352,8 +1348,8 @@ ${finalSubmissionText}`;
                       <td className="border border-slate-900 p-2 text-center align-middle font-bold text-slate-900">
                         <input
                           type="text"
-                          value={row.paraNo}
-                          onChange={(e) => handleUpdateObjectionRow(row.id, "paraNo", e.target.value)}
+                          value={para.paraNo}
+                          onChange={(e) => handleUpdateParagraphField(para.id, "paraNo", e.target.value)}
                           className="w-full text-center bg-transparent outline-none font-bold text-slate-900"
                           placeholder="১০"
                         />
@@ -1363,182 +1359,217 @@ ${finalSubmissionText}`;
                       <td className="border border-slate-900 p-2 text-left align-top leading-relaxed text-slate-900">
                         <textarea
                           rows={3}
-                          value={row.titleAndDetails}
+                          value={para.titleAndDetails}
                           onChange={(e) =>
-                            handleUpdateObjectionRow(row.id, "titleAndDetails", e.target.value)
+                            handleUpdateParagraphField(para.id, "titleAndDetails", e.target.value)
                           }
                           className="w-full bg-transparent outline-none resize-none font-bengali text-xs sm:text-[12.5px] leading-relaxed"
                           placeholder="শিরোনাম: ...&#10;অনুচ্ছেদের পৃষ্ঠা নং- ...&#10;পরিশিষ্ট পৃষ্ঠা নং- ..."
                         />
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+                  </tbody>
+                </table>
+              </div>
 
-        {/* 4. Entity Reply Statement (হুবহু জবাব, বানান শুদ্ধ ও মূল কথা বজায় রেখে) */}
-        <div className="space-y-2 pt-1">
-          <div
-            className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-colors"
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => {
-              const text = e.currentTarget.innerText;
-              setEntityReplyText(text.replace(/^স্থানীয় প্রতিষ্ঠানের জবাব:\s*/, ''));
-            }}
-          >
-            <span className="font-black text-slate-900">স্থানীয় প্রতিষ্ঠানের জবাব: </span>
-            <span className="font-bold text-slate-900">{entityReplyText}</span>
-          </div>
+              {/* খ. স্থানীয় প্রতিষ্ঠানের জবাব (Editable Bengali Text) */}
+              <div className="space-y-2 pt-1">
+                <div
+                  className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-colors"
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) => {
+                    const text = e.currentTarget.innerText;
+                    handleUpdateParagraphField(para.id, "entityReplyText", text.replace(/^স্থানীয় প্রতিষ্ঠানের জবাব:\s*/, ''));
+                  }}
+                >
+                  <span className="font-black text-slate-900">স্থানীয় প্রতিষ্ঠানের জবাব: </span>
+                  <span className="font-bold text-slate-900">{para.entityReplyText}</span>
+                </div>
 
-          {!hasTable && (
-            <div className="no-print pt-1">
-              <button
-                type="button"
-                onClick={() => setHasTable(true)}
-                className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-dashed border-emerald-300 rounded-lg px-3 py-1.5 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-              >
-                <Plus size={13} /> আদায়ের বিবরণী ছক যুক্ত করুন (যদি হিসাবে ছক প্রয়োজন হয়)
-              </button>
+                {/* গ. টেবিল অন/অফ বাটন (সরবরাহকৃত ছবির মত বাটন) */}
+                {!para.hasTable && (
+                  <div className="no-print pt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleParagraphTable(para.id, true)}
+                      className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-dashed border-emerald-300 rounded-lg px-3 py-1.5 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                    >
+                      <Plus size={13} /> আদায়ের বিবরণী ছক যুক্ত করুন (যদি হিসাবে ছক প্রয়োজন হয়)
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* ঘ. Embedded Table: Loan Recovery / Breakdown Grid for this Paragraph */}
+              {para.hasTable && (
+                <div className="space-y-2 pt-1">
+                  <div className="overflow-x-auto rounded-lg border border-slate-800 shadow-2xs">
+                    <table className="w-full text-xs sm:text-[12px] border-collapse border border-slate-800 bg-white">
+                      <thead>
+                        <tr className="bg-slate-100 text-slate-900 font-black text-center border-b border-slate-800">
+                          {para.tableColumns.map((col) => (
+                            <th key={col.id} className="border border-slate-800 p-2 text-center relative group">
+                              <div className="flex items-center justify-center gap-1">
+                                <span>{col.label}</span>
+                                {para.tableColumns.length > 2 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteParagraphTableCol(para.id, col.id)}
+                                    className="opacity-0 group-hover:opacity-100 text-rose-500 hover:text-rose-700 no-print transition-opacity"
+                                    title="কলাম মুছুন"
+                                  >
+                                    <X size={10} />
+                                  </button>
+                                )}
+                              </div>
+                            </th>
+                          ))}
+                          <th className="p-1 text-center w-8 no-print border border-slate-800">মুছুন</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {para.tableRows.map((row) => (
+                          <tr key={row.id} className="text-center hover:bg-slate-50 transition-colors">
+                            {para.tableColumns.map((col) => {
+                              const cellColor = (row.cellColors || {})[col.id];
+                              return (
+                                <td
+                                  key={col.id}
+                                  style={{ backgroundColor: cellColor || undefined }}
+                                  className="border border-slate-800 p-1 relative group/cell"
+                                >
+                                  <input
+                                    type="text"
+                                    value={row.cells[col.id] || ""}
+                                    onChange={(e) =>
+                                      handleUpdateParagraphTableCell(para.id, row.id, col.id, e.target.value)
+                                    }
+                                    className="w-full text-center bg-transparent outline-none font-medium text-slate-900 p-1 rounded"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleApplyParagraphTableCellColor(para.id, row.id, col.id)}
+                                    className="absolute right-0.5 top-0.5 opacity-0 group-hover/cell:opacity-100 p-0.5 bg-white/90 text-slate-400 hover:text-blue-600 rounded text-[8px] no-print shadow-2xs"
+                                    title="রঙ দিন"
+                                  >
+                                    <Palette size={9} />
+                                  </button>
+                                </td>
+                              );
+                            })}
+                            <td className="p-1 text-center no-print border border-slate-800">
+                              {para.tableRows.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteParagraphTableRow(para.id, row.id)}
+                                  className="text-rose-400 hover:text-rose-600 p-0.5"
+                                  title="রো মুছুন"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+
+                        {/* Totals Row */}
+                        <tr className="font-black bg-slate-100/90 text-center border-t-2 border-slate-800 text-slate-900">
+                          {para.tableColumns.map((col, idx) => {
+                            const totalInvolved = calculateParagraphTotal(para, "জড়িত");
+                            const totalPrincipal = calculateParagraphTotal(para, "আসল");
+                            const totalInterest = calculateParagraphTotal(para, "সুদ");
+                            const totalRecovered = calculateParagraphTotal(para, "আদায়");
+
+                            if (idx === 0) return <td key={col.id} className="border border-slate-800 p-1.5 text-center">সর্বমোট</td>;
+                            if (col.id === "borrowerName" || col.label.includes("নাম")) return <td key={col.id} className="border border-slate-800 p-1.5 text-center">-</td>;
+                            if (col.id === "involvedAmount" || col.label.includes("জড়িত")) return <td key={col.id} className="border border-slate-800 p-1.5 text-center">{totalInvolved ? toBengaliDigits(totalInvolved) : "-"}</td>;
+                            if (col.id === "principal" || col.label.includes("আসল")) return <td key={col.id} className="border border-slate-800 p-1.5 text-center">{toBengaliDigits(totalPrincipal || 0)}</td>;
+                            if (col.id === "interest" || col.label.includes("সুদ")) return <td key={col.id} className="border border-slate-800 p-1.5 text-center">{toBengaliDigits(totalInterest || 0)}</td>;
+                            if (col.id === "others" || col.label.includes("অন্যান্য")) return <td key={col.id} className="border border-slate-800 p-1.5 text-center">-</td>;
+                            if (col.id === "totalRecovered" || col.label.includes("আদায়")) return <td key={col.id} className="border border-slate-800 p-1.5 text-center">{totalRecovered ? toBengaliDigits(totalRecovered) : "-"}</td>;
+                            if (col.id === "adjustmentDate" || col.label.includes("তারিখ")) return <td key={col.id} className="border border-slate-800 p-1.5 text-center">-</td>;
+                            return <td key={col.id} className="border border-slate-800 p-1.5 text-center">-</td>;
+                          })}
+                          <td className="no-print border border-slate-800"></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Table Row/Column Operations (No-Print) */}
+                  <div className="flex flex-wrap items-center gap-2 pt-1 no-print">
+                    <button
+                      type="button"
+                      onClick={() => handleAddParagraphTableRow(para.id)}
+                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
+                    >
+                      <Plus size={11} /> রো যোগ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAddParagraphTableCol(para.id)}
+                      className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
+                    >
+                      <Plus size={11} /> কলাম যোগ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleParagraphTable(para.id, false)}
+                      className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
+                    >
+                      <Trash2 size={11} /> ছক বন্ধ/মুছুন
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ঙ. সমাপ্তিসূচক অনুচ্ছেদসমূহ ও মন্তব্য (হুবহু সরবরাহকৃত ছবির বিন্যাস) */}
+              <div className="space-y-3.5 pt-2 text-xs sm:text-[13px] leading-relaxed">
+                {/* ১. শাখার সমাপ্তিসূচক অনুরোধ */}
+                <div
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleUpdateParagraphField(para.id, "branchRequestText", e.currentTarget.innerText)}
+                  className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] font-medium text-slate-900 outline-none leading-relaxed text-justify"
+                >
+                  {para.branchRequestText}
+                </div>
+
+                {/* ২. প্রধান কার্যালয়ের মন্তব্য */}
+                <div
+                  className="p-2 -ml-1 bg-slate-50/70 border border-dashed border-slate-300 hover:border-slate-400 focus:border-blue-400 rounded-xl text-xs sm:text-[13px] leading-relaxed text-justify outline-none"
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) => {
+                    const text = e.currentTarget.innerText;
+                    handleUpdateParagraphField(para.id, "headOfficeCommentText", text.replace(/^প্রধান কার্যালয়ের মন্তব্য:\s*/, ''));
+                  }}
+                >
+                  <span className="font-black text-slate-900">প্রধান কার্যালয়ের মন্তব্য: </span>
+                  <span className="font-bold text-slate-900">{para.headOfficeCommentText}</span>
+                </div>
+
+                {/* ৩. উপস্থাপনকারীর মন্তব্য */}
+                <div
+                  className="p-2 -ml-1 bg-blue-50/50 border border-dashed border-blue-300 hover:border-blue-500 focus:border-blue-600 rounded-xl text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-all shadow-2xs"
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) => {
+                    const text = e.currentTarget.innerText;
+                    handleUpdateParagraphField(para.id, "presenterCommentText", text.replace(/^উপস্থাপনকারীর মন্তব্য:\s*/, ''));
+                  }}
+                >
+                  <span className="font-black text-slate-900">উপস্থাপনকারীর মন্তব্য: </span>
+                  <span className="font-bold text-slate-900">{para.presenterCommentText}</span>
+                </div>
+              </div>
             </div>
-          )}
+          ))}
         </div>
 
-        {/* 4. Embedded Table: Loan Recovery / Breakdown Grid */}
-        {hasTable && (
-          <div className="space-y-2 pt-1">
-            <div className="overflow-x-auto rounded-lg border border-slate-800 shadow-2xs">
-              <table className="w-full text-xs sm:text-[12px] border-collapse border border-slate-800 bg-white">
-                <thead>
-                  <tr className="bg-slate-100 text-slate-900 font-black text-center border-b border-slate-800">
-                    {tableColumns.map((col) => (
-                      <th key={col.id} className="border border-slate-800 p-2 text-center relative group">
-                        <div className="flex items-center justify-center gap-1">
-                          <span>{col.label}</span>
-                          {tableColumns.length > 2 && (
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteTableColumn(col.id)}
-                              className="opacity-0 group-hover:opacity-100 text-rose-500 hover:text-rose-700 no-print transition-opacity"
-                              title="কলাম মুছুন"
-                            >
-                              <X size={10} />
-                            </button>
-                          )}
-                        </div>
-                      </th>
-                    ))}
-                    <th className="p-1 text-center w-8 no-print border border-slate-800">মুছুন</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tableRows.map((row) => (
-                    <tr key={row.id} className="text-center hover:bg-slate-50 transition-colors">
-                      {tableColumns.map((col) => {
-                        const cellColor = (row.cellColors || {})[col.id];
-                        return (
-                          <td
-                            key={col.id}
-                            style={{ backgroundColor: cellColor || undefined }}
-                            className="border border-slate-800 p-1 relative group/cell"
-                          >
-                            <input
-                              type="text"
-                              value={row.cells[col.id] || ""}
-                              onChange={(e) => handleUpdateCell(row.id, col.id, e.target.value)}
-                              className="w-full text-center bg-transparent outline-none font-medium text-slate-900 p-1 rounded"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleApplyCellColor(row.id, col.id)}
-                              className="absolute right-0.5 top-0.5 opacity-0 group-hover/cell:opacity-100 p-0.5 bg-white/90 text-slate-400 hover:text-blue-600 rounded text-[8px] no-print shadow-2xs"
-                              title="রঙ দিন"
-                            >
-                              <Palette size={9} />
-                            </button>
-                          </td>
-                        );
-                      })}
-                      <td className="p-1 text-center no-print border border-slate-800">
-                        {tableRows.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteTableRow(row.id)}
-                            className="text-rose-400 hover:text-rose-600 p-0.5"
-                            title="রো মুছুন"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-
-                  {/* Totals Row */}
-                  <tr className="font-black bg-slate-100/90 text-center border-t-2 border-slate-800 text-slate-900">
-                    {tableColumns.map((col, idx) => {
-                      if (idx === 0) return <td key={col.id} className="border border-slate-800 p-1.5 text-center">সর্বমোট</td>;
-                      if (col.id === "borrowerName" || col.label.includes("নাম")) return <td key={col.id} className="border border-slate-800 p-1.5 text-center">-</td>;
-                      if (col.id === "involvedAmount" || col.label.includes("জড়িত")) return <td key={col.id} className="border border-slate-800 p-1.5 text-center">{totalInvolved ? toBengaliDigits(totalInvolved) : "-"}</td>;
-                      if (col.id === "principal" || col.label.includes("আসল")) return <td key={col.id} className="border border-slate-800 p-1.5 text-center">{toBengaliDigits(totalPrincipal || 0)}</td>;
-                      if (col.id === "interest" || col.label.includes("সুদ")) return <td key={col.id} className="border border-slate-800 p-1.5 text-center">{toBengaliDigits(totalInterest || 0)}</td>;
-                      if (col.id === "others" || col.label.includes("অন্যান্য")) return <td key={col.id} className="border border-slate-800 p-1.5 text-center">-</td>;
-                      if (col.id === "totalRecovered" || col.label.includes("আদায়")) return <td key={col.id} className="border border-slate-800 p-1.5 text-center">{totalRecovered ? toBengaliDigits(totalRecovered) : "-"}</td>;
-                      if (col.id === "adjustmentDate" || col.label.includes("তারিখ")) return <td key={col.id} className="border border-slate-800 p-1.5 text-center">-</td>;
-                      return <td key={col.id} className="border border-slate-800 p-1.5 text-center">-</td>;
-                    })}
-                    <td className="no-print border border-slate-800"></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* 5. Conclusions Flow in Exact Sequence as Images */}
-        <div className="space-y-3.5 pt-3 text-xs sm:text-[13px] leading-relaxed">
-          {/* Branch Request */}
-          <div
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => setBranchRequestText(e.currentTarget.innerText)}
-            className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] font-medium text-slate-900 outline-none leading-relaxed text-justify"
-          >
-            {branchRequestText}
-          </div>
-
-          {/* Head Office Comment: Exact baseline alignment */}
-          <div
-            className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-lg text-xs sm:text-[13px] leading-relaxed text-justify outline-none"
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => {
-              const text = e.currentTarget.innerText;
-              setHeadOfficeCommentText(text.replace(/^প্রধান কার্যালয়ের মন্তব্য:\s*/, ''));
-            }}
-          >
-            <span className="font-black text-slate-900">প্রধান কার্যালয়ের মন্তব্য: </span>
-            <span className="font-bold text-slate-900">{headOfficeCommentText}</span>
-          </div>
-
-          {/* Presenter Comment: Highlighted Core AI Task & Exact baseline alignment */}
-          <div
-            className="p-2 -ml-1 bg-indigo-50/50 border border-dashed border-indigo-300 hover:border-indigo-500 focus:border-indigo-600 rounded-xl text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-all shadow-2xs relative group/presenter"
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => {
-              const text = e.currentTarget.innerText;
-              setPresenterCommentText(text.replace(/^উপস্থাপনকারীর মন্তব্য:\s*/, ''));
-            }}
-          >
-            <span className="font-black text-slate-900">উপস্থাপনকারীর মন্তব্য: </span>
-            <span className="font-bold text-slate-900">{presenterCommentText}</span>
-          </div>
-
-          {/* Final Submission: Left-aligned with standard note margin */}
+        {/* 4. সমাপনী অনুচ্ছেদ (সকল অনুচ্ছেদের শেষে একবারে) */}
+        <div className="pt-2">
           <div
             contentEditable
             suppressContentEditableWarning
@@ -1549,10 +1580,10 @@ ${finalSubmissionText}`;
           </div>
         </div>
 
-        {/* 6. Signature Block */}
+        {/* 5. Signature Block */}
         <div className="pt-10 flex justify-between items-end text-xs">
           <div className="text-slate-600 font-bold space-y-1">
-            <p>পরিস্থিতি: <span className="text-emerald-700 font-black">{settlementStatus}</span></p>
+            <p>সার্বিক পরিস্থিতি: <span className="text-emerald-700 font-black">{settlementStatus}</span></p>
             <p className="text-[10.5px]">নথি প্রস্তুতকারক: অডিট অফিসার</p>
           </div>
           <div className="text-center space-y-1">
@@ -1696,43 +1727,37 @@ ${finalSubmissionText}`;
                 <p className="leading-relaxed">{jaripatraBody}</p>
               </div>
 
-              {hasTable && (
-                <div className="pt-2">
-                  <table className="w-full border-collapse border border-slate-800 text-[11px]">
-                    <thead>
-                      <tr className="bg-slate-100 font-black border-b border-slate-800 text-center">
-                        {tableColumns.map((col) => (
-                          <th key={col.id} className="border border-slate-800 p-1.5">{col.label}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {tableRows.map((r) => (
-                        <tr key={r.id} className="text-center">
-                          {tableColumns.map((col) => (
-                            <td key={col.id} className="border border-slate-800 p-1.5">{r.cells[col.id] || "-"}</td>
+              {/* Multi-Paragraph Tables in Jaripatra */}
+              {paragraphs.map((para) => (
+                <div key={para.id} className="space-y-2 pt-2">
+                  <p className="font-black text-slate-900">
+                    অনুচ্ছেদ নং- {para.paraNo}: {para.entityReplyText}
+                  </p>
+                  {para.hasTable && para.tableRows.length > 0 && (
+                    <table className="w-full border-collapse border border-slate-800 text-[11px]">
+                      <thead>
+                        <tr className="bg-slate-100 font-black border-b border-slate-800 text-center">
+                          {para.tableColumns.map((col) => (
+                            <th key={col.id} className="border border-slate-800 p-1.5">{col.label}</th>
                           ))}
                         </tr>
-                      ))}
-                      <tr className="font-black bg-slate-50 text-center border-t-2 border-slate-800">
-                        <td className="border border-slate-800 p-1.5">সর্বমোট</td>
-                        <td className="border border-slate-800 p-1.5">-</td>
-                        <td className="border border-slate-800 p-1.5">{totalInvolved ? toBengaliDigits(totalInvolved) : "-"}</td>
-                        <td className="border border-slate-800 p-1.5">{toBengaliDigits(totalPrincipal || 0)}</td>
-                        <td className="border border-slate-800 p-1.5">{toBengaliDigits(totalInterest || 0)}</td>
-                        <td className="border border-slate-800 p-1.5">-</td>
-                        <td className="border border-slate-800 p-1.5">{totalRecovered ? toBengaliDigits(totalRecovered) : "-"}</td>
-                        <td className="border border-slate-800 p-1.5">-</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {para.tableRows.map((r) => (
+                          <tr key={r.id} className="text-center">
+                            {para.tableColumns.map((col) => (
+                              <td key={col.id} className="border border-slate-800 p-1.5">{r.cells[col.id] || "-"}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  <p className="text-[11px] text-slate-800 italic">
+                    {para.presenterCommentText}
+                  </p>
                 </div>
-              )}
-
-              <div className="p-3 bg-slate-50 border border-slate-300 rounded-xl space-y-1">
-                <p className="font-black text-slate-900">এ কার্যালয়ের চূড়ান্ত মন্তব্য:</p>
-                <p className="font-bold text-emerald-800">{presenterCommentText}</p>
-              </div>
+              ))}
 
               <div className="pt-12 flex justify-end">
                 <div className="text-center space-y-1">
