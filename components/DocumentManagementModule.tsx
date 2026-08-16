@@ -179,6 +179,22 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   const [isNoteApproved, setIsNoteApproved] = useState<boolean>(false);
   const [selectedCellColor, setSelectedCellColor] = useState<string>("#ecfdf5");
 
+  // Document Validation, Confirmation & Toast States
+  const [validationErrorModal, setValidationErrorModal] = useState<{
+    open: boolean;
+    message: string;
+    details?: string[];
+  } | null>(null);
+
+  const [documentConfirmationModal, setDocumentConfirmationModal] = useState<{
+    open: boolean;
+    prompt: string;
+    missingFields: string[];
+    pendingPayload?: any;
+  } | null>(null);
+
+  const [aiSuccessToast, setAiSuccessToast] = useState<string | null>(null);
+
   // Jaripatra State
   const [showJaripatraView, setShowJaripatraView] = useState<boolean>(false);
   const [jaripatraMemoNo, setJaripatraMemoNo] = useState<string>(() => {
@@ -445,24 +461,119 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     );
   };
 
-  // AI Run Analysis
-  const handleRunAiAnalysis = async () => {
+  const applyParsedDataToNote = (data: any) => {
+    if (data.needsClarification && data.clarificationQuestions && data.clarificationQuestions.length > 0) {
+      setNeedsClarification(true);
+      setClarificationQuestions(data.clarificationQuestions);
+    } else {
+      setNeedsClarification(false);
+      if (data.diaryHeader) setDiaryHeader(data.diaryHeader);
+      if (data.noteTikaText || data.noteContentHtml) {
+        const html = data.noteContentHtml || `<p>${data.noteTikaText}</p>`;
+        setTikaIntroHtml(html);
+        if (tikaEditorRef.current) {
+          tikaEditorRef.current.innerHTML = html;
+        }
+      }
+      if (data.conclusionFinal) setFinalSubmissionText(data.conclusionFinal);
+      if (data.proposedStatus) setSettlementStatus(data.proposedStatus);
+
+      // Handle Multi-Paragraphs payload and paste into respective paragraph slots
+      if (Array.isArray(data.paragraphs) && data.paragraphs.length > 0) {
+        const parsedParas: AuditParagraphBlock[] = data.paragraphs.map((pItem: any, pIdx: number) => {
+          const cols: TableColumn[] = Array.isArray(pItem.tableHeaders) && pItem.tableHeaders.length > 0
+            ? pItem.tableHeaders.map((h: string, i: number) => ({ id: `col-${i}`, label: h }))
+            : [...DEFAULT_TABLE_COLUMNS];
+
+          const rows: TableRow[] = Array.isArray(pItem.tableRows) && pItem.tableRows.length > 0
+            ? pItem.tableRows.map((r: string[], rIdx: number) => {
+                const cells: Record<string, string> = {};
+                cols.forEach((col, cIdx) => {
+                  cells[col.id] = r[cIdx] || "";
+                });
+                return { id: `row-${pIdx}-${rIdx + 1}`, cells, cellColors: {} };
+              })
+            : [];
+
+          return {
+            id: `para-ai-${pIdx + 1}`,
+            sl: pItem.sl || toBengaliDigits(pIdx + 1),
+            entityAndAuditYear: pItem.entityAndAuditYear || defaultEntityAndAuditYear,
+            paraNo: pItem.paraNo ? toBengaliDigits(pItem.paraNo) : toBengaliDigits(10 + pIdx),
+            titleAndDetails: pItem.titleAndDetails || defaultTitleAndDetails,
+            entityReplyText: (pItem.entityReplyHeader || pItem.entityReplyText || "").replace(/^স্থানীয় প্রতিষ্ঠানের জবাব:\s*/, ''),
+            hasTable: !!pItem.hasTable && rows.length > 0,
+            tableColumns: cols,
+            tableRows: rows.length > 0 ? rows : [
+              {
+                id: `row-${pIdx}-1`,
+                cells: { sl: "১", borrowerName: "", involvedAmount: "০", principal: "০", interest: "০", others: "-", totalRecovered: "০", adjustmentDate: "-" },
+                cellColors: {}
+              }
+            ],
+            branchRequestText: pItem.conclusionBranch || "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
+            headOfficeCommentText: (pItem.conclusionHeadOffice || "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।").replace(/^প্রধান কার্যালয়ের মন্তব্য:\s*/, ''),
+            presenterCommentText: (pItem.conclusionPresenter || "আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।").replace(/^উপস্থাপনকারীর মন্তব্য:\s*/, ''),
+            status: pItem.status || "পূর্ণাঙ্গ নিষ্পত্তি",
+          };
+        });
+        setParagraphs(parsedParas);
+      }
+
+      if (data.suggestedIssueLetter) {
+        if (data.suggestedIssueLetter.subject) setJaripatraSubject(data.suggestedIssueLetter.subject);
+        if (data.suggestedIssueLetter.reference) setJaripatraReference(data.suggestedIssueLetter.reference);
+        if (data.suggestedIssueLetter.bodyHtml) setJaripatraBody(data.suggestedIssueLetter.bodyHtml);
+      }
+
+      // Show success toast & smooth scroll to note sheet
+      setAiSuccessToast("এআই সফলভাবে অডিট তথ্য যাচাই করে সংশ্লিষ্ট ছক ও ফিল্ডসমূহে পেস্ট করেছে!");
+      setTimeout(() => setAiSuccessToast(null), 5000);
+
+      setTimeout(() => {
+        const el = document.getElementById("document-notesheet-content");
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 300);
+    }
+  };
+
+  // AI Run Analysis with Validation & Auto-placement
+  const handleRunAiAnalysis = async (confirmedProceed: boolean = false) => {
+    // 1. Initial local emptiness check
+    const hasObjection = !!(objectionText.trim() || objectionFile);
+    const hasReply = !!(replyText.trim() || replyFile);
+
+    if (!hasObjection && !hasReply) {
+      setValidationErrorModal({
+        open: true,
+        message: "আপনি কোনো অডিট ডকুমেন্ট বা জবাব প্রদান করেননি।",
+        details: [
+          "অনুগ্রহ করে ক. মূল অডিট আপত্তি / অনুচ্ছেদসমূহ অথবা খ. প্রতিষ্ঠানের জবাব ও প্রমাণক সংযুক্ত করুন বা লিখুন।",
+          "নথিতে প্রতিষ্ঠান, নিরীক্ষা বছর ও অনুচ্ছেদ নম্বর সংক্রান্ত তথ্য থাকা আবশ্যক।"
+        ]
+      });
+      return;
+    }
+
     setIsAnalyzing(true);
-    setAiAnalysisStep("নথি ও সংযুক্তি স্ক্যান করা হচ্ছে...");
+    setAiAnalysisStep("ডকুমেন্টের বিষয়বস্তু ও অডিট তথ্যাদি স্ক্যান করা হচ্ছে...");
 
     try {
       setTimeout(() => {
-        setAiAnalysisStep("আপত্তির সারসংক্ষেপ ও জবাবের প্রমাণকসমূহ বিশ্লেষণ চলছে...");
+        setAiAnalysisStep("অনুচ্ছেদ নং, নিরীক্ষা সাল ও প্রতিষ্ঠান যাচাই চলছে...");
       }, 700);
 
       setTimeout(() => {
-        setAiAnalysisStep("সরকারি প্রমিত কাঠামো অনুযায়ী ড্রাফট নোট ও পৃথক অনুচ্ছেদ প্রস্তুত হচ্ছে...");
-      }, 1400);
+        setAiAnalysisStep("যাচাইকরণ শেষ করে সংশ্লিষ্ট ঘরে তথ্য সাজানো হচ্ছে...");
+      }, 1500);
 
       const response = await fetch("/api/document-management/analyze-note", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          userConfirmedProceed: confirmedProceed,
           originalObjectionText: objectionText,
           originalObjectionFile: objectionFile,
           entityReplyText: replyText,
@@ -489,76 +600,40 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
       const resJson = await response.json();
 
+      // Check if document was marked invalid by AI
+      if (resJson.isValid === false || resJson.data?.isValidAuditDocument === false) {
+        setValidationErrorModal({
+          open: true,
+          message: resJson.errorMessage || resJson.data?.errorMessage || "আপনি সঠিক অডিট ডকুমেন্ট দেননি। অনুচ্ছেদ নং, নিরীক্ষা বছর ও প্রতিষ্ঠান সম্বলিত সঠিক ডকুমেন্ট প্রদান করে পুনরায় চেষ্টা করুন।",
+          details: resJson.validationErrors || resJson.data?.validationErrors || [
+            "প্রদত্ত ডকুমেন্টে প্রাসঙ্গিক অডিট আপত্তি, অনুচ্ছেদ নম্বর বা নিরীক্ষা সালের কোনো রেকর্ড খুঁজে পাওয়া যায়নি।",
+            "দয়া করে এলোমেলো কোনো লেখা না দিয়ে সঠিক অডিট আপত্তি বা জবাব সংযুক্ত করুন।"
+          ]
+        });
+        return;
+      }
+
+      // Check if user confirmation is required due to missing fields
+      if (resJson.requiresConfirmation && !confirmedProceed) {
+        setDocumentConfirmationModal({
+          open: true,
+          prompt: resJson.confirmationPrompt || "প্রদত্ত নথিতে কিছু অডিট তথ্য সরাসরি পাওয়া যায়নি। এটিই কি আপনার কাঙ্ক্ষিত সঠিক অডিট ডকুমেন্ট?",
+          missingFields: resJson.missingFields || [],
+          pendingPayload: resJson.data
+        });
+        return;
+      }
+
       if (resJson.success && resJson.data) {
-        const data = resJson.data;
-
-        if (data.needsClarification && data.clarificationQuestions && data.clarificationQuestions.length > 0) {
-          setNeedsClarification(true);
-          setClarificationQuestions(data.clarificationQuestions);
-        } else {
-          setNeedsClarification(false);
-          if (data.diaryHeader) setDiaryHeader(data.diaryHeader);
-          if (data.noteTikaText || data.noteContentHtml) {
-            const html = data.noteContentHtml || `<p>${data.noteTikaText}</p>`;
-            setTikaIntroHtml(html);
-            if (tikaEditorRef.current) {
-              tikaEditorRef.current.innerHTML = html;
-            }
-          }
-          if (data.conclusionFinal) setFinalSubmissionText(data.conclusionFinal);
-          if (data.proposedStatus) setSettlementStatus(data.proposedStatus);
-
-          // Handle Multi-Paragraphs payload
-          if (Array.isArray(data.paragraphs) && data.paragraphs.length > 0) {
-            const parsedParas: AuditParagraphBlock[] = data.paragraphs.map((pItem: any, pIdx: number) => {
-              const cols: TableColumn[] = Array.isArray(pItem.tableHeaders) && pItem.tableHeaders.length > 0
-                ? pItem.tableHeaders.map((h: string, i: number) => ({ id: `col-${i}`, label: h }))
-                : [...DEFAULT_TABLE_COLUMNS];
-
-              const rows: TableRow[] = Array.isArray(pItem.tableRows) && pItem.tableRows.length > 0
-                ? pItem.tableRows.map((r: string[], rIdx: number) => {
-                    const cells: Record<string, string> = {};
-                    cols.forEach((col, cIdx) => {
-                      cells[col.id] = r[cIdx] || "";
-                    });
-                    return { id: `row-${pIdx}-${rIdx + 1}`, cells, cellColors: {} };
-                  })
-                : [];
-
-              return {
-                id: `para-ai-${pIdx + 1}`,
-                sl: pItem.sl || toBengaliDigits(pIdx + 1),
-                entityAndAuditYear: pItem.entityAndAuditYear || defaultEntityAndAuditYear,
-                paraNo: pItem.paraNo ? toBengaliDigits(pItem.paraNo) : toBengaliDigits(10 + pIdx),
-                titleAndDetails: pItem.titleAndDetails || defaultTitleAndDetails,
-                entityReplyText: (pItem.entityReplyHeader || pItem.entityReplyText || "").replace(/^স্থানীয় প্রতিষ্ঠানের জবাব:\s*/, ''),
-                hasTable: !!pItem.hasTable && rows.length > 0,
-                tableColumns: cols,
-                tableRows: rows.length > 0 ? rows : [
-                  {
-                    id: `row-${pIdx}-1`,
-                    cells: { sl: "১", borrowerName: "", involvedAmount: "০", principal: "০", interest: "০", others: "-", totalRecovered: "০", adjustmentDate: "-" },
-                    cellColors: {}
-                  }
-                ],
-                branchRequestText: pItem.conclusionBranch || "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
-                headOfficeCommentText: (pItem.conclusionHeadOffice || "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।").replace(/^প্রধান কার্যালয়ের মন্তব্য:\s*/, ''),
-                presenterCommentText: (pItem.conclusionPresenter || "আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।").replace(/^উপস্থাপনকারীর মন্তব্য:\s*/, ''),
-                status: pItem.status || "পূর্ণাঙ্গ নিষ্পত্তি",
-              };
-            });
-            setParagraphs(parsedParas);
-          }
-
-          if (data.suggestedIssueLetter) {
-            if (data.suggestedIssueLetter.subject) setJaripatraSubject(data.suggestedIssueLetter.subject);
-            if (data.suggestedIssueLetter.reference) setJaripatraReference(data.suggestedIssueLetter.reference);
-            if (data.suggestedIssueLetter.bodyHtml) setJaripatraBody(data.suggestedIssueLetter.bodyHtml);
-          }
-        }
+        applyParsedDataToNote(resJson.data);
       }
     } catch (err) {
       console.error("AI Analysis error:", err);
+      setValidationErrorModal({
+        open: true,
+        message: "ডকুমেন্ট বিশ্লেষণ ও যাচাইকরণে ত্রুটি দেখা দিয়েছে।",
+        details: ["দয়া করে নেটওয়ার্ক সংযোগ চেক করুন অথবা ফাইল ফরম্যাটটি পরিবর্তন করে পুনরায় চেষ্টা করুন।"]
+      });
     } finally {
       setIsAnalyzing(false);
       setAiAnalysisStep("");
@@ -1007,19 +1082,39 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         </div>
       </div>
 
+      {/* AI Success Toast Banner */}
+      {aiSuccessToast && (
+        <div className="bg-emerald-600 text-white px-4 py-3 rounded-none shadow-md flex items-center justify-between gap-3 animate-in slide-in-from-top-4 duration-300 no-print border-2 border-emerald-400">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 size={18} className="text-emerald-100" />
+            <span className="text-xs sm:text-sm font-black">{aiSuccessToast}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAiSuccessToast(null)}
+            className="text-emerald-200 hover:text-white text-xs font-bold px-2 py-0.5 rounded cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* SECTION 1: AI Analysis & Soft Copy Upload Controller */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-4 no-print">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+      <div className="bg-white rounded-none border-2 border-slate-300 shadow-sm p-5 space-y-4 no-print">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-black">
+            <div className="w-8 h-8 rounded-none bg-indigo-600 text-white flex items-center justify-center font-black">
               <Sparkles size={16} />
             </div>
             <div>
-              <h2 className="text-sm font-black text-slate-900 tracking-tight">
-                ১. অডিট নথি ও জবাব সংযুক্তি (AI Multi-Paragraph Analysis)
+              <h2 className="text-sm font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <span>১. অডিট নথি ও জবাব সংযুক্তি (AI Smart Validation & Multi-Paragraph Analysis)</span>
+                <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] font-black border border-indigo-300">
+                  অটো-যাচাই ও পেস্ট সক্রিয়
+                </span>
               </h2>
               <p className="text-[10.5px] text-slate-500 font-bold">
-                আপত্তি ও জবাবের সফট কপি দিলে এআই স্বয়ংক্রিয়ভাবে প্রতিটি অনুচ্ছেদ ও সংশ্লিষ্ট ছক পৃথকভাবে সাজাবে
+                এআই প্রথমে অনুচ্ছেদ নং, নিরীক্ষা বছর ও প্রতিষ্ঠান যাচাই করবে; সঠিক হলে সরাসরি সংশ্লিষ্ট ঘরে লেখাগুলো পেস্ট করে দেবে
               </p>
             </div>
           </div>
@@ -1028,7 +1123,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             type="button"
             onClick={handleRunAiAnalysis}
             disabled={isAnalyzing}
-            className="px-5 py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-lg shadow-blue-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+            className="px-5 py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-none text-xs font-black flex items-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer disabled:opacity-50 border border-indigo-700"
           >
             {isAnalyzing ? (
               <>
@@ -1257,8 +1352,9 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       {/* THE OFFICIAL GOVERNMENT NOTE SHEET DOCUMENT (চারকোনা ও নিখুঁত সরকারি বিন্যাস) */}
       {/* ========================================================================= */}
       <div
+        id="document-notesheet-content"
         ref={noteDocumentRef}
-        className="bg-white rounded-none border-2 border-slate-400 shadow-md p-8 sm:p-14 text-slate-900 font-bengali space-y-7 print:p-0 print:m-0 print:border-none print:shadow-none"
+        className="bg-white rounded-none border-2 border-slate-400 shadow-md p-8 sm:p-14 text-slate-900 font-bengali space-y-7 print:p-0 print:m-0 print:border-none print:shadow-none scroll-mt-16"
       >
         {/* 1. Official Diary Header Exactly at the Top Center */}
         <div className="text-center pb-4 border-b border-slate-300">
@@ -1805,6 +1901,153 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                 <p>২. মহাপরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, ঢাকা।</p>
                 <p>৩. সংশ্লিষ্ট নথি / মাস্টার কপি।</p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Document Validation Error Alert Modal - Strictly Rectangular */}
+      {validationErrorModal && validationErrorModal.open && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-none border-2 border-rose-600 shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="bg-rose-700 text-white px-5 py-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <AlertTriangle size={20} className="text-rose-200 shrink-0 animate-pulse" />
+                <h3 className="text-sm font-black tracking-wide">
+                  অডিট ডকুমেন্ট যাচাইকরণে ত্রুটি!
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setValidationErrorModal(null)}
+                className="text-rose-200 hover:text-white p-1 rounded-none cursor-pointer transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4 font-bengali text-slate-800">
+              <div className="p-3.5 bg-rose-50 border-l-4 border-rose-600">
+                <p className="text-sm font-black text-rose-900 leading-relaxed">
+                  {validationErrorModal.message}
+                </p>
+              </div>
+
+              {validationErrorModal.details && validationErrorModal.details.length > 0 && (
+                <div className="space-y-2 pt-1">
+                  <p className="text-xs font-black text-slate-700">শনাক্তকৃত কারণসমূহ:</p>
+                  <ul className="space-y-1.5 pl-2 text-xs text-slate-600">
+                    {validationErrorModal.details.map((detail, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-rose-600 font-bold shrink-0">✕</span>
+                        <span>{detail}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="bg-slate-50 p-3 border border-slate-200 text-[11px] text-slate-600 space-y-1">
+                <p className="font-bold text-slate-700">সঠিক অডিট ডকুমেন্টের জন্য যা প্রয়োজন:</p>
+                <p>১. নির্দিষ্ট অডিট আপত্তি বা অনুচ্ছেদ নম্বর (যেমন: অনুচ্ছেদ নং- ১০, ১৫)</p>
+                <p>২. নিরীক্ষা সাল ও অডিটকৃত প্রতিষ্ঠানের নাম</p>
+                <p>৩. আদায় বা সমন্বয়ের স্বপক্ষে চালানের বিবরণ ও জবাবের সফটকপি</p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-slate-100 px-6 py-3 border-t border-slate-200 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setValidationErrorModal(null);
+                }}
+                className="px-5 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-none text-xs font-black cursor-pointer shadow-sm transition-colors"
+              >
+                পুনরায় চেষ্টা করুন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Missing Info Clarification / Confirmation Modal */}
+      {documentConfirmationModal && documentConfirmationModal.open && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-none border-2 border-amber-600 shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200 font-bengali">
+            {/* Header */}
+            <div className="bg-amber-700 text-white px-5 py-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <AlertTriangle size={20} className="text-amber-200 shrink-0 animate-bounce" />
+                <h3 className="text-sm font-black tracking-wide">
+                  অডিট-তথ্য নিশ্চিতকরণ ও যাচাইকরণ প্রশ্ন
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDocumentConfirmationModal(null)}
+                className="text-amber-200 hover:text-white p-1 rounded-none cursor-pointer transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4 text-slate-800">
+              <div className="p-3.5 bg-amber-50 border-l-4 border-amber-600">
+                <p className="text-sm font-bold text-amber-950 leading-relaxed">
+                  {documentConfirmationModal.prompt}
+                </p>
+              </div>
+
+              {documentConfirmationModal.missingFields && documentConfirmationModal.missingFields.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-black text-slate-700">নথিতে সরাসরি পাওয়া যায়নি বা অমিল রয়েছে এমন তথ্যাদি:</p>
+                  <ul className="space-y-1.5 pl-2 text-xs text-slate-700">
+                    {documentConfirmationModal.missingFields.map((field, idx) => (
+                      <li key={idx} className="flex items-center gap-2 bg-amber-50/60 p-2 border border-amber-200">
+                        <span className="text-amber-700 font-black text-sm">⚠</span>
+                        <span className="font-bold text-amber-900">{field}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 border border-slate-200">
+                <strong>ব্যবহারকারীর করণীয়:</strong> যদি এটিই আপনার কাঙ্ক্ষিত সঠিক নথি হয়ে থাকে, তবে <strong>'হ্যাঁ, এটিই সঠিক নথি (এগিয়ে যান)'</strong> বাটনে ক্লিক করুন। এআই রেজিস্ট্রি তথ্যের সমন্বয়ে বাকি অংশ প্রস্তুত করবে এবং আপনি পরবর্তীতে ম্যানুয়ালি সম্পাদন করতে পারবেন।
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-slate-100 px-6 py-3.5 border-t border-slate-200 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setDocumentConfirmationModal(null);
+                }}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-none text-xs font-bold cursor-pointer transition-colors"
+              >
+                বাতিল / নতুন ফাইল দিন
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const pending = documentConfirmationModal.pendingPayload;
+                  setDocumentConfirmationModal(null);
+                  if (pending) {
+                    applyParsedDataToNote(pending);
+                  } else {
+                    handleRunAiAnalysis(true);
+                  }
+                }}
+                className="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-none text-xs font-black cursor-pointer shadow-sm transition-colors flex items-center gap-1.5"
+              >
+                <CheckCircle2 size={16} />
+                <span>হ্যাঁ, এটিই সঠিক নথি (এগিয়ে যান)</span>
+              </button>
             </div>
           </div>
         </div>
