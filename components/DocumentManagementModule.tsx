@@ -28,6 +28,7 @@ import {
   Info,
   X,
   Check,
+  Copy,
 } from "lucide-react";
 import { CorrespondenceEntry } from "../types";
 import { toBengaliDigits, formatDateBN, toEnglishDigits } from "../utils/numberUtils";
@@ -422,6 +423,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     );
   };
 
+  const [copiedSuccess, setCopiedSuccess] = useState<boolean>(false);
+  const [copiedTableSuccess, setCopiedTableSuccess] = useState<boolean>(false);
+  const noteDocumentRef = useRef<HTMLDivElement>(null);
+
   // Numeric totals calculation
   const calculateTotal = (identifier: string): number => {
     return tableRows.reduce((acc, row) => {
@@ -441,6 +446,254 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   const totalPrincipal = calculateTotal("আসল");
   const totalInterest = calculateTotal("সুদ");
   const totalRecovered = calculateTotal("আদায়");
+
+  // Generate 100% MS Word & Excel Compatible HTML Table
+  const generateWordCompatibleTableHtml = () => {
+    if (!hasTable || tableRows.length === 0) return "";
+
+    const getColWidth = (label: string) => {
+      if (label.includes("ক্রমিক")) return "6%";
+      if (label.includes("নাম") || label.includes("বিবরণ")) return "24%";
+      if (label.includes("জড়িত")) return "12%";
+      if (label.includes("আসল")) return "11%";
+      if (label.includes("সুদ")) return "11%";
+      if (label.includes("অন্যান্য")) return "8%";
+      if (label.includes("মোট") || label.includes("আদায়")) return "13%";
+      if (label.includes("তারিখ")) return "15%";
+      return `${Math.round(100 / (tableColumns.length || 1))}%`;
+    };
+
+    const headerCells = tableColumns
+      .map(
+        (c) => `
+        <th style="border: 1.0pt solid #000000; background-color: #E2E8F0; font-weight: bold; text-align: center; vertical-align: middle; padding: 6pt 5pt; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; width: ${getColWidth(
+          c.label
+        )}; mso-border-alt: solid black .75pt;">
+          ${c.label}
+        </th>`
+      )
+      .join("");
+
+    const bodyRows = tableRows
+      .map(
+        (r) => `
+        <tr style="page-break-inside: avoid; mso-yfti-irow: 1;">
+          ${tableColumns
+            .map((c, idx) => {
+              const isCenter = idx === 0 || c.label.includes("ক্রমিক") || c.label.includes("তারিখ");
+              const isRight =
+                c.label.includes("টাকা") ||
+                c.label.includes("আসল") ||
+                c.label.includes("সুদ") ||
+                c.label.includes("আদায়") ||
+                c.label.includes("জড়িত");
+              const align = isCenter ? "center" : isRight ? "right" : "left";
+              const bgColor = (r.cellColors && r.cellColors[c.id]) || "#ffffff";
+              return `
+              <td style="border: 1.0pt solid #000000; background-color: ${bgColor}; padding: 5pt 6pt; text-align: ${align}; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .5pt; word-break: break-word; white-space: normal;">
+                ${r.cells[c.id] || "-"}
+              </td>`;
+            })
+            .join("")}
+        </tr>`
+      )
+      .join("");
+
+    const totalRow = `
+      <tr style="font-weight: bold; background-color: #F1F5F9; page-break-inside: avoid; mso-yfti-irow: 2; mso-yfti-lastrow: yes;">
+        <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">সর্বমোট</td>
+        <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">-</td>
+        <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: right; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">${
+          totalInvolved ? toBengaliDigits(totalInvolved) : "-"
+        }</td>
+        <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: right; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">${
+          totalPrincipal ? toBengaliDigits(totalPrincipal) : "০"
+        }</td>
+        <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: right; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">${
+          totalInterest ? toBengaliDigits(totalInterest) : "০"
+        }</td>
+        <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">-</td>
+        <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: right; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">${
+          totalRecovered ? toBengaliDigits(totalRecovered) : "-"
+        }</td>
+        <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">-</td>
+      </tr>`;
+
+    return `
+      <table border="1" cellspacing="0" cellpadding="0" width="100%" style="width: 100%; border-collapse: collapse; border: 1.0pt solid #000000; mso-border-alt: solid black .75pt; mso-table-lspace: 0pt; mso-table-rspace: 0pt; margin: 12pt 0;">
+        <thead>
+          <tr style="mso-yfti-irow: 0; mso-yfti-firstrow: yes; page-break-inside: avoid;">
+            ${headerCells}
+          </tr>
+        </thead>
+        <tbody>
+          ${bodyRows}
+          ${totalRow}
+        </tbody>
+      </table>
+    `;
+  };
+
+  // Copy Only Table (Directly for MS Word & Excel)
+  const handleCopyTableOnly = async () => {
+    try {
+      const tablePlainText =
+        tableColumns.map((c) => c.label).join("\t") +
+        "\n" +
+        tableRows
+          .map((r) => tableColumns.map((c) => r.cells[c.id] || "-").join("\t"))
+          .join("\n") +
+        `\nসর্বমোট\t-\t${totalInvolved ? toBengaliDigits(totalInvolved) : "-"}\t${
+          totalPrincipal ? toBengaliDigits(totalPrincipal) : "০"
+        }\t${totalInterest ? toBengaliDigits(totalInterest) : "০"}\t-\t${
+          totalRecovered ? toBengaliDigits(totalRecovered) : "-"
+        }\t-`;
+
+      const htmlTable = generateWordCompatibleTableHtml();
+      const richHtml = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+          <style>
+            body { font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', Arial, sans-serif; font-size: 11pt; }
+            table { border-collapse: collapse; width: 100%; }
+          </style>
+        </head>
+        <body>
+          ${htmlTable}
+        </body>
+        </html>
+      `;
+
+      if (navigator.clipboard && window.ClipboardItem) {
+        const blobHtml = new Blob([richHtml], { type: "text/html" });
+        const blobText = new Blob([tablePlainText], { type: "text/plain" });
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": blobHtml,
+            "text/plain": blobText,
+          }),
+        ]);
+      } else {
+        await navigator.clipboard.writeText(tablePlainText);
+      }
+
+      setCopiedTableSuccess(true);
+      setTimeout(() => setCopiedTableSuccess(false), 3000);
+    } catch (err) {
+      console.error("Table copy error:", err);
+    }
+  };
+
+  // Copy Complete Note Sheet (One-click Rich Text & Table copy for MS Word / Docs)
+  const handleCopyNoteSheet = async () => {
+    try {
+      let tablePlainText = "";
+      if (hasTable && tableRows.length > 0) {
+        tablePlainText =
+          "\n[আদায়ের বিবরণী ছক]\n" +
+          tableColumns.map((c) => c.label).join("\t") +
+          "\n" +
+          tableRows
+            .map((r) => tableColumns.map((c) => r.cells[c.id] || "-").join("\t"))
+            .join("\n") +
+          `\nসর্বমোট\t-\t${totalInvolved ? toBengaliDigits(totalInvolved) : "-"}\t${
+            totalPrincipal ? toBengaliDigits(totalPrincipal) : "০"
+          }\t${totalInterest ? toBengaliDigits(totalInterest) : "০"}\t-\t${
+            totalRecovered ? toBengaliDigits(totalRecovered) : "-"
+          }\t-`;
+      }
+
+      const plainText = `${diaryHeader}
+
+${tikaIntroHtml.replace(/<[^>]+>/g, "").trim()}
+
+স্থানীয় প্রতিষ্ঠানের জবাব: ${entityReplyText}
+${tablePlainText}
+
+${branchRequestText}
+
+প্রধান কার্যালয়ের মন্তব্য: ${headOfficeCommentText}
+
+উপস্থাপনকারীর মন্তব্য: ${presenterCommentText}
+
+${finalSubmissionText}`;
+
+      const htmlTable = generateWordCompatibleTableHtml();
+
+      const richHtml = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <!--[if gte mso 9]>
+          <xml>
+           <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+           </w:WordDocument>
+          </xml>
+          <![endif]-->
+          <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+          <style>
+            body, p, div, table { font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 12pt; line-height: 1.6; color: #000000; }
+            table { border-collapse: collapse; width: 100%; border: 1.0pt solid #000000; }
+            th, td { border: 1.0pt solid #000000; padding: 5pt 6pt; font-size: 10.5pt; }
+            th { background-color: #E2E8F0; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div style="max-width: 800px; margin: 0 auto; padding: 10pt;">
+            <div style="text-align: center; font-weight: bold; font-size: 13pt; margin-bottom: 14pt; border-bottom: 1.0pt solid #000000; padding-bottom: 6pt;">
+              ${diaryHeader}
+            </div>
+            <div style="text-align: justify; margin-bottom: 10pt; line-height: 1.6;">
+              ${tikaIntroHtml}
+            </div>
+            <div style="text-align: justify; margin-bottom: 10pt; line-height: 1.6;">
+              <strong>স্থানীয় প্রতিষ্ঠানের জবাব: </strong><span>${entityReplyText}</span>
+            </div>
+            ${htmlTable}
+            <div style="text-align: justify; margin-bottom: 10pt; line-height: 1.6;">
+              ${branchRequestText}
+            </div>
+            <div style="text-align: justify; margin-bottom: 10pt; line-height: 1.6;">
+              <strong>প্রধান কার্যালয়ের মন্তব্য: </strong><span>${headOfficeCommentText}</span>
+            </div>
+            <div style="text-align: justify; margin-bottom: 12pt; line-height: 1.6;">
+              <strong>উপস্থাপনকারীর মন্তব্য: </strong><span>${presenterCommentText}</span>
+            </div>
+            <div style="text-align: left; font-weight: bold; margin-top: 14pt;">
+              ${finalSubmissionText}
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      if (navigator.clipboard && window.ClipboardItem) {
+        const blobHtml = new Blob([richHtml], { type: "text/html" });
+        const blobText = new Blob([plainText], { type: "text/plain" });
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": blobHtml,
+            "text/plain": blobText,
+          }),
+        ]);
+      } else {
+        await navigator.clipboard.writeText(plainText);
+      }
+
+      setCopiedSuccess(true);
+      setTimeout(() => setCopiedSuccess(false), 3500);
+    } catch (err) {
+      console.error("Clipboard copy error:", err);
+      if (noteDocumentRef.current) {
+        navigator.clipboard.writeText(noteDocumentRef.current.innerText);
+        setCopiedSuccess(true);
+        setTimeout(() => setCopiedSuccess(false), 3500);
+      }
+    }
+  };
 
   // Print Note Sheet
   const handlePrintNoteSheet = () => {
@@ -480,6 +733,27 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCopyNoteSheet}
+            className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+              copiedSuccess
+                ? "bg-emerald-600 text-white shadow-emerald-200"
+                : "bg-blue-600 hover:bg-blue-700 text-white hover:shadow-blue-200"
+            }`}
+            title="সম্পূর্ণ নোট শিট ক্লিপবোর্ডে কপি করুন (MS Word বা অন্য যেকোনো জায়গায় সরাসরি পেস্ট করা যাবে)"
+          >
+            {copiedSuccess ? (
+              <>
+                <Check size={14} /> সম্পূর্ণ নোট শিট কপি হয়েছে!
+              </>
+            ) : (
+              <>
+                <Copy size={14} /> সম্পূর্ণ নোট শিট কপি করুন
+              </>
+            )}
+          </button>
+
           <button
             type="button"
             onClick={handlePrintNoteSheet}
@@ -763,6 +1037,34 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={handleCopyNoteSheet}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors ${
+              copiedSuccess
+                ? "bg-emerald-600 text-white"
+                : "bg-slate-700 hover:bg-slate-600 text-slate-100"
+            }`}
+            title="সম্পূর্ণ নোট শিট কপি করুন"
+          >
+            {copiedSuccess ? <Check size={12} className="text-white" /> : <Copy size={12} />}
+            <span>{copiedSuccess ? "নোট কপি হয়েছে!" : "নোট কপি"}</span>
+          </button>
+          {hasTable && (
+            <button
+              type="button"
+              onClick={handleCopyTableOnly}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors ${
+                copiedTableSuccess
+                  ? "bg-teal-600 text-white"
+                  : "bg-teal-800/80 hover:bg-teal-700 text-teal-100"
+              }`}
+              title="শুধু আদায়ের ছকটি এমএস ওয়ার্ড/এক্সেলে পেস্ট করার উপযোগী করে কপি করুন"
+            >
+              {copiedTableSuccess ? <Check size={12} className="text-white" /> : <Copy size={12} />}
+              <span>{copiedTableSuccess ? "ছক কপি হয়েছে!" : "ছক কপি (Word)"}</span>
+            </button>
+          )}
+          <button
+            type="button"
             onClick={handleAddTableRow}
             className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
           >
@@ -793,7 +1095,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       {/* ========================================================================= */}
       {/* THE OFFICIAL GOVERNMENT NOTE SHEET DOCUMENT (সরাসরি ফাইলে লিখন ও প্রিন্ট) */}
       {/* ========================================================================= */}
-      <div className="bg-white rounded-3xl border-2 border-slate-300 shadow-xl p-8 sm:p-14 text-slate-900 font-bengali space-y-6 print:p-0 print:m-0 print:border-none print:shadow-none">
+      <div
+        ref={noteDocumentRef}
+        className="bg-white rounded-3xl border-2 border-slate-300 shadow-xl p-8 sm:p-14 text-slate-900 font-bengali space-y-6 print:p-0 print:m-0 print:border-none print:shadow-none"
+      >
         
         {/* 1. Official Diary Header Exactly at the Top Center */}
         <div className="text-center pb-4 border-b border-slate-300">
