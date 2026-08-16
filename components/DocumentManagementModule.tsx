@@ -263,8 +263,8 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       id: "j-row-1",
       sl: "১",
       paraAndYear: `১০, ${entry.auditYear || "২০১১-১৪"}`,
-      entityName: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `,\n${entry.branchName}` : ',\nদর্শনা শাখা, চুয়াডাঙ্গা।'}`,
-      paraTitle: `মাইক্রো ক্রেডিট (উন্মেষ)\nঋণের মেয়াদোত্তীর্ণ\nঅনাদায়ী ${entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫"}\nটাকা।`,
+      entityName: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা।'}`,
+      paraTitle: `মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ${entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫"} টাকা।`,
       involvedAmount: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫",
       officeComment: "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।"
     }
@@ -1157,8 +1157,8 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         id: "j-row-demo-1",
         sl: "১",
         paraAndYear: "১০, ২০১১-১৪",
-        entityName: "সোনালী ব্যাংক পিএলসি,\nদর্শনা শাখা, চুয়াডাঙ্গা।",
-        paraTitle: "মাইক্রো ক্রেডিট (উন্মেষ)\nঋণের মেয়াদোত্তীর্ণ\nঅনাদায়ী ৫৭,৮২৫\nটাকা।",
+        entityName: "সোনালী ব্যাংক পিএলসি, দর্শনা শাখা, চুয়াডাঙ্গা।",
+        paraTitle: "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ৫৭,৮২৫ টাকা।",
         involvedAmount: "৫৭,৮২৫",
         officeComment: "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।"
       }
