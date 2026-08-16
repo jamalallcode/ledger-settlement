@@ -31,6 +31,16 @@ import {
   RotateCcw,
   FileCheck,
   Edit3,
+  Columns,
+  Rows,
+  Split,
+  Combine,
+  ArrowUp,
+  ArrowDown,
+  ArrowRight,
+  ChevronDown,
+  Info,
+  Layers,
 } from "lucide-react";
 import { CorrespondenceEntry } from "../types";
 import { toBengaliDigits, formatDateBN, toEnglishDigits } from "../utils/numberUtils";
@@ -53,10 +63,41 @@ export interface JaripatraTableRowItem {
   officeComment: string;
 }
 
+export interface JaripatraColumnItem {
+  id: string;
+  label: string;
+  subLabel: string;
+  align?: 'left' | 'center' | 'justify' | 'right';
+  width?: string;
+}
+
+export interface JaripatraCellItem {
+  text: string;
+  colSpan?: number;
+  rowSpan?: number;
+  isHidden?: boolean;
+  align?: 'left' | 'center' | 'justify' | 'right';
+  isBold?: boolean;
+}
+
+export interface JaripatraGridRowItem {
+  id: string;
+  cells: Record<string, JaripatraCellItem>;
+}
+
 export interface TableColumn {
   id: string;
   label: string;
 }
+
+const DEFAULT_JARIPATRA_COLUMNS: JaripatraColumnItem[] = [
+  { id: "col_1", label: "ক্রমিক নং", subLabel: "(১)", align: "center", width: "w-[6%]" },
+  { id: "col_2", label: "অনু: নং ও নিরীক্ষা বছর", subLabel: "(২)", align: "center", width: "w-[14%]" },
+  { id: "col_3", label: "প্রতিষ্ঠানের নাম", subLabel: "(৩)", align: "justify", width: "w-[22%]" },
+  { id: "col_4", label: "অনুচ্ছেদের শিরোনাম", subLabel: "(৪)", align: "justify", width: "w-[22%]" },
+  { id: "col_5", label: "জড়িত টাকা", subLabel: "(৫)", align: "center", width: "w-[12%]" },
+  { id: "col_6", label: "এ কার্যালয়ের মন্তব্য", subLabel: "(৬)", align: "justify", width: "w-[24%]" },
+];
 
 export interface TableRow {
   id: string;
@@ -257,18 +298,23 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     return `উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${branchPart} এর ${auditYr} সালের নিরীক্ষা প্রতিবেদনের ${entry.paraType || "নন-এসএফআই"} অনুচ্ছেদ নং ১০ এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:`;
   });
 
-  // Table Rows (6-Column Government Settlement Format)
-  const [jaripatraTableRows, setJaripatraTableRows] = useState<JaripatraTableRowItem[]>([
+  // Dynamic Columns & Grid Rows (Flexible Government Settlement Format with Add/Delete/Merge capabilities)
+  const [jaripatraColumns, setJaripatraColumns] = useState<JaripatraColumnItem[]>(DEFAULT_JARIPATRA_COLUMNS);
+  const [jaripatraGridRows, setJaripatraGridRows] = useState<JaripatraGridRowItem[]>([
     {
       id: "j-row-1",
-      sl: "১",
-      paraAndYear: `১০, ${entry.auditYear || "২০১১-১৪"}`,
-      entityName: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা।'}`,
-      paraTitle: `মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ${entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫"} টাকা।`,
-      involvedAmount: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫",
-      officeComment: "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।"
+      cells: {
+        col_1: { text: "১", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+        col_2: { text: `১০, ${entry.auditYear || "২০১১-১৪"}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+        col_3: { text: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা।'}`, align: "justify", colSpan: 1, rowSpan: 1 },
+        col_4: { text: `মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ${entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫"} টাকা।`, align: "justify", colSpan: 1, rowSpan: 1 },
+        col_5: { text: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+        col_6: { text: "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।", align: "justify", colSpan: 1, rowSpan: 1 }
+      }
     }
   ]);
+  const [activeCellMenu, setActiveCellMenu] = useState<{ rowId: string; colId: string; rowIndex: number; colIndex: number } | null>(null);
+  const [showTableGuide, setShowTableGuide] = useState<boolean>(false);
 
   // Signatory
   const [jaripatraSignatoryName, setJaripatraSignatoryName] = useState<string>("নাসিফ কবির");
@@ -593,21 +639,23 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         setParagraphs(parsedParas);
 
         // Auto-generate Jaripatra rows from parsed paragraphs
-        const jRows: JaripatraTableRowItem[] = parsedParas.map((para, idx) => {
+        const jRows: JaripatraGridRowItem[] = parsedParas.map((para, idx) => {
           let title = para.titleAndDetails.split("\n")[0] || "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী টাকা।";
           title = title.replace(/^শিরোনাম:\s*/, '');
           return {
             id: `j-row-ai-${idx + 1}`,
-            sl: para.sl || toBengaliDigits(idx + 1),
-            paraAndYear: `${para.paraNo}, ${entry.auditYear || "২০১১-১৪"}`,
-            entityName: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `,\n${entry.branchName}` : ',\nদর্শনা শাখা, চুয়াডাঙ্গা।'}`,
-            paraTitle: title,
-            involvedAmount: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫",
-            officeComment: para.presenterCommentText || "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।"
+            cells: {
+              col_1: { text: para.sl || toBengaliDigits(idx + 1), align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+              col_2: { text: `${para.paraNo}, ${entry.auditYear || "২০১১-১৪"}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+              col_3: { text: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `,\n${entry.branchName}` : ',\nদর্শনা শাখা, চুয়াডাঙ্গা।'}`, align: "justify", colSpan: 1, rowSpan: 1 },
+              col_4: { text: title, align: "justify", colSpan: 1, rowSpan: 1 },
+              col_5: { text: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+              col_6: { text: para.presenterCommentText || "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।", align: "justify", colSpan: 1, rowSpan: 1 }
+            }
           };
         });
         if (jRows.length > 0) {
-          setJaripatraTableRows(jRows);
+          setJaripatraGridRows(jRows);
         }
       }
 
@@ -627,14 +675,16 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         if (sil.reference) setJaripatraReference(sil.reference);
         if (sil.introText) setJaripatraIntroText(sil.introText);
         if (sil.tableRows && Array.isArray(sil.tableRows) && sil.tableRows.length > 0) {
-          setJaripatraTableRows(sil.tableRows.map((r: any, idx: number) => ({
+          setJaripatraGridRows(sil.tableRows.map((r: any, idx: number) => ({
             id: `j-row-${idx + 1}`,
-            sl: r.sl || toBengaliDigits(idx + 1),
-            paraAndYear: r.paraAndYear || "১০, ২০১১-১৪",
-            entityName: r.entityName || `${entry.entityName || "সোনালী ব্যাংক পিএলসি"},\nদর্শনা শাখা, চুয়াডাঙ্গা।`,
-            paraTitle: r.paraTitle || "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী টাকা।",
-            involvedAmount: r.involvedAmount || "৫৭,৮২৫",
-            officeComment: r.officeComment || "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় আপত্তিটি নিষ্পত্তি করা হলো।"
+            cells: {
+              col_1: { text: r.sl || toBengaliDigits(idx + 1), align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+              col_2: { text: r.paraAndYear || "১০, ২০১১-১৪", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+              col_3: { text: r.entityName || `${entry.entityName || "সোনালী ব্যাংক পিএলসি"},\nদর্শনা শাখা, চুয়াডাঙ্গা।`, align: "justify", colSpan: 1, rowSpan: 1 },
+              col_4: { text: r.paraTitle || "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী টাকা।", align: "justify", colSpan: 1, rowSpan: 1 },
+              col_5: { text: r.involvedAmount || "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+              col_6: { text: r.officeComment || "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় আপত্তিটি নিষ্পত্তি করা হলো।", align: "justify", colSpan: 1, rowSpan: 1 }
+            }
           })));
         }
         if (sil.signatoryName) setJaripatraSignatoryName(sil.signatoryName);
@@ -1089,29 +1139,317 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     window.print();
   };
 
-  const handleUpdateJaripatraCell = (rowId: string, field: keyof JaripatraTableRowItem, val: string) => {
-    setJaripatraTableRows(prev => prev.map(r => r.id === rowId ? { ...r, [field]: val } : r));
+  // Cell Text update
+  const handleUpdateCellText = (rowId: string, colId: string, text: string) => {
+    setJaripatraGridRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const currentCell = r.cells[colId] || { text: "", colSpan: 1, rowSpan: 1 };
+      return {
+        ...r,
+        cells: {
+          ...r.cells,
+          [colId]: {
+            ...currentCell,
+            text,
+          }
+        }
+      };
+    }));
   };
 
-  const handleAddJaripatraRow = () => {
-    const newIdx = jaripatraTableRows.length + 1;
-    const newRow: JaripatraTableRowItem = {
-      id: `j-row-${Date.now()}-${newIdx}`,
-      sl: toBengaliDigits(newIdx),
-      paraAndYear: `${toBengaliDigits(10 + newIdx - 1)}, ${entry.auditYear || "২০১১-১৪"}`,
-      entityName: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `,\n${entry.branchName}` : ',\nদর্শনা শাখা, চুয়াডাঙ্গা।'}`,
-      paraTitle: "মাইক্রো ক্রেডিট (উন্মেষ)\nঋণের মেয়াদোত্তীর্ণ\nঅনাদায়ী টাকা।",
-      involvedAmount: "০",
-      officeComment: "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।"
+  // Cell Alignment toggle
+  const handleSetCellAlign = (rowId: string, colId: string, align: 'left' | 'center' | 'justify' | 'right') => {
+    setJaripatraGridRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const currentCell = r.cells[colId] || { text: "", colSpan: 1, rowSpan: 1 };
+      return {
+        ...r,
+        cells: {
+          ...r.cells,
+          [colId]: {
+            ...currentCell,
+            align,
+          }
+        }
+      };
+    }));
+  };
+
+  // Cell Bold toggle
+  const handleToggleCellBold = (rowId: string, colId: string) => {
+    setJaripatraGridRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const currentCell = r.cells[colId] || { text: "", colSpan: 1, rowSpan: 1 };
+      return {
+        ...r,
+        cells: {
+          ...r.cells,
+          [colId]: {
+            ...currentCell,
+            isBold: !currentCell.isBold,
+          }
+        }
+      };
+    }));
+  };
+
+  // Add dynamic column
+  const handleAddColumn = (targetColIndex?: number, position: 'left' | 'right' = 'right') => {
+    const newColId = `col_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const insertIdx = targetColIndex !== undefined
+      ? (position === 'left' ? targetColIndex : targetColIndex + 1)
+      : jaripatraColumns.length;
+
+    const newCol: JaripatraColumnItem = {
+      id: newColId,
+      label: "নতুন কলাম",
+      subLabel: `(${toBengaliDigits(insertIdx + 1)})`,
+      align: "justify",
+      width: "w-[16%]"
     };
-    setJaripatraTableRows(prev => [...prev, newRow]);
+
+    const newCols = [...jaripatraColumns];
+    newCols.splice(insertIdx, 0, newCol);
+    const updatedCols = newCols.map((c, i) => ({
+      ...c,
+      subLabel: `(${toBengaliDigits(i + 1)})`
+    }));
+    setJaripatraColumns(updatedCols);
+
+    setJaripatraGridRows(prev => prev.map(row => ({
+      ...row,
+      cells: {
+        ...row.cells,
+        [newColId]: { text: "", align: "justify", colSpan: 1, rowSpan: 1 }
+      }
+    })));
   };
 
-  const handleDeleteJaripatraRow = (rowId: string) => {
-    if (jaripatraTableRows.length <= 1) return;
-    setJaripatraTableRows(prev => {
+  // Delete column
+  const handleDeleteColumn = (colId: string) => {
+    if (jaripatraColumns.length <= 1) return;
+    const updatedCols = jaripatraColumns.filter(c => c.id !== colId).map((c, i) => ({
+      ...c,
+      subLabel: `(${toBengaliDigits(i + 1)})`
+    }));
+    setJaripatraColumns(updatedCols);
+
+    setJaripatraGridRows(prev => prev.map(row => {
+      const copyCells = { ...row.cells };
+      delete copyCells[colId];
+      // Reset any cell colSpans that might be affected
+      (Object.values(copyCells) as JaripatraCellItem[]).forEach(c => {
+        if (c.colSpan && c.colSpan > 1) c.colSpan = 1;
+      });
+      return { ...row, cells: copyCells };
+    }));
+  };
+
+  // Move column left/right
+  const handleMoveColumn = (colIndex: number, direction: 'left' | 'right') => {
+    const targetIdx = direction === 'left' ? colIndex - 1 : colIndex + 1;
+    if (targetIdx < 0 || targetIdx >= jaripatraColumns.length) return;
+
+    const updatedCols = [...jaripatraColumns];
+    const temp = updatedCols[colIndex];
+    updatedCols[colIndex] = updatedCols[targetIdx];
+    updatedCols[targetIdx] = temp;
+
+    const reindexedCols = updatedCols.map((c, i) => ({
+      ...c,
+      subLabel: `(${toBengaliDigits(i + 1)})`
+    }));
+    setJaripatraColumns(reindexedCols);
+  };
+
+  // Update column header label or subLabel
+  const handleUpdateColumnHeader = (colId: string, label: string, subLabel?: string) => {
+    setJaripatraColumns(prev => prev.map(c => {
+      if (c.id !== colId) return c;
+      return {
+        ...c,
+        label,
+        ...(subLabel !== undefined ? { subLabel } : {})
+      };
+    }));
+  };
+
+  // Add dynamic row
+  const handleAddRow = (targetRowIndex?: number, position: 'above' | 'below' = 'below') => {
+    const newRowId = `j-row-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const insertIdx = targetRowIndex !== undefined
+      ? (position === 'above' ? targetRowIndex : targetRowIndex + 1)
+      : jaripatraGridRows.length;
+
+    const newCells: Record<string, JaripatraCellItem> = {};
+    jaripatraColumns.forEach((col, cIdx) => {
+      let initialText = "";
+      let isBold = false;
+      let align: 'left' | 'center' | 'justify' | 'right' = col.align || 'left';
+
+      if (cIdx === 0) {
+        initialText = toBengaliDigits(insertIdx + 1);
+        isBold = true;
+        align = "center";
+      }
+
+      newCells[col.id] = {
+        text: initialText,
+        align,
+        isBold,
+        colSpan: 1,
+        rowSpan: 1
+      };
+    });
+
+    const newRow: JaripatraGridRowItem = {
+      id: newRowId,
+      cells: newCells
+    };
+
+    const nextRows = [...jaripatraGridRows];
+    nextRows.splice(insertIdx, 0, newRow);
+    setJaripatraGridRows(nextRows);
+  };
+
+  // Delete row
+  const handleDeleteRow = (rowId: string) => {
+    if (jaripatraGridRows.length <= 1) return;
+    setJaripatraGridRows(prev => {
       const filtered = prev.filter(r => r.id !== rowId);
-      return filtered.map((r, idx) => ({ ...r, sl: toBengaliDigits(idx + 1) }));
+      // Reset any broken rowSpans
+      filtered.forEach(row => {
+        (Object.values(row.cells) as JaripatraCellItem[]).forEach(c => {
+          if (c.rowSpan && c.rowSpan > 1) c.rowSpan = 1;
+        });
+      });
+      return filtered;
+    });
+  };
+
+  // Move row up/down
+  const handleMoveRow = (rowIndex: number, direction: 'up' | 'down') => {
+    const targetIdx = direction === 'up' ? rowIndex - 1 : rowIndex + 1;
+    if (targetIdx < 0 || targetIdx >= jaripatraGridRows.length) return;
+
+    const updatedRows = [...jaripatraGridRows];
+    const temp = updatedRows[rowIndex];
+    updatedRows[rowIndex] = updatedRows[targetIdx];
+    updatedRows[targetIdx] = temp;
+    setJaripatraGridRows(updatedRows);
+  };
+
+  // Auto-number first column
+  const handleAutoNumberRows = () => {
+    if (jaripatraColumns.length === 0) return;
+    const firstColId = jaripatraColumns[0].id;
+    setJaripatraGridRows(prev => prev.map((row, idx) => ({
+      ...row,
+      cells: {
+        ...row.cells,
+        [firstColId]: {
+          ...(row.cells[firstColId] || { align: "center", isBold: true, colSpan: 1, rowSpan: 1 }),
+          text: toBengaliDigits(idx + 1)
+        }
+      }
+    })));
+  };
+
+  // Merge Cell to Right
+  const handleMergeRight = (rowIndex: number, colIndex: number) => {
+    setJaripatraGridRows(prev => {
+      const nextRows = JSON.parse(JSON.stringify(prev)) as JaripatraGridRowItem[];
+      const row = nextRows[rowIndex];
+      if (!row) return prev;
+
+      const currentCol = jaripatraColumns[colIndex];
+      if (!currentCol) return prev;
+
+      const currentCell = row.cells[currentCol.id] || { text: "", colSpan: 1, rowSpan: 1 };
+      const currentSpan = currentCell.colSpan || 1;
+      const nextColIdx = colIndex + currentSpan;
+
+      if (nextColIdx >= jaripatraColumns.length) return prev;
+
+      const nextCol = jaripatraColumns[nextColIdx];
+      const nextCell = row.cells[nextCol.id] || { text: "", colSpan: 1, rowSpan: 1 };
+
+      currentCell.colSpan = currentSpan + (nextCell.colSpan || 1);
+      if (nextCell.text && nextCell.text.trim()) {
+        currentCell.text = currentCell.text ? `${currentCell.text} ${nextCell.text}` : nextCell.text;
+      }
+      nextCell.isHidden = true;
+      nextCell.colSpan = 1;
+      row.cells[currentCol.id] = currentCell;
+      row.cells[nextCol.id] = nextCell;
+
+      return nextRows;
+    });
+  };
+
+  // Merge Cell Down
+  const handleMergeDown = (rowIndex: number, colIndex: number) => {
+    setJaripatraGridRows(prev => {
+      const nextRows = JSON.parse(JSON.stringify(prev)) as JaripatraGridRowItem[];
+      const row = nextRows[rowIndex];
+      if (!row) return prev;
+
+      const currentCol = jaripatraColumns[colIndex];
+      if (!currentCol) return prev;
+
+      const currentCell = row.cells[currentCol.id] || { text: "", colSpan: 1, rowSpan: 1 };
+      const currentRowSpan = currentCell.rowSpan || 1;
+      const belowRowIdx = rowIndex + currentRowSpan;
+
+      if (belowRowIdx >= nextRows.length) return prev;
+
+      const belowRow = nextRows[belowRowIdx];
+      const belowCell = belowRow.cells[currentCol.id] || { text: "", colSpan: 1, rowSpan: 1 };
+
+      currentCell.rowSpan = currentRowSpan + (belowCell.rowSpan || 1);
+      if (belowCell.text && belowCell.text.trim()) {
+        currentCell.text = currentCell.text ? `${currentCell.text}\n${belowCell.text}` : belowCell.text;
+      }
+      belowCell.isHidden = true;
+      belowCell.rowSpan = 1;
+      row.cells[currentCol.id] = currentCell;
+      belowRow.cells[currentCol.id] = belowCell;
+
+      return nextRows;
+    });
+  };
+
+  // Unmerge Cell
+  const handleUnmergeCell = (rowIndex: number, colIndex: number) => {
+    setJaripatraGridRows(prev => {
+      const nextRows = JSON.parse(JSON.stringify(prev)) as JaripatraGridRowItem[];
+      const row = nextRows[rowIndex];
+      if (!row) return prev;
+
+      const currentCol = jaripatraColumns[colIndex];
+      if (!currentCol) return prev;
+
+      const currentCell = row.cells[currentCol.id];
+      if (!currentCell) return prev;
+
+      const cSpan = currentCell.colSpan || 1;
+      const rSpan = currentCell.rowSpan || 1;
+
+      currentCell.colSpan = 1;
+      currentCell.rowSpan = 1;
+
+      for (let r = rowIndex; r < rowIndex + rSpan && r < nextRows.length; r++) {
+        for (let c = colIndex; c < colIndex + cSpan && c < jaripatraColumns.length; c++) {
+          const colId = jaripatraColumns[c].id;
+          if (nextRows[r].cells[colId]) {
+            nextRows[r].cells[colId].isHidden = false;
+            nextRows[r].cells[colId].colSpan = 1;
+            nextRows[r].cells[colId].rowSpan = 1;
+          }
+        }
+      }
+
+      return nextRows;
     });
   };
 
@@ -1152,15 +1490,18 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     setJaripatraReference(`সূত্র: ${entry.entityName || "সোনালী ব্যাংক পিএলসি"} এর পত্র নং ${entry.letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩২"}, তারিখ: ${entry.letterDate ? formatDateBN(entry.letterDate) : "২৭/০৭/২০২৬"}`);
     setJaripatraIntroText(`উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা'} এর ${entry.auditYear || "২০১১-২০১৪"} সালের নিরীক্ষা প্রতিবেদনের ${entry.paraType || "নন-এসএফআই"} অনুচ্ছেদ নং ১০ এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:`);
 
-    setJaripatraTableRows([
+    setJaripatraColumns(DEFAULT_JARIPATRA_COLUMNS);
+    setJaripatraGridRows([
       {
         id: "j-row-demo-1",
-        sl: "১",
-        paraAndYear: "১০, ২০১১-১৪",
-        entityName: "সোনালী ব্যাংক পিএলসি, দর্শনা শাখা, চুয়াডাঙ্গা।",
-        paraTitle: "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ৫৭,৮২৫ টাকা।",
-        involvedAmount: "৫৭,৮২৫",
-        officeComment: "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।"
+        cells: {
+          col_1: { text: "১", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+          col_2: { text: "১০, ২০১১-১৪", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+          col_3: { text: "সোনালী ব্যাংক পিএলসি, দর্শনা শাখা, চুয়াডাঙ্গা।", align: "justify", colSpan: 1, rowSpan: 1 },
+          col_4: { text: "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ৫৭,৮২৫ টাকা।", align: "justify", colSpan: 1, rowSpan: 1 },
+          col_5: { text: "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+          col_6: { text: "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।", align: "justify", colSpan: 1, rowSpan: 1 }
+        }
       }
     ]);
 
@@ -1181,16 +1522,27 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
   const handleCopyJaripatraWord = async () => {
     try {
-      const tableRowsHtml = jaripatraTableRows.map((r) => `
-        <tr style="page-break-inside: avoid;">
-          <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: center; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt; font-weight: bold;">${r.sl}</td>
-          <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: center; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt; font-weight: bold;">${r.paraAndYear.replace(/\n/g, '<br/>')}</td>
-          <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: justify; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt;">${r.entityName.replace(/\n/g, '<br/>')}</td>
-          <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: justify; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt;">${r.paraTitle.replace(/\n/g, '<br/>')}</td>
-          <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: center; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt; font-weight: bold;">${r.involvedAmount.replace(/\n/g, '<br/>')}</td>
-          <td style="border: 1.0pt solid #000000; padding: 5pt; text-align: justify; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt; line-height: 1.5;">${r.officeComment.replace(/\n/g, '<br/>')}</td>
-        </tr>
+      const tableHeadersHtml = jaripatraColumns.map(col => `
+        <th style="border: 1.0pt solid #000000; padding: 6pt; text-align: center; font-weight: bold;">${col.label}</th>
       `).join("");
+
+      const tableSubHeadersHtml = jaripatraColumns.map(col => `
+        <th style="border: 1.0pt solid #000000; padding: 3pt; text-align: center; font-size: 9.5pt; font-weight: bold;">${col.subLabel}</th>
+      `).join("");
+
+      const tableRowsHtml = jaripatraGridRows.map((row) => {
+        const rowCellsHtml = jaripatraColumns.map((col) => {
+          const cell = row.cells[col.id];
+          if (!cell || cell.isHidden) return "";
+          const colSpanAttr = cell.colSpan && cell.colSpan > 1 ? ` colspan="${cell.colSpan}"` : "";
+          const rowSpanAttr = cell.rowSpan && cell.rowSpan > 1 ? ` rowspan="${cell.rowSpan}"` : "";
+          const align = cell.align || col.align || "left";
+          const weight = cell.isBold ? "font-weight: bold;" : "";
+          return `<td${colSpanAttr}${rowSpanAttr} style="border: 1.0pt solid #000000; padding: 5pt; text-align: ${align}; vertical-align: top; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', Arial, sans-serif; font-size: 10pt; line-height: 1.5; ${weight}">${(cell.text || '').replace(/\n/g, '<br/>')}</td>`;
+        }).join("");
+
+        return `<tr style="page-break-inside: avoid;">${rowCellsHtml}</tr>`;
+      }).join("");
 
       const onulipiHtml = jaripatraOnulipiItems.map(item => `<p style="margin: 3pt 0; line-height: 1.4;">${item}</p>`).join("");
 
@@ -1234,20 +1586,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           <table border="1" cellspacing="0" cellpadding="0" style="width: 100%; border-collapse: collapse; border: 1.0pt solid #000000; margin: 10pt 0;">
             <thead>
               <tr style="background-color: #f1f5f9; font-weight: bold; text-align: center;">
-                <th style="border: 1.0pt solid #000000; padding: 6pt; width: 7%;">ক্রমিক নং</th>
-                <th style="border: 1.0pt solid #000000; padding: 6pt; width: 14%;">অনু: নং ও নিরীক্ষা বছর</th>
-                <th style="border: 1.0pt solid #000000; padding: 6pt; width: 22%;">প্রতিষ্ঠানের নাম</th>
-                <th style="border: 1.0pt solid #000000; padding: 6pt; width: 22%;">অনুচ্ছেদের শিরোনাম</th>
-                <th style="border: 1.0pt solid #000000; padding: 6pt; width: 11%;">জড়িত টাকা</th>
-                <th style="border: 1.0pt solid #000000; padding: 6pt; width: 24%;">এ কার্যালয়ের মন্তব্য</th>
+                ${tableHeadersHtml}
               </tr>
               <tr style="background-color: #e2e8f0; font-weight: bold; text-align: center; font-size: 9.5pt;">
-                <th style="border: 1.0pt solid #000000; padding: 3pt;">(১)</th>
-                <th style="border: 1.0pt solid #000000; padding: 3pt;">(২)</th>
-                <th style="border: 1.0pt solid #000000; padding: 3pt;">(৩)</th>
-                <th style="border: 1.0pt solid #000000; padding: 3pt;">(৪)</th>
-                <th style="border: 1.0pt solid #000000; padding: 3pt;">(৫)</th>
-                <th style="border: 1.0pt solid #000000; padding: 3pt;">(৬)</th>
+                ${tableSubHeadersHtml}
               </tr>
             </thead>
             <tbody>
@@ -1283,7 +1625,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
       if (navigator.clipboard && window.ClipboardItem) {
         const blobHtml = new Blob([richJaripatraHtml], { type: "text/html" });
-        const plainText = `${jaripatraHeaderLine1}\n${jaripatraHeaderLine2}\n${jaripatraHeaderLine3}\n${jaripatraHeaderLine4}\n${jaripatraHeaderLine5}\n\nনং- ${jaripatraMemoNo}    তারিখ: ${jaripatraDate}\n\n${jaripatraRecipientDesignation}\n${jaripatraRecipientEntity}\n${jaripatraRecipientAddress}\n${jaripatraRecipientCity}\n\n${jaripatraSubject}\n${jaripatraReference}\n\n${jaripatraIntroText}\n\n[৬ কলাম ছক]\n\n${jaripatraSignatoryName}\n${jaripatraSignatoryTitle}\n${jaripatraSignatoryPhone}\n\nনং- ${jaripatraBottomMemoNo}    তারিখ: ${jaripatraBottomDate}\n\n${jaripatraOnulipiHeader}\n${jaripatraOnulipiItems.join('\n')}`;
+        const plainText = `${jaripatraHeaderLine1}\n${jaripatraHeaderLine2}\n${jaripatraHeaderLine3}\n${jaripatraHeaderLine4}\n${jaripatraHeaderLine5}\n\nনং- ${jaripatraMemoNo}    তারিখ: ${jaripatraDate}\n\n${jaripatraRecipientDesignation}\n${jaripatraRecipientEntity}\n${jaripatraRecipientAddress}\n${jaripatraRecipientCity}\n\n${jaripatraSubject}\n${jaripatraReference}\n\n${jaripatraIntroText}\n\n[ছক]\n\n${jaripatraSignatoryName}\n${jaripatraSignatoryTitle}\n${jaripatraSignatoryPhone}\n\nনং- ${jaripatraBottomMemoNo}    তারিখ: ${jaripatraBottomDate}\n\n${jaripatraOnulipiHeader}\n${jaripatraOnulipiItems.join('\n')}`;
         const blobText = new Blob([plainText], { type: "text/plain" });
         await navigator.clipboard.write([
           new ClipboardItem({
@@ -1307,7 +1649,8 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       onSaveJaripatra(entry, { 
         memoNo: jaripatraMemoNo, 
         date: jaripatraDate,
-        tableRows: jaripatraTableRows,
+        columns: jaripatraColumns,
+        gridRows: jaripatraGridRows,
         subject: jaripatraSubject,
         reference: jaripatraReference,
         onulipi: jaripatraOnulipiItems,
@@ -1605,154 +1948,454 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                 />
               </div>
 
-              {/* 6. Main 6-Column Government Settlement Table */}
-              <div className="pt-2">
-                <table className="w-full border-collapse border-2 border-black text-xs sm:text-[12px]">
-                  <thead>
-                    <tr className="bg-slate-50 font-bold border-b border-black text-center">
-                      <th className="border border-black p-2 w-[6%] text-center">ক্রমিক নং</th>
-                      <th className="border border-black p-2 w-[14%] text-center">অনু: নং ও নিরীক্ষা বছর</th>
-                      <th className="border border-black p-2 w-[22%] text-center">প্রতিষ্ঠানের নাম</th>
-                      <th className="border border-black p-2 w-[22%] text-center">অনুচ্ছেদের শিরোনাম</th>
-                      <th className="border border-black p-2 w-[12%] text-center">জড়িত টাকা</th>
-                      <th className="border border-black p-2 w-[24%] text-center">এ কার্যালয়ের মন্তব্য</th>
-                    </tr>
-                    <tr className="bg-slate-100 font-bold border-b border-black text-center text-[11px]">
-                      <th className="border border-black p-1">(১)</th>
-                      <th className="border border-black p-1">(২)</th>
-                      <th className="border border-black p-1">(৩)</th>
-                      <th className="border border-black p-1">(৪)</th>
-                      <th className="border border-black p-1">(৫)</th>
-                      <th className="border border-black p-1">(৬)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {jaripatraTableRows.map((row) => (
-                      <tr key={row.id} className="align-top hover:bg-slate-50/50 group">
-                        {/* 1. Sl */}
-                        <td className="border border-black p-1.5 text-center font-bold relative">
-                          <div className="flex items-center justify-center gap-0.5">
+              {/* 6. Dynamic Table with Add/Delete/Merge capabilities */}
+              <div className="pt-2 space-y-2">
+                {/* Table Control Toolbar (Visible in Edit Mode) */}
+                {isJaripatraEditable && (
+                  <div className="no-print bg-slate-50 p-2 border border-slate-300 rounded-none space-y-2 text-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="font-bold text-slate-700 flex items-center gap-1 mr-1">
+                          <Table size={13} className="text-blue-600" /> ছক নিয়ন্ত্রণ:
+                        </span>
+
+                        {/* Row Controls */}
+                        <div className="inline-flex rounded-none border border-slate-300 bg-white overflow-hidden shadow-xs">
+                          <button
+                            type="button"
+                            onClick={() => handleAddRow(jaripatraGridRows.length - 1, 'below')}
+                            className="px-2 py-1 hover:bg-slate-100 text-slate-700 font-bold flex items-center gap-1 border-r border-slate-200 cursor-pointer"
+                            title="ছকের নিচে নতুন সারি যোগ করুন"
+                          >
+                            <Rows size={12} className="text-emerald-600" />
+                            <span>+ নিচে সারি</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleAddRow(0, 'above')}
+                            className="px-2 py-1 hover:bg-slate-100 text-slate-700 font-bold flex items-center gap-1 cursor-pointer"
+                            title="ছকের শুরুতে নতুন সারি যোগ করুন"
+                          >
+                            <ArrowUp size={11} className="text-emerald-600" />
+                            <span>+ উপরে সারি</span>
+                          </button>
+                        </div>
+
+                        {/* Column Controls */}
+                        <div className="inline-flex rounded-none border border-slate-300 bg-white overflow-hidden shadow-xs">
+                          <button
+                            type="button"
+                            onClick={() => handleAddColumn(jaripatraColumns.length - 1, 'right')}
+                            className="px-2 py-1 hover:bg-slate-100 text-slate-700 font-bold flex items-center gap-1 border-r border-slate-200 cursor-pointer"
+                            title="ছকের ডানপাশে নতুন কলাম যোগ করুন"
+                          >
+                            <Columns size={12} className="text-blue-600" />
+                            <span>+ ডানে কলাম</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleAddColumn(0, 'left')}
+                            className="px-2 py-1 hover:bg-slate-100 text-slate-700 font-bold flex items-center gap-1 cursor-pointer"
+                            title="ছকের বামপাশে নতুন কলাম যোগ করুন"
+                          >
+                            <ArrowLeft size={11} className="text-blue-600" />
+                            <span>+ বামে কলাম</span>
+                          </button>
+                        </div>
+
+                        {/* Auto Number */}
+                        <button
+                          type="button"
+                          onClick={handleAutoNumberRows}
+                          className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-none font-bold flex items-center gap-1 cursor-pointer shadow-xs"
+                          title="১ম কলামের ক্রমিক নম্বর (১, ২, ৩...) স্বয়ংক্রিয়ভাবে সাজান"
+                        >
+                          <Hash size={12} className="text-purple-600" />
+                          <span>ক্রমিক সাজান</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setShowTableGuide(prev => !prev)}
+                          className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-none font-bold flex items-center gap-1 cursor-pointer text-[11px]"
+                          title="সেল মার্জ ও কলাম সাজানোর নির্দেশিকা"
+                        >
+                          <Info size={12} className="text-amber-600" />
+                          <span>মার্জ নির্দেশিকা {showTableGuide ? '▲' : '▼'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm("ছকটি কি ডিফল্ট সরকারি ৬-কলাম ফরম্যাটে রিসেট করতে চান?")) {
+                              setJaripatraColumns(DEFAULT_JARIPATRA_COLUMNS);
+                              setJaripatraGridRows([
+                                {
+                                  id: `j-row-${Date.now()}`,
+                                  cells: {
+                                    col_1: { text: "১", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+                                    col_2: { text: `১০, ${entry.auditYear || "২০১১-১৪"}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+                                    col_3: { text: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা।'}`, align: "justify", colSpan: 1, rowSpan: 1 },
+                                    col_4: { text: `মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ${entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫"} টাকা।`, align: "justify", colSpan: 1, rowSpan: 1 },
+                                    col_5: { text: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+                                    col_6: { text: "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।", align: "justify", colSpan: 1, rowSpan: 1 }
+                                  }
+                                }
+                              ]);
+                            }
+                          }}
+                          className="px-2 py-1 bg-white hover:bg-red-50 text-red-600 border border-slate-300 hover:border-red-300 rounded-none font-bold flex items-center gap-1 cursor-pointer text-[11px]"
+                          title="ছকটি ডিফল্ট ৬-কলাম ফরম্যাটে রিসেট করুন"
+                        >
+                          <RotateCcw size={11} />
+                          <span>ডিফল্ট ছক</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Table Guide Box */}
+                    {showTableGuide && (
+                      <div className="bg-amber-50/80 border border-amber-200 p-2.5 text-[11px] text-amber-900 space-y-1 animate-in fade-in duration-150">
+                        <p className="font-bold flex items-center gap-1">
+                          <Sparkles size={12} className="text-amber-600" /> ছক ব্যবহারের সহজ নিয়মাবলী:
+                        </p>
+                        <ul className="list-disc list-inside space-y-0.5 text-slate-700">
+                          <li><strong>কলাম যুক্ত/ডিলিট:</strong> প্রতিটি কলামের হেডার এর উপর মাউস রাখলে <span className="font-bold text-blue-600">+বামে</span>, <span className="font-bold text-blue-600">+ডানে</span> কলাম যোগ ও <span className="font-bold text-red-600">মুছুন</span> অপশন আসবে। হেডার টেক্সট ও সাব-হেডার নম্বরও সরাসরি এডিট করা যায়।</li>
+                          <li><strong>সারি যুক্ত/ডিলিট:</strong> প্রতিটি সারির বামপাশে মাউস নিলে <span className="font-bold text-emerald-600">+উপরে</span>, <span className="font-bold text-emerald-600">+নিচে</span> সারি যোগ ও <span className="font-bold text-red-600">মুছুন</span> অপশন আসবে।</li>
+                          <li><strong>সেল মার্জ (Merge):</strong> যেকোনো সেলের ডানপাশের ছোট মেনু বা আইকনে ক্লিক করে <strong>'ডানে মার্জ'</strong> বা <strong>'নিচে মার্জ'</strong> করতে পারেন।</li>
+                          <li><strong>আনমার্জ (Unmerge):</strong> মার্জ করা সেলে ক্লিক করে সহজেই <strong>'আনমার্জ'</strong> বাটন চেপে পূর্বের অবস্থায় ফিরিয়ে নিতে পারেন।</li>
+                          <li><strong>টেক্সট ফরম্যাট:</strong> সেলের লেখা সহজে <strong>জাস্টিফাই</strong>, <strong>মাঝে</strong>, বা <strong>বামে</strong> অ্যালাইন এবং <strong>বোল্ড</strong> করতে পারেন।</li>
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Main Table Container */}
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border-2 border-black text-xs sm:text-[12px]">
+                    <thead>
+                      {/* Column Header Titles */}
+                      <tr className="bg-slate-50 font-bold border-b border-black text-center">
+                        {jaripatraColumns.map((col, cIdx) => (
+                          <th
+                            key={col.id}
+                            className={`border border-black p-1.5 text-center relative group/col ${col.width || ''}`}
+                          >
+                            <div className="space-y-1">
+                              {/* Inline Controls on Column Header */}
+                              {isJaripatraEditable && (
+                                <div className="no-print flex items-center justify-center gap-0.5 opacity-0 group-hover/col:opacity-100 transition-opacity bg-slate-200/90 py-0.5 px-1 rounded-none text-[10px] text-slate-700 mb-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAddColumn(cIdx, 'left')}
+                                    className="hover:text-blue-700 hover:bg-white px-1 py-0.5 cursor-pointer font-bold"
+                                    title="বামে নতুন কলাম"
+                                  >
+                                    +বামে
+                                  </button>
+                                  <span className="text-slate-400">|</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAddColumn(cIdx, 'right')}
+                                    className="hover:text-blue-700 hover:bg-white px-1 py-0.5 cursor-pointer font-bold"
+                                    title="ডানে নতুন কলাম"
+                                  >
+                                    +ডানে
+                                  </button>
+                                  {cIdx > 0 && (
+                                    <>
+                                      <span className="text-slate-400">|</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleMoveColumn(cIdx, 'left')}
+                                        className="hover:text-blue-700 hover:bg-white px-1 py-0.5 cursor-pointer"
+                                        title="বামে সরান"
+                                      >
+                                        ◀
+                                      </button>
+                                    </>
+                                  )}
+                                  {cIdx < jaripatraColumns.length - 1 && (
+                                    <>
+                                      <span className="text-slate-400">|</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleMoveColumn(cIdx, 'right')}
+                                        className="hover:text-blue-700 hover:bg-white px-1 py-0.5 cursor-pointer"
+                                        title="ডানে সরান"
+                                      >
+                                        ▶
+                                      </button>
+                                    </>
+                                  )}
+                                  {jaripatraColumns.length > 1 && (
+                                    <>
+                                      <span className="text-slate-400">|</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteColumn(col.id)}
+                                        className="text-red-500 hover:text-red-700 hover:bg-red-50 px-1 py-0.5 cursor-pointer"
+                                        title="এই কলামটি মুছুন"
+                                      >
+                                        <Trash2 size={10} />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Editable Column Label */}
+                              <input
+                                type="text"
+                                readOnly={!isJaripatraEditable}
+                                className={`w-full text-center font-bold text-black bg-transparent outline-none ${
+                                  isJaripatraEditable
+                                    ? "hover:bg-slate-100 focus:bg-blue-50 focus:border-b focus:border-blue-500"
+                                    : "cursor-default select-text"
+                                }`}
+                                value={col.label}
+                                onChange={(e) => handleUpdateColumnHeader(col.id, e.target.value, col.subLabel)}
+                              />
+                            </div>
+                          </th>
+                        ))}
+                      </tr>
+
+                      {/* Column Sub-Header Numbers e.g. (১), (২) */}
+                      <tr className="bg-slate-100 font-bold border-b border-black text-center text-[11px]">
+                        {jaripatraColumns.map((col) => (
+                          <th key={`sub-${col.id}`} className="border border-black p-0.5 text-center">
                             <input
                               type="text"
                               readOnly={!isJaripatraEditable}
-                              className={`w-full text-center bg-transparent outline-none font-bold text-black overflow-hidden ${
-                                isJaripatraEditable ? "hover:bg-slate-100/60 focus:bg-blue-50/50" : "cursor-default select-text"
+                              className={`w-full text-center font-bold text-black bg-transparent outline-none ${
+                                isJaripatraEditable
+                                  ? "hover:bg-slate-200 focus:bg-blue-50"
+                                  : "cursor-default select-text"
                               }`}
-                              value={row.sl}
-                              onChange={(e) => handleUpdateJaripatraCell(row.id, "sl", e.target.value)}
+                              value={col.subLabel}
+                              onChange={(e) => handleUpdateColumnHeader(col.id, col.label, e.target.value)}
                             />
-                            {isJaripatraEditable && jaripatraTableRows.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteJaripatraRow(row.id)}
-                                className="no-print opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 p-0.5 cursor-pointer transition-opacity shrink-0"
-                                title="সারিটি মুছুন"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                        {/* 2. Para No & Audit Year */}
-                        <td className="border border-black p-1.5 text-center font-bold">
-                          <textarea
-                            rows={Math.max(2, (row.paraAndYear || '').split('\n').length)}
-                            readOnly={!isJaripatraEditable}
-                            className={`w-full text-center bg-transparent outline-none font-bold text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
-                              isJaripatraEditable ? "hover:bg-slate-100/60 focus:bg-blue-50/50" : "cursor-default select-text"
-                            }`}
-                            value={row.paraAndYear}
-                            onInput={(e) => {
-                              const t = e.currentTarget;
-                              t.style.height = "auto";
-                              t.style.height = `${t.scrollHeight}px`;
-                            }}
-                            onChange={(e) => handleUpdateJaripatraCell(row.id, "paraAndYear", e.target.value)}
-                          />
-                        </td>
-                        {/* 3. Entity Name */}
-                        <td className="border border-black p-1.5 text-justify">
-                          <textarea
-                            rows={Math.max(3, (row.entityName || '').split('\n').length)}
-                            readOnly={!isJaripatraEditable}
-                            className={`w-full text-justify bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-relaxed ${
-                              isJaripatraEditable ? "hover:bg-slate-100/60 focus:bg-blue-50/50" : "cursor-default select-text"
-                            }`}
-                            value={row.entityName}
-                            onInput={(e) => {
-                              const t = e.currentTarget;
-                              t.style.height = "auto";
-                              t.style.height = `${t.scrollHeight}px`;
-                            }}
-                            onChange={(e) => handleUpdateJaripatraCell(row.id, "entityName", e.target.value)}
-                          />
-                        </td>
-                        {/* 4. Title & Subject */}
-                        <td className="border border-black p-1.5 text-justify">
-                          <textarea
-                            rows={Math.max(4, Math.ceil((row.paraTitle || '').length / 28))}
-                            readOnly={!isJaripatraEditable}
-                            className={`w-full text-justify bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-relaxed ${
-                              isJaripatraEditable ? "hover:bg-slate-100/60 focus:bg-blue-50/50" : "cursor-default select-text"
-                            }`}
-                            value={row.paraTitle}
-                            onInput={(e) => {
-                              const t = e.currentTarget;
-                              t.style.height = "auto";
-                              t.style.height = `${t.scrollHeight}px`;
-                            }}
-                            onChange={(e) => handleUpdateJaripatraCell(row.id, "paraTitle", e.target.value)}
-                          />
-                        </td>
-                        {/* 5. Involved Amount */}
-                        <td className="border border-black p-1.5 text-center font-bold">
-                          <textarea
-                            rows={Math.max(2, (row.involvedAmount || '').split('\n').length)}
-                            readOnly={!isJaripatraEditable}
-                            className={`w-full text-center bg-transparent outline-none font-bold text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
-                              isJaripatraEditable ? "hover:bg-slate-100/60 focus:bg-blue-50/50" : "cursor-default select-text"
-                            }`}
-                            value={row.involvedAmount}
-                            onInput={(e) => {
-                              const t = e.currentTarget;
-                              t.style.height = "auto";
-                              t.style.height = `${t.scrollHeight}px`;
-                            }}
-                            onChange={(e) => handleUpdateJaripatraCell(row.id, "involvedAmount", e.target.value)}
-                          />
-                        </td>
-                        {/* 6. Office Comment */}
-                        <td className="border border-black p-1.5 text-justify leading-relaxed">
-                          <textarea
-                            rows={Math.max(5, Math.ceil((row.officeComment || '').length / 32))}
-                            readOnly={!isJaripatraEditable}
-                            className={`w-full text-justify bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-relaxed ${
-                              isJaripatraEditable ? "hover:bg-slate-100/60 focus:bg-blue-50/50" : "cursor-default select-text"
-                            }`}
-                            value={row.officeComment}
-                            onInput={(e) => {
-                              const t = e.currentTarget;
-                              t.style.height = "auto";
-                              t.style.height = `${t.scrollHeight}px`;
-                            }}
-                            onChange={(e) => handleUpdateJaripatraCell(row.id, "officeComment", e.target.value)}
-                          />
-                        </td>
+                          </th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
 
-                {/* Table Row Add Button */}
+                    {/* Table Body */}
+                    <tbody>
+                      {jaripatraGridRows.map((row, rIdx) => (
+                        <tr key={row.id} className="align-top hover:bg-slate-50/40 group/row">
+                          {jaripatraColumns.map((col, cIdx) => {
+                            const cell = row.cells[col.id];
+                            if (!cell || cell.isHidden) return null;
+
+                            const isMerged = (cell.colSpan && cell.colSpan > 1) || (cell.rowSpan && cell.rowSpan > 1);
+                            const alignClass =
+                              cell.align === 'center'
+                                ? 'text-center'
+                                : cell.align === 'justify'
+                                ? 'text-justify'
+                                : cell.align === 'right'
+                                ? 'text-right'
+                                : col.align === 'center'
+                                ? 'text-center'
+                                : col.align === 'justify'
+                                ? 'text-justify'
+                                : 'text-left';
+
+                            const isSerialCol = cIdx === 0 && jaripatraColumns.length > 1;
+
+                            return (
+                              <td
+                                key={`${row.id}-${col.id}`}
+                                colSpan={cell.colSpan || 1}
+                                rowSpan={cell.rowSpan || 1}
+                                className={`border border-black p-1.5 relative group/cell ${
+                                  isMerged ? "bg-amber-50/20" : ""
+                                }`}
+                              >
+                                {/* Left Row Handle (Shown on 1st Column in Edit Mode) */}
+                                {isJaripatraEditable && cIdx === 0 && (
+                                  <div className="no-print absolute -left-1 top-1 -translate-x-full opacity-0 group-hover/row:opacity-100 transition-opacity flex flex-col gap-0.5 bg-white border border-slate-300 shadow-md p-0.5 z-20">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleAddRow(rIdx, 'above')}
+                                      className="p-1 hover:bg-emerald-50 text-emerald-700 cursor-pointer"
+                                      title="উপরে নতুন সারি যোগ করুন"
+                                    >
+                                      <ArrowUp size={11} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleAddRow(rIdx, 'below')}
+                                      className="p-1 hover:bg-emerald-50 text-emerald-700 cursor-pointer"
+                                      title="নিচে নতুন সারি যোগ করুন"
+                                    >
+                                      <ArrowDown size={11} />
+                                    </button>
+                                    {jaripatraGridRows.length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteRow(row.id)}
+                                        className="p-1 hover:bg-red-50 text-red-600 cursor-pointer"
+                                        title="এই সারিটি মুছুন"
+                                      >
+                                        <Trash2 size={11} />
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Cell Controls (Merge, Align, Bold) - On Cell Hover/Menu */}
+                                {isJaripatraEditable && (
+                                  <div className="no-print absolute right-1 top-1 opacity-0 group-hover/cell:opacity-100 transition-opacity z-10">
+                                    <div className="flex items-center gap-0.5 bg-white/95 border border-slate-300 shadow-sm px-1 py-0.5 rounded-none text-[10px]">
+                                      {/* Merge Right Button */}
+                                      {cIdx + (cell.colSpan || 1) < jaripatraColumns.length && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleMergeRight(rIdx, cIdx)}
+                                          className="p-0.5 hover:bg-blue-50 text-blue-700 cursor-pointer"
+                                          title="ডানের সেলের সাথে মার্জ করুন"
+                                        >
+                                          <ArrowRight size={11} />
+                                        </button>
+                                      )}
+
+                                      {/* Merge Down Button */}
+                                      {rIdx + (cell.rowSpan || 1) < jaripatraGridRows.length && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleMergeDown(rIdx, cIdx)}
+                                          className="p-0.5 hover:bg-blue-50 text-blue-700 cursor-pointer"
+                                          title="নিচের সেলের সাথে মার্জ করুন"
+                                        >
+                                          <ArrowDown size={11} />
+                                        </button>
+                                      )}
+
+                                      {/* Unmerge Button */}
+                                      {isMerged && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleUnmergeCell(rIdx, cIdx)}
+                                          className="p-0.5 hover:bg-amber-50 text-amber-700 font-bold cursor-pointer"
+                                          title="মার্জ বাতিল করুন (আনমার্জ)"
+                                        >
+                                          <Split size={11} />
+                                        </button>
+                                      )}
+
+                                      {/* Alignment toggles */}
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSetCellAlign(row.id, col.id, 'justify')}
+                                        className={`p-0.5 hover:bg-slate-100 cursor-pointer ${
+                                          cell.align === 'justify' ? 'text-blue-700 font-bold' : 'text-slate-500'
+                                        }`}
+                                        title="জাস্টিফাই অ্যালাইন"
+                                      >
+                                        <AlignJustify size={11} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSetCellAlign(row.id, col.id, 'center')}
+                                        className={`p-0.5 hover:bg-slate-100 cursor-pointer ${
+                                          cell.align === 'center' ? 'text-blue-700 font-bold' : 'text-slate-500'
+                                        }`}
+                                        title="মাঝে অ্যালাইন"
+                                      >
+                                        <AlignCenter size={11} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSetCellAlign(row.id, col.id, 'left')}
+                                        className={`p-0.5 hover:bg-slate-100 cursor-pointer ${
+                                          cell.align === 'left' ? 'text-blue-700 font-bold' : 'text-slate-500'
+                                        }`}
+                                        title="বামে অ্যালাইন"
+                                      >
+                                        <AlignLeft size={11} />
+                                      </button>
+
+                                      {/* Bold Toggle */}
+                                      <button
+                                        type="button"
+                                        onClick={() => handleToggleCellBold(row.id, col.id)}
+                                        className={`p-0.5 hover:bg-slate-100 cursor-pointer ${
+                                          cell.isBold ? 'text-blue-700 font-bold' : 'text-slate-500'
+                                        }`}
+                                        title="বোল্ড টগল"
+                                      >
+                                        <Bold size={11} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Cell Textarea (Auto Expands and preserves justification) */}
+                                <textarea
+                                  rows={
+                                    isSerialCol
+                                      ? 1
+                                      : Math.max(
+                                          2,
+                                          Math.ceil(((cell.text || '').length || 1) / (cell.colSpan && cell.colSpan > 1 ? 45 : 25)),
+                                          (cell.text || '').split('\n').length
+                                        )
+                                  }
+                                  readOnly={!isJaripatraEditable}
+                                  className={`w-full bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-relaxed ${alignClass} ${
+                                    cell.isBold ? "font-bold" : "font-normal"
+                                  } ${
+                                    isJaripatraEditable
+                                      ? "hover:bg-slate-100/60 focus:bg-blue-50/50"
+                                      : "cursor-default select-text"
+                                  }`}
+                                  value={cell.text || ""}
+                                  onInput={(e) => {
+                                    const t = e.currentTarget;
+                                    t.style.height = "auto";
+                                    t.style.height = `${t.scrollHeight}px`;
+                                  }}
+                                  onChange={(e) => handleUpdateCellText(row.id, col.id, e.target.value)}
+                                />
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Bottom Table Quick Action Bar */}
                 {isJaripatraEditable && (
-                  <div className="pt-2 no-print flex justify-start">
-                    <button
-                      type="button"
-                      onClick={handleAddJaripatraRow}
-                      className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-none text-xs font-bold flex items-center gap-1 cursor-pointer"
-                    >
-                      <Plus size={13} /> ছকে নতুন অনুচ্ছেদ সারি যোগ করুন
-                    </button>
+                  <div className="pt-1 no-print flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleAddRow(jaripatraGridRows.length - 1, 'below')}
+                        className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-none text-xs font-bold flex items-center gap-1 cursor-pointer"
+                      >
+                        <Plus size={13} className="text-emerald-600" /> ছকে নতুন অনুচ্ছেদ সারি যোগ করুন
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAddColumn(jaripatraColumns.length - 1, 'right')}
+                        className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-none text-xs font-bold flex items-center gap-1 cursor-pointer"
+                      >
+                        <Columns size={13} className="text-blue-600" /> নতুন কলাম যোগ করুন
+                      </button>
+                    </div>
+
+                    <span className="text-[11px] text-slate-500">
+                      মোট সারি: <strong>{toBengaliDigits(jaripatraGridRows.length)}</strong>টি | মোট কলাম: <strong>{toBengaliDigits(jaripatraColumns.length)}</strong>টি
+                    </span>
                   </div>
                 )}
               </div>
