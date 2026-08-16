@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   FileText,
   Upload,
@@ -2079,13 +2080,13 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       </div>
 
       {/* SECTION 5: Official Jaripatra Modal / View (Exact Bangladesh Commercial Audit Directorate Government Format) */}
-      {showJaripatraView && (
-        <div className="fixed inset-0 z-[60000] bg-slate-950/80 backdrop-blur-sm flex items-start justify-center p-2 sm:p-6 md:p-8 overflow-y-auto">
-          <div className="bg-white rounded-none max-w-5xl w-full my-auto max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border-2 border-slate-700 animate-in zoom-in-95 duration-200">
-            {/* Modal Top Header with Actions (Fixed within modal, no clipping) */}
-            <div className="bg-slate-900 text-white px-4 sm:px-6 py-3.5 border-b border-slate-700 flex flex-wrap items-center justify-between gap-3 no-print z-20 shrink-0">
+      {showJaripatraView && createPortal(
+        <div className="fixed inset-0 z-[100000] bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden animate-in fade-in duration-200">
+          <div className="bg-white rounded-none max-w-5xl w-full h-full max-h-[94vh] flex flex-col overflow-hidden shadow-2xl border-2 border-slate-700 animate-in zoom-in-95 duration-200">
+            {/* Modal Top Header with Actions (Fixed within modal, top-level visible) */}
+            <div className="bg-slate-900 text-white px-4 sm:px-6 py-3 border-b border-slate-700 flex flex-wrap items-center justify-between gap-3 no-print z-20 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-none bg-amber-500 text-slate-900 flex items-center justify-center font-black">
+                <div className="w-8 h-8 rounded-none bg-amber-500 text-slate-900 flex items-center justify-center font-black shrink-0">
                   <Flame size={18} />
                 </div>
                 <div>
@@ -2471,12 +2472,13 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             </div>
           </div>
         </div>
-      </div>
-      )}
+      </div>,
+      document.body
+    )}
 
       {/* AI Document Validation Error Alert Modal - Strictly Rectangular */}
-      {validationErrorModal && validationErrorModal.open && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+      {validationErrorModal && validationErrorModal.open && createPortal(
+        <div className="fixed inset-0 z-[100000] bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
           <div className="bg-white rounded-none border-2 border-rose-600 shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="bg-rose-700 text-white px-5 py-3.5 flex items-center justify-between">
@@ -2538,12 +2540,13 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* AI Missing Info Clarification / Confirmation Modal */}
-      {documentConfirmationModal && documentConfirmationModal.open && (
-        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+      {documentConfirmationModal && documentConfirmationModal.open && createPortal(
+        <div className="fixed inset-0 z-[100000] bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
           <div className="bg-white rounded-none border-2 border-amber-600 shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200 font-bengali">
             {/* Header */}
             <div className="bg-amber-700 text-white px-5 py-3.5 flex items-center justify-between">
@@ -2618,7 +2621,8 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
