@@ -211,6 +211,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   // Jaripatra State (Strict Government Layout Matching Commercial Audit Format)
   const [showJaripatraView, setShowJaripatraView] = useState<boolean>(false);
   const [jaripatraCopiedSuccess, setJaripatraCopiedSuccess] = useState<boolean>(false);
+  const [jaripatraSavedSuccess, setJaripatraSavedSuccess] = useState<boolean>(false);
   
   // Header 5 Lines
   const [jaripatraHeaderLine1, setJaripatraHeaderLine1] = useState<string>("মহাপরিচালকের কার্যালয়");
@@ -1291,87 +1292,96 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     }
   };
 
+  const handleSaveJaripatra = () => {
+    if (onSaveJaripatra) {
+      onSaveJaripatra(entry, { 
+        memoNo: jaripatraMemoNo, 
+        date: jaripatraDate,
+        tableRows: jaripatraTableRows,
+        subject: jaripatraSubject,
+        reference: jaripatraReference,
+        onulipi: jaripatraOnulipiItems,
+      });
+    }
+    setJaripatraSavedSuccess(true);
+    setTimeout(() => setJaripatraSavedSuccess(false), 3000);
+  };
+
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6 pb-20 animate-in fade-in duration-300">
+    <div className="w-full max-w-6xl mx-auto space-y-4 pb-20 animate-in fade-in duration-300">
       {showJaripatraView ? (
-        <div className="space-y-4 animate-in fade-in duration-200">
-          {/* Jaripatra Top Action Header Bar */}
-          <div className="bg-slate-900 text-white rounded-2xl border border-slate-700 shadow-md p-4 flex flex-wrap items-center justify-between gap-3 no-print">
-            <div className="flex items-center gap-3">
+        <div className="space-y-3 animate-in fade-in duration-200">
+          {/* Jaripatra Top Action Header Bar - Sticky Top, Compact, Rounded-none, Rectangular */}
+          <div className="sticky top-0 z-40 bg-slate-900 text-white rounded-none border border-slate-700 shadow-md px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 no-print">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setShowJaripatraView(false)}
-                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl transition-all flex items-center gap-1.5 text-xs font-bold border border-slate-700 cursor-pointer"
+                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-none transition-all flex items-center gap-1 text-[11px] font-bold border border-slate-700 cursor-pointer"
                 title="নোট শিটে ফিরে যান"
               >
-                <ArrowLeft size={16} />
+                <ArrowLeft size={13} />
                 <span>নোট শিটে ফিরুন</span>
               </button>
-              <div className="h-6 w-[1px] bg-slate-700 hidden sm:block" />
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shrink-0">
-                  <Flame size={20} />
+              <div className="h-4 w-[1px] bg-slate-700 hidden sm:block" />
+              <div className="flex items-center gap-1.5">
+                <div className="w-6 h-6 rounded-none bg-amber-500 text-slate-950 flex items-center justify-center font-black shrink-0">
+                  <Flame size={14} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-white">সরকারি জারিপত্র (অফিসিয়াল ফরম্যাট)</h3>
-                  <p className="text-[11px] font-bold text-slate-300">বাণিজ্যিক অডিট অধিদপ্তরের নির্ধারিত ৬ কলাম ছক ও কাঠামো অনুযায়ী</p>
+                  <h3 className="text-xs font-black text-white leading-tight">সরকারি জারিপত্র (অফিসিয়াল ফরম্যাট)</h3>
+                  <p className="text-[10px] font-bold text-slate-300 hidden md:block leading-none">বাণিজ্যিক অডিট অধিদপ্তরের নির্ধারিত ৬ কলাম ছক ও কাঠামো অনুযায়ী</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center flex-wrap gap-2">
+            <div className="flex items-center flex-wrap gap-1.5">
               <button
                 type="button"
                 onClick={handleResetJaripatraToDemo}
-                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all"
+                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 rounded-none text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-all"
                 title="নমুনা জারিপত্র ফরম্যাটে রিসেট করুন"
               >
-                <RotateCcw size={14} /> নমুনা ফরম্যাট লোড
+                <RotateCcw size={12} /> নমুনা ফরম্যাট লোড
               </button>
               <button
                 type="button"
                 onClick={handleCopyJaripatraWord}
-                className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-none text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
                   jaripatraCopiedSuccess
                     ? "bg-emerald-600 text-white"
                     : "bg-blue-600 hover:bg-blue-700 text-white"
                 }`}
                 title="MS Word বা নথিতে সরাসরি পেস্ট করার জন্য ফরম্যাটসহ কপি করুন"
               >
-                {jaripatraCopiedSuccess ? <Check size={14} /> : <Copy size={14} />}
+                {jaripatraCopiedSuccess ? <Check size={12} /> : <Copy size={12} />}
                 {jaripatraCopiedSuccess ? "ওয়ার্ডে কপি হয়েছে!" : "ওয়ার্ডে কপি করুন"}
               </button>
               <button
                 type="button"
                 onClick={handlePrintJaripatra}
-                className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer transition-all"
+                className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-none text-[11px] font-bold flex items-center gap-1 shadow-xs cursor-pointer transition-all"
               >
-                <Printer size={14} /> প্রিন্ট
+                <Printer size={12} /> প্রিন্ট
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  if (onSaveJaripatra) {
-                    onSaveJaripatra(entry, { 
-                      memoNo: jaripatraMemoNo, 
-                      date: jaripatraDate,
-                      tableRows: jaripatraTableRows,
-                      subject: jaripatraSubject,
-                      reference: jaripatraReference,
-                      onulipi: jaripatraOnulipiItems,
-                    });
-                  }
-                  setShowJaripatraView(false);
-                }}
-                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer transition-all"
+                onClick={handleSaveJaripatra}
+                className={`px-3 py-1 rounded-none text-[11px] font-bold flex items-center gap-1 shadow-xs cursor-pointer transition-all ${
+                  jaripatraSavedSuccess
+                    ? "bg-emerald-700 ring-2 ring-emerald-400 font-black text-white"
+                    : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                }`}
+                title="জারিপত্র তথ্য সংরক্ষণ করুন"
               >
-                <CheckCircle2 size={14} /> সংরক্ষণ ও বন্ধ
+                <CheckCircle2 size={13} />
+                <span>{jaripatraSavedSuccess ? "সংরক্ষিত হয়েছে!" : "সংরক্ষণ"}</span>
               </button>
             </div>
           </div>
 
           {/* Printable Official Government Letter Sheet */}
-          <div className="bg-white rounded-2xl border border-slate-300 shadow-xl p-6 sm:p-12 md:p-14 text-black font-bengali text-xs sm:text-[13px] leading-relaxed space-y-4 print:p-0 print:m-0 print:border-none print:shadow-none">
+          <div className="bg-white rounded-none border border-slate-300 shadow-md p-6 sm:p-12 md:p-14 text-black font-bengali text-xs sm:text-[13px] leading-relaxed space-y-4 print:p-0 print:m-0 print:border-none print:shadow-none">
             <div 
               id="official-jaripatra-container" 
               className="space-y-4 max-w-4xl mx-auto"
