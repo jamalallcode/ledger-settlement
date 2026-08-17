@@ -52,7 +52,7 @@ import {
   cleanAndFormatBengaliAmount,
   stripAmountSlashInText
 } from "../utils/numberUtils";
-import { OFFICE_HEADER } from "../constants";
+import { OFFICE_HEADER, MINISTRY_ENTITY_MAP } from "../constants";
 
 interface DocumentManagementModuleProps {
   entry: CorrespondenceEntry;
@@ -141,12 +141,83 @@ const DEFAULT_TABLE_COLUMNS: TableColumn[] = [
   { id: "adjustmentDate", label: "সমন্বয়ের তারিখ" },
 ];
 
+const parseCorrespondenceDetails = (entry: CorrespondenceEntry) => {
+  const rawDesc = (entry.description || '').trim();
+  
+  let extractedEntity = (entry.entityName || '').trim();
+  let extractedBranch = ((entry as any).branchName || '').trim();
+  let extractedAuditYear = (entry.auditYear || '').trim();
+  let extractedMinistry = (entry.ministryName || '').trim();
+
+  // Try extracting audit year from parentheses in description if not set
+  if (!extractedAuditYear && rawDesc) {
+    const yearMatch = rawDesc.match(/\(([^)]+)\)/);
+    if (yearMatch) {
+      extractedAuditYear = yearMatch[1].trim();
+    }
+  }
+
+  // If entity is not explicitly provided, try to extract from description
+  if (!extractedEntity && rawDesc) {
+    const withoutYear = rawDesc.replace(/\s*\([^)]*\)\s*$/, '').trim();
+    if (withoutYear.includes(',')) {
+      const parts = withoutYear.split(',');
+      extractedEntity = parts[0].trim();
+      if (!extractedBranch) {
+        extractedBranch = parts.slice(1).join(',').trim();
+      }
+    } else {
+      extractedEntity = withoutYear;
+    }
+  } else if (rawDesc && !extractedBranch) {
+    const withoutYear = rawDesc.replace(/\s*\([^)]*\)\s*$/, '').trim();
+    if (withoutYear.includes(',')) {
+      const parts = withoutYear.split(',');
+      extractedBranch = parts.slice(1).join(',').trim();
+    }
+  }
+
+  // If ministry is not set, try to infer from MINISTRY_ENTITY_MAP using entity
+  if (!extractedMinistry && extractedEntity) {
+    for (const [min, entities] of Object.entries(MINISTRY_ENTITY_MAP)) {
+      if (entities.some(e => extractedEntity.includes(e) || e.includes(extractedEntity))) {
+        extractedMinistry = min;
+        break;
+      }
+    }
+  }
+
+  const diaryNo = entry.diaryNo ? toBengaliDigits(entry.diaryNo) : '';
+  const diaryDate = entry.diaryDate ? formatDateBN(entry.diaryDate) : '';
+  const letterNo = entry.letterNo ? entry.letterNo.trim() : '';
+  const letterDate = entry.letterDate ? formatDateBN(entry.letterDate) : '';
+  const totalAmount = entry.totalAmount ? toBengaliDigits(entry.totalAmount) : '০';
+  const paraNo = (entry as any).paraNo ? toBengaliDigits((entry as any).paraNo) : (entry.totalParas ? toBengaliDigits(entry.totalParas) : '১');
+  const paraType = entry.paraType || 'নন-এসএফআই';
+
+  return {
+    entity: extractedEntity,
+    branch: extractedBranch,
+    auditYear: extractedAuditYear,
+    ministry: extractedMinistry,
+    diaryNo,
+    diaryDate,
+    letterNo,
+    letterDate,
+    totalAmount,
+    paraNo,
+    paraType,
+  };
+};
+
 export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> = ({
   entry,
   onBack,
   onSaveJaripatra,
   onRegisterBackHandler,
 }) => {
+  const parsed = parseCorrespondenceDetails(entry);
+
   // In-Memory Uploaded Files (Permanently purged on note approval)
   const [objectionFile, setObjectionFile] = useState<{ name: string; size: string; base64: string; mimeType: string } | null>(null);
   const [objectionText, setObjectionText] = useState<string>("");
@@ -164,28 +235,43 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   const [userClarificationAnswers, setUserClarificationAnswers] = useState<Record<number, string>>({});
 
   // 1. Official Header (Top Center)
-  const defaultDiaryNo = entry.diaryNo ? toBengaliDigits(entry.diaryNo) : "২৩৯";
-  const defaultDiaryDate = entry.diaryDate ? formatDateBN(entry.diaryDate) : "৩০/০৭/২০২৬";
-  const [diaryHeader, setDiaryHeader] = useState<string>(`ডায়েরি নং- ${defaultDiaryNo}, তারিখ: ${defaultDiaryDate} খ্রি:`);
+  const defaultDiaryNo = parsed.diaryNo || "-";
+  const defaultDiaryDate = parsed.diaryDate || "";
+  const [diaryHeader, setDiaryHeader] = useState<string>(() => {
+    if (defaultDiaryNo && defaultDiaryDate) {
+      return `ডায়েরি নং- ${defaultDiaryNo}, তারিখ: ${defaultDiaryDate} খ্রি:`;
+    }
+    if (defaultDiaryNo) {
+      return `ডায়েরি নং- ${defaultDiaryNo}`;
+    }
+    return "ডায়েরি নং- , তারিখ:  খ্রি:";
+  });
 
   // 2. Toka / Introductory Note Body
-  const defaultLetterNo = entry.letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩২";
-  const defaultLetterDate = entry.letterDate ? formatDateBN(entry.letterDate) : "২৭/০৭/২০২৬";
-  const defaultEntity = entry.entityName || "পাটকল সংস্থা";
-  const defaultMinistry = entry.ministryName || "বস্ত্র ও পাট মন্ত্রণালয়";
-  const defaultBranch = entry.branchName || "দর্শনা শাখা, চুয়াডাঙ্গা";
-  const defaultAuditYear = entry.auditYear || "২০১০-১১, ২০১৪-১৫, ২০১৫-১৬, ২০১৮-১৯";
+  const defaultLetterNo = parsed.letterNo || "-";
+  const defaultLetterDate = parsed.letterDate || "";
+  const defaultEntity = parsed.entity || "সংশ্লিষ্ট প্রতিষ্ঠান";
+  const defaultMinistry = parsed.ministry || "";
+  const defaultBranch = parsed.branch || "";
+  const defaultAuditYear = parsed.auditYear || "";
 
   const [tikaIntroHtml, setTikaIntroHtml] = useState<string>(() => {
-    return `<p><strong>টোকা নং- ১১:</strong> উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা <strong>${defaultEntity}</strong>, প্রধান কার্যালয়ের স্মারক নং- <strong>${defaultLetterNo}</strong>, তারিখ: <strong>${defaultLetterDate} খ্রি:</strong> পত্রটি <strong>(পৃষ্ঠা নং- )</strong> দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে <strong>${defaultMinistry}</strong> এর নিয়ন্ত্রণাধীন <strong>${defaultEntity}</strong>, ${defaultBranch} এর <strong>${defaultAuditYear}</strong> নিরীক্ষা বছরের ব্রডশীট জবাবের <strong>(পৃষ্ঠা নং- )</strong> ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।</p>`;
+    const ministryPart = defaultMinistry ? `<strong>${defaultMinistry}</strong> এর নিয়ন্ত্রণাধীন ` : '';
+    const branchPart = defaultBranch ? `, ${defaultBranch}` : '';
+    const yearPart = defaultAuditYear ? `এর <strong>${defaultAuditYear}</strong> নিরীক্ষা বছরের ` : 'এর ';
+    const letterNoPart = defaultLetterNo ? `<strong>${defaultLetterNo}</strong>` : '<strong>-</strong>';
+    const letterDatePart = defaultLetterDate ? `<strong>${defaultLetterDate} খ্রি:</strong>` : '<strong>- খ্রি:</strong>';
+    const entityPart = `<strong>${defaultEntity}</strong>`;
+
+    return `<p><strong>টোকা নং- ১১:</strong> উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা ${entityPart}, প্রধান কার্যালয়ের স্মারক নং- ${letterNoPart}, তারিখ: ${letterDatePart} পত্রটি <strong>(পৃষ্ঠা নং- )</strong> দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে ${ministryPart}${entityPart}${branchPart} ${yearPart}ব্রডশীট জবাবের <strong>(পৃষ্ঠা নং- )</strong> ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।</p>`;
   });
 
   // 3. Multi-Paragraphs State (প্রতিটি অনুচ্ছেদের জন্য পৃথক ছক, জবাব, টেবিল ও মন্তব্য)
-  const defaultParaNo = entry.paraNo ? toBengaliDigits(entry.paraNo) : "১০";
-  const defaultTitleAndDetails = "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশিষ্ট পৃষ্ঠা নং- ";
+  const defaultParaNo = parsed.paraNo || "১";
+  const defaultTitleAndDetails = "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- ";
   const defaultEntityAndAuditYear = `প্রতিষ্ঠান: ${defaultEntity}${
-    entry.branchName ? `,\n${entry.branchName}` : defaultBranch ? `,\n${defaultBranch}` : ""
-  }\nনিরীক্ষা বছর: ${entry.auditYear || defaultAuditYear}`;
+    defaultBranch ? `,\n${defaultBranch}` : ""
+  }\nনিরীক্ষা বছর: ${defaultAuditYear || "-"}`;
 
   const [paragraphs, setParagraphs] = useState<AuditParagraphBlock[]>([
     {
@@ -274,25 +360,27 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
   // Recipient
   const [jaripatraRecipientDesignation, setJaripatraRecipientDesignation] = useState<string>("ব্যবস্থাপনা পরিচালক");
-  const [jaripatraRecipientEntity, setJaripatraRecipientEntity] = useState<string>(() => entry.entityName || "সোনালী ব্যাংক পিএলসি");
-  const [jaripatraRecipientAddress, setJaripatraRecipientAddress] = useState<string>("প্রধান কার্যালয়, ৩৫-৪২, ৪৪ মতিঝিল বা/এ");
-  const [jaripatraRecipientCity, setJaripatraRecipientCity] = useState<string>("ঢাকা – ১০০০");
+  const [jaripatraRecipientEntity, setJaripatraRecipientEntity] = useState<string>(() => defaultEntity);
+  const [jaripatraRecipientAddress, setJaripatraRecipientAddress] = useState<string>("প্রধান কার্যালয়, ঢাকা");
+  const [jaripatraRecipientCity, setJaripatraRecipientCity] = useState<string>("ঢাকা");
 
   // Subject & Reference & Intro Text
   const [jaripatraSubject, setJaripatraSubject] = useState<string>(() => {
-    const branchPart = entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা';
-    const auditYr = entry.auditYear || "২০১১-১৪";
-    return `বিষয়: ${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${branchPart} এর ${auditYr} সালের বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${entry.paraType || "নন-এসএফআই"} অনুচ্ছেদ নং ১০ এর জবাবের উপর মন্তব্য প্রেরণ।`;
+    const branchPart = defaultBranch ? `, ${defaultBranch}` : '';
+    const auditYr = defaultAuditYear ? ` এর ${defaultAuditYear} সালের` : '';
+    const pType = entry.paraType || "নন-এসএফআই";
+    return `বিষয়: ${defaultEntity}${branchPart}${auditYr} বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${pType} অনুচ্ছেদ নং ${defaultParaNo} এর জবাবের উপর মন্তব্য প্রেরণ।`;
   });
   const [jaripatraReference, setJaripatraReference] = useState<string>(() => {
-    const letterN = entry.letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩২";
-    const letterD = entry.letterDate ? formatDateBN(entry.letterDate) : "২৭/০৭/২০২৬";
-    return `সূত্র: ${entry.entityName || "সোনালী ব্যাংক পিএলসি"} এর পত্র নং ${letterN}, তারিখ: ${letterD}`;
+    const letterN = defaultLetterNo || "-";
+    const letterD = defaultLetterDate ? `${defaultLetterDate} খ্রি:` : "-";
+    return `সূত্র: ${defaultEntity} এর পত্র নং ${letterN}, তারিখ: ${letterD}`;
   });
   const [jaripatraIntroText, setJaripatraIntroText] = useState<string>(() => {
-    const branchPart = entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা';
-    const auditYr = entry.auditYear || "২০১১-২০১৪";
-    return `উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${branchPart} এর ${auditYr} সালের নিরীক্ষা প্রতিবেদনের ${entry.paraType || "নন-এসএফআই"} অনুচ্ছেদ নং ১০ এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:`;
+    const branchPart = defaultBranch ? `, ${defaultBranch}` : '';
+    const auditYr = defaultAuditYear ? ` এর ${defaultAuditYear} সালের` : '';
+    const pType = entry.paraType || "নন-এসএফআই";
+    return `উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${defaultEntity}${branchPart}${auditYr} নিরীক্ষা প্রতিবেদনের ${pType} অনুচ্ছেদ নং ${defaultParaNo} এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:`;
   });
 
   // Dynamic Columns & Grid Rows (Flexible Government Settlement Format with Add/Delete/Merge capabilities)
@@ -302,10 +390,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       id: "j-row-1",
       cells: {
         col_1: { text: "১", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-        col_2: { text: `${entry.paraNo ? toBengaliDigits(entry.paraNo) : "১০"}, ${entry.auditYear || "২০১১-১৪"}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-        col_3: { text: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা।'}`, align: "justify", colSpan: 1, rowSpan: 1 },
-        col_4: { text: `অনুচ্ছেদ নং ${entry.paraNo ? toBengaliDigits(entry.paraNo) : "১০"}`, align: "justify", colSpan: 1, rowSpan: 1 },
-        col_5: { text: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+        col_2: { text: `${defaultParaNo}${defaultAuditYear ? `, ${defaultAuditYear}` : ''}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+        col_3: { text: `${defaultEntity}${defaultBranch ? `, ${defaultBranch}` : ''}`, align: "justify", colSpan: 1, rowSpan: 1 },
+        col_4: { text: `অনুচ্ছেদ নং ${defaultParaNo}`, align: "justify", colSpan: 1, rowSpan: 1 },
+        col_5: { text: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "০", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
         col_6: { text: "", align: "justify", colSpan: 1, rowSpan: 1 }
       }
     }
@@ -326,17 +414,17 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   const [jaripatraOnulipiHeader, setJaripatraOnulipiHeader] = useState<string>("অনুলিপি জ্ঞাতার্থ ও কার্যার্থে প্রেরণ করা হলো:");
   const [jaripatraOnulipiItems, setJaripatraOnulipiItems] = useState<string[]>([
     "১। মহাপরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, সেগুনবাগিচা, ঢাকা।",
-    "২। মহাব্যবস্থাপক, সোনালী ব্যাংক পিএলসি, প্রধান কার্যালয়, ঢাকা।",
-    "৩। উপ-মহাব্যবস্থাপক, সোনালী ব্যাংক পিএলসি, আঞ্চলিক কার্যালয়, চুয়াডাঙ্গা।",
+    `২। মহাব্যবস্থাপক, ${defaultEntity}, প্রধান কার্যালয়, ঢাকা।`,
+    `৩। উপ-মহাব্যবস্থাপক, ${defaultEntity}, আঞ্চলিক কার্যালয়${defaultBranch ? `, ${defaultBranch}` : ''}।`,
     "৪। অফিস কপি।"
   ]);
 
   const handleSyncParagraphsToJaripatra = () => {
     const newGridRows: JaripatraGridRowItem[] = paragraphs.map((para, idx) => {
       const col1Text = toBengaliDigits(idx + 1);
-      const col2Text = `${para.paraNo ? toBengaliDigits(para.paraNo) : toBengaliDigits(idx + 10)}, ${entry.auditYear || "২০১১-১৪"}`;
-      const col3Text = `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `,\n${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা।'}`;
-      const col4Text = para.titleAndDetails ? para.titleAndDetails.split('\n')[0].replace(/^শিরোনাম:\s*/, '') : `অনুচ্ছেদ নং ${para.paraNo ? toBengaliDigits(para.paraNo) : toBengaliDigits(idx + 10)}`;
+      const col2Text = `${para.paraNo ? toBengaliDigits(para.paraNo) : toBengaliDigits(idx + 1)}${defaultAuditYear ? `, ${defaultAuditYear}` : ''}`;
+      const col3Text = `${defaultEntity}${defaultBranch ? `,\n${defaultBranch}` : ''}`;
+      const col4Text = para.titleAndDetails ? para.titleAndDetails.split('\n')[0].replace(/^শিরোনাম:\s*/, '') : `অনুচ্ছেদ নং ${para.paraNo ? toBengaliDigits(para.paraNo) : toBengaliDigits(idx + 1)}`;
       const col5Text = entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "০";
       const col6Text = para.presenterCommentText || "";
 
@@ -728,16 +816,19 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
         // Auto-generate Jaripatra rows from parsed paragraphs
         const jRows: JaripatraGridRowItem[] = parsedParas.map((para, idx) => {
-          let title = para.titleAndDetails.split("\n")[0] || "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী টাকা।";
+          let title = para.titleAndDetails.split("\n")[0] || "";
           title = stripAmountSlashInText(title.replace(/^শিরোনাম:\s*/, ''));
+          const auditYr = defaultAuditYear || "";
+          const entName = defaultEntity;
+          const brName = defaultBranch ? `,\n${defaultBranch}` : '';
           return {
             id: `j-row-ai-${idx + 1}`,
             cells: {
               col_1: { text: para.sl || toBengaliDigits(idx + 1), align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-              col_2: { text: `${para.paraNo}, ${entry.auditYear || "২০১১-১৪"}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-              col_3: { text: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `,\n${entry.branchName}` : ',\nদর্শনা শাখা, চুয়াডাঙ্গা।'}`, align: "justify", colSpan: 1, rowSpan: 1 },
-              col_4: { text: title, align: "justify", colSpan: 1, rowSpan: 1 },
-              col_5: { text: entry.totalAmount ? cleanAndFormatBengaliAmount(entry.totalAmount) : "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+              col_2: { text: `${para.paraNo}${auditYr ? `, ${auditYr}` : ''}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+              col_3: { text: `${entName}${brName}`, align: "justify", colSpan: 1, rowSpan: 1 },
+              col_4: { text: title || `অনুচ্ছেদ নং ${para.paraNo}`, align: "justify", colSpan: 1, rowSpan: 1 },
+              col_5: { text: entry.totalAmount ? cleanAndFormatBengaliAmount(entry.totalAmount) : "০", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
               col_6: { text: para.presenterCommentText || "", align: "justify", colSpan: 1, rowSpan: 1 }
             }
           };
@@ -767,10 +858,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             id: `j-row-${idx + 1}`,
             cells: {
               col_1: { text: r.sl || toBengaliDigits(idx + 1), align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-              col_2: { text: r.paraAndYear || "১০, ২০১১-১৪", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-              col_3: { text: r.entityName || `${entry.entityName || "সোনালী ব্যাংক পিএলসি"},\nদর্শনা শাখা, চুয়াডাঙ্গা।`, align: "justify", colSpan: 1, rowSpan: 1 },
-              col_4: { text: r.paraTitle || "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী টাকা।", align: "justify", colSpan: 1, rowSpan: 1 },
-              col_5: { text: r.involvedAmount || "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+              col_2: { text: r.paraAndYear || `${defaultParaNo}${defaultAuditYear ? `, ${defaultAuditYear}` : ''}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+              col_3: { text: r.entityName || `${defaultEntity}${defaultBranch ? `,\n${defaultBranch}` : ''}`, align: "justify", colSpan: 1, rowSpan: 1 },
+              col_4: { text: r.paraTitle || `অনুচ্ছেদ নং ${defaultParaNo}`, align: "justify", colSpan: 1, rowSpan: 1 },
+              col_5: { text: r.involvedAmount || (entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "০"), align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
               col_6: { text: r.officeComment || "", align: "justify", colSpan: 1, rowSpan: 1 }
             }
           })));
@@ -821,21 +912,26 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
     // Helper for robust local fallback data generation
     const generateLocalFallbackData = () => {
-      const entName = entry.entityName || "সোনালী ব্যাংক পিএলসি";
-      const minName = entry.ministryName || "আর্থিক প্রতিষ্ঠান বিভাগ";
-      const bName = entry.branchName || "বারোবাজার শাখা, ঝিনাইদহ";
-      const dNo = entry.diaryNo || "২৪১";
-      const dDate = entry.diaryDate || "৩০/০৭/২০২৬";
-      const lNo = entry.letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩৪";
-      const lDate = entry.letterDate || "২৭/০৭/২০২৬";
-      const aYear = entry.auditYear || "২০০৯-২০১৪";
-      const pNo = entry.paraNo ? String(entry.paraNo) : "০৪";
-      const totAmt = entry.totalAmount || "৮,৪১,২৮৪/-";
+      const entName = defaultEntity;
+      const minName = defaultMinistry;
+      const bName = defaultBranch;
+      const dNo = defaultDiaryNo || "-";
+      const dDate = defaultDiaryDate || "";
+      const lNo = defaultLetterNo || "-";
+      const lDate = defaultLetterDate || "";
+      const aYear = defaultAuditYear || "-";
+      const pNo = defaultParaNo || "১";
+      const totAmt = entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "০";
+      const subj = entry.description || entry.subject || "অডিট আপত্তি অনুচ্ছেদ";
+      const minPart = minName ? `<strong>${minName}</strong> এর নিয়ন্ত্রণাধীন ` : '';
+      const bPart = bName ? `, ${bName}` : '';
+      const yrPart = aYear ? `এর <strong>${aYear}</strong> নিরীক্ষা বছরের ` : 'এর ';
+      const dDatePart = dDate ? `, তারিখ: ${dDate} খ্রি:` : '';
 
       return {
         isValidAuditDocument: true,
-        diaryHeader: `ডায়েরি নং- ${dNo}, তারিখ: ${dDate} খ্রি:`,
-        noteTikaText: `টোকা নং- ১১: উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা <strong>${entName}</strong>, প্রধান কার্যালয়ের স্মারক নং- <strong>${lNo}</strong>, তারিখ: <strong>${lDate} খ্রি:</strong> পত্রটি দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে <strong>${minName}</strong> এর নিয়ন্ত্রণাধীন <strong>${entName}</strong>${bName ? `, ${bName}` : ''} এর <strong>${aYear}</strong> নিরীক্ষা বছরের ব্রডশীট জবাবের ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।`,
+        diaryHeader: `ডায়েরি নং- ${dNo}${dDatePart}`,
+        noteTikaText: `টোকা নং- ১১: উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা <strong>${entName}</strong>, প্রধান কার্যালয়ের স্মারক নং- <strong>${lNo}</strong>, তারিখ: <strong>${lDate ? `${lDate} খ্রি:` : '-'}</strong> পত্রটি দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে ${minPart}<strong>${entName}</strong>${bPart} ${yrPart}ব্রডশীট জবাবের ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।`,
         conclusionFinal: `সদয় অনুমোদনের জন্য নথি উপস্থাপন করা হলো।`,
         proposedStatus: hasEvidence ? "পূর্ণাঙ্গ নিষ্পত্তি" : "মন্তব্য বিচারাধীন",
         paragraphs: [
@@ -843,21 +939,17 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             sl: "১",
             entityAndAuditYear: `প্রতিষ্ঠান: ${entName}${bName ? `,\n${bName}` : ''}\nনিরীক্ষা বছর: ${aYear}`,
             paraNo: pNo,
-            titleAndDetails: `শিরোনাম: ${entry.subject || 'ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪/-'}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- `,
-            entityReplyHeader: "ক্যাশ ক্রেডিট ঋণের আওতায় প্রদত্ত ৪টি ঋণগ্রহীতা প্রতিষ্ঠান যথাক্রমে ১) মো: আবুল খায়ের খান, ২) মো: হাসমত আলী, ৩) আবুল কালাম আজাদ এবং ৪) এস আর রাকিব স্টোরস এর বকেয়া ঋণ ইতিমধ্যে সুদআসলে আদায়পূর্বক সমন্বয় করা হয়েছে, যা নিম্নোক্ত ছকে উপস্থাপন করা হলো:",
-            hasTable: true,
-            tableHeaders: ["ক্র: নং", "ঋণগ্রহীতার নাম", "হিসাব নং ও ঋণের প্রকৃতি", "আপত্তিতে জড়িত টাকা", "আসল", "সুদ", "অন্যান্য", "মোট আদায়", "সমন্বয়ের তারিখ"],
+            titleAndDetails: `শিরোনাম: ${subj}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- `,
+            entityReplyHeader: replyText || "আপত্তিতে দাবিকৃত অর্থ ও চালানের প্রেক্ষিতে সংশ্লিষ্ট জবাব নিম্নরূপ:",
+            hasTable: false,
+            tableHeaders: ["ক্র: নং", "বিবরণ", "আপত্তিতে জড়িত টাকা", "আদায়/সমন্বয়কৃত টাকা", "অবশিষ্ট বকেয়া", "সমন্বয়ের তারিখ/চালান"],
             tableRows: [
-              ["১", "মো: আবুল খায়ের খান", "সিসি ১৫৪", "৫২,৭৬২/-", "১,৯৬,৪৮৩/-", "১৮,৯৬৭/-", "১,২৮৭/-", "২,১৬,৭৩৭/-", "১৫/০৯/২০১৬"],
-              ["২", "মো: হাসমত আলী", "সিসি ৫২৯", "৩,০১,৬০৮/-", "৩,০৫,০৩৭/-", "৮৫,৫৪৭/-", "৩,৮২৬/-", "৩,৯৪,৪১০/-", "২২/০৪/২০১৮"],
-              ["৩", "আবুল কালাম আজাদ", "সিসি ৬৪৪", "৩,৪৭,৩৯৪/-", "৩,২৩,৮৮৮/-", "১,৪১,৯৬১/-", "৬,১০৩/-", "৪,৭১,৯৫২/-", "২৫/১০/২০১৮"],
-              ["৪", "এস আর রাকিব স্টোরস", "সিসি ৬৯৯", "১,৩৯,৫২০/-", "১,৩৭,৯৬৮/-", "১,১৪,৬৭১/-", "১৩,৯৪৯/-", "২,৬৬,৫৮৮/-", "২৬/০১/২০২০"],
-              ["সর্বমোট", "-", "-", "৮,৪১,২৮৪/-", "৯,৬৩,৩৭৬/-", "৩,৬১,১৮৬/-", "২৫,১৬৫/-", "১৩,৪৯,৭২৭/-", "-"]
+              ["১", bName || entName, totAmt, totAmt, "০", "-"]
             ],
             conclusionBranch: `এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।`,
             conclusionHeadOffice: `শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।`,
             conclusionPresenter: hasEvidence
-              ? `আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে ব্যাংক বিবরণী ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির সুপারিশ করা হলো।`
+              ? `আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির সুপারিশ করা হলো।`
               : ``,
             status: hasEvidence ? "পূর্ণাঙ্গ নিষ্পত্তি" : "মন্তব্য বিচারাধীন"
           }
@@ -868,21 +960,21 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           recipient: {
             designation: "ব্যবস্থাপনা পরিচালক",
             entityName: entName,
-            address: "প্রধান কার্যালয়, ৩৫-৪২, ৪৪ মতিঝিল বা/এ",
-            city: "ঢাকা – ১০০০"
+            address: "প্রধান কার্যালয়, ঢাকা",
+            city: "ঢাকা"
           },
           subject: `বিষয়: ${entName}${bName ? `, ${bName}` : ''} এর ${aYear} সালের বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${entry.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${pNo} এর জবাবের উপর মন্তব্য প্রেরণ।`,
-          reference: `সূত্র: ${entName} এর পত্র নং ${lNo}, তারিখ: ${lDate}`,
+          reference: `সূত্র: ${entName} এর পত্র নং ${lNo}, তারিখ: ${lDate ? `${lDate} খ্রি:` : '-'}`,
           introText: `উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entName}${bName ? `, ${bName}` : ''} এর ${aYear} সালের নিরীক্ষা প্রতিবেদনের ${entry.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${pNo} এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:`,
           tableRows: [
             {
               sl: "১",
-              paraAndYear: `${pNo}, ${aYear}`,
+              paraAndYear: `${pNo}${aYear ? `, ${aYear}` : ''}`,
               entityName: `${entName}${bName ? `,\n${bName}` : ''}।`,
-              paraTitle: `${entry.subject || 'ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪/-'}`,
+              paraTitle: `${subj}`,
               involvedAmount: `${totAmt}`,
               officeComment: hasEvidence
-                ? `আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।`
+                ? `আপত্তিকৃত টাকার সমুদয় অংশ আদায় হওয়ায় এবং প্রমাণক সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।`
                 : ``
             }
           ],
@@ -890,9 +982,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           signatoryTitle: "উপ-পরিচালক",
           signatoryPhone: "ফোন: ০২৪৭৭৭২২৬৫৬",
           onulipiList: [
-            `উপমহাব্যবস্থাপক, ${entName}, জিএম অফিস, খুলনা। (কপি সংশ্লিষ্ট শাখায় প্রেরণের জন্য অনুরোধ করা হলো)`,
-            `পিএ টু মহাপরিচালক/পরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, প্রধান কার্যালয়, অডিট কমপ্লেক্স (৮ম ও ৯ ম তলা), সেগুনবাগিচা, ঢাকা।`,
-            `অফিস কপি।`
+            `১। মহাপরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, সেগুনবাগিচা, ঢাকা।`,
+            `২। মহাব্যবস্থাপক, ${entName}, প্রধান কার্যালয়, ঢাকা।`,
+            `৩। উপ-মহাব্যবস্থাপক, ${entName}, আঞ্চলিক কার্যালয়${bName ? `, ${bName}` : ''}।`,
+            `৪। অফিস কপি।`
           ]
         }
       };
