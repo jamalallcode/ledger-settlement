@@ -1054,7 +1054,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
     const totalRow = `
       <tr style="font-weight: bold; background-color: #F1F5F9; page-break-inside: avoid; mso-yfti-irow: 2; mso-yfti-lastrow: yes;">
-        <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">সর্বমোট</td>
+        <td colspan="2" style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; font-weight: bold; mso-border-alt: solid black .75pt; white-space: nowrap;">সর্বমোট</td>
         <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">-</td>
         <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: right; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">${
           totalInvolved && totalInvolved !== "০" ? toBengaliDigits(totalInvolved) : "-"
@@ -2935,7 +2935,6 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                               </th>
                             );
                           })}
-                          <th className="p-1 text-center w-8 no-print border border-slate-800">মুছুন</th>
                         </tr>
                         {/* ক্রমিক রো (Serial / Index Row under table header) */}
                         <tr className="bg-slate-50 text-slate-950 font-bold text-center border-b border-slate-800 text-[11.5px]">
@@ -2944,7 +2943,6 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                               ({toBengaliDigits(cIdx + 1)})
                             </th>
                           ))}
-                          <th className="no-print border border-slate-800 py-1"></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2956,7 +2954,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                             return !isTotal;
                           })
                           .map((row) => (
-                          <tr key={row.id} className="text-center hover:bg-slate-50 transition-colors">
+                          <tr key={row.id} className="text-center hover:bg-slate-50 transition-colors group relative">
                             {para.tableColumns.map((col, cIdx) => {
                               const cellColor = (row.cellColors || {})[col.id];
                               const isSerial = cIdx === 0 || col.label.includes("ক্রমিক") || col.label.includes("ক্র:") || col.id === "sl";
@@ -2964,6 +2962,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                               const isAccount = col.label.includes("হিসাব") || col.label.includes("প্রকৃতি");
                               const isDate = col.label.includes("তারিখ") || col.id === "adjustmentDate";
                               const isAmount = !isSerial && !isName && !isAccount && !isDate;
+                              const isLastCol = cIdx === para.tableColumns.length - 1;
 
                               const cellValue = row.cells[col.id] || "";
                               const lineCount = cellValue.split("\n").length;
@@ -3015,30 +3014,30 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                                   <button
                                     type="button"
                                     onClick={() => handleApplyParagraphTableCellColor(para.id, row.id, col.id)}
-                                    className="absolute right-0.5 top-0.5 opacity-0 group-hover/cell:opacity-100 p-0.5 bg-white/90 text-slate-400 hover:text-blue-600 rounded-none text-[8px] no-print shadow-2xs border border-slate-300"
+                                    className="absolute right-0.5 top-0.5 opacity-0 group-hover/cell:opacity-100 p-0.5 bg-white/90 text-slate-400 hover:text-blue-600 rounded-none text-[8px] no-print shadow-2xs border border-slate-300 z-10"
                                     title="রঙ দিন"
                                   >
                                     <Palette size={9} />
                                   </button>
+
+                                  {/* Row delete action shown on hovering over row */}
+                                  {isLastCol && para.tableRows.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteParagraphTableRow(para.id, row.id)}
+                                      className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 border border-rose-300 rounded-none text-[9px] no-print shadow-2xs z-20 transition-opacity cursor-pointer flex items-center justify-center"
+                                      title="রো মুছুন"
+                                    >
+                                      <Trash2 size={11} />
+                                    </button>
+                                  )}
                                 </td>
                               );
                             })}
-                            <td className="p-1 text-center no-print border border-slate-800">
-                              {para.tableRows.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteParagraphTableRow(para.id, row.id)}
-                                  className="text-rose-400 hover:text-rose-600 p-0.5 rounded-none"
-                                  title="রো মুছুন"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-                              )}
-                            </td>
                           </tr>
                         ))}
 
-                        {/* Totals Row */}
+                        {/* Totals Row with Merged First Two Columns for Single-Line 'সর্বমোট' */}
                         <tr className="font-black bg-slate-100/95 text-center border-t-2 border-slate-900 text-slate-950 text-xs sm:text-[13px]">
                           {para.tableColumns.map((col, idx) => {
                             const totalInvolved = calculateParagraphTotal(para, "জড়িত");
@@ -3046,8 +3045,21 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                             const totalInterest = calculateParagraphTotal(para, "সুদ");
                             const totalRecovered = calculateParagraphTotal(para, "আদায়");
 
-                            if (idx === 0) return <td key={col.id} className="border border-slate-800 p-2 text-center font-black">সর্বমোট</td>;
-                            if (col.id === "borrowerName" || col.label.includes("নাম")) return <td key={col.id} className="border border-slate-800 p-2 text-center font-bold">-</td>;
+                            if (idx === 0) {
+                              return (
+                                <td
+                                  key={col.id}
+                                  colSpan={para.tableColumns.length > 1 ? 2 : 1}
+                                  className="border border-slate-800 p-2 text-center font-black whitespace-nowrap"
+                                >
+                                  সর্বমোট
+                                </td>
+                              );
+                            }
+                            if (idx === 1 && para.tableColumns.length > 1) {
+                              return null; // Merged with column 0
+                            }
+                            if (col.id === "borrowerName" || col.label.includes("নাম")) return null;
                             if (col.id === "involvedAmount" || col.label.includes("জড়িত")) return <td key={col.id} className="border border-slate-800 p-2 text-right pr-2 font-black">{totalInvolved && totalInvolved !== "০" ? toBengaliDigits(totalInvolved) : "-"}</td>;
                             if (col.id === "principal" || col.label.includes("আসল")) return <td key={col.id} className="border border-slate-800 p-2 text-right pr-2 font-black">{toBengaliDigits(totalPrincipal || "০")}</td>;
                             if (col.id === "interest" || col.label.includes("সুদ")) return <td key={col.id} className="border border-slate-800 p-2 text-right pr-2 font-black">{toBengaliDigits(totalInterest || "০")}</td>;
@@ -3056,7 +3068,6 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                             if (col.id === "adjustmentDate" || col.label.includes("তারিখ")) return <td key={col.id} className="border border-slate-800 p-2 text-center font-bold">-</td>;
                             return <td key={col.id} className="border border-slate-800 p-2 text-center font-bold">-</td>;
                           })}
-                          <td className="no-print border border-slate-800"></td>
                         </tr>
                       </tbody>
                     </table>
